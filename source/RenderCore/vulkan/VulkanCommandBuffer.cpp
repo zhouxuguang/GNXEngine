@@ -68,7 +68,7 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
     render_info.renderArea.extent.width = mCommandInfo->swapChain->GetWidth();
     render_info.renderArea.extent.height = mCommandInfo->swapChain->GetHeight();
     
-    return nullptr;
+    return std::make_shared<VKRenderEncoder>(mCommandBuffer, render_info);
 }
 
 RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& renderPass) const
@@ -136,7 +136,7 @@ void VulkanCommandBuffer::presentFrameBuffer()
     presentInfo.pResults = nullptr;
 
     res = vkQueuePresentKHR(mCommandInfo->vulkanContext->graphicsQueue, &presentInfo);
-    if (res != VK_SUCCESS)
+    if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
     {
         char szBuf[32] = {0};
         snprintf(szBuf, 32, "%d", (int)res);
@@ -152,7 +152,7 @@ void VulkanCommandBuffer::presentFrameBuffer()
         }
     }
     
-    assert(res == VK_SUCCESS);
+    assert(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
     
     // 更新当前帧的索引
     mCommandInfo->renderDevice->UpdateCurrentIndex();

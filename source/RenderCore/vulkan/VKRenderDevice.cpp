@@ -122,7 +122,9 @@ void VKRenderDevice::resize(uint32_t width, uint32_t height)
     createVertexBufferWithBytes(data, 4, StorageModeShared);
     
     CommandBufferPtr commandBuffer = createCommandBuffer();
-    commandBuffer->createDefaultRenderEncoder();
+    RenderEncoderPtr renderEncoder = commandBuffer->createDefaultRenderEncoder();
+    renderEncoder->EndEncode();
+    commandBuffer->presentFrameBuffer();
 }
 
 VertexBufferPtr VKRenderDevice::createVertexBufferWithLength(uint32_t size) const
