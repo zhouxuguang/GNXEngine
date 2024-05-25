@@ -7,6 +7,7 @@
 
 #include "VulkanCommandBuffer.h"
 #include "VKRenderDevice.h"
+#include "VKRenderEncoder.h"
 #include "BaseLib/LogService.h"
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -66,8 +67,6 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
     render_info.renderArea.offset.y = 0;
     render_info.renderArea.extent.width = mCommandInfo->swapChain->GetWidth();
     render_info.renderArea.extent.height = mCommandInfo->swapChain->GetHeight();
-
-    vkCmdBeginRenderingKHR(mCommandBuffer, &render_info);
     
     return nullptr;
 }

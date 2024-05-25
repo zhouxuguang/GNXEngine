@@ -25,7 +25,7 @@ class RenderEncoder
 public:
     RenderEncoder();
     
-    ~RenderEncoder();
+    virtual ~RenderEncoder();
     
     //结束渲染命令录制
     virtual void EndEncode() = 0;
@@ -75,7 +75,7 @@ public:
      @param offset offset description
      @param size size description
      */
-    virtual void drawPrimitves(PrimitiveMode mode, int offset, int size) =0;
+    virtual void drawPrimitves(PrimitiveMode mode, int offset, int size) = 0;
     
     /**
      draw funton with index
@@ -85,7 +85,7 @@ public:
      @param buffer buffer description
      @param offset offset description
      */
-    virtual void drawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset) =0;
+    virtual void drawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset) = 0;
     
     /**
      设置纹理和采样器
