@@ -50,9 +50,6 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
         return;
     }
     
-    // 加载所有instance的入口点
-    volkLoadInstance(mVulkanContext->instance);
-    
     if (!SelectPhysicalDevice(*mVulkanContext))
     {
         log_info("SelectPhysicalDevice ERROR");

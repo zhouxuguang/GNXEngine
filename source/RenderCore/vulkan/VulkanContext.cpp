@@ -13,6 +13,23 @@ NAMESPACE_RENDERCORE_BEGIN
 
 USING_NS_BASELIB
 
+VKAPI_ATTR VkBool32 VKAPI_CALL debug_utils_messenger_callback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+    VkDebugUtilsMessageTypeFlagsEXT message_type,
+    const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
+    void *user_data)
+{
+    if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+    {
+        printf("{%d} - {%s}: {%s}", callback_data->messageIdNumber, callback_data->pMessageIdName, callback_data->pMessage);
+    }
+    else if (message_severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+    {
+        printf("{%d} - {%s}: {%s}", callback_data->messageIdNumber, callback_data->pMessageIdName, callback_data->pMessage);
+    }
+    return VK_FALSE;
+}
+
 bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
 {
     std::vector<const char *> instanceExtensions;
@@ -35,6 +52,28 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
     appInfo.pEngineName = "GNXEngine";
     
     std::vector<const char *> instanceLayers;
+    
+    uint32_t instance_extension_count;
+    vkEnumerateInstanceExtensionProperties(nullptr, &instance_extension_count, nullptr);
+
+    std::vector<VkExtensionProperties> available_instance_extensions(instance_extension_count);
+    vkEnumerateInstanceExtensionProperties(nullptr, &instance_extension_count, available_instance_extensions.data());
+    
+    bool debug_utils = false;
+    for (auto &available_extension : available_instance_extensions)
+    {
+        if (strcmp(available_extension.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0)
+        {
+            debug_utils = true;
+            instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
+    }
+    
+    VkDebugUtilsMessengerCreateInfoEXT debug_utils_create_info = {VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
+
+    debug_utils_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    debug_utils_create_info.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
+    debug_utils_create_info.pfnUserCallback = debug_utils_messenger_callback;
 
     // 创建vulkan实例
     VkInstanceCreateInfo instanceCreateInfo = {};
@@ -42,7 +81,7 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
     instanceCreateInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instanceCreateInfo.pNext = nullptr;
+    instanceCreateInfo.pNext = &debug_utils_create_info;
     instanceCreateInfo.pApplicationInfo = &appInfo;
     instanceCreateInfo.enabledExtensionCount = (uint32_t)(instanceExtensions.size());
     instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
@@ -53,6 +92,13 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
     {
         return false;
     }
+    
+    // 加载所有instance的入口点
+    volkLoadInstance(context.instance);
+    
+    VkDebugUtilsMessengerEXT debug_utils_messenger;
+    result = vkCreateDebugUtilsMessengerEXT(context.instance, &debug_utils_create_info, nullptr, &debug_utils_messenger);
+    
     return true;
 }
 
@@ -117,6 +163,7 @@ bool SelectPhysicalDevice(VulkanContext& context)
         for (const auto &iter : extensions)
         {
             context.extensionNames.push_back(iter.extensionName);
+            printf("%s\n", iter.extensionName);
         }
         
         bool supportsSwapchain = false;
@@ -203,6 +250,10 @@ static VKAPI_PTR VkBool32 DebugReportCallback(
 
 static void CreateDebugReport(VulkanContext& context)
 {
+    PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(context.instance, "vkCreateDebugReportCallbackEXT");
+    PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(context.instance, "vkDestroyDebugReportCallbackEXT");
+    PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT = (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(context.instance, "vkDebugReportMessageEXT");
+    
     if (vkCreateDebugReportCallbackEXT)
     {
         VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfoExt;
@@ -229,13 +280,17 @@ bool CreateVirtualDevice(VulkanContext& context)
     deviceExtensionNames.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     deviceExtensionNames.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
 
-//#ifdef ENABLE_VULKAN_DEBUG
-//    if (context.debugMarkersSupported) 
-//    {
-//        deviceExtensionNames.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
-//    }
-//    CreateDebugReport(context);
-//#endif
+#ifdef ENABLE_VULKAN_DEBUG
+    if (context.debugMarkersSupported) 
+    {
+        deviceExtensionNames.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
+    }
+    if (context.debugReportCallbackExt)
+    {
+        deviceExtensionNames.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    }
+    CreateDebugReport(context);
+#endif
     
     constexpr VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature
     {

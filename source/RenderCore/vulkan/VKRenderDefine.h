@@ -27,6 +27,6 @@
 #include <assert.h>
 
 //#define ENABLE_VULKAN_MSAA  //开启msaa
-//#define ENABLE_VULKAN_DEBUG   //开启DEBUG
+#define ENABLE_VULKAN_DEBUG   //开启DEBUG
 
 #endif /* GNX_ENGINE_VK_RENDER_DEFINE_INCLUDE_GKDFGJ */

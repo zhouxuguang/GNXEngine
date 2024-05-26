@@ -16,9 +16,16 @@ NAMESPACE_RENDERCORE_BEGIN
 class VKGraphicsPipeline : public GraphicsPipeline
 {
 public:
-    VKGraphicsPipeline();
+    VKGraphicsPipeline(VulkanContextPtr context, const GraphicsPipelineDescriptor& des);
     
-    ~VKGraphicsPipeline();
+    ~VKGraphicsPipeline()
+    {
+        if (mPipeline != VK_NULL_HANDLE)
+        {
+            vkDestroyPipeline(mContext->device, mPipeline, nullptr);
+            mPipeline = VK_NULL_HANDLE;
+        }
+    }
     
     virtual void attachVertexShader(ShaderFunctionPtr shaderFunction){}
     
@@ -31,8 +38,12 @@ public:
     
     void Generate();
     
+    void ContructDes();
+    
 private:
     VkPipeline mPipeline = VK_NULL_HANDLE;
+    VulkanContextPtr mContext = nullptr;
+    VkGraphicsPipelineCreateInfo mPipeCreateInfo;
 };
 
 NAMESPACE_RENDERCORE_END
