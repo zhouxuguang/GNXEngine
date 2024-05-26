@@ -38,12 +38,29 @@ VKVertexBuffer::VKVertexBuffer(VulkanContextPtr context, const void* buffer, siz
 
     VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, mode, size,
                                       bufferUsage, memType, mBuffer, mAllocation, nullptr);
-
-    // private模式的还需要继续处理
-    void *data = nullptr;
-    vmaMapMemory(context->vmaAllocator, mAllocation, &data);
-    memcpy(data, buffer, size);
-    vmaUnmapMemory(context->vmaAllocator, mAllocation);
+    
+    if (mode == StorageModePrivate)
+    {
+        VkBuffer stageBuffer = VK_NULL_HANDLE;
+        VmaAllocation allocation = VK_NULL_HANDLE;
+        VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, StorageModeShared, size,
+                                          bufferUsage, memType, stageBuffer, allocation, nullptr);
+        
+        void *data = nullptr;
+        vmaMapMemory(context->vmaAllocator, allocation, &data);
+        memcpy(data, buffer, size);
+        vmaUnmapMemory(context->vmaAllocator, allocation);
+        
+        VulkanBufferUtil::CopyBuffer(mContext->device, mContext->graphicsQueue, mContext->commandPool, stageBuffer, mBuffer, size);
+        vmaDestroyBuffer(mContext->vmaAllocator, stageBuffer, allocation);
+    }
+    else
+    {
+        void *data = nullptr;
+        vmaMapMemory(context->vmaAllocator, mAllocation, &data);
+        memcpy(data, buffer, size);
+        vmaUnmapMemory(context->vmaAllocator, mAllocation);
+    }
     
     mStorageMode = mode;
     mBufferLength = (uint32_t)size;
