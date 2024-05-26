@@ -16,7 +16,32 @@ NAMESPACE_RENDERCORE_BEGIN
 class VKComputeBuffer : public ComputeBuffer
 {
 public:
-    VKComputeBuffer();
+    VKComputeBuffer(VulkanContextPtr context, size_t len, StorageMode mode);
+    
+    VKComputeBuffer(VulkanContextPtr context, const void* buffer, size_t size, StorageMode mode);
+    
+    ~VKComputeBuffer();
+    
+    virtual uint32_t getBufferLength() const;
+    
+    virtual void* mapBufferData() const;
+    
+    virtual void unmapBufferData(void* bufferData) const;
+    
+    virtual bool isValid() const;
+    
+    VkBuffer GetBuffer() const
+    {
+        return mBuffer;
+    }
+    
+private:
+    VulkanContextPtr mContext;
+    VkBuffer mBuffer = VK_NULL_HANDLE;
+    StorageMode mStorageMode;
+    uint32_t mBufferLength = 0;
+
+    VmaAllocation mAllocation = VK_NULL_HANDLE;
 };
 
 NAMESPACE_RENDERCORE_END
