@@ -6,6 +6,7 @@
 //
 
 #include "VKRenderEncoder.h"
+#include "VKVertexBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -35,6 +36,26 @@ VKRenderEncoder::~VKRenderEncoder()
 void VKRenderEncoder::EndEncode()
 {
     vkCmdEndRenderingKHR(mCommandBuffer);
+}
+
+void VKRenderEncoder::setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index)
+{
+//    void vkCmdBindVertexBuffers(
+//        VkCommandBuffer                             commandBuffer,
+//        uint32_t                                    firstBinding,
+//        uint32_t                                    bindingCount,
+//        const VkBuffer*                             pBuffers,
+//        const VkDeviceSize*                         pOffsets);
+    if (!buffer)
+    {
+        return;
+    }
+    
+    VKVertexBuffer* vkBuffer = (VKVertexBuffer*)buffer.get();
+    VkBuffer innerBuffer = vkBuffer->GetGpuBuffer();
+    VkDeviceSize deviceOffset = offset;
+    
+    vkCmdBindVertexBuffers(mCommandBuffer, index, 1, &innerBuffer, &deviceOffset);
 }
 
 NAMESPACE_RENDERCORE_END

@@ -69,28 +69,6 @@ void MTLRenderEncoder::setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, 
 }
 
 /**
- 设置顶点数据，以copy的方式直接设置，pData的大小dataLen最大为4096，即4K
- 
- @param pData 数据指针
- @param dataLen 数据长度
- @param index 绑定的索引
- */
-void MTLRenderEncoder::setVertexBytes(const void* pData, size_t dataLen, int index)
-{
-    assert(pData && dataLen <= 4096);
-    if (!pData || dataLen <= 0)
-    {
-        return;
-    }
-    if (dataLen > 4096)
-    {
-        return;
-    }
-    
-    [mRenderEncoder setVertexBytes:pData length:dataLen atIndex:index];
-}
-
-/**
  设置uniformbuffer的索引
  
  @param buffer buffer description

@@ -24,9 +24,7 @@ public:
     
     virtual void setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline){}
     
-    virtual void setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index){}
-    
-    virtual void setVertexBytes(const void* pData, size_t dataLen, int index){}
+    virtual void setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index);
     
     virtual void setVertexUniformBuffer(UniformBufferPtr buffer, int index){}
     

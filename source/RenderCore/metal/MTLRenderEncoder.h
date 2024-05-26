@@ -37,15 +37,6 @@ public:
     virtual void setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index);
     
     /**
-     设置顶点数据，以copy的方式直接设置，pData的大小dataLen最大为4096，即4K
-     
-     @param pData 数据指针
-     @param dataLen 数据长度
-     @param index 绑定的索引
-     */
-    virtual void setVertexBytes(const void* pData, size_t dataLen, int index);
-    
-    /**
      设置uniformbuffer的索引
      
      @param buffer buffer description
