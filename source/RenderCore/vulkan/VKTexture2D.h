@@ -20,6 +20,10 @@ public:
     VKTexture2D(const VulkanContextPtr& context, const TextureDescriptor& des);
 
     ~VKTexture2D();
+    
+    virtual void allocMemory()
+    {
+    }
 
     virtual void setTextureData(const unsigned char* imageData);
 
@@ -30,7 +34,12 @@ public:
      @param mipmapLevel 纹理等级
      @param image_data 更新数据
      */
-    virtual void replaceRegion(const Rect2D& rect,const unsigned char* imageData, unsigned int mipMapLevel = 0);
+    virtual void replaceRegion(const Rect2D& rect, const unsigned char* imageData, unsigned int mipMapLevel = 0);
+    
+    virtual bool isValid() const
+    {
+        return mImage != VK_NULL_HANDLE;
+    }
 
     const VulkanImageViewPtr getVKImageView() const noexcept {return mVulkanImageViewPtr;}
     

@@ -45,15 +45,9 @@ public:
     
     virtual IndexBufferPtr createIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const;
     
-    virtual Texture2DPtr createTextureWithDescriptor(const TextureDescriptor& des) const
-    {
-        return nullptr;
-    }
+    virtual Texture2DPtr createTextureWithDescriptor(const TextureDescriptor& des) const;
     
-    virtual TextureCubePtr createTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const
-    {
-        return nullptr;
-    }
+    virtual TextureCubePtr createTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const;
     
     virtual TextureSamplerPtr createSamplerWithDescriptor(const SamplerDescriptor& des) const;
     

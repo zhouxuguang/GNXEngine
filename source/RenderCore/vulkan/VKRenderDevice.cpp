@@ -13,6 +13,9 @@
 #include "VulkanCommandBuffer.h"
 #include "VKComputeBuffer.h"
 #include "VKComputePipeline.h"
+#include "VKTexture2D.h"
+#include "VKTextureCube.h"
+#include "VKRenderTexture.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -39,7 +42,7 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
         
         uint32_t major = VK_API_VERSION_MAJOR(apiVersions[i]);
         uint32_t minor = VK_API_VERSION_MINOR(apiVersions[i]);
-        log_info("create instance success : api version : major = %d, minor = %d", (int)major, (int)minor);
+        printf("create instance success : api version : major = %u, minor = %u", major, minor);
         mVulkanContext->apiVersion = apiVersions[i];
         break;
     }
@@ -149,6 +152,16 @@ ComputeBufferPtr VKRenderDevice::createComputeBuffer(const void* buffer, uint32_
 IndexBufferPtr VKRenderDevice::createIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const
 {
     return std::make_shared<VKIndexBuffer>(mVulkanContext, indexType, buffer, size);
+}
+
+Texture2DPtr VKRenderDevice::createTextureWithDescriptor(const TextureDescriptor& des) const
+{
+    return std::make_shared<VKTexture2D>(mVulkanContext, des);
+}
+
+TextureCubePtr VKRenderDevice::createTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const
+{
+    return std::make_shared<VKTextureCube>(mVulkanContext, desArray);
 }
 
 TextureSamplerPtr VKRenderDevice::createSamplerWithDescriptor(const SamplerDescriptor& des) const
