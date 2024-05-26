@@ -16,7 +16,7 @@ NAMESPACE_RENDERCORE_BEGIN
 class VKComputeBuffer : public ComputeBuffer
 {
 public:
-    VKComputeBuffer(VulkanContextPtr context, size_t len, StorageMode mode);
+    VKComputeBuffer(VulkanContextPtr context, size_t len);
     
     VKComputeBuffer(VulkanContextPtr context, const void* buffer, size_t size, StorageMode mode);
     

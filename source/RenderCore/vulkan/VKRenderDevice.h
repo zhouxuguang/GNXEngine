@@ -39,15 +39,9 @@ public:
     
     virtual VertexBufferPtr createVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const;
     
-    virtual ComputeBufferPtr createComputeBuffer(uint32_t size) const
-    {
-        return nullptr;
-    }
+    virtual ComputeBufferPtr createComputeBuffer(uint32_t size) const;
     
-    virtual ComputeBufferPtr createComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const
-    {
-        return nullptr;
-    }
+    virtual ComputeBufferPtr createComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const;
     
     virtual IndexBufferPtr createIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const;
     

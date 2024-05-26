@@ -16,10 +16,14 @@ NAMESPACE_RENDERCORE_BEGIN
 class VKComputePipeline : public ComputePipeline
 {
 public:
-    VKComputePipeline();
+    VKComputePipeline(VulkanContextPtr context);
+    
+    ~VKComputePipeline();
     
     //获得计算着色器的线程组的大小
     virtual void GetThreadGroupSizes(uint32_t &x, uint32_t &y, uint32_t &z){}
+    
+private:
 };
 
 NAMESPACE_RENDERCORE_END
