@@ -12,9 +12,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-class ShaderFunction;
-typedef std::shared_ptr<ShaderFunction> ShaderFunctionPtr;
-
+// 单个的shader函数对象，例如vs/ps等
 class ShaderFunction
 {
 public:
@@ -22,10 +20,12 @@ public:
     
     virtual ~ShaderFunction();
     
-    virtual ShaderFunctionPtr initWithShaderSource(const char* pShaderSource, ShaderStage shaderStage) = 0;
+    virtual std::shared_ptr<ShaderFunction> initWithShaderSource(const char* pShaderSource, ShaderStage shaderStage) = 0;
     
     virtual ShaderStage getShaderStage() const = 0;
 };
+
+using ShaderFunctionPtr = std::shared_ptr<ShaderFunction>;
 
 NAMESPACE_RENDERCORE_END
 
