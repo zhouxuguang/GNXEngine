@@ -51,25 +51,13 @@ public:
     
     virtual TextureSamplerPtr createSamplerWithDescriptor(const SamplerDescriptor& des) const;
     
-    virtual UniformBufferPtr createUniformBufferWithSize(uint32_t bufSize) const
-    {
-        return nullptr;
-    }
+    virtual UniformBufferPtr createUniformBufferWithSize(uint32_t bufSize) const;
     
-    virtual ShaderFunctionPtr createShaderFunction(const char* pShaderSource, ShaderStage shaderStage) const
-    {
-        return nullptr;
-    }
+    virtual ShaderFunctionPtr createShaderFunction(const char* pShaderSource, ShaderStage shaderStage) const;
     
-    virtual GraphicsPipelinePtr createGraphicsPipeline(const GraphicsPipelineDescriptor& des) const
-    {
-        return nullptr;
-    }
+    virtual GraphicsPipelinePtr createGraphicsPipeline(const GraphicsPipelineDescriptor& des) const;
     
-    virtual ComputePipelinePtr createComputePipeline(const char* pszShaderString) const
-    {
-        return nullptr;
-    }
+    virtual ComputePipelinePtr createComputePipeline(const char* pszShaderString) const;
     
     virtual CommandBufferPtr createCommandBuffer();
     

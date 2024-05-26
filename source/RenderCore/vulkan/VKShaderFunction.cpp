@@ -9,6 +9,24 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+VKShaderFunction::VKShaderFunction(VulkanContextPtr context, const char* pShaderSource, ShaderStage shaderStage)
+{
+    //
+}
 
+VKShaderFunction::~VKShaderFunction()
+{
+    //
+}
+
+std::shared_ptr<ShaderFunction> VKShaderFunction::initWithShaderSource(const char* pShaderSource, ShaderStage shaderStage)
+{
+    return nullptr;
+}
+
+ShaderStage VKShaderFunction::getShaderStage() const
+{
+    return ShaderStage_Vertex;
+}
 
 NAMESPACE_RENDERCORE_END

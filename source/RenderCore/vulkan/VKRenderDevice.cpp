@@ -16,6 +16,10 @@
 #include "VKTexture2D.h"
 #include "VKTextureCube.h"
 #include "VKRenderTexture.h"
+#include "VKUniformBuffer.h"
+#include "VKComputePipeline.h"
+#include "VKGraphicsPipeline.h"
+#include "VKShaderFunction.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -167,6 +171,26 @@ TextureCubePtr VKRenderDevice::createTextureCubeWithDescriptor(const std::vector
 TextureSamplerPtr VKRenderDevice::createSamplerWithDescriptor(const SamplerDescriptor& des) const
 {
     return std::make_shared<VKTextureSampler>(mVulkanContext, des);
+}
+
+UniformBufferPtr VKRenderDevice::createUniformBufferWithSize(uint32_t bufSize) const
+{
+    return std::make_shared<VKUniformBuffer>(mVulkanContext, bufSize);
+}
+
+ShaderFunctionPtr VKRenderDevice::createShaderFunction(const char* pShaderSource, ShaderStage shaderStage) const
+{
+    return std::make_shared<VKShaderFunction>(mVulkanContext, pShaderSource, shaderStage);
+}
+
+GraphicsPipelinePtr VKRenderDevice::createGraphicsPipeline(const GraphicsPipelineDescriptor& des) const
+{
+    return std::make_shared<VKGraphicsPipeline>(mVulkanContext, des);
+}
+
+ComputePipelinePtr VKRenderDevice::createComputePipeline(const char* pszShaderString) const
+{
+    return std::make_shared<VKComputePipeline>(mVulkanContext, pszShaderString);
 }
 
 CommandBufferPtr VKRenderDevice::createCommandBuffer()
