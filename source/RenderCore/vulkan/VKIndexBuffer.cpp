@@ -30,6 +30,16 @@ VKIndexBuffer::VKIndexBuffer(VulkanContextPtr context, IndexType indexType, cons
 
 VKIndexBuffer::~VKIndexBuffer()
 {
+    if (VK_NULL_HANDLE == mContext->device)
+    {
+        return;
+    }
+
+    if (mBuffer != VK_NULL_HANDLE)
+    {
+        vmaDestroyBuffer(mContext->vmaAllocator, mBuffer, mAllocation);
+        mBuffer = VK_NULL_HANDLE;
+    }
 }
 
 NAMESPACE_RENDERCORE_END
