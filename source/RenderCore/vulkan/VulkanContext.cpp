@@ -38,7 +38,7 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
 #ifdef __ANDROID__
     instanceExtensions.push_back("VK_KHR_android_surface");
 #else define __APPLE__
-    instanceExtensions.push_back(VK_MVK_MACOS_SURFACE_EXTENSION_NAME);
+    instanceExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
     instanceExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
 
@@ -67,6 +67,10 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
             debug_utils = true;
             instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
+        if (strcmp(available_extension.extensionName, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) == 0)
+        {
+            instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+        }
     }
     
     VkDebugUtilsMessengerCreateInfoEXT debug_utils_create_info = {VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
@@ -78,7 +82,7 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
     // 创建vulkan实例
     VkInstanceCreateInfo instanceCreateInfo = {};
 #ifdef __APPLE__
-    instanceCreateInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+    instanceCreateInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.pNext = &debug_utils_create_info;
@@ -411,12 +415,12 @@ bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
         return false;
     }
 
-#ifdef VK_USE_PLATFORM_MACOS_MVK
-    VkMacOSSurfaceCreateInfoMVK createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_MACOS_SURFACE_CREATE_INFO_MVK;
-    createInfo.pView = nativeWidow;
-    PFN_vkCreateMacOSSurfaceMVK vkCreateMacOSSurfaceMVK = (PFN_vkCreateMacOSSurfaceMVK)vkGetInstanceProcAddr(context.instance, "vkCreateMacOSSurfaceMVK");
-    VkResult result = vkCreateMacOSSurfaceMVK(context.instance, &createInfo, nullptr, &context.surfaceKhr);
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    VkMetalSurfaceCreateInfoEXT createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
+    createInfo.pLayer = (const CAMetalLayer*)nativeWidow;
+    PFN_vkCreateMetalSurfaceEXT vkCreateMetalSurfaceEXT = (PFN_vkCreateMetalSurfaceEXT)vkGetInstanceProcAddr(context.instance, "vkCreateMetalSurfaceEXT");
+    VkResult result = vkCreateMetalSurfaceEXT(context.instance, &createInfo, nullptr, &context.surfaceKhr);
 #endif
 
     return context.surfaceKhr != VK_NULL_HANDLE;
