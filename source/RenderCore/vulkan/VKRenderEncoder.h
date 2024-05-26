@@ -26,19 +26,19 @@ public:
     
     virtual void setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index);
     
-    virtual void setVertexUniformBuffer(UniformBufferPtr buffer, int index){}
+    virtual void setVertexUniformBuffer(UniformBufferPtr buffer, int index);
     
-    virtual void setFragmentUniformBuffer(UniformBufferPtr buffer, int index){}
+    virtual void setFragmentUniformBuffer(UniformBufferPtr buffer, int index);
     
-    virtual void drawPrimitves(PrimitiveMode mode, int offset, int size){}
+    virtual void drawPrimitves(PrimitiveMode mode, int offset, int size);
     
-    virtual void drawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset){}
+    virtual void drawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset);
     
-    virtual void setFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index){}
+    virtual void setFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index);
     
-    virtual void setFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index){}
+    virtual void setFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index);
     
-    virtual void setFragmentRenderTextureAndSampler(RenderTexturePtr textureCube, TextureSamplerPtr sampler, int index){}
+    virtual void setFragmentRenderTextureAndSampler(RenderTexturePtr textureCube, TextureSamplerPtr sampler, int index);
     
 private:
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
