@@ -26,6 +26,10 @@ VKTextureCube::VKTextureCube(VulkanContextPtr context, const std::vector<Texture
     
     VulkanBufferUtil::CreateImageCube(mContext->vmaAllocator, width, height, format,
                                       VK_SAMPLE_COUNT_1_BIT, 1, VK_IMAGE_TILING_OPTIMAL, imageUsageFlags, mImage, mAllocation);
+    
+    //创建图像视图
+    VkImageView imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, format,  nullptr, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    mVulkanImageViewPtr = std::make_shared<VulkanImageView>(mContext->device, imageView);
 }
 
 VKTextureCube::~VKTextureCube()
