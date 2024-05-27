@@ -6,9 +6,51 @@
 //
 
 #include "VKComputeEncoder.h"
+#include "VKComputePipeline.h"
+#include "VKComputeBuffer.h"
+#include "VKTexture2D.h"
+#include "VKRenderTexture.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
+VKComputeEncoder::VKComputeEncoder(VulkanContextPtr context, VkCommandBuffer commandBuffer)
+{
+    mContext = context;
+    mCommandBuffer = commandBuffer;
+}
 
+VKComputeEncoder::~VKComputeEncoder()
+{
+}
+
+void VKComputeEncoder::SetComputePipeline(ComputePipelinePtr computePipeline)
+{
+    //
+}
+
+void VKComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
+{
+    //
+}
+
+void VKComputeEncoder::SetTexture(Texture2DPtr texture, uint32_t index)
+{
+    //
+}
+
+void VKComputeEncoder::SetTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index)
+{
+    //
+}
+
+void VKComputeEncoder::Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
+{
+    //
+}
+
+void VKComputeEncoder::EndEncode()
+{
+    vkCmdEndRenderingKHR(mCommandBuffer);
+}
 
 NAMESPACE_RENDERCORE_END

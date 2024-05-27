@@ -8,6 +8,7 @@
 #include "VulkanCommandBuffer.h"
 #include "VKRenderDevice.h"
 #include "VKRenderEncoder.h"
+#include "VKComputeEncoder.h"
 #include "BaseLib/LogService.h"
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -77,7 +78,7 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
 
 ComputeEncoderPtr VulkanCommandBuffer::createComputeEncoder() const
 {
-    return nullptr;
+    return std::make_shared<VKComputeEncoder>(nullptr, mCommandBuffer);
 }
 
 //呈现到屏幕上，上屏

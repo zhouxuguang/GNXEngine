@@ -16,19 +16,25 @@ NAMESPACE_RENDERCORE_BEGIN
 class VKComputeEncoder : public ComputeEncoder
 {
 public:
-    VKComputeEncoder();
+    VKComputeEncoder(VulkanContextPtr context, VkCommandBuffer commandBuffer);
     
-    virtual void SetComputePipeline(ComputePipelinePtr computePipeline) {}
+    ~VKComputeEncoder();
     
-    virtual void SetBuffer(ComputeBufferPtr buffer, uint32_t index){}
+    virtual void SetComputePipeline(ComputePipelinePtr computePipeline);
     
-    virtual void SetTexture(Texture2DPtr texture, uint32_t index){}
+    virtual void SetBuffer(ComputeBufferPtr buffer, uint32_t index);
     
-    virtual void SetTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index){}
+    virtual void SetTexture(Texture2DPtr texture, uint32_t index);
     
-    virtual void Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ){}
+    virtual void SetTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index);
     
-    virtual void EndEncode(){}
+    virtual void Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ);
+    
+    virtual void EndEncode();
+    
+private:
+    VulkanContextPtr mContext = nullptr;
+    VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
 };
 
 NAMESPACE_RENDERCORE_END
