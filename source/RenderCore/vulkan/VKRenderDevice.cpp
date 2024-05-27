@@ -144,6 +144,8 @@ void VKRenderDevice::resize(uint32_t width, uint32_t height)
     textureCube->setTextureData(kCubeFacePZ, 4, data);
     textureCube->setTextureData(kCubeFaceNZ, 4, data);
     
+    IndexBufferPtr indexBuffer = createIndexBufferWithBytes(data, 4, IndexType_UInt);
+    
     CommandBufferPtr commandBuffer = createCommandBuffer();
     RenderEncoderPtr renderEncoder = commandBuffer->createDefaultRenderEncoder();
     renderEncoder->EndEncode();
