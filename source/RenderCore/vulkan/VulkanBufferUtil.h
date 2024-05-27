@@ -115,6 +115,8 @@ public:
             VkPipelineStageFlags srcStageMask,
             VkPipelineStageFlags dstStageMask,
             VkImageSubresourceRange subresourceRange);
+    
+    static VkFormat ConvertTextureFormat(TextureFormat texFormat);
 };
 
 NAMESPACE_RENDERCORE_END

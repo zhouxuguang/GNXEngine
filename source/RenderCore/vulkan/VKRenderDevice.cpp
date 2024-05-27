@@ -138,6 +138,11 @@ void VKRenderDevice::resize(uint32_t width, uint32_t height)
     desArray.push_back(des);
     TextureCubePtr textureCube = createTextureCubeWithDescriptor(desArray);
     textureCube->setTextureData(kCubeFacePX, 4, data);
+    textureCube->setTextureData(kCubeFaceNX, 4, data);
+    textureCube->setTextureData(kCubeFacePY, 4, data);
+    textureCube->setTextureData(kCubeFaceNY, 4, data);
+    textureCube->setTextureData(kCubeFacePZ, 4, data);
+    textureCube->setTextureData(kCubeFaceNZ, 4, data);
     
     CommandBufferPtr commandBuffer = createCommandBuffer();
     RenderEncoderPtr renderEncoder = commandBuffer->createDefaultRenderEncoder();

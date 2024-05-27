@@ -18,44 +18,7 @@ VKTextureCube::VKTextureCube(VulkanContextPtr context, const std::vector<Texture
     
     mTextureDesc = desArray[0];
     
-    VkFormat format = VK_FORMAT_UNDEFINED;
-    switch (desArray[0].format)
-    {
-        case kTexFormatAlpha8:
-            format = VK_FORMAT_R8_UNORM;
-            break;
-
-        case kTexFormatLuma:
-            format = VK_FORMAT_R8_UNORM;
-            break;
-
-        case kTexFormatRGBA4444:
-            format = VK_FORMAT_R4G4B4A4_UNORM_PACK16;
-            break;
-
-        case kTexFormatRGBA5551:
-            format = VK_FORMAT_R5G5B5A1_UNORM_PACK16;
-            break;
-
-        case kTexFormatRGB565:
-            format = VK_FORMAT_R5G6B5_UNORM_PACK16;
-            break;
-
-        case kTexFormatAlphaLum16:
-            format = VK_FORMAT_R8G8_UNORM;
-            break;
-
-        case kTexFormatRGBA32:
-            format = VK_FORMAT_R8G8B8A8_UNORM;
-            break;
-            
-        case kTexFormatSRGB8_ALPHA8:
-            format = VK_FORMAT_R8G8B8A8_SRGB;
-            break;
-
-        default:
-            break;
-    }
+    VkFormat format = VulkanBufferUtil::ConvertTextureFormat(mTextureDesc.format);
 
     assert(format != VK_FORMAT_UNDEFINED);
     
