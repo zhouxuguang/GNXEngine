@@ -124,7 +124,7 @@ void VKRenderDevice::resize(uint32_t width, uint32_t height)
     CreateSyncObject();
     
     // for test
-    uint8_t data[4] = {0, 1, 2, 3};
+    uint8_t data[4] = {4, 1, 2, 3};
     createVertexBufferWithBytes(data, 4, StorageModeShared);
     
     TextureDescriptor des;
@@ -145,6 +145,11 @@ void VKRenderDevice::resize(uint32_t width, uint32_t height)
     textureCube->setTextureData(kCubeFaceNZ, 4, data);
     
     IndexBufferPtr indexBuffer = createIndexBufferWithBytes(data, 4, IndexType_UInt);
+    
+    UniformBufferPtr uniformBuffer = createUniformBufferWithSize(4);
+    uniformBuffer->setData(data, 0, 4);
+    
+    ComputeBufferPtr computeBuffer = createComputeBuffer(data, 4, StorageModePrivate);
     
     CommandBufferPtr commandBuffer = createCommandBuffer();
     RenderEncoderPtr renderEncoder = commandBuffer->createDefaultRenderEncoder();

@@ -10,7 +10,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-VKComputeBuffer::VKComputeBuffer(VulkanContextPtr context, size_t len)
+VKComputeBuffer::VKComputeBuffer(VulkanContextPtr context, size_t len) : mContext(context)
 {
     VkMemoryPropertyFlags memType = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     
@@ -21,7 +21,7 @@ VKComputeBuffer::VKComputeBuffer(VulkanContextPtr context, size_t len)
     mBufferLength = (uint32_t)len;
 }
 
-VKComputeBuffer::VKComputeBuffer(VulkanContextPtr context, const void* buffer, size_t size, StorageMode mode)
+VKComputeBuffer::VKComputeBuffer(VulkanContextPtr context, const void* buffer, size_t size, StorageMode mode) : mContext(context)
 {
     VkMemoryPropertyFlags memType = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
