@@ -26,6 +26,11 @@ public:
     
     virtual TextureFormat getTextureFormat() const;
     
+    VulkanImageViewPtr GetImageView() const
+    {
+        return mVulkanImageViewPtr;
+    }
+    
 private:
     VulkanContextPtr mContext = nullptr;
     
@@ -36,6 +41,8 @@ private:
     
     TextureDescriptor mTextureDes;
 };
+
+using VKRenderTexturePtr = std::shared_ptr<VKRenderTexture>;
 
 NAMESPACE_RENDERCORE_END
 

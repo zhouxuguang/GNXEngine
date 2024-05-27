@@ -10,6 +10,7 @@
 #include "VKRenderEncoder.h"
 #include "VKComputeEncoder.h"
 #include "BaseLib/LogService.h"
+#include "VKRenderTexture.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -73,7 +74,93 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
 
 RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& renderPass) const
 {
-    return nullptr;
+    VkRenderingInfoKHR render_info = {};
+    render_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    render_info.layerCount = 1;
+    
+    std::vector<VkRenderingAttachmentInfo> colorAttachments;
+    
+    uint32_t width = 0;
+    uint32_t height = 0;
+    
+    for (size_t i = 0; i < renderPass.colorAttachments.size(); i ++)
+    {
+        RenderPassColorAttachmentPtr iter = renderPass.colorAttachments[i];
+        if (!iter)
+        {
+            continue;
+        }
+        
+        VKRenderTexturePtr vkRenderTexture = std::dynamic_pointer_cast<VKRenderTexture>(iter->texture);
+        
+        if (vkRenderTexture == nullptr)
+        {
+            continue;
+        }
+        
+        VkClearValue clearColor;
+        clearColor.color.float32[0] = iter->clearColor.red;
+        clearColor.color.float32[1] = iter->clearColor.green;
+        clearColor.color.float32[2] = iter->clearColor.blue;
+        clearColor.color.float32[3] = iter->clearColor.alpha;
+        
+        const VkRenderingAttachmentInfoKHR color_attachment_info
+        {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+            .imageView = vkRenderTexture->GetImageView()->GetHandle(),
+            .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue = clearColor,
+        };
+        
+        width = vkRenderTexture->getWidth();
+        height = vkRenderTexture->getHeight();
+        
+        colorAttachments.push_back(color_attachment_info);
+    }
+    
+    render_info.colorAttachmentCount = (uint32_t)colorAttachments.size();
+    render_info.pColorAttachments = colorAttachments.data();
+    
+    std::vector<VkRenderingAttachmentInfo> depthAttachments;
+    
+    if (renderPass.depthAttachment)
+    {
+        VKRenderTexturePtr vkRenderTexture = std::dynamic_pointer_cast<VKRenderTexture>(renderPass.depthAttachment->texture);
+        
+        VkRenderingAttachmentInfoKHR depth_attachment_info;
+        depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+        depth_attachment_info.imageView = vkRenderTexture->GetImageView()->GetHandle(),
+        depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
+        depth_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        depth_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        depth_attachment_info.clearValue.depthStencil.depth = 1.0f;
+        depthAttachments.push_back(depth_attachment_info);
+    }
+    
+    std::vector<VkRenderingAttachmentInfo> stencilAttachments;
+    if (renderPass.stencilAttachment)
+    {
+        VKRenderTexturePtr vkRenderTexture = std::dynamic_pointer_cast<VKRenderTexture>(renderPass.stencilAttachment->texture);
+        
+        VkRenderingAttachmentInfoKHR stencil_attachment_info;
+        stencil_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+        stencil_attachment_info.imageView = vkRenderTexture->GetImageView()->GetHandle(),
+        stencil_attachment_info.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
+        stencil_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        stencil_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        stencil_attachment_info.clearValue.depthStencil.stencil = 0x0;
+        stencilAttachments.push_back(stencil_attachment_info);
+    }
+    
+    render_info.pDepthAttachment = depthAttachments.data();
+    render_info.pStencilAttachment = stencilAttachments.data();
+    
+    render_info.renderArea.extent.width = width;
+    render_info.renderArea.extent.height = height;
+    
+    return std::make_shared<VKRenderEncoder>(mCommandBuffer, render_info);
 }
 
 ComputeEncoderPtr VulkanCommandBuffer::createComputeEncoder() const

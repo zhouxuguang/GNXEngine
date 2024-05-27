@@ -77,7 +77,6 @@ public:
     RenderPassStencilAttachmentPtr stencilAttachment = nullptr;
     
     Rect2D renderRegion;  //渲染的区域
-    //FrameBufferPtr frameBuffer = nullptr;
 };
 
 typedef std::shared_ptr<RenderPass> RenderPassPtr;
