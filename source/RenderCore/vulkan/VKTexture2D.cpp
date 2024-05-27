@@ -148,7 +148,7 @@ void VKTexture2D::replaceRegion(const Rect2D &rect, const unsigned char *imageDa
     
     VkBuffer stageBuffer = VK_NULL_HANDLE;
     VmaAllocation allocation = VK_NULL_HANDLE;
-    VkDeviceSize size = mTextureDes.width * mTextureDes.bytesPerRow;
+    VkDeviceSize size = mTextureDes.height * mTextureDes.bytesPerRow;
     VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, StorageModeShared, size,
                                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                                       stageBuffer, allocation, nullptr);

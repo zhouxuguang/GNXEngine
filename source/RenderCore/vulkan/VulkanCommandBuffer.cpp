@@ -74,10 +74,6 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
 
 RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& renderPass) const
 {
-    VkRenderingInfoKHR render_info = {};
-    render_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
-    render_info.layerCount = 1;
-    
     std::vector<VkRenderingAttachmentInfo> colorAttachments;
     
     uint32_t width = 0;
@@ -120,47 +116,50 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
         colorAttachments.push_back(color_attachment_info);
     }
     
-    render_info.colorAttachmentCount = (uint32_t)colorAttachments.size();
-    render_info.pColorAttachments = colorAttachments.data();
-    
     std::vector<VkRenderingAttachmentInfo> depthAttachments;
     
     if (renderPass.depthAttachment)
     {
         VKRenderTexturePtr vkRenderTexture = std::dynamic_pointer_cast<VKRenderTexture>(renderPass.depthAttachment->texture);
         
-        VkRenderingAttachmentInfoKHR depth_attachment_info;
+        VkRenderingAttachmentInfoKHR depth_attachment_info = {};
         depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
         depth_attachment_info.imageView = vkRenderTexture->GetImageView()->GetHandle(),
-        depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
+        depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         depth_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         depth_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-        depth_attachment_info.clearValue.depthStencil.depth = 1.0f;
+        depth_attachment_info.clearValue.depthStencil.depth = renderPass.depthAttachment->clearDepth;
+        depth_attachment_info.clearValue.depthStencil.stencil = renderPass.stencilAttachment->clearStencil;
         depthAttachments.push_back(depth_attachment_info);
     }
-    
+   
+    // 深度和模板缓冲绑定在一起的格式需要特殊处理
     std::vector<VkRenderingAttachmentInfo> stencilAttachments;
     if (renderPass.stencilAttachment)
     {
         VKRenderTexturePtr vkRenderTexture = std::dynamic_pointer_cast<VKRenderTexture>(renderPass.stencilAttachment->texture);
         
-        VkRenderingAttachmentInfoKHR stencil_attachment_info;
+        VkRenderingAttachmentInfoKHR stencil_attachment_info = {};
         stencil_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
         stencil_attachment_info.imageView = vkRenderTexture->GetImageView()->GetHandle(),
-        stencil_attachment_info.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
+        stencil_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
         stencil_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         stencil_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
         stencil_attachment_info.clearValue.depthStencil.stencil = 0x0;
         stencilAttachments.push_back(stencil_attachment_info);
     }
     
-    render_info.pDepthAttachment = depthAttachments.data();
-    render_info.pStencilAttachment = stencilAttachments.data();
+    VkRenderingInfoKHR renderingInfo = {};
+    renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    renderingInfo.layerCount = 1;
+    renderingInfo.colorAttachmentCount = (uint32_t)colorAttachments.size();
+    renderingInfo.pColorAttachments = colorAttachments.data();
+    renderingInfo.pDepthAttachment = depthAttachments.data();
+    renderingInfo.pStencilAttachment = stencilAttachments.data();
+    renderingInfo.renderArea.extent.width = width;
+    renderingInfo.renderArea.extent.height = height;
     
-    render_info.renderArea.extent.width = width;
-    render_info.renderArea.extent.height = height;
-    
-    return std::make_shared<VKRenderEncoder>(mCommandBuffer, render_info);
+    return std::make_shared<VKRenderEncoder>(mCommandBuffer, renderingInfo);
 }
 
 ComputeEncoderPtr VulkanCommandBuffer::createComputeEncoder() const
