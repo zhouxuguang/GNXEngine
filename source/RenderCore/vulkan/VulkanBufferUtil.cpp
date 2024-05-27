@@ -525,6 +525,14 @@ VkFormat VulkanBufferUtil::ConvertTextureFormat(TextureFormat texFormat)
         case kTexFormatRGBA32Float:
             format = VK_FORMAT_R32G32B32A32_SFLOAT;
             break;
+            
+        case kTexFormatDepth32FloatStencil8:
+            format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+            break;
+            
+        case kTexFormatDepth24Stencil8:
+            format = VK_FORMAT_D24_UNORM_S8_UINT;
+            break;
 
         default:
             break;

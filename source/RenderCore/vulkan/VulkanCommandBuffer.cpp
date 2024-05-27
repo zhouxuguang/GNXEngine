@@ -30,14 +30,13 @@ VulkanCommandBuffer::VulkanCommandBuffer(VkCommandBuffer commandBuffer, CommandB
 
 VulkanCommandBuffer::~VulkanCommandBuffer()
 {
-    //
 }
 
 //创建默认的encoder，也就是屏幕渲染的encoder
 RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
 {
     VkClearValue clearColor;
-    clearColor.color.float32[0] = 1.0;
+    clearColor.color.float32[0] = 0.0;
     clearColor.color.float32[1] = 0.0;
     clearColor.color.float32[2] = 0.0;
     clearColor.color.float32[3] = 1.0;
