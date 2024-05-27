@@ -122,6 +122,7 @@ void VKTexture2D::createTexture(const VkDevice device, const TextureDescriptor& 
 
     VulkanBufferUtil::EndSingleTimeCommand(mContext->device, mContext->graphicsQueue, mContext->commandPool, commandBuffer);
     mFormat = format;
+    mTextureDes = des;
 
     //创建图像视图
     VkImageView imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, format, bUseComponentMapping ? &componentMapping : nullptr, VK_IMAGE_ASPECT_COLOR_BIT, 1);
@@ -130,12 +131,41 @@ void VKTexture2D::createTexture(const VkDevice device, const TextureDescriptor& 
 
 void VKTexture2D::setTextureData(const unsigned char *imageData)
 {
+    Rect2D rect = {};
+    rect.width = mTextureDes.width;
+    rect.height = mTextureDes.height;
+    replaceRegion(rect, imageData, 0);
 }
 
 
 
 void VKTexture2D::replaceRegion(const Rect2D &rect, const unsigned char *imageData, unsigned int mipMapLevel)
 {
+    if (!imageData)
+    {
+        return;
+    }
+    
+    VkBuffer stageBuffer = VK_NULL_HANDLE;
+    VmaAllocation allocation = VK_NULL_HANDLE;
+    VkDeviceSize size = mTextureDes.width * mTextureDes.bytesPerRow;
+    VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, StorageModeShared, size,
+                                      VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                                      stageBuffer, allocation, nullptr);
+    
+    void *data = nullptr;
+    vmaMapMemory(mContext->vmaAllocator, allocation, &data);
+    memcpy(data, imageData, size);
+    vmaUnmapMemory(mContext->vmaAllocator, allocation);
+    
+    VkCommandBuffer commandBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, mContext->commandPool);
+    
+    VulkanBufferUtil::CopyBufferToImage(mContext->device, commandBuffer, stageBuffer, mImage, 
+                                        rect.offsetX, rect.offsetY, rect.width, rect.height, mipMapLevel);
+    
+    VulkanBufferUtil::EndSingleTimeCommand(mContext->device, mContext->graphicsQueue, mContext->commandPool, commandBuffer);
+    
+    vmaDestroyBuffer(mContext->vmaAllocator, stageBuffer, allocation);
 }
 
 

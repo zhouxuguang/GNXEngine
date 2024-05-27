@@ -66,10 +66,7 @@ public:
         return nullptr;
     }
     
-    virtual RenderTexturePtr createRenderTexture(const TextureDescriptor& des) const
-    {
-        return nullptr;
-    }
+    virtual RenderTexturePtr createRenderTexture(const TextureDescriptor& des) const;
     
     void UpdateCurrentIndex()
     {
@@ -100,7 +97,7 @@ private:
     void ReleaseCommandBuffers();
 };
 
-typedef std::shared_ptr<VKRenderDevice> VKRenderDevicePtr;
+using VKRenderDevicePtr = std::shared_ptr<VKRenderDevice>;
 
 NAMESPACE_RENDERCORE_END
 

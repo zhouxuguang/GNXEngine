@@ -127,6 +127,13 @@ void VKRenderDevice::resize(uint32_t width, uint32_t height)
     uint8_t data[4] = {0, 1, 2, 3};
     createVertexBufferWithBytes(data, 4, StorageModeShared);
     
+    TextureDescriptor des;
+    des.width = 1;
+    des.height = 1;
+    des.bytesPerRow = 4;
+    Texture2DPtr texture = createTextureWithDescriptor(des);
+    texture->setTextureData(data);
+    
     CommandBufferPtr commandBuffer = createCommandBuffer();
     RenderEncoderPtr renderEncoder = commandBuffer->createDefaultRenderEncoder();
     renderEncoder->EndEncode();
@@ -191,6 +198,11 @@ GraphicsPipelinePtr VKRenderDevice::createGraphicsPipeline(const GraphicsPipelin
 ComputePipelinePtr VKRenderDevice::createComputePipeline(const char* pszShaderString) const
 {
     return std::make_shared<VKComputePipeline>(mVulkanContext, pszShaderString);
+}
+
+RenderTexturePtr VKRenderDevice::createRenderTexture(const TextureDescriptor& des) const
+{
+    return std::make_shared<VKRenderTexture>(mVulkanContext, des);
 }
 
 CommandBufferPtr VKRenderDevice::createCommandBuffer()

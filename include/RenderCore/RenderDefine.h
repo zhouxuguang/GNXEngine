@@ -277,8 +277,8 @@ struct Rect2D
         this->height = height;
     }
     
-    int offsetX;
-    int offsetY;
+    int offsetX = 0;
+    int offsetY = 0;
     int width;
     int height;
 };

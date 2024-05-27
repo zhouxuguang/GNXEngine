@@ -53,6 +53,8 @@ private:
     VkFormat mFormat = VK_FORMAT_UNDEFINED;
 
     VulkanImageViewPtr mVulkanImageViewPtr = nullptr;
+    
+    TextureDescriptor mTextureDes;
 
     void release();
 
