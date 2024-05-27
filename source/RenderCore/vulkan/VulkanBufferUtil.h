@@ -52,6 +52,18 @@ public:
                               VkImageUsageFlags usage,
                               VkImage& image,
                               VmaAllocation& allocation);
+    
+    // 创建立方体贴图
+    static void CreateImageCube(VmaAllocator vmaAllocator,
+                                uint32_t width,
+                                uint32_t height,
+                                VkFormat format,
+                                VkSampleCountFlagBits numSamples,
+                                uint8_t mipLevels,
+                                VkImageTiling tiling,
+                                VkImageUsageFlags usage,
+                                VkImage& image,
+                                VmaAllocation& allocation);
 
     //拷贝buffer到图像
     static void CopyBufferToImage(VkDevice device, VkCommandBuffer commandBuffer,
@@ -72,6 +84,25 @@ public:
     static void TransitionImageLayout(VkDevice device, VkCommandBuffer commandBuffer,
                                VkImage image, VkFormat format,
                                VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t levelCount = 1);
+    
+    static void SetImageLayout
+     (
+        VkCommandBuffer cmdbuffer,
+        VkImage image,
+        VkImageLayout oldImageLayout,
+        VkImageLayout newImageLayout,
+        VkImageSubresourceRange subresourceRange,
+        VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+      VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+    
+    static void SetImageLayout(
+        VkCommandBuffer cmdbuffer,
+        VkImage image,
+        VkImageAspectFlags aspectMask,
+        VkImageLayout oldImageLayout,
+        VkImageLayout newImageLayout,
+        VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
     //插入图像屏障
     static void InsertImageMemoryBarrier(

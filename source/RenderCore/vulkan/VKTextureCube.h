@@ -29,6 +29,8 @@ private:
     VkImage mImage = VK_NULL_HANDLE;
     VmaAllocation mAllocation = VK_NULL_HANDLE;
     VkFormat mFormat = VK_FORMAT_UNDEFINED;
+    
+    TextureDescriptor mTextureDesc;
 
     VulkanImageViewPtr mVulkanImageViewPtr = nullptr;
     
