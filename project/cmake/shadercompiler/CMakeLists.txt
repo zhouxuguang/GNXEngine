@@ -6,7 +6,9 @@ file(GLOB_RECURSE SHADERCOMPILER_SOURCES CONFIGURE_DEPENDS ${shadercompiler_dir}
                                                            ${shadercompiler_dir}/*.c 
                                                            ${shadercompiler_dir}/*.h
                                                            ${shadercompiler_dir}/spirv_cross/*.cpp 
-                                                           ${shadercompiler_dir}/spirv_cross/*.h )
+                                                           ${shadercompiler_dir}/spirv_cross/*.h 
+                                                           ${shadercompiler_dir}/spirv-reflect/*.c 
+                                                           ${shadercompiler_dir}/spirv-reflect/*.h)
 file(GLOB_RECURSE SHADERCOMPILER_INCLUDES CONFIGURE_DEPENDS ${shadercompiler_include_dir}/*.h)
 
 add_library(shadercompiler OBJECT ${SHADERCOMPILER_SOURCES} ${SHADERCOMPILER_INCLUDES})
