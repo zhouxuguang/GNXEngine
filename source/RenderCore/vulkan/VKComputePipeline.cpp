@@ -48,6 +48,7 @@ VkDescriptorSetLayout CreateComputeDescriptorSetLayout(VkDevice device)
 
 VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const char* pszShaderString) : ComputePipeline(nullptr), mContext(context)
 {
+    // 这里spir-v的二进制还需要进行载入
     VkShaderModule computeShaderModule = VK_NULL_HANDLE;
 
     VkPipelineShaderStageCreateInfo computeShaderStageInfo = {};

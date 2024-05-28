@@ -25,7 +25,12 @@ VKComputeEncoder::~VKComputeEncoder()
 
 void VKComputeEncoder::SetComputePipeline(ComputePipelinePtr computePipeline)
 {
-    //
+    if (!computePipeline)
+    {
+        return;
+    }
+    VKComputePipeline *vkPipeline = (VKComputePipeline*)computePipeline.get();
+    vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipeline->GetPipeline());
 }
 
 void VKComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
@@ -45,7 +50,7 @@ void VKComputeEncoder::SetTexture(RenderTexturePtr texture, uint32_t mipLevel, u
 
 void VKComputeEncoder::Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
 {
-    //
+    vkCmdDispatch(mCommandBuffer, threadGroupsX, threadGroupsY, threadGroupsZ);
 }
 
 void VKComputeEncoder::EndEncode()
