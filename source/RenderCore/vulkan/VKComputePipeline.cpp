@@ -49,7 +49,12 @@ VkDescriptorSetLayout CreateComputeDescriptorSetLayout(VkDevice device)
 VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode& shaderSource) : ComputePipeline(nullptr), mContext(context)
 {
     // 这里spir-v的二进制还需要进行载入
+    VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
+    shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    shaderModuleCreateInfo.codeSize = shaderSource.size();
+    shaderModuleCreateInfo.pCode = (const uint32_t*)shaderSource.data();
     VkShaderModule computeShaderModule = VK_NULL_HANDLE;
+    VkResult res = vkCreateShaderModule(mContext->device, &shaderModuleCreateInfo, nullptr, &computeShaderModule);
 
     VkPipelineShaderStageCreateInfo computeShaderStageInfo = {};
     computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

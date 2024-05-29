@@ -15,6 +15,7 @@ typedef enum : NSUInteger
     RenderTypeAuto,    // 根据设备自动选择
     RenderTypeGLES,  // gles
     RenderTypeMetal,   // Metal
+    RenderTypeVulkan,   // Vulkan
 } RenderType;
 
 @protocol RenderDelegate <NSObject>

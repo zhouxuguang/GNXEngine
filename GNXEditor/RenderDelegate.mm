@@ -36,6 +36,9 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
         case RenderTypeMetal:
             return RenderDeviceType::METAL;
             
+        case RenderTypeVulkan:
+            return RenderDeviceType::VULKAN;
+            
         default:
             break;
     }

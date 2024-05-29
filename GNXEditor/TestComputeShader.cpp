@@ -17,19 +17,15 @@ using namespace imagecodec;
 
 using namespace RenderSystem;
 
-#if 0
+#if 1
 void TestADD()
 {
     ShaderAssetString shaderAssetString = LoadShaderAsset("TestADD");
     
-    const char* computeShader = nullptr;
-    if (getRenderDevice()->getRenderDeviceType() == RenderDeviceType::METAL)
-    {
-        computeShader = shaderAssetString.metalShader.computeShaderStr.c_str();
-    }
+    ShaderCodePtr computeShader = shaderAssetString.computeShader->shaderSource;
     
     FILE* fp1 = fopen("/Users/zhouxuguang/work/TestADD.metal", "wb");
-    fwrite(computeShader, 1, strlen(computeShader), fp1);
+    fwrite(computeShader->data(), 1, computeShader->size(), fp1);
     fclose(fp1);
     
     int count = 1 << 26;
@@ -49,7 +45,7 @@ void TestADD()
     
     ComputeBufferPtr buffer3 = getRenderDevice()->createComputeBuffer(data_b, count * 4, StorageModeShared);
     
-    ComputePipelinePtr computePipeline = getRenderDevice()->createComputePipeline(computeShader);
+    ComputePipelinePtr computePipeline = getRenderDevice()->createComputePipeline(*computeShader);
     
     CommandBufferPtr command = getRenderDevice()->createCommandBuffer();
     

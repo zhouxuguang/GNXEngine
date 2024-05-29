@@ -189,7 +189,9 @@ CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage s
     
     else if (renderType == RenderDeviceType::VULKAN)
     {
-        //return compileToMSL(shaderCode, shaderStage);
+        CompiledShaderInfoPtr compileShader = std::make_shared<CompiledShaderInfo>();
+        compileShader->shaderSource = shaderCode;
+        return compileShader;
     }
     
     else if (renderType == RenderDeviceType::GLES)
