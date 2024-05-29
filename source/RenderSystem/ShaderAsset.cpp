@@ -23,6 +23,8 @@ ShaderAsset::~ShaderAsset()
     //
 }
 
+#if 0
+
 static ShaderCode defaultShader;
 
 const ShaderCode& ShaderAsset::GetCompiledVertexShader() const
@@ -67,8 +69,11 @@ const ShaderCode& ShaderAsset::GetCompiledFragmentShader() const
     return defaultShader;
 }
 
+#endif
+
 bool ShaderAsset::LoadFromFile(const std::string& fileName)
 {
+#if 0
     ShaderCodePtr hlshCodePtr1 = shader_compiler::compileHLSLToSPIRV(fileName.c_str(), ShaderStage_Vertex);
     //mCompiledShaderString.vulkanShader.vertexShader = *hlshCodePtr1;
     if (hlshCodePtr1)
@@ -83,6 +88,7 @@ bool ShaderAsset::LoadFromFile(const std::string& fileName)
         //mCompiledShaderString.gles30Shader.fragmentShader = shader_compiler::compileToESSL30(*hlshCodePtr2, ShaderStage_Fragment);
         //mCompiledShaderString.metalShader.fragmentShader = shader_compiler::compileToMSL(*hlshCodePtr2, ShaderStage_Fragment).shaderSource;
     }
+#endif
     return true;
 }
 

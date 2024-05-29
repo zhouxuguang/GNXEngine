@@ -147,38 +147,19 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     
     ShaderAssetString shaderAssetString = LoadShaderAsset("Skybox");
     
-    ShaderCode vertexShader;
-    ShaderCode fragmentShader;
-    if (renderDevice->getRenderDeviceType() == RenderDeviceType::GLES)
-    {
-        vertexShader = std::move(shaderAssetString.gles30Shader.vertexShader);
-        fragmentShader = std::move(shaderAssetString.gles30Shader.fragmentShader);
-        
-//        FILE* fp1 = fopen("/Users/zhouxuguang/work/skybok.vert", "wb");
-//        fwrite(vertexShader, 1, strlen(vertexShader), fp1);
-//        fclose(fp1);
-//
-//        FILE* fp2 = fopen("/Users/zhouxuguang/work/skybok.frag", "wb");
-//        fwrite(fragmentShader, 1, strlen(fragmentShader), fp2);
-//        fclose(fp2);
-        
-    }
-    else if (renderDevice->getRenderDeviceType() == RenderDeviceType::METAL)
-    {
-        vertexShader = std::move(shaderAssetString.metalShader.vertexShader);
-        fragmentShader = std::move(shaderAssetString.metalShader.fragmentShader);
-        
-//        FILE* fp1 = fopen("/Users/zhouxuguang/work/skybox.vert", "wb");
-//        fwrite(vertexShader, 1, strlen(vertexShader), fp1);
-//        fclose(fp1);
-//
-//        FILE* fp2 = fopen("/Users/zhouxuguang/work/skybox.frag", "wb");
-//        fwrite(fragmentShader, 1, strlen(fragmentShader), fp2);
-//        fclose(fp2);
-    }
+    ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
+    ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
     
-    ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(vertexShader, ShaderStage_Vertex);
-    ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(fragmentShader, ShaderStage_Fragment);
+    //        FILE* fp1 = fopen("/Users/zhouxuguang/work/skybok.vert", "wb");
+    //        fwrite(vertexShader, 1, strlen(vertexShader), fp1);
+    //        fclose(fp1);
+    //
+    //        FILE* fp2 = fopen("/Users/zhouxuguang/work/skybok.frag", "wb");
+    //        fwrite(fragmentShader, 1, strlen(fragmentShader), fp2);
+    //        fclose(fp2);
+    
+    ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(*vertexShader, ShaderStage_Vertex);
+    ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(*fragmentShader, ShaderStage_Fragment);
     GraphicsPipelineDescriptor graphicsPipelineDescriptor;
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
     graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionLessThanOrEqual;

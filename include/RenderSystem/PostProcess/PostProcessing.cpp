@@ -24,25 +24,10 @@ PostProcessing::PostProcessing(RenderDevicePtr renderDevice)
     
     ShaderAssetString shaderAssetString = LoadShaderAsset("PostProcessShader");
     
-    ShaderCode vertexShader;
-    ShaderCode fragmentShader;
-    if (renderDevice->getRenderDeviceType() == RenderDeviceType::GLES)
-    {
-        vertexShader = std::move(shaderAssetString.gles30Shader.vertexShader);
-        fragmentShader = std::move(shaderAssetString.gles30Shader.fragmentShader);
-    }
-    else if (renderDevice->getRenderDeviceType() == RenderDeviceType::METAL)
-    {
-        vertexShader = std::move(shaderAssetString.metalShader.vertexShader);
-        fragmentShader = std::move(shaderAssetString.metalShader.fragmentShader);
-    }
-    else if (renderDevice->getRenderDeviceType() == RenderDeviceType::VULKAN)
-    {
-        vertexShader = std::move(shaderAssetString.metalShader.vertexShader);
-        fragmentShader = std::move(shaderAssetString.metalShader.fragmentShader);
-    }
-    ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(vertexShader, ShaderStage_Vertex);
-    ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(fragmentShader, ShaderStage_Fragment);
+    ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
+    ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
+    ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(*vertexShader, ShaderStage_Vertex);
+    ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(*fragmentShader, ShaderStage_Fragment);
     GraphicsPipelineDescriptor graphicsPipelineDescriptor;
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
     

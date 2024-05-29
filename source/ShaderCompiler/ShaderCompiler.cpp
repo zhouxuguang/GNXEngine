@@ -94,7 +94,7 @@ ShaderCode compileToESSL30(ShaderCodePtr spirvCode, ShaderStage shaderStage)
     return shaderCode;
 }
 
-CompiledShaderInfo compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderStage)
+CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderStage)
 {
     spirv_cross::CompilerMSL msl((const uint32_t*)spirvCode->data(), spirvCode->size() / 4);
 
@@ -150,32 +150,54 @@ CompiledShaderInfo compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderStage
     // Compile to msl, ready to give to metal driver.
     std::string shaderSource = msl.compile();
     
-    CompiledShaderInfo shaderInfo;
+    CompiledShaderInfoPtr shaderInfo = std::make_shared<CompiledShaderInfo>();
     if (shaderStage == ShaderStage_Vertex)
     {
-        shaderInfo.vertexDescriptor = GetMetalReflectionInfo(msl, resources);
-        shaderInfo.vertexUniformBufferLayout = GetMetalUniformReflectionInfo(msl, resources);
+        shaderInfo->vertexDescriptor = GetMetalReflectionInfo(msl, resources);
+        //shaderInfo.vertexUniformBufferLayout = GetMetalUniformReflectionInfo(msl, resources);
     }
     else
     {
-        shaderInfo.fragmentUniformBufferLayout = GetMetalUniformReflectionInfo(msl, resources);
+        //shaderInfo.fragmentUniformBufferLayout = GetMetalUniformReflectionInfo(msl, resources);
     }
     
-    shaderInfo.shaderSource.resize(shaderSource.size());
-    memcpy(shaderInfo.shaderSource.data(), shaderSource.data(), shaderSource.size());
+    shaderInfo->shaderSource = std::make_shared<ShaderCode>();
+    shaderInfo->shaderSource->resize(shaderSource.size());
+    memcpy(shaderInfo->shaderSource->data(), shaderSource.data(), shaderSource.size());
     
     return shaderInfo;
 }
 
 //HLSL shader脚本字符串转换
-ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage)
+ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType)
 {
-    return DXCompilerUtil::GetInstance()->compileHLSLToSPIRV(shaderFile, shaderStage);
+    return DXCompilerUtil::GetInstance()->compileHLSLToSPIRV(shaderFile, shaderStage, renderType);
 }
 
 CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType)
 {
-    //
+    ShaderCodePtr shaderCode = compileHLSLToSPIRV(shaderFile, shaderStage, renderType);
+    if (!shaderCode)
+    {
+        return nullptr;
+    }
+    
+    if (renderType == RenderDeviceType::METAL)
+    {
+        return compileToMSL(shaderCode, shaderStage);
+    }
+    
+    else if (renderType == RenderDeviceType::VULKAN)
+    {
+        //return compileToMSL(shaderCode, shaderStage);
+    }
+    
+    else if (renderType == RenderDeviceType::GLES)
+    {
+        //return compileToMSL(shaderCode, shaderStage);
+    }
+    
+    return nullptr;
 }
 
 NAMESPACE_SHADERCOMPILER_END

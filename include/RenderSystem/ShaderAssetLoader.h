@@ -15,6 +15,8 @@
 
 NS_RENDERSYSTEM_BEGIN
 
+using namespace shader_compiler;
+
 struct ShaderString
 {
     ShaderCode vertexShader;
@@ -24,11 +26,13 @@ struct ShaderString
 
 struct ShaderAssetString
 {
-    ShaderString gles30Shader;
-    ShaderString gles31Shader;
-    ShaderString gles32Shader;
-    ShaderString metalShader;
-    ShaderString vulkanShader;
+    CompiledShaderInfoPtr vertexShader;
+    CompiledShaderInfoPtr fragmentShader;
+    CompiledShaderInfoPtr computeShader;
+//    ShaderString gles31Shader;
+//    ShaderString gles32Shader;
+//    ShaderString metalShader;
+//    ShaderString vulkanShader;
     
     VertexDescriptor vertexDescriptor;                             // 顶点描述
     shader_compiler::UniformBuffersLayout vertexUniformBufferLayout;  //顶点ubo信息

@@ -97,17 +97,13 @@ ComputePipelinePtr initTestimageGray()
 #if 1
     ShaderAssetString shaderAssetString = LoadShaderAsset("TestImageGray");
     
-    ShaderCode computeShader;
-    if (getRenderDevice()->getRenderDeviceType() == RenderDeviceType::METAL)
-    {
-        computeShader = std::move(shaderAssetString.metalShader.computeShader);
-    }
+    ShaderCodePtr computeShader = shaderAssetString.computeShader->shaderSource;
     
     FILE* fp1 = fopen("/Users/zhouxuguang/work/TestImageGray.metal", "wb");
-    fwrite(computeShader.data(), 1, computeShader.size(), fp1);
+    fwrite(computeShader->data(), 1, computeShader->size(), fp1);
     fclose(fp1);
     
-    ComputePipelinePtr computePipeline = getRenderDevice()->createComputePipeline(computeShader);
+    ComputePipelinePtr computePipeline = getRenderDevice()->createComputePipeline(*computeShader);
     
     return computePipeline;
 #elif

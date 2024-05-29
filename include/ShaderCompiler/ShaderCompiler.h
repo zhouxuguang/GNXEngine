@@ -37,20 +37,20 @@ typedef std::vector<UniformLayout> UniformBuffersLayout;
 // 编译后的shader信息以及一些反射的元数据信息
 struct CompiledShaderInfo
 {
-    ShaderCode shaderSource;
+    ShaderCodePtr shaderSource = nullptr;
     RenderCore::VertexDescriptor vertexDescriptor;
-    UniformBuffersLayout vertexUniformBufferLayout;
-    UniformBuffersLayout fragmentUniformBufferLayout;
+//    UniformBuffersLayout vertexUniformBufferLayout;
+//    UniformBuffersLayout fragmentUniformBufferLayout;
 };
 
 using CompiledShaderInfoPtr = std::shared_ptr<CompiledShaderInfo>;
 
 ShaderCode compileToESSL30(ShaderCodePtr spirvCode, ShaderStage shaderStage);
 
-CompiledShaderInfo compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderStage);
+CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderStage);
 
 //HLSL shader脚本字符串转换
-ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage);
+ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType);
 
 CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType);
 

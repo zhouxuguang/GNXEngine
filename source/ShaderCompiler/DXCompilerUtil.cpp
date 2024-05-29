@@ -112,7 +112,7 @@ const wchar_t *GetWC(const char *c)
     return wc;
 }
 
-ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage)
+ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType)
 {
 //    CComPtr<IDxcBlobEncoding> pSource = nullptr;
 //    m_pUtils->CreateBlob(shaderSource.c_str(), shaderSource.size(), CP_UTF8, &pSource);

@@ -21,7 +21,7 @@ class DXCompilerUtil
 public:
     static DXCompilerUtil* GetInstance();
     
-    ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage);
+    ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType);
     
 private:
     DXCompilerUtil();
