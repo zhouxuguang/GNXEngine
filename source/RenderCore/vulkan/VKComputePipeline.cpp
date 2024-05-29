@@ -79,8 +79,8 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
     // 创建管线布局
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = (uint32_t)desLayouts.size();
-    pipelineLayoutInfo.pSetLayouts = desLayouts.data();
+    pipelineLayoutInfo.setLayoutCount = (uint32_t)mDescriptorSetLayouts.size();
+    pipelineLayoutInfo.pSetLayouts = mDescriptorSetLayouts.data();
 
     if (vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
     {

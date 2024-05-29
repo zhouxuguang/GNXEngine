@@ -98,7 +98,7 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
     }
     
     // 加载所有instance的入口点
-    volkLoadInstance(context.instance);
+    volkLoadInstanceOnly(context.instance);
     
     VkDebugUtilsMessengerEXT debug_utils_messenger;
     result = vkCreateDebugUtilsMessengerEXT(context.instance, &debug_utils_create_info, nullptr, &debug_utils_messenger);
@@ -296,6 +296,12 @@ bool CreateVirtualDevice(VulkanContext& context)
     CreateDebugReport(context);
 #endif
     
+    // 打开 VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME
+    if (1)
+    {
+        deviceExtensionNames.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    }
+    
     constexpr VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature
     {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
@@ -333,6 +339,8 @@ bool CreateVirtualDevice(VulkanContext& context)
         log_info("vkCreateDevice error");
         return false;
     }
+    
+    volkLoadDevice(context.device);
     
     vkGetDeviceQueue(context.device, context.graphicsQueueFamilyIndex, 0, &context.graphicsQueue);
     

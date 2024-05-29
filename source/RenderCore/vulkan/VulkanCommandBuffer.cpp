@@ -247,7 +247,13 @@ void VulkanCommandBuffer::presentFrameBuffer()
 //等待命令缓冲区执行完成
 void VulkanCommandBuffer::waitUntilCompleted()
 {
-    //
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &mCommandBuffer;
+    
+    vkQueueSubmit(mCommandInfo->vulkanContext->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(mCommandInfo->vulkanContext->graphicsQueue);
 }
 
 NAMESPACE_RENDERCORE_END
