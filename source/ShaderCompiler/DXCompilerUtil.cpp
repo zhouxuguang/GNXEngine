@@ -6,7 +6,7 @@
 //
 
 #include "DXCompilerUtil.h"
-#include "spirv_reflect/spirv_reflection.h"
+#include "spirv_reflection.h"
 
 //代码可以参考这个博客。https://simoncoenen.com/blog/programming/graphics/DxcCompiling
 

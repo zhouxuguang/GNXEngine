@@ -9,6 +9,7 @@ add_subdirectory(rendercore)
 add_subdirectory(rendersystem)
 add_subdirectory(shadercompiler)
 add_subdirectory(../../source/thirdparty/assimp assimp)
+add_subdirectory(../../source/thirdparty/SPIRV-Reflect SPIRV-Reflect)
 
 
 
