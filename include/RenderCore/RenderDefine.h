@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <vector>
+#include <string>
 
 // 命名空间宏定义
 #define NAMESPACE_RENDERCORE_BEGIN        namespace RenderCore {

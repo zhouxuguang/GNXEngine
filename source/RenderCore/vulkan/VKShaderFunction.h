@@ -13,6 +13,15 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+struct DescriptorSetLayoutData
+{
+    uint32_t set_number;
+    VkDescriptorSetLayoutCreateInfo create_info;
+    std::vector<VkDescriptorSetLayoutBinding> bindings;
+};
+
+using DescriptorSetLayoutDataVec = std::vector<DescriptorSetLayoutData>;
+
 class VKShaderFunction : public ShaderFunction, public std::enable_shared_from_this<VKShaderFunction>
 {
 public:
@@ -30,10 +39,24 @@ public:
         return mShaderFunction;
     }
     
+    const DescriptorSetLayoutDataVec& GetDescriptorSets() const
+    {
+        return mDescriptorSets;
+    }
+    
+    const std::string& GetEntryName() const
+    {
+        return mEntryName;
+    }
+    
 private:
     VulkanContextPtr mContext = nullptr;
     VkShaderModule mShaderFunction = VK_NULL_HANDLE;
     ShaderStage mShaderStage;
+    
+    std::string mEntryName;
+    
+    DescriptorSetLayoutDataVec mDescriptorSets;
 };
 
 NAMESPACE_RENDERCORE_END

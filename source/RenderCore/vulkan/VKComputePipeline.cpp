@@ -11,12 +11,13 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+#if 0
 VkDescriptorSetLayout CreateComputeDescriptorSetLayout(VkDevice device)
 {
     std::array<VkDescriptorSetLayoutBinding, 3> layoutBindings{};
     layoutBindings[0].binding = 0;
     layoutBindings[0].descriptorCount = 1;
-    layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_com;
     layoutBindings[0].pImmutableSamplers = nullptr;
     layoutBindings[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
@@ -46,6 +47,7 @@ VkDescriptorSetLayout CreateComputeDescriptorSetLayout(VkDevice device)
     
     return computeDescriptorSetLayout;
 }
+#endif
 
 VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode& shaderSource) : ComputePipeline(nullptr), mContext(context)
 {
@@ -58,22 +60,40 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
     computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     computeShaderStageInfo.module = shaderFunction->GetShaderModule();
-    computeShaderStageInfo.pName = "CS";
+    computeShaderStageInfo.pName = shaderFunction->GetEntryName().c_str();
     
-    VkDescriptorSetLayout desSetLayout = CreateComputeDescriptorSetLayout(mContext->device);
+    // 根据shader反射出来的DescriptorSet信息创建各个DescriptorSetLayout
+    const DescriptorSetLayoutDataVec& desSetLayouts = shaderFunction->GetDescriptorSets();
+    std::vector<VkDescriptorSetLayout> desLayouts;
+    desLayouts.resize(desSetLayouts.size());
+    for (int i = 0; i < desSetLayouts.size(); i ++)
+    {
+        if (vkCreateDescriptorSetLayout(mContext->device, &desSetLayouts[i].create_info, nullptr, desLayouts.data() + i) != VK_SUCCESS)
+        {
+            printf("failed to create compute descriptor set layout!\n");
+            baselib::DebugBreak();
+        }
+    }
 
     // 创建管线布局
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &desSetLayout;
+    pipelineLayoutInfo.setLayoutCount = (uint32_t)desLayouts.size();
+    pipelineLayoutInfo.pSetLayouts = desLayouts.data();
 
-    VkPipelineLayout computePipelineLayout= VK_NULL_HANDLE;
+    VkPipelineLayout computePipelineLayout = VK_NULL_HANDLE;
     if (vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &computePipelineLayout) != VK_SUCCESS)
     {
         printf("failed to create compute pipeline layout!");
         baselib::DebugBreak();
     }
+    
+    // 删除VkDescriptorSetLayout
+    for (auto iter : desLayouts)
+    {
+        vkDestroyDescriptorSetLayout(mContext->device, iter, nullptr);
+    }
+    desLayouts.clear();
     
     // 创建管线
     VkComputePipelineCreateInfo pipelineInfo = {};
