@@ -53,11 +53,11 @@ public:
     
     virtual UniformBufferPtr createUniformBufferWithSize(uint32_t bufSize) const;
     
-    virtual ShaderFunctionPtr createShaderFunction(const char* pShaderSource, ShaderStage shaderStage) const;
+    virtual ShaderFunctionPtr createShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const;
     
     virtual GraphicsPipelinePtr createGraphicsPipeline(const GraphicsPipelineDescriptor& des) const;
     
-    virtual ComputePipelinePtr createComputePipeline(const char* pszShaderString) const;
+    virtual ComputePipelinePtr createComputePipeline(const ShaderCode& shaderString) const;
     
     virtual CommandBufferPtr createCommandBuffer();
     

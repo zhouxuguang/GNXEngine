@@ -51,25 +51,31 @@ Material *Material::GetDefaultDiffuseMaterial()
 MaterialPtr Material::CreateMaterial(const char *shaderStrPath)
 {
     ShaderAssetString shaderAssetString = LoadShaderAsset(shaderStrPath);
-    const char* vertexShader = nullptr;
-    const char* fragmentShader = nullptr;
+    ShaderCode vertexShader;
+    ShaderCode fragmentShader;
     if (getRenderDevice()->getRenderDeviceType() == RenderDeviceType::GLES)
     {
-        vertexShader = shaderAssetString.gles30Shader.vertexShaderStr.c_str();
-        fragmentShader = shaderAssetString.gles30Shader.fragmentShaderStr.c_str();
+        vertexShader = shaderAssetString.gles30Shader.vertexShader;
+        fragmentShader = shaderAssetString.gles30Shader.fragmentShader;
     }
     else if (getRenderDevice()->getRenderDeviceType() == RenderDeviceType::METAL)
     {
-        vertexShader = shaderAssetString.metalShader.vertexShaderStr.c_str();
-        fragmentShader = shaderAssetString.metalShader.fragmentShaderStr.c_str();
+        vertexShader = shaderAssetString.metalShader.vertexShader;
+        fragmentShader = shaderAssetString.metalShader.fragmentShader;
+    }
+    
+    else if (getRenderDevice()->getRenderDeviceType() == RenderDeviceType::VULKAN)
+    {
+        vertexShader = shaderAssetString.metalShader.vertexShader;
+        fragmentShader = shaderAssetString.metalShader.fragmentShader;
     }
     
     FILE* fp1 = fopen("/Users/zhouxuguang/work/pbr.vert", "wb");
-    fwrite(vertexShader, 1, strlen(vertexShader), fp1);
+    fwrite(vertexShader.data(), 1, vertexShader.size(), fp1);
     fclose(fp1);
 
     FILE* fp2 = fopen("/Users/zhouxuguang/work/pbr.frag", "wb");
-    fwrite(fragmentShader, 1, strlen(fragmentShader), fp2);
+    fwrite(fragmentShader.data(), 1, fragmentShader.size(), fp2);
     fclose(fp2);
     
     ShaderFunctionPtr vertShader = getRenderDevice()->createShaderFunction(vertexShader, ShaderStage_Vertex);

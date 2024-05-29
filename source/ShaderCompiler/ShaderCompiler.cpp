@@ -21,7 +21,7 @@ bool startsWith(const std::string& str, const std::string& prefix)
 //glslang使用说明
 //https://stackoverflow.com/questions/38234986/how-to-use-glslang
 
-std::string compileToESSL30(const std::vector<uint32_t>& spirvCode, ShaderStage shaderStage)
+ShaderCode compileToESSL30(const std::vector<uint32_t>& spirvCode, ShaderStage shaderStage)
 {
     spirv_cross::CompilerGLSL glsl(std::move(spirvCode));
 
@@ -86,7 +86,12 @@ std::string compileToESSL30(const std::vector<uint32_t>& spirvCode, ShaderStage 
     glsl.set_common_options(options);
 
     // Compile to GLSL, ready to give to GL driver.
-    return glsl.compile();
+    std::string shaderStr = glsl.compile();
+    ShaderCode shaderCode;
+    shaderCode.resize(shaderStr.size());
+    memcpy(shaderCode.data(), shaderStr.data(), shaderStr.size());
+    
+    return shaderCode;
 }
 
 CompiledShaderInfo compileToMSL(const std::vector<uint32_t>& spirvCode, ShaderStage shaderStage)
@@ -156,7 +161,8 @@ CompiledShaderInfo compileToMSL(const std::vector<uint32_t>& spirvCode, ShaderSt
         shaderInfo.fragmentUniformBufferLayout = GetMetalUniformReflectionInfo(msl, resources);
     }
     
-    shaderInfo.shaderSource = std::move(shaderSource);
+    shaderInfo.shaderSource.resize(shaderSource.size());
+    memcpy(shaderInfo.shaderSource.data(), shaderSource.data(), shaderSource.size());
     
     return shaderInfo;
 }

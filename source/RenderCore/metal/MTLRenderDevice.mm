@@ -154,10 +154,10 @@ UniformBufferPtr MTLRenderDevice::createUniformBufferWithSize(uint32_t bufSize) 
 /**
  创建ShaderFunctionPtr
  */
-ShaderFunctionPtr MTLRenderDevice::createShaderFunction(const char* pShaderSource, ShaderStage shaderStage) const
+ShaderFunctionPtr MTLRenderDevice::createShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const
 {
     MTLShaderFunctionPtr shaderFunction = std::make_shared<MTLShaderFunction>(mMetalLayer.device);
-    return shaderFunction->initWithShaderSource(pShaderSource, shaderStage);
+    return shaderFunction->initWithShaderSource(shaderSource, shaderStage);
 }
 
 /**
@@ -168,9 +168,9 @@ GraphicsPipelinePtr MTLRenderDevice::createGraphicsPipeline(const GraphicsPipeli
     return std::make_shared<MTLGraphicsPipeline>(mMetalLayer.device, des);
 }
 
-ComputePipelinePtr MTLRenderDevice::createComputePipeline(const char* pszShaderString) const
+ComputePipelinePtr MTLRenderDevice::createComputePipeline(const ShaderCode& shaderSource) const
 {
-    ShaderFunctionPtr shaderFunction = createShaderFunction(pszShaderString, ShaderStage_Compute);
+    ShaderFunctionPtr shaderFunction = createShaderFunction(shaderSource, ShaderStage_Compute);
     return std::make_shared<MTLComputePipeline>(mMetalLayer.device, shaderFunction);
 }
 

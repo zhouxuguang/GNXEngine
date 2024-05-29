@@ -16,7 +16,7 @@ NAMESPACE_RENDERCORE_BEGIN
 class VKComputePipeline : public ComputePipeline
 {
 public:
-    VKComputePipeline(VulkanContextPtr context, const char* pszShaderString);
+    VKComputePipeline(VulkanContextPtr context, const ShaderCode& shaderSource);
     
     ~VKComputePipeline();
     

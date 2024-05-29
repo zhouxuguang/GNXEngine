@@ -25,9 +25,9 @@ public:
     
     bool LoadFromFile(const std::string& fileName);
     
-    const std::string& GetCompiledVertexShader() const;
+    const ShaderCode& GetCompiledVertexShader() const;
     
-    const std::string& GetCompiledFragmentShader() const;
+    const ShaderCode& GetCompiledFragmentShader() const;
     
 private:
     std::string mShaderStr;     //原始shader资产

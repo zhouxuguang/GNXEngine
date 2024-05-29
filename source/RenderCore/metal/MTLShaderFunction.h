@@ -21,7 +21,7 @@ public:
     
     ~MTLShaderFunction();
     
-    virtual ShaderFunctionPtr initWithShaderSource(const char* pShaderSource, ShaderStage shaderStage);
+    virtual ShaderFunctionPtr initWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage);
     
     virtual ShaderStage getShaderStage() const;
     

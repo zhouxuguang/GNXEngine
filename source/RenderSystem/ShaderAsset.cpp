@@ -23,52 +23,65 @@ ShaderAsset::~ShaderAsset()
     //
 }
 
-const std::string& ShaderAsset::GetCompiledVertexShader() const
+static ShaderCode defaultShader;
+
+const ShaderCode& ShaderAsset::GetCompiledVertexShader() const
 {
     RenderDevicePtr renderDevice = getRenderDevice();
     if (renderDevice && renderDevice->getRenderDeviceType() == RenderDeviceType::GLES)
     {
-        return mCompiledShaderString.gles30Shader.vertexShaderStr;
+        return mCompiledShaderString.gles30Shader.vertexShader;
     }
     
     else if (renderDevice && renderDevice->getRenderDeviceType() == RenderDeviceType::METAL)
     {
-        return mCompiledShaderString.metalShader.vertexShaderStr;
+        return mCompiledShaderString.metalShader.vertexShader;
     }
     
-    return "";
+    else if (renderDevice && renderDevice->getRenderDeviceType() == RenderDeviceType::VULKAN)
+    {
+        return mCompiledShaderString.vulkanShader.vertexShader;
+    }
+    
+    return defaultShader;
 }
 
-const std::string& ShaderAsset::GetCompiledFragmentShader() const
+const ShaderCode& ShaderAsset::GetCompiledFragmentShader() const
 {
     RenderDevicePtr renderDevice = getRenderDevice();
     if (renderDevice && renderDevice->getRenderDeviceType() == RenderDeviceType::GLES)
     {
-        return mCompiledShaderString.gles30Shader.fragmentShaderStr;
+        return mCompiledShaderString.gles30Shader.fragmentShader;
     }
     
     else if (renderDevice && renderDevice->getRenderDeviceType() == RenderDeviceType::METAL)
     {
-        return mCompiledShaderString.metalShader.fragmentShaderStr;
+        return mCompiledShaderString.metalShader.fragmentShader;
     }
     
-    return "";
+    else if (renderDevice && renderDevice->getRenderDeviceType() == RenderDeviceType::VULKAN)
+    {
+        return mCompiledShaderString.vulkanShader.fragmentShader;
+    }
+    
+    return defaultShader;
 }
 
 bool ShaderAsset::LoadFromFile(const std::string& fileName)
 {
     ShaderCodePtr hlshCodePtr1 = shader_compiler::compileHLSLToSPIRV(fileName.c_str(), ShaderStage_Vertex);
+    //mCompiledShaderString.vulkanShader.vertexShader = *hlshCodePtr1;
     if (hlshCodePtr1)
     {
-        mCompiledShaderString.gles30Shader.vertexShaderStr = shader_compiler::compileToESSL30(*hlshCodePtr1, ShaderStage_Vertex);
-        mCompiledShaderString.metalShader.vertexShaderStr = shader_compiler::compileToMSL(*hlshCodePtr1, ShaderStage_Vertex).shaderSource;
+        //mCompiledShaderString.gles30Shader.vertexShader = shader_compiler::compileToESSL30(*hlshCodePtr1, ShaderStage_Vertex);
+        //mCompiledShaderString.metalShader.vertexShader = shader_compiler::compileToMSL(*hlshCodePtr1, ShaderStage_Vertex).shaderSource;
     }
     
     ShaderCodePtr hlshCodePtr2 = shader_compiler::compileHLSLToSPIRV(fileName.c_str(), ShaderStage_Fragment);
     if (hlshCodePtr2)
     {
-        mCompiledShaderString.gles30Shader.fragmentShaderStr = shader_compiler::compileToESSL30(*hlshCodePtr2, ShaderStage_Fragment);
-        mCompiledShaderString.metalShader.fragmentShaderStr = shader_compiler::compileToMSL(*hlshCodePtr2, ShaderStage_Fragment).shaderSource;
+        //mCompiledShaderString.gles30Shader.fragmentShader = shader_compiler::compileToESSL30(*hlshCodePtr2, ShaderStage_Fragment);
+        //mCompiledShaderString.metalShader.fragmentShader = shader_compiler::compileToMSL(*hlshCodePtr2, ShaderStage_Fragment).shaderSource;
     }
     return true;
 }

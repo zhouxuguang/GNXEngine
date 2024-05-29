@@ -9,7 +9,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-VKShaderFunction::VKShaderFunction(VulkanContextPtr context, const char* pShaderSource, ShaderStage shaderStage)
+VKShaderFunction::VKShaderFunction(VulkanContextPtr context, const ShaderCode& shaderSource, ShaderStage shaderStage)
 {
     //
 }

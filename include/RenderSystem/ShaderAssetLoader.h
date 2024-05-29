@@ -10,15 +10,16 @@
 
 #include "RSDefine.h"
 #include "RenderCore/RenderDescriptor.h"
+#include "RenderCore/ShaderFunction.h"
 #include "ShaderCompiler.h"
 
 NS_RENDERSYSTEM_BEGIN
 
 struct ShaderString
 {
-    std::string vertexShaderStr;
-    std::string fragmentShaderStr;
-    std::string computeShaderStr;
+    ShaderCode vertexShader;
+    ShaderCode fragmentShader;
+    ShaderCode computeShader;
 };
 
 struct ShaderAssetString
@@ -27,6 +28,7 @@ struct ShaderAssetString
     ShaderString gles31Shader;
     ShaderString gles32Shader;
     ShaderString metalShader;
+    ShaderString vulkanShader;
     
     VertexDescriptor vertexDescriptor;
     

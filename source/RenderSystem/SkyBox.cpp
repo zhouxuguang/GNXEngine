@@ -147,34 +147,34 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     
     ShaderAssetString shaderAssetString = LoadShaderAsset("Skybox");
     
-    const char* vertexShader = nullptr;
-    const char* fragmentShader = nullptr;
+    ShaderCode vertexShader;
+    ShaderCode fragmentShader;
     if (renderDevice->getRenderDeviceType() == RenderDeviceType::GLES)
     {
-        vertexShader = shaderAssetString.gles30Shader.vertexShaderStr.c_str();
-        fragmentShader = shaderAssetString.gles30Shader.fragmentShaderStr.c_str();
+        vertexShader = std::move(shaderAssetString.gles30Shader.vertexShader);
+        fragmentShader = std::move(shaderAssetString.gles30Shader.fragmentShader);
         
-        FILE* fp1 = fopen("/Users/zhouxuguang/work/skybok.vert", "wb");
-        fwrite(vertexShader, 1, strlen(vertexShader), fp1);
-        fclose(fp1);
-
-        FILE* fp2 = fopen("/Users/zhouxuguang/work/skybok.frag", "wb");
-        fwrite(fragmentShader, 1, strlen(fragmentShader), fp2);
-        fclose(fp2);
+//        FILE* fp1 = fopen("/Users/zhouxuguang/work/skybok.vert", "wb");
+//        fwrite(vertexShader, 1, strlen(vertexShader), fp1);
+//        fclose(fp1);
+//
+//        FILE* fp2 = fopen("/Users/zhouxuguang/work/skybok.frag", "wb");
+//        fwrite(fragmentShader, 1, strlen(fragmentShader), fp2);
+//        fclose(fp2);
         
     }
     else if (renderDevice->getRenderDeviceType() == RenderDeviceType::METAL)
     {
-        vertexShader = shaderAssetString.metalShader.vertexShaderStr.c_str();
-        fragmentShader = shaderAssetString.metalShader.fragmentShaderStr.c_str();
+        vertexShader = std::move(shaderAssetString.metalShader.vertexShader);
+        fragmentShader = std::move(shaderAssetString.metalShader.fragmentShader);
         
-        FILE* fp1 = fopen("/Users/zhouxuguang/work/skybox.vert", "wb");
-        fwrite(vertexShader, 1, strlen(vertexShader), fp1);
-        fclose(fp1);
-
-        FILE* fp2 = fopen("/Users/zhouxuguang/work/skybox.frag", "wb");
-        fwrite(fragmentShader, 1, strlen(fragmentShader), fp2);
-        fclose(fp2);
+//        FILE* fp1 = fopen("/Users/zhouxuguang/work/skybox.vert", "wb");
+//        fwrite(vertexShader, 1, strlen(vertexShader), fp1);
+//        fclose(fp1);
+//
+//        FILE* fp2 = fopen("/Users/zhouxuguang/work/skybox.frag", "wb");
+//        fwrite(fragmentShader, 1, strlen(fragmentShader), fp2);
+//        fclose(fp2);
     }
     
     ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(vertexShader, ShaderStage_Vertex);

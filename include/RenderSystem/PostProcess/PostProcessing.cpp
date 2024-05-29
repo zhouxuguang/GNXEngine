@@ -24,17 +24,22 @@ PostProcessing::PostProcessing(RenderDevicePtr renderDevice)
     
     ShaderAssetString shaderAssetString = LoadShaderAsset("PostProcessShader");
     
-    const char* vertexShader = nullptr;
-    const char* fragmentShader = nullptr;
+    ShaderCode vertexShader;
+    ShaderCode fragmentShader;
     if (renderDevice->getRenderDeviceType() == RenderDeviceType::GLES)
     {
-        vertexShader = shaderAssetString.gles30Shader.vertexShaderStr.c_str();
-        fragmentShader = shaderAssetString.gles30Shader.fragmentShaderStr.c_str();
+        vertexShader = std::move(shaderAssetString.gles30Shader.vertexShader);
+        fragmentShader = std::move(shaderAssetString.gles30Shader.fragmentShader);
     }
     else if (renderDevice->getRenderDeviceType() == RenderDeviceType::METAL)
     {
-        vertexShader = shaderAssetString.metalShader.vertexShaderStr.c_str();
-        fragmentShader = shaderAssetString.metalShader.fragmentShaderStr.c_str();
+        vertexShader = std::move(shaderAssetString.metalShader.vertexShader);
+        fragmentShader = std::move(shaderAssetString.metalShader.fragmentShader);
+    }
+    else if (renderDevice->getRenderDeviceType() == RenderDeviceType::VULKAN)
+    {
+        vertexShader = std::move(shaderAssetString.metalShader.vertexShader);
+        fragmentShader = std::move(shaderAssetString.metalShader.fragmentShader);
     }
     ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(vertexShader, ShaderStage_Vertex);
     ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(fragmentShader, ShaderStage_Fragment);

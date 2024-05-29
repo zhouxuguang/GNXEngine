@@ -14,7 +14,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-class MTLRenderDevice : public RenderDevice//, std::enable_shared_from_this<MTLRenderDevice>
+class MTLRenderDevice : public RenderDevice
 {
 public:
     MTLRenderDevice(CAMetalLayer *metalLayer);
@@ -92,7 +92,7 @@ public:
     /**
      创建ShaderFunctionPtr
      */
-    virtual ShaderFunctionPtr createShaderFunction(const char* pShaderSource, ShaderStage shaderStage) const;
+    virtual ShaderFunctionPtr createShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const;
     
     /**
      创建图形管线
@@ -102,7 +102,7 @@ public:
     /**
      创建计算管线
      */
-    virtual ComputePipelinePtr createComputePipeline(const char* pszShaderString) const;
+    virtual ComputePipelinePtr createComputePipeline(const ShaderCode& shaderSource) const;
     
     virtual CommandBufferPtr createCommandBuffer();
     

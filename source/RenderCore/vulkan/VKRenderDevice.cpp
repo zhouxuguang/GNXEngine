@@ -202,9 +202,10 @@ UniformBufferPtr VKRenderDevice::createUniformBufferWithSize(uint32_t bufSize) c
     return std::make_shared<VKUniformBuffer>(mVulkanContext, bufSize);
 }
 
-ShaderFunctionPtr VKRenderDevice::createShaderFunction(const char* pShaderSource, ShaderStage shaderStage) const
+ShaderFunctionPtr VKRenderDevice::createShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const
 {
-    return std::make_shared<VKShaderFunction>(mVulkanContext, pShaderSource, shaderStage);
+    return nullptr;
+    //return std::make_shared<VKShaderFunction>(mVulkanContext, shaderSource, shaderStage);
 }
 
 GraphicsPipelinePtr VKRenderDevice::createGraphicsPipeline(const GraphicsPipelineDescriptor& des) const
@@ -212,9 +213,9 @@ GraphicsPipelinePtr VKRenderDevice::createGraphicsPipeline(const GraphicsPipelin
     return std::make_shared<VKGraphicsPipeline>(mVulkanContext, des);
 }
 
-ComputePipelinePtr VKRenderDevice::createComputePipeline(const char* pszShaderString) const
+ComputePipelinePtr VKRenderDevice::createComputePipeline(const ShaderCode& shaderSource) const
 {
-    return std::make_shared<VKComputePipeline>(mVulkanContext, pszShaderString);
+    return std::make_shared<VKComputePipeline>(mVulkanContext, shaderSource);
 }
 
 RenderTexturePtr VKRenderDevice::createRenderTexture(const TextureDescriptor& des) const

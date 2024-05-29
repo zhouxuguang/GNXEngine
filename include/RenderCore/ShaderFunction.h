@@ -12,6 +12,8 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+using ShaderCode = std::vector<uint8_t>;
+
 // 单个的shader函数对象，例如vs/ps等
 class ShaderFunction
 {
@@ -20,7 +22,7 @@ public:
     
     virtual ~ShaderFunction();
     
-    virtual std::shared_ptr<ShaderFunction> initWithShaderSource(const char* pShaderSource, ShaderStage shaderStage) = 0;
+    virtual std::shared_ptr<ShaderFunction> initWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage) = 0;
     
     virtual ShaderStage getShaderStage() const = 0;
 };

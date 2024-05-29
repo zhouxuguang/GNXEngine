@@ -110,38 +110,38 @@ static ShaderCodePtr loadShaderAsset(const char* pszShaderName)
     return shaderCodePtr;
 }
 
-void testShader(RenderDevicePtr renderDevice)
-{
-    ShaderFunctionPtr shaderFunction1 = renderDevice->createShaderFunction(vertexShader, ShaderStage_Vertex);
-    if (shaderFunction1) {
-        printf("");
-    }
-    
-    ShaderFunctionPtr shaderFunction2 = renderDevice->createShaderFunction(fragmentShader, ShaderStage_Fragment);
-    if (shaderFunction2) {
-        printf("");
-    }
-    
-    std::string path = getShaderPath();
-    ShaderCodePtr codePtr = loadShaderAsset(path.c_str());
-    std::string essl30Source = shader_compiler::compileToESSL30(*codePtr, ShaderStage_Fragment);
-    if (essl30Source.empty()) {
-        printf("");
-    }
-    
-    ShaderFunctionPtr shaderFunction3 = renderDevice->createShaderFunction(essl30Source.c_str(), ShaderStage_Fragment);
-    if (shaderFunction3) {
-        printf("");
-    }
-    
-    NSString *shadePath = [[NSBundle mainBundle] pathForResource:@"Skybox" ofType:@"hlsl"];
-    ShaderCodePtr hlshCodePtr = shader_compiler::compileHLSLToSPIRV(shadePath.UTF8String, ShaderStage_Vertex);
-    std::string essl30Source1 = shader_compiler::compileToESSL30(*hlshCodePtr, ShaderStage_Vertex);
-    
-    ShaderCodePtr hlshCodePtr1 = shader_compiler::compileHLSLToSPIRV(shadePath.UTF8String, ShaderStage_Fragment);
-    std::string essl30Source2 = shader_compiler::compileToESSL30(*hlshCodePtr1, ShaderStage_Fragment);
-    printf("");
-    
-}
+//void testShader(RenderDevicePtr renderDevice)
+//{
+//    ShaderFunctionPtr shaderFunction1 = renderDevice->createShaderFunction(vertexShader, ShaderStage_Vertex);
+//    if (shaderFunction1) {
+//        printf("");
+//    }
+//    
+//    ShaderFunctionPtr shaderFunction2 = renderDevice->createShaderFunction(fragmentShader, ShaderStage_Fragment);
+//    if (shaderFunction2) {
+//        printf("");
+//    }
+//    
+//    std::string path = getShaderPath();
+//    ShaderCodePtr codePtr = loadShaderAsset(path.c_str());
+//    std::string essl30Source = shader_compiler::compileToESSL30(*codePtr, ShaderStage_Fragment);
+//    if (essl30Source.empty()) {
+//        printf("");
+//    }
+//    
+//    ShaderFunctionPtr shaderFunction3 = renderDevice->createShaderFunction(essl30Source.c_str(), ShaderStage_Fragment);
+//    if (shaderFunction3) {
+//        printf("");
+//    }
+//    
+//    NSString *shadePath = [[NSBundle mainBundle] pathForResource:@"Skybox" ofType:@"hlsl"];
+//    ShaderCodePtr hlshCodePtr = shader_compiler::compileHLSLToSPIRV(shadePath.UTF8String, ShaderStage_Vertex);
+//    std::string essl30Source1 = shader_compiler::compileToESSL30(*hlshCodePtr, ShaderStage_Vertex);
+//    
+//    ShaderCodePtr hlshCodePtr1 = shader_compiler::compileHLSLToSPIRV(shadePath.UTF8String, ShaderStage_Fragment);
+//    std::string essl30Source2 = shader_compiler::compileToESSL30(*hlshCodePtr1, ShaderStage_Fragment);
+//    printf("");
+//    
+//}
 
 #endif

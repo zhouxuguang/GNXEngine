@@ -10,6 +10,7 @@
 
 #include "ShaderCompilerDefine.h"
 #include "RenderCore/RenderDescriptor.h"
+#include "RenderCore/ShaderFunction.h"
 
 NAMESPACE_SHADERCOMPILER_BEGIN
 
@@ -35,13 +36,13 @@ typedef std::vector<UniformLayout> UniformBuffersLayout;
 
 struct CompiledShaderInfo
 {
-    std::string shaderSource;
+    ShaderCode shaderSource;
     RenderCore::VertexDescriptor vertexDescriptor;
     UniformBuffersLayout vertexUniformBufferLayout;
     UniformBuffersLayout fragmentUniformBufferLayout;
 };
 
-std::string compileToESSL30(const std::vector<uint32_t>& spirvCode, ShaderStage shaderStage);
+ShaderCode compileToESSL30(const std::vector<uint32_t>& spirvCode, ShaderStage shaderStage);
 
 CompiledShaderInfo compileToMSL(const std::vector<uint32_t>& spirvCode, ShaderStage shaderStage);
 

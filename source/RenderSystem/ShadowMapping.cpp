@@ -67,10 +67,10 @@ ShadowMapping::ShadowMapping(const RenderDevicePtr& renderDevice)
     graphicsPipelineDescriptor.colorAttachmentDescriptor.writeMask = ColorWriteMaskNone;
     m_GraphicsPipeline = renderDevice->createGraphicsPipeline(graphicsPipelineDescriptor);
     
-    ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(vShadowMapShaderStr, ShaderStage_Vertex);
-    ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(fShadowMapShaderStr, ShaderStage_Fragment);
-    m_GraphicsPipeline->attachVertexShader(vertShader);
-    m_GraphicsPipeline->attachFragmentShader(fragShader);
+//    ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(vShadowMapShaderStr, ShaderStage_Vertex);
+//    ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(fShadowMapShaderStr, ShaderStage_Fragment);
+//    m_GraphicsPipeline->attachVertexShader(vertShader);
+//    m_GraphicsPipeline->attachFragmentShader(fragShader);
 }
 
 ShadowMapping::~ShadowMapping()

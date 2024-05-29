@@ -17,6 +17,7 @@ using namespace imagecodec;
 
 using namespace RenderSystem;
 
+#if 0
 void TestADD()
 {
     ShaderAssetString shaderAssetString = LoadShaderAsset("TestADD");
@@ -89,23 +90,29 @@ void TestADD()
     delete [] data_b;
 }
 
+#endif
+
 ComputePipelinePtr initTestimageGray()
 {
+#if 1
     ShaderAssetString shaderAssetString = LoadShaderAsset("TestImageGray");
     
-    const char* computeShader = nullptr;
+    ShaderCode computeShader;
     if (getRenderDevice()->getRenderDeviceType() == RenderDeviceType::METAL)
     {
-        computeShader = shaderAssetString.metalShader.computeShaderStr.c_str();
+        computeShader = std::move(shaderAssetString.metalShader.computeShader);
     }
     
     FILE* fp1 = fopen("/Users/zhouxuguang/work/TestImageGray.metal", "wb");
-    fwrite(computeShader, 1, strlen(computeShader), fp1);
+    fwrite(computeShader.data(), 1, computeShader.size(), fp1);
     fclose(fp1);
     
     ComputePipelinePtr computePipeline = getRenderDevice()->createComputePipeline(computeShader);
     
     return computePipeline;
+#elif
+    return nullptr;
+#endif
 }
 
 void testImageGrayDraw(ComputeEncoderPtr computeEncoder, ComputePipelinePtr computePipeline,
@@ -126,6 +133,7 @@ void testImageGrayDraw(ComputeEncoderPtr computeEncoder, ComputePipelinePtr comp
 
 RenderTexturePtr TestImageGray()
 {
+#if 0
     ShaderAssetString shaderAssetString = LoadShaderAsset("TestImageGray");
     
     const char* computeShader = nullptr;
@@ -174,4 +182,6 @@ RenderTexturePtr TestImageGray()
     command->waitUntilCompleted();
     
     return outputTexture;
+#endif
+    return nullptr;
 }

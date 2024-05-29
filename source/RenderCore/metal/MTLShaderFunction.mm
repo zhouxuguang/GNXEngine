@@ -6,6 +6,7 @@
 //
 
 #include "MTLShaderFunction.h"
+#include <string>
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -40,16 +41,20 @@ static const char* getFunctionName(ShaderStage shaderStage)
     return "";
 }
 
-ShaderFunctionPtr MTLShaderFunction::initWithShaderSource(const char* pShaderSource, ShaderStage shaderStage)
+ShaderFunctionPtr MTLShaderFunction::initWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage)
 {
-    if (!pShaderSource)
+    if (shaderSource.empty())
     {
         return nullptr;
     }
     
     NSError *error = nil;
     
-    id<MTLLibrary> library = [mDevice newLibraryWithSource:[NSString stringWithUTF8String:pShaderSource] options:nil error:&error];
+    std::string shaderStr;
+    shaderStr.resize(shaderSource.size());
+    memcpy(shaderStr.data(), shaderSource.data(), shaderSource.size());
+    
+    id<MTLLibrary> library = [mDevice newLibraryWithSource:[NSString stringWithUTF8String:shaderStr.c_str()] options:nil error:&error];
     if (error)
     {
         //NSString* errorStr = error.domain;

@@ -100,7 +100,7 @@ public:
     /**
      创建ShaderFunctionPtr
      */
-    virtual ShaderFunctionPtr createShaderFunction(const char* pShaderSource, ShaderStage shaderStage) const = 0;
+    virtual ShaderFunctionPtr createShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const = 0;
     
     /**
      创建图形管线
@@ -110,7 +110,7 @@ public:
     /**
      创建计算管线
      */
-    virtual ComputePipelinePtr createComputePipeline(const char* pszShaderString) const = 0;
+    virtual ComputePipelinePtr createComputePipeline(const ShaderCode& shaderString) const = 0;
     
     virtual CommandBufferPtr createCommandBuffer() = 0;
     
