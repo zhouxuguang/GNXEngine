@@ -111,8 +111,8 @@ RenderDevicePtr createRenderDevice(RenderDeviceType deviceType, ViewHandle viewH
     }
     else if (METAL == deviceType)
     {
-        renderDevicePtr = std::make_shared<VKRenderDevice>(viewHandle);
-        //renderDevicePtr = createMetalRenderDevice(viewHandle);
+        //renderDevicePtr = std::make_shared<VKRenderDevice>(viewHandle);
+        renderDevicePtr = createMetalRenderDevice(viewHandle);
     }
     else if (VULKAN == deviceType)
     {

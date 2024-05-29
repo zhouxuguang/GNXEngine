@@ -6,6 +6,7 @@
 //
 
 #include "DXCompilerUtil.h"
+#include "spirv_reflect/spirv_reflection.h"
 
 //代码可以参考这个博客。https://simoncoenen.com/blog/programming/graphics/DxcCompiling
 
@@ -26,6 +27,33 @@ DXCompilerUtil* DXCompilerUtil::GetInstance()
 {
     static DXCompilerUtil instance;
     return &instance;
+}
+
+int SpirvReflectExample(const void* spirv_code, size_t spirv_nbytes)
+{
+    // Generate reflection data for a shader
+    SpvReflectShaderModule module;
+    SpvReflectResult result = spvReflectCreateShaderModule(spirv_nbytes, spirv_code, &module);
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+    // Enumerate and extract shader's input variables
+    uint32_t var_count = 0;
+    result = spvReflectEnumerateInputVariables(&module, &var_count, NULL);
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+    SpvReflectInterfaceVariable** input_vars =
+    (SpvReflectInterfaceVariable**)malloc(var_count * sizeof(SpvReflectInterfaceVariable*));
+    result = spvReflectEnumerateInputVariables(&module, &var_count, input_vars);
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+    
+    //spvReflectEnumerateDescriptorSets(, , )
+
+    // Output variables, descriptor bindings, descriptor sets, and push constants
+    // can be enumerated and extracted using a similar mechanism.
+
+    // Destroy the reflection data when no longer required.
+    spvReflectDestroyShaderModule(&module);
+    
+    return 0;
 }
 
 LPCWSTR GetEntryPoint(ShaderStage stage)
@@ -181,6 +209,8 @@ std::shared_ptr<std::vector<uint32_t>> DXCompilerUtil::compileHLSLToSPIRV(const 
         std::shared_ptr<std::vector<uint32_t>> spirvBuffer = std::make_shared<std::vector<uint32_t>>();
         spirvBuffer->resize(pShader->GetBufferSize() / 4);
         memcpy(spirvBuffer->data(), pShader->GetBufferPointer(), pShader->GetBufferSize());
+        
+        SpirvReflectExample(pShader->GetBufferPointer(), pShader->GetBufferSize());
         
         return spirvBuffer;
     }
