@@ -6,6 +6,7 @@
 //
 
 #include "VKComputePipeline.h"
+#include "VKShaderFunction.h"
 #include "BaseLib/DebugBreaker.h"
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -49,17 +50,14 @@ VkDescriptorSetLayout CreateComputeDescriptorSetLayout(VkDevice device)
 VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode& shaderSource) : ComputePipeline(nullptr), mContext(context)
 {
     // 这里spir-v的二进制还需要进行载入
-    VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
-    shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    shaderModuleCreateInfo.codeSize = shaderSource.size();
-    shaderModuleCreateInfo.pCode = (const uint32_t*)shaderSource.data();
-    VkShaderModule computeShaderModule = VK_NULL_HANDLE;
-    VkResult res = vkCreateShaderModule(mContext->device, &shaderModuleCreateInfo, nullptr, &computeShaderModule);
-
+    std::shared_ptr<VKShaderFunction> shaderFunction = std::make_shared<VKShaderFunction>(context);
+    shaderFunction = shaderFunction->initWithShaderSourceInner(shaderSource, ShaderStage_Compute);
+    assert(shaderFunction);
+    
     VkPipelineShaderStageCreateInfo computeShaderStageInfo = {};
     computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    computeShaderStageInfo.module = computeShaderModule;
+    computeShaderStageInfo.module = shaderFunction->GetShaderModule();
     computeShaderStageInfo.pName = "CS";
     
     VkDescriptorSetLayout desSetLayout = CreateComputeDescriptorSetLayout(mContext->device);

@@ -16,16 +16,24 @@ NAMESPACE_RENDERCORE_BEGIN
 class VKShaderFunction : public ShaderFunction, public std::enable_shared_from_this<VKShaderFunction>
 {
 public:
-    VKShaderFunction(VulkanContextPtr context, const ShaderCode& pShaderSource, ShaderStage shaderStage);
+    VKShaderFunction(VulkanContextPtr context);
     ~VKShaderFunction();
     
-    virtual std::shared_ptr<ShaderFunction> initWithShaderSource(const char* pShaderSource, ShaderStage shaderStage);
+    virtual ShaderFunctionPtr initWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage);
+    
+    virtual std::shared_ptr<VKShaderFunction> initWithShaderSourceInner(const ShaderCode& shaderSource, ShaderStage shaderStage);
     
     virtual ShaderStage getShaderStage() const;
+    
+    VkShaderModule GetShaderModule() const
+    {
+        return mShaderFunction;
+    }
     
 private:
     VulkanContextPtr mContext = nullptr;
     VkShaderModule mShaderFunction = VK_NULL_HANDLE;
+    ShaderStage mShaderStage;
 };
 
 NAMESPACE_RENDERCORE_END
