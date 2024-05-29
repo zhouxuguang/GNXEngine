@@ -13,6 +13,8 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+class VKComputePipeline;
+
 class VKComputeEncoder : public ComputeEncoder
 {
 public:
@@ -35,6 +37,7 @@ public:
 private:
     VulkanContextPtr mContext = nullptr;
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
+    VKComputePipeline *mVKPipeline = nullptr;
 };
 
 NAMESPACE_RENDERCORE_END

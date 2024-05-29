@@ -74,6 +74,7 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
             baselib::DebugBreak();
         }
     }
+    mDescriptorSetLayouts = std::move(desLayouts);
 
     // 创建管线布局
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
@@ -81,24 +82,23 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
     pipelineLayoutInfo.setLayoutCount = (uint32_t)desLayouts.size();
     pipelineLayoutInfo.pSetLayouts = desLayouts.data();
 
-    VkPipelineLayout computePipelineLayout = VK_NULL_HANDLE;
-    if (vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &computePipelineLayout) != VK_SUCCESS)
+    if (vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
     {
         printf("failed to create compute pipeline layout!");
         baselib::DebugBreak();
     }
     
     // 删除VkDescriptorSetLayout
-    for (auto iter : desLayouts)
-    {
-        vkDestroyDescriptorSetLayout(mContext->device, iter, nullptr);
-    }
-    desLayouts.clear();
+//    for (auto iter : desLayouts)
+//    {
+//        vkDestroyDescriptorSetLayout(mContext->device, iter, nullptr);
+//    }
+//    desLayouts.clear();
     
     // 创建管线
     VkComputePipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    pipelineInfo.layout = computePipelineLayout;
+    pipelineInfo.layout = mPipelineLayout;
     pipelineInfo.stage = computeShaderStageInfo;
 
     if (vkCreateComputePipelines(mContext->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline) != VK_SUCCESS)
@@ -115,7 +115,9 @@ VKComputePipeline::~VKComputePipeline()
 
 void VKComputePipeline::GetThreadGroupSizes(uint32_t &x, uint32_t &y, uint32_t &z)
 {
-    return;
+    x = 32;
+    y = 1;
+    z = 1;
 }
 
 NAMESPACE_RENDERCORE_END

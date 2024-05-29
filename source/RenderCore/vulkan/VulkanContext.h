@@ -35,6 +35,9 @@ struct VulkanContext
     VmaAllocator vmaAllocator;    //内存分配器
     VkSampleCountFlagBits numSamples = VK_SAMPLE_COUNT_1_BIT;
     
+    //描述符集合的池子，分为计算和图形
+    VkDescriptorPool computeDescriptorPool = VK_NULL_HANDLE;
+    
     std::vector<const char*> extensionNames;   //设备支持的扩展列表名称
 };
 
@@ -54,6 +57,12 @@ void CreateVMA(VulkanContext& context);
 
 // 创建Surface对象
 bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow);
+
+// 创建计算描述符的pool
+void CreateComputeDescriptorPool(VulkanContext& context);
+
+// 创建描述符集
+VkDescriptorSet AllocDescriptorSet(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descLayout);
 
 //图像视图的包装
 struct VulkanImageView

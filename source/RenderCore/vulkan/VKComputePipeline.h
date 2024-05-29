@@ -28,9 +28,21 @@ public:
         return mPipeline;
     }
     
+    const std::vector<VkDescriptorSetLayout>& GetDescriptorSetLayouts() const
+    {
+        return mDescriptorSetLayouts;
+    }
+    
+    VkPipelineLayout GetPipelineLayout() const
+    {
+        return mPipelineLayout;
+    }
+    
 private:
     VulkanContextPtr mContext = nullptr;
     VkPipeline mPipeline = VK_NULL_HANDLE;
+    VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;
+    std::vector<VkDescriptorSetLayout> mDescriptorSetLayouts;
 };
 
 NAMESPACE_RENDERCORE_END

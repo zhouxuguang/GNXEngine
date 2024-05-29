@@ -164,7 +164,7 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
 
 ComputeEncoderPtr VulkanCommandBuffer::createComputeEncoder() const
 {
-    return std::make_shared<VKComputeEncoder>(nullptr, mCommandBuffer);
+    return std::make_shared<VKComputeEncoder>(mCommandInfo->vulkanContext, mCommandBuffer);
 }
 
 //呈现到屏幕上，上屏

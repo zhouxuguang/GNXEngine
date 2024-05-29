@@ -37,7 +37,7 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
     instanceExtensions.push_back("VK_KHR_surface");
 #ifdef __ANDROID__
     instanceExtensions.push_back("VK_KHR_android_surface");
-#else define __APPLE__
+#elif __APPLE__
     instanceExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
     instanceExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
@@ -424,6 +424,45 @@ bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
 #endif
 
     return context.surfaceKhr != VK_NULL_HANDLE;
+}
+
+void CreateComputeDescriptorPool(VulkanContext& context)
+{
+    constexpr int maxInflight = 3;
+    // 创建VkDescriptorPool
+    VkDescriptorPoolSize poolSizes[2] = {};
+    poolSizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    poolSizes[0].descriptorCount = maxInflight;
+    poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    poolSizes[1].descriptorCount = maxInflight;
+    
+    VkDescriptorPoolCreateInfo poolInfo = {};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 2;
+    poolInfo.pPoolSizes = poolSizes;
+    poolInfo.maxSets = maxInflight;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    
+    VkResult res = vkCreateDescriptorPool(context.device, &poolInfo, nullptr, &context.computeDescriptorPool);
+    if (res != VK_SUCCESS)
+    {
+        printf("vkCreateDescriptorPool failed!!!!\n");
+    }
+}
+
+VkDescriptorSet AllocDescriptorSet(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descLayout)
+{
+    VkDescriptorSetAllocateInfo allocInfo = {};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &descLayout;
+    
+    VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+
+    VkResult result = vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet);
+
+    return descriptorSet;
 }
 
 NAMESPACE_RENDERCORE_END
