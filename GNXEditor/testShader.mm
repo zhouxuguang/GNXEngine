@@ -13,6 +13,8 @@
 #include "ResourceUtil.h"
 #include <Foundation/Foundation.h>
 
+#if 0
+
 static const char * vertexShader = R"(
 #version 300 es
 #ifdef GL_ARB_separate_shader_objects
@@ -109,6 +111,8 @@ static ShaderCodePtr loadShaderAsset(const char* pszShaderName)
     fclose(fpShader);
     return shaderCodePtr;
 }
+
+#endif
 
 //void testShader(RenderDevicePtr renderDevice)
 //{

@@ -14,7 +14,7 @@
 
 NAMESPACE_SHADERCOMPILER_BEGIN
 
-typedef std::shared_ptr<std::vector<uint32_t>> ShaderCodePtr;
+//typedef std::shared_ptr<std::vector<uint32_t>> ShaderCodePtr;
 
 //uniform buffer每一个成员的布局
 struct UniformMember
@@ -34,6 +34,7 @@ struct UniformLayout
 
 typedef std::vector<UniformLayout> UniformBuffersLayout;
 
+// 编译后的shader信息以及一些反射的元数据信息
 struct CompiledShaderInfo
 {
     ShaderCode shaderSource;
@@ -42,12 +43,16 @@ struct CompiledShaderInfo
     UniformBuffersLayout fragmentUniformBufferLayout;
 };
 
-ShaderCode compileToESSL30(const std::vector<uint32_t>& spirvCode, ShaderStage shaderStage);
+using CompiledShaderInfoPtr = std::shared_ptr<CompiledShaderInfo>;
 
-CompiledShaderInfo compileToMSL(const std::vector<uint32_t>& spirvCode, ShaderStage shaderStage);
+ShaderCode compileToESSL30(ShaderCodePtr spirvCode, ShaderStage shaderStage);
+
+CompiledShaderInfo compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderStage);
 
 //HLSL shader脚本字符串转换
 ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage);
+
+CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType);
 
 NAMESPACE_SHADERCOMPILER_END
 

@@ -13,6 +13,7 @@
 NAMESPACE_RENDERCORE_BEGIN
 
 using ShaderCode = std::vector<uint8_t>;
+using ShaderCodePtr = std::shared_ptr<ShaderCode>;
 
 // 单个的shader函数对象，例如vs/ps等
 class ShaderFunction

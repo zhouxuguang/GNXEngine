@@ -9,6 +9,7 @@
 #define GNX_ENGINE_DX_COMPILER_INCLUDESJGVH_H
 
 #include "ShaderCompilerDefine.h"
+#include "RenderCore/ShaderFunction.h"
 
 #define __EMULATE_UUID
 #include "dxc/dxcapi.h"
@@ -20,7 +21,7 @@ class DXCompilerUtil
 public:
     static DXCompilerUtil* GetInstance();
     
-    std::shared_ptr<std::vector<uint32_t>> compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage);
+    ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage);
     
 private:
     DXCompilerUtil();

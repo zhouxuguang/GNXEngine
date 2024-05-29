@@ -30,10 +30,9 @@ struct ShaderAssetString
     ShaderString metalShader;
     ShaderString vulkanShader;
     
-    VertexDescriptor vertexDescriptor;
-    
-    shader_compiler::UniformBuffersLayout vertexUniformBufferLayout;
-    shader_compiler::UniformBuffersLayout fragmentUniformBufferLayout;
+    VertexDescriptor vertexDescriptor;                             // 顶点描述
+    shader_compiler::UniformBuffersLayout vertexUniformBufferLayout;  //顶点ubo信息
+    shader_compiler::UniformBuffersLayout fragmentUniformBufferLayout; //片元ubo信息
 };
 
 ShaderAssetString LoadShaderAsset(const std::string &shaderName);

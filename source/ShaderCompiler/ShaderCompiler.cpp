@@ -21,9 +21,9 @@ bool startsWith(const std::string& str, const std::string& prefix)
 //glslang使用说明
 //https://stackoverflow.com/questions/38234986/how-to-use-glslang
 
-ShaderCode compileToESSL30(const std::vector<uint32_t>& spirvCode, ShaderStage shaderStage)
+ShaderCode compileToESSL30(ShaderCodePtr spirvCode, ShaderStage shaderStage)
 {
-    spirv_cross::CompilerGLSL glsl(std::move(spirvCode));
+    spirv_cross::CompilerGLSL glsl((const uint32_t *)spirvCode->data(), spirvCode->size() / 4);
 
     // The SPIR-V is now parsed, and we can perform reflection on it.
     spirv_cross::ShaderResources resources = glsl.get_shader_resources();
@@ -94,9 +94,9 @@ ShaderCode compileToESSL30(const std::vector<uint32_t>& spirvCode, ShaderStage s
     return shaderCode;
 }
 
-CompiledShaderInfo compileToMSL(const std::vector<uint32_t>& spirvCode, ShaderStage shaderStage)
+CompiledShaderInfo compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderStage)
 {
-    spirv_cross::CompilerMSL msl(std::move(spirvCode));
+    spirv_cross::CompilerMSL msl((const uint32_t*)spirvCode->data(), spirvCode->size() / 4);
 
     // The SPIR-V is now parsed, and we can perform reflection on it.
     spirv_cross::ShaderResources resources = msl.get_shader_resources();
@@ -171,6 +171,11 @@ CompiledShaderInfo compileToMSL(const std::vector<uint32_t>& spirvCode, ShaderSt
 ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage)
 {
     return DXCompilerUtil::GetInstance()->compileHLSLToSPIRV(shaderFile, shaderStage);
+}
+
+CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType)
+{
+    //
 }
 
 NAMESPACE_SHADERCOMPILER_END

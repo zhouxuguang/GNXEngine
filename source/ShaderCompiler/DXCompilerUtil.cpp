@@ -112,7 +112,7 @@ const wchar_t *GetWC(const char *c)
     return wc;
 }
 
-std::shared_ptr<std::vector<uint32_t>> DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage)
+ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage)
 {
 //    CComPtr<IDxcBlobEncoding> pSource = nullptr;
 //    m_pUtils->CreateBlob(shaderSource.c_str(), shaderSource.size(), CP_UTF8, &pSource);
@@ -206,8 +206,8 @@ std::shared_ptr<std::vector<uint32_t>> DXCompilerUtil::compileHLSLToSPIRV(const 
     result = pResults->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&pShader), &pShaderName);
     if (pShader != nullptr)
     {
-        std::shared_ptr<std::vector<uint32_t>> spirvBuffer = std::make_shared<std::vector<uint32_t>>();
-        spirvBuffer->resize(pShader->GetBufferSize() / 4);
+        ShaderCodePtr spirvBuffer = std::make_shared<ShaderCode>();
+        spirvBuffer->resize(pShader->GetBufferSize());
         memcpy(spirvBuffer->data(), pShader->GetBufferPointer(), pShader->GetBufferSize());
         
         SpirvReflectExample(pShader->GetBufferPointer(), pShader->GetBufferSize());
