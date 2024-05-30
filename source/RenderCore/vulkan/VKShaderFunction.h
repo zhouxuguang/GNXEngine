@@ -20,6 +20,14 @@ struct DescriptorSetLayoutData
     std::vector<VkDescriptorSetLayoutBinding> bindings;
 };
 
+// 工作组线程的大小
+struct WorkGroupSize
+{
+  uint32_t x;
+  uint32_t y;
+  uint32_t z;
+};
+
 using DescriptorSetLayoutDataVec = std::vector<DescriptorSetLayoutData>;
 
 class VKShaderFunction : public ShaderFunction, public std::enable_shared_from_this<VKShaderFunction>
@@ -49,12 +57,18 @@ public:
         return mEntryName;
     }
     
+    const WorkGroupSize& GetWorkGroupSize() const
+    {
+        return mWorkGroupSize;
+    }
+    
 private:
     VulkanContextPtr mContext = nullptr;
     VkShaderModule mShaderFunction = VK_NULL_HANDLE;
     ShaderStage mShaderStage;
     
     std::string mEntryName;
+    WorkGroupSize mWorkGroupSize;
     
     DescriptorSetLayoutDataVec mDescriptorSets;
 };

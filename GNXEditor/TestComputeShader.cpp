@@ -20,6 +20,7 @@ using namespace RenderSystem;
 #if 1
 void TestADD()
 {
+    return;
     ShaderAssetString shaderAssetString = LoadShaderAsset("TestADD");
     
     ShaderCodePtr computeShader = shaderAssetString.computeShader->shaderSource;
@@ -162,8 +163,6 @@ RenderTexturePtr TestImageGray()
     
     uint32_t x, y ,z;
     computePipeline->GetThreadGroupSizes(x, y, z);
-    x = y = 16;
-    z = 1;
     
     int groupX = (image->GetWidth() + x - 1) / x;
     int groupY = (image->GetHeight() + y - 1) / y;

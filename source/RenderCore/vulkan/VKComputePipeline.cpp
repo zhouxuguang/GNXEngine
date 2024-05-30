@@ -56,6 +56,8 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
     shaderFunction = shaderFunction->initWithShaderSourceInner(shaderSource, ShaderStage_Compute);
     assert(shaderFunction);
     
+    mWorkGroupSize = shaderFunction->GetWorkGroupSize();
+    
     VkPipelineShaderStageCreateInfo computeShaderStageInfo = {};
     computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -115,9 +117,9 @@ VKComputePipeline::~VKComputePipeline()
 
 void VKComputePipeline::GetThreadGroupSizes(uint32_t &x, uint32_t &y, uint32_t &z)
 {
-    x = 1;
-    y = 1;
-    z = 1;
+    x = mWorkGroupSize.x;
+    y = mWorkGroupSize.y;
+    z = mWorkGroupSize.z;
 }
 
 NAMESPACE_RENDERCORE_END

@@ -10,6 +10,7 @@
 
 #include "VulkanContext.h"
 #include "GraphicsPipeline.h"
+#include "VKShaderFunction.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -43,6 +44,7 @@ private:
     VkPipeline mPipeline = VK_NULL_HANDLE;
     VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;
     std::vector<VkDescriptorSetLayout> mDescriptorSetLayouts;
+    WorkGroupSize mWorkGroupSize;
 };
 
 NAMESPACE_RENDERCORE_END

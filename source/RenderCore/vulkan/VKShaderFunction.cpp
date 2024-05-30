@@ -93,7 +93,7 @@ std::shared_ptr<VKShaderFunction> VKShaderFunction::initWithShaderSourceInner(co
     VkResult res = vkCreateShaderModule(mContext->device, &shaderModuleCreateInfo, nullptr, &computeShaderModule);
     if (res != VK_SUCCESS)
     {
-        mShaderFunction = VK_NULL_HANDLE;
+        mShaderFunction = nullptr;
         return nullptr;
     }
     mShaderFunction = computeShaderModule;
@@ -104,6 +104,17 @@ std::shared_ptr<VKShaderFunction> VKShaderFunction::initWithShaderSourceInner(co
     
     mDescriptorSets = GetDescriptorInfo(shaderModule);
     mEntryName = shaderModule.entry_point_name;
+    
+    assert(shaderModule.entry_point_count);
+    
+    // 获得计算着色器的局部工作组线程的大小
+    if (shaderModule.shader_stage == SPV_REFLECT_SHADER_STAGE_COMPUTE_BIT)
+    {
+        const SpvReflectEntryPoint* entryPoint = spvReflectGetEntryPoint(&shaderModule, shaderModule.entry_point_name);
+        mWorkGroupSize.x = entryPoint->local_size.x;
+        mWorkGroupSize.y = entryPoint->local_size.y;
+        mWorkGroupSize.z = entryPoint->local_size.z;
+    }
     
     spvReflectDestroyShaderModule(&shaderModule);
     
