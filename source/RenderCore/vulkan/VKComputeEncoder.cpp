@@ -54,21 +54,17 @@ void VKComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
         return;
     }
     VKComputeBuffer *vkComputeBuffer = (VKComputeBuffer*)buffer.get();
-//    typedef VkResult (VKAPI_PTR *PFN_vkFreeDescriptorSets)(VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSet* pDescriptorSets);
-    
-    VkDescriptorSet descriptorSet = AllocDescriptorSet(mContext->device, mContext->computeDescriptorPool, 
-                                                       mVKPipeline->GetDescriptorSetLayouts()[0]);
     
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.range = VK_WHOLE_SIZE;
     bufferInfo.buffer = vkComputeBuffer->GetBuffer();
     
-    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(descriptorSet,
+    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
+    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(VK_NULL_HANDLE,
                 VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, index, &bufferInfo);
+    writeDescriptorSet.dstSet = 0;   //这句也是可以的
     
     vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), 0, 1, &writeDescriptorSet);
-    
-    vkFreeDescriptorSets(mContext->device, mContext->computeDescriptorPool, 1, &descriptorSet);
 }
 
 void VKComputeEncoder::SetTexture(Texture2DPtr texture, uint32_t index)
@@ -88,7 +84,8 @@ void VKComputeEncoder::Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, 
 
 void VKComputeEncoder::EndEncode()
 {
-    vkCmdEndRenderingKHR(mCommandBuffer);
+    // vulkan中的计算着色器没有pass的概念
+    //vkCmdEndRenderingKHR(mCommandBuffer);
 }
 
 NAMESPACE_RENDERCORE_END

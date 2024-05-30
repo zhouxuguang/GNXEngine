@@ -72,7 +72,9 @@ static DescriptorSetLayoutDataVec GetDescriptorInfo(const SpvReflectShaderModule
         }
         layout.set_number = refl_set.set;
         layout.create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layout.create_info.flags = 0;
+        
+        // PUSH Descriptor必须使用VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR这个flag
+        layout.create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
         layout.create_info.pNext = nullptr;
         layout.create_info.bindingCount = refl_set.binding_count;
         layout.create_info.pBindings = layout.bindings.data();
