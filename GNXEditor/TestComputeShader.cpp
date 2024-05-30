@@ -125,17 +125,13 @@ void testImageGrayDraw(ComputeEncoderPtr computeEncoder, ComputePipelinePtr comp
 
 RenderTexturePtr TestImageGray()
 {
-#if 0
+#if 1
     ShaderAssetString shaderAssetString = LoadShaderAsset("TestImageGray");
     
-    const char* computeShader = nullptr;
-    if (getRenderDevice()->getRenderDeviceType() == RenderDeviceType::METAL)
-    {
-        computeShader = shaderAssetString.metalShader.computeShaderStr.c_str();
-    }
+    const ShaderCodePtr computeShader = shaderAssetString.computeShader->shaderSource;
     
     FILE* fp1 = fopen("/Users/zhouxuguang/work/TestImageGray.metal", "wb");
-    fwrite(computeShader, 1, strlen(computeShader), fp1);
+    fwrite(computeShader->data(), 1, computeShader->size(), fp1);
     fclose(fp1);
     
     // 创建纹理
@@ -149,21 +145,25 @@ RenderTexturePtr TestImageGray()
     Texture2DPtr inputTexture = getRenderDevice()->createTextureWithDescriptor(inputDes);
     inputTexture->setTextureData(image->GetPixels());
     
-    //inputDes.usage = TextureUsageShaderRead | TextureUsageShaderWrite;
+    inputDes.usage = TextureUsage(TextureUsageShaderRead | TextureUsageShaderWrite);
     inputDes.format = kTexFormatRGBA32;
-    RenderTexturePtr outputTexture = getRenderDevice()->createRenderTexture(inputDes);
+    //RenderTexturePtr outputTexture = getRenderDevice()->createRenderTexture(inputDes);
     
-    ComputePipelinePtr computePipeline = getRenderDevice()->createComputePipeline(computeShader);
+    Texture2DPtr outputTexture = getRenderDevice()->createTextureWithDescriptor(inputDes);
+    
+    ComputePipelinePtr computePipeline = getRenderDevice()->createComputePipeline(*computeShader);
     
     CommandBufferPtr command = getRenderDevice()->createCommandBuffer();
     
     ComputeEncoderPtr computeEncoder = command->createComputeEncoder();
     computeEncoder->SetComputePipeline(computePipeline);
     computeEncoder->SetTexture(inputTexture, 0);
-    computeEncoder->SetTexture(outputTexture, 0, 1);
+    computeEncoder->SetTexture(outputTexture, 1);
     
     uint32_t x, y ,z;
     computePipeline->GetThreadGroupSizes(x, y, z);
+    x = y = 16;
+    z = 1;
     
     int groupX = (image->GetWidth() + x - 1) / x;
     int groupY = (image->GetHeight() + y - 1) / y;
@@ -173,7 +173,7 @@ RenderTexturePtr TestImageGray()
     computeEncoder->EndEncode();
     command->waitUntilCompleted();
     
-    return outputTexture;
+    return nullptr;
 #endif
     return nullptr;
 }

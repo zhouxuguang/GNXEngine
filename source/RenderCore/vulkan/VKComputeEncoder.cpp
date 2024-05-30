@@ -78,13 +78,14 @@ void VKComputeEncoder::SetTexture(Texture2DPtr texture, uint32_t index)
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkTexture2D->getVKImageView()->GetHandle();
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageInfo.sampler = nullptr;
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
     VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
                                                 VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, index, &imageInfo);
     writeDescriptorSet.dstSet = 0;   //这句也是可以的
     
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), 1, 1, &writeDescriptorSet);
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), 0, 1, &writeDescriptorSet);
 }
 
 void VKComputeEncoder::SetTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index)

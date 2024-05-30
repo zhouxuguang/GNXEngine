@@ -97,6 +97,14 @@ void VKTexture2D::createTexture(const VkDevice device, const TextureDescriptor& 
         case kTexFormatSRGB8_ALPHA8:
             format = VK_FORMAT_R8G8B8A8_SRGB;
             break;
+            
+        case kTexFormatRGBA16Float:
+            format = VK_FORMAT_R16G16B16A16_SFLOAT;
+            break;
+            
+        case kTexFormatRGBA32Float:
+            format = VK_FORMAT_R32G32B32A32_SFLOAT;
+            break;
 
         default:
             break;
@@ -106,10 +114,19 @@ void VKTexture2D::createTexture(const VkDevice device, const TextureDescriptor& 
     assert(des.width > 0 && des.height > 0);
 
     VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    if (des.usage & TextureUsageShaderWrite)
+    {
+        imageUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }
+//    if (des.usage && TextureUsageShaderRead)
+//    {
+//        imageUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
+//    }
     
     VulkanBufferUtil::CreateImage2DVMA(mContext->vmaAllocator, des.width, des.height, format,
                                        VK_SAMPLE_COUNT_1_BIT, 1, VK_IMAGE_TILING_OPTIMAL, imageUsageFlags, mImage, mAllocation);
 
+#if 0
     VkCommandBuffer commandBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, mContext->commandPool);
 
     VkClearColorValue clearVal;
@@ -121,6 +138,7 @@ void VKTexture2D::createTexture(const VkDevice device, const TextureDescriptor& 
     vkCmdClearColorImage(commandBuffer, mImage, VK_IMAGE_LAYOUT_UNDEFINED, &clearVal, 1, &imageSubresourceRange);
 
     VulkanBufferUtil::EndSingleTimeCommand(mContext->device, mContext->graphicsQueue, mContext->commandPool, commandBuffer);
+#endif
     mFormat = format;
     mTextureDes = des;
 

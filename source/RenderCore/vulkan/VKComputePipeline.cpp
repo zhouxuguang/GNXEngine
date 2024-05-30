@@ -115,7 +115,7 @@ VKComputePipeline::~VKComputePipeline()
 
 void VKComputePipeline::GetThreadGroupSizes(uint32_t &x, uint32_t &y, uint32_t &z)
 {
-    x = 32;
+    x = 1;
     y = 1;
     z = 1;
 }

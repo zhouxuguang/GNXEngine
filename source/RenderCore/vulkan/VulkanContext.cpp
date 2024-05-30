@@ -170,6 +170,14 @@ bool SelectPhysicalDevice(VulkanContext& context)
             printf("%s\n", iter.extensionName);
         }
         
+        const VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
+        
+        VkFormatProperties formatProperties;
+        // Get device properties for the requested texture format
+        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProperties);
+        // Check if requested image format supports image storage operations required for storing pixel from the compute shader
+        assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
+        
         bool supportsSwapchain = false;
         context.debugMarkersSupported = false;
         for (uint32_t k = 0; k < extensionCount; ++k) 
