@@ -8,7 +8,9 @@
 #include "VKRenderEncoder.h"
 #include "VKVertexBuffer.h"
 #include "VKIndexBuffer.h"
+#include "VKUniformBuffer.h"
 #include "VKGraphicsPipeline.h"
+#include "VulkanDescriptorUtil.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -109,12 +111,42 @@ void VKRenderEncoder::setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, i
 
 void VKRenderEncoder::setVertexUniformBuffer(UniformBufferPtr buffer, int index)
 {
-    //
+    if (!buffer)
+    {
+        return;
+    }
+    VKUniformBuffer *vkUniformBuffer = (VKUniformBuffer*)buffer.get();
+    
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.range = VK_WHOLE_SIZE;
+    bufferInfo.buffer = vkUniformBuffer->GetBuffer();
+    
+    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
+    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(VK_NULL_HANDLE,
+                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, index, &bufferInfo);
+    writeDescriptorSet.dstSet = 0;   //这句也是可以的
+    
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), 0, 1, &writeDescriptorSet);
 }
 
 void VKRenderEncoder::setFragmentUniformBuffer(UniformBufferPtr buffer, int index)
 {
-    //
+    if (!buffer)
+    {
+        return;
+    }
+    VKUniformBuffer *vkUniformBuffer = (VKUniformBuffer*)buffer.get();
+    
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.range = VK_WHOLE_SIZE;
+    bufferInfo.buffer = vkUniformBuffer->GetBuffer();
+    
+    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
+    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(VK_NULL_HANDLE,
+                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, index, &bufferInfo);
+    writeDescriptorSet.dstSet = 0;   //这句也是可以的
+    
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), 0, 1, &writeDescriptorSet);
 }
 
 void VKRenderEncoder::drawPrimitves(PrimitiveMode mode, int offset, int size)

@@ -22,6 +22,11 @@ public:
     
     void setData(const void* data, uint32_t offset, uint32_t dataSize);
     
+    VkBuffer GetBuffer() const
+    {
+        return mBuffer;
+    }
+    
 private:
     VulkanContextPtr mContext;
     VkBuffer mBuffer = VK_NULL_HANDLE;
