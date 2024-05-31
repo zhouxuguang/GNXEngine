@@ -31,6 +31,11 @@ public:
         return mVulkanImageViewPtr;
     }
     
+    VkFormat GetVKFormat() const
+    {
+        return mFormat;
+    }
+    
 private:
     VulkanContextPtr mContext = nullptr;
     

@@ -10,15 +10,14 @@
 
 #include "VulkanContext.h"
 #include "RenderEncoder.h"
+#include "VKGraphicsPipeline.h"
 
 NAMESPACE_RENDERCORE_BEGIN
-
-class VKGraphicsPipeline;
 
 class VKRenderEncoder : public RenderEncoder
 {
 public:
-    VKRenderEncoder(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR& renderInfo);
+    VKRenderEncoder(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR& renderInfo, const RenderPassFormat& passFormat);
     
     ~VKRenderEncoder();
     
@@ -45,6 +44,7 @@ public:
 private:
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
     VKGraphicsPipeline *mGraphicsPipieline = nullptr;
+    RenderPassFormat mPassFormat;
 };
 
 using VKRenderEncoderPtr = std::shared_ptr<VKRenderEncoder>;

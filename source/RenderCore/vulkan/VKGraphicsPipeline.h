@@ -14,6 +14,13 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+struct RenderPassFormat
+{
+    std::vector<VkFormat> colorFormats;
+    VkFormat depthFormat;
+    VkFormat stencilFormat;
+};
+
 class VKGraphicsPipeline : public GraphicsPipeline
 {
 public:
@@ -37,9 +44,9 @@ public:
         return mPipeline;
     }
     
-    void Generate();
+    void Generate(const RenderPassFormat& passFormat);
     
-    void ContructDes();
+    void ContructDes(const RenderPassFormat& passFormat);
     
     void CreatePipelineLayout();
     

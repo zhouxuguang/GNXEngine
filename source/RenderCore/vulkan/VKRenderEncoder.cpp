@@ -50,7 +50,8 @@ VkPrimitiveTopology ConvertToVulkanPrimitiveTopology(PrimitiveMode mode)
     return topology;
 }
 
-VKRenderEncoder::VKRenderEncoder(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR& renderInfo)
+VKRenderEncoder::VKRenderEncoder(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR& renderInfo, const RenderPassFormat& passFormat)
+    : mPassFormat(passFormat)
 {
     mCommandBuffer = commandBuffer;
     vkCmdBeginRenderingKHR(mCommandBuffer, &renderInfo);
@@ -87,7 +88,7 @@ void VKRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     
     VKGraphicsPipeline *vkGraphicsPipieline = (VKGraphicsPipeline *)graphicsPipeline.get();
     
-    vkGraphicsPipieline->Generate();
+    vkGraphicsPipieline->Generate(mPassFormat);
     mGraphicsPipieline = vkGraphicsPipieline;
     
     vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipieline->GetPipeline());

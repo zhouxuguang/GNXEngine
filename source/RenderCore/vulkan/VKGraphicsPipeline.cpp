@@ -169,17 +169,17 @@ void VKGraphicsPipeline::attachFragmentShader(ShaderFunctionPtr shaderFunction)
     mShaders.push_back(std::dynamic_pointer_cast<VKShaderFunction>(shaderFunction));
 }
 
-void VKGraphicsPipeline::Generate()
+void VKGraphicsPipeline::Generate(const RenderPassFormat& passFormat)
 {
     if (mGenerated)
     {
         return;
     }
-    ContructDes();
+    ContructDes(passFormat);
     mGenerated = true;
 }
 
-void VKGraphicsPipeline::ContructDes()
+void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
 {
     mPipeCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
@@ -307,6 +307,17 @@ void VKGraphicsPipeline::ContructDes()
     mPipeCreateInfo.layout = mPipelineLayout;
 
     //12、例如dynamic rendering相关的
+    //if (1)
+    {
+        // New create info to define color, depth and stencil attachments at pipeline create time
+        VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo = {};
+        pipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
+        pipelineRenderingCreateInfo.colorAttachmentCount = (uint32_t)passFormat.colorFormats.size();
+        pipelineRenderingCreateInfo.pColorAttachmentFormats = passFormat.colorFormats.data();
+        pipelineRenderingCreateInfo.depthAttachmentFormat = passFormat.depthFormat;
+        pipelineRenderingCreateInfo.stencilAttachmentFormat = passFormat.stencilFormat;
+        mPipeCreateInfo.pNext = &pipelineRenderingCreateInfo;
+    }
     
     VkResult result = vkCreateGraphicsPipelines(mContext->device, VK_NULL_HANDLE, 1, &mPipeCreateInfo, nullptr, &mPipeline);
     assert(result == VK_SUCCESS);

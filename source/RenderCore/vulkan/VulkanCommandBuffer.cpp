@@ -43,6 +43,8 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
     clearColor.color.float32[2] = 0.0;
     clearColor.color.float32[3] = 1.0;
     
+    RenderPassFormat passFormat;
+    
     VkImageView imageView = mCommandInfo->swapChain->GetImageView(mCommandInfo->nextFrameIndex);
     
     const VkRenderingAttachmentInfoKHR color_attachment_info 
@@ -69,7 +71,9 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
     render_info.renderArea.extent.width = mCommandInfo->swapChain->GetWidth();
     render_info.renderArea.extent.height = mCommandInfo->swapChain->GetHeight();
     
-    return std::make_shared<VKRenderEncoder>(mCommandBuffer, render_info);
+    passFormat.colorFormats.push_back(mCommandInfo->swapChain->GetDisplayFormat());
+    
+    return std::make_shared<VKRenderEncoder>(mCommandBuffer, render_info, passFormat);
 }
 
 RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& renderPass) const
@@ -78,6 +82,8 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
     
     uint32_t width = 0;
     uint32_t height = 0;
+    
+    RenderPassFormat passFormat;
     
     for (size_t i = 0; i < renderPass.colorAttachments.size(); i ++)
     {
@@ -114,6 +120,7 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
         height = vkRenderTexture->getHeight();
         
         colorAttachments.push_back(color_attachment_info);
+        passFormat.colorFormats.push_back(vkRenderTexture->GetVKFormat());
     }
     
     std::vector<VkRenderingAttachmentInfo> depthAttachments;
@@ -131,6 +138,7 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
         depth_attachment_info.clearValue.depthStencil.depth = renderPass.depthAttachment->clearDepth;
         depth_attachment_info.clearValue.depthStencil.stencil = renderPass.stencilAttachment->clearStencil;
         depthAttachments.push_back(depth_attachment_info);
+        passFormat.depthFormat = vkRenderTexture->GetVKFormat();
     }
    
     // 深度和模板缓冲绑定在一起的格式需要特殊处理
@@ -147,6 +155,7 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
         stencil_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
         stencil_attachment_info.clearValue.depthStencil.stencil = 0x0;
         stencilAttachments.push_back(stencil_attachment_info);
+        passFormat.stencilFormat = vkRenderTexture->GetVKFormat();
     }
     
     VkRenderingInfoKHR renderingInfo = {};
@@ -159,7 +168,7 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
     renderingInfo.renderArea.extent.width = width;
     renderingInfo.renderArea.extent.height = height;
     
-    return std::make_shared<VKRenderEncoder>(mCommandBuffer, renderingInfo);
+    return std::make_shared<VKRenderEncoder>(mCommandBuffer, renderingInfo, passFormat);
 }
 
 ComputeEncoderPtr VulkanCommandBuffer::createComputeEncoder() const

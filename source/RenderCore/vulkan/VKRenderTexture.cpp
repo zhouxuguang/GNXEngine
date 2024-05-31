@@ -16,6 +16,7 @@ VKRenderTexture::VKRenderTexture(VulkanContextPtr context, const TextureDescript
     
     VkFormat format = VulkanBufferUtil::ConvertTextureFormat(des.format);
     assert(format != VK_FORMAT_UNDEFINED);
+    mFormat = format;
     assert(des.width > 0 && des.height > 0);
 
     VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
