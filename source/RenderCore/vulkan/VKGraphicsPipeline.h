@@ -53,6 +53,10 @@ private:
     VulkanContextPtr mContext = nullptr;
     VkGraphicsPipelineCreateInfo mPipeCreateInfo;
     
+    GraphicsPipelineDescriptor mGraphicsPipelineDes;
+    
+    bool mGenerated = false;
+    
     std::vector<VKShaderFunctionPtr> mShaders;
 };
 

@@ -6,6 +6,7 @@
 //
 
 #include "VKGraphicsPipeline.h"
+#include "VKDepthStencilBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -137,7 +138,22 @@ static VkColorComponentFlags ConvertToVulkanColorWriteMask(ColorWriteMask colorM
     return writeMask;
 }
 
-VKGraphicsPipeline::VKGraphicsPipeline(VulkanContextPtr context, const GraphicsPipelineDescriptor& des) : GraphicsPipeline(des)
+static VkPipelineColorBlendAttachmentState CreateColorBlendState(const ColorAttachmentDescriptor& colorDes)
+{
+    VkPipelineColorBlendAttachmentState colorBlendState;
+    colorBlendState.colorWriteMask = ConvertToVulkanColorWriteMask(colorDes.writeMask);
+    colorBlendState.blendEnable = colorDes.blendingEnabled;
+    colorBlendState.srcColorBlendFactor = ConvertToVulkanBlendFactor(colorDes.sourceRGBBlendFactor);
+    colorBlendState.dstColorBlendFactor = ConvertToVulkanBlendFactor(colorDes.destinationRGBBlendFactor);
+    colorBlendState.srcAlphaBlendFactor = ConvertToVulkanBlendFactor(colorDes.sourceAlphaBlendFactor);
+    colorBlendState.dstAlphaBlendFactor = ConvertToVulkanBlendFactor(colorDes.destinationAplhaBlendFactor);
+    colorBlendState.colorBlendOp = ConvertToVulkanBlendOp(colorDes.rgbBlendOperation);
+    colorBlendState.alphaBlendOp = ConvertToVulkanBlendOp(colorDes.aplhaBlendOperation);
+    
+    return colorBlendState;
+}
+
+VKGraphicsPipeline::VKGraphicsPipeline(VulkanContextPtr context, const GraphicsPipelineDescriptor& des) : GraphicsPipeline(des), mGraphicsPipelineDes(des)
 {
     mContext = context;
     memset(&mPipeCreateInfo, 0, sizeof(mPipeCreateInfo));
@@ -155,7 +171,12 @@ void VKGraphicsPipeline::attachFragmentShader(ShaderFunctionPtr shaderFunction)
 
 void VKGraphicsPipeline::Generate()
 {
+    if (mGenerated)
+    {
+        return;
+    }
     ContructDes();
+    mGenerated = true;
 }
 
 void VKGraphicsPipeline::ContructDes()
@@ -244,18 +265,19 @@ void VKGraphicsPipeline::ContructDes()
 
     //7、多重采样信息
     VkSampleMask sampleMask = ~0u;
-    VkPipelineMultisampleStateCreateInfo multisampleInfo = {};
-    multisampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    //multisampleInfo.rasterizationSamples = 1;
-    multisampleInfo.sampleShadingEnable = VK_FALSE;
-    multisampleInfo.minSampleShading = 0;
-    multisampleInfo.pSampleMask = &sampleMask;
-    multisampleInfo.alphaToCoverageEnable = VK_FALSE;
-    multisampleInfo.alphaToOneEnable = VK_FALSE;
-    mPipeCreateInfo.pMultisampleState = &multisampleInfo;
+    VkPipelineMultisampleStateCreateInfo multiSampleInfo = {};
+    multiSampleInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multiSampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multiSampleInfo.sampleShadingEnable = VK_FALSE;
+    multiSampleInfo.minSampleShading = 0;
+    multiSampleInfo.pSampleMask = &sampleMask;
+    multiSampleInfo.alphaToCoverageEnable = VK_FALSE;
+    multiSampleInfo.alphaToOneEnable = VK_FALSE;
+    mPipeCreateInfo.pMultisampleState = &multiSampleInfo;
 
     //8、深度和模板状态
-    mPipeCreateInfo.pDepthStencilState = nullptr;
+    VKDepthStencilState depthStencilDes = VKDepthStencilState(mGraphicsPipelineDes.depthStencilDescriptor);
+    mPipeCreateInfo.pDepthStencilState = &depthStencilDes.GetDepthStencilStateCreateInfo();
 
     //9、颜色混合状态
     VkPipelineColorBlendStateCreateInfo colorBlendInfo = {};
@@ -263,29 +285,30 @@ void VKGraphicsPipeline::ContructDes()
     colorBlendInfo.logicOpEnable = VK_FALSE;
     colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
     colorBlendInfo.attachmentCount = 1;
-    colorBlendInfo.pAttachments = nullptr;  //
+    VkPipelineColorBlendAttachmentState colorBlendState = CreateColorBlendState(mGraphicsPipelineDes.colorAttachmentDescriptor);
+    colorBlendInfo.pAttachments = &colorBlendState;  //
     mPipeCreateInfo.pColorBlendState = &colorBlendInfo;
 
     //10、动态状态
-    const VkDynamicState pDynamicStates[] = 
-    {
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR,
-            VK_DYNAMIC_STATE_DEPTH_BIAS,
-            VK_DYNAMIC_STATE_STENCIL_REFERENCE,
-    };
+    std::vector<VkDynamicState> dynamicStates;
+    dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+    dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
+    dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
+    dynamicStates.push_back(VK_DYNAMIC_STATE_STENCIL_REFERENCE);
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {};
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicStateCreateInfo.dynamicStateCount = sizeof(pDynamicStates)/ sizeof(VkDynamicState);
-    dynamicStateCreateInfo.pDynamicStates = pDynamicStates;
+    dynamicStateCreateInfo.dynamicStateCount = (uint32_t)dynamicStates.size();
+    dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
     mPipeCreateInfo.pDynamicState = &dynamicStateCreateInfo;
 
     //11、pipelayout
-    
     CreatePipelineLayout();
     mPipeCreateInfo.layout = mPipelineLayout;
 
     //12、例如dynamic rendering相关的
+    
+    VkResult result = vkCreateGraphicsPipelines(mContext->device, VK_NULL_HANDLE, 1, &mPipeCreateInfo, nullptr, &mPipeline);
+    assert(result == VK_SUCCESS);
 }
 
 void VKGraphicsPipeline::CreatePipelineLayout()
