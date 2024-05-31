@@ -9,6 +9,10 @@
 #include "VKVertexBuffer.h"
 #include "VKIndexBuffer.h"
 #include "VKUniformBuffer.h"
+#include "VKTexture2D.h"
+#include "VKTextureSampler.h"
+#include "VKTextureCube.h"
+#include "VKRenderTexture.h"
 #include "VKGraphicsPipeline.h"
 #include "VulkanDescriptorUtil.h"
 
@@ -225,17 +229,62 @@ void VKRenderEncoder::drawIndexedPrimitives(PrimitiveMode mode, int size, IndexB
 
 void VKRenderEncoder::setFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index)
 {
-    //
+    if (!texture || !sampler)
+    {
+        return;
+    }
+    VKTexture2D *vkTexture2D = (VKTexture2D*)texture.get();
+    VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
+    
+    VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(),
+                        vkTexture2D->getVKImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    
+    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
+    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
+                                                VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, index, &imageInfo);
+    writeDescriptorSet.dstSet = 0;   //这句也是可以的
+    
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mGraphicsPipieline->GetPipelineLayout(), 1, 1, &writeDescriptorSet);
 }
 
 void VKRenderEncoder::setFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index)
 {
-    //
+    if (!textureCube || !sampler)
+    {
+        return;
+    }
+    VKTextureCube *vkTextureCube = (VKTextureCube*)textureCube.get();
+    VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
+    
+    VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(),
+                        vkTextureCube->GetImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    
+    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
+    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
+                                                VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, index, &imageInfo);
+    writeDescriptorSet.dstSet = 0;   //这句也是可以的
+    
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mGraphicsPipieline->GetPipelineLayout(), 1, 1, &writeDescriptorSet);
 }
 
-void VKRenderEncoder::setFragmentRenderTextureAndSampler(RenderTexturePtr textureCube, TextureSamplerPtr sampler, int index)
+void VKRenderEncoder::setFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index)
 {
-    //
+    if (!renderTexture || !sampler)
+    {
+        return;
+    }
+    VKRenderTexture *vkTexture = (VKRenderTexture*)renderTexture.get();
+    VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
+    
+    VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(),
+                                    vkTexture->GetImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    
+    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
+    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
+                                                VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, index, &imageInfo);
+    writeDescriptorSet.dstSet = 0;   //这句也是可以的
+    
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mGraphicsPipieline->GetPipelineLayout(), 1, 1, &writeDescriptorSet);
 }
 
 NAMESPACE_RENDERCORE_END

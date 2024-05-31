@@ -49,6 +49,15 @@ public:
         return writeDescriptorSet;
     }
     
+    static inline VkDescriptorImageInfo DescriptorImageInfo(VkSampler sampler, VkImageView imageView, VkImageLayout imageLayout)
+    {
+        VkDescriptorImageInfo descriptorImageInfo = {};
+        descriptorImageInfo.sampler = sampler;
+        descriptorImageInfo.imageView = imageView;
+        descriptorImageInfo.imageLayout = imageLayout;
+        return descriptorImageInfo;
+    }
+    
 };
 
 NAMESPACE_RENDERCORE_END

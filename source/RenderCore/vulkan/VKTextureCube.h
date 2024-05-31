@@ -24,6 +24,11 @@ public:
     
     virtual bool isValid() const;
     
+    VulkanImageViewPtr GetImageView() const
+    {
+        return mVulkanImageViewPtr;
+    }
+    
 private:
     VulkanContextPtr mContext = nullptr;
     VkImage mImage = VK_NULL_HANDLE;
