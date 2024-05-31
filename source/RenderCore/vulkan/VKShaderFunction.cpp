@@ -7,6 +7,7 @@
 
 #include "VKShaderFunction.h"
 #include "spirv_reflection.h"
+#include "VulkanBufferUtil.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -83,6 +84,63 @@ static DescriptorSetLayoutDataVec GetDescriptorInfo(const SpvReflectShaderModule
     return std::move(set_layouts);
 }
 
+static VertexInputLayout GetVertexInfo(const SpvReflectShaderModule& shaderModule)
+{
+    // 获得输入的数据
+    uint32_t count = 0;
+    SpvReflectResult result = spvReflectEnumerateInputVariables(&shaderModule, &count, NULL);
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+    std::vector<SpvReflectInterfaceVariable*> inputVars(count);
+    result = spvReflectEnumerateInputVariables(&shaderModule, &count, inputVars.data());
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+    
+    VkVertexInputBindingDescription bindingDescription = {};
+    bindingDescription.binding = 0;
+    bindingDescription.stride = 0;  // computed below
+    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    //VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info = {VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+    
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+    attributeDescriptions.reserve(inputVars.size());
+    for (size_t i = 0; i < inputVars.size(); ++i)
+    {
+        const SpvReflectInterfaceVariable& refl_var = *(inputVars[i]);
+        // ignore built-in variables
+        if (refl_var.decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) 
+        {
+            continue;
+        }
+        VkVertexInputAttributeDescription attr_desc{};
+        attr_desc.location = refl_var.location;
+        attr_desc.binding = bindingDescription.binding;
+        attr_desc.format = (VkFormat)(refl_var.format);
+        attr_desc.offset = 0;  // final offset computed below after sorting.
+        attributeDescriptions.push_back(attr_desc);
+    }
+    
+    // 根据位置进行属性排序
+    std::sort(std::begin(attributeDescriptions), std::end(attributeDescriptions),
+              [](const VkVertexInputAttributeDescription& a, const VkVertexInputAttributeDescription& b)
+    {
+        return a.location < b.location;
+    });
+    
+    // 计算最终每个顶点属性的索引以及顶点的跨距大小
+    for (auto& attribute : attributeDescriptions)
+    {
+        uint32_t format_size = VulkanBufferUtil::GetFormatSize(attribute.format);
+        attribute.offset = bindingDescription.stride;
+        bindingDescription.stride += format_size;
+    }
+    
+    VertexInputLayout vertexInputLayout;
+    vertexInputLayout.attributeDescriptions = std::move(attributeDescriptions);
+    vertexInputLayout.inputBindings.push_back(bindingDescription);
+    
+    return vertexInputLayout;
+}
+
 std::shared_ptr<VKShaderFunction> VKShaderFunction::initWithShaderSourceInner(const ShaderCode& shaderSource, ShaderStage shaderStage)
 {
     VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
@@ -114,6 +172,11 @@ std::shared_ptr<VKShaderFunction> VKShaderFunction::initWithShaderSourceInner(co
         mWorkGroupSize.x = entryPoint->local_size.x;
         mWorkGroupSize.y = entryPoint->local_size.y;
         mWorkGroupSize.z = entryPoint->local_size.z;
+    }
+    
+    if (shaderModule.shader_stage == SPV_REFLECT_SHADER_STAGE_VERTEX_BIT)
+    {
+        mVertexInputLayout = GetVertexInfo(shaderModule);
     }
     
     spvReflectDestroyShaderModule(&shaderModule);

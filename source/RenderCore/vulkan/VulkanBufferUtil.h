@@ -117,6 +117,9 @@ public:
             VkImageSubresourceRange subresourceRange);
     
     static VkFormat ConvertTextureFormat(TextureFormat texFormat);
+    
+    // 获得格式对应的大小
+    static uint32_t GetFormatSize(VkFormat format);
 };
 
 NAMESPACE_RENDERCORE_END

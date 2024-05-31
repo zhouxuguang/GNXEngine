@@ -20,6 +20,12 @@ struct DescriptorSetLayoutData
     std::vector<VkDescriptorSetLayoutBinding> bindings;
 };
 
+struct VertexInputLayout
+{
+    std::vector<VkVertexInputBindingDescription> inputBindings;
+    std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+};
+
 // 工作组线程的大小
 struct WorkGroupSize
 {
@@ -71,6 +77,7 @@ private:
     WorkGroupSize mWorkGroupSize;
     
     DescriptorSetLayoutDataVec mDescriptorSets;
+    VertexInputLayout mVertexInputLayout;
 };
 
 NAMESPACE_RENDERCORE_END
