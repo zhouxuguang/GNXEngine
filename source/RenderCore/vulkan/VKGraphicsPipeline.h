@@ -41,8 +41,15 @@ public:
     
     void ContructDes();
     
+    void CreatePipelineLayout();
+    
+    VkPipelineLayout GetPipelineLayout() const
+    {
+        return mPipelineLayout;
+    }
 private:
     VkPipeline mPipeline = VK_NULL_HANDLE;
+    VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;
     VulkanContextPtr mContext = nullptr;
     VkGraphicsPipelineCreateInfo mPipeCreateInfo;
     

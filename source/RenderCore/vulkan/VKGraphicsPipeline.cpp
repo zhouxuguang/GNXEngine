@@ -281,9 +281,43 @@ void VKGraphicsPipeline::ContructDes()
     mPipeCreateInfo.pDynamicState = &dynamicStateCreateInfo;
 
     //11、pipelayout
-    mPipeCreateInfo.layout = nullptr;
+    
+    CreatePipelineLayout();
+    mPipeCreateInfo.layout = mPipelineLayout;
 
     //12、例如dynamic rendering相关的
+}
+
+void VKGraphicsPipeline::CreatePipelineLayout()
+{
+    // 根据shader反射出来的DescriptorSet信息创建各个DescriptorSetLayout
+    DescriptorSetLayoutDataVec desSetLayouts;
+    for (auto &iter : mShaders)
+    {
+        const DescriptorSetLayoutDataVec& desSetLayout = iter->GetDescriptorSets();
+        desSetLayouts.insert(desSetLayout.end(), desSetLayout.begin(), desSetLayout.end());
+    }
+    
+    std::vector<VkDescriptorSetLayout> desLayouts;
+    desLayouts.resize(desSetLayouts.size());
+    for (int i = 0; i < desSetLayouts.size(); i ++)
+    {
+        if (vkCreateDescriptorSetLayout(mContext->device, &desSetLayouts[i].create_info, nullptr, desLayouts.data() + i) != VK_SUCCESS)
+        {
+            printf("failed to create compute descriptor set layout!\n");
+        }
+    }
+
+    // 创建管线布局
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = (uint32_t)desLayouts.size();
+    pipelineLayoutInfo.pSetLayouts = desLayouts.data();
+
+    if (vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
+    {
+        printf("failed to create compute pipeline layout!");
+    }
 }
 
 NAMESPACE_RENDERCORE_END
