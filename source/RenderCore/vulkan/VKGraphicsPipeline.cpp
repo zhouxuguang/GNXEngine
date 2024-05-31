@@ -318,7 +318,7 @@ void VKGraphicsPipeline::CreatePipelineLayout()
     for (auto &iter : mShaders)
     {
         const DescriptorSetLayoutDataVec& desSetLayout = iter->GetDescriptorSets();
-        desSetLayouts.insert(desSetLayout.end(), desSetLayout.begin(), desSetLayout.end());
+        desSetLayouts.insert(desSetLayouts.end(), desSetLayout.begin(), desSetLayout.end());
     }
     
     std::vector<VkDescriptorSetLayout> desLayouts;

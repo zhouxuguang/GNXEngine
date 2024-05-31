@@ -8,6 +8,7 @@
 #include "VKRenderEncoder.h"
 #include "VKVertexBuffer.h"
 #include "VKIndexBuffer.h"
+#include "VKGraphicsPipeline.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -69,6 +70,21 @@ VKRenderEncoder::~VKRenderEncoder()
 void VKRenderEncoder::EndEncode()
 {
     vkCmdEndRenderingKHR(mCommandBuffer);
+}
+
+void VKRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
+{
+    if (!graphicsPipeline)
+    {
+        return;
+    }
+    
+    VKGraphicsPipeline *vkGraphicsPipieline = (VKGraphicsPipeline *)graphicsPipeline.get();
+    
+    vkGraphicsPipieline->Generate();
+    mGraphicsPipieline = vkGraphicsPipieline;
+    
+    vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipieline->GetPipeline());
 }
 
 void VKRenderEncoder::setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index)

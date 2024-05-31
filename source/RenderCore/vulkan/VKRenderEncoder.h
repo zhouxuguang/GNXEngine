@@ -13,6 +13,8 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+class VKGraphicsPipeline;
+
 class VKRenderEncoder : public RenderEncoder
 {
 public:
@@ -22,7 +24,7 @@ public:
     
     virtual void EndEncode();
     
-    virtual void setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline){}
+    virtual void setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline);
     
     virtual void setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index);
     
@@ -42,6 +44,7 @@ public:
     
 private:
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
+    VKGraphicsPipeline *mGraphicsPipieline = nullptr;
 };
 
 using VKRenderEncoderPtr = std::shared_ptr<VKRenderEncoder>;
