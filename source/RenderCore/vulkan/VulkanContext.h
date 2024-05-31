@@ -10,6 +10,7 @@
 
 #include "VKRenderDefine.h"
 #include "RenderDevice.h"
+#include "VulkanExtension.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -39,6 +40,7 @@ struct VulkanContext
     VkDescriptorPool computeDescriptorPool = VK_NULL_HANDLE;
     
     std::vector<const char*> extensionNames;   //设备支持的扩展列表名称
+    VulkanExtension vulkanExtension;
 };
 
 using VulkanContextPtr = std::shared_ptr<VulkanContext>;

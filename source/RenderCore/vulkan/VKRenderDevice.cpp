@@ -57,11 +57,15 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
         return;
     }
     
+    // 选择物理设备
     if (!SelectPhysicalDevice(*mVulkanContext))
     {
         log_info("SelectPhysicalDevice ERROR");
         return;
     }
+    
+    // 初始化扩展信息
+    mVulkanContext->vulkanExtension.Init(mVulkanContext->physicalDevice);
     
     // 创建虚拟设备
     if (!CreateVirtualDevice(*mVulkanContext))

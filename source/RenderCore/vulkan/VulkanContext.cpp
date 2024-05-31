@@ -192,6 +192,8 @@ bool SelectPhysicalDevice(VulkanContext& context)
             }
         }
         if (!supportsSwapchain) continue;
+        
+        context.vulkanExtension.mDeviceExtensions.swap(extensions);
 
         //最终找打我们需要的physical device
         context.physicalDevice = physicalDevice;
@@ -304,16 +306,68 @@ bool CreateVirtualDevice(VulkanContext& context)
     CreateDebugReport(context);
 #endif
     
+    void *deviceCreatepNextChain = nullptr;
+    
+    // 扩展动态状态
+    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeaturesEXT = {};
+    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extendedDynamicState2FeaturesEXT = {};
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extendedDynamicState3FeaturesEXT = {};
+    
+    // 获得完整的扩展动态状态
+    extendedDynamicStateFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+    extendedDynamicStateFeaturesEXT.pNext = &extendedDynamicState2FeaturesEXT;
+    extendedDynamicState2FeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
+    extendedDynamicState2FeaturesEXT.pNext = &extendedDynamicState3FeaturesEXT;
+    extendedDynamicState3FeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
+    extendedDynamicState3FeaturesEXT.pNext = nullptr;
+
+    VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
+    physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    physicalDeviceFeatures2.pNext = &extendedDynamicStateFeaturesEXT;
+    vkGetPhysicalDeviceFeatures2(context.physicalDevice, &physicalDeviceFeatures2);
+    
+    if (context.vulkanExtension.enabledExtendedDynamicState)
+    {
+        deviceExtensionNames.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+        extendedDynamicStateFeaturesEXT.pNext = nullptr;
+        deviceCreatepNextChain = &extendedDynamicStateFeaturesEXT;
+    }
+    if (context.vulkanExtension.enabledExtendedDynamicState2)
+    {
+        deviceExtensionNames.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+        extendedDynamicState2FeaturesEXT.pNext = nullptr;
+        if (context.vulkanExtension.enabledExtendedDynamicState)
+        {
+            extendedDynamicStateFeaturesEXT.pNext = &extendedDynamicState2FeaturesEXT;
+        }
+        else
+        {
+            deviceCreatepNextChain = &extendedDynamicState2FeaturesEXT;
+        }
+    }
+    if (context.vulkanExtension.enabledExtendedDynamicState3)
+    {
+        deviceExtensionNames.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+        if (context.vulkanExtension.enabledExtendedDynamicState2)
+        {
+            extendedDynamicState2FeaturesEXT.pNext = &extendedDynamicState3FeaturesEXT;
+        }
+        else
+        {
+            deviceCreatepNextChain = &extendedDynamicState3FeaturesEXT;
+        }
+    }
+    
     // 打开 VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME
     if (1)
     {
         deviceExtensionNames.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     }
     
-    constexpr VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature
+    const VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature
     {
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
-        .pNext = nullptr,
+        .pNext = deviceCreatepNextChain,
         .dynamicRendering = VK_TRUE,
     };
 
