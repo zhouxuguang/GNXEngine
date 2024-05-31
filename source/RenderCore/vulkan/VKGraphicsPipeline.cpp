@@ -295,7 +295,10 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
     dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
     dynamicStates.push_back(VK_DYNAMIC_STATE_STENCIL_REFERENCE);
-    dynamicStates.push_back(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT);
+    if (mContext->vulkanExtension.enabledExtendedDynamicState)
+    {
+        dynamicStates.push_back(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT);
+    }
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {};
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicStateCreateInfo.dynamicStateCount = (uint32_t)dynamicStates.size();

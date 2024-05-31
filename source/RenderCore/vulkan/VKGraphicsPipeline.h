@@ -17,8 +17,8 @@ NAMESPACE_RENDERCORE_BEGIN
 struct RenderPassFormat
 {
     std::vector<VkFormat> colorFormats;
-    VkFormat depthFormat;
-    VkFormat stencilFormat;
+    VkFormat depthFormat = VK_FORMAT_UNDEFINED;
+    VkFormat stencilFormat = VK_FORMAT_UNDEFINED;
 };
 
 class VKGraphicsPipeline : public GraphicsPipeline
