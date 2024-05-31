@@ -237,15 +237,17 @@ void VKRenderEncoder::setFragmentTextureAndSampler(Texture2DPtr texture, Texture
     VKTexture2D *vkTexture2D = (VKTexture2D*)texture.get();
     VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
     
-    VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(),
+    //VkWriteDescriptorSet
+    VkWriteDescriptorSet writeDesSets[2];
+    
+    VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(0,
                         vkTexture2D->getVKImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    writeDesSets[0] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
     
-    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
-    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
-                                                VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, index, &imageInfo);
-    writeDescriptorSet.dstSet = 0;   //这句也是可以的
+    VkDescriptorImageInfo samplerInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(), 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    writeDesSets[1] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLER, index, &samplerInfo);
     
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mGraphicsPipieline->GetPipelineLayout(), 1, 1, &writeDescriptorSet);
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), 1, 2, writeDesSets);
 }
 
 void VKRenderEncoder::setFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index)
@@ -257,15 +259,15 @@ void VKRenderEncoder::setFragmentTextureCubeAndSampler(TextureCubePtr textureCub
     VKTextureCube *vkTextureCube = (VKTextureCube*)textureCube.get();
     VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
     
-    VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(),
-                        vkTextureCube->GetImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    VkWriteDescriptorSet writeDesSets[2];
     
-    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
-    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
-                                                VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, index, &imageInfo);
-    writeDescriptorSet.dstSet = 0;   //这句也是可以的
+    VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(0, vkTextureCube->GetImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    writeDesSets[0] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
     
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mGraphicsPipieline->GetPipelineLayout(), 1, 1, &writeDescriptorSet);
+    VkDescriptorImageInfo samplerInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(), 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    writeDesSets[1] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLER, index, &samplerInfo);
+    
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), 1, 2, writeDesSets);
 }
 
 void VKRenderEncoder::setFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index)
@@ -277,15 +279,15 @@ void VKRenderEncoder::setFragmentRenderTextureAndSampler(RenderTexturePtr render
     VKRenderTexture *vkTexture = (VKRenderTexture*)renderTexture.get();
     VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
     
-    VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(),
-                                    vkTexture->GetImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    VkWriteDescriptorSet writeDesSets[2];
     
-    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
-    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
-                                                VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, index, &imageInfo);
-    writeDescriptorSet.dstSet = 0;   //这句也是可以的
+    VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(0, vkTexture->GetImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    writeDesSets[0] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
     
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mGraphicsPipieline->GetPipelineLayout(), 1, 1, &writeDescriptorSet);
+    VkDescriptorImageInfo samplerInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(), 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    writeDesSets[1] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLER, index, &samplerInfo);
+    
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), 0, 2, writeDesSets);
 }
 
 NAMESPACE_RENDERCORE_END

@@ -129,6 +129,8 @@ void VKRenderDevice::resize(uint32_t width, uint32_t height)
     // 创建相关同步对象
     CreateSyncObject();
     
+    return;
+    
     // for test
     uint8_t data[4] = {4, 1, 2, 3};
     createVertexBufferWithBytes(data, 4, StorageModeShared);
