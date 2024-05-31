@@ -13,13 +13,16 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+// DescriptorSetLayout
 struct DescriptorSetLayoutData
 {
     uint32_t set_number;
     VkDescriptorSetLayoutCreateInfo create_info;
     std::vector<VkDescriptorSetLayoutBinding> bindings;
 };
+using DescriptorSetLayoutDataVec = std::vector<DescriptorSetLayoutData>;
 
+// 顶点布局
 struct VertexInputLayout
 {
     std::vector<VkVertexInputBindingDescription> inputBindings;
@@ -29,12 +32,10 @@ struct VertexInputLayout
 // 工作组线程的大小
 struct WorkGroupSize
 {
-  uint32_t x;
-  uint32_t y;
-  uint32_t z;
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
 };
-
-using DescriptorSetLayoutDataVec = std::vector<DescriptorSetLayoutData>;
 
 class VKShaderFunction : public ShaderFunction, public std::enable_shared_from_this<VKShaderFunction>
 {
@@ -68,6 +69,11 @@ public:
         return mWorkGroupSize;
     }
     
+    const VertexInputLayout& GetVertexInputLayout() const
+    {
+        return mVertexInputLayout;
+    }
+    
 private:
     VulkanContextPtr mContext = nullptr;
     VkShaderModule mShaderFunction = VK_NULL_HANDLE;
@@ -79,6 +85,8 @@ private:
     DescriptorSetLayoutDataVec mDescriptorSets;
     VertexInputLayout mVertexInputLayout;
 };
+
+using VKShaderFunctionPtr = std::shared_ptr<VKShaderFunction>;
 
 NAMESPACE_RENDERCORE_END
 

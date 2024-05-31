@@ -143,6 +143,16 @@ VKGraphicsPipeline::VKGraphicsPipeline(VulkanContextPtr context, const GraphicsP
     memset(&mPipeCreateInfo, 0, sizeof(mPipeCreateInfo));
 }
 
+void VKGraphicsPipeline::attachVertexShader(ShaderFunctionPtr shaderFunction)
+{
+    //
+}
+
+void VKGraphicsPipeline::attachFragmentShader(ShaderFunctionPtr shaderFunction)
+{
+    //
+}
+
 void VKGraphicsPipeline::Generate()
 {
     //

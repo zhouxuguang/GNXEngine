@@ -27,9 +27,9 @@ public:
         }
     }
     
-    virtual void attachVertexShader(ShaderFunctionPtr shaderFunction){}
+    virtual void attachVertexShader(ShaderFunctionPtr shaderFunction);
     
-    virtual void attachFragmentShader(ShaderFunctionPtr shaderFunction){}
+    virtual void attachFragmentShader(ShaderFunctionPtr shaderFunction);
     
     VkPipeline GetPipeline() const
     {

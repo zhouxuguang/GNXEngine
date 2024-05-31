@@ -206,8 +206,10 @@ UniformBufferPtr VKRenderDevice::createUniformBufferWithSize(uint32_t bufSize) c
 
 ShaderFunctionPtr VKRenderDevice::createShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const
 {
-    return nullptr;
-    //return std::make_shared<VKShaderFunction>(mVulkanContext, shaderSource, shaderStage);
+    VKShaderFunctionPtr shaderPtr = std::make_shared<VKShaderFunction>(mVulkanContext);
+    shaderPtr = shaderPtr->initWithShaderSourceInner(shaderSource, shaderStage);
+    
+    return shaderPtr;
 }
 
 GraphicsPipelinePtr VKRenderDevice::createGraphicsPipeline(const GraphicsPipelineDescriptor& des) const
