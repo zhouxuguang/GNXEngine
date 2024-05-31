@@ -99,7 +99,6 @@ static VertexInputLayout GetVertexInfo(const SpvReflectShaderModule& shaderModul
     bindingDescription.binding = 0;
     bindingDescription.stride = 0;  // computed below
     bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-    //VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info = {VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
     
     std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
     attributeDescriptions.reserve(inputVars.size());
@@ -155,6 +154,25 @@ std::shared_ptr<VKShaderFunction> VKShaderFunction::initWithShaderSourceInner(co
         return nullptr;
     }
     mShaderFunction = computeShaderModule;
+    mShaderStage = shaderStage;
+    
+    switch (shaderStage)
+    {
+        case ShaderStage_Vertex:
+            mVKShaderStage = VK_SHADER_STAGE_VERTEX_BIT;
+            break;
+            
+        case ShaderStage_Fragment:
+            mVKShaderStage = VK_SHADER_STAGE_FRAGMENT_BIT;
+            break;
+            
+        case ShaderStage_Compute:
+            mVKShaderStage = VK_SHADER_STAGE_COMPUTE_BIT;
+            break;
+            
+        default:
+            break;
+    }
     
     SpvReflectShaderModule shaderModule = {};
     SpvReflectResult result = spvReflectCreateShaderModule(shaderSource.size(), shaderSource.data(), &shaderModule);

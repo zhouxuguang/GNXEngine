@@ -10,6 +10,7 @@
 
 #include "VulkanContext.h"
 #include "GraphicsPipeline.h"
+#include "VKShaderFunction.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -44,6 +45,8 @@ private:
     VkPipeline mPipeline = VK_NULL_HANDLE;
     VulkanContextPtr mContext = nullptr;
     VkGraphicsPipelineCreateInfo mPipeCreateInfo;
+    
+    std::vector<VKShaderFunctionPtr> mShaders;
 };
 
 NAMESPACE_RENDERCORE_END

@@ -145,17 +145,17 @@ VKGraphicsPipeline::VKGraphicsPipeline(VulkanContextPtr context, const GraphicsP
 
 void VKGraphicsPipeline::attachVertexShader(ShaderFunctionPtr shaderFunction)
 {
-    //
+    mShaders.push_back(std::dynamic_pointer_cast<VKShaderFunction>(shaderFunction));
 }
 
 void VKGraphicsPipeline::attachFragmentShader(ShaderFunctionPtr shaderFunction)
 {
-    //
+    mShaders.push_back(std::dynamic_pointer_cast<VKShaderFunction>(shaderFunction));
 }
 
 void VKGraphicsPipeline::Generate()
 {
-    //
+    ContructDes();
 }
 
 void VKGraphicsPipeline::ContructDes()
@@ -163,43 +163,36 @@ void VKGraphicsPipeline::ContructDes()
     mPipeCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
     // 1、shader信息配置
-    VkShaderModule vertexShader = VK_NULL_HANDLE;
-    VkShaderModule fragmentShader = VK_NULL_HANDLE;
-
-    VkPipelineShaderStageCreateInfo shaderStages[2]
+    std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    for (auto &iter : mShaders)
     {
-        {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
-            .module = vertexShader,
-            .pName = "main",
-            .pSpecializationInfo = nullptr,
-        },
-        {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-            .pNext = nullptr,
-            .flags = 0,
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .module = fragmentShader,
-            .pName = "main",
-            .pSpecializationInfo = nullptr,
-        }
-    };
-    mPipeCreateInfo.stageCount = 2;
-    mPipeCreateInfo.pStages = shaderStages;
+        VkPipelineShaderStageCreateInfo shaderStage = {};
+        shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStage.stage = iter->GetVKShaderStage();
+        shaderStage.module = iter->GetShaderModule();
+        shaderStage.pName = iter->GetEntryName().c_str();
+        shaderStages.push_back(shaderStage);
+    }
+    
+    mPipeCreateInfo.stageCount = (uint32_t)shaderStages.size();
+    mPipeCreateInfo.pStages = shaderStages.data();
 
     //2、顶点输入状态
-    std::vector<VkVertexInputBindingDescription> bindingDes;
-    std::vector<VkVertexInputAttributeDescription> attributeDes;
+    const VertexInputLayout* vertexInputLayout = nullptr;
+    for (auto &iter : mShaders)
+    {
+        if (iter->GetVKShaderStage() == VK_SHADER_STAGE_VERTEX_BIT)
+        {
+            vertexInputLayout = &iter->GetVertexInputLayout();
+        }
+    }
     
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = (uint32_t)bindingDes.size();
-    vertexInputInfo.pVertexBindingDescriptions = bindingDes.data();
-    vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)attributeDes.size();
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDes.data();
+    vertexInputInfo.vertexBindingDescriptionCount = (uint32_t)vertexInputLayout->inputBindings.size();
+    vertexInputInfo.pVertexBindingDescriptions = vertexInputLayout->inputBindings.data();
+    vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)vertexInputLayout->attributeDescriptions.size();
+    vertexInputInfo.pVertexAttributeDescriptions = vertexInputLayout->attributeDescriptions.data();
     mPipeCreateInfo.pVertexInputState = &vertexInputInfo;
 
     //3、顶点输入组装

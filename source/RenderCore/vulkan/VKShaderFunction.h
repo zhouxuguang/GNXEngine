@@ -74,10 +74,16 @@ public:
         return mVertexInputLayout;
     }
     
+    VkShaderStageFlagBits GetVKShaderStage() const
+    {
+        return mVKShaderStage;
+    }
+    
 private:
     VulkanContextPtr mContext = nullptr;
     VkShaderModule mShaderFunction = VK_NULL_HANDLE;
     ShaderStage mShaderStage;
+    VkShaderStageFlagBits mVKShaderStage;
     
     std::string mEntryName;
     WorkGroupSize mWorkGroupSize;
