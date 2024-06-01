@@ -370,6 +370,9 @@ bool CreateVirtualDevice(VulkanContext& context)
         .pNext = deviceCreatepNextChain,
         .dynamicRendering = VK_TRUE,
     };
+    
+    // 开启负的高度
+    deviceExtensionNames.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
 
     deviceQueueCreateInfo->sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     deviceQueueCreateInfo->pNext = &dynamicRenderingFeature;

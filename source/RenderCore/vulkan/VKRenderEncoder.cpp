@@ -58,12 +58,16 @@ VKRenderEncoder::VKRenderEncoder(VkCommandBuffer commandBuffer, const VkRenderin
     
     //设置viewport
     VkViewport viewport;
-    viewport.x = renderInfo.renderArea.offset.x;
-    viewport.y = renderInfo.renderArea.offset.y;
-    viewport.width = (float)renderInfo.renderArea.extent.width;
-    viewport.height = (float)renderInfo.renderArea.extent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
+    
+    // 设置负的高度
+    viewport.x = renderInfo.renderArea.offset.x;
+    viewport.y = (float)renderInfo.renderArea.extent.height - renderInfo.renderArea.offset.y;
+    viewport.width = (float)renderInfo.renderArea.extent.width;
+    // [POI] Flip the sign of the viewport's height
+    viewport.height = -(float)renderInfo.renderArea.extent.height;
+    
     vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
 
     //设置裁剪区域
