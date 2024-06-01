@@ -39,8 +39,8 @@ v2f VS(uint vertexID : SV_VertexID)
     return vout;
 }
 
-Texture2D texImage : register(t0);
-SamplerState samLinearWrap  : register(s0);
+Texture2D texImage : register(t0, space0);
+SamplerState texImageSam  : register(s0, space1);
 
 float3 aces_approx(float3 v)
 {
@@ -114,7 +114,7 @@ float3 ToneMapFilmicALU(in float3 color)
 
 half4 PS(v2f pin) : SV_Target
 {
-    half4 texColor = texImage.Sample(samLinearWrap, pin.texcoord);
+    half4 texColor = texImage.Sample(texImageSam, pin.texcoord);
 
     // if (color.x > 1.0 || color.y > 1.0 || color.z > 1.0)
     // {
