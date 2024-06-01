@@ -140,7 +140,7 @@ static VkColorComponentFlags ConvertToVulkanColorWriteMask(ColorWriteMask colorM
 
 static VkPipelineColorBlendAttachmentState CreateColorBlendState(const ColorAttachmentDescriptor& colorDes)
 {
-    VkPipelineColorBlendAttachmentState colorBlendState;
+    VkPipelineColorBlendAttachmentState colorBlendState = {};
     colorBlendState.colorWriteMask = ConvertToVulkanColorWriteMask(colorDes.writeMask);
     colorBlendState.blendEnable = colorDes.blendingEnabled;
     colorBlendState.srcColorBlendFactor = ConvertToVulkanBlendFactor(colorDes.sourceRGBBlendFactor);

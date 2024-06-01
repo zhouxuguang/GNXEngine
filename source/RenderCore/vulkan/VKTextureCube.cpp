@@ -19,6 +19,7 @@ VKTextureCube::VKTextureCube(VulkanContextPtr context, const std::vector<Texture
     mTextureDesc = desArray[0];
     
     VkFormat format = VulkanBufferUtil::ConvertTextureFormat(mTextureDesc.format);
+    mFormat = format;
 
     assert(format != VK_FORMAT_UNDEFINED);
     

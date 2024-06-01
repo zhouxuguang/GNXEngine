@@ -76,6 +76,7 @@ VKRenderEncoder::VKRenderEncoder(VkCommandBuffer commandBuffer, const VkRenderin
 
 VKRenderEncoder::~VKRenderEncoder()
 {
+    //vkResetCommandBuffer(mCommandBuffer, 0);
 }
 
 void VKRenderEncoder::EndEncode()
