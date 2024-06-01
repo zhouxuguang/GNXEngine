@@ -57,15 +57,23 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue = clearColor,
     };
+    
+    VkRenderingAttachmentInfoKHR depth_attachment_info = {};
+    depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+    depth_attachment_info.imageView = mCommandInfo->depthStencilBuffer->GetImageView();
+    depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    depth_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_attachment_info.clearValue.depthStencil.depth = 1.0;
+    depth_attachment_info.clearValue.depthStencil.stencil = 0;
 
-    VkRenderingInfoKHR render_info 
-    {
-        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR,
-        //.renderArea = render_area,
-        .layerCount = 1,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = &color_attachment_info,
-    };
+    VkRenderingInfoKHR render_info = {};
+    render_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+    render_info.layerCount = 1;
+    render_info.colorAttachmentCount = 1;
+    render_info.pColorAttachments = &color_attachment_info;
+    render_info.pDepthAttachment = &depth_attachment_info;
+    render_info.pStencilAttachment = &depth_attachment_info;
     
     render_info.renderArea.offset.x = 0;
     render_info.renderArea.offset.y = 0;
@@ -73,7 +81,13 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
     render_info.renderArea.extent.height = mCommandInfo->swapChain->GetHeight();
     
     passFormat.colorFormats.push_back(mCommandInfo->swapChain->GetDisplayFormat());
+    passFormat.depthFormat = mCommandInfo->depthStencilBuffer->GetFormat();
+    passFormat.stencilFormat = mCommandInfo->depthStencilBuffer->GetFormat();
+    
     passImage.colorImages.push_back(mCommandInfo->swapChain->GetImage(mCommandInfo->nextFrameIndex));
+    passImage.depthImage = mCommandInfo->depthStencilBuffer->GetImage();
+    passImage.stencilImage = mCommandInfo->depthStencilBuffer->GetImage();
+    
     passImage.isPresentStage = true;
     
     return std::make_shared<VKRenderEncoder>(mCommandBuffer, render_info, passFormat, passImage);
@@ -110,20 +124,28 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
         clearColor.color.float32[2] = iter->clearColor.blue;
         clearColor.color.float32[3] = iter->clearColor.alpha;
         
-        const VkRenderingAttachmentInfoKHR color_attachment_info
-        {
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-            .imageView = vkRenderTexture->GetImageView()->GetHandle(),
-            .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue = clearColor,
-        };
+//        const VkRenderingAttachmentInfoKHR color_attachment_info
+//        {
+//            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
+//            .imageView = vkRenderTexture->GetImageView()->GetHandle(),
+//            .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
+//            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+//            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+//            .clearValue = clearColor,
+//        };
+        
+        VkRenderingAttachmentInfoKHR colorAttachment = {};
+        colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+        colorAttachment.imageView = vkRenderTexture->GetImageView()->GetHandle();
+        colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment.clearValue = clearColor;
         
         width = vkRenderTexture->getWidth();
         height = vkRenderTexture->getHeight();
         
-        colorAttachments.push_back(color_attachment_info);
+        colorAttachments.push_back(colorAttachment);
         passFormat.colorFormats.push_back(vkRenderTexture->GetVKFormat());
         passImage.colorImages.push_back(vkRenderTexture->GetVKImage());
     }

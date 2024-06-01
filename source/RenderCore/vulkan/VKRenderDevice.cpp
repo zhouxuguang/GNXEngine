@@ -266,6 +266,7 @@ CommandBufferPtr VKRenderDevice::createCommandBuffer()
     commandBufferInfo->renderFinishSemaphore = mRenderFinishedSemaphores[mCurrentFrame];
     commandBufferInfo->swapChain = mSwapChain;
     commandBufferInfo->vulkanContext = mVulkanContext;
+    commandBufferInfo->depthStencilBuffer = mDSBuffer;
     
     return std::make_shared<VulkanCommandBuffer>(commandBuffer, commandBufferInfo);
 }

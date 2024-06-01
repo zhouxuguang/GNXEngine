@@ -11,6 +11,7 @@
 #include "VulkanContext.h"
 #include "CommandBuffer.h"
 #include "VulkanSwapChain.h"
+#include "VKDepthStencilBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -24,6 +25,7 @@ struct CommandBufferInfo
     VulkanSwapChainPtr swapChain;
     uint32_t nextFrameIndex;
     VulkanContextPtr vulkanContext;
+    VKDepthStencilBufferPtr depthStencilBuffer;
     VKRenderDevice *renderDevice;
 };
 
