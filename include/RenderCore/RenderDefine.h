@@ -35,6 +35,7 @@ enum ShaderStage
     ShaderStage_Vertex = 0,
     ShaderStage_Fragment = 1,
     ShaderStage_Compute = 2,
+    ShaderStage_Max = 3,
 };
 
 //清除缓冲区的模式

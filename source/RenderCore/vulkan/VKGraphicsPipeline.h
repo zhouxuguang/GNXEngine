@@ -54,6 +54,11 @@ public:
     {
         return mPipelineLayout;
     }
+    
+    uint32_t GetDescriptorOffset(ShaderStage stage, DescriptorType type) const
+    {
+        return mStageSetOffsets[stage][type];
+    }
 private:
     VkPipeline mPipeline = VK_NULL_HANDLE;
     VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;
@@ -65,6 +70,8 @@ private:
     bool mGenerated = false;
     
     std::vector<VKShaderFunctionPtr> mShaders;
+    
+    uint32_t mStageSetOffsets[ShaderStage_Max][DESCRIPTOR_TYPE_MAX];
 };
 
 NAMESPACE_RENDERCORE_END

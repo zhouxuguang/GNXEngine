@@ -157,6 +157,8 @@ VKGraphicsPipeline::VKGraphicsPipeline(VulkanContextPtr context, const GraphicsP
 {
     mContext = context;
     memset(&mPipeCreateInfo, 0, sizeof(mPipeCreateInfo));
+    
+    memset(&(mStageSetOffsets[0][0]), 0, ShaderStage_Max * DESCRIPTOR_TYPE_MAX * sizeof(uint32_t));
 }
 
 void VKGraphicsPipeline::attachVertexShader(ShaderFunctionPtr shaderFunction)
@@ -185,6 +187,7 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
 
     // 1、shader信息配置
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+    int setIndex = 0;
     for (auto &iter : mShaders)
     {
         VkPipelineShaderStageCreateInfo shaderStage = {};
@@ -193,6 +196,13 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
         shaderStage.module = iter->GetShaderModule();
         shaderStage.pName = iter->GetEntryName().c_str();
         shaderStages.push_back(shaderStage);
+        
+        const DescriptorSetLayoutDataVec& descriptorSets = iter->GetDescriptorSets();
+        for (const auto &iterDes : descriptorSets)
+        {
+            mStageSetOffsets[iter->getShaderStage()][iterDes.descriptorType] = setIndex;
+            setIndex ++;
+        }
     }
     
     mPipeCreateInfo.stageCount = (uint32_t)shaderStages.size();

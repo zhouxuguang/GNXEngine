@@ -13,10 +13,22 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+typedef enum DescriptorType
+{
+    DESCRIPTOR_TYPE_SAMPLER = 0,
+    DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER = 1,
+    DESCRIPTOR_TYPE_SAMPLED_IMAGE = 2,
+    DESCRIPTOR_TYPE_STORAGE_IMAGE = 3,
+    DESCRIPTOR_TYPE_UNIFORM_BUFFER = 4,
+    DESCRIPTOR_TYPE_STORAGE_BUFFER = 5,
+    DESCRIPTOR_TYPE_MAX = 6,
+} DescriptorType;
+
 // DescriptorSetLayout
 struct DescriptorSetLayoutData
 {
     uint32_t set_number;
+    DescriptorType descriptorType;
     VkDescriptorSetLayoutCreateInfo create_info;
     std::vector<VkDescriptorSetLayoutBinding> bindings;
 };
