@@ -460,6 +460,10 @@ void VulkanBufferUtil::InsertImageMemoryBarrier(
         VkPipelineStageFlags dstStageMask,
         VkImageSubresourceRange subresourceRange)
 {
+    if (!cmdbuffer || !image)
+    {
+        return;
+    }
     VkImageMemoryBarrier imageMemoryBarrier {};
     imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;

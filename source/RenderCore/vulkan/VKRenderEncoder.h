@@ -17,7 +17,8 @@ NAMESPACE_RENDERCORE_BEGIN
 class VKRenderEncoder : public RenderEncoder
 {
 public:
-    VKRenderEncoder(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR& renderInfo, const RenderPassFormat& passFormat);
+    VKRenderEncoder(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR& renderInfo, 
+                    const RenderPassFormat& passFormat, const RenderPassImage& passImage);
     
     ~VKRenderEncoder();
     
@@ -45,6 +46,7 @@ private:
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
     VKGraphicsPipeline *mGraphicsPipieline = nullptr;
     RenderPassFormat mPassFormat;
+    RenderPassImage mPassImage;
 };
 
 using VKRenderEncoderPtr = std::shared_ptr<VKRenderEncoder>;

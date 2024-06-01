@@ -21,6 +21,14 @@ struct RenderPassFormat
     VkFormat stencilFormat = VK_FORMAT_UNDEFINED;
 };
 
+struct RenderPassImage
+{
+    bool isPresentStage = false;
+    std::vector<VkImage> colorImages;
+    VkImage depthImage = VK_NULL_HANDLE;
+    VkImage stencilImage = VK_NULL_HANDLE;
+};
+
 class VKGraphicsPipeline : public GraphicsPipeline
 {
 public:

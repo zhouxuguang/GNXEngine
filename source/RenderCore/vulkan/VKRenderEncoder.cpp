@@ -15,6 +15,7 @@
 #include "VKRenderTexture.h"
 #include "VKGraphicsPipeline.h"
 #include "VulkanDescriptorUtil.h"
+#include "VulkanBufferUtil.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -50,10 +51,55 @@ VkPrimitiveTopology ConvertToVulkanPrimitiveTopology(PrimitiveMode mode)
     return topology;
 }
 
-VKRenderEncoder::VKRenderEncoder(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR& renderInfo, const RenderPassFormat& passFormat)
-    : mPassFormat(passFormat)
+VKRenderEncoder::VKRenderEncoder(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR& renderInfo, 
+                                 const RenderPassFormat& passFormat, const RenderPassImage& passImage)
+    : mPassFormat(passFormat), mPassImage(passImage)
 {
     mCommandBuffer = commandBuffer;
+    
+    // 动态渲染没有子流程依赖，所以需要插入图像内存屏障
+    for (auto &iter : mPassImage.colorImages)
+    {
+        VulkanBufferUtil::InsertImageMemoryBarrier(
+                                                   mCommandBuffer,
+                                                   iter,
+            0,
+            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+    }
+    
+    if (mPassImage.depthImage)
+    {
+        VulkanBufferUtil::InsertImageMemoryBarrier(
+                                                   mCommandBuffer,
+                                                   mPassImage.depthImage,
+            0,
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            VkImageSubresourceRange{ VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 });
+    }
+    
+    if (mPassImage.stencilImage)
+    {
+        VulkanBufferUtil::InsertImageMemoryBarrier(
+                                                   mCommandBuffer,
+                                                   mPassImage.stencilImage,
+            0,
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            VkImageSubresourceRange{ VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 });
+    }
+    
     vkCmdBeginRenderingKHR(mCommandBuffer, &renderInfo);
     
     //设置viewport
@@ -82,6 +128,27 @@ VKRenderEncoder::~VKRenderEncoder()
 void VKRenderEncoder::EndEncode()
 {
     vkCmdEndRenderingKHR(mCommandBuffer);
+    
+    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    if (!mPassImage.isPresentStage)
+    {
+        imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+    
+    // 对颜色附件进行转换
+    for (auto &iter : mPassImage.colorImages)
+    {
+        VulkanBufferUtil::InsertImageMemoryBarrier(
+                                             mCommandBuffer,
+                                                   iter,
+            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            0,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                   imageLayout,
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+    }
 }
 
 void VKRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
