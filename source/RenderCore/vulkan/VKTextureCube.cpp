@@ -28,7 +28,22 @@ VKTextureCube::VKTextureCube(VulkanContextPtr context, const std::vector<Texture
                                       VK_SAMPLE_COUNT_1_BIT, 1, VK_IMAGE_TILING_OPTIMAL, imageUsageFlags, mImage, mAllocation);
     
     //创建图像视图
-    VkImageView imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, format,  nullptr, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    VkImageView imageView = 0;
+    
+    // Create image view
+    VkImageViewCreateInfo viewCreateInfo = {};
+    viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    // Cube map view type
+    viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    viewCreateInfo.format = format;
+    viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    // 6 array layers (faces)
+    viewCreateInfo.subresourceRange.layerCount = 6;
+    // Set number of mip levels
+    viewCreateInfo.subresourceRange.levelCount = 1;   //这里先写死了
+    viewCreateInfo.image = mImage;
+    vkCreateImageView(mContext->device, &viewCreateInfo, nullptr, &imageView);
+    
     mVulkanImageViewPtr = std::make_shared<VulkanImageView>(mContext->device, imageView);
 }
 
@@ -48,7 +63,7 @@ void VKTextureCube::setTextureData(CubemapFace cubeFace, uint32_t imageSize, con
     VkBuffer stageBuffer = VK_NULL_HANDLE;
     VmaAllocation allocation = VK_NULL_HANDLE;
     VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, StorageModeShared, imageSize,
-                                      VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+                                      VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
                                       stageBuffer, allocation, nullptr);
     
     void *data = nullptr;
