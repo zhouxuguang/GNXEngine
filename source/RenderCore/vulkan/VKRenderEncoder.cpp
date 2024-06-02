@@ -200,7 +200,7 @@ void VKRenderEncoder::setVertexUniformBuffer(UniformBufferPtr buffer, int index)
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
     VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(VK_NULL_HANDLE,
-                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, &bufferInfo);   // 这里还有问题，索引binding的问题
+                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, index, &bufferInfo);   // 这里还有问题，索引binding的问题
     writeDescriptorSet.dstSet = 0;   //这句也是可以的
     
     uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Vertex, DESCRIPTOR_TYPE_UNIFORM_BUFFER);

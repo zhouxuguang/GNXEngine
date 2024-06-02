@@ -28,17 +28,17 @@ public:
     
     id<MTLRenderPipelineState> getRenderPipelineState() const;
     
-    id<MTLDepthStencilState> getDepthStencilState() const
+    id<MTLDepthStencilState> GetDepthStencilState() const
     {
         return mDepthStencilState;
     }
     
-    MTLRenderPipelineReflection* getReflectionObject() const
+    MTLRenderPipelineReflection* GetReflectionObject() const
     {
         return mReflectionObj;
     }
     
-    uint32_t getVertexUniformOffset() const
+    uint32_t GetVertexUniformOffset() const
     {
         return mVertexUniformOffset;
     }

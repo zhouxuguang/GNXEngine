@@ -39,8 +39,6 @@ struct CompiledShaderInfo
 {
     ShaderCodePtr shaderSource = nullptr;
     RenderCore::VertexDescriptor vertexDescriptor;
-//    UniformBuffersLayout vertexUniformBufferLayout;
-//    UniformBuffersLayout fragmentUniformBufferLayout;
 };
 
 using CompiledShaderInfoPtr = std::shared_ptr<CompiledShaderInfo>;

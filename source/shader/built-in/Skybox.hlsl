@@ -64,13 +64,13 @@ SkyVertexOut VS(appdata_skybox vin)
     return vout;
 }
 
-TextureCube gCubeMap : register(t0);
+TextureCube gCubeMap : register(t0, space0);
 
-SamplerState gsamLinearWrap       : register(s0);
+SamplerState gCubeMapSam : register(s0, space1);
 
 float4 PS(SkyVertexOut pin) : SV_Target
 {
-    return gCubeMap.Sample(gsamLinearWrap, pin.PosL);
+    return gCubeMap.Sample(gCubeMapSam, pin.PosL);
 }
 
 

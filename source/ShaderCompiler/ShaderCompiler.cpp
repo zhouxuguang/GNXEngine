@@ -118,20 +118,31 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
     //修改顶点着色器中uniform——buffer的索引
     if (shaderStage == ShaderStage_Vertex)
     {
-        for (auto &resource : resources.uniform_buffers)
-        {
-            uint32_t index = msl.get_decoration(resource.id, spv::DecorationBinding);
-            msl.set_decoration(resource.id, spv::DecorationBinding, index + (uint32_t)resources.stage_inputs.size());
-        }
-        
-        int index = 0;
+        uint32_t maxIndex = 0;
+        int count = 0;
         for (auto &resource : resources.stage_inputs)
         {
             uint32_t index1 = msl.get_decoration(resource.id, spv::DecorationLocation);
+            count ++;
+            if (index1 > maxIndex)
+            {
+                maxIndex = index1;
+            }
             
-            const spirv_cross::SPIRType &type = msl.get_type(resource.type_id);
-            msl.set_decoration(resource.id, spv::DecorationLocation, index);
-            index ++;
+//            const spirv_cross::SPIRType &type = msl.get_type(resource.type_id);
+//            msl.set_decoration(resource.id, spv::DecorationLocation, index1);
+//            index ++;
+        }
+        
+        if (count > 0)
+        {
+            maxIndex += 1;
+        }
+        
+        for (auto &resource : resources.uniform_buffers)
+        {
+            uint32_t index = msl.get_decoration(resource.id, spv::DecorationBinding);
+            msl.set_decoration(resource.id, spv::DecorationBinding, index + (uint32_t)maxIndex);
         }
     }
     

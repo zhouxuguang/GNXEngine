@@ -49,7 +49,7 @@ void MTLRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     id<MTLRenderPipelineState> mtlPipeline = mtlGraphicsPipeline->getRenderPipelineState();
     [mRenderEncoder setRenderPipelineState:mtlPipeline];
     
-    id<MTLDepthStencilState> mtlDepthStencil = mtlGraphicsPipeline->getDepthStencilState();
+    id<MTLDepthStencilState> mtlDepthStencil = mtlGraphicsPipeline->GetDepthStencilState();
     [mRenderEncoder setDepthStencilState:mtlDepthStencil];
 }
 
@@ -86,15 +86,17 @@ void MTLRenderEncoder::setVertexUniformBuffer(UniformBufferPtr buffer, int index
         return;
     }
     
+    int realIndex = mMtlGraphicsPipeline->GetVertexUniformOffset() + index;
+    
     MTLUniformBuffer *mtlBuffer = (MTLUniformBuffer *)buffer.get();
     if (mtlBuffer->isBuffer())
     {
-        [mRenderEncoder setVertexBuffer:mtlBuffer->getMTLBuffer() offset:0 atIndex:index];
+        [mRenderEncoder setVertexBuffer:mtlBuffer->getMTLBuffer() offset:0 atIndex:realIndex];
     }
     else
     {
         const std::vector<uint8_t>& bufferData = mtlBuffer->getBufferData();
-        [mRenderEncoder setVertexBytes:bufferData.data() length:bufferData.size() atIndex:index];
+        [mRenderEncoder setVertexBytes:bufferData.data() length:bufferData.size() atIndex:realIndex];
     }
 }
 

@@ -356,7 +356,8 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
         GetShaderReflectionInfo(reflectionObj);
         
         //
-        uint32_t count = 0;
+        uint32_t maxVertexIndex = 0;
+        int vertexCount = 0;
         for (MTLArgument *arg in reflectionObj.vertexArguments)
         {
             NSLog(@"Found arg: %@\n", arg.name);
@@ -376,7 +377,11 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
             
             if (arg.bufferStructType.members.count == 0)
             {
-                count++;
+                vertexCount ++;
+                if (maxVertexIndex < index)
+                {
+                    maxVertexIndex = index;
+                }
             }
 
             for (MTLStructMember* uniform in arg.bufferStructType.members)
@@ -413,7 +418,11 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
         
 #endif
         
-        mVertexUniformOffset = count;
+        mVertexUniformOffset = maxVertexIndex;
+        if (vertexCount > 0)
+        {
+            mVertexUniformOffset += 1;
+        }
         
         if (!mRenderPipelineState)
         {
