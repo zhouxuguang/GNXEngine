@@ -137,9 +137,9 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
         
         if (isCPUSkin)
         {
-            renderEncoder->setVertexUniformBuffer(renderInfo.cameraUBO, 4);
-            renderEncoder->setVertexUniformBuffer(renderInfo.objectUBO, 5);
-            renderEncoder->setVertexUniformBuffer(renderInfo.lightUBO, 6);
+            renderEncoder->setVertexUniformBuffer(renderInfo.cameraUBO, 0);
+            renderEncoder->setVertexUniformBuffer(renderInfo.objectUBO, 1);
+            renderEncoder->setVertexUniformBuffer(renderInfo.lightUBO, 2);
             
             renderEncoder->setVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
             renderEncoder->setVertexBuffer(vertexBuffer, channels[kShaderChannelNormal].offset, 1);
@@ -148,10 +148,10 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
         }
         else
         {
-            renderEncoder->setVertexUniformBuffer(renderInfo.cameraUBO, 6);
-            renderEncoder->setVertexUniformBuffer(renderInfo.objectUBO, 7);
-            renderEncoder->setVertexUniformBuffer(renderInfo.lightUBO, 8);
-            renderEncoder->setVertexUniformBuffer(renderInfo.skinnedMatrixUBO, 9);
+            renderEncoder->setVertexUniformBuffer(renderInfo.cameraUBO, 0);
+            renderEncoder->setVertexUniformBuffer(renderInfo.objectUBO, 1);
+            renderEncoder->setVertexUniformBuffer(renderInfo.lightUBO, 2);
+            renderEncoder->setVertexUniformBuffer(renderInfo.skinnedMatrixUBO, 3);
             
             renderEncoder->setVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
             renderEncoder->setVertexBuffer(vertexBuffer, channels[kShaderChannelNormal].offset, 1);
