@@ -27,12 +27,14 @@ VKUniformBuffer::~VKUniformBuffer()
     {
         return;
     }
+    
+    // 这里先注释掉，因为模型的UBO目前是随时创建的，后续这个资源管理需要继续优化
 
-    if (mBuffer != VK_NULL_HANDLE)
-    {
-        vmaDestroyBuffer(mContext->vmaAllocator, mBuffer, mAllocation);
-        mBuffer = VK_NULL_HANDLE;
-    }
+//    if (mBuffer != VK_NULL_HANDLE)
+//    {
+//        vmaDestroyBuffer(mContext->vmaAllocator, mBuffer, mAllocation);
+//        mBuffer = VK_NULL_HANDLE;
+//    }
 }
 
 void VKUniformBuffer::setData(const void* data, uint32_t offset, uint32_t dataSize)
