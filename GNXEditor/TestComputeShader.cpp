@@ -20,7 +20,6 @@ using namespace RenderSystem;
 #if 1
 void TestADD()
 {
-    return;
     ShaderAssetString shaderAssetString = LoadShaderAsset("TestADD");
     
     ShaderCodePtr computeShader = shaderAssetString.computeShader->shaderSource;
