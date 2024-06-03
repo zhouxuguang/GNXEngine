@@ -10,7 +10,6 @@
 #include "TextureCube.h"
 #include "RenderEncoder.h"
 #include "CommandBuffer.h"
-#include "FrameBuffer.h"
 #include "RenderPass.h"
 #include "RenderTexture.h"
 
@@ -33,10 +32,6 @@ RenderDevice::~RenderDevice() {}
 DeviceExtension::DeviceExtension(){}
 
 DeviceExtension::~DeviceExtension(){}
-
-FrameBuffer::FrameBuffer(){}
-
-FrameBuffer::~FrameBuffer(){}
 
 VertexBuffer::VertexBuffer(){}
 

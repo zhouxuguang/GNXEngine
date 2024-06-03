@@ -11,7 +11,6 @@
 #include "Plane.h"
 #include "RenderCore/RenderTexture.h"
 #include "RenderCore/TextureSampler.h"
-#include "RenderCore/FrameBuffer.h"
 #include "RenderCore/RenderDevice.h"
 #include "RenderCore/GraphicsPipeline.h"
 
@@ -29,7 +28,6 @@ public:
     void SetUp();
     
 private:
-    FrameBufferPtr m_DepthFrameBuffer = 0;
     Texture2DPtr m_DepthTexture = 0;
     TextureSamplerPtr m_DepthTextureSampler = 0;
     GraphicsPipelinePtr m_GraphicsPipeline = 0;
