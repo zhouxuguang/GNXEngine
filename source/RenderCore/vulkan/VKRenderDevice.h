@@ -61,11 +61,6 @@ public:
     
     virtual CommandBufferPtr createCommandBuffer();
     
-    virtual FrameBufferPtr createFrameBuffer(uint32_t width, uint32_t height) const
-    {
-        return nullptr;
-    }
-    
     virtual RenderTexturePtr createRenderTexture(const TextureDescriptor& des) const;
     
     void UpdateCurrentIndex()

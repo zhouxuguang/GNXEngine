@@ -52,10 +52,6 @@ ShadowMapping::ShadowMapping(const RenderDevicePtr& renderDevice)
     samplerDescriptor.filterMag = MAG_NEAREST;
     m_DepthTextureSampler = renderDevice->createSamplerWithDescriptor(samplerDescriptor);
     
-    //创建FBO
-//    m_DepthFrameBuffer = renderDevice->getRenderContext()->createFrameBuffer();
-//    m_DepthFrameBuffer->attachDepthBuffer(m_DepthTexture);
-    
     //创建阴影渲染管线
     GraphicsPipelineDescriptor graphicsPipelineDescriptor;
     VertextAttributesDescritptor vertextAttributesDescritptor;

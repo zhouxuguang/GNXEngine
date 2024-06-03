@@ -179,14 +179,6 @@ CommandBufferPtr MTLRenderDevice::createCommandBuffer()
     return std::make_shared<MTLCommandBuffer>(mCommandQueue, mMetalLayer, mDepthTexture, mStencilTexture, mDepthStencilTexture);
 }
 
-/**
- 创建FrameBuffer
- */
-FrameBufferPtr MTLRenderDevice::createFrameBuffer(uint32_t width, uint32_t height) const
-{
-    return nullptr;
-}
-
 RenderTexturePtr MTLRenderDevice::createRenderTexture(const TextureDescriptor& des) const
 {
     return std::make_shared<MTLRenderTexture>(mMetalLayer.device, des);
