@@ -39,12 +39,19 @@ public:
         return mPipelineLayout;
     }
     
+    uint32_t GetSetOffset(DescriptorType descriptorType) const
+    {
+        return mStageSetOffsets[descriptorType];
+    }
+    
 private:
     VulkanContextPtr mContext = nullptr;
     VkPipeline mPipeline = VK_NULL_HANDLE;
     VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;
     std::vector<VkDescriptorSetLayout> mDescriptorSetLayouts;
     WorkGroupSize mWorkGroupSize;
+    
+    uint32_t mStageSetOffsets[DESCRIPTOR_TYPE_MAX];   //每一种资源所在的set的索引
 };
 
 NAMESPACE_RENDERCORE_END

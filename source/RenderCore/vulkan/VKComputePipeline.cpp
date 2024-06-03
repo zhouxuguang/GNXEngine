@@ -51,6 +51,8 @@ VkDescriptorSetLayout CreateComputeDescriptorSetLayout(VkDevice device)
 
 VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode& shaderSource) : ComputePipeline(nullptr), mContext(context)
 {
+    memset(mStageSetOffsets, 0, sizeof(uint32_t) * DESCRIPTOR_TYPE_MAX);
+    
     // 这里spir-v的二进制还需要进行载入
     std::shared_ptr<VKShaderFunction> shaderFunction = std::make_shared<VKShaderFunction>(context);
     shaderFunction = shaderFunction->initWithShaderSourceInner(shaderSource, ShaderStage_Compute);
@@ -70,6 +72,7 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
     desLayouts.resize(desSetLayouts.size());
     for (int i = 0; i < desSetLayouts.size(); i ++)
     {
+        mStageSetOffsets[desSetLayouts[i].descriptorType] = i;
         if (vkCreateDescriptorSetLayout(mContext->device, &desSetLayouts[i].create_info, nullptr, desLayouts.data() + i) != VK_SUCCESS)
         {
             printf("failed to create compute descriptor set layout!\n");

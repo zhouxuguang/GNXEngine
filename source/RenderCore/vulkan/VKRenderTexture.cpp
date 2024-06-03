@@ -19,7 +19,7 @@ VKRenderTexture::VKRenderTexture(VulkanContextPtr context, const TextureDescript
     mFormat = format;
     assert(des.width > 0 && des.height > 0);
 
-    VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT |
+    VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
                                         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                                         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     

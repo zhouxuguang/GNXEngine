@@ -64,7 +64,9 @@ void VKComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
                 VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, index, &bufferInfo);
     writeDescriptorSet.dstSet = 0;   //这句也是可以的
     
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), 0, 1, &writeDescriptorSet);
+    uint32_t bufSetOffset = mVKPipeline->GetSetOffset(DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), bufSetOffset, 1, &writeDescriptorSet);
 }
 
 void VKComputeEncoder::SetTexture(Texture2DPtr texture, uint32_t index)
@@ -82,10 +84,11 @@ void VKComputeEncoder::SetTexture(Texture2DPtr texture, uint32_t index)
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
     VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
-                                                VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, index, &imageInfo);
+                                                    VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
     writeDescriptorSet.dstSet = 0;   //这句也是可以的
     
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), 0, 1, &writeDescriptorSet);
+    uint32_t imageSetOffset = mVKPipeline->GetSetOffset(DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), imageSetOffset, 1, &writeDescriptorSet);
 }
 
 void VKComputeEncoder::SetTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index)
@@ -102,10 +105,53 @@ void VKComputeEncoder::SetTexture(RenderTexturePtr texture, uint32_t mipLevel, u
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
     VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
-                                        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, index, &imageInfo);
+                                                VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
     writeDescriptorSet.dstSet = 0;   //这句也是可以的
     
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), 1, 1, &writeDescriptorSet);
+    uint32_t imageSetOffset = mVKPipeline->GetSetOffset(DESCRIPTOR_TYPE_SAMPLED_IMAGE);
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), imageSetOffset, 1, &writeDescriptorSet);
+}
+
+void VKComputeEncoder::SetOutTexture(Texture2DPtr texture, uint32_t index)
+{
+    if (!texture)
+    {
+        return;
+    }
+    VKTexture2D *vkRenderTex = (VKTexture2D*)texture.get();
+    
+    VkDescriptorImageInfo imageInfo = {};
+    imageInfo.imageView = vkRenderTex->getVKImageView()->GetHandle();
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    
+    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
+    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
+                                                VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, index, &imageInfo);
+    writeDescriptorSet.dstSet = 0;   //这句也是可以的
+    
+    uint32_t imageSetOffset = mVKPipeline->GetSetOffset(DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), imageSetOffset, 1, &writeDescriptorSet);
+}
+
+void VKComputeEncoder::SetOutTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index)
+{
+    if (!texture)
+    {
+        return;
+    }
+    VKRenderTexture *vkRenderTex = (VKRenderTexture*)texture.get();
+    
+    VkDescriptorImageInfo imageInfo = {};
+    imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    
+    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
+    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
+                                                VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, index, &imageInfo);
+    writeDescriptorSet.dstSet = 0;   //这句也是可以的
+    
+    uint32_t imageSetOffset = mVKPipeline->GetSetOffset(DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), imageSetOffset, 1, &writeDescriptorSet);
 }
 
 void VKComputeEncoder::Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)

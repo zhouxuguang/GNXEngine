@@ -70,6 +70,16 @@ void MTLComputeEncoder::SetTexture(RenderTexturePtr texture, uint32_t mipLevel, 
     }
 }
 
+void MTLComputeEncoder::SetOutTexture(Texture2DPtr texture, uint32_t index)
+{
+    MTLComputeEncoder::SetTexture(texture, index);
+}
+
+void MTLComputeEncoder::SetOutTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index)
+{
+    MTLComputeEncoder::SetTexture(texture, mipLevel, index);
+}
+
 void MTLComputeEncoder::Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
 {
     @autoreleasepool

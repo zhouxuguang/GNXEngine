@@ -1,5 +1,5 @@
-Texture2D gInput            : register(t0);
-RWTexture2D<unorm float4> gOutput : register(u1);
+Texture2D gInput            : register(t0, space0);
+RWTexture2D<unorm float4> gOutput : register(u1, space1);
 
 
 // Approximates luminance ("brightness") from an RGB value.  These weights are derived from

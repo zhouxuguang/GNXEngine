@@ -113,7 +113,7 @@ void testImageGrayDraw(ComputeEncoderPtr computeEncoder, ComputePipelinePtr comp
 {
     computeEncoder->SetComputePipeline(computePipeline);
     computeEncoder->SetTexture(inputTexture, 0, 0);
-    computeEncoder->SetTexture(outputTexture, 0, 1);
+    computeEncoder->SetOutTexture(outputTexture, 0, 1);
     
     uint32_t x, y ,z;
     computePipeline->GetThreadGroupSizes(x, y, z);

@@ -36,6 +36,10 @@ public:
     
     virtual void SetTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index) = 0;
     
+    virtual void SetOutTexture(Texture2DPtr texture, uint32_t index) = 0;
+    
+    virtual void SetOutTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index) = 0;
+    
     virtual void Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) = 0;
     
     virtual void EndEncode() = 0;
