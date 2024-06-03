@@ -25,7 +25,7 @@ VertexOut VS(appdata_skin vin)
     float4x4 modelMatrix = mul(skin, MATRIX_M);
     
     // Transform to world space.
-    float4 posW = mul(float4(vin.position, 1.0), modelMatrix);
+    float4 posW = mul(float4(vin.position.xyz, 1.0), modelMatrix);
     vout.position = posW;
 
     posW = mul(posW, MATRIX_V);
@@ -34,7 +34,7 @@ VertexOut VS(appdata_skin vin)
     vout.texCoord0 = vin.texcoord;
 
     // 法线转换到视线空间
-    float3 norm = normalize(mul(vin.normal, modelMatrix));
+    float3 norm = normalize(mul(vin.normal.xyz, modelMatrix));
     vout.worldNormal = norm;
     norm = normalize(mul(norm, MATRIX_V));
     vout.normal = norm;
@@ -45,7 +45,7 @@ VertexOut VS(appdata_skin vin)
     vout.tangent = float4(tang, vin.tangent.w);
 
     // 将视线方向和光源方向转换到视线空间
-    float4 pos = mul(float4(vin.position, 1.0), modelMatrix);   // 世界坐标的顶点 
+    float4 pos = mul(float4(vin.position.xyz, 1.0), modelMatrix);   // 世界坐标的顶点 
 
     float3 lightPos = _WorldSpaceLightPos;
     vout.lightDir = mul(float4(lightPos - pos.xyz, 1.0), MATRIX_V).xyz;

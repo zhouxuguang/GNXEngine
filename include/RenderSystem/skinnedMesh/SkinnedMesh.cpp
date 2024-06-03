@@ -15,7 +15,7 @@ SkinnedMesh::~SkinnedMesh()
     log_info("Mesh::~Mesh()");
 }
 
-void SkinnedMesh::SetPositions(simd_float3 const* data, size_t count)
+void SkinnedMesh::SetPositions(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
@@ -32,7 +32,7 @@ void SkinnedMesh::SetPositions(simd_float3 const* data, size_t count)
     strided_copy(data, data + count, GetPositionBegin());
 }
 
-void SkinnedMesh::SetNormals(simd_float3 const* data, size_t count)
+void SkinnedMesh::SetNormals(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
@@ -49,7 +49,7 @@ void SkinnedMesh::SetNormals(simd_float3 const* data, size_t count)
     strided_copy(data, data + count, GetNormalBegin());
 }
 
-void SkinnedMesh::SetTangents(simd_float4 const* data, size_t count)
+void SkinnedMesh::SetTangents(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
@@ -66,7 +66,7 @@ void SkinnedMesh::SetTangents(simd_float4 const* data, size_t count)
     strided_copy(data, data + count, GetTangentBegin());
 }
 
-void SkinnedMesh::SetUv(int uvIndex, simd_float2 const* data, size_t count)
+void SkinnedMesh::SetUv(int uvIndex, Vector2f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
@@ -117,7 +117,7 @@ void SkinnedMesh::SetBoneIndexs(BoneIndexInfo const* data, size_t count)
     strided_copy(data, data + count, GetBoneIndexBegin());
 }
 
-void SkinnedMesh::SetBoneWeights(simd_float4 const* data, size_t count)
+void SkinnedMesh::SetBoneWeights(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
@@ -152,17 +152,17 @@ void SkinnedMesh::CPUSkin(Skeleton& skeleton, AnimationPose& pose)
     //skeleton.GetBindPose().GetMatrixPalette(posePalette);
     
     StrideIterator<BoneIndexInfo> boneIndex = GetBoneIndexBegin();
-    StrideIterator<simd_float4> boneWeight = GetBoneWeightBegin();
-    StrideIterator<simd_float3> position = GetPositionBegin();
-    StrideIterator<simd_float3> normal = GetNormalBegin();
+    StrideIterator<Vector4f> boneWeight = GetBoneWeightBegin();
+    StrideIterator<Vector4f> position = GetPositionBegin();
+    StrideIterator<Vector4f> normal = GetNormalBegin();
     
-    StrideIterator<simd_float3> skinnedPosition = mSkinnedVertexData.MakeStrideIterator<simd_float3>(kShaderChannelPosition);
-    StrideIterator<simd_float3> skinnedNormal = mSkinnedVertexData.MakeStrideIterator<simd_float3>(kShaderChannelNormal);
+    StrideIterator<Vector4f> skinnedPosition = mSkinnedVertexData.MakeStrideIterator<Vector4f>(kShaderChannelPosition);
+    StrideIterator<Vector4f> skinnedNormal = mSkinnedVertexData.MakeStrideIterator<Vector4f>(kShaderChannelNormal);
 
     for (unsigned int i = 0; i < numVerts; ++i) 
     {
         const BoneIndexInfo& j = boneIndex[i];
-        const simd_float4& w = boneWeight[i];
+        const Vector4f& w = boneWeight[i];
 
         //分别计算每一个骨骼的影响矩阵
         Matrix4x4f m0 = (posePalette[j.x] * invPosePalette[j.x]) * w.x;
@@ -175,11 +175,11 @@ void SkinnedMesh::CPUSkin(Skeleton& skeleton, AnimationPose& pose)
         //skin = Matrix4x4f::IDENTITY;
 
         Vector4f tranformedPoint = skin * Vector4f(position[i].x, position[i].y, position[i].z, 1.0);
-        skinnedPosition[i] = make_simd_float3(tranformedPoint.x / tranformedPoint.w,
+        skinnedPosition[i] = Vector4f(tranformedPoint.x / tranformedPoint.w,
                                               tranformedPoint.y / tranformedPoint.w,
-                                              tranformedPoint.z / tranformedPoint.w);
+                                              tranformedPoint.z / tranformedPoint.w, 1.0);
         Vector3f transformedNormal = skin * Vector3f(normal[i].x, normal[i].y, normal[i].z);
-        skinnedNormal[i] = make_simd_float3(transformedNormal.Normalize());
+        skinnedNormal[i] = Vector4f(transformedNormal.x, transformedNormal.y, transformedNormal.z, 1.0);
     }
     
     // 更新gpu buffer

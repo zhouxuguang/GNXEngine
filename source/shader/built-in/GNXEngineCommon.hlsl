@@ -38,8 +38,8 @@ struct appdata_tan
 
 struct appdata_skin
 {
-    float3 position : POSITION;
-    float3 normal : NORMAL;
+    float4 position : POSITION;
+    float4 normal : NORMAL;
     float4 tangent : TANGENT;
     float2 texcoord : TEXCOORD0;
     uint4 boneIndex : BONEINDICES;

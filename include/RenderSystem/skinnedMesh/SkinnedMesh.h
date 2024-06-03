@@ -13,7 +13,7 @@
 #include "MathUtil/Vector2.h"
 #include "MathUtil/Vector3.h"
 #include "MathUtil/Vector4.h"
-#include "MathUtil/SimdMath.h"
+//#include "MathUtil/SimdMath.h"
 #include "RenderCore/RenderDevice.h"
 #include "../mesh/VertexData.h"
 #include "animation/Skeleton.h"
@@ -51,41 +51,41 @@ public:
     const VertexData& GetSkinnedVertexData() const { return mSkinnedVertexData; }
     VertexData& GetSkinnedVertexData() { return mSkinnedVertexData; }
     
-    StrideIterator<simd_float3> GetPositionBegin() const { return mVertexData.MakeStrideIterator<simd_float3>(kShaderChannelPosition);}
-    StrideIterator<simd_float3> GetPositionEnd() const { return mVertexData.MakeEndIterator<simd_float3>(kShaderChannelPosition); }
+    StrideIterator<Vector4f> GetPositionBegin() const { return mVertexData.MakeStrideIterator<Vector4f>(kShaderChannelPosition);}
+    StrideIterator<Vector4f> GetPositionEnd() const { return mVertexData.MakeEndIterator<Vector4f>(kShaderChannelPosition); }
 
-    StrideIterator<simd_float3> GetNormalBegin() const { return mVertexData.MakeStrideIterator<simd_float3>(kShaderChannelNormal); }
-    StrideIterator<simd_float3> GetNormalEnd() const { return mVertexData.MakeEndIterator<simd_float3>(kShaderChannelNormal); }
+    StrideIterator<Vector4f> GetNormalBegin() const { return mVertexData.MakeStrideIterator<Vector4f>(kShaderChannelNormal); }
+    StrideIterator<Vector4f> GetNormalEnd() const { return mVertexData.MakeEndIterator<Vector4f>(kShaderChannelNormal); }
 
     StrideIterator<uint32_t> GetColorBegin() const { return mVertexData.MakeStrideIterator<uint32_t>(kShaderChannelColor); }
     StrideIterator<uint32_t> GetColorEnd() const { return mVertexData.MakeEndIterator<uint32_t>(kShaderChannelColor); }
 
-    StrideIterator<simd_float2> GetUvBegin(int uvIndex = 0) const
+    StrideIterator<Vector2f> GetUvBegin(int uvIndex = 0) const
     {
-        return mVertexData.MakeStrideIterator<simd_float2>((ShaderChannel)(kShaderChannelTexCoord0 + uvIndex));
+        return mVertexData.MakeStrideIterator<Vector2f>((ShaderChannel)(kShaderChannelTexCoord0 + uvIndex));
     }
-    StrideIterator<simd_float2> GetUvEnd(int uvIndex = 0) const
+    StrideIterator<Vector2f> GetUvEnd(int uvIndex = 0) const
     {
-        return mVertexData.MakeEndIterator<simd_float2>((ShaderChannel)(kShaderChannelTexCoord0 + uvIndex));
+        return mVertexData.MakeEndIterator<Vector2f>((ShaderChannel)(kShaderChannelTexCoord0 + uvIndex));
     }
 
-    StrideIterator<simd_float4> GetTangentBegin() const { return mVertexData.MakeStrideIterator<simd_float4>(kShaderChannelTangent); }
-    StrideIterator<simd_float4> GetTangentEnd() const { return mVertexData.MakeEndIterator<simd_float4>(kShaderChannelTangent); }
+    StrideIterator<Vector4f> GetTangentBegin() const { return mVertexData.MakeStrideIterator<Vector4f>(kShaderChannelTangent); }
+    StrideIterator<Vector4f> GetTangentEnd() const { return mVertexData.MakeEndIterator<Vector4f>(kShaderChannelTangent); }
     
     // 蒙皮网格特有的
     StrideIterator<BoneIndexInfo> GetBoneIndexBegin() const { return mVertexData.MakeStrideIterator<BoneIndexInfo>(kShaderChannelBoneIndex); }
     StrideIterator<BoneIndexInfo> GetBoneIndexEnd() const { return mVertexData.MakeEndIterator<BoneIndexInfo>(kShaderChannelBoneIndex); }
     
-    StrideIterator<simd_float4> GetBoneWeightBegin() const { return mVertexData.MakeStrideIterator<simd_float4>(kShaderChannelWeight); }
-    StrideIterator<simd_float4> GetBoneWeightEnd() const { return mVertexData.MakeEndIterator<simd_float4>(kShaderChannelWeight); }
+    StrideIterator<Vector4f> GetBoneWeightBegin() const { return mVertexData.MakeStrideIterator<Vector4f>(kShaderChannelWeight); }
+    StrideIterator<Vector4f> GetBoneWeightEnd() const { return mVertexData.MakeEndIterator<Vector4f>(kShaderChannelWeight); }
     
-    void SetPositions(simd_float3 const* data, size_t count);
-    void SetNormals(simd_float3 const* data, size_t count);
-    void SetTangents(simd_float4 const* data, size_t count);
-    void SetUv(int uvIndex, simd_float2 const* data, size_t count);
+    void SetPositions(Vector4f const* data, size_t count);
+    void SetNormals(Vector4f const* data, size_t count);
+    void SetTangents(Vector4f const* data, size_t count);
+    void SetUv(int uvIndex, Vector2f const* data, size_t count);
     void SetColors(uint32_t const* data, size_t count);
     void SetBoneIndexs(BoneIndexInfo const* data, size_t count);
-    void SetBoneWeights(simd_float4 const* data, size_t count);
+    void SetBoneWeights(Vector4f const* data, size_t count);
     
     void SetIndices(uint32_t const* data, size_t count);
     

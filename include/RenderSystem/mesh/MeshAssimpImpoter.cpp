@@ -738,7 +738,7 @@ std::vector<std::shared_ptr<Material>> MeshAssimpImpoter::processMeshVertex(cons
         // 遍历submesh的每个顶点
         for(unsigned int i = 0; i < mesh->mNumVertices; i++)
         {
-            simd_float3 vector;
+            Vector4f vector;
             
             aiVector3D point = globalTransform * mesh->mVertices[i];
             // 顶点
@@ -760,7 +760,7 @@ std::vector<std::shared_ptr<Material>> MeshAssimpImpoter::processMeshVertex(cons
             // 纹理坐标
             if(mesh->mTextureCoords[0]) // does the mesh contain texture coordinates?
             {
-                simd_float2 vec;
+                Vector2f vec;
                 // 一个顶点最多包含8个不同的纹理坐标，我们假设只包含一个纹理坐标
                 vec.x = mesh->mTextureCoords[0][i].x;
                 vec.y = mesh->mTextureCoords[0][i].y;
@@ -768,7 +768,7 @@ std::vector<std::shared_ptr<Material>> MeshAssimpImpoter::processMeshVertex(cons
             }
             if (mesh->mTextureCoords[1])
             {
-                simd_float2 vec;
+                Vector2f vec;
                 // 一个顶点最多包含8个不同的纹理坐标，我们假设只包含一个纹理坐标
                 vec.x = mesh->mTextureCoords[1][i].x;
                 vec.y = mesh->mTextureCoords[1][i].y;
@@ -779,7 +779,7 @@ std::vector<std::shared_ptr<Material>> MeshAssimpImpoter::processMeshVertex(cons
             if (mesh->HasTangentsAndBitangents())
             {
                 // 切线
-                simd_float4 vector;
+                Vector4f vector;
                 vector.x = mesh->mTangents[i].x;
                 vector.y = mesh->mTangents[i].y;
                 vector.z = mesh->mTangents[i].z;
@@ -853,11 +853,11 @@ std::vector<std::shared_ptr<Material>> MeshAssimpImpoter::processMeshVertex(cons
         //将权重进行归一化
         for (int i = 0; i < mBoneWeight.size(); i++)
         {
-            simd_float4 & boneWeights = mBoneWeight[i];
+            Vector4f & boneWeights = mBoneWeight[i];
             float totalWeight = boneWeights.x + boneWeights.y + boneWeights.z + boneWeights.w;
             if (totalWeight > 0.0f) 
             {
-                boneWeights = make_simd_float4(
+                boneWeights = Vector4f(
                     boneWeights.x / totalWeight,
                     boneWeights.y / totalWeight,
                     boneWeights.z / totalWeight,

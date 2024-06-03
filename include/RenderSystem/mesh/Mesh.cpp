@@ -20,7 +20,7 @@ Mesh::~Mesh()
     log_info("Mesh::~Mesh()");
 }
 
-void Mesh::SetPositions(simd_float3 const* data, size_t count)
+void Mesh::SetPositions(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
@@ -37,7 +37,7 @@ void Mesh::SetPositions(simd_float3 const* data, size_t count)
     strided_copy(data, data + count, GetPositionBegin());
 }
 
-void Mesh::SetNormals(simd_float3 const* data, size_t count)
+void Mesh::SetNormals(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
@@ -54,7 +54,7 @@ void Mesh::SetNormals(simd_float3 const* data, size_t count)
     strided_copy(data, data + count, GetNormalBegin());
 }
 
-void Mesh::SetTangents(simd_float4 const* data, size_t count)
+void Mesh::SetTangents(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
@@ -73,7 +73,7 @@ void Mesh::SetTangents(simd_float4 const* data, size_t count)
     //strided_copy(data, data + count, GetTangentBegin());
 }
 
-void Mesh::SetUv(int uvIndex, simd_float2 const* data, size_t count)
+void Mesh::SetUv(int uvIndex, Vector2f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {

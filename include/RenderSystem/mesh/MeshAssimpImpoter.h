@@ -40,15 +40,15 @@ private:
     uint32_t mVertexCount = 0;
     uint32_t mVertexSize = 0;
     std::vector<uint32_t> mSubVertexCounts;    //各个子mesh的顶点个数
-    std::vector<simd_float3> mPosition;
-    std::vector<simd_float3> mNormal;
+    std::vector<Vector4f> mPosition;
+    std::vector<Vector4f> mNormal;
     std::vector<uint32_t> mColor;
-    std::vector<simd_float2> mTexCoord0;
-    std::vector<simd_float2> mTexCoord1;
-    std::vector<simd_float4> mTangent;
+    std::vector<Vector2f> mTexCoord0;
+    std::vector<Vector2f> mTexCoord1;
+    std::vector<Vector4f> mTangent;
     
     std::vector<BoneIndexInfo> mBoneIndex;
-    std::vector<simd_float4> mBoneWeight;
+    std::vector<Vector4f> mBoneWeight;
     
     std::vector<uint32_t> mIndices;
     std::vector<SubMeshInfo> mSubMeshInfos;
