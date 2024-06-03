@@ -112,6 +112,8 @@ static DescriptorSetLayoutDataVec GetDescriptorInfo(const SpvReflectShaderModule
                 layout_binding.descriptorCount *= refl_binding.array.dims[i_dim];
             }
             layout_binding.stageFlags = (VkShaderStageFlagBits)shaderModule.shader_stage;
+            
+            //printf("binding %d = %s\n", refl_binding.binding, refl_binding.name);
         }
         
         // 判断每个set上的绑定是否是同一类型
@@ -142,11 +144,6 @@ static VertexInputLayout GetVertexInfo(const SpvReflectShaderModule& shaderModul
     result = spvReflectEnumerateInputVariables(&shaderModule, &count, inputVars.data());
     assert(result == SPV_REFLECT_RESULT_SUCCESS);
     
-    VkVertexInputBindingDescription bindingDescription = {};
-    bindingDescription.binding = 0;
-    bindingDescription.stride = 0;  // computed below
-    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-    
     std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
     attributeDescriptions.reserve(inputVars.size());
     for (size_t i = 0; i < inputVars.size(); ++i)
@@ -159,7 +156,7 @@ static VertexInputLayout GetVertexInfo(const SpvReflectShaderModule& shaderModul
         }
         VkVertexInputAttributeDescription attr_desc{};
         attr_desc.location = refl_var.location;
-        attr_desc.binding = bindingDescription.binding;
+        attr_desc.binding = attr_desc.location;
         attr_desc.format = (VkFormat)(refl_var.format);
         attr_desc.offset = 0;  // final offset computed below after sorting.
         attributeDescriptions.push_back(attr_desc);
@@ -172,17 +169,22 @@ static VertexInputLayout GetVertexInfo(const SpvReflectShaderModule& shaderModul
         return a.location < b.location;
     });
     
+    std::vector<VkVertexInputBindingDescription> bindingDescriptions;
+    
     // 计算最终每个顶点属性的索引以及顶点的跨距大小
     for (auto& attribute : attributeDescriptions)
     {
-        uint32_t format_size = VulkanBufferUtil::GetFormatSize(attribute.format);
-        attribute.offset = bindingDescription.stride;
-        bindingDescription.stride += format_size;
+        VkVertexInputBindingDescription bindingDescription = {};
+        bindingDescription.binding = attribute.binding;
+        bindingDescription.stride = VulkanBufferUtil::GetFormatSize(attribute.format);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+        
+        bindingDescriptions.push_back(bindingDescription);
     }
     
     VertexInputLayout vertexInputLayout;
     vertexInputLayout.attributeDescriptions = std::move(attributeDescriptions);
-    vertexInputLayout.inputBindings.push_back(bindingDescription);
+    vertexInputLayout.inputBindings = std::move(bindingDescriptions);
     
     return vertexInputLayout;
 }
