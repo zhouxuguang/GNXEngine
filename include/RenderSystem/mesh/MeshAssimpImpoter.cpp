@@ -878,16 +878,16 @@ void MeshAssimpImpoter::setupLayout(Mesh* mesh)
     if (!mPosition.empty())
     {
         channels[kShaderChannelPosition].offset = offset;
-        channels[kShaderChannelPosition].format = VertexFormatFloat3;
+        channels[kShaderChannelPosition].format = VertexFormatFloat4;
         mVertexSize += 16;
-        offset += mPosition.size() * sizeof(simd_float3);
+        offset += mPosition.size() * sizeof(Vector4f);
     }
     if (!mNormal.empty())
     {
         channels[kShaderChannelNormal].offset = offset;
-        channels[kShaderChannelNormal].format = VertexFormatFloat3;
+        channels[kShaderChannelNormal].format = VertexFormatFloat4;
         mVertexSize += 16;
-        offset += mNormal.size() * sizeof(simd_float3);
+        offset += mNormal.size() * sizeof(Vector4f);
     }
     if (!mColor.empty())
     {
@@ -901,29 +901,29 @@ void MeshAssimpImpoter::setupLayout(Mesh* mesh)
         channels[kShaderChannelTexCoord0].offset = offset;
         channels[kShaderChannelTexCoord0].format = VertexFormatFloat2;
         mVertexSize += 8;
-        offset += mTexCoord0.size() * sizeof(simd_float2);
+        offset += mTexCoord0.size() * sizeof(Vector2f);
     }
     if (!mTexCoord1.empty())
     {
         channels[kShaderChannelTexCoord1].offset = offset;
         channels[kShaderChannelTexCoord1].format = VertexFormatFloat2;
         mVertexSize += 8;
-        offset += mTexCoord1.size() * sizeof(simd_float2);
+        offset += mTexCoord1.size() * sizeof(Vector2f);
     }
     if (!mTangent.empty())
     {
         channels[kShaderChannelTangent].offset = offset;
         channels[kShaderChannelTangent].format = VertexFormatFloat4;
         mVertexSize += 16;
-        offset += mTangent.size() * sizeof(simd_float4);
+        offset += mTangent.size() * sizeof(Vector4f);
     }
     
-    channels[kShaderChannelPosition].stride = sizeof(simd_float3);
-    channels[kShaderChannelNormal].stride = sizeof(simd_float3);
+    channels[kShaderChannelPosition].stride = sizeof(Vector4f);
+    channels[kShaderChannelNormal].stride = sizeof(Vector4f);
     channels[kShaderChannelColor].stride = 0;
-    channels[kShaderChannelTexCoord0].stride = sizeof(simd_float2);
-    channels[kShaderChannelTexCoord1].stride = sizeof(simd_float2);
-    channels[kShaderChannelTangent].stride = sizeof(simd_float4);
+    channels[kShaderChannelTexCoord0].stride = sizeof(Vector2f);
+    channels[kShaderChannelTexCoord1].stride = sizeof(Vector2f);
+    channels[kShaderChannelTangent].stride = sizeof(Vector4f);
 }
 
 void MeshAssimpImpoter::setupSkinnedMeshLayout(SkinnedMesh* skinnedMesh)
@@ -935,16 +935,16 @@ void MeshAssimpImpoter::setupSkinnedMeshLayout(SkinnedMesh* skinnedMesh)
         if (!mPosition.empty())
         {
             channels[kShaderChannelPosition].offset = offset;
-            channels[kShaderChannelPosition].format = VertexFormatFloat3;
+            channels[kShaderChannelPosition].format = VertexFormatFloat4;
             mVertexSize += 16;
-            offset += mPosition.size() * sizeof(simd_float3);
+            offset += mPosition.size() * sizeof(Vector4f);
         }
         if (!mNormal.empty())
         {
             channels[kShaderChannelNormal].offset = offset;
-            channels[kShaderChannelNormal].format = VertexFormatFloat3;
+            channels[kShaderChannelNormal].format = VertexFormatFloat4;
             mVertexSize += 16;
-            offset += mNormal.size() * sizeof(simd_float3);
+            offset += mNormal.size() * sizeof(Vector4f);
         }
         if (!mColor.empty())
         {
@@ -958,21 +958,21 @@ void MeshAssimpImpoter::setupSkinnedMeshLayout(SkinnedMesh* skinnedMesh)
             channels[kShaderChannelTexCoord0].offset = offset;
             channels[kShaderChannelTexCoord0].format = VertexFormatFloat2;
             mVertexSize += 8;
-            offset += mTexCoord0.size() * sizeof(simd_float2);
+            offset += mTexCoord0.size() * sizeof(Vector2f);
         }
         if (!mTexCoord1.empty())
         {
             channels[kShaderChannelTexCoord1].offset = offset;
             channels[kShaderChannelTexCoord1].format = VertexFormatFloat2;
             mVertexSize += 8;
-            offset += mTexCoord1.size() * sizeof(simd_float2);
+            offset += mTexCoord1.size() * sizeof(Vector2f);
         }
         if (!mTangent.empty())
         {
             channels[kShaderChannelTangent].offset = offset;
             channels[kShaderChannelTangent].format = VertexFormatFloat4;
             mVertexSize += 16;
-            offset += mTangent.size() * sizeof(simd_float4);
+            offset += mTangent.size() * sizeof(Vector4f);
         }
         if (!mBoneIndex.empty())
         {
@@ -986,17 +986,17 @@ void MeshAssimpImpoter::setupSkinnedMeshLayout(SkinnedMesh* skinnedMesh)
             channels[kShaderChannelWeight].offset = offset;
             channels[kShaderChannelWeight].format = VertexFormatFloat4;
             mVertexSize += 16;
-            offset += mBoneWeight.size() * sizeof(simd_float4);
+            offset += mBoneWeight.size() * sizeof(Vector4f);
         }
         
-        channels[kShaderChannelPosition].stride = sizeof(simd_float3);
-        channels[kShaderChannelNormal].stride = sizeof(simd_float3);
+        channels[kShaderChannelPosition].stride = sizeof(Vector4f);
+        channels[kShaderChannelNormal].stride = sizeof(Vector4f);
         channels[kShaderChannelColor].stride = 0;
-        channels[kShaderChannelTexCoord0].stride = sizeof(simd_float2);
-        channels[kShaderChannelTexCoord1].stride = sizeof(simd_float2);
-        channels[kShaderChannelTangent].stride = sizeof(simd_float4);
+        channels[kShaderChannelTexCoord0].stride = sizeof(Vector2f);
+        channels[kShaderChannelTexCoord1].stride = sizeof(Vector2f);
+        channels[kShaderChannelTangent].stride = sizeof(Vector4f);
         channels[kShaderChannelBoneIndex].stride = sizeof(BoneIndexInfo);
-        channels[kShaderChannelWeight].stride = sizeof(simd_float4);
+        channels[kShaderChannelWeight].stride = sizeof(Vector4f);
     }
     
     {
@@ -1006,16 +1006,16 @@ void MeshAssimpImpoter::setupSkinnedMeshLayout(SkinnedMesh* skinnedMesh)
         if (!mPosition.empty())
         {
             channels[kShaderChannelPosition].offset = offset;
-            channels[kShaderChannelPosition].format = VertexFormatFloat3;
+            channels[kShaderChannelPosition].format = VertexFormatFloat4;
             mVertexSize += 16;
-            offset += mPosition.size() * sizeof(simd_float3);
+            offset += mPosition.size() * sizeof(Vector4f);
         }
         if (!mNormal.empty())
         {
             channels[kShaderChannelNormal].offset = offset;
-            channels[kShaderChannelNormal].format = VertexFormatFloat3;
+            channels[kShaderChannelNormal].format = VertexFormatFloat4;
             mVertexSize += 16;
-            offset += mNormal.size() * sizeof(simd_float3);
+            offset += mNormal.size() * sizeof(Vector4f);
         }
         if (!mColor.empty())
         {
@@ -1029,21 +1029,21 @@ void MeshAssimpImpoter::setupSkinnedMeshLayout(SkinnedMesh* skinnedMesh)
             channels[kShaderChannelTexCoord0].offset = offset;
             channels[kShaderChannelTexCoord0].format = VertexFormatFloat2;
             mVertexSize += 8;
-            offset += mTexCoord0.size() * sizeof(simd_float2);
+            offset += mTexCoord0.size() * sizeof(Vector2f);
         }
         if (!mTexCoord1.empty())
         {
             channels[kShaderChannelTexCoord1].offset = offset;
             channels[kShaderChannelTexCoord1].format = VertexFormatFloat2;
             mVertexSize += 8;
-            offset += mTexCoord1.size() * sizeof(simd_float2);
+            offset += mTexCoord1.size() * sizeof(Vector2f);
         }
         if (!mTangent.empty())
         {
             channels[kShaderChannelTangent].offset = offset;
             channels[kShaderChannelTangent].format = VertexFormatFloat4;
             mVertexSize += 16;
-            offset += mTangent.size() * sizeof(simd_float4);
+            offset += mTangent.size() * sizeof(Vector4f);
         }
         if (!mBoneIndex.empty())
         {
@@ -1057,17 +1057,17 @@ void MeshAssimpImpoter::setupSkinnedMeshLayout(SkinnedMesh* skinnedMesh)
             channels[kShaderChannelWeight].offset = offset;
             channels[kShaderChannelWeight].format = VertexFormatFloat4;
             mVertexSize += 16;
-            offset += mBoneWeight.size() * sizeof(simd_float4);
+            offset += mBoneWeight.size() * sizeof(Vector4f);
         }
         
-        channels[kShaderChannelPosition].stride = sizeof(simd_float3);
-        channels[kShaderChannelNormal].stride = sizeof(simd_float3);
+        channels[kShaderChannelPosition].stride = sizeof(Vector4f);
+        channels[kShaderChannelNormal].stride = sizeof(Vector4f);
         channels[kShaderChannelColor].stride = 0;
-        channels[kShaderChannelTexCoord0].stride = sizeof(simd_float2);
-        channels[kShaderChannelTexCoord1].stride = sizeof(simd_float2);
-        channels[kShaderChannelTangent].stride = sizeof(simd_float4);
+        channels[kShaderChannelTexCoord0].stride = sizeof(Vector2f);
+        channels[kShaderChannelTexCoord1].stride = sizeof(Vector2f);
+        channels[kShaderChannelTangent].stride = sizeof(Vector4f);
         channels[kShaderChannelBoneIndex].stride = sizeof(BoneIndexInfo);
-        channels[kShaderChannelWeight].stride = sizeof(simd_float4);
+        channels[kShaderChannelWeight].stride = sizeof(Vector4f);
     }
 }
 
