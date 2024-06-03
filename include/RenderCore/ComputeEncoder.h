@@ -16,6 +16,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+// 计算着色器的encoder
 class ComputeEncoder
 {
 public:
@@ -27,20 +28,20 @@ public:
     {
     }
     
-    virtual void SetComputePipeline(ComputePipelinePtr computePipeline) {}
+    virtual void SetComputePipeline(ComputePipelinePtr computePipeline) = 0;
     
-    virtual void SetBuffer(ComputeBufferPtr buffer, uint32_t index){}
+    virtual void SetBuffer(ComputeBufferPtr buffer, uint32_t index) = 0;
     
-    virtual void SetTexture(Texture2DPtr texture, uint32_t index){}
+    virtual void SetTexture(Texture2DPtr texture, uint32_t index) = 0;
     
-    virtual void SetTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index){}
+    virtual void SetTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index) = 0;
     
-    virtual void Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ){}
+    virtual void Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) = 0;
     
-    virtual void EndEncode(){}
+    virtual void EndEncode() = 0;
 };
 
-typedef std::shared_ptr<ComputeEncoder> ComputeEncoderPtr;
+using ComputeEncoderPtr = std::shared_ptr<ComputeEncoder>;
 
 
 NAMESPACE_RENDERCORE_END

@@ -27,6 +27,11 @@ USING_NS_BASELIB
 
 VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
 {
+//    const char* env_p = std::getenv("PATH");
+//    putenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS");
+//    const char* name = getenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS");
+//    setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "0", 1);
+//    name = getenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS");
     VkResult result = volkInitialize();
     if (result != VK_SUCCESS)
     {
