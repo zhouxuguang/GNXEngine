@@ -17,5 +17,6 @@ void initPostResource(RenderDevicePtr renderDevice)
 
 void testPost(const RenderEncoderPtr &renderEncoder, const RenderTexturePtr texture)
 {
-    postProcessing->Process(renderEncoder, texture);
+    postProcessing->SetRenderTexture(texture);
+    postProcessing->Process(renderEncoder);
 }

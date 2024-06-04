@@ -15,6 +15,7 @@
 #include "Light.h"
 #include "ArcballManipulate.h"
 #include "mesh/MeshDrawUtil.h"
+#include "PostProcess/PostProcessing.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -27,6 +28,11 @@ public:
     static SceneManager* GetInstance();
     
     SceneNode* getRootNode() const;
+    
+    PostProcessing *GetPostProcessing() const
+    {
+        return mPostProcessing;
+    }
     
     Light * createLight(const std::string &name, Light::LightType type);
     
@@ -66,6 +72,7 @@ private:
     std::vector<CameraPtr> mCameras;            //相机的列表
     
     SkyBoxNode* mSkyBoxNode = nullptr;   //天空盒的特殊节点
+    PostProcessing *mPostProcessing = nullptr;
     
     ArcballManipulate* mCameraMani = nullptr;
     

@@ -41,10 +41,15 @@ PostProcessing::~PostProcessing()
     //
 }
 
-void PostProcessing::Process(const RenderEncoderPtr &renderEncoder, const RenderTexturePtr texture)
+void PostProcessing::SetRenderTexture(const RenderTexturePtr texture)
+{
+    mTexture = texture;
+}
+
+void PostProcessing::Process(const RenderEncoderPtr &renderEncoder)
 {
     renderEncoder->setGraphicsPipeline(mPipeline);
-    renderEncoder->setFragmentRenderTextureAndSampler(texture, mTextureSampler, 0);
+    renderEncoder->setFragmentRenderTextureAndSampler(mTexture, mTextureSampler, 0);
     
     renderEncoder->drawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
 }

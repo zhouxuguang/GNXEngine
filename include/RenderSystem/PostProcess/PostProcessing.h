@@ -21,7 +21,9 @@ public:
     
     ~PostProcessing();
     
-    void Process(const RenderEncoderPtr &renderEncoder, const RenderTexturePtr texture);
+    void SetRenderTexture(const RenderTexturePtr texture);
+    
+    void Process(const RenderEncoderPtr &renderEncoder);
     
 private:
     VertexBufferPtr mPositionCoord = nullptr;   //顶点buffer
@@ -29,6 +31,8 @@ private:
     RenderDevicePtr mRenderDevice = nullptr;  //渲染设备
     TextureSamplerPtr mTextureSampler = nullptr; //纹理采样器
     GraphicsPipelinePtr mPipeline = nullptr;   //渲染管线
+    
+    RenderTexturePtr mTexture = nullptr;
     
     Texture2DPtr mTextures[2];
     Texture2DPtr mPingPangTexture = nullptr;

@@ -24,6 +24,7 @@ SceneManager::SceneManager()
 {
     mRootSceneNode = new SceneNode();
     mSkyBoxNode = new SkyBoxNode();
+    mPostProcessing = new PostProcessing(getRenderDevice());
     
     mCameraUBO = getRenderDevice()->createUniformBufferWithSize(sizeof(cbPerCamera));
     mLightUBO = getRenderDevice()->createUniformBufferWithSize(sizeof(cbLighting));
@@ -160,6 +161,11 @@ void SceneManager::Render(RenderEncoderPtr renderEncoder)
     if (mSkyBoxNode)
     {
         mSkyBoxNode->Render(renderEncoder);
+    }
+    
+    if (mPostProcessing)
+    {
+        //mPostProcessing->Process(renderEncoder);
     }
 }
 
