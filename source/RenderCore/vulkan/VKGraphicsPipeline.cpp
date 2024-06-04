@@ -320,7 +320,8 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     mPipeCreateInfo.layout = mPipelineLayout;
 
     //12、例如dynamic rendering相关的
-    //if (1)
+    std::vector<VkPipelineRenderingCreateInfoKHR> renderingCreateInfos;
+    if (mContext->vulkanExtension.enabledDynamicRendering)
     {
         // New create info to define color, depth and stencil attachments at pipeline create time
         VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo = {};
@@ -329,8 +330,12 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
         pipelineRenderingCreateInfo.pColorAttachmentFormats = passFormat.colorFormats.data();
         pipelineRenderingCreateInfo.depthAttachmentFormat = passFormat.depthFormat;
         pipelineRenderingCreateInfo.stencilAttachmentFormat = passFormat.stencilFormat;
-        mPipeCreateInfo.pNext = &pipelineRenderingCreateInfo;
+        renderingCreateInfos.push_back(pipelineRenderingCreateInfo);
+        
+        // 动态渲染需要把renderpass设置为空
+        mPipeCreateInfo.renderPass = nullptr;
     }
+    mPipeCreateInfo.pNext = renderingCreateInfos.data();
     
     VkResult result = vkCreateGraphicsPipelines(mContext->device, VK_NULL_HANDLE, 1, &mPipeCreateInfo, nullptr, &mPipeline);
     assert(result == VK_SUCCESS);

@@ -67,6 +67,11 @@ public:
     {
         return mStageSetOffsets[stage][type];
     }
+    
+    void SetRenderPass(VkRenderPass renderPass)
+    {
+        mPipeCreateInfo.renderPass = renderPass;
+    }
 private:
     VkPipeline mPipeline = VK_NULL_HANDLE;
     VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;

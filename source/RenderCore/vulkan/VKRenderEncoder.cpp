@@ -51,12 +51,8 @@ VkPrimitiveTopology ConvertToVulkanPrimitiveTopology(PrimitiveMode mode)
     return topology;
 }
 
-VKRenderEncoder::VKRenderEncoder(VkCommandBuffer commandBuffer, const VkRenderingInfoKHR& renderInfo, 
-                                 const RenderPassFormat& passFormat, const RenderPassImage& passImage)
-    : mPassFormat(passFormat), mPassImage(passImage)
+void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInfo)
 {
-    mCommandBuffer = commandBuffer;
-    
     // 动态渲染没有子流程依赖，所以需要插入图像内存屏障
     for (auto &iter : mPassImage.colorImages)
     {
@@ -100,9 +96,59 @@ VKRenderEncoder::VKRenderEncoder(VkCommandBuffer commandBuffer, const VkRenderin
             VkImageSubresourceRange{ VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 });
     }
     
-    //if (.vulkanExtension.enabledDynamicRendering)
+    vkCmdBeginRenderingKHR(mCommandBuffer, &renderInfo);
+}
+
+void VKRenderEncoder::EndDynamicRenderPass()
+{
+    vkCmdEndRenderingKHR(mCommandBuffer);
+    
+    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    if (!mPassImage.isPresentStage)
     {
-        vkCmdBeginRenderingKHR(mCommandBuffer, &renderInfo);
+        imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+    
+    // 对颜色附件进行转换
+    for (auto &iter : mPassImage.colorImages)
+    {
+        VulkanBufferUtil::InsertImageMemoryBarrier(
+                                             mCommandBuffer,
+                                                   iter,
+            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            0,
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                   imageLayout,
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+    }
+}
+
+void VKRenderEncoder::BeginRenderPass()
+{
+    //
+}
+
+void VKRenderEncoder::EndRenderPass()
+{
+    //
+}
+
+VKRenderEncoder::VKRenderEncoder(VulkanContextPtr context, VkCommandBuffer commandBuffer, const VkRenderingInfoKHR& renderInfo,
+                                 const RenderPassFormat& passFormat, const RenderPassImage& passImage)
+    : mPassFormat(passFormat), mPassImage(passImage)
+{
+    mCommandBuffer = commandBuffer;
+    mContext = context;
+    
+    if (mContext->vulkanExtension.enabledDynamicRendering)
+    {
+        BeginDynamicRenderPass(renderInfo);
+    }
+    else
+    {
+        //
     }
     
     //设置viewport
@@ -130,27 +176,13 @@ VKRenderEncoder::~VKRenderEncoder()
 
 void VKRenderEncoder::EndEncode()
 {
-    vkCmdEndRenderingKHR(mCommandBuffer);
-    
-    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    if (!mPassImage.isPresentStage)
+    if (mContext->vulkanExtension.enabledDynamicRendering)
     {
-        imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        EndDynamicRenderPass();
     }
-    
-    // 对颜色附件进行转换
-    for (auto &iter : mPassImage.colorImages)
+    else
     {
-        VulkanBufferUtil::InsertImageMemoryBarrier(
-                                             mCommandBuffer,
-                                                   iter,
-            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            0,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                   imageLayout,
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+        //
     }
 }
 
@@ -165,6 +197,12 @@ void VKRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     
     vkGraphicsPipieline->Generate(mPassFormat);
     mGraphicsPipieline = vkGraphicsPipieline;
+    
+    // 没有动态渲染时需要设置renderpass
+    if (!mContext->vulkanExtension.enabledDynamicRendering)
+    {
+        mGraphicsPipieline->SetRenderPass(mRenderPass);
+    }
     
     vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipieline->GetPipeline());
 }

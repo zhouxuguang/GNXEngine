@@ -107,33 +107,18 @@ void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t w
 
 void VulkanSwapChain::CreateFrameBuffer(VulkanContextPtr vulkanContext, VkRenderPass renderPass, VkImageView depthStencilImage)
 {
-    // 使用交换链的图像创建帧缓冲
+    // 使用交换链的图像创建帧缓冲，这里帧缓冲区常驻内存
     mFrameBuffers.resize(mSwapchainImageCount);
     for (uint32_t i = 0; i < mSwapchainImageCount; i++)
     {
         std::vector<VkImageView> attachments;
-//        if (vulkanContext->numSamples > VK_SAMPLE_COUNT_1_BIT)
-//        {
-//            attachments.reserve(3);
-//            attachments.push_back(_msaaImageView);
-//            attachments.push_back(depthStencilImage);
-//            attachments.push_back(mDisplayViews[i]);
-//        }
-//        else
-//        {
-//            attachments.reserve(2);
-//            attachments.push_back(mDisplayViews[i]);
-//            attachments.push_back(depthStencilImage);
-//        }
         
-        attachments.reserve(2);
+        attachments.reserve(3);
         attachments.push_back(mDisplayViews[i]);
         attachments.push_back(depthStencilImage);
         
         VkFramebufferCreateInfo fbCreateInfo = {};
         fbCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        fbCreateInfo.pNext = nullptr;
-        fbCreateInfo.flags = 0;
         fbCreateInfo.renderPass = renderPass;
         fbCreateInfo.layers = 1;
         fbCreateInfo.attachmentCount = (uint32_t)attachments.size();
