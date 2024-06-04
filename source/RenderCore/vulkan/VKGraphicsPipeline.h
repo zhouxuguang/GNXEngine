@@ -80,6 +80,24 @@ public:
     {
         mPipeCreateInfo.renderPass = renderPass;
     }
+    
+    bool IsGenerated() const
+    {
+        return mGenerated;
+    }
+    
+    void SetPrimitiveType(VkPrimitiveTopology primitiveTopology)
+    {
+        if (mGenerated)
+        {
+            return;
+        }
+        VkPipelineInputAssemblyStateCreateInfo vertexAssemblyCreateInfo = {};
+        vertexAssemblyCreateInfo.topology = primitiveTopology;
+        vertexAssemblyCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        mPipeCreateInfo.pInputAssemblyState = &vertexAssemblyCreateInfo;
+    }
+    
 private:
     VkPipeline mPipeline = VK_NULL_HANDLE;
     VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;

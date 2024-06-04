@@ -66,6 +66,8 @@ private:
                          const std::vector<VkClearValue> &clearValues,
                          const RenderPassImageView& passImageView);
     void EndRenderPass();
+    
+    void BindPipeline();
 };
 
 using VKRenderEncoderPtr = std::shared_ptr<VKRenderEncoder>;

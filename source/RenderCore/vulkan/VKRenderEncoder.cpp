@@ -239,6 +239,15 @@ void VKRenderEncoder::EndEncode()
     }
 }
 
+void VKRenderEncoder::BindPipeline()
+{
+    if (mGraphicsPipieline && !mGraphicsPipieline->IsGenerated())
+    {
+        mGraphicsPipieline->Generate(mPassFormat);
+    }
+    vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipeline());
+}
+
 void VKRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
 {
     if (!graphicsPipeline)
@@ -247,17 +256,16 @@ void VKRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     }
     
     VKGraphicsPipeline *vkGraphicsPipieline = (VKGraphicsPipeline *)graphicsPipeline.get();
+    assert(vkGraphicsPipieline);
+    mGraphicsPipieline = vkGraphicsPipieline;
     
     // 没有动态渲染时需要设置renderpass
     if (!mContext->vulkanExtension.enabledDynamicRendering)
     {
-        vkGraphicsPipieline->SetRenderPass(mRenderPass->GetRenderPass());
+        mGraphicsPipieline->SetRenderPass(mRenderPass->GetRenderPass());
     }
     
-    vkGraphicsPipieline->Generate(mPassFormat);
-    mGraphicsPipieline = vkGraphicsPipieline;
-    
-    vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipieline->GetPipeline());
+    BindPipeline();
 }
 
 void VKRenderEncoder::setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index)
@@ -337,7 +345,15 @@ void VKRenderEncoder::drawPrimitves(PrimitiveMode mode, int offset, int size)
         VkCommandBuffer                             commandBuffer,
         VkPrimitiveTopology                         primitiveTopology);
 #endif
-    vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+    if (mContext->vulkanExtension.enabledExtendedDynamicState)
+    {
+        vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+    }
+    else
+    {
+        //mGraphicsPipieline->SetPrimitiveType(ConvertToVulkanPrimitiveTopology(mode));
+    }
+    //BindPipeline();
     
 #if 0
     // Provided by VK_VERSION_1_0
@@ -393,7 +409,16 @@ void VKRenderEncoder::drawIndexedPrimitives(PrimitiveMode mode, int size, IndexB
 #endif
     
     vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer->GetBuffer(), 0, indexType);
-    vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+    if (mContext->vulkanExtension.enabledExtendedDynamicState)
+    {
+        vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+    }
+    else
+    {
+        //mGraphicsPipieline->SetPrimitiveType(ConvertToVulkanPrimitiveTopology(mode));
+    }
+    //BindPipeline();
+    
     vkCmdDrawIndexed(mCommandBuffer, size, 1, offset, 0, 0);
 }
 
