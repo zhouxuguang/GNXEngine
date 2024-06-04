@@ -100,7 +100,10 @@ VKRenderEncoder::VKRenderEncoder(VkCommandBuffer commandBuffer, const VkRenderin
             VkImageSubresourceRange{ VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 });
     }
     
-    vkCmdBeginRenderingKHR(mCommandBuffer, &renderInfo);
+    //if (.vulkanExtension.enabledDynamicRendering)
+    {
+        vkCmdBeginRenderingKHR(mCommandBuffer, &renderInfo);
+    }
     
     //设置viewport
     VkViewport viewport;

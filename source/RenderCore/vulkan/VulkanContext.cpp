@@ -292,7 +292,10 @@ bool CreateVirtualDevice(VulkanContext& context)
     VkDeviceCreateInfo deviceCreateInfo = {};
     std::vector<const char*> deviceExtensionNames;
     deviceExtensionNames.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    deviceExtensionNames.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    if (context.vulkanExtension.enabledDynamicRendering)
+    {
+        deviceExtensionNames.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    }
 
 #ifdef ENABLE_VULKAN_DEBUG
     if (context.debugMarkersSupported) 
@@ -358,11 +361,9 @@ bool CreateVirtualDevice(VulkanContext& context)
         }
     }
     
-    // 打开 VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME
-    if (1)
-    {
-        deviceExtensionNames.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    }
+    // 打开 VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME    
+    // push descriptor默认开启
+    deviceExtensionNames.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     
     const VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature
     {

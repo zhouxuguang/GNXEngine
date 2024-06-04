@@ -14,9 +14,11 @@ NAMESPACE_RENDERCORE_BEGIN
 
 struct VulkanExtension
 {
-    bool enabledExtendedDynamicState;
-    bool enabledExtendedDynamicState2;
-    bool enabledExtendedDynamicState3;
+    bool enabledExtendedDynamicState = false;
+    bool enabledExtendedDynamicState2 = false;
+    bool enabledExtendedDynamicState3 = false;
+    
+    bool enabledDynamicRendering = false;
     
     std::vector<VkExtensionProperties> mDeviceExtensions;
     

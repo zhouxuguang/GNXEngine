@@ -12,6 +12,8 @@ NAMESPACE_RENDERCORE_BEGIN
 void VulkanExtension::Init(VkPhysicalDevice physicalDevice)
 {
     InitExtendedDynamicState(physicalDevice);
+    
+    enabledDynamicRendering = ExtensionSupported(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
 }
 
 void VulkanExtension::InitExtendedDynamicState(VkPhysicalDevice physicalDevice)
