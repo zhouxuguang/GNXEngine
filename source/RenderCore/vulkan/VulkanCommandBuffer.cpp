@@ -45,6 +45,9 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
     
     RenderPassFormat passFormat;
     RenderPassImage passImage;
+    RenderPassImageView passImageView;
+    std::vector<VkClearValue> clearValues;
+    clearValues.reserve(6);
     
     VkImageView imageView = mCommandInfo->swapChain->GetImageView(mCommandInfo->nextFrameIndex);
     
@@ -57,6 +60,7 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
         .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
         .clearValue = clearColor,
     };
+    clearValues.push_back(clearColor);
     
     VkRenderingAttachmentInfoKHR depth_attachment_info = {};
     depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
@@ -66,6 +70,8 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
     depth_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depth_attachment_info.clearValue.depthStencil.depth = 1.0;
     depth_attachment_info.clearValue.depthStencil.stencil = 0;
+    clearValues.push_back(depth_attachment_info.clearValue);
+    clearValues.push_back(depth_attachment_info.clearValue);
 
     VkRenderingInfoKHR render_info = {};
     render_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
@@ -88,9 +94,13 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
     passImage.depthImage = mCommandInfo->depthStencilBuffer->GetImage();
     passImage.stencilImage = mCommandInfo->depthStencilBuffer->GetImage();
     
+    passImageView.colorImages.push_back(imageView);
+    passImageView.depthImage = mCommandInfo->depthStencilBuffer->GetImageView();
+    passImageView.stencilImage = mCommandInfo->depthStencilBuffer->GetImageView();
+    
     passImage.isPresentStage = true;
     
-    return std::make_shared<VKRenderEncoder>(mCommandInfo->vulkanContext, mCommandBuffer, render_info, passFormat, passImage);
+    return std::make_shared<VKRenderEncoder>(mCommandInfo->vulkanContext, mCommandBuffer, render_info, passFormat, passImage, clearValues, passImageView);
 }
 
 RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& renderPass) const
@@ -102,6 +112,10 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
     
     RenderPassFormat passFormat;
     RenderPassImage passImage;
+    RenderPassImageView passImageView;
+    
+    std::vector<VkClearValue> clearValues;
+    clearValues.reserve(6);
     
     for (size_t i = 0; i < renderPass.colorAttachments.size(); i ++)
     {
@@ -123,6 +137,7 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
         clearColor.color.float32[1] = iter->clearColor.green;
         clearColor.color.float32[2] = iter->clearColor.blue;
         clearColor.color.float32[3] = iter->clearColor.alpha;
+        clearValues.push_back(clearColor);
         
 //        const VkRenderingAttachmentInfoKHR color_attachment_info
 //        {
@@ -148,6 +163,7 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
         colorAttachments.push_back(colorAttachment);
         passFormat.colorFormats.push_back(vkRenderTexture->GetVKFormat());
         passImage.colorImages.push_back(vkRenderTexture->GetVKImage());
+        passImageView.colorImages.push_back(vkRenderTexture->GetImageView()->GetHandle());
     }
     
     std::vector<VkRenderingAttachmentInfo> depthAttachments;
@@ -167,6 +183,9 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
         depthAttachments.push_back(depth_attachment_info);
         passFormat.depthFormat = vkRenderTexture->GetVKFormat();
         passImage.depthImage = vkRenderTexture->GetVKImage();
+        passImageView.depthImage = vkRenderTexture->GetImageView()->GetHandle();
+        
+        clearValues.push_back(depth_attachment_info.clearValue);
     }
    
     // 深度和模板缓冲绑定在一起的格式需要特殊处理
@@ -185,6 +204,9 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
         stencilAttachments.push_back(stencil_attachment_info);
         passFormat.stencilFormat = vkRenderTexture->GetVKFormat();
         passImage.stencilImage = vkRenderTexture->GetVKImage();
+        passImageView.stencilImage = vkRenderTexture->GetImageView()->GetHandle();
+        
+        clearValues.push_back(stencil_attachment_info.clearValue);
     }
     
     VkRenderingInfoKHR renderingInfo = {};
@@ -199,7 +221,7 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
     
     passImage.isPresentStage = false;
     
-    return std::make_shared<VKRenderEncoder>(mCommandInfo->vulkanContext, mCommandBuffer, renderingInfo, passFormat, passImage);
+    return std::make_shared<VKRenderEncoder>(mCommandInfo->vulkanContext, mCommandBuffer, renderingInfo, passFormat, passImage, clearValues, passImageView);
 }
 
 ComputeEncoderPtr VulkanCommandBuffer::createComputeEncoder() const

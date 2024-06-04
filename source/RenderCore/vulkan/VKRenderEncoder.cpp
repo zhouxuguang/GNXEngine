@@ -125,19 +125,72 @@ void VKRenderEncoder::EndDynamicRenderPass()
     }
 }
 
-void VKRenderEncoder::BeginRenderPass()
+void VKRenderEncoder::BeginRenderPass(const VkRenderingInfoKHR& renderInfo, 
+                                      const RenderPassFormat& passFormat,
+                                      const RenderPassImage& passImage, 
+                                      const std::vector<VkClearValue> &clearValues,
+                                      const RenderPassImageView& passImageView)
 {
-    //
+    mRenderPass = std::make_shared<VulkanRenderPass>(mContext, passFormat);
+    
+    // 创建fb
+    std::vector<VkImageView> attachments;
+    
+    attachments.reserve(6);
+    for (const auto & iter : passImageView.colorImages)
+    {
+        attachments.push_back(iter);
+    }
+    if (passImageView.depthImage)
+    {
+        attachments.push_back(passImageView.depthImage);
+    }
+    if (passImageView.stencilImage)
+    {
+        attachments.push_back(passImageView.stencilImage);
+    }
+    
+    VkFramebufferCreateInfo fbCreateInfo = {};
+    fbCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    fbCreateInfo.renderPass = mRenderPass->GetRenderPass();
+    fbCreateInfo.layers = 1;
+    fbCreateInfo.attachmentCount = (uint32_t)attachments.size();
+    fbCreateInfo.pAttachments = attachments.data();
+    fbCreateInfo.width = renderInfo.renderArea.extent.width;
+    fbCreateInfo.height = renderInfo.renderArea.extent.height;
+    
+    vkCreateFramebuffer(mContext->device, &fbCreateInfo, nullptr, &mFrameBuffer);
+    
+    // Now we start a renderpass. Any draw command has to be recorded in a renderpass
+    VkRenderPassBeginInfo renderPassBeginInfo = {};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = mRenderPass->GetRenderPass();
+    renderPassBeginInfo.framebuffer = mFrameBuffer;   //fb还需要创建
+    
+    renderPassBeginInfo.renderArea.offset.x = renderInfo.renderArea.offset.x;
+    renderPassBeginInfo.renderArea.offset.y = renderInfo.renderArea.offset.y;
+    renderPassBeginInfo.renderArea.extent.width = renderInfo.renderArea.extent.width;
+    renderPassBeginInfo.renderArea.extent.height = renderInfo.renderArea.extent.height;
+            
+    renderPassBeginInfo.clearValueCount = (uint32_t)clearValues.size();
+    renderPassBeginInfo.pClearValues = clearValues.data();
+
+    vkCmdBeginRenderPass(mCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void VKRenderEncoder::EndRenderPass()
 {
-    //
+    //结束renderpass
+    vkCmdEndRenderPass(mCommandBuffer);
 }
 
-VKRenderEncoder::VKRenderEncoder(VulkanContextPtr context, VkCommandBuffer commandBuffer, const VkRenderingInfoKHR& renderInfo,
-                                 const RenderPassFormat& passFormat, const RenderPassImage& passImage)
-    : mPassFormat(passFormat), mPassImage(passImage)
+VKRenderEncoder::VKRenderEncoder(VulkanContextPtr context, 
+                                 VkCommandBuffer commandBuffer,
+                                 const VkRenderingInfoKHR& renderInfo,
+                                 const RenderPassFormat& passFormat, 
+                                 const RenderPassImage& passImage,
+                                 const std::vector<VkClearValue> &clearValues,
+                                 const RenderPassImageView& passImageView) : mPassFormat(passFormat), mPassImage(passImage)
 {
     mCommandBuffer = commandBuffer;
     mContext = context;
@@ -148,7 +201,7 @@ VKRenderEncoder::VKRenderEncoder(VulkanContextPtr context, VkCommandBuffer comma
     }
     else
     {
-        //
+        BeginRenderPass(renderInfo, passFormat, passImage, clearValues, passImageView);
     }
     
     //设置viewport
@@ -171,7 +224,7 @@ VKRenderEncoder::VKRenderEncoder(VulkanContextPtr context, VkCommandBuffer comma
 
 VKRenderEncoder::~VKRenderEncoder()
 {
-    //vkResetCommandBuffer(mCommandBuffer, 0);
+    vkDestroyFramebuffer(mContext->device, mFrameBuffer, nullptr);
 }
 
 void VKRenderEncoder::EndEncode()
@@ -182,7 +235,7 @@ void VKRenderEncoder::EndEncode()
     }
     else
     {
-        //
+        EndRenderPass();
     }
 }
 
@@ -195,14 +248,14 @@ void VKRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     
     VKGraphicsPipeline *vkGraphicsPipieline = (VKGraphicsPipeline *)graphicsPipeline.get();
     
-    vkGraphicsPipieline->Generate(mPassFormat);
-    mGraphicsPipieline = vkGraphicsPipieline;
-    
     // 没有动态渲染时需要设置renderpass
     if (!mContext->vulkanExtension.enabledDynamicRendering)
     {
-        mGraphicsPipieline->SetRenderPass(mRenderPass);
+        vkGraphicsPipieline->SetRenderPass(mRenderPass->GetRenderPass());
     }
+    
+    vkGraphicsPipieline->Generate(mPassFormat);
+    mGraphicsPipieline = vkGraphicsPipieline;
     
     vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkGraphicsPipieline->GetPipeline());
 }

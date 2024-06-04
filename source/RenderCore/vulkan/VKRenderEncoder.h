@@ -11,14 +11,20 @@
 #include "VulkanContext.h"
 #include "RenderEncoder.h"
 #include "VKGraphicsPipeline.h"
+#include "VulkanRenderPass.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
 class VKRenderEncoder : public RenderEncoder
 {
 public:
-    VKRenderEncoder(VulkanContextPtr context, VkCommandBuffer commandBuffer, const VkRenderingInfoKHR& renderInfo, 
-                    const RenderPassFormat& passFormat, const RenderPassImage& passImage);
+    VKRenderEncoder(VulkanContextPtr context, 
+                    VkCommandBuffer commandBuffer,
+                    const VkRenderingInfoKHR& renderInfo,
+                    const RenderPassFormat& passFormat, 
+                    const RenderPassImage& passImage,
+                    const std::vector<VkClearValue> &clearValues,
+                    const RenderPassImageView& passImageView);
     
     ~VKRenderEncoder();
     
@@ -45,7 +51,8 @@ public:
 private:
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
     VKGraphicsPipeline *mGraphicsPipieline = nullptr;
-    VkRenderPass mRenderPass = VK_NULL_HANDLE;
+    VulkanRenderPassPtr mRenderPass = nullptr;
+    VkFramebuffer mFrameBuffer = VK_NULL_HANDLE;
     RenderPassFormat mPassFormat;
     RenderPassImage mPassImage;
     VulkanContextPtr mContext = nullptr;
@@ -53,7 +60,11 @@ private:
     void BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInfo);
     void EndDynamicRenderPass();
     
-    void BeginRenderPass();
+    void BeginRenderPass(const VkRenderingInfoKHR& renderInfo, 
+                         const RenderPassFormat& passFormat,
+                         const RenderPassImage& passImage, 
+                         const std::vector<VkClearValue> &clearValues,
+                         const RenderPassImageView& passImageView);
     void EndRenderPass();
 };
 

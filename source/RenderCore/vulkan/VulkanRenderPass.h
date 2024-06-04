@@ -32,6 +32,8 @@ private:
     void CreateRenderPass(VulkanContextPtr context, const RenderPassFormat& passFormat);
 };
 
+using VulkanRenderPassPtr = std::shared_ptr<VulkanRenderPass>;
+
 NAMESPACE_RENDERCORE_END
 
 #endif /* GNX_ENGINE_VULKAN_RENDERPASS_INCLUDE_NDGHGJJDF */
