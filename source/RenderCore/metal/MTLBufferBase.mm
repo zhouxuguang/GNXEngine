@@ -35,11 +35,13 @@ MTLBufferBase::MTLBufferBase(id<MTLDevice> device, size_t len, StorageMode type)
         {
             if (type == StorageModeShared)
             {
-                mBuffer = [device newBufferWithLength:len options:MTLStorageModeShared << MTLResourceStorageModeShift];
+                mBuffer = [device newBufferWithLength:len options:
+                           MTLResourceStorageModeShared | MTLResourceHazardTrackingModeUntracked];
             }
             else
             {
-                mBuffer = [device newBufferWithLength: len options: MTLStorageModePrivate << MTLResourceStorageModeShift];
+                mBuffer = [device newBufferWithLength: len options: 
+                           MTLResourceStorageModePrivate | MTLResourceHazardTrackingModeUntracked];
             }
         }
     }
@@ -53,11 +55,13 @@ MTLBufferBase::MTLBufferBase(id<MTLDevice> device, id<MTLCommandQueue> commandQu
         {
             if (type == StorageModeShared)
             {
-                mBuffer = [device newBufferWithBytes:buffer length:size options:MTLStorageModeShared << MTLResourceStorageModeShift];
+                mBuffer = [device newBufferWithBytes:buffer length:size options:
+                           MTLResourceStorageModeShared | MTLResourceHazardTrackingModeUntracked];
             }
             else
             {
-                id<MTLBuffer> bufferShared = [device newBufferWithBytes:buffer length:size options:MTLStorageModeShared << MTLResourceStorageModeShift];
+                id<MTLBuffer> bufferShared = [device newBufferWithBytes:buffer length:size options:
+                                              MTLResourceStorageModeShared | MTLResourceHazardTrackingModeUntracked];
                 createPrivateBuffer(device, commandQueue, bufferShared);
             }
         }
