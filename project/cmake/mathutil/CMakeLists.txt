@@ -15,7 +15,7 @@ endif()
 add_library(mathutil OBJECT ${SOURCE_FILES})
 target_include_directories(mathutil PUBLIC ${mathutil_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
 if(ANDROID)
-    target_include_directories(mathutil PRIVATE ${ANDROID_NDK}/sources/android/cpufeatures)
+    target_include_directories(mathutil PUBLIC ${ANDROID_NDK}/sources/android/cpufeatures)
 endif()
 
 target_link_libraries(mathutil PRIVATE baselib)

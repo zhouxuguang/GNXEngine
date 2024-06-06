@@ -322,7 +322,7 @@ bool EncodeWithLibPNG(std::vector<unsigned char>& dataStream, const VImage& imag
     png_set_write_fn(png_ptr, &dataStream, png_write_fn, NULL);
 
     //预先分配内存
-    dataStream.reserve(image.GetHeight() * image.GetWidth() * image.GetBytesPerPixel() / 3);
+    dataStream.reserve(image.GetWidth() * image.GetBytesPerRow() / 3);
     
     /* 设置图像的宽、高、格式、压缩方式等基本信息
      */
@@ -336,7 +336,7 @@ bool EncodeWithLibPNG(std::vector<unsigned char>& dataStream, const VImage& imag
     png_set_packing(png_ptr);
     png_write_info(png_ptr, info_ptr);
     
-    size_t nPerLinuint8_ts = image.GetWidth() * image.GetBytesPerPixel();
+    size_t nPerLinuint8_ts = image. GetHeight() * image.GetBytesPerRow();
     unsigned char* srcImage =  image.GetPixels() + (image.GetHeight() - 1) * nPerLinuint8_ts;
     unsigned char* storage = (unsigned char*)malloc(image.GetWidth() * 4);
     transform_line_proc transformProc = choose_tranform_proc(format, hasAlpha);
