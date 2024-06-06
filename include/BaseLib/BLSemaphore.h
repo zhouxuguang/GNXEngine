@@ -9,6 +9,8 @@
 #ifndef BASELIB_SEMAPHORE_INCLUDE_H
 #define BASELIB_SEMAPHORE_INCLUDE_H
 
+#if 0
+
 #include "PreCompile.h"
 
 NS_BASELIB_BEGIN
@@ -33,5 +35,7 @@ public:
 };
 
 NS_BASELIB_END
+
+#endif
 
 #endif /* BASELIB_SEMAPHORE_INCLUDE_H */

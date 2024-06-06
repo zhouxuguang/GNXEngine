@@ -11,6 +11,8 @@
 
 #ifdef __ANDROID__
 #include <sys/prctl.h>
+#include <sys/types.h>
+#include <unistd.h>
 #endif
 
 #ifdef WIN32

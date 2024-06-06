@@ -90,9 +90,15 @@ int EnvironmentUtility::GetProcessorCount() const
 	GetSystemInfo(&sysinfo);
 	return sysinfo.dwNumberOfProcessors;
 #elif defined(__linux__)
-	int count = sysconf(_SC_NPROCESSORS_ONLN);
+
+#ifdef __ANDROID__
+	return 8;   // 先写一个假的
+#else
+	int count = sysconf(_SC_NPROCESSORS_ONLN);   //这个是返回当前可用的核心数目，我需要返回总的核心数
 	if (count <= 0) count = 1;
 	return count;
+#endif
+
 #elif __open_bsd__
 	int mib[2] = { CTL_HW, HW_NCPU };
 	int mib[2];

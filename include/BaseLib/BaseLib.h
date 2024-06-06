@@ -17,7 +17,7 @@
 #include "Condition.h"
 #include "MutexLock.h"
 #include "Reference.h"
-#include "Semaphore.h"
+#include "BLSemaphore.h"
 
 #include "StringConverter.h"
 #include "StringUtil.h"

@@ -6,6 +6,8 @@
     #include <mach-o/dyld.h>
 #elif defined __ANDROID__
     #include <sys/resource.h>
+    #include <sys/types.h>
+    #include <unistd.h>
 #elif defined WIN32
 	#include <Psapi.h>
 	#pragma comment(lib,"Psapi.lib")
@@ -180,26 +182,28 @@ std::string GetExePath()
     int  namelen = 512;
     char selfname[namelen];
     memset( selfname, 0, namelen );
-    
+
+#ifndef __ANDROID__
     if ( -1 != readlink( sysfile,
                         selfname,
                         namelen) )
     {
         printf( " self name = %s\n", selfname );
     }
+#endif
     
     return std::string(selfname);
     
     
     //另一种方法
-    const char*pszSdPath = getenv("SECONDARY_STORAGE");
+    const char *pszSdPath = getenv("SECONDARY_STORAGE");
     if (NULL == pszSdPath)
     {
         pszSdPath = getenv("EXTERNAL_STORAGE");
     }
     
     char szBuf[255];
-    sprintf(szBuf, "/proc/%d/cmdline",getpid());
+    sprintf(szBuf, "/proc/%d/cmdline", getpid());
     const char* pszPath = szBuf;
     FILE* fp = fopen(pszPath, "r");
     if (fp)
@@ -219,12 +223,12 @@ std::string GetExeName()
 #if defined(__APPLE__) || defined(__FreeBSD__)
     const char * appname = getprogname();
 #elif defined(_GNU_SOURCE)
-    //const char * appname = program_invocation_name;
+    const char * appname = "";
 #else
     const char * appname = "?";
 #endif
     
-    //return appname;
+    return appname;
 }
 
 #elif defined WIN32

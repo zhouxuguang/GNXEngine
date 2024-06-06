@@ -6,7 +6,9 @@
 //  Copyright 漏 2016骞�zhouxuguang. All rights reserved.
 //
 
-#include "Semaphore.h"
+#include "BLSemaphore.h"
+
+#if 0
 
 NS_BASELIB_BEGIN
 
@@ -52,7 +54,7 @@ bool Semaphore::timedWait(unsigned int s, unsigned int ms)
 }
 
 
-#elif defined(__linux__) || defined(__ANDROID__)
+#elif defined(__linux__) && !defined(__ANDROID__)
 
 
 Semaphore::Semaphore(int initValue)
@@ -131,3 +133,5 @@ bool Semaphore::timedWait(unsigned int s, unsigned int ms)
 
 
 NS_BASELIB_END
+
+#endif

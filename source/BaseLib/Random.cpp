@@ -8,11 +8,13 @@
 
 #include "Random.h"
 #include <limits.h>
+#include <unistd.h>
 
 NS_BASELIB_BEGIN
 
 unsigned int GetRandom()
 {
+    int nNum = 0;
 #ifdef _MSC_VER
 #if defined _WIN32_WCE
     CeGenRandom(sizeof(nNum), (PBYTE)&nNum);
