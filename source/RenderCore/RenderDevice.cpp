@@ -101,12 +101,14 @@ RenderDevicePtr createRenderDevice(RenderDeviceType deviceType, ViewHandle viewH
     if (GLES == deviceType)
     {
         #if TARGET_OS_IPHONE || __ANDROID__
-        renderDevicePtr = std::make_shared<GLRenderDevice>(viewHandle);
+        //renderDevicePtr = std::make_shared<GLRenderDevice>(viewHandle);
         #endif
     }
     else if (METAL == deviceType)
     {
+#ifdef __APPLE__
         renderDevicePtr = createMetalRenderDevice(viewHandle);
+#endif
     }
     else if (VULKAN == deviceType)
     {

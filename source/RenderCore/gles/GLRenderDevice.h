@@ -103,11 +103,6 @@ public:
     virtual CommandBufferPtr createCommandBuffer() const;
     
     /**
-     创建FrameBuffer
-     */
-    virtual FrameBufferPtr createFrameBuffer(uint32_t width, uint32_t height) const;
-    
-    /**
      创建renderTexture
      */
     virtual RenderTexturePtr createRenderTexture(const TextureDescriptor& des) const;

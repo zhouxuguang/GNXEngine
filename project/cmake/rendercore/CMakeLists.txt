@@ -25,7 +25,12 @@ if(APPLE)
     endif()
     
 elseif(ANDROID) #android平台
-    file(GLOB_RECURSE RENDERCORE_SOURCES CONFIGURE_DEPENDS ${rendercore_dir}/*.cpp ${rendercore_dir}/*.c ${rendercore_dir}/*.h) 
+    file(GLOB RENDERCORE_SOURCES CONFIGURE_DEPENDS  ${rendercore_dir}/*.cpp 
+                                                    ${rendercore_dir}/*.c 
+                                                    ${rendercore_dir}/*.h
+                                                    ${rendercore_dir}/vulkan/*.cpp
+                                                    ${rendercore_dir}/vulkan/*.c
+                                                    ${rendercore_dir}/vulkan/*.h) 
 endif()
 
 file(GLOB_RECURSE RENDERCORE_INCLUDES CONFIGURE_DEPENDS ${rendercore_include_dir}/*.h)
