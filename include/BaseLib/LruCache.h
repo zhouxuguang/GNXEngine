@@ -85,7 +85,7 @@ NS_BASELIB_BEGIN
             const TKey& getKey() const { return key; }
         };
         
-        struct HashForEntry : public std::unary_function<Entry*, size_t>
+        struct HashForEntry //: public std::unary_function<Entry*, size_t>
         {
             size_t operator() (const Entry* entry) const
             {
@@ -93,7 +93,7 @@ NS_BASELIB_BEGIN
             };
         };
         
-        struct EqualityForHashedEntries : public std::unary_function<Entry*, bool>
+        struct EqualityForHashedEntries //: public std::unary_function<Entry*, bool>
 		{
             bool operator() (const Entry* lhs, const Entry* rhs) const 
 			{
