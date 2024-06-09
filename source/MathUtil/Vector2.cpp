@@ -27,12 +27,12 @@ Vector2<T>::Vector2(const T afCoordinate[2]) : x( afCoordinate[0] ), y( afCoordi
 
 }
 
-template <typename T>
-Vector2<T>::Vector2(const int afCoordinate[2])
-{
-	x = (Real)afCoordinate[0];
-	y = (Real)afCoordinate[1];
-}
+//template <typename T>
+//Vector2<T>::Vector2(const int afCoordinate[2])
+//{
+//	x = (Real)afCoordinate[0];
+//	y = (Real)afCoordinate[1];
+//}
 
 template <typename T>
 Vector2<T>::Vector2(T* const r) : x( r[0] ), y( r[1] )
@@ -111,5 +111,6 @@ Vector2<T> Vector2<T>::Reflect(const Vector2& normal) const
 
 template class Vector2<float>;
 template class Vector2<double>;
+template class Vector2<int>;
 
 NS_MATHUTIL_END

@@ -17,7 +17,7 @@ public:
 
     inline explicit Vector2( const T afCoordinate[2] );
 
-    explicit Vector2( const int afCoordinate[2] );
+    //explicit Vector2( const int afCoordinate[2] );
 
     inline explicit Vector2( T* const r );
 
@@ -270,6 +270,7 @@ public:
 
 typedef Vector2<float> Vector2f;
 typedef Vector2<float> Vector2d;
+typedef Vector2<int> Vector2i;
 
 NS_MATHUTIL_END
 
