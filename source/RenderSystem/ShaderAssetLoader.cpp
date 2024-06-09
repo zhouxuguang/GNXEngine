@@ -20,9 +20,16 @@ ShaderAssetString LoadShaderAsset(const std::string &shaderName)
     
     std::string shaderFilePath = getBuiltInShaderDir() + shaderName + ".hlsl";
     
+    return LoadCustomShaderAsset(shaderFilePath);
+}
+
+ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName)
+{
+    ShaderAssetString shaderAssetString;
+    
     RenderDeviceType renderType = getRenderDevice()->getRenderDeviceType();
     
-    CompiledShaderInfoPtr vertexShaderInfo = CompileShader(shaderFilePath, ShaderStage_Vertex, renderType);
+    CompiledShaderInfoPtr vertexShaderInfo = CompileShader(shaderName, ShaderStage_Vertex, renderType);
     
     if (vertexShaderInfo)
     {
@@ -30,13 +37,13 @@ ShaderAssetString LoadShaderAsset(const std::string &shaderName)
         shaderAssetString.vertexDescriptor = vertexShaderInfo->vertexDescriptor;
     }
     
-    CompiledShaderInfoPtr fragmentShaderInfo = CompileShader(shaderFilePath.c_str(), ShaderStage_Fragment, renderType);
+    CompiledShaderInfoPtr fragmentShaderInfo = CompileShader(shaderName, ShaderStage_Fragment, renderType);
     if (fragmentShaderInfo)
     {
         shaderAssetString.fragmentShader = fragmentShaderInfo;
     }
     
-    CompiledShaderInfoPtr computeShaderInfo = CompileShader(shaderFilePath.c_str(), ShaderStage_Compute, renderType);
+    CompiledShaderInfoPtr computeShaderInfo = CompileShader(shaderName, ShaderStage_Compute, renderType);
     if (computeShaderInfo)
     {
         shaderAssetString.computeShader = computeShaderInfo;

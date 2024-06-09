@@ -41,6 +41,8 @@ struct ShaderAssetString
 
 ShaderAssetString LoadShaderAsset(const std::string &shaderName);
 
+ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName);
+
 NS_RENDERSYSTEM_END
 
 #endif /* GNX_ENGINE_SHADER_ASSET_LOADER_INCLUDE_FKJBJBJ_H */
