@@ -69,6 +69,11 @@ public:
      */
     int GetTaskCount() const;
     
+    /**
+     *  取消没有执行的任务
+     */
+    void CancelAllTasks();
+    
 private:
     std::shared_ptr<ThreadPoolIMPL> mIMPL = nullptr;
 };

@@ -59,6 +59,13 @@ int ThreadPoolIMPL::GetTaskCount()
     return (int)mTaskList.size();
 }
 
+void ThreadPoolIMPL::CancelAllTasks()
+{
+    AutoLock lock_guard(mLock);
+    printf("还没完成的任务个数 = %d\n", (int)mTaskList.size());
+    mTaskList.clear();
+}
+
 void ThreadPoolIMPL::Execute(const TaskRunnerPtr &task, ThreadPool::TaskStrategy strategy)
 {
     mLock.Lock();

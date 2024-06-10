@@ -63,6 +63,11 @@ public:
      */
     int GetTaskCount();
     
+    /**
+     *  取消没有执行的任务
+     */
+    void CancelAllTasks();
+    
 private:
     typedef std::vector<std::thread> ThreadQueue;
     ThreadQueue mThreads;

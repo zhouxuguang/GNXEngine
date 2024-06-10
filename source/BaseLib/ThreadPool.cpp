@@ -47,6 +47,11 @@ int ThreadPool::GetTaskCount() const
     return mIMPL->GetTaskCount();
 }
 
+void ThreadPool::CancelAllTasks()
+{
+    mIMPL->CancelAllTasks();
+}
+
 void ThreadPool::Execute(const TaskRunnerPtr &task, TaskStrategy strategy)
 {
     mIMPL->Execute(task, strategy);
