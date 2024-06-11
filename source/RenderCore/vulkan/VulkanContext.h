@@ -11,6 +11,7 @@
 #include "VKRenderDefine.h"
 #include "RenderDevice.h"
 #include "VulkanExtension.h"
+#include "BaseLib/ThreadLocal.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -23,7 +24,12 @@ struct VulkanContext
     VkPhysicalDeviceProperties physicalDeviceProperties;
     VkPhysicalDeviceFeatures physicalDeviceFeatures;
     VkPhysicalDeviceMemoryProperties memoryProperties;
-    VkCommandPool commandPool = VK_NULL_HANDLE;
+    
+    baselib::ThreadLocal commandPoolTls;
+    
+    VkCommandPool GetCommandPool();
+    
+    //VkCommandPool commandPool = VK_NULL_HANDLE;
     uint32_t graphicsQueueFamilyIndex;
     uint32_t computeQueueFamilyIndex;
     uint32_t queueCount;

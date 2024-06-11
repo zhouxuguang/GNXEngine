@@ -176,12 +176,12 @@ void VKTexture2D::replaceRegion(const Rect2D &rect, const unsigned char *imageDa
     memcpy(data, imageData, size);
     vmaUnmapMemory(mContext->vmaAllocator, allocation);
     
-    VkCommandBuffer commandBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, mContext->commandPool);
+    VkCommandBuffer commandBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, mContext->GetCommandPool());
     
     VulkanBufferUtil::CopyBufferToImage(mContext->device, commandBuffer, stageBuffer, mImage, 
                                         rect.offsetX, rect.offsetY, rect.width, rect.height, mipMapLevel);
     
-    VulkanBufferUtil::EndSingleTimeCommand(mContext->device, mContext->graphicsQueue, mContext->commandPool, commandBuffer);
+    VulkanBufferUtil::EndSingleTimeCommand(mContext->device, mContext->graphicsQueue, mContext->GetCommandPool(), commandBuffer);
     
     vmaDestroyBuffer(mContext->vmaAllocator, stageBuffer, allocation);
 }

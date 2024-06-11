@@ -51,7 +51,7 @@ VKVertexBuffer::VKVertexBuffer(VulkanContextPtr context, const void* buffer, siz
         memcpy(data, buffer, size);
         vmaUnmapMemory(context->vmaAllocator, allocation);
         
-        VulkanBufferUtil::CopyBuffer(mContext->device, mContext->graphicsQueue, mContext->commandPool, stageBuffer, mBuffer, size);
+        VulkanBufferUtil::CopyBuffer(mContext->device, mContext->graphicsQueue, mContext->GetCommandPool(), stageBuffer, mBuffer, size);
         vmaDestroyBuffer(mContext->vmaAllocator, stageBuffer, allocation);
     }
     else

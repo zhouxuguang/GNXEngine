@@ -30,7 +30,7 @@ VKIndexBuffer::VKIndexBuffer(VulkanContextPtr context, IndexType indexType, cons
     memcpy(data, pData, dataLen);
     vmaUnmapMemory(context->vmaAllocator, allocation);
     
-    VulkanBufferUtil::CopyBuffer(mContext->device, mContext->graphicsQueue, mContext->commandPool, stageBuffer, mBuffer, dataLen);
+    VulkanBufferUtil::CopyBuffer(mContext->device, mContext->graphicsQueue, mContext->GetCommandPool(), stageBuffer, mBuffer, dataLen);
     vmaDestroyBuffer(mContext->vmaAllocator, stageBuffer, allocation);
 
     mBufferLength = (uint32_t)dataLen;

@@ -92,7 +92,7 @@ void VKTextureCube::setTextureData(CubemapFace cubeFace, uint32_t imageSize, con
     subresourceRange.levelCount = 1;
     subresourceRange.layerCount = 1;
     
-    VkCommandBuffer commandBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, mContext->commandPool);
+    VkCommandBuffer commandBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, mContext->GetCommandPool());
 
     VulkanBufferUtil::SetImageLayout(
                                      commandBuffer,
@@ -119,7 +119,7 @@ void VKTextureCube::setTextureData(CubemapFace cubeFace, uint32_t imageSize, con
                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                 subresourceRange);
 
-    VulkanBufferUtil::EndSingleTimeCommand(mContext->device, mContext->graphicsQueue, mContext->commandPool, commandBuffer);
+    VulkanBufferUtil::EndSingleTimeCommand(mContext->device, mContext->graphicsQueue, mContext->GetCommandPool(), commandBuffer);
     
     vmaDestroyBuffer(mContext->vmaAllocator, stageBuffer, allocation);
     

@@ -409,22 +409,38 @@ bool CreateVirtualDevice(VulkanContext& context)
     volkLoadDevice(context.device);
     
     vkGetDeviceQueue(context.device, context.graphicsQueueFamilyIndex, 0, &context.graphicsQueue);
-    
-    //创建命令缓冲区池
-    VkCommandPoolCreateInfo createInfo;
-    createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-    createInfo.queueFamilyIndex = context.graphicsQueueFamilyIndex;
-    createInfo.pNext = nullptr;
-    
-    result = vkCreateCommandPool(context.device, &createInfo, NULL, &context.commandPool);
-    if (result != VK_SUCCESS) 
-    {
-        log_info("vkCreateCommandPool error");
-        return false;
-    }
 
     return true;
+}
+
+VkCommandPool VulkanContext::GetCommandPool()
+{
+    void *pCommandPool = nullptr;
+    if ((pCommandPool = commandPoolTls.get()))
+    {
+        return (VkCommandPool)pCommandPool;
+    }
+    
+    else
+    {
+        //创建命令缓冲区池
+        VkCommandPoolCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+        createInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
+        createInfo.pNext = nullptr;
+        
+        VkCommandPool commandPool = VK_NULL_HANDLE;
+        
+        VkResult result = vkCreateCommandPool(device, &createInfo, NULL, &commandPool);
+        if (result != VK_SUCCESS)
+        {
+            log_info("vkCreateCommandPool error");
+        }
+        
+        commandPoolTls.set(commandPool);
+        return commandPool;
+    }
 }
 
 // 创建内存分配器

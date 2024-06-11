@@ -81,6 +81,8 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     
     CreateVMA(*mVulkanContext);
     
+    mVulkanContext->GetCommandPool();
+    
     // 创建交换链
     if (!CreateSurfaceKHR(*mVulkanContext, nativeWidow))
     {
@@ -127,7 +129,7 @@ void VKRenderDevice::resize(uint32_t width, uint32_t height)
     // 创建命令缓冲区
     if (mCommandBuffers.empty())
     {
-        CreateCommandBufers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->commandPool);
+        CreateCommandBufers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetCommandPool());
     }
     mCurrentFrame = 0;
     
@@ -342,7 +344,7 @@ void VKRenderDevice::ReleaseCommandBuffers()
 {
     if (!mCommandBuffers.empty())
     {
-        vkFreeCommandBuffers(mVulkanContext->device, mVulkanContext->commandPool, (uint32_t)mCommandBuffers.size(), mCommandBuffers.data());
+        vkFreeCommandBuffers(mVulkanContext->device, mVulkanContext->GetCommandPool(), (uint32_t)mCommandBuffers.size(), mCommandBuffers.data());
     }
     mCommandBuffers.clear();
     mCommandBuffers.shrink_to_fit();
