@@ -58,9 +58,9 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
     {
         renderEncoder->setGraphicsPipeline(renderInfo.materials[n]->GetPSO());
         
-        renderEncoder->setVertexUniformBuffer(renderInfo.cameraUBO, 4);
-        renderEncoder->setVertexUniformBuffer(renderInfo.objectUBO, 5);
-        renderEncoder->setVertexUniformBuffer(renderInfo.lightUBO, 6);
+        renderEncoder->setVertexUniformBuffer(renderInfo.cameraUBO, 0);
+        renderEncoder->setVertexUniformBuffer(renderInfo.objectUBO, 1);
+        renderEncoder->setVertexUniformBuffer(renderInfo.lightUBO, 2);
         
         renderEncoder->setFragmentUniformBuffer(renderInfo.cameraUBO, 0);
         renderEncoder->setFragmentUniformBuffer(renderInfo.lightUBO, 2);
