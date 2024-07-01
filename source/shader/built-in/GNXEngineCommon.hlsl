@@ -23,15 +23,15 @@
 //应用程序的顶点结构
 struct appdata_base
 {
-    float3 position : POSITION;
-    float3 normal : NORMAL;
+    float4 position : POSITION;
+    float4 normal : NORMAL;
     float2 texcoord : TEXCOORD0;
 };
 
 struct appdata_tan
 {
-    float3 position : POSITION;
-    float3 normal : NORMAL;
+    float4 position : POSITION;
+    float4 normal : NORMAL;
     float4 tangent : TANGENT;
     float2 texcoord : TEXCOORD0;
 };

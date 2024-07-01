@@ -192,22 +192,20 @@ static MTLRenderPipelineDescriptor* convertToMTLRenderPiplineDescriptor(const Gr
     mtlPiplineDes.fragmentFunction = nil;
     
     // 设置顶点属性
-    int index = 0;
+    std::vector<int> indexs;
     for (const auto& iter : des.vertexDescriptor.attributes)
     {
-        mtlPiplineDes.vertexDescriptor.attributes[index].bufferIndex = iter.index;
-        mtlPiplineDes.vertexDescriptor.attributes[index].format = convertMETALVertexFormat(iter.format);
-        mtlPiplineDes.vertexDescriptor.attributes[index].offset = iter.offset;
-        ++index;
+        mtlPiplineDes.vertexDescriptor.attributes[iter.index].bufferIndex = iter.index;
+        mtlPiplineDes.vertexDescriptor.attributes[iter.index].format = convertMETALVertexFormat(iter.format);
+        mtlPiplineDes.vertexDescriptor.attributes[iter.index].offset = iter.offset;
+        indexs.push_back(iter.index);
     }
     
-    index = 0;
-    for (const auto& iter : des.vertexDescriptor.layouts)
+    for (size_t i = 0; i < des.vertexDescriptor.layouts.size(); i ++)
     {
-        mtlPiplineDes.vertexDescriptor.layouts[index].stride = iter.stride;
-        mtlPiplineDes.vertexDescriptor.layouts[index].stepRate = 1;
-        mtlPiplineDes.vertexDescriptor.layouts[index].stepFunction = MTLVertexStepFunctionPerVertex;
-        index++;
+        mtlPiplineDes.vertexDescriptor.layouts[indexs[i]].stride = des.vertexDescriptor.layouts[i].stride;
+        mtlPiplineDes.vertexDescriptor.layouts[indexs[i]].stepRate = 1;
+        mtlPiplineDes.vertexDescriptor.layouts[indexs[i]].stepFunction = MTLVertexStepFunctionPerVertex;
     }
     
     //mtlPiplineDes.colorAttachments[0].pixelFormat = MTLPixelFormatRGBA8Unorm;

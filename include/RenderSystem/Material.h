@@ -33,7 +33,7 @@ public:
     
     // 获得默认的材质
     static Material *GetDefault();
-    static Material *GetDefaultDiffuseMaterial();
+    static std::shared_ptr<Material> GetDefaultDiffuseMaterial();
     
     static std::shared_ptr<Material> CreateMaterial(const char *shaderStrPath);
     static Material *CreateMaterial(ShaderAssetPtr shader);

@@ -49,25 +49,25 @@ VertexOut VS(appdata_tan vin)
     VertexOut vout;
     
     // Transform to world space.
-    float4 posW = mul(float4(vin.position, 1.0), MATRIX_M);
+    float4 posW = mul(float4(vin.position.xyz, 1.0), MATRIX_M);
     posW = mul(posW, MATRIX_V);
     posW = mul(posW, MATRIX_P);
     vout.PosH = posW;
     vout.texCoord0 = vin.texcoord;
 
     // 法线转换到视线空间
-    float3 norm = normalize(mul(vin.normal, MATRIX_Normal));
+    float3 norm = normalize(mul(vin.normal.xyz, MATRIX_Normal));
     norm = normalize(mul(norm, MATRIX_V));
     vout.normal = norm;
 
     // 将视线方向和光源方向转换到视线空间
-    float4 pos = mul(float4(vin.position, 1.0), MATRIX_M);
+    float4 pos = mul(float4(vin.position.xyz, 1.0), MATRIX_M);
     pos = mul(pos, MATRIX_V);
     vout.lightDir = normalize((Position.xyz - pos));
 
     // 相机的位置
     float3 cameraPos = mul(float4(_WorldSpaceCameraPos, 1.0), MATRIX_V);
-    vout.viewDir = normalize(cameraPos - pos);
+    vout.viewDir = normalize(cameraPos - pos.xyz);
     
     return vout;
 }

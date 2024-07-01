@@ -43,9 +43,9 @@ Material *Material::GetDefault()
     return nullptr;
 }
 
-Material *Material::GetDefaultDiffuseMaterial()
+MaterialPtr Material::GetDefaultDiffuseMaterial()
 {
-    return nullptr;
+    return Material::CreateMaterial("ModelShader");
 }
 
 MaterialPtr Material::CreateMaterial(const char *shaderStrPath)

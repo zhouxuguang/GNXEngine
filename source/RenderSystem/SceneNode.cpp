@@ -101,6 +101,20 @@ SceneNode * SceneNode::createRendererNode(const std::string &name,
     return pNode;
 }
 
+void SceneNode::AddSceneNode(SceneNode *pNode,
+           const Vector3f &translate,
+           const Quaternionf &rotate,
+                  const Vector3f &scale)
+{
+    pNode->mParentNode = this;
+    
+    TransformComponent* transform = new TransformComponent(
+                       Transform(translate, rotate, scale));
+    pNode->AddComponent(transform);
+    
+    mChildNodes.push_back(pNode);
+}
+
 void SceneNode::attachObject(SceneObject *obj)
 {
     mAttachedObjects.push_back(obj);

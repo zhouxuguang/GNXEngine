@@ -39,6 +39,11 @@ public:
                                     const Quaternionf &rotate = Quaternionf::IDENTITY,
                                            const Vector3f &scale = Vector3f::UNIT_SCALE);
     
+    void AddSceneNode(SceneNode *pNode,
+               const Vector3f &translate = Vector3f::ZERO,
+               const Quaternionf &rotate = Quaternionf::IDENTITY,
+                      const Vector3f &scale = Vector3f::UNIT_SCALE);
+    
     virtual void attachObject(SceneObject *obj);
     
     virtual void detachAllObjects(void);
