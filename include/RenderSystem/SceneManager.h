@@ -46,6 +46,11 @@ public:
     
     bool hasCamera(const std::string &name) const;
     
+    void AddCamara(CameraPtr camera)
+    {
+        mCameras.push_back(camera);
+    }
+    
     SkyBoxNode* GetSkyBox() const
     {
         return mSkyBoxNode;

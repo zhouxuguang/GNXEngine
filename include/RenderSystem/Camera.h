@@ -25,7 +25,7 @@ class Camera : public SceneObject
 public:
     Camera(RenderDeviceType renderType, const std::string& name);
     
-    ~Camera();
+    virtual ~Camera();
     
     std::string GetName() const;
     
@@ -40,10 +40,10 @@ public:
     void SetPosition(const Vector3f& position);
     
     //获得相机的世界坐标位置
-    Vector3f GetPosition() const;
+    virtual Vector3f GetPosition() const;
     
     //获得视图矩阵
-    Matrix4x4f GetViewMatrix() const;
+    virtual Matrix4x4f GetViewMatrix() const;
     
     //获得投影矩阵
     Matrix4x4f GetProjectionMatrix() const;
@@ -62,7 +62,7 @@ public:
     
     Vector3f GetTarget() const;
     
-private:
+protected:
     bool mViewDirty = true;
     Matrix4x4f mProjection;
     Matrix4x4f mView;

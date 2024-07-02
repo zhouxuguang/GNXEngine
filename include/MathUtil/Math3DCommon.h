@@ -71,7 +71,7 @@
 	#endif
 #endif
 
-//弧度和角度之间互相转换的常数
+//
 #define RADTODEG	57.29577951308232
 #define DEGTORAD	0.0174532925199432958
 

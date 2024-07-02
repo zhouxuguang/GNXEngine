@@ -172,7 +172,10 @@ void SceneManager::Render(RenderEncoderPtr renderEncoder)
 void SceneManager::Update(float deltaTime)
 {
     //相机操作器更新
-    mCameraMani->Update();
+    if (mCameraMani)
+    {
+        mCameraMani->Update();
+    }
     
     //更新相机
     CameraPtr cameraPtr = getCamera("MainCamera");

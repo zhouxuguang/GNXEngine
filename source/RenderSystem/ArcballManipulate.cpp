@@ -31,6 +31,10 @@ ArcballManipulate::~ArcballManipulate()
 
 void ArcballManipulate::Update()
 {
+    if (!cameraPtr)
+    {
+        return;
+    }
     InputSystem* input = InputSystem::GetInstance();
     
     float scrollSensitivity = mouseScrollSensitivity;
