@@ -17,7 +17,7 @@ static float mouseScrollSensitivity = 0.1;
 static float mousePanSensitivity = 0.008;
 
 static float minDistance = 0.2;
-static float maxDistance = 1000;
+static float maxDistance = 1000000000;
 
 ArcballManipulate::ArcballManipulate(CameraPtr cameraPtr)
 {
