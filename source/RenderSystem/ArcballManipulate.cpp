@@ -48,8 +48,8 @@ void ArcballManipulate::Update()
     if (input->leftMouseDown)
     {
         float sensitivity = mousePanSensitivity;
-        rotation.x += input->mouseDelta.y * sensitivity;
-        rotation.y -= input->mouseDelta.x * sensitivity;
+        rotation.x -= input->mouseDelta.y * sensitivity;
+        rotation.y += input->mouseDelta.x * sensitivity;
         rotation.x = std::max(float(-M_PI) / 3.0f, std::min((float)rotation.x, (float)M_PI / 3.0f));
         
 //        Quaternionf deltaRotate;
@@ -63,11 +63,12 @@ void ArcballManipulate::Update()
     //计算出旋转矩阵
     Matrix4x4f rotateX = Matrix4x4f::CreateRotationX(rotation.x * RADTODEG);
     Matrix4x4f rotateY = Matrix4x4f::CreateRotationY(rotation.y * RADTODEG);
+    rotation = Vector3f::ZERO;
     Matrix4x4f rotateMatrix = rotateX * rotateY;
     
     // 距离向量
     Vector3f posVec = (cameraPos - cameraTarget).Normalize();
-    Vector3f distanceVector = Vector3f(0, 0, distance);
+    Vector3f distanceVector = posVec * distance;
 
     // 旋转后的距离向量
     Vector3f rotatedVector = rotateMatrix * distanceVector;
