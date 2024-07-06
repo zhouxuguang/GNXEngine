@@ -61,6 +61,12 @@ void Camera::SetLens(float fovY, float aspect, float zNear, float zFar)
     mFov = fovY;
 }
 
+void Camera::SetViewSize(uint32_t width, uint32_t height)
+{
+    mWidth = width;
+    mHeight = height;
+}
+
 void Camera::UpdateViewMatrix()
 {
     if (mViewDirty)
@@ -137,6 +143,31 @@ float Camera::GetAspect() const
 Vector3f Camera::GetTarget() const
 {
     return mLook;
+}
+
+Ray Camera::GenerateRay(float screenX, float screenY) const
+{
+    // https://antongerdelan.net/opengl/raycasting.html
+    // 第一步，生成ndc空间的射线
+    float x = (2.0f * screenX) / mWidth - 1.0f;
+    float y = 1.0f - (2.0f * screenY) / mHeight;
+    float z = 1.0f;
+    Vector3f ray_nds = Vector3f(x, y, z);
+    
+    // 转换到齐次坐标
+    Vector4f ray_clip = Vector4f(ray_nds.x, ray_nds.y, -1.0, 1.0);
+    
+    // Step 3: 4d Eye (Camera) Coordinates
+    Vector4f ray_eye = mProjection.Inverse() * ray_clip;
+    ray_eye = Vector4f(ray_eye.x, ray_eye.y, -1.0, 0.0);
+    
+    // 4d World Coordinates
+    Vector4f rayWorld = mView.Inverse() * ray_eye;
+    Vector3f ray_wor = Vector3f(rayWorld.x, rayWorld.y, rayWorld.z);
+    // don't forget to normalise the vector at some point
+    ray_wor = ray_wor.Normalize();
+    
+    return Ray(mPosition, ray_wor);
 }
 
 NS_RENDERSYSTEM_END

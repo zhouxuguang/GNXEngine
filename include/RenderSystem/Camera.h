@@ -14,6 +14,7 @@
 #include "MathUtil/Vector3.h"
 #include "RenderCore/RenderDefine.h"
 #include "SceneObject.h"
+#include "Ray.h"
 
 USING_NS_MATHUTIL
 USING_NS_RENDERCORE
@@ -34,6 +35,9 @@ public:
     
     //设置投影矩阵的参数
     void SetLens(float fovY, float aspect, float zNear, float zFar);
+    
+    // 设置渲染区域的大小
+    void SetViewSize(uint32_t width, uint32_t height);
     
     void SetPosition(float x, float y, float z);
     
@@ -62,6 +66,9 @@ public:
     
     Vector3f GetTarget() const;
     
+    // 根据屏幕坐标产生射线
+    Ray GenerateRay(float screenX, float screenY) const;
+    
 protected:
     bool mViewDirty = true;
     Matrix4x4f mProjection;
@@ -79,6 +86,9 @@ protected:
     float mFarZ = 0.0f;
     float mAspect = 0.0f;
     float mFov = 0.0f;
+    
+    uint32_t mWidth = 0;
+    uint32_t mHeight = 0;
     
     RenderDeviceType mRenderDeviceType;
     std::string mName;
