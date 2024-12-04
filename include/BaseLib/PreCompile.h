@@ -28,6 +28,8 @@
 #include <map>
 #include <functional>
 #include <algorithm>
+#include <atomic>
+#include <memory>
 #include <numeric>
 
 #if(__cplusplus >= 201103L)

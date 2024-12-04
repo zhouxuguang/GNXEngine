@@ -8,7 +8,10 @@
 
 #include "Random.h"
 #include <limits.h>
-#include <unistd.h>
+
+#ifndef _WIN32
+    #include <unistd.h>
+#endif // !_WIN32
 
 NS_BASELIB_BEGIN
 

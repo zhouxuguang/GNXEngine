@@ -50,14 +50,16 @@ static void SetThreadName( DWORD dwThreadID, const char* threadName)
 
 static char* GetThreadName(void)
 {
-    char* pszName = NULL;
-    __asm
-    {
-        mov eax, fs:[0x18]    //    Locate the caller's TIB
-        mov eax, [eax+0x14]    //    Read the pvArbitary field in the TIB
-        mov [pszName], eax    //    pszName = pTIB->pvArbitary
-    }
-    return pszName ? pszName : "Win32 Thread";
+    //char* pszName = NULL;
+    //__asm
+    //{
+    //    mov eax, fs:[0x18]    //    Locate the caller's TIB
+    //    mov eax, [eax+0x14]    //    Read the pvArbitary field in the TIB
+    //    mov [pszName], eax    //    pszName = pTIB->pvArbitary
+    //}
+    //return pszName ? pszName : "Win32 Thread";
+
+    return "Win32 Thread";
 }
 
 #include <intrin.h>

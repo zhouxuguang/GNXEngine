@@ -30,7 +30,7 @@ double GetTimeSince1970()
 
 double GetTimeSince1970()
 {
-	eInt64  intervals;
+	int64_t  intervals;
     FILETIME  ft;
     GetSystemTimeAsFileTime(&ft);
 
@@ -47,7 +47,7 @@ double GetTimeSince1970()
      * See also MSKB Q167296.
      */
 
-    intervals = ((eInt64) ft.dwHighDateTime << 32) | ft.dwLowDateTime;
+    intervals = ((int64_t) ft.dwHighDateTime << 32) | ft.dwLowDateTime;
     intervals -= 116444736000000000;
 
 	struct timeval timeCur;
@@ -59,7 +59,7 @@ double GetTimeSince1970()
 
 #endif
 
-#pragma region 纳秒函数实现
+#pragma region //纳秒函数实现
 
 //获得纳秒 嘀嗒数
 
@@ -103,7 +103,7 @@ uint64_t GetTickNanoSeconds()
 
 uint64_t GetTickNanoSeconds()
 {
-    eInt64  intervals;
+    int64_t  intervals;
     FILETIME  ft;
     GetSystemTimeAsFileTime(&ft);
 
@@ -120,7 +120,7 @@ uint64_t GetTickNanoSeconds()
      * See also MSKB Q167296.
      */
 
-    intervals = ((eInt64) ft.dwHighDateTime << 32) | ft.dwLowDateTime;
+    intervals = ((int64_t) ft.dwHighDateTime << 32) | ft.dwLowDateTime;
     intervals -= 116444736000000000;
 
 	struct timeval timeCur;
@@ -134,7 +134,7 @@ uint64_t GetTickNanoSeconds()
 
 #endif
 
-#pragma endregion 纳秒函数实现
+#pragma endregion //纳秒函数实现
 
 
 NS_BASELIB_END
