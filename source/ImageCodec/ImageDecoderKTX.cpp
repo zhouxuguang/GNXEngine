@@ -7,6 +7,15 @@
 
 #include "ImageDecoderKTX.h"
 #include "BytesSwap.h"
+#include <algorithm>
+
+#ifdef min
+#undef min
+#endif
+
+#ifdef max
+#undef max
+#endif
 
 NAMESPACE_IMAGECODEC_BEGIN
 

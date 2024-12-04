@@ -113,6 +113,7 @@ add_library(imagecodec OBJECT ${SOURCE_FILES})
 
 if(APPLE)
     target_link_libraries(imagecodec PRIVATE "-framework Accelerate")
+    target_compile_options(imagecodec PRIVATE "-fobjc-arc")
 endif()
 
 target_include_directories(imagecodec PUBLIC ${imagecodec_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
@@ -121,7 +122,4 @@ target_include_directories(imagecodec PRIVATE ${imagecodec_dir}/libwebp ${imagec
 #     target_include_directories(imagecodec PRIVATE ${ANDROID_NDK}/sources/android/cpufeatures)
 # endif()
 target_link_libraries(imagecodec PRIVATE baselib mathutil)
-target_compile_options(imagecodec PRIVATE "-fobjc-arc")
-
-
 

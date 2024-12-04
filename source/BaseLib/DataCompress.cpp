@@ -1,6 +1,6 @@
 #include "DataCompress.h"
 
-#include "zlib/zlib.h"
+#include "zlib.h"
 //#include "lzma/LzmaLib.h"
 #include "lz4/lz4.h"
 
