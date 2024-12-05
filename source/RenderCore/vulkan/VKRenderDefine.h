@@ -26,6 +26,15 @@
 #include "vk_mem_alloc.h"
 #include "RenderDefine.h"
 
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+#ifdef min
+    #undef min
+#endif
+#ifdef max
+    #undef max
+#endif
+#endif
+
 #include <assert.h>
 
 //#define ENABLE_VULKAN_MSAA  //开启msaa

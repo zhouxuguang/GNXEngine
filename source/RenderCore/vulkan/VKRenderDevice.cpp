@@ -283,20 +283,13 @@ void VKRenderDevice::CreateSyncObject()
     assert(mSwapChain->GetSwapChainImageCount());
     
     //在渲染线程，等待渲染命令提交完毕后交换缓冲区图像
-    VkFenceCreateInfo fenceCreateInfo 
-    {
-        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = VK_FENCE_CREATE_SIGNALED_BIT,
-    };
+    VkFenceCreateInfo fenceCreateInfo = {};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
     
     // 在渲染线程使用，需要等待可用的帧缓冲准备好
-    VkSemaphoreCreateInfo semaphoreCreateInfo
-    {
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-    };
+    VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+    semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     
     size_t imageCount = mSwapChain->GetSwapChainImageCount();
 

@@ -85,21 +85,19 @@ void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t w
         viewCreateInfo.image = mDisplayImages[i];
         viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
         viewCreateInfo.format = mDisplayFormat;
-        viewCreateInfo.components =
-        {
-            .r = VK_COMPONENT_SWIZZLE_R,
-            .g = VK_COMPONENT_SWIZZLE_G,
-            .b = VK_COMPONENT_SWIZZLE_B,
-            .a = VK_COMPONENT_SWIZZLE_A,
-        };
-        viewCreateInfo.subresourceRange =
-        {
-            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-            .baseMipLevel = 0,
-            .levelCount = 1,
-            .baseArrayLayer = 0,
-            .layerCount = 1,
-        };
+        viewCreateInfo.components = {};
+        viewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_R;
+        viewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_G;
+        viewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_B;
+        viewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_A;
+
+        viewCreateInfo.subresourceRange = {};
+		viewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		viewCreateInfo.subresourceRange.baseMipLevel = 0;
+		viewCreateInfo.subresourceRange.levelCount = 1;
+		viewCreateInfo.subresourceRange.baseArrayLayer = 0;
+		viewCreateInfo.subresourceRange.layerCount = 1;
+
         viewCreateInfo.flags = 0;
         vkCreateImageView(vulkanContext->device, &viewCreateInfo, nullptr, &mDisplayViews[i]);
     }

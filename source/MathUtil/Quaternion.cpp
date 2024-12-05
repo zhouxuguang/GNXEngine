@@ -222,8 +222,8 @@ template <typename T>
 void Quaternion<T>::FromToRotation(const Vector3<T>& from, const Vector3<T>& to)
 {
     //不标准化，认为外面已经标准化
-    Vector3 p0 = (from);
-    Vector3 p1 = (to);
+    Vector3<T> p0 = (from);
+    Vector3<T> p1 = (to);
  
     if (p0 == -p1)
     {

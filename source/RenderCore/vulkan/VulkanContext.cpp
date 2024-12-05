@@ -205,7 +205,7 @@ bool SelectPhysicalDevice(VulkanContext& context)
     return ret;
 }
 
-static VKAPI_PTR VkBool32 DebugReportCallback(
+static VkBool32 VKAPI_PTR DebugReportCallback(
         VkDebugReportFlagsEXT                       flags,
         VkDebugReportObjectTypeEXT                  objectType,
         uint64_t                                    object,
@@ -365,12 +365,10 @@ bool CreateVirtualDevice(VulkanContext& context)
     // push descriptor默认开启
     deviceExtensionNames.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     
-    const VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature
-    {
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
-        .pNext = deviceCreatepNextChain,
-        .dynamicRendering = VK_TRUE,
-    };
+    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature = {};
+	dynamicRenderingFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
+	dynamicRenderingFeature.pNext = deviceCreatepNextChain;
+	dynamicRenderingFeature.dynamicRendering = VK_TRUE;
     
     // 开启负的高度
     deviceExtensionNames.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
