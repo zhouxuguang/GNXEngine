@@ -15,34 +15,38 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
-        view.mm
-        view.h
-        MetalView.mm
-        MetalView.h
-        OpenGLView.mm
-        OpenGLView.h
-        RenderDelegate.mm
-        RenderDelegate.h
-        testShader.mm
-        testShader.h
         TestPost/TestPost.cpp
         TestPost/TestPost.hpp
-        ResourceUtil.mm
-        ResourceUtil.h
         TestImageDecode.cpp
         TestImageDecode.h
         TestComputeShader.cpp
         TestComputeShader.hpp
-        testShader.h
-        testShader.mm
-        testSkybox.h
-        testSkybox.mm
         TestTransform.cpp
         TestTransform.hpp
 )
 
+set(PLATFORM_SRC )
+if(APPLE)
+set(PLATFORM_SRC 
+                view.mm
+                view.h
+                MetalView.mm
+                MetalView.h
+                OpenGLView.mm
+                OpenGLView.h
+                RenderDelegate.mm
+                RenderDelegate.h
+                ResourceUtil.mm
+                ResourceUtil.h
+                testShader.h
+                testShader.mm
+                testSkybox.h
+                testSkybox.mm)
+endif()
+
+
 add_executable(GNXEditor
-    ${PROJECT_SOURCES}
+    ${PROJECT_SOURCES} ${PLATFORM_SRC}
 )
 
 set_property(TARGET GNXEditor PROPERTY AUTOUIC ON)

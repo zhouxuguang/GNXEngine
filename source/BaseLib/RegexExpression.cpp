@@ -50,9 +50,9 @@ bool RegexExpression::RegexParser(const std::string& srcStr, const std::string& 
     return true;
     
 #else
-	std::tr1::regex re(pattern);
-	std::tr1::smatch sm;   // 存放string结果的容器
-	std::tr1::regex_match(srcStr, sm, re);
+	std::regex re(pattern);
+	std::smatch sm;   // 存放string结果的容器
+	std::regex_match(srcStr, sm, re);
 	if (sm.empty())
 	{
 		return false;

@@ -39,12 +39,12 @@
     #include <unordered_map>
     #include <unordered_set>
 
-	namespace std
+	/*namespace std
 	{
 		using std::tr1::unordered_map;
 		using std::tr1::unordered_set;
 		using std::tr1::hash;
-	}
+	}*/
 
 #else
 	#include <tr1/unordered_map>
