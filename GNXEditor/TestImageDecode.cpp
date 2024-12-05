@@ -10,8 +10,10 @@
 
 VImagePtr getImage()
 {
-    std::string strPath = getTexturePath();
+    /*std::string strPath = getTexturePath();
     VImagePtr image = std::make_shared<VImage>();
     ImageDecoder::DecodeFile(strPath.c_str(), image.get());
-    return image;
+    return image;*/
+
+    return nullptr;
 }

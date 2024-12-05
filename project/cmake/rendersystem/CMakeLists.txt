@@ -36,9 +36,15 @@ target_include_directories(rendersystem PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../..
 #         /Users/zhouxuguang/work/mycode/GNXEngine/source/thirdparty/assimp-5.2.4/lib/Mac
 #         /Users/zhouxuguang/work/mycode/GNXEngine/source/thirdparty/DirectXShaderCompiler/lib/mac)
 
+if(APPLE)
 target_link_libraries(rendersystem PRIVATE baselib rendercore shadercompiler 
     assimp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/DirectXShaderCompiler/lib/mac/libdxcompiler.3.7.dylib)
+elseif(WIN32)
+target_link_libraries(rendersystem PRIVATE baselib rendercore shadercompiler 
+    assimp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/DirectXShaderCompiler/lib/win/dxcompiler.lib)
+endif() 
 
 #/Users/zhouxuguang/work/mycode/DirectXShaderCompiler/build/lib
 # target_link_libraries(rendersystem PUBLIC baselib rendercore shadercompiler 

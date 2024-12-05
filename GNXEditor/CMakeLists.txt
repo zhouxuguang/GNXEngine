@@ -23,6 +23,8 @@ set(PROJECT_SOURCES
         TestComputeShader.hpp
         TestTransform.cpp
         TestTransform.hpp
+        testSkybox.h
+        testSkybox.cpp
 )
 
 set(PLATFORM_SRC )
@@ -39,9 +41,7 @@ set(PLATFORM_SRC
                 ResourceUtil.mm
                 ResourceUtil.h
                 testShader.h
-                testShader.mm
-                testSkybox.h
-                testSkybox.mm)
+                testShader.mm)
 endif()
 
 

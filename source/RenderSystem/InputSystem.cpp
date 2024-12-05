@@ -20,7 +20,11 @@ InputSystem* InputSystem::GetInstance()
     static InputSystem* instance = nullptr;
     if (nullptr == instance)
     {
+    #ifdef _WIN32
+        instance = nullptr;
+    #elif __APPLE__
         instance = createInputSystem_APPLE();
+    #endif
     }
     return instance;
 }

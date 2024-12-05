@@ -78,7 +78,7 @@ ${imagecodec_dir}/libjpeg/jquant1.c
 ${imagecodec_dir}/libjpeg/jquant2.c
 )
 
-list(APPEND JPEG_FILES ${imagecodec_dir}/libjpeg/jsimd_neon.c ${imagecodec_dir}/libjpeg/jsimd_arm64_neon.S)
+#list(APPEND JPEG_FILES ${imagecodec_dir}/libjpeg/jsimd_neon.c ${imagecodec_dir}/libjpeg/jsimd_arm64_neon.S)
 
 # if(arm64-v8a EQUAL {CMAKE_ANDROID_ARCH_ABI})
 #     list(APPEND JPEG_FILES ${imagecodec_dir}/libjpeg/jsimd_neon.c ${imagecodec_dir}/libjpeg/jsimd_arm64_neon.S)
@@ -106,7 +106,7 @@ if(ANDROID)
     ${JPEG_FILES}
     ${PNG_FILES})
 else()
-    set(SOURCE_FILES ${IMAGECODEC_SOURCES} ${IMAGECODEC_INCLUDES} ${WEBP_SOURCES})
+    set(SOURCE_FILES ${IMAGECODEC_SOURCES} ${IMAGECODEC_INCLUDES} ${WEBP_SOURCES} ${JPEG_FILES})
 endif()
 
 add_library(imagecodec OBJECT ${SOURCE_FILES})
