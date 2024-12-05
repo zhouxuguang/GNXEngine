@@ -7,6 +7,7 @@
 
 #include "DXCompilerUtil.h"
 #include "spirv_reflection.h"
+#include <assert.h>
 
 //代码可以参考这个博客。https://simoncoenen.com/blog/programming/graphics/DxcCompiling
 

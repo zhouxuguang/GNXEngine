@@ -11,8 +11,14 @@
 #include "ShaderCompilerDefine.h"
 #include "RenderCore/ShaderFunction.h"
 
-#define __EMULATE_UUID
-#include "dxc/dxcapi.h"
+#ifdef _WIN32
+    #include <Windows.h>
+    #include <atlbase.h>
+    #include "dxc/dxcapi.h"
+#else
+    #define __EMULATE_UUID
+    #include "dxc/dxcapi.h"
+#endif
 
 NAMESPACE_SHADERCOMPILER_BEGIN
 
