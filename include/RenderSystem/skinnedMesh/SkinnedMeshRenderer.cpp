@@ -42,12 +42,12 @@ void SkinnedMeshRenderer::Render(RenderInfo &renderInfo, bool isCPUSkin)
 {
     if (mMaterials.empty())
     {
-        log_info("MeshRenderer 材质列表为空！！！");
+        //log_info("MeshRenderer 材质列表为空！！！");
     }
     
     if (!mMeshPtr)
     {
-        log_info("MeshRenderer mMeshPtr == nullptr！！！");
+        //log_info("MeshRenderer mMeshPtr == nullptr！！！");
     }
     
     if (mMaterials.size() == 1)

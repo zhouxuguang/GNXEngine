@@ -8,6 +8,13 @@
 #include "Mesh.h"
 #include "BaseLib/LogService.h"
 
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+
 NS_RENDERSYSTEM_BEGIN
 
 Mesh::Mesh()

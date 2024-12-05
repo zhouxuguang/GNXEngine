@@ -68,7 +68,7 @@ static Vector3f transformPoint(const Transform& a, const Vector3f& b)
 
 static Transform mix(const Transform& a, const Transform& b, float t)
 {
-    Quaternion bRot = b.rotation;
+    Quaternionf bRot = b.rotation;
     
     if (bRot.DotProduct(a.rotation) < 0.0f)
     {
@@ -85,9 +85,9 @@ static Transform mix(const Transform& a, const Transform& b, float t)
 static Matrix4x4f transformToMat4(const Transform& t)
 {
     // First, extract the rotation basis of the transform
-    Vector3 x = t.rotation * Vector3f(1, 0, 0);
-    Vector3 y = t.rotation * Vector3f(0, 1, 0);
-    Vector3 z = t.rotation * Vector3f(0, 0, 1);
+    Vector3f x = t.rotation * Vector3f(1, 0, 0);
+    Vector3f y = t.rotation * Vector3f(0, 1, 0);
+    Vector3f z = t.rotation * Vector3f(0, 0, 1);
 
     // Next, scale the basis vectors
     x = x * t.scale.x;
@@ -95,7 +95,7 @@ static Matrix4x4f transformToMat4(const Transform& t)
     z = z * t.scale.z;
 
     // Extract the position of the transform
-    Vector3 p = t.position;
+    Vector3f p = t.position;
 
     // Create matrix
     return Matrix4x4f(

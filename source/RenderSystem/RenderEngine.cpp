@@ -10,7 +10,12 @@
 #include <iostream>
 #include <string>
 #include <stdlib.h>     // 用于 getenv 函数
+
+#ifndef _WIN32
 #include <unistd.h>     // 用于 readlink 函数
+#else
+#include <Windows.h>
+#endif // !_WIN32
 
 std::string GetCurrentWorkingDirectory()
 {

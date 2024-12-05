@@ -2,14 +2,25 @@
 set(RENDERSYSTEM_SOURCES )
 set(rendersystem_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/RenderSystem)
 set(rendersystem_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/RenderSystem)
-file(GLOB_RECURSE RENDERSYSTEM_SOURCES CONFIGURE_DEPENDS ${rendersystem_dir}/*.cpp 
-                                                        ${rendersystem_dir}/*.mm
-                                                        ${rendersystem_dir}/*.c 
-                                                        ${rendersystem_dir}/*.h) 
-file(GLOB_RECURSE RENDERSYSTEM_INCLUDES CONFIGURE_DEPENDS ${rendersystem_include_dir}/*.h
-                                                        ${rendersystem_include_dir}/*.cpp
-                                                        ${rendersystem_include_dir}/*.mm
-                                                        ${rendersystem_include_dir}/*.c)
+
+if(APPLE)
+    file(GLOB_RECURSE RENDERSYSTEM_SOURCES CONFIGURE_DEPENDS ${rendersystem_dir}/*.cpp 
+                                ${rendersystem_dir}/*.mm
+                                ${rendersystem_dir}/*.c 
+                                ${rendersystem_dir}/*.h) 
+    file(GLOB_RECURSE RENDERSYSTEM_INCLUDES CONFIGURE_DEPENDS ${rendersystem_include_dir}/*.h
+                                ${rendersystem_include_dir}/*.cpp
+                                ${rendersystem_include_dir}/*.mm
+                                ${rendersystem_include_dir}/*.c)
+elseif(WIN32)
+    file(GLOB_RECURSE RENDERSYSTEM_SOURCES CONFIGURE_DEPENDS ${rendersystem_dir}/*.cpp 
+                                ${rendersystem_dir}/*.c 
+                                ${rendersystem_dir}/*.h) 
+    file(GLOB_RECURSE RENDERSYSTEM_INCLUDES CONFIGURE_DEPENDS ${rendersystem_include_dir}/*.h
+                                ${rendersystem_include_dir}/*.cpp
+                                ${rendersystem_include_dir}/*.c)
+endif()
+
 
 add_library(rendersystem OBJECT ${RENDERSYSTEM_SOURCES} ${RENDERSYSTEM_INCLUDES})
 target_include_directories(rendersystem PUBLIC ${rendersystem_include_dir} 

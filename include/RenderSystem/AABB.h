@@ -88,7 +88,7 @@ public:
     /**
      * update the _min and _max from the given point.
      */
-    void updateMinMax(const Vector3f* point, ssize_t num);
+    void updateMinMax(const Vector3f* point, size_t num);
     
     /**
      * Transforms the bounding box by the given transformation matrix.

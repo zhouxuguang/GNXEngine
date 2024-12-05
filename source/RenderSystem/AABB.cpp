@@ -111,9 +111,9 @@ bool AABB::isEmpty() const
     return mMin.x > mMax.x || mMin.y > mMax.y || mMin.z > mMax.z;
 }
 
-void AABB::updateMinMax(const Vector3f* point, ssize_t num)
+void AABB::updateMinMax(const Vector3f* point, size_t num)
 {
-    for (ssize_t i = 0; i < num; i++)
+    for (size_t i = 0; i < num; i++)
     {
         // Leftmost point.
         if (point[i].x < mMin.x)

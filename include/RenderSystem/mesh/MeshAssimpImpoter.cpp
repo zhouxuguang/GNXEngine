@@ -810,7 +810,7 @@ std::vector<std::shared_ptr<Material>> MeshAssimpImpoter::processMeshVertex(cons
         }
         
         // 处理骨骼的数据
-        std::vector<uint> boneCounts;
+        std::vector<uint32_t> boneCounts;
         boneCounts.resize(mBoneIndex.size(), 0);
         
         for (uint32_t i = 0; i < mesh->mNumBones; i++)
