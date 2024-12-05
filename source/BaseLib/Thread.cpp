@@ -152,7 +152,7 @@ bool Thread::Start()
 
 void Thread::Stop()
 {
-	WindowsThread *pThreadData = (WindowsThread*)pThreadData;
+	WindowsThread *pThreadData = (WindowsThread*)m_Handle;
     if (NULL == pThreadData)
     {
         return;
