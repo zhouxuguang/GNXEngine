@@ -18,6 +18,8 @@ if(ANDROID)
     target_include_directories(mathutil PUBLIC ${ANDROID_NDK}/sources/android/cpufeatures)
 endif()
 
+add_definitions("-DMATH3D_EXPORTS")
+
 target_link_libraries(mathutil PRIVATE baselib)
 
 

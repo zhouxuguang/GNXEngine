@@ -20,7 +20,7 @@
 #include <list>
 #include <complex>
 
-//平台标示声明
+//鍩烘湰骞冲彴鐨勫畯
 #if defined WIN32 || defined _WIN64
 	#define M3_PLATFORM_WINDOWS 1
 	#define M3_TARGET_PLATFORM M3_PLATFORM_WINDOWS
@@ -45,14 +45,14 @@
 
 
 
-//导出库声明
+//瀵煎叆瀵煎嚭鐨勫畯
 #if defined _WIN32 || defined __CYGWIN__
 	#ifdef MATH3D_EXPORTS		
 		#ifdef __GNUC__
 			#define MATH3D_API __attribute__((dllexport))
-	#else
-		#define MATH3D_API __declspec(dllexport)
-	#endif
+		#else
+			#define MATH3D_API __declspec(dllexport)
+		#endif
 	#else
 #ifdef __GNUC__
 	#define MATH3D_API __attribute__((dllimport))
@@ -75,7 +75,7 @@
 #define RADTODEG	57.29577951308232
 #define DEGTORAD	0.0174532925199432958
 
-//删除内存的宏
+//閲婃斁鍐呭瓨鐨勫畯
 #define FREEPTR(x)  if(x != NULL) \
                     {               \
                         free(x);    \
@@ -100,7 +100,7 @@
     typedef float Real;
 #endif
 
-//命名空间声明
+//鍛藉悕绌洪棿鐨勫畯
 #ifdef __cplusplus
     #define NS_MATHUTIL_BEGIN                     namespace mathutil {
     #define NS_MATHUTIL_END                       }

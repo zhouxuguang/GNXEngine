@@ -15,11 +15,36 @@
 
 NS_MATHUTIL_BEGIN
 
+#ifdef _MSC_VER
+struct simd_float2
+{
+	float x;
+	float y;
+};
+
+struct simd_float3
+{
+	float x;
+	float y;
+	float z;
+	float pad;
+};
+
+struct simd_float4
+{
+	float x;
+	float y;
+	float z;
+	float w;
+};
+
+#else
 typedef float __attribute__((ext_vector_type(2))) simd_float2;
 
 typedef float __attribute__((ext_vector_type(3))) simd_float3;
 
 typedef float __attribute__((ext_vector_type(4))) simd_float4;
+#endif
 
 //构造simd类型的函数
 simd_float2 make_simd_float2(float __x, float __y);

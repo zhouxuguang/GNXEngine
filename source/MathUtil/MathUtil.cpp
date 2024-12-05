@@ -8,7 +8,7 @@
 
 USING_NS_MATHUTIL
 
-const Vector3 kZeroVector(0.0f, 0.0f, 0.0f);
+//const Vector3 kZeroVector(0.0f, 0.0f, 0.0f);
 
 
 float wrapPi(float theta)
