@@ -163,7 +163,7 @@ void Thread::Stop()
 
 void Thread::Resume()
 {
-	WindowsThread *pThreadData = (WindowsThread*)pThreadData;
+	WindowsThread *pThreadData = (WindowsThread*)m_Handle;
     if (NULL == pThreadData)
     {
         return;
@@ -173,7 +173,7 @@ void Thread::Resume()
 
 void Thread::Suspend()
 {
-	WindowsThread *pThreadData = (WindowsThread*)pThreadData;
+	WindowsThread *pThreadData = (WindowsThread*)m_Handle;
     if (NULL == pThreadData)
     {
         return;
@@ -183,7 +183,7 @@ void Thread::Suspend()
 
 thread_id_t Thread::GetThreadID() const
 {
-	WindowsThread *pThreadData = (WindowsThread*)pThreadData;
+	WindowsThread *pThreadData = (WindowsThread*)m_Handle;
     if (NULL == pThreadData)
     {
         return 0;
@@ -193,7 +193,7 @@ thread_id_t Thread::GetThreadID() const
 
 bool Thread::WaitFor() const
 {
-	WindowsThread *pThreadData = (WindowsThread*)pThreadData;
+	WindowsThread *pThreadData = (WindowsThread*)m_Handle;
     if (NULL == pThreadData)
     {
         return false;
