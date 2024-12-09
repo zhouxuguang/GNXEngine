@@ -12,11 +12,7 @@ MainWindow::MainWindow(QWidget *parent)
     
     setWindowTitle(QString::fromLocal8Bit("GNXEngine"));
 
-#ifdef __APPLE__
     QWindow *window = QWindow::fromWinId((WId)test());
-#elif _WIN32
-    QWindow *window = QWindow::fromWinId((WId)nullptr);
-#endif
     window->resize(2560, 1080);
     QWidget *wrapper = QWidget::createWindowContainer(window, this);
     setCentralWidget(wrapper);

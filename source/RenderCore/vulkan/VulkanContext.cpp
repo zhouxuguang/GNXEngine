@@ -35,11 +35,13 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
     std::vector<const char *> instanceExtensions;
 
     instanceExtensions.push_back("VK_KHR_surface");
-#ifdef __ANDROID__
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
     instanceExtensions.push_back("VK_KHR_android_surface");
-#elif __APPLE__
+#elif defined VK_USE_PLATFORM_METAL_EXT
     instanceExtensions.push_back(VK_EXT_METAL_SURFACE_EXTENSION_NAME);
     instanceExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+#elif defined VK_USE_PLATFORM_WIN32_KHR
+    instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 #endif
 
     VkApplicationInfo appInfo = {};
@@ -509,6 +511,13 @@ bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
     createInfo.pLayer = (const CAMetalLayer*)nativeWidow;
     PFN_vkCreateMetalSurfaceEXT vkCreateMetalSurfaceEXT = (PFN_vkCreateMetalSurfaceEXT)vkGetInstanceProcAddr(context.instance, "vkCreateMetalSurfaceEXT");
     VkResult result = vkCreateMetalSurfaceEXT(context.instance, &createInfo, nullptr, &context.surfaceKhr);
+#elif defined VK_USE_PLATFORM_WIN32_KHR
+    VkWin32SurfaceCreateInfoKHR createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	createInfo.hwnd = (HWND)nativeWidow;
+	createInfo.hinstance = GetModuleHandle(nullptr);
+    PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(context.instance, "vkCreateWin32SurfaceKHR");
+    VkResult result = vkCreateWin32SurfaceKHR(context.instance, &createInfo, nullptr, &context.surfaceKhr);
 #endif
 
     return context.surfaceKhr != VK_NULL_HANDLE;

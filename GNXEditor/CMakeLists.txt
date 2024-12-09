@@ -44,6 +44,14 @@ set(PLATFORM_SRC
                 testShader.mm)
 endif()
 
+if(WIN32)
+set(PLATFORM_SRC 
+                view.cpp
+                view.h
+                WindowsVulkanView.cpp
+                WindowsVulkanView.h)
+endif()
+
 
 add_executable(GNXEditor
     ${PROJECT_SOURCES} ${PLATFORM_SRC}
