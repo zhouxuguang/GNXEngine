@@ -2,13 +2,6 @@
 #include "BaseLib/LogService.h"
 #include "MathUtil/Matrix4x4.h"
 
-#ifdef min
-#undef min
-#endif
-#ifdef max
-#undef max
-#endif
-
 USING_NS_MATHUTIL
 
 NS_RENDERSYSTEM_BEGIN

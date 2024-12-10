@@ -200,7 +200,7 @@ public:
     static bool CheckBMP(const void* pBuffer, unsigned int nSize)
     {
         uint16_t Signature = 0;
-        memcpy(&Signature, pBuffer, BITMAP_FILEHEADER_SIZE);
+        memcpy(&Signature, pBuffer, 2);
         if (Signature != BITMAP_SIGNATURE)
         {
             return false;

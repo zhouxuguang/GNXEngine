@@ -8,6 +8,7 @@
 #include <math.h>
 #include "ArcballManipulate.h"
 #include "InputSystem.h"
+#include "MathUtil/Math3DCommon.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -65,8 +66,8 @@ void ArcballManipulate::Update()
     }
     
     //计算出旋转矩阵
-    Matrix4x4f rotateX = Matrix4x4f::CreateRotationX(rotation.x * RADTODEG);
-    Matrix4x4f rotateY = Matrix4x4f::CreateRotationY(rotation.y * RADTODEG);
+    Matrix4x4f rotateX = Matrix4x4f::CreateRotationX(rotation.x * 57.29577951308232);
+    Matrix4x4f rotateY = Matrix4x4f::CreateRotationY(rotation.y * 57.29577951308232);
     rotation = Vector3f::ZERO;
     Matrix4x4f rotateMatrix = rotateX * rotateY;
     

@@ -46,29 +46,16 @@
 
 
 //导入导出的宏
-#if defined _WIN32 || defined __CYGWIN__
-	#ifdef MATH3D_EXPORTS		
-		#ifdef __GNUC__
-			#define MATH3D_API __attribute__((dllexport))
-		#else
-			#define MATH3D_API __declspec(dllexport)
-		#endif
-	#else
+#ifdef _WIN32
+
 #ifdef __GNUC__
+#define MATH3D_API __attribute__((dllexport))
+#else
+#define MATH3D_API __declspec(dllexport)
+#endif
+
+#else
 	#define MATH3D_API __attribute__((dllimport))
-#else
-	#define MATH3D_API __declspec(dllimport)
-#endif
-#endif
-#define MATH3D_HIDE
-#else
-	#if __GNUC__>=4
-		#define MATH3D_API __attribute__ ((visibility("default")))
-		#define MATH3D_HIDE __attribute__ ((visibility("hidden")))
-	#else
-		#define MATH3D_API
-		#define MATH3D_HIDE
-	#endif
 #endif
 
 //

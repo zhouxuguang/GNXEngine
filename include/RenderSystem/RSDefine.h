@@ -13,6 +13,15 @@
 #include <string>
 #include "RenderCore/RenderDefine.h"
 #include "MathUtil/Math3DCommon.h"
+#include "BaseLib/BaseLib.h"
+
+#ifdef min
+    #undef min
+#endif
+
+#ifdef max
+    #undef max
+#endif
 
 #ifdef __cplusplus
     #define NS_RENDERSYSTEM_BEGIN                     namespace RenderSystem {

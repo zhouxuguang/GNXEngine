@@ -8,6 +8,7 @@
 #include "testSkybox.h"
 #include "RenderSystem/SkyBox.h"
 #include "RenderSystem/RenderEngine.h"
+#include "BaseLib/BaseLib.h"
 
 RenderSystem::SkyBox* initSky(RenderDevicePtr renderDevice)
 {
@@ -32,12 +33,13 @@ RenderSystem::SkyBox* initSky(RenderDevicePtr renderDevice)
 //    NSString *positive_z = @"/Users/zhouxuguang/work/mycode/GNXEngine/GNXEditor/skybox/front.jpg";
 //    NSString *negative_z = @"/Users/zhouxuguang/work/mycode/GNXEngine/GNXEditor/skybox/back.jpg";
     
-    std::string positive_x = getMediaDir() + "skybox/right.jpg";
-    std::string negative_x = getMediaDir() + "skybox/left.jpg";
-    std::string positive_y = getMediaDir() + "skybox/top.jpg";
-    std::string negative_y = getMediaDir() + "skybox/bottom.jpg";
-    std::string positive_z = getMediaDir() + "skybox/front.jpg";
-    std::string negative_z = getMediaDir() + "skybox/back.jpg";
+    std::string pathSplit = std::string(1, PATHSPLIT);
+    std::string positive_x = getMediaDir() + "skybox" + pathSplit + "right.jpg";
+    std::string negative_x = getMediaDir() + "skybox" + pathSplit + "left.jpg";
+    std::string positive_y = getMediaDir() + "skybox" + pathSplit + "top.jpg";
+    std::string negative_y = getMediaDir() + "skybox" + pathSplit + "bottom.jpg";
+    std::string positive_z = getMediaDir() + "skybox" + pathSplit + "front.jpg";
+    std::string negative_z = getMediaDir() + "skybox" + pathSplit + "back.jpg";
     
     return RenderSystem::SkyBox::create(renderDevice, positive_x.c_str(), negative_x.c_str(),
                                           positive_y.c_str(), negative_y.c_str(), positive_z.c_str(), negative_z.c_str());

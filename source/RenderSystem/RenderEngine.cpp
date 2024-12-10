@@ -6,6 +6,7 @@
 //
 
 #include "RenderEngine.h"
+#include "BaseLib/BaseLib.h"
 
 #include <iostream>
 #include <string>
@@ -52,8 +53,10 @@ std::string GetCurrentWorkingDirectory()
 std::string getBuiltInShaderDir()
 {
     std::string path = __FILE__;
-    path = path.substr(0, path.find_last_of("/"));
-    return path + "/../shader/built-in/";
+    path = path.substr(0, path.find_last_of(PATHSPLIT));
+    std::string pathSplit = std::string(1, PATHSPLIT);
+    return path + pathSplit + ".." + pathSplit + "shader" + pathSplit + "built-in" + pathSplit;
+    //return path + R"(../shader/built-in/)";
 }
 
 // /Users/zhouxuguang/work/mycode/GNXEngine/GNXEditor/media
@@ -61,6 +64,8 @@ std::string getBuiltInShaderDir()
 std::string getMediaDir()
 {
     std::string path = __FILE__;
-    path = path.substr(0, path.find_last_of("/"));
-    return path + "/../../GNXEditor/media/";
+    path = path.substr(0, path.find_last_of(PATHSPLIT));
+    std::string pathSplit = std::string(1, PATHSPLIT);
+    return path + pathSplit + ".." + pathSplit + ".." + pathSplit + "GNXEditor" + pathSplit + "media" + pathSplit;
+    //return path + R"(/../../GNXEditor/media/)";
 }

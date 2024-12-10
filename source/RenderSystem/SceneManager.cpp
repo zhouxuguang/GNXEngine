@@ -16,8 +16,12 @@ NS_RENDERSYSTEM_BEGIN
 
 SceneManager* SceneManager::GetInstance()
 {
-    static SceneManager instance;
-    return &instance;
+    static SceneManager *instance = nullptr;
+    if (nullptr == instance)
+    {
+        instance = new SceneManager();
+    }
+    return instance;
 }
 
 SceneManager::SceneManager()
@@ -174,7 +178,7 @@ void SceneManager::Update(float deltaTime)
     //相机操作器更新
     if (mCameraMani)
     {
-        mCameraMani->Update();
+        //mCameraMani->Update();
     }
     
     //更新相机
