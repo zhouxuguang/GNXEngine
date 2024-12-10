@@ -304,6 +304,11 @@ void VKRenderEncoder::setVertexUniformBuffer(UniformBufferPtr buffer, int index)
     VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(VK_NULL_HANDLE,
                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, index, &bufferInfo);   // 这里还有问题，索引binding的问题
     writeDescriptorSet.dstSet = 0;   //这句也是可以的
+    VkDescriptorImageInfo imageInfo = {};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageInfo.imageView = VK_NULL_HANDLE;
+    imageInfo.sampler = VK_NULL_HANDLE;
+    writeDescriptorSet.pImageInfo = &imageInfo;
     
     uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Vertex, DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     
