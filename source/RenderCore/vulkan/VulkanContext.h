@@ -47,6 +47,13 @@ struct VulkanContext
     
     std::vector<const char*> extensionNames;   //设备支持的扩展列表名称
     VulkanExtension vulkanExtension;
+
+#ifdef NDEBUG
+	bool enableValidationLayers = false;
+#else
+	bool enableValidationLayers = true;
+#endif
+    VkDebugUtilsMessengerEXT debugUtilsMessenger = VK_NULL_HANDLE;
 };
 
 using VulkanContextPtr = std::shared_ptr<VulkanContext>;

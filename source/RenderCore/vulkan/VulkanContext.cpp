@@ -30,6 +30,50 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_utils_messenger_callback(
     return VK_FALSE;
 }
 
+static const std::vector<const char*> validationLayers = 
+{
+	"VK_LAYER_KHRONOS_validation"
+};
+
+bool checkValidationLayerSupport() 
+{
+	uint32_t layerCount;
+	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+	std::vector<VkLayerProperties> availableLayers(layerCount);
+	vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+	for (const char* layerName : validationLayers) 
+    {
+		bool layerFound = false;
+
+        //检查所有的layer在可以使用的layer中
+		for (const auto& layerProperties : availableLayers) 
+        {
+			if (strcmp(layerName, layerProperties.layerName) == 0) 
+            {
+				layerFound = true;
+				break;
+			}
+		}
+		if (!layerFound) 
+        {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) 
+{
+	createInfo = {};
+	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+	createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+	createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+	createInfo.pfnUserCallback = debug_utils_messenger_callback;
+}
+
 bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
 {
     std::vector<const char *> instanceExtensions;
@@ -53,8 +97,6 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
     appInfo.pApplicationName = "GNXEngine";
     appInfo.pEngineName = "GNXEngine";
     
-    std::vector<const char *> instanceLayers;
-    
     uint32_t instance_extension_count;
     vkEnumerateInstanceExtensionProperties(nullptr, &instance_extension_count, nullptr);
 
@@ -75,24 +117,33 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
         }
     }
     
-    VkDebugUtilsMessengerCreateInfoEXT debug_utils_create_info = {VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT};
-
-    debug_utils_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-    debug_utils_create_info.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT;
-    debug_utils_create_info.pfnUserCallback = debug_utils_messenger_callback;
-
     // 创建vulkan实例
     VkInstanceCreateInfo instanceCreateInfo = {};
+
+    // 检查vulkan验证层的情况
+	VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
+	if (context.enableValidationLayers && checkValidationLayerSupport())
+    {
+        instanceCreateInfo.enabledLayerCount = (uint32_t)validationLayers.size();
+        instanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+
+		populateDebugMessengerCreateInfo(debugCreateInfo);
+        instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+	}
+	else 
+    {
+        instanceCreateInfo.enabledLayerCount = 0;
+        instanceCreateInfo.pNext = nullptr;
+        context.enableValidationLayers = false;
+	}
+
 #ifdef __APPLE__
     instanceCreateInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instanceCreateInfo.pNext = &debug_utils_create_info;
     instanceCreateInfo.pApplicationInfo = &appInfo;
     instanceCreateInfo.enabledExtensionCount = (uint32_t)(instanceExtensions.size());
     instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
-    instanceCreateInfo.enabledLayerCount = (uint32_t)instanceLayers.size();
-    instanceCreateInfo.ppEnabledLayerNames = instanceLayers.data();
     VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &context.instance);
     if (result != VK_SUCCESS) 
     {
@@ -102,8 +153,10 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
     // 加载所有instance的入口点
     volkLoadInstanceOnly(context.instance);
     
-    VkDebugUtilsMessengerEXT debug_utils_messenger;
-    result = vkCreateDebugUtilsMessengerEXT(context.instance, &debug_utils_create_info, nullptr, &debug_utils_messenger);
+    if (context.enableValidationLayers)
+    {
+        result = vkCreateDebugUtilsMessengerEXT(context.instance, &debugCreateInfo, nullptr, &context.debugUtilsMessenger);
+    }
     
     return true;
 }
