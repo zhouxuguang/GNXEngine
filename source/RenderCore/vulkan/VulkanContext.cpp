@@ -425,6 +425,7 @@ bool CreateVirtualDevice(VulkanContext& context)
 	dynamicRenderingFeature.pNext = deviceCreateNextChain;
 	dynamicRenderingFeature.dynamicRendering = VK_TRUE;
 
+    context.features_11.pNext = &context.features_12;
     context.features_12.pNext = &dynamicRenderingFeature;
     
     // 开启负的高度
@@ -440,7 +441,7 @@ bool CreateVirtualDevice(VulkanContext& context)
     deviceQueueCreateInfo->queueCount = context.queueCount;
     deviceQueueCreateInfo->pQueuePriorities = queuePriority.data();
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceCreateInfo.pNext = &context.features_12;
+    deviceCreateInfo.pNext = &context.features_11;
     deviceCreateInfo.queueCreateInfoCount = 1;
     deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfo;
 
