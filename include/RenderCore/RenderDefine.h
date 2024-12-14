@@ -101,19 +101,24 @@ enum CompareFunction
 //缩小采样器
 enum SamplerMinFilter
 {
-    MIN_NEAREST = 0,
-    MIN_LINEAR = 1,
-    MIN_NEAREST_MIPMAP_NEAREST = 2,
-    MIN_LINEAR_MIPMAP_NEAREST = 3,
-    MIN_NEAREST_MIPMAP_LINEAR = 4,
-    MIN_LINEAR_MIPMAP_LINEAR = 5
+    MIN_NEAREST = 0,   //最邻近
+    MIN_LINEAR = 1     //双线性
 };
 
 //放大采样器
 enum SamplerMagFilter
 {
-    MAG_NEAREST,              //最邻近
-    MAG_LINEAR,              //双线性
+    MAG_NEAREST = 0,              //最邻近
+    MAG_LINEAR = 1,              //双线性
+};
+
+//mipmap采样器
+enum SamplerMipFilter
+{
+	MIN_NEAREST_MIPMAP_NEAREST = 0,
+	MIN_LINEAR_MIPMAP_NEAREST = 1,
+	MIN_NEAREST_MIPMAP_LINEAR = 2,
+	MIN_LINEAR_MIPMAP_LINEAR = 3
 };
 
 //纹理采样地址环绕模式

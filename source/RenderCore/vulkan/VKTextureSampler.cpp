@@ -45,8 +45,6 @@ void VKTextureSampler::GenerateSamplerInfo(const SamplerDescriptor &des, VkSampl
             break;
     }
 
-    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_MAX_ENUM;
-
     switch (des.filterMin)
     {
         case SamplerMinFilter::MIN_LINEAR:
@@ -55,24 +53,24 @@ void VKTextureSampler::GenerateSamplerInfo(const SamplerDescriptor &des, VkSampl
         case SamplerMinFilter::MIN_NEAREST:
             samplerInfo.minFilter = VK_FILTER_NEAREST;
             break;
-        case SamplerMinFilter::MIN_LINEAR_MIPMAP_LINEAR:
-            samplerInfo.minFilter = VK_FILTER_LINEAR;
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            break;
-        case SamplerMinFilter::MIN_LINEAR_MIPMAP_NEAREST:
-            samplerInfo.minFilter = VK_FILTER_LINEAR;
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-            break;
-        case SamplerMinFilter::MIN_NEAREST_MIPMAP_LINEAR:
-            samplerInfo.minFilter = VK_FILTER_NEAREST;
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-            break;
-        case SamplerMinFilter::MIN_NEAREST_MIPMAP_NEAREST:
-            samplerInfo.minFilter = VK_FILTER_NEAREST;
-            samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-            break;
         default:
             break;
+    }
+
+    switch (des.filterMip)
+    {
+	    case SamplerMipFilter::MIN_LINEAR_MIPMAP_LINEAR:
+		    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		    break;
+	    case SamplerMipFilter::MIN_LINEAR_MIPMAP_NEAREST:
+		    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+		    break;
+	    case SamplerMipFilter::MIN_NEAREST_MIPMAP_LINEAR:
+		    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+		    break;
+	    case SamplerMipFilter::MIN_NEAREST_MIPMAP_NEAREST:
+		    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+		    break;
     }
 
     samplerInfo.addressModeU = TransToVulkanAdressMode(des.wrapS);

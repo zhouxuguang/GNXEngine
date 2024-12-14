@@ -164,6 +164,7 @@ struct SamplerDescriptor
 {
     SamplerMagFilter filterMag = MAG_LINEAR;    // NEAREST
     SamplerMinFilter filterMin = MIN_LINEAR;    // NEAREST
+    SamplerMipFilter filterMip = MIN_LINEAR_MIPMAP_LINEAR;
     SamplerWrapMode wrapS = CLAMP_TO_EDGE;    // CLAMP_TO_EDGE
     SamplerWrapMode wrapT = CLAMP_TO_EDGE;    // CLAMP_TO_EDGE
     SamplerWrapMode wrapR = CLAMP_TO_EDGE;    // CLAMP_TO_EDGE

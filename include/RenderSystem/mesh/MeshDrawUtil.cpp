@@ -34,7 +34,7 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
     if (!cubeSampler)
     {
         SamplerDescriptor sampleDes;
-        sampleDes.filterMin = MIN_LINEAR_MIPMAP_LINEAR;
+        sampleDes.filterMip = MIN_LINEAR_MIPMAP_LINEAR;
         sampleDes.maxLod = 8;
         cubeSampler = getRenderDevice()->createSamplerWithDescriptor(sampleDes);
     }
@@ -108,7 +108,7 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
     if (!cubeSampler)
     {
         SamplerDescriptor sampleDes;
-        sampleDes.filterMin = MIN_LINEAR_MIPMAP_LINEAR;
+        sampleDes.filterMip = MIN_LINEAR_MIPMAP_LINEAR;
         sampleDes.maxLod = 8;
         cubeSampler = getRenderDevice()->createSamplerWithDescriptor(sampleDes);
     }
