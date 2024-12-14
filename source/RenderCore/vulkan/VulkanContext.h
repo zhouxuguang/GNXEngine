@@ -24,12 +24,15 @@ struct VulkanContext
     VkPhysicalDeviceProperties physicalDeviceProperties;
     VkPhysicalDeviceFeatures physicalDeviceFeatures;
     VkPhysicalDeviceMemoryProperties memoryProperties;
+
+    VkPhysicalDeviceFeatures2 features2 = {};
+    VkPhysicalDeviceVulkan11Features features_11 = {};
+    VkPhysicalDeviceVulkan12Features features_12 = {};
     
     baselib::ThreadLocal commandPoolTls;
     
     VkCommandPool GetCommandPool();
     
-    //VkCommandPool commandPool = VK_NULL_HANDLE;
     uint32_t graphicsQueueFamilyIndex;
     uint32_t computeQueueFamilyIndex;
     uint32_t queueCount;

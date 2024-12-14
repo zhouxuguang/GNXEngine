@@ -68,6 +68,12 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
         log_info("SelectPhysicalDevice ERROR");
         return;
     }
+
+    // 初始化vulkanfeature
+    mVulkanContext->features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    mVulkanContext->features_12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    mVulkanContext->features2.pNext = &mVulkanContext->features_12;
+	vkGetPhysicalDeviceFeatures2(mVulkanContext->physicalDevice, &mVulkanContext->features2);
     
     // 初始化扩展信息
     mVulkanContext->vulkanExtension.Init(mVulkanContext->physicalDevice);

@@ -152,7 +152,8 @@ void VulkanBufferUtil::CreateImageCube(VmaAllocator vmaAllocator,
                             VmaAllocation& allocation)
 {
     // Create optimal tiled target image
-    VkImageCreateInfo imageCreateInfo{};
+    VkImageCreateInfo imageCreateInfo = {};
+    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
     imageCreateInfo.format = format;
     imageCreateInfo.mipLevels = mipLevels;

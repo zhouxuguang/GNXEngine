@@ -424,12 +424,14 @@ bool CreateVirtualDevice(VulkanContext& context)
 	dynamicRenderingFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
 	dynamicRenderingFeature.pNext = deviceCreateNextChain;
 	dynamicRenderingFeature.dynamicRendering = VK_TRUE;
+
+    context.features_12.pNext = &dynamicRenderingFeature;
     
     // 开启负的高度
     deviceExtensionNames.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
 
     deviceQueueCreateInfo->sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    deviceQueueCreateInfo->pNext = &dynamicRenderingFeature;
+    deviceQueueCreateInfo->pNext = &context.features_12;
     deviceQueueCreateInfo->queueFamilyIndex = context.graphicsQueueFamilyIndex;
     std::vector<float> queuePriority;
     for (int i = 0; i < context.queueCount; ++i)
