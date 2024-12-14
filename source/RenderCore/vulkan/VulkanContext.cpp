@@ -431,7 +431,6 @@ bool CreateVirtualDevice(VulkanContext& context)
     deviceExtensionNames.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
 
     deviceQueueCreateInfo->sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    deviceQueueCreateInfo->pNext = &context.features_12;
     deviceQueueCreateInfo->queueFamilyIndex = context.graphicsQueueFamilyIndex;
     std::vector<float> queuePriority;
     for (int i = 0; i < context.queueCount; ++i)
@@ -441,6 +440,7 @@ bool CreateVirtualDevice(VulkanContext& context)
     deviceQueueCreateInfo->queueCount = context.queueCount;
     deviceQueueCreateInfo->pQueuePriorities = queuePriority.data();
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    deviceCreateInfo.pNext = &context.features_12;
     deviceCreateInfo.queueCreateInfoCount = 1;
     deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfo;
 
