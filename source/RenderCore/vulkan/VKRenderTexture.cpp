@@ -19,19 +19,36 @@ VKRenderTexture::VKRenderTexture(VulkanContextPtr context, const TextureDescript
     mFormat = format;
     assert(des.width > 0 && des.height > 0);
 
-    VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
-                                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-                                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    bool isDepthStencil = VulkanBufferUtil::IsDepthStencilFormat(format);
+
+    VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
+    if (isDepthStencil)
+    {
+        imageUsageFlags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    }
+    else
+    {
+        imageUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    }
     
     VulkanBufferUtil::CreateImage2DVMA(mContext->vmaAllocator, des.width, des.height, format,
                                        VK_SAMPLE_COUNT_1_BIT, 1, VK_IMAGE_TILING_OPTIMAL, imageUsageFlags, mImage, mAllocation);
     
     //创建图像视图
+    VkImageAspectFlags imageAspectFlags = 0;
+    if (isDepthStencil)
+    {
+        imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+    else
+    {
+        imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    }
     
     // | VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT 这两个标记加上后图像就是红色的，也不知道为啥，
     // 需要继续研究，应该需要判断缺失是深度模板的格式后再加上这些标记
     VkImageView imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, format, nullptr,
-                            VK_IMAGE_ASPECT_COLOR_BIT, 1);
+        imageAspectFlags, 1);
     mVulkanImageViewPtr = std::make_shared<VulkanImageView>(mContext->device, imageView);
 }
 

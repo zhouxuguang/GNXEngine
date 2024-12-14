@@ -364,7 +364,7 @@ bool CreateVirtualDevice(VulkanContext& context)
     CreateDebugReport(context);
 #endif
     
-    void *deviceCreatepNextChain = nullptr;
+    void *deviceCreateNextChain = nullptr;
     
     // 扩展动态状态
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeaturesEXT = {};
@@ -388,7 +388,7 @@ bool CreateVirtualDevice(VulkanContext& context)
     {
         deviceExtensionNames.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
         extendedDynamicStateFeaturesEXT.pNext = nullptr;
-        deviceCreatepNextChain = &extendedDynamicStateFeaturesEXT;
+        deviceCreateNextChain = &extendedDynamicStateFeaturesEXT;
     }
     if (context.vulkanExtension.enabledExtendedDynamicState2)
     {
@@ -400,7 +400,7 @@ bool CreateVirtualDevice(VulkanContext& context)
         }
         else
         {
-            deviceCreatepNextChain = &extendedDynamicState2FeaturesEXT;
+            deviceCreateNextChain = &extendedDynamicState2FeaturesEXT;
         }
     }
     if (context.vulkanExtension.enabledExtendedDynamicState3)
@@ -412,7 +412,7 @@ bool CreateVirtualDevice(VulkanContext& context)
         }
         else
         {
-            deviceCreatepNextChain = &extendedDynamicState3FeaturesEXT;
+            deviceCreateNextChain = &extendedDynamicState3FeaturesEXT;
         }
     }
     
@@ -422,7 +422,7 @@ bool CreateVirtualDevice(VulkanContext& context)
     
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature = {};
 	dynamicRenderingFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
-	dynamicRenderingFeature.pNext = deviceCreatepNextChain;
+	dynamicRenderingFeature.pNext = deviceCreateNextChain;
 	dynamicRenderingFeature.dynamicRendering = VK_TRUE;
     
     // 开启负的高度

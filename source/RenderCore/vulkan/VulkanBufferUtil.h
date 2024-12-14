@@ -20,6 +20,8 @@ public:
     static VkCommandBuffer BeginSingleTimeCommand(VkDevice device, VkCommandPool cmdPool);
     
     static void EndSingleTimeCommand(VkDevice device, VkQueue queue, VkCommandPool cmdPool, VkCommandBuffer commandBuffer);
+
+    static bool IsDepthStencilFormat(VkFormat format);
     
     /**
      @param vmaAllocator 设备句柄
