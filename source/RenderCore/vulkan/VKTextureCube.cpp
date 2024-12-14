@@ -89,6 +89,7 @@ void VKTextureCube::setTextureData(CubemapFace cubeFace, uint32_t imageSize, con
     VkImageSubresourceRange subresourceRange = {};
     subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresourceRange.baseMipLevel = 0;
+    subresourceRange.baseArrayLayer = face;
     subresourceRange.levelCount = 1;
     subresourceRange.layerCount = 1;
     
