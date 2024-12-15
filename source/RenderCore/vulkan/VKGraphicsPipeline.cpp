@@ -158,8 +158,7 @@ VKGraphicsPipeline::VKGraphicsPipeline(VulkanContextPtr context, const GraphicsP
 {
     mContext = context;
     memset(&mPipeCreateInfo, 0, sizeof(mPipeCreateInfo));
-    
-    memset(&(mStageSetOffsets[0][0]), 0, ShaderStage_Max * DESCRIPTOR_TYPE_MAX * sizeof(uint32_t));
+    memset(mStageSetOffsets, 0, ShaderStage_Max * DESCRIPTOR_TYPE_MAX * sizeof(uint32_t));
 }
 
 void VKGraphicsPipeline::attachVertexShader(ShaderFunctionPtr shaderFunction)
@@ -269,7 +268,7 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     rasterInfo.rasterizerDiscardEnable = VK_FALSE;
     rasterInfo.polygonMode = VK_POLYGON_MODE_FILL;
     rasterInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;   //注意这里设置为逆时针，后续适配负的高度
+    rasterInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;   //注意这里设置为逆时针
     rasterInfo.depthBiasEnable = VK_TRUE;
     rasterInfo.lineWidth = 1;
     mPipeCreateInfo.pRasterizationState = &rasterInfo;
@@ -386,9 +385,14 @@ void VKGraphicsPipeline::CreatePipelineLayout()
     //创建描述符集
     for (int i = 0; i < mDescriptorSets.size(); i++)
     {
+        std::vector<VkDescriptorSetLayout> descriptorSetLayout;
+        for (int j = 0; j < desSetLayouts[i].create_info.bindingCount; j++)
+        {
+            descriptorSetLayout.push_back(desLayouts[i]);
+        }
         VkDescriptorSetAllocateInfo allocateInfo = 
             VulkanDescriptorUtil::GetDescriptorSetAllocateInfo(mContext->graphicsDescriptorPool, 
-                desLayouts.data() + i, desSetLayouts[i].bindings.size());
+                descriptorSetLayout.data(), desSetLayouts[i].create_info.bindingCount);
         VkResult result = vkAllocateDescriptorSets(mContext->device, &allocateInfo, mDescriptorSets.data() + i);
         assert(result == VK_SUCCESS);
     }

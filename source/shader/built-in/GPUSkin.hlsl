@@ -60,20 +60,20 @@ VertexOut VS(appdata_skin vin)
 
 
 // 纹理和采样器
-Texture2D gDiffuseMap : register(t0);
-SamplerState gDiffuseSamp  : register(s0);
+Texture2D gDiffuseMap : register(t0, space2);
+SamplerState gDiffuseSamp  : register(s0, space3);
 
-Texture2D gNormalMap : register(t1);
-SamplerState gNormalSamp  : register(s1);
+Texture2D gNormalMap : register(t1, space2);
+SamplerState gNormalSamp  : register(s1, space3);
 
-Texture2D gMetalRoughMap : register(t2);
-SamplerState gMetalRoughSamp  : register(s2);
+Texture2D gMetalRoughMap : register(t2, space2);
+SamplerState gMetalRoughSamp  : register(s2, space3);
 
-Texture2D gEmissiveMap : register(t3);
-SamplerState gEmissiveSamp  : register(s3);
+Texture2D gEmissiveMap : register(t3, space2);
+SamplerState gEmissiveSamp  : register(s3, space3);
 
-Texture2D gAmbientMap : register(t4);
-SamplerState gAmbientSamp  : register(s4);
+Texture2D gAmbientMap : register(t4, space2);
+SamplerState gAmbientSamp  : register(s4, space3);
 
 float4 PS(VertexOut pin) : SV_Target
 {

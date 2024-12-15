@@ -429,17 +429,6 @@ bool CreateVirtualDevice(VulkanContext& context)
 
     context.features_11.pNext = &context.features_12;
     context.features_12.pNext = &dynamicRenderingFeature;
-
-    /*VkPhysicalDeviceVulkan12Features feature12 = {};
-    feature12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-    feature12.shaderFloat16 = context.features_12.shaderFloat16;*/
-
-    VkPhysicalDeviceDescriptorIndexingFeaturesEXT physicalDeviceDescriptorIndexingFeatures = {};
-	physicalDeviceDescriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
-	physicalDeviceDescriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
-	physicalDeviceDescriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
-	physicalDeviceDescriptorIndexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
-    physicalDeviceDescriptorIndexingFeatures.pNext = &context.features_11;
     
     // 开启负的高度
     deviceExtensionNames.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
@@ -594,23 +583,31 @@ bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
 
 void CreateGraphicsDescriptorPool(VulkanContext& context)
 {
-	constexpr int maxCount = 16;
+	constexpr int maxCount = 100000;
     constexpr int maxSetCount = 8;
 	// 创建VkDescriptorPool
-	VkDescriptorPoolSize poolSizes[3] = {};
+
+	/*VkDescriptorPoolSize setSizes[2] = {
+		{VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1},
+		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1},
+	};*/
+
+	VkDescriptorPoolSize poolSizes[4] = {};
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_SAMPLER;
 	poolSizes[0].descriptorCount = maxCount;
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 	poolSizes[1].descriptorCount = maxCount;
 	poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[2].descriptorCount = maxCount;
+	poolSizes[3].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[3].descriptorCount = maxCount;
 
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
-	poolInfo.poolSizeCount = 3;
+	poolInfo.poolSizeCount = 4;
 	poolInfo.pPoolSizes = poolSizes;
-	poolInfo.maxSets = maxSetCount;
+	poolInfo.maxSets = 200;
 	//poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
 	VkResult res = vkCreateDescriptorPool(context.device, &poolInfo, nullptr, &context.graphicsDescriptorPool);

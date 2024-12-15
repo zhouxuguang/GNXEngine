@@ -112,11 +112,14 @@ static DescriptorSetLayoutDataVec GetDescriptorInfo(const SpvReflectShaderModule
                 layout_binding.descriptorCount *= refl_binding.array.dims[i_dim];
             }
             layout_binding.stageFlags = (VkShaderStageFlagBits)shaderModule.shader_stage;
+
+            // 
+            layout_binding.stageFlags = VK_SHADER_STAGE_ALL;
             
             //printf("binding %d = %s\n", refl_binding.binding, refl_binding.name);
         }
         
-        // 判断每个set上的绑定是否是同一类型
+        // 判断每个set上的绑定是否是同一类型，这里每个set上有不同类型的desType，这里以后可能需要重构
         //assert(bindingTypes.size() == 1);
         layout.descriptorType = GetDescriptorType(*bindingTypes.begin());
         

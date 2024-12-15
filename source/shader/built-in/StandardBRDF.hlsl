@@ -262,14 +262,14 @@ float4 SRGBtoLINEAR(float4 srgbIn)
 	return float4(linOut, srgbIn.a);
 }
 
-TextureCube texEnvMap : register(t5);
-SamplerState texEnvSamp  : register(s5);
+TextureCube texEnvMap : register(t5, space2);
+SamplerState texEnvSamp  : register(s5, space3);
 
-TextureCube texEnvMapIrradiance : register(t6);
-SamplerState texEnvMapIrradianceSamp  : register(s6);
+TextureCube texEnvMapIrradiance : register(t6, space2);
+SamplerState texEnvMapIrradianceSamp  : register(s6, space3);
 
-Texture2D texBRDF_LUT : register(t7);
-SamplerState texBRDF_LUTSamp  : register(s7);
+Texture2D texBRDF_LUT : register(t7, space2);
+SamplerState texBRDF_LUTSamp  : register(s7, space3);
 
 // Calculation of the lighting contribution from an optional Image Based Light source.
 // Precomputed Environment Maps are required uniform inputs and are computed as outlined in [1].

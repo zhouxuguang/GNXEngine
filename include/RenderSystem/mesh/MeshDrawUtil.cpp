@@ -21,14 +21,15 @@ NS_RENDERSYSTEM_BEGIN
 
 void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
 {
+    std::string pathSplit = std::string(1, PATHSPLIT);
     if (!envMap)
     {
-        envMap = LoadEquirectangularMap(getMediaDir() + "IBL/piazza_bologni_1k.hdr");
+        envMap = LoadEquirectangularMap(getMediaDir() + "IBL" + pathSplit + "piazza_bologni_1k.hdr");
     }
     
     if (!envMapIrradiance)
     {
-        envMapIrradiance = LoadEquirectangularMap(getMediaDir() + "IBL/piazza_bologni_1k_irradiance.hdr");
+        envMapIrradiance = LoadEquirectangularMap(getMediaDir() + "IBL" + pathSplit + "piazza_bologni_1k_irradiance.hdr");
     }
     
     if (!cubeSampler)
@@ -41,7 +42,7 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
     
     if (!brdfMap) {
         VImage image;
-        imagecodec::ImageDecoder::DecodeFile((getMediaDir() + "IBL/brdfLUT.ktx").c_str(), &image);
+        imagecodec::ImageDecoder::DecodeFile((getMediaDir() + "IBL" + pathSplit + "brdfLUT.ktx").c_str(), &image);
         TextureDescriptor des = ImageTextureUtil::getTextureDescriptor(image);
         brdfMap = getRenderDevice()->createTextureWithDescriptor(des);
         brdfMap->setTextureData(image.GetPixels());
@@ -95,14 +96,15 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
 
 void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& renderInfo, bool isCPUSkin)
 {
+    std::string pathSplit = std::string(1, PATHSPLIT);
     if (!envMap)
     {
-        envMap = LoadEquirectangularMap(getMediaDir() + "IBL/piazza_bologni_1k.hdr");
+        envMap = LoadEquirectangularMap(getMediaDir() + "IBL" + pathSplit + "piazza_bologni_1k.hdr");
     }
     
     if (!envMapIrradiance)
     {
-        envMapIrradiance = LoadEquirectangularMap(getMediaDir() + "IBL/piazza_bologni_1k_irradiance.hdr");
+        envMapIrradiance = LoadEquirectangularMap(getMediaDir() + "IBL" + pathSplit + "piazza_bologni_1k_irradiance.hdr");
     }
     
     if (!cubeSampler)
@@ -115,7 +117,7 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
     
     if (!brdfMap) {
         VImage image;
-        imagecodec::ImageDecoder::DecodeFile((getMediaDir() + "IBL/brdfLUT.ktx").c_str(), &image);
+        imagecodec::ImageDecoder::DecodeFile((getMediaDir() + "IBL" + pathSplit + "brdfLUT.ktx").c_str(), &image);
         TextureDescriptor des = ImageTextureUtil::getTextureDescriptor(image);
         brdfMap = getRenderDevice()->createTextureWithDescriptor(des);
         brdfMap->setTextureData(image.GetPixels());
