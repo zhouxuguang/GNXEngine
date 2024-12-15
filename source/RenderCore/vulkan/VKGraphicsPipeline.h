@@ -76,9 +76,19 @@ public:
         return mStageSetOffsets[stage][type];
     }
 
-    VkDescriptorSet GetDescriptorSet(uint32_t index)
+    VkDescriptorSet GetDescriptorSet(uint32_t index) const
     {
         return mDescriptorSets[index];
+    }
+
+    uint32_t GetSetCount() const
+    {
+        return mDescriptorSets.size();
+    }
+
+    const std::vector<VkDescriptorSet>& GetDescriptorSets() const
+    {
+        return mDescriptorSets;
     }
     
     void SetRenderPass(VkRenderPass renderPass)

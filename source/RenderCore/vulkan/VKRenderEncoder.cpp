@@ -241,11 +241,29 @@ void VKRenderEncoder::EndEncode()
 
 void VKRenderEncoder::BindPipeline()
 {
+    if (!mGraphicsPipieline)
+    {
+        return;
+    }
     if (mGraphicsPipieline && !mGraphicsPipieline->IsGenerated())
     {
         mGraphicsPipieline->Generate(mPassFormat);
     }
     vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipeline());
+
+	// Provided by VK_VERSION_1_0
+	/*void vkCmdBindDescriptorSets(
+		VkCommandBuffer                             commandBuffer,
+		VkPipelineBindPoint                         pipelineBindPoint,
+		VkPipelineLayout                            layout,
+		uint32_t                                    firstSet,
+		uint32_t                                    descriptorSetCount,
+		const VkDescriptorSet * pDescriptorSets,
+		uint32_t                                    dynamicOffsetCount,
+		const uint32_t * pDynamicOffsets);*/
+    vkCmdBindDescriptorSets(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        mGraphicsPipieline->GetPipelineLayout(), 0, mGraphicsPipieline->GetSetCount(),
+        mGraphicsPipieline->GetDescriptorSets().data(), 0, nullptr);
 }
 
 void VKRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)

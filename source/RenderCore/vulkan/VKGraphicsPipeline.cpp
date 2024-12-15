@@ -304,7 +304,7 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     std::vector<VkDynamicState> dynamicStates;
     dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
     dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
-    dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
+    //dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
     dynamicStates.push_back(VK_DYNAMIC_STATE_STENCIL_REFERENCE);
     if (mContext->vulkanExtension.enabledExtendedDynamicState)
     {
@@ -357,6 +357,25 @@ void VKGraphicsPipeline::CreatePipelineLayout()
     mDescriptorSets.clear();
     for (int i = 0; i < desSetLayouts.size(); i ++)
     {
+		// Provided by VK_VERSION_1_2
+// 		typedef struct VkDescriptorSetLayoutBindingFlagsCreateInfo {
+// 			VkStructureType                    sType;
+// 			const void* pNext;
+// 			uint32_t                           bindingCount;
+// 			const VkDescriptorBindingFlags* pBindingFlags;
+// 		} VkDescriptorSetLayoutBindingFlagsCreateInfo;
+
+        VkDescriptorSetLayoutBindingFlagsCreateInfo descriptorSetLayoutBindingFlagsCreateInfo = {};
+        descriptorSetLayoutBindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+        descriptorSetLayoutBindingFlagsCreateInfo.bindingCount = desSetLayouts[i].create_info.bindingCount;
+        std::vector<VkDescriptorBindingFlags> desBindingFlags;
+        for (int j = 0; j < desSetLayouts[i].create_info.bindingCount; j ++)
+        {
+            desBindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
+        }
+        descriptorSetLayoutBindingFlagsCreateInfo.pBindingFlags = desBindingFlags.data();
+        desSetLayouts[i].create_info.pNext = &descriptorSetLayoutBindingFlagsCreateInfo;
+
         if (vkCreateDescriptorSetLayout(mContext->device, &desSetLayouts[i].create_info, nullptr, desLayouts.data() + i) != VK_SUCCESS)
         {
             printf("failed to create compute descriptor set layout!\n");
