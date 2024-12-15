@@ -99,6 +99,7 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
         return;
     }
     
+    CreateGraphicsDescriptorPool(*mVulkanContext);
     CreateComputeDescriptorPool(*mVulkanContext);
     
     // 测试以下函数指针是否为空

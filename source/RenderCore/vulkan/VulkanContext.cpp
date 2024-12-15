@@ -35,7 +35,7 @@ static const std::vector<const char*> validationLayers =
 	"VK_LAYER_KHRONOS_validation"
 };
 
-bool checkValidationLayerSupport() 
+static bool checkValidationLayerSupport()
 {
 	uint32_t layerCount;
 	vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
@@ -65,7 +65,7 @@ bool checkValidationLayerSupport()
 	return true;
 }
 
-void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) 
+static void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
 {
 	createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -352,6 +352,8 @@ bool CreateVirtualDevice(VulkanContext& context)
         deviceExtensionNames.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
     }
 
+    deviceExtensionNames.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+
 #ifdef ENABLE_VULKAN_DEBUG
     if (context.debugMarkersSupported) 
     {
@@ -427,6 +429,17 @@ bool CreateVirtualDevice(VulkanContext& context)
 
     context.features_11.pNext = &context.features_12;
     context.features_12.pNext = &dynamicRenderingFeature;
+
+    /*VkPhysicalDeviceVulkan12Features feature12 = {};
+    feature12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    feature12.shaderFloat16 = context.features_12.shaderFloat16;*/
+
+    VkPhysicalDeviceDescriptorIndexingFeaturesEXT physicalDeviceDescriptorIndexingFeatures = {};
+	physicalDeviceDescriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT;
+	physicalDeviceDescriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	physicalDeviceDescriptorIndexingFeatures.runtimeDescriptorArray = VK_TRUE;
+	physicalDeviceDescriptorIndexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+    physicalDeviceDescriptorIndexingFeatures.pNext = &context.features_11;
     
     // 开启负的高度
     deviceExtensionNames.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
@@ -577,6 +590,33 @@ bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
 #endif
 
     return context.surfaceKhr != VK_NULL_HANDLE;
+}
+
+void CreateGraphicsDescriptorPool(VulkanContext& context)
+{
+	constexpr int maxCount = 16;
+    constexpr int maxSetCount = 8;
+	// 创建VkDescriptorPool
+	VkDescriptorPoolSize poolSizes[3] = {};
+	poolSizes[0].type = VK_DESCRIPTOR_TYPE_SAMPLER;
+	poolSizes[0].descriptorCount = maxCount;
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	poolSizes[1].descriptorCount = maxCount;
+	poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[2].descriptorCount = maxCount;
+
+	VkDescriptorPoolCreateInfo poolInfo = {};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = 3;
+	poolInfo.pPoolSizes = poolSizes;
+	poolInfo.maxSets = maxSetCount;
+	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+	VkResult res = vkCreateDescriptorPool(context.device, &poolInfo, nullptr, &context.graphicsDescriptorPool);
+	if (res != VK_SUCCESS)
+	{
+		printf("vkCreateDescriptorPool failed!!!!\n");
+	}
 }
 
 void CreateComputeDescriptorPool(VulkanContext& context)

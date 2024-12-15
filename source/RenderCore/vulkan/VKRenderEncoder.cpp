@@ -301,18 +301,18 @@ void VKRenderEncoder::setVertexUniformBuffer(UniformBufferPtr buffer, int index)
     bufferInfo.buffer = vkUniformBuffer->GetBuffer();
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
-    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(VK_NULL_HANDLE,
+    uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Vertex, DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    VkDescriptorSet descriptorSet = mGraphicsPipieline->GetDescriptorSet(texOffset);
+    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(descriptorSet,
                 VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, index, &bufferInfo);   // 这里还有问题，索引binding的问题
-    writeDescriptorSet.dstSet = 0;   //这句也是可以的
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     imageInfo.imageView = VK_NULL_HANDLE;
     imageInfo.sampler = VK_NULL_HANDLE;
     writeDescriptorSet.pImageInfo = &imageInfo;
     
-    uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Vertex, DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-    
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, &writeDescriptorSet);
+    vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
+    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, &writeDescriptorSet);
 }
 
 void VKRenderEncoder::setFragmentUniformBuffer(UniformBufferPtr buffer, int index)
@@ -328,12 +328,13 @@ void VKRenderEncoder::setFragmentUniformBuffer(UniformBufferPtr buffer, int inde
     bufferInfo.buffer = vkUniformBuffer->GetBuffer();
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
-    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(VK_NULL_HANDLE,
-                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, index, &bufferInfo);
-    writeDescriptorSet.dstSet = 0;   //这句也是可以的
     uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    VkDescriptorSet descriptorSet = mGraphicsPipieline->GetDescriptorSet(texOffset);
+    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(descriptorSet,
+                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, index, &bufferInfo);
     
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, &writeDescriptorSet);
+    vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
+    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, &writeDescriptorSet);
 }
 
 void VKRenderEncoder::drawPrimitves(PrimitiveMode mode, int offset, int size)
@@ -441,15 +442,20 @@ void VKRenderEncoder::setFragmentTextureAndSampler(Texture2DPtr texture, Texture
     
     VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(0,
                         vkTexture2D->getVKImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    writeDesSets[0] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
     uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, writeDesSets);
+    VkDescriptorSet descriptorSet1 = mGraphicsPipieline->GetDescriptorSet(texOffset);
+    writeDesSets[0] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(descriptorSet1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
+    
+    vkUpdateDescriptorSets(mContext->device, 1, writeDesSets, 0, nullptr);
+    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, writeDesSets);
     
     VkDescriptorImageInfo samplerInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(), 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    writeDesSets[1] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLER, index, &samplerInfo);
-    
     uint32_t samOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_SAMPLER);
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), samOffset, 1, writeDesSets + 1);
+    VkDescriptorSet descriptorSet2 = mGraphicsPipieline->GetDescriptorSet(samOffset);
+    writeDesSets[1] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(descriptorSet2, VK_DESCRIPTOR_TYPE_SAMPLER, index, &samplerInfo);
+    
+    vkUpdateDescriptorSets(mContext->device, 1, writeDesSets + 1, 0, nullptr);
+    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), samOffset, 1, writeDesSets + 1);
 }
 
 void VKRenderEncoder::setFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index)
@@ -464,16 +470,20 @@ void VKRenderEncoder::setFragmentTextureCubeAndSampler(TextureCubePtr textureCub
     VkWriteDescriptorSet writeDesSets[2];
     
     VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(0, vkTextureCube->GetImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    writeDesSets[0] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
-    
     uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, writeDesSets);
+    VkDescriptorSet descriptorSet1 = mGraphicsPipieline->GetDescriptorSet(texOffset);
+    writeDesSets[0] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(descriptorSet1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
+    
+    vkUpdateDescriptorSets(mContext->device, 1, writeDesSets, 0, nullptr);
+    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, writeDesSets);
     
     VkDescriptorImageInfo samplerInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(), 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    writeDesSets[1] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLER, index, &samplerInfo);
-    
     uint32_t samOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_SAMPLER);
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), samOffset, 1, writeDesSets + 1);
+    VkDescriptorSet descriptorSet2 = mGraphicsPipieline->GetDescriptorSet(samOffset);
+    writeDesSets[1] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(descriptorSet2, VK_DESCRIPTOR_TYPE_SAMPLER, index, &samplerInfo);
+    
+    vkUpdateDescriptorSets(mContext->device, 1, writeDesSets + 1, 0, nullptr);
+    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), samOffset, 1, writeDesSets + 1);
 }
 
 void VKRenderEncoder::setFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index)
@@ -488,16 +498,21 @@ void VKRenderEncoder::setFragmentRenderTextureAndSampler(RenderTexturePtr render
     VkWriteDescriptorSet writeDesSets[2];
     
     VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(0, vkTexture->GetImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    writeDesSets[0] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
-    
     uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, writeDesSets);
+    VkDescriptorSet descriptorSet1 = mGraphicsPipieline->GetDescriptorSet(texOffset);
+    writeDesSets[0] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(descriptorSet1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
+    
+    vkUpdateDescriptorSets(mContext->device, 1, writeDesSets, 0, nullptr);
+
+    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, writeDesSets);
     
     VkDescriptorImageInfo samplerInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(), 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    writeDesSets[1] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE, VK_DESCRIPTOR_TYPE_SAMPLER, index, &samplerInfo);
-    
     uint32_t samOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_SAMPLER);
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), samOffset, 1, writeDesSets + 1);
+    VkDescriptorSet descriptorSet2 = mGraphicsPipieline->GetDescriptorSet(samOffset);
+    writeDesSets[1] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(descriptorSet2, VK_DESCRIPTOR_TYPE_SAMPLER, index, &samplerInfo);
+    vkUpdateDescriptorSets(mContext->device, 1, writeDesSets + 1, 0, nullptr);
+
+    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), samOffset, 1, writeDesSets + 1);
 }
 
 NAMESPACE_RENDERCORE_END

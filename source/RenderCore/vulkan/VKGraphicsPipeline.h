@@ -75,6 +75,11 @@ public:
     {
         return mStageSetOffsets[stage][type];
     }
+
+    VkDescriptorSet GetDescriptorSet(uint32_t index)
+    {
+        return mDescriptorSets[index];
+    }
     
     void SetRenderPass(VkRenderPass renderPass)
     {
@@ -111,6 +116,7 @@ private:
     std::vector<VKShaderFunctionPtr> mShaders;
     
     uint32_t mStageSetOffsets[ShaderStage_Max][DESCRIPTOR_TYPE_MAX];
+    std::vector<VkDescriptorSet> mDescriptorSets;
 };
 
 NAMESPACE_RENDERCORE_END

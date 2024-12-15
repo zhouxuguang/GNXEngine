@@ -46,6 +46,7 @@ struct VulkanContext
     VkSampleCountFlagBits numSamples = VK_SAMPLE_COUNT_1_BIT;
     
     //描述符集合的池子，分为计算和图形
+    VkDescriptorPool graphicsDescriptorPool = VK_NULL_HANDLE;
     VkDescriptorPool computeDescriptorPool = VK_NULL_HANDLE;
     
     std::vector<const char*> extensionNames;   //设备支持的扩展列表名称
@@ -75,6 +76,9 @@ void CreateVMA(VulkanContext& context);
 
 // 创建Surface对象
 bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow);
+
+// 创建图形描述符的pool
+void CreateGraphicsDescriptorPool(VulkanContext& context);
 
 // 创建计算描述符的pool
 void CreateComputeDescriptorPool(VulkanContext& context);

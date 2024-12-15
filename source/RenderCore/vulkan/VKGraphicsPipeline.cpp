@@ -7,6 +7,7 @@
 
 #include "VKGraphicsPipeline.h"
 #include "VKDepthStencilBuffer.h"
+#include "VulkanDescriptorUtil.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -353,12 +354,24 @@ void VKGraphicsPipeline::CreatePipelineLayout()
     
     std::vector<VkDescriptorSetLayout> desLayouts;
     desLayouts.resize(desSetLayouts.size());
+    mDescriptorSets.clear();
     for (int i = 0; i < desSetLayouts.size(); i ++)
     {
         if (vkCreateDescriptorSetLayout(mContext->device, &desSetLayouts[i].create_info, nullptr, desLayouts.data() + i) != VK_SUCCESS)
         {
             printf("failed to create compute descriptor set layout!\n");
         }
+        mDescriptorSets.push_back(VK_NULL_HANDLE);
+    }
+
+    //创建描述符集
+    for (int i = 0; i < mDescriptorSets.size(); i++)
+    {
+        VkDescriptorSetAllocateInfo allocateInfo = 
+            VulkanDescriptorUtil::GetDescriptorSetAllocateInfo(mContext->graphicsDescriptorPool, 
+                desLayouts.data() + i, desSetLayouts[i].bindings.size());
+        VkResult result = vkAllocateDescriptorSets(mContext->device, &allocateInfo, mDescriptorSets.data() + i);
+        assert(result == VK_SUCCESS);
     }
 
     // 创建管线布局

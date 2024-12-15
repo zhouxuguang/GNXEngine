@@ -15,6 +15,19 @@ NAMESPACE_RENDERCORE_BEGIN
 class VulkanDescriptorUtil
 {
 public:
+    static inline VkDescriptorSetAllocateInfo GetDescriptorSetAllocateInfo(
+		VkDescriptorPool descriptorPool,
+		const VkDescriptorSetLayout* pSetLayouts,
+		uint32_t descriptorSetCount)
+	{
+		VkDescriptorSetAllocateInfo descriptorSetAllocateInfo = {};
+		descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		descriptorSetAllocateInfo.descriptorPool = descriptorPool;
+		descriptorSetAllocateInfo.pSetLayouts = pSetLayouts;
+		descriptorSetAllocateInfo.descriptorSetCount = descriptorSetCount;
+		return descriptorSetAllocateInfo;
+	}
+
     static inline VkWriteDescriptorSet GetBufferWriteDescriptorSet(
         VkDescriptorSet dstSet,
         VkDescriptorType type,
