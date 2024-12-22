@@ -24,8 +24,7 @@ endif()
 
 add_library(rendersystem OBJECT ${RENDERSYSTEM_SOURCES} ${RENDERSYSTEM_INCLUDES})
 target_include_directories(rendersystem PUBLIC ${rendersystem_include_dir} 
-                                                ${CMAKE_CURRENT_SOURCE_DIR}/../../../include
-                                                ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/assimp/assimp-5.2.4/include)
+                                                ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
 
 target_include_directories(rendersystem PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/glm-0.9.9.8)
                                            
