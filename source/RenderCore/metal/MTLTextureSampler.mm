@@ -33,15 +33,6 @@ MTLSamplerDescriptor* MTLTextureSampler::transToMTLSamplerDescriptor(const Sampl
             samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
             samplerDescriptor.mipFilter = MTLSamplerMipFilterNotMipmapped;
             break;
-        case SamplerMinFilter::MIN_NEAREST_MIPMAP_NEAREST:
-        case SamplerMinFilter::MIN_NEAREST_MIPMAP_LINEAR:
-            samplerDescriptor.minFilter = MTLSamplerMinMagFilterNearest;
-            samplerDescriptor.mipFilter = MTLSamplerMipFilterNearest;
-            break;
-        case SamplerMinFilter::MIN_LINEAR_MIPMAP_LINEAR:
-        case SamplerMinFilter::MIN_LINEAR_MIPMAP_NEAREST:
-            samplerDescriptor.minFilter = MTLSamplerMinMagFilterLinear;
-            samplerDescriptor.mipFilter = MTLSamplerMipFilterLinear;
         default:
             break;
     }
@@ -58,10 +49,31 @@ MTLSamplerDescriptor* MTLTextureSampler::transToMTLSamplerDescriptor(const Sampl
             break;
     }
     
+    // TODO : 这里还有问题需要解决，命名还需要规范化
+//    enum SamplerMipFilter
+//    {
+//        MIN_NEAREST_MIPMAP_NEAREST = 0,
+//        MIN_LINEAR_MIPMAP_NEAREST = 1,
+//        MIN_NEAREST_MIPMAP_LINEAR = 2,
+//        MIN_LINEAR_MIPMAP_LINEAR = 3
+//    };
+    switch (des.filterMip)
+    {
+        case SamplerMipFilter::MIN_NEAREST_MIPMAP_NEAREST:
+        case SamplerMipFilter::MIN_NEAREST_MIPMAP_LINEAR:
+            samplerDescriptor.mipFilter = MTLSamplerMipFilterNearest;
+            break;
+        case SamplerMipFilter::MIN_LINEAR_MIPMAP_LINEAR:
+        case SamplerMipFilter::MIN_LINEAR_MIPMAP_NEAREST:
+            samplerDescriptor.mipFilter = MTLSamplerMipFilterLinear;
+        default:
+            break;
+    }
+    
     samplerDescriptor.rAddressMode = transToMTLAdressMode(des.wrapR);
     samplerDescriptor.tAddressMode = transToMTLAdressMode(des.wrapT);
     samplerDescriptor.sAddressMode = transToMTLAdressMode(des.wrapS);
-   // samplerDescriptor.compareFunction = (MTLCompareFunction)des.compareFunc;
+    //samplerDescriptor.compareFunction = (MTLCompareFunction)des.compareFunc;
     return samplerDescriptor;
 }
 
