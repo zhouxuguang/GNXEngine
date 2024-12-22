@@ -11,5 +11,4 @@ add_subdirectory(shadercompiler)
 add_subdirectory(../../source/thirdparty/assimp assimp)
 add_subdirectory(../../source/thirdparty/SPIRV-Reflect SPIRV-Reflect)
 add_subdirectory(../../source/thirdparty/tbb tbb)
-
-
+add_subdirectory(../../source/thirdparty/meshoptimizer meshoptimizer)
