@@ -459,6 +459,10 @@ typedef uLong FAR uLongf;
 #  endif
 #endif
 
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
 /* a little trick to accommodate both "#define _LARGEFILE64_SOURCE" and
  * "#define _LARGEFILE64_SOURCE 1" as requesting 64-bit operations, (even
  * though the former does not conform to the LFS document), but considering

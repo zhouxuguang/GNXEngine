@@ -1,6 +1,10 @@
 #include "DataCompress.h"
 
+#ifdef _WIN32
 #include "zlib.h"
+#else
+#include <zlib.h>
+#endif
 //#include "lzma/LzmaLib.h"
 #include "lz4/lz4.h"
 
