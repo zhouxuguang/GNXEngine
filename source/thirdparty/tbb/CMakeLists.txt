@@ -5,3 +5,7 @@ set(TBB_BUILD_TBBMALLOC_PROXY OFF CACHE BOOL "TBB_BUILD_TBBMALLOC_PROXY" FORCE)
 set(TBB_BUILD_TESTS OFF CACHE BOOL "TBB_BUILD_TESTS" FORCE)
 
 add_subdirectory(tbb)
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set_property(TARGET tbb_static PROPERTY FOLDER "thirdparty")
+set_property(TARGET tbb_def_files PROPERTY FOLDER "thirdparty")
