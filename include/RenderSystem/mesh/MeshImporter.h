@@ -25,6 +25,10 @@ public:
     virtual bool ImportFromFile(const std::string &fileName, Mesh* mesh, SkinnedMesh* skinnedMesh) = 0;
 };
 
+MeshImporter* CreateMeshImporter();
+
+void DestroyMeshImporter(MeshImporter* meshImporter);
+
 NS_RENDERSYSTEM_END
 
 #endif /* FNXENGINE_MESH_IMPORTER_INCLUDE_H */

@@ -409,6 +409,8 @@ bool MeshAssimpImpoter::ImportFromFile(const std::string &fileName, Mesh* mesh, 
             mesh->AddSubMeshInfo(iter);
         }
     }
+
+    aiReleaseImport(scene);
     
     return true;
 }

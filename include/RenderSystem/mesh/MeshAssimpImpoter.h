@@ -15,6 +15,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/material.h>
+#include <assimp/cimport.h>
 #include "Material.h"
 #include "../animation/AnimationClip.h"
 #include "../skinnedMesh/SkinnedMesh.h"

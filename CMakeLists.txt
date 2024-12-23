@@ -7,4 +7,5 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #add_subdirectory(project/cmake ${CMAKE_CURRENT_SOURCE_DIR})
 add_subdirectory(GNXEditor GNXEditor) 
+add_subdirectory(test test) 
 
