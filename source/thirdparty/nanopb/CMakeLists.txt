@@ -8,5 +8,7 @@ add_library(nanopb STATIC
             pb_decode.h
             pb_decode.c)
 
+target_include_directories(nanopb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(TARGET nanopb PROPERTY FOLDER "thirdparty")

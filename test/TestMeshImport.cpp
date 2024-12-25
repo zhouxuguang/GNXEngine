@@ -1,4 +1,5 @@
 #include "RenderSystem/mesh/MeshImporter.h"
+#include "pb.h"
 
 using namespace RenderSystem;
 
