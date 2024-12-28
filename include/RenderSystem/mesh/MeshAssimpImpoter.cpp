@@ -410,7 +410,8 @@ bool MeshAssimpImpoter::ImportFromFile(const std::string &fileName, Mesh* mesh, 
         }
     }
 
-    aiReleaseImport(scene);
+    // 这里苹果上崩溃，需要继续看原因
+    //aiReleaseImport(scene);
     
     return true;
 }
