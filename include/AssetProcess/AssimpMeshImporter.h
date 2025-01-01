@@ -18,7 +18,7 @@ NS_ASSETPROCESS_BEGIN
 class AssimpMeshImporter
 {
 public:
-	AssimpMeshImporter(const aiScene* scene);
+	AssimpMeshImporter(const aiScene* scene, const std::string& saveDir);
 	~AssimpMeshImporter();
 
 	void LoadMesh();
@@ -50,6 +50,8 @@ private:
 	//索引信息和SubMeshInfo
 	std::vector<uint32_t> mIndices;
 	std::vector<SubMeshInfo> mSubMeshInfos;
+
+	std::string mSaveDir;
 };
 
 NS_ASSETPROCESS_END

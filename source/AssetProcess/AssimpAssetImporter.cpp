@@ -39,7 +39,7 @@ bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std:
 	}
 
 	// 导入mesh
-	AssimpMeshImporter assimpMeshImport(scene);
+	AssimpMeshImporter assimpMeshImport(scene, saveDir);
 	assimpMeshImport.LoadMesh();
 
     return true;

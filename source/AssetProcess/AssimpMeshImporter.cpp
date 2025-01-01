@@ -2,7 +2,7 @@
 
 NS_ASSETPROCESS_BEGIN
 
-AssimpMeshImporter::AssimpMeshImporter(const aiScene* scene) : mScene(scene)
+AssimpMeshImporter::AssimpMeshImporter(const aiScene* scene, const std::string& saveDir) : mScene(scene), mSaveDir(saveDir)
 {
 }
 
