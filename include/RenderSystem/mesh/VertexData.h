@@ -87,7 +87,6 @@ public:
     
     bool HasChannel(ShaderChannel shaderChannelIndex) const
     {
-        //assert((mChannels[shaderChannelIndex].format != VertexFormatInvalid));
         return mChannels[shaderChannelIndex].format != VertexFormatInvalid;
     }
     
