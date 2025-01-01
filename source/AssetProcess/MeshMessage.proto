@@ -7,7 +7,7 @@ message SubMeshMessage
 {
     uint32 firstIndex = 1;        //第一个绘制的索引，即索引个数的偏移
     uint32 indexCount = 2;        //索引的个数，即绘制顶点的个数
-    PrimitiveMode topology = 3;
+    PrimitiveType topology = 3;
     uint32 vertexCount = 4;       //顶点的个数
 }
 
@@ -16,7 +16,7 @@ message VertexChannelMessage
 {
     uint32 offset = 1;
     uint32 stride = 2;
-    VertexFormat format = 3;
+    VertexDataFormat format = 3;
     VertexChannel vertexChannel = 4;   // 是什么通道
 }
 

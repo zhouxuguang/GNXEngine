@@ -15,7 +15,7 @@
 typedef struct _SubMeshMessage {
     uint32_t firstIndex; /* 第一个绘制的索引，即索引个数的偏移 */
     uint32_t indexCount; /* 索引的个数，即绘制顶点的个数 */
-    PrimitiveMode topology;
+    PrimitiveType topology;
     uint32_t vertexCount; /* 顶点的个数 */
 } SubMeshMessage;
 
@@ -23,7 +23,7 @@ typedef struct _SubMeshMessage {
 typedef struct _VertexChannelMessage {
     uint32_t offset;
     uint32_t stride;
-    VertexFormat format;
+    VertexDataFormat format;
     VertexChannel vertexChannel; /* 是什么通道 */
 } VertexChannelMessage;
 
@@ -45,11 +45,11 @@ extern "C" {
 #endif
 
 /* Initializer values for message structs */
-#define SubMeshMessage_init_default              {0, 0, _PrimitiveMode_MIN, 0}
-#define VertexChannelMessage_init_default        {0, 0, _VertexFormat_MIN, _VertexChannel_MIN}
+#define SubMeshMessage_init_default              {0, 0, _PrimitiveType_MIN, 0}
+#define VertexChannelMessage_init_default        {0, 0, _VertexDataFormat_MIN, _VertexChannel_MIN}
 #define MeshMessage_init_default                 {{{NULL}, NULL}, {{NULL}, NULL}, _IndiceType_MIN, 0, 0, 0, {{NULL}, NULL}, {{NULL}, NULL}}
-#define SubMeshMessage_init_zero                 {0, 0, _PrimitiveMode_MIN, 0}
-#define VertexChannelMessage_init_zero           {0, 0, _VertexFormat_MIN, _VertexChannel_MIN}
+#define SubMeshMessage_init_zero                 {0, 0, _PrimitiveType_MIN, 0}
+#define VertexChannelMessage_init_zero           {0, 0, _VertexDataFormat_MIN, _VertexChannel_MIN}
 #define MeshMessage_init_zero                    {{{NULL}, NULL}, {{NULL}, NULL}, _IndiceType_MIN, 0, 0, 0, {{NULL}, NULL}, {{NULL}, NULL}}
 
 /* Field tags (for use in manual encoding/decoding) */

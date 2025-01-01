@@ -17,63 +17,63 @@ typedef enum _IndiceType {
 } IndiceType;
 
 /* 图元类型 */
-typedef enum _PrimitiveMode {
-    PrimitiveMode_PrimitiveMode_POINTS = 0,
-    PrimitiveMode_PrimitiveMode_LINES = 1,
-    PrimitiveMode_PrimitiveMode_LINE_STRIP = 2,
-    PrimitiveMode_PrimitiveMode_TRIANGLES = 3,
-    PrimitiveMode_PrimitiveMode_TRIANGLE_STRIP = 4
-} PrimitiveMode;
+typedef enum _PrimitiveType {
+    PrimitiveType_PrimitiveType_POINTS = 0,
+    PrimitiveType_PrimitiveType_LINES = 1,
+    PrimitiveType_PrimitiveType_LINE_STRIP = 2,
+    PrimitiveType_PrimitiveType_TRIANGLES = 3,
+    PrimitiveType_PrimitiveType_TRIANGLE_STRIP = 4
+} PrimitiveType;
 
 /* 顶点通道，也就是顶点属性 */
 typedef enum _VertexChannel {
-    VertexChannel_kVertexChannelPosition = 0, /* position (vector3) */
-    VertexChannel_kVertexChannelNormal = 1, /* Normal (vector3) */
-    VertexChannel_kVertexChannelColor = 2, /* Vertex color */
-    VertexChannel_kVertexChannelTexCoord0 = 3, /* UV set 0 (vector2) */
-    VertexChannel_kVertexChannelTexCoord1 = 4, /* UV set 1 (vector2) */
-    VertexChannel_kVertexChannelTangent = 5, /* Tangent (vector4) */
-    VertexChannel_kVertexChannelBoneIndex = 6, /* BoneIndex (vec4ui) */
-    VertexChannel_kVertexChannelWeight = 7, /* Weight (vector4) */
-    VertexChannel_kVertexChannelCount = 8 /* Keep this last! */
+    VertexChannel_VertexChannelPosition = 0, /* position (vector3) */
+    VertexChannel_VertexChannelNormal = 1, /* Normal (vector3) */
+    VertexChannel_VertexChannelColor = 2, /* Vertex color */
+    VertexChannel_VertexChannelTexCoord0 = 3, /* UV set 0 (vector2) */
+    VertexChannel_VertexChannelTexCoord1 = 4, /* UV set 1 (vector2) */
+    VertexChannel_VertexChannelTangent = 5, /* Tangent (vector4) */
+    VertexChannel_VertexChannelBoneIndex = 6, /* BoneIndex (vec4ui) */
+    VertexChannel_VertexChannelWeight = 7, /* Weight (vector4) */
+    VertexChannel_VertexChannelCount = 8 /* Keep this last! */
 } VertexChannel;
 
 /* 顶点格式 */
-typedef enum _VertexFormat {
-    VertexFormat_VertexFormatInvalid = 0,
-    VertexFormat_VertexFormatUChar = 1,
-    VertexFormat_VertexFormatUChar2 = 2,
-    VertexFormat_VertexFormatUChar3 = 3,
-    VertexFormat_VertexFormatUChar4 = 4,
-    VertexFormat_VertexFormatChar = 5,
-    VertexFormat_VertexFormatChar2 = 6,
-    VertexFormat_VertexFormatChar3 = 7,
-    VertexFormat_VertexFormatChar4 = 8,
-    VertexFormat_VertexFormatUShort = 9,
-    VertexFormat_VertexFormatUShort2 = 10,
-    VertexFormat_VertexFormatUShort3 = 11,
-    VertexFormat_VertexFormatUShort4 = 12,
-    VertexFormat_VertexFormatShort = 13,
-    VertexFormat_VertexFormatShort2 = 14,
-    VertexFormat_VertexFormatShort3 = 15,
-    VertexFormat_VertexFormatShort4 = 16,
-    VertexFormat_VertexFormatFloat = 28,
-    VertexFormat_VertexFormatFloat2 = 29,
-    VertexFormat_VertexFormatFloat3 = 30,
-    VertexFormat_VertexFormatFloat4 = 31,
-    VertexFormat_VertexFormatInt = 32,
-    VertexFormat_VertexFormatInt2 = 33,
-    VertexFormat_VertexFormatInt3 = 34,
-    VertexFormat_VertexFormatInt4 = 35,
-    VertexFormat_VertexFormatUInt = 36,
-    VertexFormat_VertexFormatUInt2 = 37,
-    VertexFormat_VertexFormatUInt3 = 38,
-    VertexFormat_VertexFormatUInt4 = 39,
-    VertexFormat_VertexFormatHalfFloat = 40,
-    VertexFormat_VertexFormatHalfFloat2 = 41,
-    VertexFormat_VertexFormatHalfFloat3 = 42,
-    VertexFormat_VertexFormatHalfFloat4 = 43
-} VertexFormat;
+typedef enum _VertexDataFormat {
+    VertexDataFormat_VertexDataFormatInvalid = 0,
+    VertexDataFormat_VertexDataFormatUChar = 1,
+    VertexDataFormat_VertexDataFormatUChar2 = 2,
+    VertexDataFormat_VertexDataFormatUChar3 = 3,
+    VertexDataFormat_VertexDataFormatUChar4 = 4,
+    VertexDataFormat_VertexDataFormatChar = 5,
+    VertexDataFormat_VertexDataFormatChar2 = 6,
+    VertexDataFormat_VertexDataFormatChar3 = 7,
+    VertexDataFormat_VertexDataFormatChar4 = 8,
+    VertexDataFormat_VertexDataFormatUShort = 9,
+    VertexDataFormat_VertexDataFormatUShort2 = 10,
+    VertexDataFormat_VertexDataFormatUShort3 = 11,
+    VertexDataFormat_VertexDataFormatUShort4 = 12,
+    VertexDataFormat_VertexDataFormatShort = 13,
+    VertexDataFormat_VertexDataFormatShort2 = 14,
+    VertexDataFormat_VertexDataFormatShort3 = 15,
+    VertexDataFormat_VertexDataFormatShort4 = 16,
+    VertexDataFormat_VertexDataFormatFloat = 28,
+    VertexDataFormat_VertexDataFormatFloat2 = 29,
+    VertexDataFormat_VertexDataFormatFloat3 = 30,
+    VertexDataFormat_VertexDataFormatFloat4 = 31,
+    VertexDataFormat_VertexDataFormatInt = 32,
+    VertexDataFormat_VertexDataFormatInt2 = 33,
+    VertexDataFormat_VertexDataFormatInt3 = 34,
+    VertexDataFormat_VertexDataFormatInt4 = 35,
+    VertexDataFormat_VertexDataFormatUInt = 36,
+    VertexDataFormat_VertexDataFormatUInt2 = 37,
+    VertexDataFormat_VertexDataFormatUInt3 = 38,
+    VertexDataFormat_VertexDataFormatUInt4 = 39,
+    VertexDataFormat_VertexDataFormatHalfFloat = 40,
+    VertexDataFormat_VertexDataFormatHalfFloat2 = 41,
+    VertexDataFormat_VertexDataFormatHalfFloat3 = 42,
+    VertexDataFormat_VertexDataFormatHalfFloat4 = 43
+} VertexDataFormat;
 
 #ifdef __cplusplus
 extern "C" {
@@ -84,17 +84,17 @@ extern "C" {
 #define _IndiceType_MAX IndiceType_UnsignedInt
 #define _IndiceType_ARRAYSIZE ((IndiceType)(IndiceType_UnsignedInt+1))
 
-#define _PrimitiveMode_MIN PrimitiveMode_PrimitiveMode_POINTS
-#define _PrimitiveMode_MAX PrimitiveMode_PrimitiveMode_TRIANGLE_STRIP
-#define _PrimitiveMode_ARRAYSIZE ((PrimitiveMode)(PrimitiveMode_PrimitiveMode_TRIANGLE_STRIP+1))
+#define _PrimitiveType_MIN PrimitiveType_PrimitiveType_POINTS
+#define _PrimitiveType_MAX PrimitiveType_PrimitiveType_TRIANGLE_STRIP
+#define _PrimitiveType_ARRAYSIZE ((PrimitiveType)(PrimitiveType_PrimitiveType_TRIANGLE_STRIP+1))
 
-#define _VertexChannel_MIN VertexChannel_kVertexChannelPosition
-#define _VertexChannel_MAX VertexChannel_kVertexChannelCount
-#define _VertexChannel_ARRAYSIZE ((VertexChannel)(VertexChannel_kVertexChannelCount+1))
+#define _VertexChannel_MIN VertexChannel_VertexChannelPosition
+#define _VertexChannel_MAX VertexChannel_VertexChannelCount
+#define _VertexChannel_ARRAYSIZE ((VertexChannel)(VertexChannel_VertexChannelCount+1))
 
-#define _VertexFormat_MIN VertexFormat_VertexFormatInvalid
-#define _VertexFormat_MAX VertexFormat_VertexFormatHalfFloat4
-#define _VertexFormat_ARRAYSIZE ((VertexFormat)(VertexFormat_VertexFormatHalfFloat4+1))
+#define _VertexDataFormat_MIN VertexDataFormat_VertexDataFormatInvalid
+#define _VertexDataFormat_MAX VertexDataFormat_VertexDataFormatHalfFloat4
+#define _VertexDataFormat_ARRAYSIZE ((VertexDataFormat)(VertexDataFormat_VertexDataFormatHalfFloat4+1))
 
 
 #ifdef __cplusplus

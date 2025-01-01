@@ -5,74 +5,74 @@ enum IndiceType
 {
     UnsignedShort = 0;
     UnsignedInt = 1;
-}
+};
 
 //图元类型
-enum PrimitiveMode
+enum PrimitiveType
 {
-    PrimitiveMode_POINTS = 0;
-    PrimitiveMode_LINES = 1;
-    PrimitiveMode_LINE_STRIP = 2;
-    PrimitiveMode_TRIANGLES = 3;
-    PrimitiveMode_TRIANGLE_STRIP = 4;
-}
+    PrimitiveType_POINTS = 0;
+    PrimitiveType_LINES = 1;
+    PrimitiveType_LINE_STRIP = 2;
+    PrimitiveType_TRIANGLES = 3;
+    PrimitiveType_TRIANGLE_STRIP = 4;
+};
 
 // 顶点通道，也就是顶点属性
 enum VertexChannel
 {
-    kVertexChannelPosition = 0;    // position (vector3)
-    kVertexChannelNormal = 1;        // Normal (vector3)
-    kVertexChannelColor = 2;        // Vertex color
-    kVertexChannelTexCoord0 = 3;    // UV set 0 (vector2)
-    kVertexChannelTexCoord1 = 4;   // UV set 1 (vector2)
-    kVertexChannelTangent = 5;        // Tangent (vector4)
-    kVertexChannelBoneIndex = 6;      // BoneIndex (vec4ui)
-    kVertexChannelWeight = 7;          // Weight (vector4)
-    kVertexChannelCount = 8;            // Keep this last!
-}
+    VertexChannelPosition = 0;    // position (vector3)
+    VertexChannelNormal = 1;        // Normal (vector3)
+    VertexChannelColor = 2;        // Vertex color
+    VertexChannelTexCoord0 = 3;    // UV set 0 (vector2)
+    VertexChannelTexCoord1 = 4;   // UV set 1 (vector2)
+    VertexChannelTangent = 5;        // Tangent (vector4)
+    VertexChannelBoneIndex = 6;      // BoneIndex (vec4ui)
+    VertexChannelWeight = 7;          // Weight (vector4)
+    VertexChannelCount = 8;            // Keep this last!
+};
 
 // 顶点格式
-enum VertexFormat
+enum VertexDataFormat
 {
-    VertexFormatInvalid = 0;
+    VertexDataFormatInvalid = 0;
     
-    VertexFormatUChar = 1;
-    VertexFormatUChar2 = 2;
-    VertexFormatUChar3 = 3;
-    VertexFormatUChar4 = 4;
+    VertexDataFormatUChar = 1;
+    VertexDataFormatUChar2 = 2;
+    VertexDataFormatUChar3 = 3;
+    VertexDataFormatUChar4 = 4;
     
-    VertexFormatChar = 5;
-    VertexFormatChar2 = 6;
-    VertexFormatChar3 = 7;
-    VertexFormatChar4 = 8;
+    VertexDataFormatChar = 5;
+    VertexDataFormatChar2 = 6;
+    VertexDataFormatChar3 = 7;
+    VertexDataFormatChar4 = 8;
    
-    VertexFormatUShort = 9;
-    VertexFormatUShort2 = 10;
-    VertexFormatUShort3 = 11;
-    VertexFormatUShort4 = 12;
+    VertexDataFormatUShort = 9;
+    VertexDataFormatUShort2 = 10;
+    VertexDataFormatUShort3 = 11;
+    VertexDataFormatUShort4 = 12;
     
-    VertexFormatShort = 13;
-    VertexFormatShort2 = 14;
-    VertexFormatShort3 = 15;
-    VertexFormatShort4 = 16;
+    VertexDataFormatShort = 13;
+    VertexDataFormatShort2 = 14;
+    VertexDataFormatShort3 = 15;
+    VertexDataFormatShort4 = 16;
     
-    VertexFormatFloat = 28;
-    VertexFormatFloat2 = 29;
-    VertexFormatFloat3 = 30;
-    VertexFormatFloat4 = 31;
+    VertexDataFormatFloat = 28;
+    VertexDataFormatFloat2 = 29;
+    VertexDataFormatFloat3 = 30;
+    VertexDataFormatFloat4 = 31;
     
-    VertexFormatInt = 32;
-    VertexFormatInt2 = 33;
-    VertexFormatInt3 = 34;
-    VertexFormatInt4 = 35;
+    VertexDataFormatInt = 32;
+    VertexDataFormatInt2 = 33;
+    VertexDataFormatInt3 = 34;
+    VertexDataFormatInt4 = 35;
     
-    VertexFormatUInt = 36;
-    VertexFormatUInt2 = 37;
-    VertexFormatUInt3 = 38;
-    VertexFormatUInt4 = 39;
+    VertexDataFormatUInt = 36;
+    VertexDataFormatUInt2 = 37;
+    VertexDataFormatUInt3 = 38;
+    VertexDataFormatUInt4 = 39;
     
-    VertexFormatHalfFloat = 40;
-    VertexFormatHalfFloat2 = 41;
-    VertexFormatHalfFloat3 = 42;
-    VertexFormatHalfFloat4 = 43;
-}
+    VertexDataFormatHalfFloat = 40;
+    VertexDataFormatHalfFloat2 = 41;
+    VertexDataFormatHalfFloat3 = 42;
+    VertexDataFormatHalfFloat4 = 43;
+};
