@@ -12,23 +12,23 @@
 
 /* Struct definitions */
 /* 每一个子网格的信息 */
-typedef struct _SubMeshInfo {
+typedef struct _SubMeshMessage {
     uint32_t firstIndex; /* 第一个绘制的索引，即索引个数的偏移 */
     uint32_t indexCount; /* 索引的个数，即绘制顶点的个数 */
     PrimitiveMode topology;
     uint32_t vertexCount; /* 顶点的个数 */
-} SubMeshInfo;
+} SubMeshMessage;
 
 /* 顶点通道信息 */
-typedef struct _VertexChannelInfo {
+typedef struct _VertexChannelMessage {
     uint32_t offset;
     uint32_t stride;
     VertexFormat format;
     VertexChannel vertexChannel; /* 是什么通道 */
-} VertexChannelInfo;
+} VertexChannelMessage;
 
 /* mesh的格式定义 */
-typedef struct _Mesh {
+typedef struct _MeshMessage {
     pb_callback_t vertexData; /* 顶点数据 */
     pb_callback_t indiceData; /* 索引数据 */
     IndiceType indiceType;
@@ -37,7 +37,7 @@ typedef struct _Mesh {
     uint32_t vertexSize; /* 每一个顶点占用的字节大小 */
     pb_callback_t subMeshInfos;
     pb_callback_t vertexChannelInfos;
-} Mesh;
+} MeshMessage;
 
 
 #ifdef __cplusplus
@@ -45,49 +45,49 @@ extern "C" {
 #endif
 
 /* Initializer values for message structs */
-#define SubMeshInfo_init_default                 {0, 0, _PrimitiveMode_MIN, 0}
-#define VertexChannelInfo_init_default           {0, 0, _VertexFormat_MIN, _VertexChannel_MIN}
-#define Mesh_init_default                        {{{NULL}, NULL}, {{NULL}, NULL}, _IndiceType_MIN, 0, 0, 0, {{NULL}, NULL}, {{NULL}, NULL}}
-#define SubMeshInfo_init_zero                    {0, 0, _PrimitiveMode_MIN, 0}
-#define VertexChannelInfo_init_zero              {0, 0, _VertexFormat_MIN, _VertexChannel_MIN}
-#define Mesh_init_zero                           {{{NULL}, NULL}, {{NULL}, NULL}, _IndiceType_MIN, 0, 0, 0, {{NULL}, NULL}, {{NULL}, NULL}}
+#define SubMeshMessage_init_default              {0, 0, _PrimitiveMode_MIN, 0}
+#define VertexChannelMessage_init_default        {0, 0, _VertexFormat_MIN, _VertexChannel_MIN}
+#define MeshMessage_init_default                 {{{NULL}, NULL}, {{NULL}, NULL}, _IndiceType_MIN, 0, 0, 0, {{NULL}, NULL}, {{NULL}, NULL}}
+#define SubMeshMessage_init_zero                 {0, 0, _PrimitiveMode_MIN, 0}
+#define VertexChannelMessage_init_zero           {0, 0, _VertexFormat_MIN, _VertexChannel_MIN}
+#define MeshMessage_init_zero                    {{{NULL}, NULL}, {{NULL}, NULL}, _IndiceType_MIN, 0, 0, 0, {{NULL}, NULL}, {{NULL}, NULL}}
 
 /* Field tags (for use in manual encoding/decoding) */
-#define SubMeshInfo_firstIndex_tag               1
-#define SubMeshInfo_indexCount_tag               2
-#define SubMeshInfo_topology_tag                 3
-#define SubMeshInfo_vertexCount_tag              4
-#define VertexChannelInfo_offset_tag             1
-#define VertexChannelInfo_stride_tag             2
-#define VertexChannelInfo_format_tag             3
-#define VertexChannelInfo_vertexChannel_tag      4
-#define Mesh_vertexData_tag                      1
-#define Mesh_indiceData_tag                      2
-#define Mesh_indiceType_tag                      3
-#define Mesh_vertexCount_tag                     4
-#define Mesh_indiceCount_tag                     5
-#define Mesh_vertexSize_tag                      6
-#define Mesh_subMeshInfos_tag                    7
-#define Mesh_vertexChannelInfos_tag              8
+#define SubMeshMessage_firstIndex_tag            1
+#define SubMeshMessage_indexCount_tag            2
+#define SubMeshMessage_topology_tag              3
+#define SubMeshMessage_vertexCount_tag           4
+#define VertexChannelMessage_offset_tag          1
+#define VertexChannelMessage_stride_tag          2
+#define VertexChannelMessage_format_tag          3
+#define VertexChannelMessage_vertexChannel_tag   4
+#define MeshMessage_vertexData_tag               1
+#define MeshMessage_indiceData_tag               2
+#define MeshMessage_indiceType_tag               3
+#define MeshMessage_vertexCount_tag              4
+#define MeshMessage_indiceCount_tag              5
+#define MeshMessage_vertexSize_tag               6
+#define MeshMessage_subMeshInfos_tag             7
+#define MeshMessage_vertexChannelInfos_tag       8
 
 /* Struct field encoding specification for nanopb */
-#define SubMeshInfo_FIELDLIST(X, a) \
+#define SubMeshMessage_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, UINT32,   firstIndex,        1) \
 X(a, STATIC,   SINGULAR, UINT32,   indexCount,        2) \
 X(a, STATIC,   SINGULAR, UENUM,    topology,          3) \
 X(a, STATIC,   SINGULAR, UINT32,   vertexCount,       4)
-#define SubMeshInfo_CALLBACK NULL
-#define SubMeshInfo_DEFAULT NULL
+#define SubMeshMessage_CALLBACK NULL
+#define SubMeshMessage_DEFAULT NULL
 
-#define VertexChannelInfo_FIELDLIST(X, a) \
+#define VertexChannelMessage_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, UINT32,   offset,            1) \
 X(a, STATIC,   SINGULAR, UINT32,   stride,            2) \
 X(a, STATIC,   SINGULAR, UENUM,    format,            3) \
 X(a, STATIC,   SINGULAR, UENUM,    vertexChannel,     4)
-#define VertexChannelInfo_CALLBACK NULL
-#define VertexChannelInfo_DEFAULT NULL
+#define VertexChannelMessage_CALLBACK NULL
+#define VertexChannelMessage_DEFAULT NULL
 
-#define Mesh_FIELDLIST(X, a) \
+#define MeshMessage_FIELDLIST(X, a) \
 X(a, CALLBACK, SINGULAR, BYTES,    vertexData,        1) \
 X(a, CALLBACK, SINGULAR, BYTES,    indiceData,        2) \
 X(a, STATIC,   SINGULAR, UENUM,    indiceType,        3) \
@@ -96,25 +96,25 @@ X(a, STATIC,   SINGULAR, UINT32,   indiceCount,       5) \
 X(a, STATIC,   SINGULAR, UINT32,   vertexSize,        6) \
 X(a, CALLBACK, REPEATED, MESSAGE,  subMeshInfos,      7) \
 X(a, CALLBACK, REPEATED, MESSAGE,  vertexChannelInfos,   8)
-#define Mesh_CALLBACK pb_default_field_callback
-#define Mesh_DEFAULT NULL
-#define Mesh_subMeshInfos_MSGTYPE SubMeshInfo
-#define Mesh_vertexChannelInfos_MSGTYPE VertexChannelInfo
+#define MeshMessage_CALLBACK pb_default_field_callback
+#define MeshMessage_DEFAULT NULL
+#define MeshMessage_subMeshInfos_MSGTYPE SubMeshMessage
+#define MeshMessage_vertexChannelInfos_MSGTYPE VertexChannelMessage
 
-extern const pb_msgdesc_t SubMeshInfo_msg;
-extern const pb_msgdesc_t VertexChannelInfo_msg;
-extern const pb_msgdesc_t Mesh_msg;
+extern const pb_msgdesc_t SubMeshMessage_msg;
+extern const pb_msgdesc_t VertexChannelMessage_msg;
+extern const pb_msgdesc_t MeshMessage_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
-#define SubMeshInfo_fields &SubMeshInfo_msg
-#define VertexChannelInfo_fields &VertexChannelInfo_msg
-#define Mesh_fields &Mesh_msg
+#define SubMeshMessage_fields &SubMeshMessage_msg
+#define VertexChannelMessage_fields &VertexChannelMessage_msg
+#define MeshMessage_fields &MeshMessage_msg
 
 /* Maximum encoded size of messages (where known) */
-/* Mesh_size depends on runtime parameters */
-#define MESHMESSAGE_PB_H_MAX_SIZE                SubMeshInfo_size
-#define SubMeshInfo_size                         20
-#define VertexChannelInfo_size                   16
+/* MeshMessage_size depends on runtime parameters */
+#define MESHMESSAGE_PB_H_MAX_SIZE                SubMeshMessage_size
+#define SubMeshMessage_size                      20
+#define VertexChannelMessage_size                16
 
 #ifdef __cplusplus
 } /* extern "C" */

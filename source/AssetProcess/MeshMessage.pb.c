@@ -6,13 +6,13 @@
 #error Regenerate this file with the current version of nanopb generator.
 #endif
 
-PB_BIND(SubMeshInfo, SubMeshInfo, AUTO)
+PB_BIND(SubMeshMessage, SubMeshMessage, AUTO)
 
 
-PB_BIND(VertexChannelInfo, VertexChannelInfo, AUTO)
+PB_BIND(VertexChannelMessage, VertexChannelMessage, AUTO)
 
 
-PB_BIND(Mesh, Mesh, AUTO)
+PB_BIND(MeshMessage, MeshMessage, AUTO)
 
 
 

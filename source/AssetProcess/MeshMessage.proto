@@ -3,7 +3,7 @@ import "Common.proto";
 
 
 //每一个子网格的信息
-message SubMeshInfo
+message SubMeshMessage
 {
     uint32 firstIndex = 1;        //第一个绘制的索引，即索引个数的偏移
     uint32 indexCount = 2;        //索引的个数，即绘制顶点的个数
@@ -12,7 +12,7 @@ message SubMeshInfo
 }
 
 // 顶点通道信息
-message VertexChannelInfo
+message VertexChannelMessage
 {
     uint32 offset = 1;
     uint32 stride = 2;
@@ -21,7 +21,7 @@ message VertexChannelInfo
 }
 
 // mesh的格式定义
-message Mesh
+message MeshMessage
 {
     bytes vertexData = 1;   //顶点数据
     bytes indiceData = 2;   //索引数据
@@ -29,6 +29,6 @@ message Mesh
     uint32 vertexCount = 4;  //顶点个数
     uint32 indiceCount = 5;  //索引个数
     uint32 vertexSize = 6;   //每一个顶点占用的字节大小
-    repeated SubMeshInfo subMeshInfos = 7;
-    repeated VertexChannelInfo vertexChannelInfos = 8;
+    repeated SubMeshMessage subMeshInfos = 7;
+    repeated VertexChannelMessage vertexChannelInfos = 8;
 }
