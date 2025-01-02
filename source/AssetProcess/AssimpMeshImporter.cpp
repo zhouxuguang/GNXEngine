@@ -1,4 +1,5 @@
 #include "AssimpMeshImporter.h"
+#include "MeshMessageUtil.h"
 
 NS_ASSETPROCESS_BEGIN
 
@@ -32,6 +33,8 @@ void AssimpMeshImporter::LoadMesh()
 	{
 		mesh->AddSubMeshInfo(iter);
 	}
+
+	MeshMessageUtil::EncodeMeshMessage(mesh.get());
 }
 
 void AssimpMeshImporter::getVertexCountAndLayout(aiNode* node, const aiScene* scene)

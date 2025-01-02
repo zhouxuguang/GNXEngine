@@ -74,6 +74,11 @@ public:
     void SetColors(uint32_t const* data, size_t count);
     
     void SetIndices(uint32_t const* data, size_t count);
+
+    const std::vector<uint32_t>& GetIndices() const
+    {
+        return mIndices;
+    }
     
     void AddSubMeshInfo(const SubMeshInfo& subMeshInfo);
     
