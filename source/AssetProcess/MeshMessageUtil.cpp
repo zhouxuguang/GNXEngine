@@ -63,16 +63,14 @@ bool nanopb_encode_gnx_submeshinfo(pb_ostream_t* stream, const pb_field_t* field
 		return true;
 	}
 
-	//pb_encode_varint(stream, pSubMeshInfos->size());
-
 	for (size_t i = 0; i < pSubMeshInfos->size(); i ++)
 	{
 		SubMeshMessage& subMeshInfo = (*pSubMeshInfos)[i];
 
-		/*if (!pb_encode_tag(stream, PB_WT_STRING, field->tag)) 
+		if (!pb_encode_tag(stream, PB_WT_STRING, field->tag)) 
 		{
 			return false;
-		}*/
+		}
 
 		if (!pb_encode_submessage(stream, SubMeshMessage_fields, &subMeshInfo)) 
 		{
@@ -91,9 +89,6 @@ bool nanopb_decode_gnx_submeshinfo(pb_istream_t* stream, const pb_field_t* field
 		pSubMeshInfos = new std::vector<SubMeshMessage>();
 		*arg = pSubMeshInfos;
 	}
-
-	uint64_t size = 0;
-	//pb_decode_varint(stream, &size);
 
 	while (stream->bytes_left > 0)
 	{
@@ -116,8 +111,6 @@ bool nanopb_encode_gnx_vertex_channel_info(pb_ostream_t* stream, const pb_field_
 		return true;
 	}
 
-	//pb_encode_varint(stream, pVertexChannelInfos->size());
-
 	for (size_t i = 0; i < pVertexChannelInfos->size(); i++)
 	{
 		VertexChannelMessage& vertexChannelInfo = (*pVertexChannelInfos)[i];
@@ -131,8 +124,6 @@ bool nanopb_encode_gnx_vertex_channel_info(pb_ostream_t* stream, const pb_field_
 		{
 			return false;
 		}
-
-		//pb_encode_delimited(stream, VertexChannelMessage_fields, &vertexChannelInfo);
 	}
 
 	return true;
@@ -147,26 +138,18 @@ bool nanopb_decode_gnx_vertex_channel_info(pb_istream_t* stream, const pb_field_
 		*arg = pChannelInfos;
 	}
 
-	uint64_t size = 0;
-	//pb_decode_varint(stream, &size);
-
 	while (stream->bytes_left > 0)
 	{
-		/*pb_wire_type_t wire_type = PB_WT_STRING;
-		uint32_t tag = 0;
-		bool eof = 0;
-		pb_decode_tag(stream, &wire_type, &tag, &eof);*/
-
 		VertexChannelMessage channelInfo = VertexChannelMessage_init_default;
 		if (!pb_decode(stream, VertexChannelMessage_fields, &channelInfo))
 		{
 			return false;
 		}
 
-		//pb_decode_delimited(stream, VertexChannelMessage_fields, &channelInfo);
 		pChannelInfos->push_back(channelInfo);
 	}
 
+	// 这里返回true处理下一个repeated的值
 	return true;
 }
 
@@ -197,8 +180,11 @@ bool MeshMessageUtil::DecodeMeshMessage(const uint8_t* pData, uint32_t dataSize,
 	if (!pb_decode(&dec_stream, MeshMessage_fields, &meshMessage))
 	{
 		printf("pb decode error in %s, error %s\n", __func__, dec_stream.errmsg);
-		return -1;
+		return false;
 	}
+
+	std::vector<VertexChannelMessage>* pChannelInfos = (std::vector<VertexChannelMessage>*)meshMessage.vertexChannelInfos.arg;
+	std::vector<SubMeshMessage>* pSubMeshInfos = (std::vector<SubMeshMessage>*)meshMessage.subMeshInfos.arg;
 
 	return true;
 }
