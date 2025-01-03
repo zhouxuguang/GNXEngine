@@ -44,7 +44,13 @@ bool nanopb_encode_gnx_bytes(pb_ostream_t* stream, const pb_field_t* field, void
 
 	pb_bytes_array_t* pByteArray = (pb_bytes_array_t*)*arg;
 
-	bool status = pb_write(stream, pByteArray->bytes, pByteArray->size);
+	// 这里要写入二进制的大小，要不然pb不知道这个二进制的大小
+	bool status = pb_encode_varint(stream, pByteArray->size);
+	if (!status)
+	{
+		return false;
+	}
+	status = pb_write(stream, pByteArray->bytes, pByteArray->size);
 
 	return status;
 }
@@ -57,19 +63,46 @@ bool nanopb_encode_gnx_submeshinfo(pb_ostream_t* stream, const pb_field_t* field
 		return true;
 	}
 
+	//pb_encode_varint(stream, pSubMeshInfos->size());
+
 	for (size_t i = 0; i < pSubMeshInfos->size(); i ++)
 	{
 		SubMeshMessage& subMeshInfo = (*pSubMeshInfos)[i];
 
-		if (!pb_encode_tag(stream, PB_WT_STRING, field->tag)) 
+		/*if (!pb_encode_tag(stream, PB_WT_STRING, field->tag)) 
 		{
 			return false;
-		}
+		}*/
 
 		if (!pb_encode_submessage(stream, SubMeshMessage_fields, &subMeshInfo)) 
 		{
 			return false;
 		}
+	}
+
+	return true;
+}
+
+bool nanopb_decode_gnx_submeshinfo(pb_istream_t* stream, const pb_field_t* field, void** arg)
+{
+	std::vector<SubMeshMessage>* pSubMeshInfos = (std::vector<SubMeshMessage>*)*arg;
+	if (!pSubMeshInfos)
+	{
+		pSubMeshInfos = new std::vector<SubMeshMessage>();
+		*arg = pSubMeshInfos;
+	}
+
+	uint64_t size = 0;
+	//pb_decode_varint(stream, &size);
+
+	while (stream->bytes_left > 0)
+	{
+		SubMeshMessage subMeshInfo = SubMeshMessage_init_default;
+		if (!pb_decode(stream, SubMeshMessage_fields, &subMeshInfo))
+		{
+			return false;
+		}
+		pSubMeshInfos->push_back(subMeshInfo);
 	}
 
 	return true;
@@ -83,11 +116,13 @@ bool nanopb_encode_gnx_vertex_channel_info(pb_ostream_t* stream, const pb_field_
 		return true;
 	}
 
+	//pb_encode_varint(stream, pVertexChannelInfos->size());
+
 	for (size_t i = 0; i < pVertexChannelInfos->size(); i++)
 	{
 		VertexChannelMessage& vertexChannelInfo = (*pVertexChannelInfos)[i];
 
-		if (!pb_encode_tag(stream, PB_WT_STRING, field->tag))
+		if (!pb_encode_tag_for_field(stream, field))
 		{
 			return false;
 		}
@@ -96,6 +131,40 @@ bool nanopb_encode_gnx_vertex_channel_info(pb_ostream_t* stream, const pb_field_
 		{
 			return false;
 		}
+
+		//pb_encode_delimited(stream, VertexChannelMessage_fields, &vertexChannelInfo);
+	}
+
+	return true;
+}
+
+bool nanopb_decode_gnx_vertex_channel_info(pb_istream_t* stream, const pb_field_t* field, void** arg)
+{
+	std::vector<VertexChannelMessage>* pChannelInfos = (std::vector<VertexChannelMessage>*)*arg;
+	if (!pChannelInfos)
+	{
+		pChannelInfos = new std::vector<VertexChannelMessage>();
+		*arg = pChannelInfos;
+	}
+
+	uint64_t size = 0;
+	//pb_decode_varint(stream, &size);
+
+	while (stream->bytes_left > 0)
+	{
+		/*pb_wire_type_t wire_type = PB_WT_STRING;
+		uint32_t tag = 0;
+		bool eof = 0;
+		pb_decode_tag(stream, &wire_type, &tag, &eof);*/
+
+		VertexChannelMessage channelInfo = VertexChannelMessage_init_default;
+		if (!pb_decode(stream, VertexChannelMessage_fields, &channelInfo))
+		{
+			return false;
+		}
+
+		//pb_decode_delimited(stream, VertexChannelMessage_fields, &channelInfo);
+		pChannelInfos->push_back(channelInfo);
 	}
 
 	return true;
@@ -111,11 +180,27 @@ MeshMessageUtil::~MeshMessageUtil()
 
 bool MeshMessageUtil::DecodeMeshMessage(const uint8_t* pData, uint32_t dataSize, Mesh* mesh)
 {
-	if (!pData || dataSize <= 0)
+	if (!pData || dataSize <= 0 || !mesh)
 	{
 		return false;
 	}
-	return false;
+
+	// 1 先填充结构体，设置编解码回调函数 2 执行解码
+	MeshMessage meshMessage = MeshMessage_init_default;
+	meshMessage.vertexData.funcs.decode = nanopb_decode_gnx_bytes;
+	meshMessage.indiceData.funcs.decode = nanopb_decode_gnx_bytes;
+	meshMessage.subMeshInfos.funcs.decode = nanopb_decode_gnx_submeshinfo;
+	meshMessage.vertexChannelInfos.funcs.decode = nanopb_decode_gnx_vertex_channel_info;
+
+	// decode data
+	pb_istream_t dec_stream = pb_istream_from_buffer(pData, dataSize);
+	if (!pb_decode(&dec_stream, MeshMessage_fields, &meshMessage))
+	{
+		printf("pb decode error in %s, error %s\n", __func__, dec_stream.errmsg);
+		return -1;
+	}
+
+	return true;
 }
 
 ByteVectorPtr MeshMessageUtil::EncodeMeshMessage(const Mesh* mesh)

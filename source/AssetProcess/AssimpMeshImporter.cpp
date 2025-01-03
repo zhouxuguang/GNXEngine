@@ -34,7 +34,10 @@ void AssimpMeshImporter::LoadMesh()
 		mesh->AddSubMeshInfo(iter);
 	}
 
-	MeshMessageUtil::EncodeMeshMessage(mesh.get());
+	ByteVectorPtr encodedBuffer = MeshMessageUtil::EncodeMeshMessage(mesh.get());
+
+	MeshPtr meshDecode = std::make_shared<Mesh>();
+	MeshMessageUtil::DecodeMeshMessage(encodedBuffer->data(), encodedBuffer->size(), meshDecode.get());
 }
 
 void AssimpMeshImporter::getVertexCountAndLayout(aiNode* node, const aiScene* scene)
