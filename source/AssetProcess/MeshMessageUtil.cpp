@@ -183,15 +183,42 @@ bool MeshMessageUtil::DecodeMeshMessage(const uint8_t* pData, uint32_t dataSize,
 		return false;
 	}
 
+	VertexData& vertexData = mesh->GetVertexData();
+	vertexData.Resize(meshMessage.vertexCount, meshMessage.vertexSize);
+
+	pb_bytes_array_t* pVertexArray = (pb_bytes_array_t*)meshMessage.vertexData.arg;
+	memcpy(vertexData.GetDataPtr(), pVertexArray->bytes, pVertexArray->size);
+
+	pb_bytes_array_t* pIndiceArray = (pb_bytes_array_t*)meshMessage.indiceData.arg;
+	mesh->SetIndices((const uint32_t*)pIndiceArray->bytes, pIndiceArray->size / sizeof(uint32_t));
+
 	std::vector<VertexChannelMessage>* pChannelInfos = (std::vector<VertexChannelMessage>*)meshMessage.vertexChannelInfos.arg;
+
+	ChannelInfo* channels = vertexData.GetChannels();
+	for (size_t i = 0; i < pChannelInfos->size(); i ++)
+	{
+		VertexChannel vertexChannel = (*pChannelInfos)[i].vertexChannel;
+		channels[vertexChannel].offset = (*pChannelInfos)[i].offset;
+		channels[vertexChannel].stride = (*pChannelInfos)[i].stride;
+		channels[vertexChannel].format = (VertexFormat)(*pChannelInfos)[i].format;
+	}
+
 	std::vector<SubMeshMessage>* pSubMeshInfos = (std::vector<SubMeshMessage>*)meshMessage.subMeshInfos.arg;
+	for (size_t i = 0; i < pSubMeshInfos->size(); i ++)
+	{
+		SubMeshInfo subMeshInfo;
+		subMeshInfo.firstIndex = (*pSubMeshInfos)[i].firstIndex;
+		subMeshInfo.indexCount = (*pSubMeshInfos)[i].indexCount;
+		subMeshInfo.vertexCount = (*pSubMeshInfos)[i].vertexCount;
+		subMeshInfo.topology = (PrimitiveMode)(*pSubMeshInfos)[i].topology;
+		mesh->AddSubMeshInfo(subMeshInfo);
+	}
 
 	return true;
 }
 
 ByteVectorPtr MeshMessageUtil::EncodeMeshMessage(const Mesh* mesh)
 {
-	//pb_get_encoded_size()
 	// 1 先填充结构体的值 2 获得编码后数据大小，分配编码后空间 3 编码
 	MeshMessage meshMessage = MeshMessage_init_default;
 	meshMessage.indiceType = IndiceType::IndiceType_UnsignedInt;
