@@ -203,8 +203,8 @@ void WindowsVulkanView::resize(int width, int height)
     //gltf/BrainStem/glTF
     //gltf/BrainStem/glTF/BrainStem.gltf
     std::string pathSplit = std::string(1, PATHSPLIT);
-    sceneManager->getRootNode()->createRendererNode("hat", "gltf" + pathSplit + "BrainStem" + pathSplit + "glTF" + pathSplit + "BrainStem.gltf",
-                                                    Vector3f(0, -3.0, -2), Quaternionf(), Vector3f(3, 3, 3));
+    /*sceneManager->getRootNode()->createRendererNode("hat", "gltf" + pathSplit + "BrainStem" + pathSplit + "glTF" + pathSplit + "BrainStem.gltf",
+                                                    Vector3f(0, -3.0, -2), Quaternionf(), Vector3f(3, 3, 3));*/
     //sceneManager->getRootNode()->createRendererNode("hat", "skin/Woman.gltf", Vector3f(0, -3.0, -2), Quaternionf(), Vector3f(0.01, 0.01, 0.01));
     
     //sceneManager->getRootNode()->createRendererNode("Marry", "asset/Marry.obj", Vector3f(0, -2.0, 0));

@@ -10,7 +10,7 @@ int main(int argc, char* argv[])
 	std::string modelPath = filePath.string();
 
 	AssetProcess::AssetImporter assetImporter;
-	assetImporter.ImportFromFile(modelPath, modelPath);
+	assetImporter.ImportFromFile(modelPath, filePath.parent_path().string());
 
 	return 0;
 }
