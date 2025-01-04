@@ -32,6 +32,9 @@
 #include <atomic>
 #include <memory>
 #include <numeric>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 #if(__cplusplus >= 201103L)
     #include <unordered_map>

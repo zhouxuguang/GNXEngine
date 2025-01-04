@@ -36,6 +36,11 @@ void AssimpMeshImporter::LoadMesh()
 
 	ByteVectorPtr encodedBuffer = MeshMessageUtil::EncodeMeshMessage(mesh.get());
 
+	fs::path path = (fs::path(mSaveDir).parent_path() / "test.mesh").lexically_normal();
+	FILE* fp = fopen(path.string().c_str(), "wb");
+	fwrite(encodedBuffer->data(), 1, encodedBuffer->size(), fp);
+	fclose(fp);
+
 	MeshPtr meshDecode = std::make_shared<Mesh>();
 	MeshMessageUtil::DecodeMeshMessage(encodedBuffer->data(), encodedBuffer->size(), meshDecode.get());
 }
