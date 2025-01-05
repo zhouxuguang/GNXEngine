@@ -38,9 +38,31 @@ bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std:
 		return false;
 	}
 
-	// 导入mesh
-	AssimpMeshImporter assimpMeshImport(scene, saveDir);
-	assimpMeshImport.LoadMesh();
+	if (scene->HasMeshes())
+	{
+		// 导入mesh
+		AssimpMeshImporter assimpMeshImport(scene, saveDir);
+		assimpMeshImport.LoadMesh();
+	}
+
+	if (scene->HasTextures())
+	{
+		for (int i = 0; i < scene->mNumTextures; i++)
+		{
+			const aiTexture* texture = scene->mTextures[i];
+			if (texture != nullptr)
+			{
+				// 高度为0说明是嵌入的纹理
+				if (texture->mHeight == 0)
+				{
+					// mHeight = 0 means embedded textures inside
+					// here we use stb to save texture images
+					//Texture2DPtr texturePtr = TextureFromMemory((unsigned char*)texture->pcData, texture->mWidth);
+					//fileTextures.push_back(texturePtr);
+				}
+			}
+		}
+	}
 
     return true;
 }

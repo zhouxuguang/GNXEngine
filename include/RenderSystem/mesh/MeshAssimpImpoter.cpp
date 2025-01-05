@@ -556,8 +556,8 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     //获得相关的纹理贴图
     aiString diffuseMap;
     material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuseMap);
-    Texture2DPtr diffuseTexture = TextureFromFile((mDirectory + "Woman.png").c_str());
-    //Texture2DPtr diffuseTexture = TextureFromFile((mDirectory + diffuseMap.C_Str()).c_str());
+    //Texture2DPtr diffuseTexture = TextureFromFile((mDirectory + "Woman.png").c_str());
+    Texture2DPtr diffuseTexture = TextureFromFile((mDirectory + diffuseMap.C_Str()).c_str());
     if (diffuseTexture) {
         mat->SetTexture("diffuseTexture", diffuseTexture);
     }
