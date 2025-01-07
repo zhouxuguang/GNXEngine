@@ -112,7 +112,7 @@ protected:
     Vector3f getFaceDirection(int index) const;
 
 public:
-    Vector3f m_center;   // obb center
+    Vector3f mCenter;   // obb center
     Vector3f m_xAxis;    // x axis of obb, unit vector
     Vector3f m_yAxis;    // y axis of obb, unit vector
     Vector3f m_zAxis;    // z axis of obb, unit vector

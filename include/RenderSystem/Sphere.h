@@ -17,22 +17,23 @@ NS_RENDERSYSTEM_BEGIN
 
 class Sphere
 {
-    Vector3f    m_Center;
-    float        m_Radius;
+public:
+    Vector3f    mCenter;
+    float       mRadius;
     
 public:
     
     Sphere () {}
     Sphere (const Vector3f& p0, float r)                {Set (p0, r);}
     
-    void Set (const Vector3f& p0)                        {m_Center = p0;    m_Radius = 0;}
-    void Set (const Vector3f& p0, float r)                {m_Center = p0;    m_Radius = r;}
+    void Set (const Vector3f& p0)                        {mCenter = p0;    mRadius = 0;}
+    void Set (const Vector3f& p0, float r)                {mCenter = p0;    mRadius = r;}
     
-    Vector3f& GetCenter () {return m_Center;}
-    const Vector3f& GetCenter () const  {return m_Center;}
+    Vector3f& GetCenter () {return mCenter;}
+    const Vector3f& GetCenter () const  {return mCenter;}
     
-    float& GetRadius () {return m_Radius;}
-    const float& GetRadius ()const {return m_Radius;}
+    float& GetRadius () {return mRadius;}
+    const float& GetRadius ()const {return mRadius;}
     
     bool IsInside(const Sphere& inSphere)const;
 };

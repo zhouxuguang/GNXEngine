@@ -72,7 +72,7 @@ bool Frustum::isOutOfFrustum(const OBB& obb) const
         for (int i = 0; i < plane; i++)
         {
             const Vector3f& normal = mPlane[i].getNormal();
-            point = obb.m_center;
+            point = obb.mCenter;
             point = normal.DotProduct(obb.m_xAxis) > 0 ? point - obbExtentX : point + obbExtentX;
             point = normal.DotProduct(obb.m_yAxis) > 0 ? point - obbExtentY : point + obbExtentY;
             point = normal.DotProduct(obb.m_zAxis) > 0 ? point - obbExtentZ : point + obbExtentZ;

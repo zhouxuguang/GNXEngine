@@ -14,10 +14,10 @@ NS_RENDERSYSTEM_BEGIN
 bool IntersectRayTriangle (const Ray& ray, const Vector3f& a, const Vector3f& b, const Vector3f& c)
 {
     float t;
-    return IntersectRayTriangle (ray, a, b, c, &t);
+    return IntersectRayTriangle(ray, a, b, c, &t);
 }
 
-bool IntersectRayTriangle (const Ray& ray, const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, float* outT)
+bool IntersectRayTriangle(const Ray& ray, const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, float* outT)
 {
 
     Vector3f e1 = v1 - v0;
@@ -46,7 +46,7 @@ bool IntersectRayTriangle (const Ray& ray, const Vector3f& v0, const Vector3f& v
     return true;
 }
 
-bool IntersectRaySphere (const Ray& ray, const Sphere& inSphere)
+bool IntersectRaySphere(const Ray& ray, const Sphere& inSphere)
 {
     Vector3f dif = inSphere.GetCenter () - ray.getOrigin ();
     float d = dif.DotProduct(ray.getDirection ());
@@ -62,6 +62,11 @@ bool IntersectRaySphere (const Ray& ray, const Sphere& inSphere)
         return false;
     else
         return true;
+}
+
+bool IntersectRayAABB(const Ray& ray, const AABB& inAABB)
+{
+    return false;
 }
 
 NS_RENDERSYSTEM_END
