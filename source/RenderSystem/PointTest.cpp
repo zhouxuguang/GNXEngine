@@ -78,6 +78,11 @@ bool PointTest::PointInOBB(const Vector3f& point, const OBB& obb)
 	return true;
 }
 
+Vector3f PointTest::ClosestPoint(const OBB& obb, const Vector3f& point)
+{
+	return Vector3f();
+}
+
 NS_RENDERSYSTEM_END
 
 

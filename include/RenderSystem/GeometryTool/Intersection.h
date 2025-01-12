@@ -18,6 +18,7 @@ NS_RENDERSYSTEM_BEGIN
 class Ray;
 class Sphere;
 class AABB;
+class OBB;
 
 // Intersects a Ray with a triangle.
 bool IntersectRayTriangle(const Ray& ray, const Vector3f& a, const Vector3f& b, const Vector3f& c);
@@ -28,6 +29,18 @@ bool IntersectRayTriangle(const Ray& ray, const Vector3f& a, const Vector3f& b, 
 // Returns true if the ray stats inside the volume or in front of the volume
 bool IntersectRaySphere(const Ray& ray, const Sphere& inSphere);
 bool IntersectRayAABB(const Ray& ray, const AABB& inAABB);
+
+// 判断两个球体是否相交
+bool IntersectSphereSphere(const Sphere& s1, const Sphere& s2);
+
+//判断球和AABB是否相交
+bool IntersectSphereAABB(const Sphere& sphere, const AABB& aabb);
+
+//判断球和OBB是否相交
+bool IntersectSphereOBB(const Sphere& sphere, const OBB& obb);
+
+//判断AABB之间是否相交
+bool IntersectAABBAABB(const AABB& aabb1, const AABB& aabb2);
 
 NS_RENDERSYSTEM_END
 

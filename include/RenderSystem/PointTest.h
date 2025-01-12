@@ -37,6 +37,9 @@ public:
 
     //判断点是否在OBB中
     static bool PointInOBB(const Vector3f& point, const OBB& obb);
+
+	//计算点离OBB最近的点
+	static Vector3f ClosestPoint(const OBB& obb, const Vector3f& point);
 };
 
 
