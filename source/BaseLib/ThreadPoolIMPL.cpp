@@ -134,9 +134,15 @@ TaskRunnerPtr ThreadPoolIMPL::GetHeadTask()
     }
 }
 
-void* ThreadPoolIMPL::WorkFunc(std::shared_ptr<ThreadPoolIMPL> threadPool)
+void* ThreadPoolIMPL::WorkFunc(std::weak_ptr<ThreadPoolIMPL> weakThreadPool)
 {
-    while (threadPool && threadPool->IsRunning())
+    std::shared_ptr<ThreadPoolIMPL> threadPool = weakThreadPool.lock();
+    if (!threadPool)
+    {
+        return nullptr;
+    }
+
+    while (threadPool->IsRunning())
     {
         TaskRunnerPtr pTask = threadPool->GetHeadTask();
         if (NULL == pTask)
@@ -177,7 +183,7 @@ void ThreadPoolIMPL::Start()
     size_t nThreads = mThreadCount;
     for (int i = 0; i < nThreads; i++)
     {
-        mThreads.emplace_back(std::thread(std::bind(ThreadPoolIMPL::WorkFunc, shared_from_this())));
+        mThreads.emplace_back(std::thread(std::bind(ThreadPoolIMPL::WorkFunc, std::weak_ptr(shared_from_this()))));
     }
     
 }

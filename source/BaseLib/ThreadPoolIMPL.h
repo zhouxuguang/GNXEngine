@@ -91,7 +91,7 @@ private:
     ThreadPoolIMPL(const ThreadPoolIMPL&);
     ThreadPoolIMPL& operator = (const ThreadPoolIMPL&);
     
-    static void* WorkFunc(std::shared_ptr<ThreadPoolIMPL> threadPool);
+    static void* WorkFunc(std::weak_ptr<ThreadPoolIMPL> weakThreadPool);
 };
 
 }
