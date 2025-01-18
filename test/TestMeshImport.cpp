@@ -1,5 +1,9 @@
 #include "RenderSystem/RenderEngine.h"
 #include "AssetProcess/AssetImporter.h"
+#include "BaseLib/ThreadPool.h"
+
+
+
 
 int main(int argc, char* argv[])
 {
@@ -14,6 +18,10 @@ int main(int argc, char* argv[])
 	// 这个是ktx2格式的轻量级的库
 	// https://github.com/DeanoC/tiny_ktx/tree/master
 
+
+	
+
+	Sleep(10000000000);
 
 	return 0;
 }

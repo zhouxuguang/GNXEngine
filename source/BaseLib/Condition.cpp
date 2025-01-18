@@ -103,13 +103,13 @@ Condition::~Condition()
 void Condition::Wait()
 {
 	WindowsMutex* pMutexData = (WindowsMutex*)lock->m_Lock;
-    SleepConditionVariableCS(&condId,&pMutexData->lock_t,INFINITE);
+    SleepConditionVariableCS(&condId, &pMutexData->lock_t, INFINITE);
 }
 
 void Condition::Wait(long long mills)
 {
 	WindowsMutex* pMutexData = (WindowsMutex*)lock->m_Lock;
-    SleepConditionVariableCS(&condId,&pMutexData->lock_t,(DWORD)mills);
+    SleepConditionVariableCS(&condId, &pMutexData->lock_t, (DWORD)mills);
 }
 
 void Condition::Notify()

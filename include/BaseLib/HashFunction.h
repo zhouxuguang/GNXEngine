@@ -16,7 +16,7 @@ BASELIB_API uint32_t GetHashCode(const std::string& key);
 template<typename KEY>
 uint32_t GetHashCode(const KEY& key)
 {
-	return HashFunction(&key,sizeof(key));
+	return HashFunction(&key, sizeof(key));
 }
 
 NS_BASELIB_END

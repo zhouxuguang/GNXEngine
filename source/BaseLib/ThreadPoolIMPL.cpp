@@ -142,7 +142,7 @@ void* ThreadPoolIMPL::WorkFunc(std::weak_ptr<ThreadPoolIMPL> weakThreadPool)
         return nullptr;
     }
 
-    while (threadPool->IsRunning())
+    while ((threadPool = weakThreadPool.lock()) && threadPool->IsRunning())
     {
         TaskRunnerPtr pTask = threadPool->GetHeadTask();
         if (NULL == pTask)

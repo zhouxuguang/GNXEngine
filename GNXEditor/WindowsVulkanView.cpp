@@ -31,6 +31,29 @@
 //    return 0;
 //}
 
+class MyTask : public baselib::TaskRunner
+{
+public:
+	MyTask();
+	~MyTask();
+
+private:
+	virtual void Run()
+	{
+		printf("fuck\n");
+		//::Sleep(300);
+	}
+
+};
+
+MyTask::MyTask()
+{
+}
+
+MyTask::~MyTask()
+{
+}
+
 void OnSize(HWND hWnd, WPARAM wParam, LPARAM lParam) {
 	int nHeight = HIWORD(lParam);
 	int nWidth = LOWORD(lParam);
@@ -153,6 +176,17 @@ bool WindowsVulkanView::createRenderDevice()
 {
 	mRenderDevice = RenderCore::createRenderDevice(RenderCore::RenderDeviceType::VULKAN, mWindow);
 
+	{
+		baselib::ThreadPool threadPool(32);
+
+		threadPool.Start();
+		for (int i = 0; i < 100000; i++)
+		{
+			threadPool.Execute(std::make_shared<MyTask>());
+		}
+
+	}
+
     return true;
 }
 
@@ -199,12 +233,14 @@ void WindowsVulkanView::resize(int width, int height)
     Quaternionf rotate;
     rotate.FromAngleAxis(90, Vector3f(1.0, 0.0, 0.0));
     //sceneManager->getRootNode()->createRendererNode("hat", "DamagedHelmet/glTF/DamagedHelmet.gltf");
+
+	
     
     //gltf/BrainStem/glTF
     //gltf/BrainStem/glTF/BrainStem.gltf
-    std::string pathSplit = std::string(1, PATHSPLIT);
+    /*std::string pathSplit = std::string(1, PATHSPLIT);
     sceneManager->getRootNode()->createRendererNode("hat", "gltf" + pathSplit + "BrainStem" + pathSplit + "glTF" + pathSplit + "BrainStem.gltf",
-                                                    Vector3f(0, -3.0, -2), Quaternionf(), Vector3f(3, 3, 3));
+                                                    Vector3f(0, -3.0, -2), Quaternionf(), Vector3f(3, 3, 3));*/
     //sceneManager->getRootNode()->createRendererNode("hat", "skin/Woman.gltf", Vector3f(0, -3.0, -2), Quaternionf(), Vector3f(0.01, 0.01, 0.01));
     
     //sceneManager->getRootNode()->createRendererNode("Marry", "asset/Marry.obj", Vector3f(0, -2.0, 0));

@@ -47,8 +47,6 @@ uint32_t GetHashCode(const std::string& key)
 	return HashFunction(key.data(), (uint32_t)key.size());
 }
 
-
-
 #if defined(_MSC_VER)
 
 #define FORCE_INLINE    __forceinline
