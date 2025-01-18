@@ -28,3 +28,30 @@ ContentWidget::ContentWidget(QDockWidget* parent, const QString& currentDir)
 
 	parent->setWidget(mListView);
 }
+
+void ContentWidget::onDoubleClicked(const QModelIndex& index)
+{
+	if (mModel->isDir(index))
+	{
+		QString path = mModel->filePath(index);
+		mCurrentDir = path;
+		mBackButton->setEnabled(true);
+		mListView->setRootIndex(mModel->index(path));
+	}
+}
+
+void ContentWidget::onBackClicked()
+{
+	qDebug() << "Button clicked!";
+	QDir dir(mCurrentDir);
+	dir.cd(".."); // 返回上一级目录
+	QString parentPath = dir.absolutePath();
+	mListView->setRootIndex(mModel->index(parentPath));
+	mCurrentDir = parentPath;
+
+	// 如果回到初始目录，则禁用返回按钮
+	if (mCurrentDir == mInitDir)
+	{
+		mBackButton->setEnabled(false);
+	}
+}
