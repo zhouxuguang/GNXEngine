@@ -78,3 +78,11 @@ std::string getMediaDir()
     return path + pathSplit + ".." + pathSplit + ".." + pathSplit + "GNXEditor" + pathSplit + "media" + pathSplit;*/
     //return path + R"(/../../GNXEditor/media/)";
 }
+
+std::string getAssetsDir()
+{
+	fs::path path = __FILE__;
+	fs::path parentDir = path.parent_path();
+	path = (parentDir / fs::path("../../GNXEditor/Assets/")).lexically_normal();
+	return path.string();
+}

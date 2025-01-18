@@ -15,4 +15,6 @@ std::string getBuiltInShaderDir();
 
 std::string getMediaDir();
 
+std::string getAssetsDir();
+
 #endif /* RenderEngine_hpp */

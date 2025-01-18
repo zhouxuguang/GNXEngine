@@ -20,6 +20,9 @@ out/
 .gradle/
 build/
 
+# asset file
+Assets/
+
 # Local configuration file (sdk path, etc)
 local.properties
 

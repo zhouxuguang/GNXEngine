@@ -2,9 +2,6 @@
 #include "AssetProcess/AssetImporter.h"
 #include "BaseLib/ThreadPool.h"
 
-
-
-
 int main(int argc, char* argv[])
 {
 	fs::path currentPath = getMediaDir();
@@ -15,13 +12,8 @@ int main(int argc, char* argv[])
 	AssetProcess::AssetImporter assetImporter;
 	assetImporter.ImportFromFile(modelPath, filePath.parent_path().string());
 
-	// 这个是ktx2格式的轻量级的库
+	// 杩欎釜鏄痥tx2鏍煎紡鐨勮交閲忕骇鐨勫簱
 	// https://github.com/DeanoC/tiny_ktx/tree/master
-
-
-	
-
-	Sleep(10000000000);
 
 	return 0;
 }

@@ -48,7 +48,6 @@ void ContentWidget::onDoubleClicked(const QModelIndex& index)
 
 void ContentWidget::onBackClicked()
 {
-	qDebug() << "Button clicked!";
 	QDir dir(mCurrentDir);
 	dir.cd(".."); // 返回上一级目录
 	QString parentPath = dir.absolutePath();

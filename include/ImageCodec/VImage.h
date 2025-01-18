@@ -57,6 +57,7 @@ enum ImageStoreFormat
     kPNG_Format,
     kTGA_Format,
     kWEBP_Format,
+    kHDR_Format
 };
 
 struct MipDataSizeAndOffset
