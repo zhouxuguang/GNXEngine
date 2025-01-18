@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QWindow>
 #include <QFileSystemModel>
+#include <QListView>
 #include "View.h"
 
 MainWindow::MainWindow(QWidget *parent)
@@ -12,14 +13,11 @@ MainWindow::MainWindow(QWidget *parent)
     
     setWindowTitle(QString::fromLocal8Bit("GNXEngine"));
 
-    QWindow *window = QWindow::fromWinId((WId)test());
-    window->resize(2560, 1080);
-    QWidget *wrapper = QWidget::createWindowContainer(window, this);
-    setCentralWidget(wrapper);
-    wrapper->show();
-//    window->setTitle("QWindow with MTKView");
-//    window->resize(640, 480);
-//    window->show();
+	QWindow* window = QWindow::fromWinId((WId)test());
+	window->resize(2560, 1080);
+	QWidget* wrapper = QWidget::createWindowContainer(window, this);
+	setCentralWidget(wrapper);
+	wrapper->show();
     
     setupDock();
 
@@ -37,34 +35,16 @@ void MainWindow::setupDock()
     m_SceneDockWidget->setFeatures(QDockWidget::DockWidgetClosable);
     m_SceneDockWidget->setWindowTitle("层级结构");
     
+    // 内容浏览器窗口
     m_ContentDockWidget = new QDockWidget(this);
     m_ContentDockWidget->setFeatures(QDockWidget::DockWidgetClosable);
-    m_ContentDockWidget->setWindowTitle("内容");
-    
-    QTreeView *fileTreeView = new QTreeView(this);
-    
-    m_ContentDockWidget->setWidget(fileTreeView);
-    
-    // 创建文件系统模型并设置根路径
-    QFileSystemModel model;
-    model.setRootPath(QDir::currentPath());
-    // 设置文件过滤器，只显示目录和所有者可读的文件
-    model.setFilter(QDir::AllDirs | QDir::Files | QDir::Readable | QDir::NoDotAndDotDot);
-    // 设置模型到视图中
-    fileTreeView->setModel(&model);
-    // 设置视图样式，并调整列宽以适应内容
-    fileTreeView->setAnimated(false);
-    fileTreeView->setIndentation(20);
-    fileTreeView->setSortingEnabled(true);
-    fileTreeView->resizeColumnToContents(0);
-    fileTreeView->setEnabled(true);
-    fileTreeView->show();
-    
-    
+    m_ContentDockWidget->setWindowTitle("Content Browser");
+    m_ContentDockWidget->setAllowedAreas(Qt::BottomDockWidgetArea);
+    ContentWidget* contentWidget = new ContentWidget(m_ContentDockWidget, QDir::currentPath());
     
     m_DetailDockWidget = new QDockWidget(this);
     m_DetailDockWidget->setFeatures(QDockWidget::DockWidgetClosable);
-    m_DetailDockWidget->setWindowTitle("细节");
+    m_DetailDockWidget->setWindowTitle("Detail");
 
     this->addDockWidget(Qt::LeftDockWidgetArea, m_SceneDockWidget, Qt::Orientation::Vertical);
     this->addDockWidget(Qt::BottomDockWidgetArea, m_ContentDockWidget, Qt::Orientation::Vertical);

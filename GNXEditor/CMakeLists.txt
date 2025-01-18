@@ -15,6 +15,8 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
+        ContentWidget.h
+        ContentWidget.cpp
         TestPost/TestPost.cpp
         TestPost/TestPost.hpp
         TestImageDecode.cpp
