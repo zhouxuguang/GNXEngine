@@ -2,6 +2,8 @@
 #include <QPushButton>
 #include <QFileDialog>
 
+#include "ImageCodec/ImageDecoder.h"
+
 ContentWidget::ContentWidget(QDockWidget* parent, const QString& currentDir)
 	: QWidget(parent),
 	mModel(new QFileSystemModel(parent)), 
@@ -97,5 +99,7 @@ void ContentWidget::OpenImportAssetDialog()
 	//选择了文件，进行导入操作
 	if (!filePath.isEmpty())
 	{
+		imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
+		imagecodec::ImageDecoder::DecodeFile(filePath.toUtf8().constData(), image.get());
 	}
 }

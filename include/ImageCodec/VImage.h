@@ -26,6 +26,9 @@ enum
     
     FORMAT_SRGB8_ALPHA8,             //sRGB_alpha
     FORMAT_SRGB8,             //sRGB
+
+	FORMAT_RGBA32Float,            //RGBA32位float
+	FORMAT_RGB32Float,             //RGB float
     
     //压缩纹理
     // EAC and ETC2 compressed formats, mandated by OpenGL ES 3.0

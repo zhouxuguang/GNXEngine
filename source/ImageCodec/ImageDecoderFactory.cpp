@@ -9,6 +9,7 @@
 #include "ImageDecoderTGA.h"
 #include "ImageDecoderWebp.h"
 #include "ImageDecoderKTX.h"
+#include "ImageDecoderHDR.h"
 
 NAMESPACE_IMAGECODEC_BEGIN
 
@@ -26,6 +27,7 @@ ImageDecoderFactory* ImageDecoderFactory::GetInstance()
         m_pInstance->AddImageDecoder(std::make_shared<ImageDecoderTGA>());
         m_pInstance->AddImageDecoder(std::make_shared<ImageDecoderWEBP>());
         m_pInstance->AddImageDecoder(std::make_shared<ImageDecoderKTX>());
+        m_pInstance->AddImageDecoder(std::make_shared<ImageDecoderHDR>());
     });
 
     return m_pInstance;
