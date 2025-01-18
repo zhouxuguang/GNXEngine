@@ -1,5 +1,6 @@
 #include "ContentWidget.h"
 #include <QPushButton>
+#include <QFileDialog>
 
 ContentWidget::ContentWidget(QDockWidget* parent, const QString& currentDir)
 	: QWidget(parent),
@@ -14,9 +15,11 @@ ContentWidget::ContentWidget(QDockWidget* parent, const QString& currentDir)
 	mListView->setModel(mModel);
 	mListView->setRootIndex(mModel->index(currentDir));
 	mListView->setViewMode(QListView::IconMode);
-	mListView->setIconSize(QSize(100, 100));
+	mListView->setIconSize(QSize(50, 50));
 	mListView->setResizeMode(QListView::Adjust);
-	mListView->setSpacing(10);
+	mListView->setSpacing(3);
+	// 启用上下文菜单
+	mListView->setContextMenuPolicy(Qt::CustomContextMenu);
 
 	mBackButton = new QPushButton("back", parent);
 	mBackButton->setEnabled(false); // 初始状态禁用
@@ -24,7 +27,10 @@ ContentWidget::ContentWidget(QDockWidget* parent, const QString& currentDir)
 
 	// 连接双击信号到槽函数
 	connect(mListView, &QListView::doubleClicked, this, &ContentWidget::onDoubleClicked);
+	// 连接后退按钮的槽函数
 	connect(mBackButton, &QPushButton::clicked, this, &ContentWidget::onBackClicked);
+	// 连接空白地方弹出菜单的槽函数
+	connect(mListView, &QListView::customContextMenuRequested, this, &ContentWidget::showContextMenu);
 
 	parent->setWidget(mListView);
 }
@@ -53,5 +59,44 @@ void ContentWidget::onBackClicked()
 	if (mCurrentDir == mInitDir)
 	{
 		mBackButton->setEnabled(false);
+	}
+}
+
+void ContentWidget::showContextMenu(const QPoint& pos)
+{
+	QModelIndex index = mListView->indexAt(pos);
+
+	// 如果点击的是空白区域（没有选中任何项），则显示自定义菜单
+	if (!index.isValid())
+	{
+		QMenu menu(this);
+
+		QAction* refreshAction = new QAction("ImportAsset", this);
+		connect(refreshAction, &QAction::triggered, this, &ContentWidget::OpenImportAssetDialog);
+		menu.addAction(refreshAction);
+
+		QAction* exitAction = new QAction("退出", this);
+		connect(exitAction, &QAction::triggered, this, &QMainWindow::close);
+		menu.addAction(exitAction);
+
+		// 在鼠标位置显示菜单
+		menu.exec(mListView->viewport()->mapToGlobal(pos));
+	}
+	// 如果点击的是某个文件或文件夹，可以在这里处理相应的右键菜单
+}
+
+void ContentWidget::OpenImportAssetDialog()
+{
+	// 使用 QFileDialog::getOpenFileName 显示文件打开对话框
+	QString filePath = QFileDialog::getOpenFileName(
+		this,
+		"选择一个文件",          // 对话框标题
+		QDir::homePath(),       // 默认目录
+		"所有文件 (*.*);;文本文件 (*.txt);;图像文件 (*.png *.jpg *.bmp)" // 文件过滤器
+	);
+
+	//选择了文件，进行导入操作
+	if (!filePath.isEmpty())
+	{
 	}
 }
