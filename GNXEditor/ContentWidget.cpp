@@ -3,6 +3,7 @@
 #include <QFileDialog>
 
 #include "ImageCodec/ImageDecoder.h"
+#include "AssetProcess/AssetImporter.h"
 
 ContentWidget::ContentWidget(QDockWidget* parent, const QString& currentDir)
 	: QWidget(parent),
@@ -91,15 +92,19 @@ void ContentWidget::OpenImportAssetDialog()
 	// 使用 QFileDialog::getOpenFileName 显示文件打开对话框
 	QString filePath = QFileDialog::getOpenFileName(
 		this,
-		"选择一个文件",          // 对话框标题
+		"导入资产",          // 对话框标题
 		QDir::homePath(),       // 默认目录
-		"所有文件 (*.*);;文本文件 (*.txt);;图像文件 (*.png *.jpg *.bmp)" // 文件过滤器
+		"模型文件 (*.obj *.fbx *.gltf *.glb);;图像文件 (*.png *.jpg *.bmp *.tga *.hdr *.webp)" // 文件过滤器
 	);
 
 	//选择了文件，进行导入操作
 	if (!filePath.isEmpty())
 	{
-		imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
-		imagecodec::ImageDecoder::DecodeFile(filePath.toUtf8().constData(), image.get());
+		//QFileInfo fileInfo(filePath);
+
+		AssetProcess::AssetImporter assetImporter;
+		assetImporter.ImportFromFile(filePath.toStdString(), mCurrentDir.toStdString());
+		/*imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
+		imagecodec::ImageDecoder::DecodeFile(filePath.toUtf8().constData(), image.get());*/
 	}
 }

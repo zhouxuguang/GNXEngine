@@ -4,6 +4,8 @@
 #include <QFileSystemModel>
 #include <QListView>
 #include "View.h"
+#include "RenderEngine.h"
+#include "BaseLib/BaseLib.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -40,7 +42,11 @@ void MainWindow::setupDock()
     m_ContentDockWidget->setFeatures(QDockWidget::DockWidgetClosable);
     m_ContentDockWidget->setWindowTitle("Content Browser");
     m_ContentDockWidget->setAllowedAreas(Qt::BottomDockWidgetArea);
-    ContentWidget* contentWidget = new ContentWidget(m_ContentDockWidget, QDir::currentPath());
+    fs::path contentPath = getAssetsDir();
+    if (EnsurePathExists(contentPath))
+    {
+    }
+    ContentWidget* contentWidget = new ContentWidget(m_ContentDockWidget, QString::fromStdString(getAssetsDir()));
     
     m_DetailDockWidget = new QDockWidget(this);
     m_DetailDockWidget->setFeatures(QDockWidget::DockWidgetClosable);

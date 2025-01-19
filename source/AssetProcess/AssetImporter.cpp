@@ -3,6 +3,11 @@
 
 NS_ASSETPROCESS_BEGIN
 
+static bool HasExtension(const fs::path& filePath, const std::string& ext) 
+{
+	return filePath.extension() == "." + ext;
+}
+
 AssetImporter::AssetImporter()
 {
 }
@@ -18,8 +23,28 @@ bool AssetImporter::ImportFromFile(const std::string& fileName, const std::strin
 		return false;
 	}
 
-	AssimpAssetImporter assimpAssetImporter;
-	return assimpAssetImporter.ImportFromFile(fileName, saveDir);
+	// 这里通过后缀判断不同类型的资产文件
+	fs::path filePath = fileName;
+	if (HasExtension(filePath, "bmp") || 
+		HasExtension(filePath, "tga") || 
+		HasExtension(filePath, "jpeg") ||
+		HasExtension(filePath, "jpg") ||
+		HasExtension(filePath, "png") ||
+		HasExtension(filePath, "hdr") ||
+		HasExtension(filePath, "webp"))
+	{
+		//加载和处理图像
+	}
+
+	else if (HasExtension(filePath, "obj") ||
+		HasExtension(filePath, "fbx") ||
+		HasExtension(filePath, "gltf") ||
+		HasExtension(filePath, "glb") ||
+		HasExtension(filePath, "3ds"))
+	{
+		AssimpAssetImporter assimpAssetImporter;
+		return assimpAssetImporter.ImportFromFile(fileName, saveDir);
+	}
 }
 
 NS_ASSETPROCESS_END

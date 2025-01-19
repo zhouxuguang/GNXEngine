@@ -86,3 +86,35 @@ std::string getAssetsDir()
 	path = (parentDir / fs::path("../../GNXEditor/Assets/")).lexically_normal();
 	return path.string();
 }
+
+bool EnsurePathExists(const fs::path& path) 
+{
+	if (fs::exists(path)) 
+    {
+		std::cout << "路径已存在: " << path << std::endl;
+		return true;
+	}
+	else 
+    {
+		try 
+        {
+			// 创建所有不存在的父目录
+			bool success = fs::create_directories(path);
+			if (success) 
+            {
+				std::cout << "成功创建路径: " << path << std::endl;
+				return true;
+			}
+			else 
+            {
+				std::cerr << "创建路径失败: " << path << std::endl;
+				return false;
+			}
+		}
+		catch (const fs::filesystem_error& e) 
+        {
+			std::cerr << "文件系统错误: " << e.what() << std::endl;
+			return false;
+		}
+	}
+}

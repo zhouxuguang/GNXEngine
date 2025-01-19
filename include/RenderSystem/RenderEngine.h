@@ -10,11 +10,14 @@
 
 #include <stdio.h>
 #include <string>
+#include "BaseLib/BaseLib.h"
 
 std::string getBuiltInShaderDir();
 
 std::string getMediaDir();
 
 std::string getAssetsDir();
+
+bool EnsurePathExists(const fs::path& path);
 
 #endif /* RenderEngine_hpp */
