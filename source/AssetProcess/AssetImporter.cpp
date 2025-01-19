@@ -1,5 +1,6 @@
 #include "AssetImporter.h"
 #include "AssimpAssetImporter.h"
+#include "ImageImporter.h"
 
 NS_ASSETPROCESS_BEGIN
 
@@ -34,6 +35,8 @@ bool AssetImporter::ImportFromFile(const std::string& fileName, const std::strin
 		HasExtension(filePath, "webp"))
 	{
 		//加载和处理图像
+		ImageImporter imageImporter(fileName.c_str(), saveDir);
+		return imageImporter.Load();
 	}
 
 	else if (HasExtension(filePath, "obj") ||

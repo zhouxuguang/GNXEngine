@@ -45,6 +45,20 @@ static uint32_t GetFormatBytesPerRow(ImagePixelFormat format, uint32_t width, ui
             encodedHeight = height;
             return width * 3;
         }
+
+		case FORMAT_RGBA32Float:
+		{
+			encodedWidth = width;
+			encodedHeight = height;
+			return width * 16;
+		}
+
+		case FORMAT_RGB32Float:
+		{
+			encodedWidth = width;
+			encodedHeight = height;
+			return width * 12;
+		}
             
         case FORMAT_EAC_R:
         case FORMAT_EAC_R_SIGNED:
