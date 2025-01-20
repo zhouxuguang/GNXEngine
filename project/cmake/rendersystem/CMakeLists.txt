@@ -22,7 +22,7 @@ elseif(WIN32)
 endif()
 
 
-add_library(rendersystem OBJECT ${RENDERSYSTEM_SOURCES} ${RENDERSYSTEM_INCLUDES})
+add_library(rendersystem STATIC ${RENDERSYSTEM_SOURCES} ${RENDERSYSTEM_INCLUDES})
 target_include_directories(rendersystem PUBLIC ${rendersystem_include_dir} 
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
 

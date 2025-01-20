@@ -113,7 +113,7 @@ else()
     set(SOURCE_FILES ${IMAGECODEC_SOURCES} ${IMAGECODEC_INCLUDES} ${WEBP_SOURCES} ${JPEG_FILES})
 endif()
 
-add_library(imagecodec OBJECT ${SOURCE_FILES})
+add_library(imagecodec STATIC ${SOURCE_FILES})
 
 if(APPLE)
     target_link_libraries(imagecodec PRIVATE "-framework Accelerate")

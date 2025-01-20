@@ -1,0 +1,6 @@
+#include "RenderWindow.h"
+
+NAMESPACE_GNXENGINE_BEGIN
+
+
+NAMESPACE_GNXENGINE_END

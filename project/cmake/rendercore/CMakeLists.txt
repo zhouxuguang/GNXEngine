@@ -43,7 +43,7 @@ endif()
 
 file(GLOB_RECURSE RENDERCORE_INCLUDES CONFIGURE_DEPENDS ${rendercore_include_dir}/*.h)
 
-add_library(rendercore OBJECT ${RENDERCORE_SOURCES} ${RENDERCORE_INCLUDES})
+add_library(rendercore STATIC ${RENDERCORE_SOURCES} ${RENDERCORE_INCLUDES})
 target_include_directories(rendercore PUBLIC ${rendercore_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
 target_link_libraries(rendercore PRIVATE mathutil spirv_reflect)
 

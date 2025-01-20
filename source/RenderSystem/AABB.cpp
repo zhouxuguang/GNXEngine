@@ -6,11 +6,11 @@
 //
 
 #include "AABB.h"
+#include <algorithm>
 #include <limits>
 
 NS_RENDERSYSTEM_BEGIN
-
-static const float MAX_FLOAT = std::numeric_limits<float>::max();
+    static const float MAX_FLOAT = std::numeric_limits<float>::max();
 static const float MIN_FLOAT = std::numeric_limits<float>::min();
 
 AABB::AABB()
@@ -116,28 +116,22 @@ void AABB::updateMinMax(const Vector3f* point, size_t num)
     for (size_t i = 0; i < num; i++)
     {
         // Leftmost point.
-        if (point[i].x < mMin.x)
-            mMin.x = point[i].x;
-        
+        mMin.x = std::min(point[i].x, mMin.x);
+
         // Lowest point.
-        if (point[i].y < mMin.y)
-            mMin.y = point[i].y;
-        
+        mMin.y = std::min(point[i].y, mMin.y);
+
         // Farthest point.
-        if (point[i].z < mMin.z)
-            mMin.z = point[i].z;
-        
+        mMin.z = std::min(point[i].z, mMin.z);
+
         // Rightmost point.
-        if (point[i].x > mMax.x)
-            mMax.x = point[i].x;
-        
+        mMax.x = std::max(point[i].x, mMax.x);
+
         // Highest point.
-        if (point[i].y > mMax.y)
-            mMax.y = point[i].y;
-        
+        mMax.y = std::max(point[i].y, mMax.y);
+
         // Nearest point.
-        if (point[i].z > mMax.z)
-            mMax.z = point[i].z;
+        mMax.z = std::max(point[i].z, mMax.z);
     }
 }
 

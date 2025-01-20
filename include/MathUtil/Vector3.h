@@ -9,8 +9,8 @@
 @ 日    期		版    本		修改人		修改摘要
 
 ********************************************************************************/
-#ifndef __VECTOR3_H_CD2C4FC7_29F5_439D_9403_106DAA2DC4CA__
-#define __VECTOR3_H_CD2C4FC7_29F5_439D_9403_106DAA2DC4CA__
+#ifndef VECTOR3_H_CD2C4FC7_29F5_439D_9403_106DAA2DC4CA_
+#define VECTOR3_H_CD2C4FC7_29F5_439D_9403_106DAA2DC4CA_
 
 #include "Math3DCommon.h"
 
