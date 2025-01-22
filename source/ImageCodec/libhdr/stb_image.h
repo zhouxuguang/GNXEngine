@@ -130,6 +130,7 @@ RECENT REVISION HISTORY:
 
 #include <math.h>
 #include <assert.h>
+#include <stdlib.h>
 
 namespace hdr
 {
