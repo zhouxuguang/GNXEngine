@@ -128,6 +128,9 @@ RECENT REVISION HISTORY:
 #ifndef STBI_INCLUDE_STB_IMAGE_H
 #define STBI_INCLUDE_STB_IMAGE_H
 
+#include <math.h>
+#include <assert.h>
+
 namespace hdr
 {
 
@@ -385,7 +388,6 @@ namespace hdr
         STBI_rgb_alpha = 4
     };
 
-#include <stdlib.h>
     typedef unsigned char stbi_uc;
     typedef unsigned short stbi_us;
 
@@ -593,12 +595,12 @@ namespace hdr
 
 #include <stdarg.h>
 #include <stddef.h> // ptrdiff_t on osx
-#include <stdlib.h>
+//#include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 
 #if !defined(STBI_NO_LINEAR) || !defined(STBI_NO_HDR)
-#include <math.h>  // ldexp, pow
+//#include <math.h>  // ldexp, pow
 #endif
 
 #ifndef STBI_NO_STDIO
@@ -606,7 +608,7 @@ namespace hdr
 #endif
 
 #ifndef STBI_ASSERT
-#include <assert.h>
+//#include <assert.h>
 #define STBI_ASSERT(x) assert(x)
 #endif
 
