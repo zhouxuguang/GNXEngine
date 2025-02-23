@@ -100,8 +100,6 @@ void ContentWidget::OpenImportAssetDialog()
 	//选择了文件，进行导入操作
 	if (!filePath.isEmpty())
 	{
-		//QFileInfo fileInfo(filePath);
-
 		AssetProcess::AssetImporter assetImporter;
 		assetImporter.ImportFromFile(filePath.toStdString(), mCurrentDir.toStdString());
 		/*imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();

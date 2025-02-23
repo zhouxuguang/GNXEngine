@@ -25,6 +25,6 @@ ${baselib_dir}/zlib/uncompr.c
 ${baselib_dir}/zlib/zutil.c
 )
 
-add_library(baselib OBJECT ${BASELIB_SOURCES} ${BASELIB_INCLUDES} ${ZLIB_SRCS})
+add_library(baselib STATIC ${BASELIB_SOURCES} ${BASELIB_INCLUDES} ${ZLIB_SRCS})
 target_include_directories(baselib PUBLIC ${baselib_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
 

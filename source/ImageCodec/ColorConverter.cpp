@@ -211,6 +211,15 @@ void ColorConverter::convert_RGB24toRGBA32(const void* sP, unsigned int sN, void
     dstBuffer.rowBytes = sN * 4;
     vImageConvert_RGB888toRGBA8888(&srcBuffer, nullptr, 255, &dstBuffer, true, kvImageDoNotTile);
 #else
+    uint8_t* src = (uint8_t*)sP;
+    uint8_t* dst = (uint8_t*)dP;
+    for (uint32_t s = 0; s < sN; s ++)
+    {
+        dst[s * 4 + 0] = src[s * 3 + 0];
+        dst[s * 4 + 1] = src[s * 3 + 1];
+        dst[s * 4 + 2] = src[s * 3 + 2];
+        dst[s * 4 + 3] = 255;
+    }
 #endif
 }
 
