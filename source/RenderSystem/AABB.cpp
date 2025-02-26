@@ -167,4 +167,27 @@ void AABB::transform(const Matrix4x4f& mat)
     updateMinMax(corners, 8);
 }
 
+template <typename T>
+AxisAlignedBox<T> AxisAlignedBox<T>::FromPositions(const std::vector<Vector3<T>>& positions)
+{
+	if (positions.size() == 0) 
+    {
+		return AxisAlignedBox();
+	}
+
+	Vector3<T> min = positions[0];
+    Vector3<T> max = positions[0];
+
+	for (size_t i = 1; i < positions.size(); i++) 
+    {
+		/*min = glm::min(min, positions[i]);
+		max = glm::max(max, positions[i]);*/
+	}
+
+	return AxisAlignedBox<T>(min, max);
+}
+
+template class AxisAlignedBox<float>;
+template class AxisAlignedBox<double>;
+
 NS_RENDERSYSTEM_END

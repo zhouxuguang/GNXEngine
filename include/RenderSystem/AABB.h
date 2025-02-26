@@ -100,6 +100,56 @@ public:
     Vector3f mMax;
 };
 
+/**
+ * @brief An Axis-Aligned Bounding Box (AABB), where the axes of the box are
+ * aligned with the axes of the coordinate system.
+ */
+template <typename T>
+class AxisAlignedBox 
+{
+public:
+    /**
+     * @brief Creates an empty AABB with a length, width, and height of zero,
+     * with the center located at (0, 0, 0).
+     */
+    constexpr AxisAlignedBox() noexcept
+    {
+    }
+
+    /**
+     * @brief Creates a new AABB using the range of coordinates the box covers.
+     *
+     */
+    constexpr AxisAlignedBox(const Vector3<T> minimum_, const Vector3<T> maximum_) noexcept
+        : minimum(minimum_),
+        maximum(maximum_),
+        length(maximum - minimum),
+        center((minimum + maximum) * 0.5)
+    {
+    }
+
+    // 最小点
+    Vector3<T> minimum;
+    // 最大点
+    Vector3<T> maximum;
+	// 各个方向的长度
+	Vector3<T> length;
+	// 中心点坐标
+    Vector3<T> center;
+
+    /**
+     * @brief Creates a tight-fitting, axis-aligned bounding box that contains all
+     * of the input positions.
+     *
+     * @param positions The positions.
+     * @returns An axis-aligned bounding box derived from the input positions.
+     */
+    static AxisAlignedBox FromPositions(const std::vector<Vector3<T>>& positions);
+};
+
+typedef AxisAlignedBox<float> AxisAlignedBoxf;
+typedef AxisAlignedBox<double> AxisAlignedBoxd;
+
 NS_RENDERSYSTEM_END
 
 #endif /* GNXENGINE_RENDERSYSTEM_AABB_INCLUDE_NMSDV */

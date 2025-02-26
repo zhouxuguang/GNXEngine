@@ -86,7 +86,7 @@ public:
         mComponents.push_back(component);
     }
     
-    void Update(float deltaTime);
+    virtual void Update(float deltaTime);
     
     // 获得所有的子节点列表
     const std::vector<SceneNode*>& GetAllNodes() const;
