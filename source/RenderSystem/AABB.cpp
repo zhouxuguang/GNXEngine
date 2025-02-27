@@ -180,8 +180,23 @@ AxisAlignedBox<T> AxisAlignedBox<T>::FromPositions(const std::vector<Vector3<T>>
 
 	for (size_t i = 1; i < positions.size(); i++) 
     {
-		/*min = glm::min(min, positions[i]);
-		max = glm::max(max, positions[i]);*/
+		// Leftmost point.
+        min.x = std::min(positions[i].x, min.x);
+
+		// Lowest point.
+        min.y = std::min(positions[i].y, min.y);
+
+		// Farthest point.
+        min.z = std::min(positions[i].z, min.z);
+
+		// Rightmost point.
+        max.x = std::max(positions[i].x, max.x);
+
+		// Highest point.
+        max.y = std::max(positions[i].y, max.y);
+
+		// Nearest point.
+        max.z = std::max(positions[i].z, max.z);
 	}
 
 	return AxisAlignedBox<T>(min, max);
