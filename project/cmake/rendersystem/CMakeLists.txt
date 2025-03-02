@@ -38,7 +38,7 @@ target_include_directories(rendersystem PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../..
 if(APPLE)
 target_link_libraries(rendersystem PRIVATE baselib rendercore shadercompiler 
     assimp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/DirectXShaderCompiler/lib/mac/libdxcompiler.3.7.dylib)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/DirectXShaderCompiler/lib/mac/libdxcompiler.dylib)
 elseif(WIN32)
 target_link_libraries(rendersystem PRIVATE baselib rendercore shadercompiler 
     assimp
