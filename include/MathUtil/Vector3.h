@@ -136,6 +136,8 @@ public:
 
     const Vector3& Normalize() const;
 
+	Vector3 Abs() const;
+
 	//求向量的模
 	const T Length() const;
 

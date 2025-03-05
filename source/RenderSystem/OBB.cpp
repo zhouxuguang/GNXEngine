@@ -437,4 +437,39 @@ void OBB::transform(const Mat4& mat)
 
 #endif
 
+template<typename T>
+AxisAlignedBox<T> OrientedBoundingBox<T>::ToAxisAligned() const noexcept
+{
+	const Matrix3x3<T> & halfAxes = this->mHalfAxes;
+
+    Vector3<T> halfAxes1 = Vector3<T>(halfAxes[0][0], halfAxes[0][1], halfAxes[0][2]);
+    Vector3<T> halfAxes2 = Vector3<T>(halfAxes[1][0], halfAxes[1][1], halfAxes[1][2]);
+    Vector3<T> halfAxes3 = Vector3<T>(halfAxes[2][0], halfAxes[2][1], halfAxes[2][2]);
+
+    Vector3<T> extent = halfAxes1.Abs() + halfAxes2.Abs() + halfAxes3.Abs();
+	const Vector3<T>& center = this->mCenter;
+    Vector3<T> ll = center - extent;
+    Vector3<T> ur = center + extent;
+	return AxisAlignedBox<T>(ll, ur);
+}
+
+template<typename T>
+OrientedBoundingBox<T> OrientedBoundingBox<T>::FromAxisAligned(const AxisAlignedBox<T>& axisAligned) noexcept
+{
+	/*return OrientedBoundingBox(
+		axisAligned.center,
+		glm::dmat3(
+			glm::dvec3(axisAligned.lengthX * 0.5, 0.0, 0.0),
+			glm::dvec3(0.0, axisAligned.lengthY * 0.5, 0.0),
+			glm::dvec3(0.0, 0.0, axisAligned.lengthZ * 0.5)));*/
+
+    // 临时的实现，编译通过
+    Vector3<T> center;
+    Matrix3x3<T> halfAxes;
+	return OrientedBoundingBox(center, halfAxes);
+}
+
+template class OrientedBoundingBox<float>;
+template class OrientedBoundingBox<double>;
+
 NS_RENDERSYSTEM_END
