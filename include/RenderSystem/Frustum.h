@@ -43,7 +43,7 @@ private:
      */
     void createPlane(const Camera& camera);
 
-    Plane mPlane[6];             // clip plane, left, right, top, bottom, near, far
+    //Plane mPlane[6];             // clip plane, left, right, top, bottom, near, far
     bool mInitialized = false;
 };
 

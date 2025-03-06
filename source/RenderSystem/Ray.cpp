@@ -208,20 +208,20 @@ bool Ray::intersects(const OBB& obb, float* distance) const
     
 }
 
-float Ray::dist(const Plane& plane) const
-{
-    float ndd = plane.getNormal().DotProduct(mDirection);
-    if(ndd == 0)
-        return 0.0f;
-    float ndo = plane.getNormal().DotProduct(mOrigin);
-    return (plane.getDist() - ndo) / ndd;
-}
-
-Vector3f Ray::intersects(const Plane& plane) const
-{
-    float dis = this->dist(plane);
-    return mOrigin + dis * mDirection;
-}
+//float Ray::dist(const Plane& plane) const
+//{
+//    float ndd = plane.getNormal().DotProduct(mDirection);
+//    if(ndd == 0)
+//        return 0.0f;
+//    float ndo = plane.getNormal().DotProduct(mOrigin);
+//    return (plane.getDist() - ndo) / ndd;
+//}
+//
+//Vector3f Ray::intersects(const Plane& plane) const
+//{
+//    float dis = this->dist(plane);
+//    return mOrigin + dis * mDirection;
+//}
 
 void Ray::set(const Vector3f& origin, const Vector3f& direction)
 {

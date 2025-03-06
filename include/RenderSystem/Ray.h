@@ -68,9 +68,9 @@ public:
      */
     bool intersects(const OBB& obb, float* distance = nullptr) const;
 
-    float dist(const Plane& plane) const;
+    //float dist(const Plane& plane) const;
     
-    Vector3f intersects(const Plane& plane) const;
+    //Vector3f intersects(const Plane& plane) const;
     
     /**
      * Sets this ray to the specified values.

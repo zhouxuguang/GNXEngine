@@ -28,7 +28,7 @@ Frustum::~Frustum()
 bool Frustum::initFrustum(const Camera& camera)
 {
     mInitialized = true;
-    createPlane(camera);
+    //createPlane(camera);
     return true;
 }
 
@@ -37,14 +37,14 @@ bool Frustum::initFrustum(const Camera& camera)
  */
 bool Frustum::isOutOfFrustum(const AABB& aabb) const
 {
-    if (mInitialized)
+    /*if (mInitialized)
     {
         Vector3f point;
 
         int plane = 6;
         for (int i = 0; i < plane; i++)
         {
-            const Vector3f& normal = mPlane[i].getNormal();
+            const Vector3<T>& normal = mPlane[i].getNormal();
             point.x = normal.x < 0 ? aabb.mMax.x : aabb.mMin.x;
             point.y = normal.y < 0 ? aabb.mMax.y : aabb.mMin.y;
             point.z = normal.z < 0 ? aabb.mMax.z : aabb.mMin.z;
@@ -52,7 +52,7 @@ bool Frustum::isOutOfFrustum(const AABB& aabb) const
             if (mPlane[i].getSide(point) == PointSide::FRONT_PLANE)
                 return true;
         }
-    }
+    }*/
     return false;
 }
 
@@ -61,7 +61,7 @@ bool Frustum::isOutOfFrustum(const AABB& aabb) const
  */
 bool Frustum::isOutOfFrustum(const OBB& obb) const
 {
-    if (mInitialized)
+    /*if (mInitialized)
     {
         Vector3f point;
         int plane = 6;
@@ -80,7 +80,7 @@ bool Frustum::isOutOfFrustum(const OBB& obb) const
             if (mPlane[i].getSide(point) == PointSide::FRONT_PLANE)
                 return true;
         }
-    }
+    }*/
     return  false;
 }
 
@@ -101,7 +101,7 @@ void Frustum::createPlane(const Camera& camera)
 //    mPlane[3].initPlane(-Vector3(mat[3] - mat[1], mat[7] - mat[5], mat[11] - mat[9]), (mat[15] - mat[13]));//top
     //Vector4 temp1 = mat[3] + mat[2];
     //mPlane[4].initPlane(-Vector3(mat[3] + mat[2]), (mat[15] + mat[14]));//near
-    mPlane[5].initPlane(-Vector3f(mat[3] - mat[2], mat[7] - mat[6], mat[11] - mat[10]), (mat[15] - mat[14]));//far
+    //mPlane[5].initPlane(-Vector3f(mat[3] - mat[2], mat[7] - mat[6], mat[11] - mat[10]), (mat[15] - mat[14]));//far
 }
 
 NS_RENDERSYSTEM_END

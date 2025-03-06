@@ -23,69 +23,55 @@ enum PointSide
 };
 
 /**
- 平面定义
+    平面定义
  **/
+template<typename T>
 class Plane
 {
 public:
     /**
     * 从三个点创建一个平面
     */
-    Plane(const Vector3f& p1, const Vector3f& p2, const Vector3f& p3);
+    Plane(const Vector3<T>& p1, const Vector3<T>& p2, const Vector3<T>& p3);
 
     /**
     * 从法向量和距离创建平面
     */
-    Plane(const Vector3f& normal, float dist);
+    Plane(const Vector3<T>& normal, T dist);
 
     /**
-    * create plane from normal and a point on plane.
+    * 根据平面上的一个点和发线创建平面
     */
-    Plane(const Vector3f& normal, const Vector3f& point);
+    Plane(const Vector3<T>& normal, const Vector3<T>& point);
     
     /**
-     * create a default plan whose normal is (0, 0, 1), and _dist is 0, xoy plan in fact.
+     * 创建默认的平面
      */
     Plane();
-    
-    /**
-    * init plane from tree point.
-    */
-    void initPlane(const Vector3f& p1, const Vector3f& p2, const Vector3f& p3);
-
-    /**
-    * init plane from normal and dist.
-    */
-    void initPlane(const Vector3f& normal, float dist);
-
-    /**
-    * init plane from normal and a point on plane.
-    */
-    void initPlane(const Vector3f& normal, const Vector3f& point);
 
     /**
     * dist to plane, > 0 normal direction
     */
-    float dist2Plane(const Vector3f& p) const;
+    T dist2Plane(const Vector3<T>& p) const;
 
     /**
     * Gets the plane's normal.
     */
-    const Vector3f& getNormal() const { return mNormal; }
+    const Vector3<T>& getNormal() const { return mNormal; }
 
     /**
     * Gets the plane's distance to the origin along its normal.
     */
-    float getDist() const  { return mDist; }
+    T getDist() const  { return mDist; }
 
     /**
     * Return the side where the point is.
     */
-    PointSide getSide(const Vector3f& point) const;
+    PointSide getSide(const Vector3<T>& point) const;
 
 protected:
-    Vector3f mNormal;         // the normal line of the plane
-    float mDist;             // original displacement of the normal
+    Vector3<T> mNormal;         // the normal line of the plane
+    T mDist;             // original displacement of the normal
 };
 
 NS_RENDERSYSTEM_END
