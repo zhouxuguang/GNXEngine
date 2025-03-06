@@ -17,27 +17,25 @@ Plane<T>::Plane() : mNormal(0, 0, 1), mDist(0)
 template<typename T>
 Plane<T>::Plane(const Vector3<T>& p1, const Vector3<T>& p2, const Vector3<T>& p3)
 {
-	Vector3f p21 = p2 - p1;
-	Vector3f p32 = p3 - p2;
-	mNormal = Vector3f::CrossProduct(p21, p32);
-	mNormal.Normalize();
-	mDist = mNormal.DotProduct(p1);
+	initPlane(p1, p2, p3);
 }
 
 template<typename T>
 Plane<T>::Plane(const Vector3<T>& normal, T dist)
 {
-	T oneOverLength = 1 / normal.Length();
-	mNormal = normal * oneOverLength;
-	mDist = dist * oneOverLength;
+	initPlane(normal, dist);
 }
 
 template<typename T>
 Plane<T>::Plane(const Vector3<T>& normal, const Vector3<T>& point)
 {
-	mNormal = normal;
-	mNormal.Normalize();
-	mDist = mNormal.DotProduct(point);
+	initPlane(normal, point);
+}
+
+template<typename T>
+Plane<T>::Plane(const Vector4<T>& coff)
+{
+	initPlane(coff);
 }
 
 template<typename T>
@@ -57,5 +55,42 @@ PointSide Plane<T>::getSide(const Vector3<T>& point) const
     else
         return PointSide::IN_PLANE;
 }
+
+template<typename T>
+void Plane<T>::initPlane(const Vector3<T>& p1, const Vector3<T>& p2, const Vector3<T>& p3)
+{
+	Vector3<T> p21 = p2 - p1;
+	Vector3<T> p32 = p3 - p2;
+	mNormal = Vector3<T>::CrossProduct(p21, p32);
+	mNormal.Normalize();
+	mDist = mNormal.DotProduct(p1);
+}
+
+template<typename T>
+void Plane<T>::initPlane(const Vector3<T>& normal, T dist)
+{
+	T oneOverLength = 1.0 / normal.Length();
+	mNormal = normal * oneOverLength;
+	mDist = dist * oneOverLength;
+}
+
+template<typename T>
+void Plane<T>::initPlane(const Vector3<T>& normal, const Vector3<T>& point)
+{
+	mNormal = normal;
+	mNormal.Normalize();
+	mDist = mNormal.DotProduct(point);
+}
+
+template<typename T>
+void Plane<T>::initPlane(const Vector4<T>& coff)
+{
+	mNormal = Vector3<T>(coff.x, coff.y, coff.z);
+	mNormal.Normalize();
+	mDist = coff.w;
+}
+
+template class Plane<float>;
+template class Plane<double>;
 
 NS_RENDERSYSTEM_END

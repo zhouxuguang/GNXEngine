@@ -10,6 +10,7 @@
 
 #include "RSDefine.h"
 #include "MathUtil/Vector3.h"
+#include "MathUtil/Vector4.h"
 
 USING_NS_MATHUTIL
 
@@ -43,6 +44,11 @@ public:
     * 根据平面上的一个点和发线创建平面
     */
     Plane(const Vector3<T>& normal, const Vector3<T>& point);
+
+	/**
+	* 根据平面上的四个系数创建平面方程
+	*/
+	Plane(const Vector4<T>& coff);
     
     /**
      * 创建默认的平面
@@ -62,17 +68,40 @@ public:
     /**
     * Gets the plane's distance to the origin along its normal.
     */
-    T getDist() const  { return mDist; }
+    T getDist() const { return mDist; }
 
     /**
     * Return the side where the point is.
     */
     PointSide getSide(const Vector3<T>& point) const;
 
+    /**
+    * init plane from tree point.
+    */
+    void initPlane(const Vector3<T>& p1, const Vector3<T>& p2, const Vector3<T>& p3);
+
+    /**
+    * init plane from normal and dist.
+    */
+    void initPlane(const Vector3<T>& normal, T dist);
+
+    /**
+    * init plane from normal and a point on plane.
+    */
+    void initPlane(const Vector3<T>& normal, const Vector3<T>& point);
+
+	/**
+	* 根据平面上的四个系数创建平面方程
+	*/
+    void initPlane(const Vector4<T>& coff);
+
 protected:
     Vector3<T> mNormal;         // the normal line of the plane
     T mDist;             // original displacement of the normal
 };
+
+typedef Plane<float> Planef;
+typedef Plane<double> Planed;
 
 NS_RENDERSYSTEM_END
 

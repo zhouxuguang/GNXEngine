@@ -52,22 +52,22 @@ Matrix4x4<T>::Matrix4x4(const Matrix4x4<T>& rtMat)
 template <typename T>
 Matrix4x4<T>::Matrix4x4(T m00, T m01, T m02, T m03, T m10, T m11, T m12, T m13, T m20, T m21, T m22, T m23, T m30, T m31, T m32, T m33)
 {
-	m_pValue[0][0] = m00;
-	m_pValue[0][1] = m01;
-	m_pValue[0][2] = m02;
-	m_pValue[0][3] = m03;
-	m_pValue[1][0] = m10;
-	m_pValue[1][1] = m11;
-	m_pValue[1][2] = m12;
-	m_pValue[1][3] = m13;
-	m_pValue[2][0] = m20;
-	m_pValue[2][1] = m21;
-	m_pValue[2][2] = m22;
-	m_pValue[2][3] = m23;
-	m_pValue[3][0] = m30;
-	m_pValue[3][1] = m31;
-	m_pValue[3][2] = m32;
-	m_pValue[3][3] = m33;
+	mVecArray[0][0] = m00;
+	mVecArray[0][1] = m01;
+	mVecArray[0][2] = m02;
+	mVecArray[0][3] = m03;
+	mVecArray[1][0] = m10;
+	mVecArray[1][1] = m11;
+	mVecArray[1][2] = m12;
+	mVecArray[1][3] = m13;
+	mVecArray[2][0] = m20;
+	mVecArray[2][1] = m21;
+	mVecArray[2][2] = m22;
+	mVecArray[2][3] = m23;
+	mVecArray[3][0] = m30;
+	mVecArray[3][1] = m31;
+	mVecArray[3][2] = m32;
+	mVecArray[3][3] = m33;
 }
 
 template <typename T>
@@ -89,7 +89,7 @@ Matrix4x4<T> Matrix4x4<T>::operator +(T fValue)
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			mtRes[i][j] = m_pValue[i][j] + fValue;
+			mtRes[i][j] = mVecArray[i][j] + fValue;
 		}
 	}
 
@@ -105,7 +105,7 @@ Matrix4x4<T> Matrix4x4<T>::operator -(T fValue)
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			mtRes[i][j] = m_pValue[i][j] - fValue;
+			mtRes[i][j] = mVecArray[i][j] - fValue;
 		}
 	}
 
@@ -121,7 +121,7 @@ Matrix4x4<T> Matrix4x4<T>::operator *(T fValue)
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			mtRes[i][j] = m_pValue[i][j] * fValue;
+			mtRes[i][j] = mVecArray[i][j] * fValue;
 		}
 	}
 
@@ -133,11 +133,11 @@ Vector3<T> Matrix4x4<T>::operator * ( const Vector3<T> &v ) const
 {
 	Vector3<T> r;
 
-	T fInvW = 1.0f / ( m_pValue[3][0] * v.x + m_pValue[3][1] * v.y + m_pValue[3][2] * v.z + m_pValue[3][3] );
+	T fInvW = 1.0f / ( mVecArray[3][0] * v.x + mVecArray[3][1] * v.y + mVecArray[3][2] * v.z + mVecArray[3][3] );
 
-	r.x = ( m_pValue[0][0] * v.x + m_pValue[0][1] * v.y + m_pValue[0][2] * v.z + m_pValue[0][3] ) * fInvW;
-	r.y = ( m_pValue[1][0] * v.x + m_pValue[1][1] * v.y + m_pValue[1][2] * v.z + m_pValue[1][3] ) * fInvW;
-	r.z = ( m_pValue[2][0] * v.x + m_pValue[2][1] * v.y + m_pValue[2][2] * v.z + m_pValue[2][3] ) * fInvW;
+	r.x = ( mVecArray[0][0] * v.x + mVecArray[0][1] * v.y + mVecArray[0][2] * v.z + mVecArray[0][3] ) * fInvW;
+	r.y = ( mVecArray[1][0] * v.x + mVecArray[1][1] * v.y + mVecArray[1][2] * v.z + mVecArray[1][3] ) * fInvW;
+	r.z = ( mVecArray[2][0] * v.x + mVecArray[2][1] * v.y + mVecArray[2][2] * v.z + mVecArray[2][3] ) * fInvW;
 
 	return r;
 }
@@ -146,10 +146,10 @@ template <typename T>
 Vector4<T> Matrix4x4<T>::operator*(const Vector4<T>& v)
 {
 	return Vector4<T>(
-		m_pValue[0][0] * v[0] + m_pValue[0][1] * v[1] + m_pValue[0][2] * v[2] + m_pValue[0][3] * v[3], 
-		m_pValue[1][0] * v[0] + m_pValue[1][1] * v[1] + m_pValue[1][2] * v[2] + m_pValue[1][3] * v[3],
-		m_pValue[2][0] * v[0] + m_pValue[2][1] * v[1] + m_pValue[2][2] * v[2] + m_pValue[2][3] * v[3],
-		m_pValue[3][0] * v[0] + m_pValue[3][1] * v[1] + m_pValue[3][2] * v[2] + m_pValue[3][3] * v[3]
+		mVecArray[0][0] * v[0] + mVecArray[0][1] * v[1] + mVecArray[0][2] * v[2] + mVecArray[0][3] * v[3], 
+		mVecArray[1][0] * v[0] + mVecArray[1][1] * v[1] + mVecArray[1][2] * v[2] + mVecArray[1][3] * v[3],
+		mVecArray[2][0] * v[0] + mVecArray[2][1] * v[1] + mVecArray[2][2] * v[2] + mVecArray[2][3] * v[3],
+		mVecArray[3][0] * v[0] + mVecArray[3][1] * v[1] + mVecArray[3][2] * v[2] + mVecArray[3][3] * v[3]
 		);
 }
 
@@ -164,7 +164,7 @@ Matrix4x4<T> Matrix4x4<T>::operator*(const Matrix4x4<T>& other)
 		{
 			for (int k = 0; k < 4; k ++)
 			{
-				adfResult[i*4+j] += m_pValue[i][k]*other[k][j];
+				adfResult[i*4+j] += mVecArray[i][k]*other[k][j];
 			}
 		}
 	}
@@ -183,7 +183,7 @@ Matrix4x4<T> Matrix4x4<T>::operator*(const Matrix4x4<T>& other) const
         {
             for (int k = 0; k < 4; k ++)
             {
-                adfResult[i*4+j] += m_pValue[i][k]*other[k][j];
+                adfResult[i*4+j] += mVecArray[i][k]*other[k][j];
             }
         }
     }
@@ -202,7 +202,7 @@ Matrix4x4<T>& Matrix4x4<T>::operator *=(const Matrix4x4<T>& other)
 		{
 			for (int k = 0; k < 4; k ++)
 			{
-				adfResult[i*4+j] += m_pValue[i][k]*other[k][j];
+				adfResult[i*4+j] += mVecArray[i][k]*other[k][j];
 			}
 		}
 	}
@@ -220,7 +220,7 @@ Matrix4x4<T> Matrix4x4<T>::operator + (const Matrix4x4<T>& other) const
     {
         for (int j = 0; j < 4; j++)
         {
-            mtRes[i][j] = m_pValue[i][j] + other.m_pValue[i][j];
+            mtRes[i][j] = mVecArray[i][j] + other.mVecArray[i][j];
         }
     }
 
@@ -235,7 +235,7 @@ Matrix4x4<T> Matrix4x4<T>::operator /(T fValue)
 	{
 		for (int j = 0; j < 4; j++)
 		{
-			mtRes[i][j] = m_pValue[i][j] / fValue;
+			mtRes[i][j] = mVecArray[i][j] / fValue;
 		}
 	}
 
@@ -251,10 +251,10 @@ void Matrix4x4<T>::MakeIdentity()
 template <typename T>
 bool Matrix4x4<T>::IsIdentity() const
 {
-	return m_pValue[0][0]==1.0 && m_pValue[0][1]==0.0 && m_pValue[0][2]==0.0 &&  m_pValue[0][3]==0.0 &&
-		m_pValue[1][0]==0.0 && m_pValue[1][1]==1.0 && m_pValue[1][2]==0.0 &&  m_pValue[1][3]==0.0 &&
-		m_pValue[2][0]==0.0 && m_pValue[2][1]==0.0 && m_pValue[2][2]==1.0 &&  m_pValue[2][3]==0.0 &&
-		m_pValue[3][0]==0.0 && m_pValue[3][1]==0.0 && m_pValue[3][2]==0.0 &&  m_pValue[3][3]==1.0;
+	return mVecArray[0][0]==1.0 && mVecArray[0][1]==0.0 && mVecArray[0][2]==0.0 &&  mVecArray[0][3]==0.0 &&
+		mVecArray[1][0]==0.0 && mVecArray[1][1]==1.0 && mVecArray[1][2]==0.0 &&  mVecArray[1][3]==0.0 &&
+		mVecArray[2][0]==0.0 && mVecArray[2][1]==0.0 && mVecArray[2][2]==1.0 &&  mVecArray[2][3]==0.0 &&
+		mVecArray[3][0]==0.0 && mVecArray[3][1]==0.0 && mVecArray[3][2]==0.0 &&  mVecArray[3][3]==1.0;
 }
 
 template <typename T>
@@ -270,19 +270,19 @@ MINOR(const Matrix4x4<T>& m, const size_t r0, const size_t r1, const size_t r2,
 template <typename T>
 T Matrix4x4<T>::Determinant() const
 {
-	return m_pValue[0][0] * MINOR(*this, 1, 2, 3, 1, 2, 3) -
-			m_pValue[0][1] * MINOR(*this, 1, 2, 3, 0, 2, 3) +
-			m_pValue[0][2] * MINOR(*this, 1, 2, 3, 0, 1, 3) -
-			m_pValue[0][3] * MINOR(*this, 1, 2, 3, 0, 1, 2);
+	return mVecArray[0][0] * MINOR(*this, 1, 2, 3, 1, 2, 3) -
+			mVecArray[0][1] * MINOR(*this, 1, 2, 3, 0, 2, 3) +
+			mVecArray[0][2] * MINOR(*this, 1, 2, 3, 0, 1, 3) -
+			mVecArray[0][3] * MINOR(*this, 1, 2, 3, 0, 1, 2);
 }
 
 template <typename T>
 Matrix4x4<T> Matrix4x4<T>::Inverse() const
 {
-	T m00 = m_pValue[0][0], m01 = m_pValue[0][1], m02 = m_pValue[0][2], m03 = m_pValue[0][3];
-	T m10 = m_pValue[1][0], m11 = m_pValue[1][1], m12 = m_pValue[1][2], m13 = m_pValue[1][3];
-	T m20 = m_pValue[2][0], m21 = m_pValue[2][1], m22 = m_pValue[2][2], m23 = m_pValue[2][3];
-	T m30 = m_pValue[3][0], m31 = m_pValue[3][1], m32 = m_pValue[3][2], m33 = m_pValue[3][3];
+	T m00 = mVecArray[0][0], m01 = mVecArray[0][1], m02 = mVecArray[0][2], m03 = mVecArray[0][3];
+	T m10 = mVecArray[1][0], m11 = mVecArray[1][1], m12 = mVecArray[1][2], m13 = mVecArray[1][3];
+	T m20 = mVecArray[2][0], m21 = mVecArray[2][1], m22 = mVecArray[2][2], m23 = mVecArray[2][3];
+	T m30 = mVecArray[3][0], m31 = mVecArray[3][1], m32 = mVecArray[3][2], m33 = mVecArray[3][3];
 
 	T v0 = m20 * m31 - m21 * m30;
 	T v1 = m20 * m32 - m22 * m30;
@@ -342,10 +342,10 @@ Matrix4x4<T> Matrix4x4<T>::Inverse() const
 template <typename T>
 Matrix4x4<T> Matrix4x4<T>::Transpose() const
 {
-	return Matrix4x4<T>(m_pValue[0][0], m_pValue[1][0], m_pValue[2][0], m_pValue[3][0],
-		m_pValue[0][1], m_pValue[1][1], m_pValue[2][1], m_pValue[3][1],
-		m_pValue[0][2], m_pValue[1][2], m_pValue[2][2], m_pValue[3][2],
-		m_pValue[0][3], m_pValue[1][3], m_pValue[2][3], m_pValue[3][3]);
+	return Matrix4x4<T>(mVecArray[0][0], mVecArray[1][0], mVecArray[2][0], mVecArray[3][0],
+		mVecArray[0][1], mVecArray[1][1], mVecArray[2][1], mVecArray[3][1],
+		mVecArray[0][2], mVecArray[1][2], mVecArray[2][2], mVecArray[3][2],
+		mVecArray[0][3], mVecArray[1][3], mVecArray[2][3], mVecArray[3][3]);
 }
 
 template <typename T>
@@ -354,7 +354,7 @@ Matrix3x3<T> Matrix4x4<T>::GetMatrix3() const
     Matrix3x3<T> matResult;
     for (int i = 0; i < 3; ++ i)
     {
-        memcpy(matResult[i], m_pValue[i], sizeof(T)*3);
+        memcpy(matResult[i], &mVecArray[i], sizeof(T)*3);
     }
     
     return matResult;
@@ -515,7 +515,7 @@ Matrix4x4<T> Matrix4x4<T>::CreateRotation(T x, T y, T z, T angle)
 	memset(dst.m_adfValues, 0, MATRIX4_SIZE);
     dst.m_adfValues[15] = 1;
     
-    //Ðý×ªÖáµ¥Î»»¯
+    //
     double dbLen = sqrt(x*x+y*y+z*z);
     x /= dbLen;
     y /= dbLen;
@@ -527,7 +527,7 @@ Matrix4x4<T> Matrix4x4<T>::CreateRotation(T x, T y, T z, T angle)
     double dbSinTheta = sin(angle);
     double dbCosTheta = cos(angle);
     
-    //ÄæÊ±ÕëÎªÕý
+    //
     dst.m_adfValues[0] = x*x*db1costheta + dbCosTheta;
     dst.m_adfValues[1] = x*y*db1costheta - z*dbSinTheta;
     dst.m_adfValues[2] = x*z*db1costheta + y*dbSinTheta;
