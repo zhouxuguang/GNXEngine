@@ -84,13 +84,13 @@ void Frustum<T>::createPlane(const Matrix4x4<T>& comboMatrix)
     // 参考这篇文章
     //Fast Extraction of Viewing Frustum Planes from the WorldView-Projection Matrix
     
-    //extract frustum plane
-    //mPlane[0].initPlane(-Vector3(mat[3] + mat[0], mat[7] + mat[4], mat[11] + mat[8]), (mat[15] + mat[12]));//left
-    //mPlane[1].initPlane(-Vector3(mat[3] - mat[0], mat[7] - mat[4], mat[11] - mat[8]), (mat[15] - mat[12]));//right
-    //mPlane[2].initPlane(-Vector3(mat[3] + mat[1], mat[7] + mat[5], mat[11] + mat[9]), (mat[15] + mat[13]));//bottom
-    //mPlane[3].initPlane(-Vector3(mat[3] - mat[1], mat[7] - mat[5], mat[11] - mat[9]), (mat[15] - mat[13]));//top
-    //mPlane[4].initPlane(-Vector3(mat[3] + mat[2]), (mat[15] + mat[14]));//near
-    //mPlane[5].initPlane(-Vector3f(mat[3] - mat[2], mat[7] - mat[6], mat[11] - mat[10]), (mat[15] - mat[14]));//far
+    // 提取平面方程的系数
+    mPlane[0].initPlane(comboMatrix[3] + comboMatrix[0]);//left
+    mPlane[1].initPlane(comboMatrix[3] - comboMatrix[0]);//right
+    mPlane[2].initPlane(comboMatrix[3] + comboMatrix[1]);//bottom
+    mPlane[3].initPlane(comboMatrix[3] - comboMatrix[1]);//top
+    mPlane[4].initPlane(comboMatrix[3] + comboMatrix[2]);//near
+    mPlane[5].initPlane(comboMatrix[3] - comboMatrix[2]);//far
 }
 
 template class Frustum<float>;
