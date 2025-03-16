@@ -23,13 +23,13 @@ bool IntersectRayTriangle(const Ray& ray, const Vector3f& v0, const Vector3f& v1
     // 算法参考论文 https://www.tandfonline.com/doi/abs/10.1080/10867651.1997.10487468
     Vector3f e1 = v1 - v0;
     Vector3f e2 = v2 - v0;
-    Vector3f s = ray.getOrigin() - v0;
-    Vector3f s1 = Vector3f::CrossProduct(ray.getDirection(), e2);
+    Vector3f s = ray.GetOrigin() - v0;
+    Vector3f s1 = Vector3f::CrossProduct(ray.GetDirection(), e2);
     Vector3f s2 = Vector3f::CrossProduct(s, e1);
     
     float det = s1.DotProduct(e1);
     
-    Vector3f result = Vector3f(s2.DotProduct(e2), s1.DotProduct(s), s2.DotProduct(ray.getDirection()));
+    Vector3f result = Vector3f(s2.DotProduct(e2), s1.DotProduct(s), s2.DotProduct(ray.GetDirection()));
     result = result / det;
     
     if (result.x <= 0)
@@ -49,8 +49,8 @@ bool IntersectRayTriangle(const Ray& ray, const Vector3f& v0, const Vector3f& v1
 
 bool IntersectRaySphere(const Ray& ray, const Sphere& inSphere)
 {
-    Vector3f dif = inSphere.GetCenter () - ray.getOrigin ();
-    float d = dif.DotProduct(ray.getDirection ());
+    Vector3f dif = inSphere.GetCenter () - ray.GetOrigin ();
+    float d = dif.DotProduct(ray.GetDirection ());
     float lSqr = dif.DotProduct(dif);
     float rSqr = inSphere.GetRadius() * inSphere.GetRadius();
 
