@@ -442,9 +442,9 @@ AxisAlignedBox<T> OrientedBoundingBox<T>::ToAxisAligned() const noexcept
 {
 	const Matrix3x3<T> & halfAxes = this->mHalfAxes;
 
-    Vector3<T> halfAxes1 = Vector3<T>(halfAxes[0][0], halfAxes[0][1], halfAxes[0][2]);
-    Vector3<T> halfAxes2 = Vector3<T>(halfAxes[1][0], halfAxes[1][1], halfAxes[1][2]);
-    Vector3<T> halfAxes3 = Vector3<T>(halfAxes[2][0], halfAxes[2][1], halfAxes[2][2]);
+    Vector3<T> halfAxes1 = Vector3<T>(halfAxes[0][0], halfAxes[1][0], halfAxes[2][0]);
+    Vector3<T> halfAxes2 = Vector3<T>(halfAxes[0][1], halfAxes[1][1], halfAxes[2][1]);
+    Vector3<T> halfAxes3 = Vector3<T>(halfAxes[0][2], halfAxes[1][2], halfAxes[2][2]);
 
     Vector3<T> extent = halfAxes1.Abs() + halfAxes2.Abs() + halfAxes3.Abs();
 	const Vector3<T>& center = this->mCenter;

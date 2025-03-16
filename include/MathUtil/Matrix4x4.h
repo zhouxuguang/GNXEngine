@@ -50,6 +50,20 @@ public:
 		//return Vector4<T>(pValue[0], pValue[1], pValue[2], pValue[3]);
         return mVecArray[nIndex];
     }
+
+	inline const Vector4<T>& col(size_t nIndex) const
+	{
+        size_t startIndex = nIndex;
+		return Vector4<T>(m_adfValues[startIndex + 0], m_adfValues[startIndex + 4],
+            m_adfValues[startIndex + 8], m_adfValues[startIndex + 12]);
+	}
+
+	inline Vector4<T>& col(size_t nIndex)
+	{
+		size_t startIndex = nIndex;
+		return Vector4<T>(m_adfValues[startIndex + 0], m_adfValues[startIndex + 4],
+			m_adfValues[startIndex + 8], m_adfValues[startIndex + 12]);
+	}
     
     //操作符重载
     Vector3<T> operator * ( const Vector3<T> &v ) const;

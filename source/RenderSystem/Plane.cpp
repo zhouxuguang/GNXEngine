@@ -77,9 +77,8 @@ void Plane<T>::initPlane(const Vector3<T>& normal, T dist)
 template<typename T>
 void Plane<T>::initPlane(const Vector3<T>& normal, const Vector3<T>& point)
 {
-	mNormal = normal;
-	mNormal.Normalize();
-	mDist = mNormal.DotProduct(point);
+	//-glm::dot(normal, point)  这里容易出错, 参考cesium native的平面类
+	initPlane(normal, -normal.DotProduct(point));
 }
 
 template<typename T>
