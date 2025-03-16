@@ -9,36 +9,45 @@
 
 NS_RENDERSYSTEM_BEGIN
 
-Ray::Ray(const Vector3f& origin, const Vector3f& direction)
+template<typename T>
+Ray<T>::Ray(const Vector3<T>& origin, const Vector3<T>& direction)
 {
     mOrigin = origin;
     mDirection = direction;
 }
 
-Ray::~Ray()
+template<typename T>
+Ray<T>::~Ray()
 {
 }
 
-Vector3f Ray::GetOrigin() const
+template<typename T>
+Vector3<T> Ray<T>::GetOrigin() const
 {
     return mOrigin;
 }
 
-Vector3f Ray::GetDirection() const
+template<typename T>
+Vector3<T> Ray<T>::GetDirection() const
 {
     return mDirection;
 }
 
-Vector3f Ray::PointFromDistance(double distance) const
+template<typename T>
+Vector3<T> Ray<T>::PointFromDistance(T distance) const
 {
     return this->mOrigin + this->mDirection * distance;
 }
 
-void Ray::Transform(const Matrix4x4f& matrix)
+template<typename T>
+void Ray<T>::Transform(const Matrix4x4<T>& matrix)
 {
-//    matrix.transformPoint(&_origin);
+	//    matrix.transformPoint(&_origin);
 //    matrix.transformVector(&_direction);
 //    _direction.normalize();
 }
+
+template class Ray<float>;
+template class Ray<double>;
 
 NS_RENDERSYSTEM_END

@@ -190,9 +190,6 @@ T Distance(const Vector3<T> &a, const Vector3<T> &b);
 template <typename T>
 T DistanceSquared(const Vector3<T> &a, const Vector3<T> &b);
 
-//template <typename T>
-//extern const Vector3<T> kZeroVector;
-
 typedef Vector3<float> Vector3f;
 typedef Vector3<double> Vector3d;
 
