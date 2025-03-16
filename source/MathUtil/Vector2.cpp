@@ -27,13 +27,6 @@ Vector2<T>::Vector2(const T afCoordinate[2]) : x( afCoordinate[0] ), y( afCoordi
 
 }
 
-//template <typename T>
-//Vector2<T>::Vector2(const int afCoordinate[2])
-//{
-//	x = (Real)afCoordinate[0];
-//	y = (Real)afCoordinate[1];
-//}
-
 template <typename T>
 Vector2<T>::Vector2(T* const r) : x( r[0] ), y( r[1] )
 {
@@ -86,10 +79,10 @@ T Vector2<T>::DotProduct(const Vector2& vec) const
 template <typename T>
 T Vector2<T>::Normalise()
 {
-	Real fLength = sqrt( x * x + y * y);
-	if ( fLength > Real(0.0f) )
+	T fLength = sqrt( x * x + y * y);
+	if ( fLength > T(0))
 	{
-		Real fInvLength = 1.0f / fLength;
+		T fInvLength = 1.0f / fLength;
 		x *= fInvLength;
 		y *= fInvLength;
 	}

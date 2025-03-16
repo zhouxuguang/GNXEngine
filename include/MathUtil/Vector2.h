@@ -269,7 +269,7 @@ public:
 };
 
 typedef Vector2<float> Vector2f;
-typedef Vector2<float> Vector2d;
+typedef Vector2<double> Vector2d;
 typedef Vector2<int> Vector2i;
 
 NS_MATHUTIL_END
