@@ -51,6 +51,15 @@ inline const T Clamp (const T& value, const T& low, const T& high)
 	return std::min (std::max(value,low), high);
 }
 
+template <class T>
+inline const T Sign(const T& value)
+{
+	if (value > 0)
+	{
+		return 1.0;
+	}
+	return -1.0;
+}
 
 float GetClamp(float x,float fMin,float fMax);
 

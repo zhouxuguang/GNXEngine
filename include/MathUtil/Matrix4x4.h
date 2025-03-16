@@ -70,16 +70,6 @@ public:
     //是否单位矩阵
     bool IsIdentity() const;
 
-    /*T *GetValues()
-    {
-        return m_adfValues;
-    }
-
-    const T* GetValues() const
-    {
-        return m_adfValues;
-    }*/
-
     void SetValues(T* pfValues)
     {
         memcpy(mVecArray, pfValues, sizeof(T)*16);

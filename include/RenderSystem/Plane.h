@@ -95,7 +95,15 @@ public:
 	*/
     void initPlane(const Vector4<T>& coff);
 
-protected:
+    /**
+    * 获得点到平面的最近的带符号距离
+    *
+    * @param point The point.
+    * @returns 点到平面的最近的带符号距离
+    */
+    T getPointDistance(const Vector3<T>& point) const;
+
+private:
     Vector3<T> mNormal;         // the normal line of the plane
     T mDist;             // original displacement of the normal
 };

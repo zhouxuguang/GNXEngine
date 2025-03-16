@@ -144,13 +144,12 @@ public:
     }
 
     /**
-     * @brief Converts this oriented bounding box to an axis-aligned bounding box.
+     * @brief 将OBB转换为AABB
      */
     AxisAlignedBox<T> ToAxisAligned() const noexcept;
 
     /**
-     * @brief Creates an oriented bounding box from the given axis-aligned
-     * bounding box.
+     * @brief 从AABB创建OBB
      */
     static OrientedBoundingBox FromAxisAligned(const AxisAlignedBox<T>& axisAligned) noexcept;
 

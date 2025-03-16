@@ -90,6 +90,12 @@ void Plane<T>::initPlane(const Vector4<T>& coff)
 	mDist = coff.w;
 }
 
+template<typename T>
+T Plane<T>::getPointDistance(const Vector3<T>& point) const
+{
+	return this->mNormal.DotProduct(point) + this->mDist;
+}
+
 template class Plane<float>;
 template class Plane<double>;
 

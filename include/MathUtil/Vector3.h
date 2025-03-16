@@ -54,12 +54,12 @@ public:
 
 	bool operator ==(const Vector3 &a) const 
 	{
-		return x==a.x && y==a.y && z==a.z;
+		return fabs(x - a.x) < Epsilon14 && fabs(y - a.y) < Epsilon14 && fabs(z - a.z) < Epsilon14;
 	}
 
 	bool operator !=(const Vector3 &a) const 
 	{
-		return x!=a.x || y!=a.y || z!=a.z;
+		return !(*this == a);
 	}
 
 
