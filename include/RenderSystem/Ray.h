@@ -49,6 +49,8 @@ public:
      */
     void Transform(const Matrix4x4<T>& matrix);
 
+    Ray<T> operator-() const;
+
     Vector3<T> mOrigin;        // 射线起点
     Vector3<T> mDirection;     // 射线方向
 };

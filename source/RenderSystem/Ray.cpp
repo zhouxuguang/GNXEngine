@@ -47,6 +47,12 @@ void Ray<T>::Transform(const Matrix4x4<T>& matrix)
 //    _direction.normalize();
 }
 
+template<typename T>
+Ray<T> Ray<T>::operator-() const
+{
+    return Ray(this->mOrigin, -mDirection);
+}
+
 template class Ray<float>;
 template class Ray<double>;
 
