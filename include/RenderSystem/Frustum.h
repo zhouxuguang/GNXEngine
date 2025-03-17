@@ -25,27 +25,27 @@ public:
     ~Frustum();
     
     /**
-     * init frustum from camera.
+     * 从矩阵创建视锥体
      */
     bool initFrustum(const Matrix4x4<T>& comboMatrix);
 
     /**
-     * is aabb out of frustum.
+     * 判断AABB和视锥体的关系
      */
     bool isOutOfFrustum(const AxisAlignedBox<T>& aabb) const;
 
     /**
-     * is obb out of frustum
+     * 判断OBB和视锥体的关系
      */
     bool isOutOfFrustum(const OrientedBoundingBox<T>& obb) const;
     
 private:
     /**
-     * create clip plane
+     * 创建裁剪平面
      */
     void createPlane(const Matrix4x4<T>& comboMatrix);
 
-    Plane<T> mPlane[6];             // clip plane, left, right, top, bottom, near, far
+    Plane<T> mPlane[6];             // 裁剪平面, left, right, top, bottom, near, far
     bool mInitialized = false;
 };
 

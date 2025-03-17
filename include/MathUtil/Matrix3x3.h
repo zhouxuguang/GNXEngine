@@ -55,6 +55,20 @@ public:
 		return m_Values[nIndex];
 	}
 
+	Vector3<T> col(size_t nIndex)
+	{
+		size_t startIndex = nIndex;
+		return Vector3<T>(m_adfValues[startIndex + 0], m_adfValues[startIndex + 3],
+			m_adfValues[startIndex + 6]);
+	}
+
+	const Vector3<T> col(size_t nIndex) const
+	{
+		size_t startIndex = nIndex;
+		return Vector3<T>(m_adfValues[startIndex + 0], m_adfValues[startIndex + 3],
+			m_adfValues[startIndex + 6]);
+	}
+
 	//重载两个矩阵之间的操作符
 	Matrix3x3 operator +(const Matrix3x3& rhs) const;
 

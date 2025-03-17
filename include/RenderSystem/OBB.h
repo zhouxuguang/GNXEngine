@@ -135,12 +135,12 @@ public:
         : mCenter(center),
         mHalfAxes(halfAxes),
         // TODO: what should we do if halfAxes is singular?
-        mInverseHalfAxes(halfAxes.Inverse())
+        mInverseHalfAxes(halfAxes.Inverse()),
+        mLengths(
+            2.0 * mHalfAxes.col(0).Length(),
+            2.0 * mHalfAxes.col(1).Length(),
+            2.0 * mHalfAxes.col(2).Length())
     {
-			/*_lengths(
-				2.0 * glm::length(_halfAxes[0]),
-				2.0 * glm::length(_halfAxes[1]),
-				2.0 * glm::length(_halfAxes[2]))*/
     }
 
     /**
@@ -153,7 +153,7 @@ public:
      */
     static OrientedBoundingBox FromAxisAligned(const AxisAlignedBox<T>& axisAligned) noexcept;
 
-private:
+public:
     Vector3<T> mCenter;                 // 中心点坐标
     Matrix3x3<T> mHalfAxes;             // 每个轴向
     Matrix3x3<T> mInverseHalfAxes;      // 朝向矩阵的逆矩阵

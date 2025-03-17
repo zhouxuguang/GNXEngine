@@ -56,21 +56,21 @@ bool Frustum<T>::isOutOfFrustum(const OrientedBoundingBox<T>& obb) const
 	if (mInitialized)
 	{
 		Vector3<T> point;
-		/*Vector3<T> obbExtentX = obb.m_xAxis * obb.m_extents.x;
-		Vector3<T> obbExtentY = obb.m_yAxis * obb.m_extents.y;
-		Vector3<T> obbExtentZ = obb.m_zAxis * obb.m_extents.z;
+		Vector3<T> obbExtentX = obb.mHalfAxes.col(0) * 2.0;
+		Vector3<T> obbExtentY = obb.mHalfAxes.col(1) * 2.0;
+		Vector3<T> obbExtentZ = obb.mHalfAxes.col(2) * 2.0;
 
 		for (int i = 0; i < 6; i++)
 		{
 			const Vector3<T>& normal = mPlane[i].getNormal();
 			point = obb.mCenter;
-			point = normal.DotProduct(obb.m_xAxis) > 0.0 ? point - obbExtentX : point + obbExtentX;
-			point = normal.DotProduct(obb.m_yAxis) > 0.0 ? point - obbExtentY : point + obbExtentY;
-			point = normal.DotProduct(obb.m_zAxis) > 0.0 ? point - obbExtentZ : point + obbExtentZ;
+			point = normal.DotProduct(obbExtentX) > 0.0 ? point - obbExtentX : point + obbExtentX;
+			point = normal.DotProduct(obbExtentY) > 0.0 ? point - obbExtentY : point + obbExtentY;
+			point = normal.DotProduct(obbExtentZ) > 0.0 ? point - obbExtentZ : point + obbExtentZ;
 
 			if (mPlane[i].getSide(point) == PointSide::FRONT_PLANE)
 				return true;
-		}*/
+		}
 	}
 	return  false;
 }
