@@ -150,9 +150,9 @@ void Timer::UnInit()
 
 struct FuncOption
 {
-	void* pArgs;		//²ÎÊý
-	uint8_t eArgs;		//²ÎÊý
-	TimerProc pFun;		//»Øµ÷º¯Êý
+	void* pArgs;		//ï¿½ï¿½ï¿½ï¿½
+	uint8_t eArgs;		//ï¿½ï¿½ï¿½ï¿½
+	TimerProc pFun;		//ï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½
 };
 
 struct TimerOption
@@ -191,7 +191,7 @@ Timer* Timer::CreateTimer(int64_t nStartLater,int64_t nInterval,TimerProc pFun,v
 {
 	timer_t timerid;
 	struct sigevent evp;
-	memset(&evp, 0, sizeof(struct sigevent));       //ÇåÁã³õÊ¼»¯
+	memset(&evp, 0, sizeof(struct sigevent));       //ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½
 
 	FuncOption* pOption = new FuncOption;
 	pOption->eArgs = 0;
@@ -200,8 +200,8 @@ Timer* Timer::CreateTimer(int64_t nStartLater,int64_t nInterval,TimerProc pFun,v
 
 	//evp.sigev_value.sival_int = 111;
 	evp.sigev_value.sival_ptr = pOption;
-	evp.sigev_notify = SIGEV_THREAD;            //Ïß³ÌÍ¨ÖªµÄ·½Ê½£¬ÅÉ×¤ÐÂÏß³Ì
-	evp.sigev_notify_function = TimerFunction;       	//Ïß³Ìº¯ÊýµØÖ·
+	evp.sigev_notify = SIGEV_THREAD;            //ï¿½ß³ï¿½Í¨Öªï¿½Ä·ï¿½Ê½ï¿½ï¿½ï¿½ï¿½×¤ï¿½ï¿½ï¿½ß³ï¿½
+	evp.sigev_notify_function = TimerFunction;       	//ï¿½ß³Ìºï¿½ï¿½ï¿½ï¿½ï¿½Ö·
 
 	if (timer_create(CLOCK_REALTIME, &evp, &timerid) == -1)
 	{
@@ -210,7 +210,7 @@ Timer* Timer::CreateTimer(int64_t nStartLater,int64_t nInterval,TimerProc pFun,v
 	}
 
 	struct itimerspec it;
-	//ÉèÖÃ¼ä¸ôÏìÓ¦Ê±¼ä
+	//ï¿½ï¿½ï¿½Ã¼ï¿½ï¿½ï¿½ï¿½Ó¦Ê±ï¿½ï¿½
 	int nSecond = nInterval/1000;
 	int nMilliSecond = nInterval%1000;
 	it.it_interval.tv_sec = nSecond;
@@ -219,7 +219,7 @@ Timer* Timer::CreateTimer(int64_t nStartLater,int64_t nInterval,TimerProc pFun,v
 #else
     it.it_interval.tv_nsec = nMilliSecond;
 #endif
-	//ÉèÖÃµÚÒ»´ÎÏìÓ¦Ê±¼ä
+	//ï¿½ï¿½ï¿½Ãµï¿½Ò»ï¿½ï¿½ï¿½ï¿½Ó¦Ê±ï¿½ï¿½
 	nSecond = nStartLater/1000;
 	nMilliSecond = nStartLater%1000;
 	it.it_value.tv_sec = nSecond;
@@ -271,10 +271,10 @@ Timer* Timer::CreateTimer(int64_t nStartLater,int64_t nInterval,TimerProc pFun,v
 	dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
 	if (timer)
 	{
-        //gcdµÄÊ±¼äµ¥Î»ÊÇÄÉÃë£¬×¢ÒâÊ±¼ä×ª»»
+        //gcdï¿½ï¿½Ê±ï¿½äµ¥Î»ï¿½ï¿½ï¿½ï¿½ï¿½ë£¬×¢ï¿½ï¿½Ê±ï¿½ï¿½×ªï¿½ï¿½
 		dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, nInterval * NSEC_PER_MSEC), nInterval * NSEC_PER_MSEC, (1ull * NSEC_PER_MSEC) / 10);
         
-        //ÉèÖÃÖ´ÐÐµÄÊÂ¼þ
+        //ï¿½ï¿½ï¿½ï¿½Ö´ï¿½Ðµï¿½ï¿½Â¼ï¿½
         dispatch_source_set_event_handler(timer, ^{pFun(pParameter,false);});
 		dispatch_resume(timer);
 

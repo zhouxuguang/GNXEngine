@@ -1,7 +1,7 @@
 #ifndef BASELIB_GUIDGENERATOR_INCLUDE_H_45FG6HJ
 #define BASELIB_GUIDGENERATOR_INCLUDE_H_45FG6HJ
 
-//GUID生成器，Windows利用现有的，其他平台自己实现
+//GUID璺ㄥ钩鍙扮殑灏佽
 
 #include "PreCompile.h" 
 
@@ -13,12 +13,13 @@ struct GUID;
 #endif
 
 
-//创建GUID
+//鍒涘缓GUID
 BASELIB_API bool CreateGUID(GUID *guid);
 
-//GUID格式化为字符串
+//GUID杞瓧绗︿覆
 BASELIB_API bool GUIDToString(const GUID *guid, std::string& buf);
 
+//guid鏄惁鐩哥瓑
 BASELIB_API bool IsGUIDEqual(const GUID &guid1,const GUID& guid2);
 
 NS_BASELIB_END

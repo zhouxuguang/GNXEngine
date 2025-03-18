@@ -18,16 +18,12 @@ public:
 
 	~MutexLock(void);
 
-	//加锁
 	void Lock() const;
 
-	//尝试加锁
 	bool TryLock() const;
     
-    //尝试加锁，msecs时间
     bool TryLock(unsigned long msecs);
 
-	//解锁
 	void UnLock() const;
 
 private:
@@ -35,7 +31,7 @@ private:
 };
 
 
-//锁类，使用方法是AutoLock( &Mutex );
+//锟斤拷锟洁，使锟矫凤拷锟斤拷锟斤拷AutoLock( &Mutex );
 class BASELIB_API AutoLock
 {
 public:

@@ -25,7 +25,7 @@ bool RegexExpression::RegexParser(const std::string& srcStr, const std::string& 
     vecMatchPos.clear();
 #ifndef WIN32
 	regex_t reg;
-	if (regcomp(&reg,pattern.c_str(),REG_EXTENDED|REG_NEWLINE) != 0)		//±àÒëÊ§°Ü
+	if (regcomp(&reg,pattern.c_str(),REG_EXTENDED|REG_NEWLINE) != 0)		//ï¿½ï¿½ï¿½ï¿½Ê§ï¿½ï¿½
 	{
 		regfree(&reg);
 		return false;
@@ -51,7 +51,7 @@ bool RegexExpression::RegexParser(const std::string& srcStr, const std::string& 
     
 #else
 	std::regex re(pattern);
-	std::smatch sm;   // ´æ·Åstring½á¹ûµÄÈÝÆ÷
+	std::smatch sm;   // ï¿½ï¿½ï¿½stringï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	std::regex_match(srcStr, sm, re);
 	if (sm.empty())
 	{
@@ -64,7 +64,7 @@ bool RegexExpression::RegexParser(const std::string& srcStr, const std::string& 
 	}
 	return true;
 
-	// regex¶à´Î
+	// regexï¿½ï¿½ï¿½
 	/*str = "!!!123!!!12333!!!890!!!";
 	re = std::tr1::regex("[0-9]+");
 	while(std::tr1::regex_search(str, sm, re)) {

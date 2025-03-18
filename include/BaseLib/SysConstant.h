@@ -35,25 +35,24 @@
 
 #endif
 
-//�ֽ���
+//字节序定义
 enum ByteOrder
 {
-	BL_LITTLE_ENDIAN = 0,		//Сβ��
-	BL_BIG_ENDIAN    = 1		//��ΰ��
+	BL_LITTLE_ENDIAN = 0,
+	BL_BIG_ENDIAN    = 1
 };
 
 
-//���廡�ȺͽǶ�֮���໥ת����ϵ��
 #ifdef DEGTORAD
 	#undef DEGTORAD
 #else
-	#define DEGTORAD		0.0174532925199432958			//�Ƕ�תΪ���ȵ�ϵ��
+	#define DEGTORAD		0.0174532925199432958			//度转弧度的系数
 #endif
 
 #ifdef RADTODEG
 	#undef RADTODEG
 #else
-	#define RADTODEG		57.29577951308232			//����ת��Ϊ�Ƕȵ�ϵ��
+	#define RADTODEG		57.29577951308232			//弧度转度的系数
 #endif
 
 #ifdef FLOAT_ZERO
@@ -148,13 +147,10 @@ typedef unsigned int thread_id_t;
 #endif
 
 
-
-//��ʱ����,����Ҫ�ع�
 #if defined _WIN32 || defined _WIN64
     #include <process.h>
     #include <Windows.h>
 
-    //Windows ����С˯�߾���
     #define MIN_SLEEP 10
 
 #elif defined __linux__ || (defined(__MACH__) && defined(__APPLE__) )
