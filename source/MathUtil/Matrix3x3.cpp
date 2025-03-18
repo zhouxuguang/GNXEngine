@@ -299,7 +299,7 @@ bool Matrix3x3<T>::Inverse(Matrix3x3& rkInverse, T fTolerance /*= 1e-06*/) const
 template <typename T>
 Matrix3x3<T> Matrix3x3<T>::Inverse(T fTolerance /*= 1e-06*/) const
 {
-	//ÓÐ±ÀÀ££¿
+	//ï¿½Ð±ï¿½ï¿½ï¿½ï¿½ï¿½
 	Matrix3x3 kInverse;
 	kInverse.MakeIdentity();
 	Inverse(kInverse,fTolerance);

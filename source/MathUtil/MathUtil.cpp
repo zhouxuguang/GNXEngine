@@ -56,7 +56,7 @@ inline void Rand_Seed(const unsigned int seed)
 	srand(seed);
 }
 
-//初始化正弦和余弦表
+//锟斤拷始锟斤拷锟斤拷锟揭猴拷锟斤拷锟揭憋拷
 double SinTable[361] = {0};
 double CosTable[361] = {0};
 bool g_bTableInit = false;
@@ -156,7 +156,7 @@ Real MathUtil::FastSin(Real fValue)
 
 	fValue = fmod(fValue,360);
 
-	//负数转换为正数
+	//锟斤拷锟斤拷转锟斤拷为锟斤拷锟斤拷
 	if (fValue < 0)
 	{
 		fValue += 360.0;
@@ -165,7 +165,7 @@ Real MathUtil::FastSin(Real fValue)
 	int nValueInt = (int)fValue;
 	double thetaFrac = fValue - nValueInt;
 
-	//线性插值
+	//锟斤拷锟皆诧拷值
 	return SinTable[nValueInt] + thetaFrac*(SinTable[nValueInt+1] - SinTable[nValueInt]);
 	
 }
@@ -179,7 +179,7 @@ Real MathUtil::FastCos(Real fValue)
 
 	fValue = fmod(fValue,360);
 
-	//负数转换为正数
+	//锟斤拷锟斤拷转锟斤拷为锟斤拷锟斤拷
 	if (fValue < 0)
 	{
 		fValue += 360.0;
@@ -188,7 +188,7 @@ Real MathUtil::FastCos(Real fValue)
 	int nValueInt = (int)fValue;
 	double thetaFrac = fValue - nValueInt;
 
-	//线性插值
+	//锟斤拷锟皆诧拷值
 	return CosTable[nValueInt] + thetaFrac*(CosTable[nValueInt+1] - CosTable[nValueInt]);
 }
 
