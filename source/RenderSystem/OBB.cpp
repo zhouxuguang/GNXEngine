@@ -456,17 +456,12 @@ AxisAlignedBox<T> OrientedBoundingBox<T>::ToAxisAligned() const noexcept
 template<typename T>
 OrientedBoundingBox<T> OrientedBoundingBox<T>::FromAxisAligned(const AxisAlignedBox<T>& axisAligned) noexcept
 {
-	/*return OrientedBoundingBox(
+	return OrientedBoundingBox(
 		axisAligned.center,
-		glm::dmat3(
-			glm::dvec3(axisAligned.lengthX * 0.5, 0.0, 0.0),
-			glm::dvec3(0.0, axisAligned.lengthY * 0.5, 0.0),
-			glm::dvec3(0.0, 0.0, axisAligned.lengthZ * 0.5)));*/
-
-    // 临时的实现，编译通过
-    Vector3<T> center;
-    Matrix3x3<T> halfAxes;
-	return OrientedBoundingBox(center, halfAxes);
+		Matrix3x3<T>(
+            axisAligned.length[0] * 0.5, 0.0, 0.0,
+            0.0, axisAligned.length[1] * 0.5, 0.0,
+            0.0, 0.0, axisAligned.length[2] * 0.5));
 }
 
 template class OrientedBoundingBox<float>;
