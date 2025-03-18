@@ -101,23 +101,21 @@ public:
 };
 
 /**
- * @brief An Axis-Aligned Bounding Box (AABB), where the axes of the box are
- * aligned with the axes of the coordinate system.
+ * @brief 轴对齐包围盒
  */
 template <typename T>
 class AxisAlignedBox 
 {
 public:
     /**
-     * @brief Creates an empty AABB with a length, width, and height of zero,
-     * with the center located at (0, 0, 0).
+     * @brief 创建一个中心点位于原点的空的AABB
      */
     constexpr AxisAlignedBox() noexcept
     {
     }
 
     /**
-     * @brief Creates a new AABB using the range of coordinates the box covers.
+     * @brief 通过最大值和最小值创建包围盒
      *
      */
     constexpr AxisAlignedBox(const Vector3<T> minimum_, const Vector3<T> maximum_) noexcept
@@ -138,8 +136,7 @@ public:
     Vector3<T> center;
 
     /**
-     * @brief Creates a tight-fitting, axis-aligned bounding box that contains all
-     * of the input positions.
+     * @brief 从一系列点创建包围盒
      *
      * @param positions The positions.
      * @returns An axis-aligned bounding box derived from the input positions.
