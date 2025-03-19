@@ -103,4 +103,7 @@ public:
 	static Real FastCos(Real fValue);//fValue�����ĵ�λ�Ƕ�
 };
 
+uint32_t convertRGBFloatToRGB9E5(float red, float green, float blue);
+void convertRGB9E5toRGBFloat(uint32_t input, float* red, float* green, float* blue);
+
 #endif 
