@@ -15,9 +15,9 @@
 
 NS_BASELIB_BEGIN
 
-BASELIB_API void* Aligned_Malloc(size_t size, size_t align);
+BASELIB_API void* AlignedMalloc(size_t size, size_t alignment);
 
-BASELIB_API void Aligned_Free(void *ptr);
+BASELIB_API void AlignedFree(void *ptr);
 
 NS_BASELIB_END
 
