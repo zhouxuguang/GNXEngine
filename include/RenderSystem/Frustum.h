@@ -9,13 +9,14 @@
 #define GNX_ENGINE_FRUSTUM_INCLUDE_H
 
 #include "Plane.h"
+#include "mathutil/Matrix4x4.h"
+#include "OBB.h"
+#include "AABB.h"
 
 NS_RENDERSYSTEM_BEGIN
 
-class Camera;
-class AABB;
-class OBB;
-
+// 相机视锥体
+template <typename T>
 class Frustum
 {
 public:
@@ -24,28 +25,32 @@ public:
     ~Frustum();
     
     /**
-     * init frustum from camera.
+     * 从矩阵创建视锥体
      */
-    bool initFrustum(const Camera& camera);
+    bool initFrustum(const Matrix4x4<T>& comboMatrix);
 
     /**
-     * is aabb out of frustum.
+     * 判断AABB和视锥体的关系
      */
-    bool isOutOfFrustum(const AABB& aabb) const;
+    bool isOutOfFrustum(const AxisAlignedBox<T>& aabb) const;
+
     /**
-     * is obb out of frustum
+     * 判断OBB和视锥体的关系
      */
-    bool isOutOfFrustum(const OBB& obb) const;
+    bool isOutOfFrustum(const OrientedBoundingBox<T>& obb) const;
     
 private:
     /**
-     * create clip plane
+     * 创建裁剪平面
      */
-    void createPlane(const Camera& camera);
+    void createPlane(const Matrix4x4<T>& comboMatrix);
 
-    Plane mPlane[6];             // clip plane, left, right, top, bottom, near, far
+    Plane<T> mPlane[6];             // 裁剪平面, left, right, top, bottom, near, far
     bool mInitialized = false;
 };
+
+typedef Frustum<float> Frustumf;
+typedef Frustum<double> Frustumd;
 
 NS_RENDERSYSTEM_END
 

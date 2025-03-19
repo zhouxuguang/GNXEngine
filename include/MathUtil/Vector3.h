@@ -54,12 +54,12 @@ public:
 
 	bool operator ==(const Vector3 &a) const 
 	{
-		return x==a.x && y==a.y && z==a.z;
+		return fabs(x - a.x) < Epsilon14 && fabs(y - a.y) < Epsilon14 && fabs(z - a.z) < Epsilon14;
 	}
 
 	bool operator !=(const Vector3 &a) const 
 	{
-		return x!=a.x || y!=a.y || z!=a.z;
+		return !(*this == a);
 	}
 
 
@@ -136,6 +136,8 @@ public:
 
     const Vector3& Normalize() const;
 
+	Vector3 Abs() const;
+
 	//求向量的模
 	const T Length() const;
 
@@ -187,9 +189,6 @@ T Distance(const Vector3<T> &a, const Vector3<T> &b);
 
 template <typename T>
 T DistanceSquared(const Vector3<T> &a, const Vector3<T> &b);
-
-//template <typename T>
-//extern const Vector3<T> kZeroVector;
 
 typedef Vector3<float> Vector3f;
 typedef Vector3<double> Vector3d;

@@ -67,7 +67,7 @@ public:
     Vector3f GetTarget() const;
     
     // 根据屏幕坐标产生射线
-    Ray GenerateRay(float screenX, float screenY) const;
+    Rayf GenerateRay(float screenX, float screenY) const;
     
 protected:
     bool mViewDirty = true;

@@ -56,7 +56,7 @@ inline void Rand_Seed(const unsigned int seed)
 	srand(seed);
 }
 
-//³õÊ¼»¯ÕýÏÒºÍÓàÏÒ±í
+//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½Òºï¿½ï¿½ï¿½ï¿½Ò±ï¿½
 double SinTable[361] = {0};
 double CosTable[361] = {0};
 bool g_bTableInit = false;
@@ -156,7 +156,7 @@ Real MathUtil::FastSin(Real fValue)
 
 	fValue = fmod(fValue,360);
 
-	//¸ºÊý×ª»»ÎªÕýÊý
+	//ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½
 	if (fValue < 0)
 	{
 		fValue += 360.0;
@@ -165,7 +165,7 @@ Real MathUtil::FastSin(Real fValue)
 	int nValueInt = (int)fValue;
 	double thetaFrac = fValue - nValueInt;
 
-	//ÏßÐÔ²åÖµ
+	//ï¿½ï¿½ï¿½Ô²ï¿½Öµ
 	return SinTable[nValueInt] + thetaFrac*(SinTable[nValueInt+1] - SinTable[nValueInt]);
 	
 }
@@ -179,7 +179,7 @@ Real MathUtil::FastCos(Real fValue)
 
 	fValue = fmod(fValue,360);
 
-	//¸ºÊý×ª»»ÎªÕýÊý
+	//ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½
 	if (fValue < 0)
 	{
 		fValue += 360.0;
@@ -188,7 +188,7 @@ Real MathUtil::FastCos(Real fValue)
 	int nValueInt = (int)fValue;
 	double thetaFrac = fValue - nValueInt;
 
-	//ÏßÐÔ²åÖµ
+	//ï¿½ï¿½ï¿½Ô²ï¿½Öµ
 	return CosTable[nValueInt] + thetaFrac*(CosTable[nValueInt+1] - CosTable[nValueInt]);
 }
 
@@ -205,4 +205,79 @@ float GetClamp(float x,float fMin,float fMax)
 	}
 
 	return x;
+}
+
+namespace
+{
+
+struct RGB9E5Data
+{
+	unsigned int R : 9;
+	unsigned int G : 9;
+	unsigned int B : 9;
+	unsigned int E : 5;
+};
+
+// B is the exponent bias (15)
+constexpr int g_sharedexp_bias = 15;
+
+// N is the number of mantissa bits per component (9)
+constexpr int g_sharedexp_mantissabits = 9;
+
+// number of mantissa bits per component pre-biased
+constexpr int g_sharedexp_biased_mantissabits = g_sharedexp_bias + g_sharedexp_mantissabits;
+
+// Emax is the maximum allowed biased exponent value (31)
+constexpr int g_sharedexp_maxexponent = 31;
+
+constexpr float g_sharedexp_max =
+((static_cast<float>(1 << g_sharedexp_mantissabits) - 1) /
+	static_cast<float>(1 << g_sharedexp_mantissabits)) *
+	static_cast<float>(1 << (g_sharedexp_maxexponent - g_sharedexp_bias));
+
+template <typename destType, typename sourceType>
+destType bitCast(const sourceType& source)
+{
+	size_t copySize = std::min(sizeof(destType), sizeof(sourceType));
+	destType output;
+	memcpy(&output, &source, copySize);
+	return output;
+}
+
+}  // anonymous namespace
+
+uint32_t convertRGBFloatToRGB9E5(float red, float green, float blue)
+{
+	const float red_c = std::max<float>(0, std::min(g_sharedexp_max, red));
+	const float green_c = std::max<float>(0, std::min(g_sharedexp_max, green));
+	const float blue_c = std::max<float>(0, std::min(g_sharedexp_max, blue));
+
+	const float max_c = std::max<float>({ red_c, green_c, blue_c });
+	const float exp_p =
+		std::max<float>(-g_sharedexp_bias - 1, floor(log(max_c))) + 1 + g_sharedexp_bias;
+	const int max_s = static_cast<int>(
+		floor((max_c / (pow(2.0f, exp_p - g_sharedexp_biased_mantissabits))) + 0.5f));
+	const int exp_s =
+		static_cast<int>((max_s < pow(2.0f, g_sharedexp_mantissabits)) ? exp_p : exp_p + 1);
+	const float pow2_exp = pow(2.0f, static_cast<float>(exp_s) - g_sharedexp_biased_mantissabits);
+
+	RGB9E5Data output;
+	output.R = static_cast<unsigned int>(floor((red_c / pow2_exp) + 0.5f));
+	output.G = static_cast<unsigned int>(floor((green_c / pow2_exp) + 0.5f));
+	output.B = static_cast<unsigned int>(floor((blue_c / pow2_exp) + 0.5f));
+	output.E = exp_s;
+
+	return bitCast<unsigned int>(output);
+}
+
+void convertRGB9E5toRGBFloat(uint32_t input, float* red, float* green, float* blue)
+{
+	const RGB9E5Data* inputData = reinterpret_cast<const RGB9E5Data*>(&input);
+
+	const float pow2_exp =
+		pow(2.0f, static_cast<float>(inputData->E) - g_sharedexp_biased_mantissabits);
+
+	*red = inputData->R * pow2_exp;
+	*green = inputData->G * pow2_exp;
+	*blue = inputData->B * pow2_exp;
 }

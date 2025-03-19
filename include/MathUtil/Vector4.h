@@ -122,6 +122,11 @@ public:
 		return Vector4(-x, -y, -z, -w);
 	}
 
+	inline Vector3<T> xyz() const
+	{
+		return Vector3<T>(x, y, z);
+	}
+
 public:
 	T x, y, z, w;
 };

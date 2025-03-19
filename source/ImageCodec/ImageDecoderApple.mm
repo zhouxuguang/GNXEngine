@@ -152,9 +152,9 @@ static void ParserImageFormat(CGImageRef imageRef, CGColorSpaceRef colorSpace, I
             // 是sRGB颜色空间
             if (CFEqual(srcSpace, dstSpace))
             {
-                CGColorSpaceRelease(dstSpace);
-                pixelFormat = hasAlpha ? FORMAT_SRGB8_ALPHA8 : FORMAT_SRGB8;
-                break;
+//                CGColorSpaceRelease(dstSpace);
+//                pixelFormat = hasAlpha ? FORMAT_SRGB8_ALPHA8 : FORMAT_SRGB8;
+//                break;
             }
             
             pixelFormat = hasAlpha ? FORMAT_RGBA8 : FORMAT_RGB8;

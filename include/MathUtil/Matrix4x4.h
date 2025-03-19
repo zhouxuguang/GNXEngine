@@ -37,15 +37,33 @@ public:
 
     Matrix4x4 operator /(T fValue);
 
-    inline const T* operator [](size_t nIndex) const
+    inline const Vector4<T>& operator [](size_t nIndex) const
     {
-        return m_pValue[nIndex];
+        //const T* pValue = m_pValue[nIndex];
+        //return Vector4<T>(pValue[0], pValue[1], pValue[2], pValue[3]);
+        return mVecArray[nIndex];
     }
 
-    inline T* operator [](size_t nIndex)
+    inline Vector4<T>& operator [](size_t nIndex)
     {
-        return m_pValue[nIndex];
+		//T* pValue = m_pValue[nIndex];
+		//return Vector4<T>(pValue[0], pValue[1], pValue[2], pValue[3]);
+        return mVecArray[nIndex];
     }
+
+	inline const Vector4<T> col(size_t nIndex) const
+	{
+        size_t startIndex = nIndex;
+		return Vector4<T>(m_adfValues[startIndex + 0], m_adfValues[startIndex + 4],
+            m_adfValues[startIndex + 8], m_adfValues[startIndex + 12]);
+	}
+
+	inline Vector4<T> col(size_t nIndex)
+	{
+		size_t startIndex = nIndex;
+		return Vector4<T>(m_adfValues[startIndex + 0], m_adfValues[startIndex + 4],
+			m_adfValues[startIndex + 8], m_adfValues[startIndex + 12]);
+	}
     
     //操作符重载
     Vector3<T> operator * ( const Vector3<T> &v ) const;
@@ -66,19 +84,9 @@ public:
     //是否单位矩阵
     bool IsIdentity() const;
 
-    T *GetValues()
-    {
-        return m_adfValues;
-    }
-
-    const T* GetValues() const
-    {
-        return m_adfValues;
-    }
-
     void SetValues(T* pfValues)
     {
-        memcpy(m_adfValues, pfValues, sizeof(T)*16);
+        memcpy(mVecArray, pfValues, sizeof(T)*16);
     }
 
     //行列式的值
@@ -167,12 +175,11 @@ public:
                              T upX, T upY, T upZ);
 
 private:
-
     //矩阵元素
     union
     {
         T m_adfValues[16];
-        T m_pValue[4][4];
+        Vector4<T> mVecArray[4];
     };
     
     static const size_t MATRIX4_SIZE;

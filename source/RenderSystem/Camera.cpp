@@ -145,7 +145,7 @@ Vector3f Camera::GetTarget() const
     return mLook;
 }
 
-Ray Camera::GenerateRay(float screenX, float screenY) const
+Rayf Camera::GenerateRay(float screenX, float screenY) const
 {
     // https://antongerdelan.net/opengl/raycasting.html
     // 第一步，生成ndc空间的射线

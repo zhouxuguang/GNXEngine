@@ -44,20 +44,29 @@ inline void sinCos(float *returnSin, float *returnCos, float theta) {
 inline float	fovToZoom(float fov) { return 1.0f / tan(fov * .5f); }
 inline float	zoomToFov(float zoom) { return 2.0f * atan(1.0f / zoom); }
 
-//Clampº¯Êý
+//Clampï¿½ï¿½ï¿½ï¿½
 template <class T>
 inline const T Clamp (const T& value, const T& low, const T& high)
 {
 	return std::min (std::max(value,low), high);
 }
 
+template <class T>
+inline const T Sign(const T& value)
+{
+	if (value > 0)
+	{
+		return 1.0;
+	}
+	return -1.0;
+}
 
 float GetClamp(float x,float fMin,float fMax);
 
-//¿ìËÙÕýÏÒº¯Êý
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òºï¿½ï¿½ï¿½
 inline MATH3D_API double FastSin(double x);
 
-//Éú³ÉÕûÊýËæ»úÊý
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 inline int Rand_Int(void);
 
 inline float Rand_Float(void);
@@ -87,11 +96,14 @@ public:
     
     static bool IsNaN(Real f);
 
-	//¿ìËÙ¼ÆËãº¯Êý
+	//ï¿½ï¿½ï¿½Ù¼ï¿½ï¿½ãº¯ï¿½ï¿½
 	static float FastInvSqrt (float fValue);
 	static double FastInvSqrt (double dValue);
-	static Real FastSin(Real fValue);//fValue²ÎÊýµÄµ¥Î»ÊÇ¶È
-	static Real FastCos(Real fValue);//fValue²ÎÊýµÄµ¥Î»ÊÇ¶È
+	static Real FastSin(Real fValue);//fValueï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½Î»ï¿½Ç¶ï¿½
+	static Real FastCos(Real fValue);//fValueï¿½ï¿½ï¿½ï¿½ï¿½Äµï¿½Î»ï¿½Ç¶ï¿½
 };
+
+uint32_t convertRGBFloatToRGB9E5(float red, float green, float blue);
+void convertRGB9E5toRGBFloat(uint32_t input, float* red, float* green, float* blue);
 
 #endif 

@@ -49,16 +49,22 @@ Vector3<T> Vector3<T>::CrossProduct(const Vector3 &a, const Vector3 &b)
 template <typename T>
 const Vector3<T>& Vector3<T>::Normalize() const
 {
-	Real magSq = x*x + y*y + z*z;
-	if (magSq > 0.0f) 
+	T magSq = x*x + y*y + z*z;
+	if (magSq > 0.0) 
 	{ 
-		float oneOverMag = 1.0f / sqrt(magSq);
+		float oneOverMag = 1.0 / sqrt(magSq);
 		x *= oneOverMag;
 		y *= oneOverMag;
 		z *= oneOverMag;
 	}
     
     return *this;
+}
+
+template <typename T>
+Vector3<T> Vector3<T>::Abs() const
+{
+	return Vector3(fabs(x), fabs(y), fabs(z));
 }
 
 template <typename T>

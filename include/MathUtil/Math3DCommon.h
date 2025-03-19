@@ -62,6 +62,8 @@
 #define RADTODEG	57.29577951308232
 #define DEGTORAD	0.0174532925199432958
 
+#define Epsilon14 1e-14
+
 //释放内存的宏
 #define FREEPTR(x)  if(x != NULL) \
                     {               \

@@ -11,7 +11,7 @@
 
 #include "Math3DCommon.h"
 
-//参考http://graphics.stanford.edu/~seander/bithacks.html
+//参考 http://graphics.stanford.edu/~seander/bithacks.html
 
 NS_MATHUTIL_BEGIN
 

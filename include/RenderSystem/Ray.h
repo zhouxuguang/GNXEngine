@@ -11,85 +11,52 @@
 #include "RSDefine.h"
 #include "MathUtil/Matrix4x4.h"
 #include "MathUtil/Vector3.h"
-#include "AABB.h"
-#include "OBB.h"
-#include "Plane.h"
 
 USING_NS_MATHUTIL
 
 NS_RENDERSYSTEM_BEGIN
 
 /**
- * @brief Ray is a line with one end. usually use it to check intersects with some object,such as Plane, OBB, AABB
- * @js NA
+ * 射线类
  **/
+template <typename T>
 class Ray
 {
 public:
     /**
-     * Constructor.
+     * 构造一个新的射线
      *
-     * @lua new
-     */
-    Ray();
-
-    /**
-     * Constructor.
-     * @lua NA
-     */
-    Ray(const Ray& ray);
-    
-    /**
-     * Constructs a new ray initialized to the specified values.
-     *
-     * @param origin The ray's origin.
+     * @param origin 起点
      * @param direction The ray's direction.
-     * @lua new
      */
-    Ray(const Vector3f& origin, const Vector3f& direction);
+    Ray(const Vector3<T>& origin, const Vector3<T>& direction);
 
-    /**
-     * Destructor.
-     * @lua NA
-     */
     ~Ray();
     
-    Vector3f getOrigin() const;
+    Vector3<T> GetOrigin() const;
     
-    Vector3f getDirection() const;
+    Vector3<T> GetDirection() const;
 
     /**
-     * Check whether this ray intersects with the specified AABB.
+     * 通过给定的参数计算射线上的点
      */
-    bool intersects(const AABB& aabb, float* distance = nullptr) const;
-    
-    /**
-     * Check whether this ray intersects with the specified OBB.
-     */
-    bool intersects(const OBB& obb, float* distance = nullptr) const;
-
-    float dist(const Plane& plane) const;
-    
-    Vector3f intersects(const Plane& plane) const;
-    
-    /**
-     * Sets this ray to the specified values.
-     *
-     * @param origin The ray's origin.
-     * @param direction The ray's direction.
-     */
-    void set(const Vector3f& origin, const Vector3f& direction);
+    Vector3<T> PointFromDistance(T distance) const;
 
     /**
-     * Transforms this ray by the given transformation matrix.
+     * 通过变换矩阵变换射线
      *
      * @param matrix The transformation matrix to transform by.
      */
-    void transform(const Matrix4x4f& matrix);
+    void Transform(const Matrix4x4<T>& matrix);
 
-    Vector3f mOrigin;        // The ray origin position.
-    Vector3f mDirection;     // The ray direction vector.
+    Ray<T> operator-() const;
+
+    Vector3<T> mOrigin;        // 射线起点
+    Vector3<T> mDirection;     // 射线方向
 };
+
+typedef Ray<float> Rayf;
+typedef Ray<double> Rayd;
 
 NS_RENDERSYSTEM_END
 
