@@ -1,11 +1,11 @@
 /**
 * @file              PreCompile.h
-* @brief             Ԥ���봦��
+* @brief             基本的宏定义，头文件包含
 * @details           
-* @author            zxg 
-* @date              2015��5��15��
+* @author            zhouxuguang 
+* @date              2015年5月15日
 * @version           1.0.0.1
-* @par               Copyright (c):����� 2015
+* @par               Copyright (c):zhouxuguang
 * @par               History:
 */
 #ifndef __PRECOMPILE_H_C0C6C4C8_B1C4_49C3_87E4_EEF1ABC862F0__
@@ -61,10 +61,8 @@ namespace fs = std::filesystem;
 	}
 #endif
 
-//���������ڲ���ͷ�ļ�
 #include "SysConstant.h"
 
-//����utf16��utf32
 typedef std::basic_string<uint16_t> utf16String;
 typedef std::basic_string<uint32_t> utf32String;
 
@@ -80,7 +78,7 @@ typedef std::basic_string<uint32_t> utf32String;
     #define OS_IOS
 #endif
 
-//����������ڴ�
+//对齐内存申明的跨平台定义
 #ifdef __GNUC__
     #define DECLARE_ALIGNED(n)   __attribute__((aligned(n)))
 #elif defined _MSC_VER
@@ -95,7 +93,7 @@ typedef uint64_t DECLARE_ALIGNED(8) AlignedInt64;
 typedef std::vector<uint8_t> ByteVector;
 typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 
-//����������
+//导出宏定义
 #if defined _WIN32 || defined __CYGWIN__ || _WIN64
 	#ifdef BASELIB_EXPORTS		
 		#ifdef __GNUC__
@@ -135,7 +133,7 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 	#endif
 #endif
 
-//C���ӷ�ʽ�궨��
+//extern "C" 定义
 #ifdef __cplusplus
 	#define EXTERN_C_START           extern "C" {
 	#define EXTERN_C_END             }
@@ -144,7 +142,7 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 	#define EXTERN_C_END
 #endif
 
-//ǿ�������ĺ궨�壬����һ���ܳɹ�
+//强制内联的定义
 #if defined _WIN32 ||_WIN64 || defined __CYGWIN__
 
 	#define FORCE_INLINE __forceinline
@@ -152,10 +150,9 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 	#define FORCE_INLINE __attribute__((always_inline) )
 #endif
 
-//�������ܳ��쳣��new �����
 //#define new new(std::nothrow)
 
-//�����ռ�����
+//命名空间定义
 #ifdef __cplusplus
     #define NS_BASELIB_BEGIN                     namespace baselib {
     #define NS_BASELIB_END                       }
@@ -166,6 +163,11 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
     #define USING_NS_BASELIB
 #endif
 
-
+// 探测系统位数
+#if INTPTR_MAX == INT64_MAX
+	#define BASE_IS_64_BIT_CPU 1
+#else
+	#define BASE_IS_32_BIT_CPU 1
+#endif
 
 #endif // end of file_

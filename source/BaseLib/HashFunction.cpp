@@ -1,4 +1,5 @@
 #include "HashFunction.h"
+#include "xxhash.h"
 
 NS_BASELIB_BEGIN
 
@@ -8,43 +9,18 @@ extern void MurmurHash3_x86_32 ( const void * key, const int len,
 extern void MurmurHash3_x86_128 ( const void * key, const int len,
                                  uint32_t seed, void * out );
 
-
-uint32_t HashFunction(const void* pKey,int nLen)
+size_t HashFunction(const void* pKey, size_t keySize)
 {
-    uint32_t hash = 0;
-	/*uint32_t x    = 0;
-	uint32_t i    = 0;
-
-	const uint8_t* pStr = (const uint8_t*)pKey;
-
-	for(i = 0; i < nLen; i++)
-	{
-		hash = (hash << 4) + pStr[i];
-		if((x = hash & 0xF0000000L) != 0)
-		{
-			hash ^= (x >> 24);
-		}
-		hash &= ~x;
-	}*/
-
-    uint32_t h = 0x5f3759df;
-
-	if (nLen <= 32)
-	{
-		MurmurHash3_x86_32(pKey,nLen,h,&hash);
-	}
-
-	else if (nLen > 32)
-	{
-		MurmurHash3_x86_128(pKey,nLen,h,&hash);
-	}
-
-	return hash;
+#if defined(BASE_IS_64_BIT_CPU)
+	return XXH3_64bits(pKey, keySize);
+#else
+	return XXH32(pKey, keySize);
+#endif  // defined(BASE_IS_64_BIT_CPU)
 }
 
-uint32_t GetHashCode(const std::string& key)
+size_t GetHashCode(const std::string& key)
 {
-	return HashFunction(key.data(), (uint32_t)key.size());
+	return HashFunction(key.data(), key.size());
 }
 
 #if defined(_MSC_VER)
