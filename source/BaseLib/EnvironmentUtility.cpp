@@ -123,6 +123,8 @@ int EnvironmentUtility::GetProcessorCount() const
 
 #ifdef WIN32
 
+#pragma warning(disable: 4996)
+
 std::string EnvironmentUtility::GetSystemName() const
 {
 	OSVERSIONINFO vi;

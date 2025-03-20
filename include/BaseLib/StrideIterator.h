@@ -16,15 +16,21 @@ NS_BASELIB_BEGIN
 
 // 跨步迭代器
 template<class T>
-class StrideIterator : public std::iterator<std::random_access_iterator_tag, T>
+class StrideIterator// : public std::iterator<std::random_access_iterator_tag, T>
 {
 public:
-    typedef std::iterator<std::random_access_iterator_tag, T> base_iterator;
+    /*typedef std::iterator<std::random_access_iterator_tag, T> base_iterator;
     typedef typename base_iterator::value_type value_type;
     typedef typename base_iterator::difference_type difference_type;
     typedef typename base_iterator::pointer pointer;
     typedef typename base_iterator::reference reference;
-    typedef typename base_iterator::iterator_category iterator_category;
+    typedef typename base_iterator::iterator_category iterator_category;*/
+
+	using iterator_category = std::random_access_iterator_tag;
+	using value_type = T;
+	using difference_type = std::ptrdiff_t;
+	using pointer = T*;
+	using reference = T&;
     
     StrideIterator () : m_Pointer(NULL), m_Stride(1) {}
     StrideIterator (void* p, int stride) : m_Pointer ((uint8_t*) (p)), m_Stride (stride) {}

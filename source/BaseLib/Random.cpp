@@ -71,12 +71,12 @@ unsigned int GetRandom(unsigned int minNum, unsigned int maxNum)
 
 float GetRandom_0_1()
 {
-    return GetRandom() / (double)UINT_MAX;
+    return GetRandom() / (float)UINT_MAX;
 }
 
 float GetRandom_Minus1_1()
 {
-   return (GetRandom() / (double)UINT_MAX) * 2 - 1;
+   return (GetRandom() / (float)UINT_MAX) * 2 - 1;
 }
 
 NS_BASELIB_END

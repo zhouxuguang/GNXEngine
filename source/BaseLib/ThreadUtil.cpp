@@ -120,7 +120,7 @@ thread_handle_t ThreadUtil::GetCurrentID()
 
 void ThreadUtil::Sleep(long long nMiliSeconds)
 {
-    ::Sleep(nMiliSeconds);
+    ::Sleep((DWORD)nMiliSeconds);
 }
 
 #else

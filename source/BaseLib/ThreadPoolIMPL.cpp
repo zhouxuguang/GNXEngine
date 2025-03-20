@@ -69,7 +69,7 @@ void ThreadPoolIMPL::CancelAllTasks()
 void ThreadPoolIMPL::Execute(const TaskRunnerPtr &task, ThreadPool::TaskStrategy strategy)
 {
     mLock.Lock();
-    int nTaskCount = (int)mTaskList.size();
+    uint32_t nTaskCount = (uint32_t)mTaskList.size();
     mLock.UnLock();
     
     //如果超过最大任务数量，根据不同策略做不同的操作

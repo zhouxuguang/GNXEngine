@@ -21,7 +21,7 @@ static uint64_t GetTimeMillis()
     {
 		LARGE_INTEGER nCurTime;
         QueryPerformanceCounter(&nCurTime);
-        return (double)(nCurTime.QuadPart)/(double)nFreq.QuadPart;
+        return uint64_t((double)(nCurTime.QuadPart)/(double)nFreq.QuadPart);
     }
 }
 

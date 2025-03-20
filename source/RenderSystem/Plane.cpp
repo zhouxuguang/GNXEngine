@@ -47,7 +47,7 @@ T Plane<T>::dist2Plane(const Vector3<T>& p) const
 template<typename T>
 PointSide Plane<T>::getSide(const Vector3<T>& point) const
 {
-    float dist = dist2Plane(point);
+    T dist = dist2Plane(point);
     if (dist > 0)
         return PointSide::FRONT_PLANE;
     else if (dist < 0)
@@ -69,7 +69,7 @@ void Plane<T>::initPlane(const Vector3<T>& p1, const Vector3<T>& p2, const Vecto
 template<typename T>
 void Plane<T>::initPlane(const Vector3<T>& normal, T dist)
 {
-	T oneOverLength = 1.0 / normal.Length();
+	T oneOverLength = T(1.0 / normal.Length());
 	mNormal = normal * oneOverLength;
 	mDist = dist * oneOverLength;
 }
