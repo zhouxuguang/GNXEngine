@@ -2,10 +2,10 @@
 * @file              SysConstant.h
 * @brief             基本宏定义等
 * @details           
-* @author            ����� (zhouxuguang@.com)
-* @date              2015��12��4��
+* @author            周旭光 (zhouxuguang@.com)
+* @date              2012年12月4日
 * @version           1.0.0.1
-* @par               Copyright (c): 2015
+* @par               Copyright (c): 2012
 * @par               History:
 */
 #ifndef __SYSCONSTANT_H_47406346_D7ED_4C5A_B209_F6D31AE07D92__

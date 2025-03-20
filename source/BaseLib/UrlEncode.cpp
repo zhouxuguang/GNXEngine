@@ -104,8 +104,6 @@ std::string HttpUrlEncode(const std::string& srcUrl)
         }
     }
     return encodedUrl;
-    
-    
 }
 
 std::string UrlEncodeFormat(const unsigned char cValue)

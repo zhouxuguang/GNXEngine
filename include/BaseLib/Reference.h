@@ -1,7 +1,7 @@
 #ifndef REFERENCE_INCLUDE
 #define REFERENCE_INCLUDE
 
-//���ü������ʵ��
+//引用计数
 
 #include "PreCompile.h"
 
@@ -14,17 +14,17 @@ public:
 
     ~Reference();
 	
-    //�������ø���
+    //引用计数减1
     uint32_t ReleaseReference();
 	
-    //�������ø���
+    //引用计数+1
     uint32_t AddReference();
     
-    //������ø���
+    //获得当前的引用计数
     uint32_t GetReferenceCount() const;
 
 private:
-    //���������4�ֽ�����
+    //引用计数
 	volatile AlignedUint32 m_nRef;
 };
 

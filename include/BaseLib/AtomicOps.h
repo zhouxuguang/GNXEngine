@@ -1,7 +1,7 @@
 #ifndef ATOMIC_OPS_INCLUDE_H
 #define ATOMIC_OPS_INCLUDE_H
 
-//��ƽ̨ԭ�Ӳ�����װ����
+//原子操作封装
 
 #include "PreCompile.h"
 

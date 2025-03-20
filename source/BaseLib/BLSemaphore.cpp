@@ -3,12 +3,10 @@
 //  BaseLib
 //
 //  Created by zhouxuguang on 16/6/18.
-//  Copyright 漏 2016骞�zhouxuguang. All rights reserved.
+//  Copyright 2016年zhouxuguang. All rights reserved.
 //
 
 #include "BLSemaphore.h"
-
-#if 0
 
 NS_BASELIB_BEGIN
 
@@ -90,7 +88,7 @@ bool Semaphore::timedWait(unsigned int s, unsigned int ms)
     return 0 == ::sem_timedwait(&m_sem, &abstime);
 }
 
-#elif ( defined(__MACH__) && defined(__APPLE__) )        //�规���OS
+#elif ( defined(__MACH__) && defined(__APPLE__) )        //苹果平台
 Semaphore::Semaphore(int initValue)
 {
     m_sem = dispatch_semaphore_create(initValue);
@@ -127,11 +125,6 @@ bool Semaphore::timedWait(unsigned int s, unsigned int ms)
     return dispatch_semaphore_wait(m_sem,s * 1000 + ms);
 }
 
-
 #endif
-
-
 
 NS_BASELIB_END
-
-#endif

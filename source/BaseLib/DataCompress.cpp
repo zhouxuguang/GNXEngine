@@ -14,8 +14,6 @@ NS_BASELIB_BEGIN
 unsigned char szProp[5];
 size_t oSize = 5;
 
-#if 1
-
 BASELIB_API bool DataCompress(const void* pSrcData, size_t nLen, void* pDstData, size_t* pOutLen, COMPRESS_TYPE eType)
 {
 	switch (eType)
@@ -95,7 +93,7 @@ bool DataUnCompress(const void* pSrcData,size_t nLen,void* pDstData,size_t* pOut
 	case COMPRESS_LZMA:
 		{
 			//unsigned char szProp[5];
-			//szProp,oSize ������ѹ��ǰ������
+			//szProp,oSize
 			/*if (SZ_OK != LzmaUncompress((unsigned char*)pDstData,pOutLen,(const uint8_t*)pSrcData,&nLen,szProp,oSize))
 			{
 				*pOutLen = 0;
@@ -132,8 +130,5 @@ bool DataUnCompress(const void* pSrcData,size_t nLen,void* pDstData,size_t* pOut
 	
 	return 1;
 }
-
-#endif
-
 
 NS_BASELIB_END

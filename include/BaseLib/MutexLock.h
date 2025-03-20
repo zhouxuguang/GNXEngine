@@ -31,7 +31,7 @@ private:
 };
 
 
-//���࣬ʹ�÷�����AutoLock( &Mutex );
+//自动锁(RAII) AutoLock( &Mutex );
 class BASELIB_API AutoLock
 {
 public:

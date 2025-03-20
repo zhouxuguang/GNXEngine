@@ -74,7 +74,7 @@ static unsigned __stdcall ThreadWinRun(void* args)
 	return 1;
 }
 
-//ªÒµ√µ±«∞µ˜”√’ﬂµƒœﬂ≥ÃID
+//获得线程的ID
 thread_handle_t GetCurrentThreadHangle()
 {
 	return (thread_handle_t)GetCurrentThread();

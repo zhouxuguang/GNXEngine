@@ -2,8 +2,8 @@
 //  LruCache.h LRU缓存类，用于在内存中缓存经常出现的数据
 //
 //
-//  Created by zhouxuguang on 19/4/19.
-//  Copyright © 2019年 zhouxuguang. All rights reserved.
+//  Created by zhouxuguang on 15/4/19.
+//  Copyright © 2015年 zhouxuguang. All rights reserved.
 //
 
 #ifndef BAASELIB_LRU_CACHE_INCLUDE_H

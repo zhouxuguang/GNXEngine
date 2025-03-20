@@ -1,15 +1,13 @@
 //
-//  Semaphore.h 淇″彿閲忕殑璺ㄥ钩鍙板皝瑁�
+//  Semaphore.h 信号量的封装
 //  BaseLib
 //
 //  Created by zhouxuguang on 16/6/18.
-//  Copyright 漏 2016骞�zhouxuguang. All rights reserved.
+//  Copyright 2016年 zhouxuguang. All rights reserved.
 //
 
 #ifndef BASELIB_SEMAPHORE_INCLUDE_H
 #define BASELIB_SEMAPHORE_INCLUDE_H
-
-#if 0
 
 #include "PreCompile.h"
 
@@ -35,7 +33,5 @@ public:
 };
 
 NS_BASELIB_END
-
-#endif
 
 #endif /* BASELIB_SEMAPHORE_INCLUDE_H */

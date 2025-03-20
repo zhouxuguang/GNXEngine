@@ -4,7 +4,7 @@
 //  BaseLib
 //
 //  Created by Zhou,Xuguang on 17/5/3.
-//  Copyright ?2017�� Zhou,Xuguang. All rights reserved.
+//  Copyright 2017年 Zhou,Xuguang. All rights reserved.
 //
 
 #ifndef BASELIB_REGEXEXPRESSION_INCLUDE_FGDDSGGD8DG
@@ -14,8 +14,9 @@
 
 NS_BASELIB_BEGIN
 
-/**��ƽ̨�������ʽ������
-***/
+/**
+ * 正则表达式封装
+**/
 class BASELIB_API RegexExpression
 {
 public:
