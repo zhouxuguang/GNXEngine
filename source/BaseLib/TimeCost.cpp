@@ -33,7 +33,6 @@ static uint64_t GetTimeMillis()
 //mico second
 static uint64_t GetTimeMillis()
 {
-    //���ȶ�������
 	//struct timeb64 tb;
 	//ftime(&tb);
 
