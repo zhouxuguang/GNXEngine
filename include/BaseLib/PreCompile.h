@@ -72,10 +72,13 @@ typedef std::basic_string<uint32_t> utf32String;
     #define OS_ANDROID
 #elif defined __linux__
 	#define OS_LINUX
-#elif (defined(__MACH__) && defined(__APPLE__) )
-    #define OS_MACOSX
-#elif defined __IOS__
-    #define OS_IOS
+#elif defined(__APPLE__)
+#include <TargetConditionals.h>
+	#if TARGET_OS_OSX
+		#define OS_MACOS
+	#elif TARGET_OS_IOS
+		#define OS_IOS
+	#endif
 #endif
 
 //对齐内存申明的跨平台定义
