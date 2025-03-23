@@ -103,6 +103,14 @@ public:
     */
     T getPointDistance(const Vector3<T>& point) const;
 
+    /**
+     * @brief 将三维点投影到该平面上
+     * 
+     * @param point 被投影的点
+     * @returns 投影后的点
+     */
+    Vector3<T> projectPointOntoPlane(const Vector3<T>& point) const;
+
 private:
     Vector3<T> mNormal;         // the normal line of the plane
     T mDist;             // original displacement of the normal

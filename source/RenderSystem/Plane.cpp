@@ -95,6 +95,15 @@ T Plane<T>::getPointDistance(const Vector3<T>& point) const
 	return this->mNormal.DotProduct(point) + this->mDist;
 }
 
+template<typename T>
+Vector3<T> Plane<T>::projectPointOntoPlane(const Vector3<T>& point) const
+{
+  // projectedPoint = point - (normal.point + scale) * normal
+  const T pointDistance = this->getPointDistance(point);
+  const Vector3<T> scaledNormal = this->mNormal * pointDistance;
+  return point - scaledNormal;
+}
+
 template class Plane<float>;
 template class Plane<double>;
 
