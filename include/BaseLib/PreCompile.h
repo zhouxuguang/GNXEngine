@@ -66,34 +66,34 @@ namespace fs = std::filesystem;
 typedef std::basic_string<uint16_t> utf16String;
 typedef std::basic_string<uint32_t> utf32String;
 
-#if defined _WIN32 || defined _WIN64 || defined WINCE
-	#define OS_WINDOWS
+#if defined _WIN32 || defined WINCE
+	#define OS_WINDOWS 1
 #elif defined __ANDROID__
-    #define OS_ANDROID
+    #define OS_ANDROID 1
 #elif defined __linux__
-	#define OS_LINUX
+	#define OS_LINUX 1
 #elif defined(__APPLE__)
 #include <TargetConditionals.h>
 	#if TARGET_OS_OSX
-		#define OS_MACOS
+		#define OS_MACOS 1
 	#elif TARGET_OS_IOS
-		#define OS_IOS
+		#define OS_IOS 1
 	#endif
 #endif
 
 //跨平台cpu架构的宏定义
 #if defined(__ppc__)
-    #define CPU_PPC          1
+    #define TARGET_PPC          1
 #elif defined(__ppc64__) 
-    #define CPU_PPC64        1
-#elif defined(__i386__) 
-    #define CPU_X86          1
-#elif defined(__x86_64__) 
-    #define CPU_X86_64       1
+    #define TARGET_PPC64        1
+#elif defined(__i386__)  || defined(_M_IX86)
+    #define TARGET_X86          1
+#elif defined(__x86_64__) || defined(_M_X64)
+    #define TARGET_X86_64       1
 #elif defined(__arm__) 
-    #define CPU_ARM          1
+    #define TARGET_ARM          1
 #elif defined(__arm64__)
-    #define CPU_ARM64        1
+    #define TARGET_ARM64        1
 #endif
 
 //对齐内存申明的跨平台定义
