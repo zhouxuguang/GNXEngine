@@ -81,6 +81,21 @@ typedef std::basic_string<uint32_t> utf32String;
 	#endif
 #endif
 
+//跨平台cpu架构的宏定义
+#if defined(__ppc__)
+    #define CPU_PPC          1
+#elif defined(__ppc64__) 
+    #define CPU_PPC64        1
+#elif defined(__i386__) 
+    #define CPU_X86          1
+#elif defined(__x86_64__) 
+    #define CPU_X86_64       1
+#elif defined(__arm__) 
+    #define CPU_ARM          1
+#elif defined(__arm64__)
+    #define CPU_ARM64        1
+#endif
+
 //对齐内存申明的跨平台定义
 #ifdef __GNUC__
     #define DECLARE_ALIGNED(n)   __attribute__((aligned(n)))
