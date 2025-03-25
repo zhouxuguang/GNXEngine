@@ -6,15 +6,6 @@
 
 NS_BASELIB_BEGIN
 
-//template<typename T>
-//static void atomic_swap(T & a, T & b)
-//{
-//    T * ptr = &a;
-//    b = __sync_lock_test_and_set(ptr, b);
-//    __sync_lock_release(&ptr);
-//}
-
-
 bool CBLAtomicSwapPtr( void *volatile *oneValue, void *volatile *otherValue )
 {
 	if (NULL == oneValue || NULL == otherValue)
@@ -280,6 +271,5 @@ inline void MemoryBarrier()
 }
 
 #endif
-
 
 NS_BASELIB_END

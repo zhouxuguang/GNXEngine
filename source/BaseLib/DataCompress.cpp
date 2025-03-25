@@ -1,6 +1,6 @@
 #include "DataCompress.h"
 
-#ifdef _WIN32
+#if OS_WINDOWS
 #include "zlib.h"
 #else
 #include <zlib.h>
@@ -8,11 +8,7 @@
 //#include "lzma/LzmaLib.h"
 #include "lz4/lz4.h"
 
-
 NS_BASELIB_BEGIN
-
-unsigned char szProp[5];
-size_t oSize = 5;
 
 BASELIB_API bool DataCompress(const void* pSrcData, size_t nLen, void* pDstData, size_t* pOutLen, COMPRESS_TYPE eType)
 {

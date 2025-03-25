@@ -1,4 +1,4 @@
-//�������
+//任务队列的实现
 #ifndef BASELIB_TASKQUEUE_INCLUDE_H
 #define BASELIB_TASKQUEUE_INCLUDE_H
 

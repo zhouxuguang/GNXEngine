@@ -27,6 +27,7 @@
 #include <list>
 #include <deque>
 #include <map>
+#include <set>
 #include <functional>
 #include <algorithm>
 #include <atomic>
