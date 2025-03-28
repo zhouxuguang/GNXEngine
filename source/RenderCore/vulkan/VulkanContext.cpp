@@ -8,6 +8,7 @@
 #include "VulkanContext.h"
 #include "VulkanDeviceUtil.h"
 #include "BaseLib/LogService.h"
+#include <optional>
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -654,6 +655,163 @@ VkDescriptorSet AllocDescriptorSet(VkDevice device, VkDescriptorPool descriptorP
     VkResult result = vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet);
 
     return descriptorSet;
+}
+
+void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties2 pGetPhysicalDeviceProperties2,
+	const std::vector<VkPhysicalDevice>& physicalDevices,
+	uint32_t preferredVendorID,
+	uint32_t preferredDeviceID,
+	const uint8_t* preferredDeviceUUID,
+	const uint8_t* preferredDriverUUID,
+	VkDriverId preferredDriverID,
+	VkPhysicalDevice* physicalDeviceOut,
+	VkPhysicalDeviceProperties2* physicalDeviceProperties2Out,
+	VkPhysicalDeviceIDProperties* physicalDeviceIDPropertiesOut,
+	VkPhysicalDeviceDriverProperties* physicalDeviceDriverPropertiesOut)
+{
+	VkPhysicalDeviceProperties const* deviceProps = &physicalDeviceProperties2Out->properties;
+
+	const bool shouldChooseByPciId = (preferredVendorID != 0 || preferredDeviceID != 0);
+	const bool shouldChooseByUUIDs = (preferredDeviceUUID != nullptr ||
+		preferredDriverUUID != nullptr || preferredDriverID != 0);
+
+	for (const VkPhysicalDevice& physicalDevice : physicalDevices)
+	{
+		*physicalDeviceProperties2Out = {};
+		physicalDeviceProperties2Out->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+		physicalDeviceProperties2Out->pNext = physicalDeviceIDPropertiesOut;
+
+		*physicalDeviceIDPropertiesOut = {};
+		physicalDeviceIDPropertiesOut->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+		physicalDeviceIDPropertiesOut->pNext = physicalDeviceDriverPropertiesOut;
+
+		*physicalDeviceDriverPropertiesOut = {};
+		physicalDeviceDriverPropertiesOut->sType =
+			VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+
+		pGetPhysicalDeviceProperties2(physicalDevice, physicalDeviceProperties2Out);
+
+		if (deviceProps->apiVersion < VK_MAKE_API_VERSION(0, 1, 1, 0))
+		{
+			// Skip any devices that don't support our minimum API version. This
+			// takes precedence over all other considerations.
+			continue;
+		}
+
+		if (shouldChooseByUUIDs)
+		{
+			bool matched = true;
+
+			if (preferredDriverID != 0 &&
+				preferredDriverID != physicalDeviceDriverPropertiesOut->driverID)
+			{
+				matched = false;
+			}
+			else if (preferredDeviceUUID != nullptr &&
+				memcmp(preferredDeviceUUID, physicalDeviceIDPropertiesOut->deviceUUID,
+					VK_UUID_SIZE) != 0)
+			{
+				matched = false;
+			}
+			else if (preferredDriverUUID != nullptr &&
+				memcmp(preferredDriverUUID, physicalDeviceIDPropertiesOut->driverUUID,
+					VK_UUID_SIZE) != 0)
+			{
+				matched = false;
+			}
+
+			if (matched)
+			{
+				*physicalDeviceOut = physicalDevice;
+				return;
+			}
+		}
+
+		if (shouldChooseByPciId)
+		{
+			// NOTE: If the system has multiple GPUs with the same vendor and
+			// device IDs, this will arbitrarily select one of them.
+			bool matchVendorID = true;
+			bool matchDeviceID = true;
+
+			if (preferredVendorID != 0 && preferredVendorID != deviceProps->vendorID)
+			{
+				matchVendorID = false;
+			}
+
+			if (preferredDeviceID != 0 && preferredDeviceID != deviceProps->deviceID)
+			{
+				matchDeviceID = false;
+			}
+
+			if (matchVendorID && matchDeviceID)
+			{
+				*physicalDeviceOut = physicalDevice;
+				return;
+			}
+		}
+	}
+
+	std::optional<VkPhysicalDevice> integratedDevice;
+	VkPhysicalDeviceProperties2 integratedDeviceProperties2;
+	VkPhysicalDeviceIDProperties integratedDeviceIDProperties;
+	VkPhysicalDeviceDriverProperties integratedDeviceDriverProperties;
+
+	for (const VkPhysicalDevice& physicalDevice : physicalDevices)
+	{
+		*physicalDeviceProperties2Out = {};
+		physicalDeviceProperties2Out->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+		physicalDeviceProperties2Out->pNext = physicalDeviceIDPropertiesOut;
+
+		*physicalDeviceIDPropertiesOut = {};
+		physicalDeviceIDPropertiesOut->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+		physicalDeviceIDPropertiesOut->pNext = physicalDeviceDriverPropertiesOut;
+
+		*physicalDeviceDriverPropertiesOut = {};
+		physicalDeviceDriverPropertiesOut->sType =
+			VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+
+		pGetPhysicalDeviceProperties2(physicalDevice, physicalDeviceProperties2Out);
+
+		if (deviceProps->apiVersion < VK_MAKE_API_VERSION(0, 1, 1, 0))
+		{
+			// Skip any devices that don't support our minimum API version. This
+			// takes precedence over all other considerations.
+			continue;
+		}
+
+		// If discrete GPU exists, uses it by default.
+		if (deviceProps->deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+		{
+			*physicalDeviceOut = physicalDevice;
+			return;
+		}
+		if (deviceProps->deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU &&
+			!integratedDevice.has_value())
+		{
+			integratedDevice = physicalDevice;
+			integratedDeviceProperties2 = *physicalDeviceProperties2Out;
+			integratedDeviceIDProperties = *physicalDeviceIDPropertiesOut;
+			integratedDeviceDriverProperties = *physicalDeviceDriverPropertiesOut;
+			integratedDeviceProperties2.pNext = nullptr;
+			integratedDeviceIDProperties.pNext = nullptr;
+			integratedDeviceDriverProperties.pNext = nullptr;
+			continue;
+		}
+	}
+
+	// If only integrated GPU exists, use it by default.
+	if (integratedDevice.has_value())
+	{
+		*physicalDeviceOut = integratedDevice.value();
+		*physicalDeviceProperties2Out = integratedDeviceProperties2;
+		*physicalDeviceIDPropertiesOut = integratedDeviceIDProperties;
+		return;
+	}
+
+	// Fallback to the first device.
+	*physicalDeviceOut = physicalDevices[0];
+	pGetPhysicalDeviceProperties2(*physicalDeviceOut, physicalDeviceProperties2Out);
 }
 
 NAMESPACE_RENDERCORE_END

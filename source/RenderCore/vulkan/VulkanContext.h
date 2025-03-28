@@ -86,6 +86,18 @@ void CreateComputeDescriptorPool(VulkanContext& context);
 // 创建描述符集
 VkDescriptorSet AllocDescriptorSet(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descLayout);
 
+void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties2 pGetPhysicalDeviceProperties2,
+	const std::vector<VkPhysicalDevice>& physicalDevices,
+	uint32_t preferredVendorID,
+	uint32_t preferredDeviceID,
+	const uint8_t* preferredDeviceUUID,
+	const uint8_t* preferredDriverUUID,
+	VkDriverId preferredDriverID,
+	VkPhysicalDevice* physicalDeviceOut,
+	VkPhysicalDeviceProperties2* physicalDeviceProperties2Out,
+	VkPhysicalDeviceIDProperties* physicalDeviceIDPropertiesOut,
+	VkPhysicalDeviceDriverProperties* physicalDeviceDriverPropertiesOut);
+
 //图像视图的包装
 struct VulkanImageView
 {
