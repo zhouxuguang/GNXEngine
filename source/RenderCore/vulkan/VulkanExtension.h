@@ -30,6 +30,10 @@ private:
     bool ExtensionSupported(const char* name);
 };
 
+struct VulkanFeature
+{
+};
+
 NAMESPACE_RENDERCORE_END
 
 #endif /* GNX_ENGINE_VK_EXTENSION_FSDJDSGJDFNBGDFJ_INCLUDE */

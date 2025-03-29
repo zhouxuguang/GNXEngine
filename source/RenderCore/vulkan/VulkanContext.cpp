@@ -8,6 +8,7 @@
 #include "VulkanContext.h"
 #include "VulkanDeviceUtil.h"
 #include "BaseLib/LogService.h"
+#include "VKUtil.h"
 #include <optional>
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -367,8 +368,6 @@ bool CreateVirtualDevice(VulkanContext& context)
     CreateDebugReport(context);
 #endif
     
-    void *deviceCreateNextChain = nullptr;
-    
     // 扩展动态状态
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeaturesEXT = {};
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extendedDynamicState2FeaturesEXT = {};
@@ -376,17 +375,31 @@ bool CreateVirtualDevice(VulkanContext& context)
     
     // 获得完整的扩展动态状态
     extendedDynamicStateFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
-    extendedDynamicStateFeaturesEXT.pNext = &extendedDynamicState2FeaturesEXT;
+    AppendToPNextChain(&extendedDynamicStateFeaturesEXT, &extendedDynamicState2FeaturesEXT);
+  
     extendedDynamicState2FeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
-    extendedDynamicState2FeaturesEXT.pNext = &extendedDynamicState3FeaturesEXT;
+    AppendToPNextChain(&extendedDynamicState2FeaturesEXT, &extendedDynamicState3FeaturesEXT);
+
     extendedDynamicState3FeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
-    extendedDynamicState3FeaturesEXT.pNext = nullptr;
+
+    // 查询VkPhysicalDeviceDescriptorIndexingFeatures
+	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
+	indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+    //AppendToPNextChain(&extendedDynamicState3FeaturesEXT, &indexingFeatures);
 
     VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
     physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    physicalDeviceFeatures2.pNext = &extendedDynamicStateFeaturesEXT;
+    AppendToPNextChain(&physicalDeviceFeatures2, &extendedDynamicStateFeaturesEXT);
     vkGetPhysicalDeviceFeatures2(context.physicalDevice, &physicalDeviceFeatures2);
+
+	if (!indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind) 
+    {
+		// 设备不支持，需要处理回退逻辑或报错
+        log_info("descriptorBindingUniformBufferUpdateAfterBind NOT SUPPORTED");
+	}
     
+    // 构建设备创建时的开启的特性
+    void* deviceCreateNextChain = nullptr;
     if (context.vulkanExtension.enabledExtendedDynamicState)
     {
         deviceExtensionNames.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
@@ -418,6 +431,10 @@ bool CreateVirtualDevice(VulkanContext& context)
             deviceCreateNextChain = &extendedDynamicState3FeaturesEXT;
         }
     }
+
+    //indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
+
+    //deviceExtensionNames.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     
     // 打开 VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME    
     // push descriptor默认开启
