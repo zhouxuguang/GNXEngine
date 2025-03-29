@@ -26,16 +26,22 @@ VulkanSwapChain::VulkanSwapChain(VulkanContextPtr vulkanContext, uint32_t width,
 
 void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t width, uint32_t height)
 {
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkanContext->physicalDevice, vulkanContext->surfaceKhr, &mSurfaceCapabilities);
-    assert(mSurfaceCapabilities.supportedCompositeAlpha | VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR);
+    //The Vulkan spec states : compositeAlpha must be one of the bits present in the supportedCompositeAlpha member of the 
+    // VkSurfaceCapabilitiesKHR structure returned by vkGetPhysicalDeviceSurfaceCapabilitiesKHR for the surface
+    VkResult res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkanContext->physicalDevice, vulkanContext->surfaceKhr, &mSurfaceCapabilities);
+    mCompositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+	if ((mSurfaceCapabilities.supportedCompositeAlpha & VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR))
+	{
+		mCompositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+	}
 
     // 查询支持的格式以及选择一个常用的格式如RGBA8
     uint32_t formatCount = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(vulkanContext->physicalDevice, vulkanContext->surfaceKhr, &formatCount, nullptr);
+    res = vkGetPhysicalDeviceSurfaceFormatsKHR(vulkanContext->physicalDevice, vulkanContext->surfaceKhr, &formatCount, nullptr);
     
     std::vector<VkSurfaceFormatKHR> formats;
     formats.resize(formatCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(vulkanContext->physicalDevice, vulkanContext->surfaceKhr, &formatCount, formats.data());
+    res = vkGetPhysicalDeviceSurfaceFormatsKHR(vulkanContext->physicalDevice, vulkanContext->surfaceKhr, &formatCount, formats.data());
     
     uint32_t chosenFormat = 0;
     for (chosenFormat = 0; chosenFormat < formatCount; chosenFormat++)
@@ -64,14 +70,14 @@ void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t w
     swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchainCreateInfo.queueFamilyIndexCount = 1;
     swapchainCreateInfo.pQueueFamilyIndices = &vulkanContext->graphicsQueueFamilyIndex;
-    swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+    swapchainCreateInfo.compositeAlpha = mCompositeAlpha;
     swapchainCreateInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
     swapchainCreateInfo.oldSwapchain = mSwapchain;
     swapchainCreateInfo.clipped = VK_FALSE;
-    vkCreateSwapchainKHR(vulkanContext->device, &swapchainCreateInfo, nullptr, &mSwapchain);
+    res = vkCreateSwapchainKHR(vulkanContext->device, &swapchainCreateInfo, nullptr, &mSwapchain);
     
     // 获得交换链图像
-    VkResult res = vkGetSwapchainImagesKHR(vulkanContext->device, mSwapchain, &mSwapchainImageCount, nullptr);
+    res = vkGetSwapchainImagesKHR(vulkanContext->device, mSwapchain, &mSwapchainImageCount, nullptr);
     mDisplayImages.resize(mSwapchainImageCount);
     res = vkGetSwapchainImagesKHR(vulkanContext->device, mSwapchain, &mSwapchainImageCount, mDisplayImages.data());
     

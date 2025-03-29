@@ -88,6 +88,7 @@ private:
     std::vector<VkFramebuffer> mFrameBuffers;
 
     VkSurfaceCapabilitiesKHR mSurfaceCapabilities;
+    VkCompositeAlphaFlagBitsKHR mCompositeAlpha;
 };
 
 using VulkanSwapChainPtr = std::shared_ptr<VulkanSwapChain>;
