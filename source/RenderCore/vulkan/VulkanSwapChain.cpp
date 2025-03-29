@@ -26,6 +26,11 @@ VulkanSwapChain::VulkanSwapChain(VulkanContextPtr vulkanContext, uint32_t width,
 
 void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t width, uint32_t height)
 {
+    if (mDisplaySize.width == width && mDisplaySize.height == height)
+    {
+        return;
+    }
+
     //The Vulkan spec states : compositeAlpha must be one of the bits present in the supportedCompositeAlpha member of the 
     // VkSurfaceCapabilitiesKHR structure returned by vkGetPhysicalDeviceSurfaceCapabilitiesKHR for the surface
     VkResult res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vulkanContext->physicalDevice, vulkanContext->surfaceKhr, &mSurfaceCapabilities);

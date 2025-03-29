@@ -54,6 +54,8 @@ public:
     virtual UniformBufferPtr createUniformBufferWithSize(uint32_t bufSize) const;
     
     virtual ShaderFunctionPtr createShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const;
+
+    virtual GraphicsShaderPtr createGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const;
     
     virtual GraphicsPipelinePtr createGraphicsPipeline(const GraphicsPipelineDescriptor& des) const;
     

@@ -100,6 +100,11 @@ public:
      创建ShaderFunctionPtr
      */
     virtual ShaderFunctionPtr createShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const = 0;
+
+    /**
+     创建GraphicsShader
+     */
+    virtual GraphicsShaderPtr createGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const = 0;
     
     /**
      创建图形管线

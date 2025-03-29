@@ -147,7 +147,7 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
     }
     
     spirv_cross::CompilerMSL::Options options;
-#if defined(TARGET_OS_IOS)
+#if OS_IOS
     options.platform = spirv_cross::CompilerMSL::Options::iOS;
 #else
     options.platform = spirv_cross::CompilerMSL::Options::macOS;

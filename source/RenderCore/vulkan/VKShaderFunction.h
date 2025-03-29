@@ -10,6 +10,7 @@
 
 #include "VulkanContext.h"
 #include "ShaderFunction.h"
+#include "spirv_reflection.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -105,6 +106,56 @@ private:
 };
 
 using VKShaderFunctionPtr = std::shared_ptr<VKShaderFunction>;
+
+class VKGraphicsShader : public GraphicsShader
+{
+public:
+    struct BindMetaData 
+    {
+        uint32_t             set;
+        uint32_t             binding;
+        uint32_t             descriptorCount;
+        VkDescriptorType     descriptorType;
+        VkShaderStageFlags   shaderStageFlag;
+    };
+
+    using OneFrameDescriptorSets = std::vector<VkDescriptorSet>;   //每一帧的数据
+
+public:
+    VKGraphicsShader(VulkanContextPtr context, const ShaderCode& vertexShader, const ShaderCode& fragmentShader);
+    ~VKGraphicsShader();
+
+    VkShaderModule GetVertexShaderModule() const { return mVertexShader; }
+    VkShaderModule GetFragmentShaderModule() const { return mFragShader; }
+
+    std::string GetVertexEntryName() const { return mVertexEntryName; }
+    std::string GetFragmentEntryName() const { return mFragmentEntryName; }
+
+    auto& GetDescriptorSetLayouts() const { return mDescriptorSetLayouts; }
+    auto& GetCurrentDescriptorSets() const { return mDescriptorSets[mCurrentFrame]; }
+
+private:
+    void CollectResource(SpvReflectShaderModule shaderModule, ShaderStage shaderStage);
+
+    void GenerateVulkanDescriptorSetLayout();
+
+    void GenerateDescriptorSets();
+
+    VulkanContextPtr mContext = nullptr;
+    VkShaderModule mVertexShader = VK_NULL_HANDLE;
+    VkShaderModule mFragShader = VK_NULL_HANDLE;
+    uint32_t mCurrentFrame = 0;
+
+	std::string mVertexEntryName;
+    std::string mFragmentEntryName;
+
+    std::unordered_map<std::string, BindMetaData> mReflectionDatas;
+
+	std::vector<VkDescriptorSetLayout> mDescriptorSetLayouts;
+	std::vector<OneFrameDescriptorSets> mDescriptorSets;
+};
+
+using VKGraphicsShaderPtr = std::shared_ptr<VKGraphicsShader>;
 
 NAMESPACE_RENDERCORE_END
 

@@ -5,14 +5,14 @@
 //模型坐标输出定义
 
 // 灯光信息
-cbuffer LightInfo : register(b2)
+cbuffer LightInfo// : register(b2)
 {
     float4 Position;  // Light position in world space.
     float3 Intensity; // A,D,S intensity
 };
 
 //材质信息
-cbuffer MaterialInfo  : register(b3)
+cbuffer MaterialInfo//  : register(b3)
 {
     float4 diffuseColor;  // 漫反射颜色
     float3 Ka;            // 环境光反射系数
@@ -72,8 +72,8 @@ VertexOut VS(appdata_tan vin)
     return vout;
 }
 
-Texture2D gDiffuseMap : register(t0);
-SamplerState gSamLinearWrap  : register(s0);
+Texture2D gDiffuseMap; //: register(t0);
+SamplerState gSamLinearWrap; // : register(s0);
 
 float4 PS(VertexOut pin) : SV_Target
 {

@@ -602,13 +602,8 @@ bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
 void CreateGraphicsDescriptorPool(VulkanContext& context)
 {
 	constexpr int maxCount = 100000;
-    constexpr int maxSetCount = 8;
+    constexpr int maxSetCount = 4;
 	// 创建VkDescriptorPool
-
-	/*VkDescriptorPoolSize setSizes[2] = {
-		{VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1},
-		{VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1},
-	};*/
 
 	VkDescriptorPoolSize poolSizes[4] = {};
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_SAMPLER;
@@ -622,11 +617,11 @@ void CreateGraphicsDescriptorPool(VulkanContext& context)
 
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+    //poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 	poolInfo.poolSizeCount = 4;
 	poolInfo.pPoolSizes = poolSizes;
-	poolInfo.maxSets = 200;
-	//poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+	poolInfo.maxSets = maxSetCount;
 
 	VkResult res = vkCreateDescriptorPool(context.device, &poolInfo, nullptr, &context.graphicsDescriptorPool);
 	if (res != VK_SUCCESS)

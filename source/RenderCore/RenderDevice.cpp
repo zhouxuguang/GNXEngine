@@ -93,6 +93,14 @@ RenderPass::~RenderPass()
 {
 }
 
+GraphicsShader::GraphicsShader()
+{
+}
+
+GraphicsShader::~GraphicsShader()
+{
+}
+
 static RenderDevicePtr renderDevicePtr = nullptr;
 
 RenderDevicePtr createRenderDevice(RenderDeviceType deviceType, ViewHandle viewHandle)

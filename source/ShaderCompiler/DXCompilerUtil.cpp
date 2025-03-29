@@ -149,6 +149,15 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
     arguments.push_back(L"-D");
     arguments.push_back(L"TEXCOORD_FLIP");
 
+    if (shaderStage == ShaderStage_Fragment)
+    {
+        arguments.push_back(L"-auto-binding-space 1");
+        //arguments.push_back(L"-fvk-auto-shift-bindings");
+    }
+
+    // -fvk-use-dx-layout -fvk-s-shift 1
+    // -fvk-auto-shift-bindings
+
 //    for (const std::wstring& define : defines)
 //    {
 //        arguments.push_back(L"-D");

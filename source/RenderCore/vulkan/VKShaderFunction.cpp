@@ -128,7 +128,7 @@ static DescriptorSetLayoutDataVec GetDescriptorInfo(const SpvReflectShaderModule
         
         // PUSH Descriptor必须使用VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR这个flag
         layout.create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
-        layout.create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
+        //layout.create_info.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;
         layout.create_info.pNext = nullptr;
         layout.create_info.bindingCount = refl_set.binding_count;
         layout.create_info.pBindings = layout.bindings.data();
@@ -258,6 +258,168 @@ std::shared_ptr<VKShaderFunction> VKShaderFunction::initWithShaderSourceInner(co
 ShaderStage VKShaderFunction::getShaderStage() const
 {
     return mShaderStage;
+}
+
+static VkShaderModule CreateShaderModule(VkDevice device, const ShaderCode& shaderCode)
+{
+	VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
+	shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	shaderModuleCreateInfo.codeSize = shaderCode.size();
+	shaderModuleCreateInfo.pCode = (const uint32_t*)shaderCode.data();
+	VkShaderModule shaderModule = VK_NULL_HANDLE;
+	VkResult res = vkCreateShaderModule(device, &shaderModuleCreateInfo, nullptr, &shaderModule);
+    assert(res == VK_SUCCESS);
+
+    return shaderModule;
+}
+
+const uint32_t MAX_FRAMES_IN_FLIGHT = 3;
+
+VKGraphicsShader::VKGraphicsShader(VulkanContextPtr context, const ShaderCode& vertexShader, const ShaderCode& fragmentShader)
+{
+    mContext = context;
+    mDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+	SpvReflectShaderModule vertexShaderModule = {};
+	SpvReflectResult result = spvReflectCreateShaderModule(vertexShader.size(), vertexShader.data(), &vertexShaderModule);
+	assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+	CollectResource(vertexShaderModule, ShaderStage_Vertex);
+
+	SpvReflectShaderModule fragShaderModule = {};
+	result = spvReflectCreateShaderModule(fragmentShader.size(), fragmentShader.data(), &fragShaderModule);
+	assert(result == SPV_REFLECT_RESULT_SUCCESS);
+	CollectResource(fragShaderModule, ShaderStage_Fragment);
+
+	mVertexShader = CreateShaderModule(mContext->device, vertexShader);
+    if (vertexShaderModule.entry_point_name)
+    {
+        mVertexEntryName = std::string(vertexShaderModule.entry_point_name);
+    }
+    
+	mFragShader = CreateShaderModule(mContext->device, fragmentShader);
+	if (fragShaderModule.entry_point_name)
+	{
+		mFragmentEntryName = std::string(fragShaderModule.entry_point_name);
+	}
+
+    GenerateVulkanDescriptorSetLayout();
+    GenerateDescriptorSets();
+}
+
+VKGraphicsShader::~VKGraphicsShader()
+{
+    vkDestroyShaderModule(mContext->device, mVertexShader, nullptr);
+    mVertexShader = VK_NULL_HANDLE;
+    vkDestroyShaderModule(mContext->device, mFragShader, nullptr);
+    mFragShader = VK_NULL_HANDLE;
+
+	// destroy layout
+	for (auto& descriptorSetLayout : mDescriptorSetLayouts) 
+    {
+		vkDestroyDescriptorSetLayout(mContext->device, descriptorSetLayout, nullptr);
+	}
+    mDescriptorSetLayouts.clear();
+
+	for (auto& iter : mDescriptorSets)
+	{
+        vkFreeDescriptorSets(mContext->device, mContext->graphicsDescriptorPool, iter.size(), iter.data());
+        iter.clear();
+	}
+    mDescriptorSets.clear();
+}
+
+void VKGraphicsShader::CollectResource(SpvReflectShaderModule shaderModule, ShaderStage shaderStage)
+{
+    uint32_t count = 0;
+    SpvReflectResult result = spvReflectEnumerateDescriptorSets(&shaderModule, &count, NULL);
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+    std::vector<SpvReflectDescriptorSet*> sets(count);
+    result = spvReflectEnumerateDescriptorSets(&shaderModule, &count, sets.data());
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+    std::vector<DescriptorSetLayoutData> setLayouts(sets.size(), DescriptorSetLayoutData{});
+    
+    for (size_t iSet = 0; iSet < sets.size(); ++iSet)
+    {
+        // 当前的set
+        const SpvReflectDescriptorSet& reflDesSet = *(sets[iSet]);
+        
+        for (uint32_t iBinding = 0; iBinding < reflDesSet.binding_count; ++iBinding)
+        {
+            const SpvReflectDescriptorBinding& reflBinding = *(reflDesSet.bindings[iBinding]);
+
+			if (mReflectionDatas.find(reflBinding.name) == mReflectionDatas.end())
+            {
+				std::string resourceName = reflBinding.name;
+                uint32_t set = reflBinding.set;
+                uint32_t binding = reflBinding.binding;
+                uint32_t descriptorCount = 1;
+				for (uint32_t iDim = 0; iDim < reflBinding.array.dims_count; ++iDim)
+				{
+					descriptorCount *= reflBinding.array.dims[iDim];
+				}
+                VkDescriptorType descriptorType = static_cast<VkDescriptorType>(reflBinding.descriptor_type);
+                VkShaderStageFlags shaderStageFlag = VK_SHADER_STAGE_ALL;
+
+				BindMetaData metaData{ set, binding, descriptorCount, descriptorType, shaderStageFlag };
+                mReflectionDatas[resourceName] = metaData;
+			}
+        }
+    }
+}
+
+void VKGraphicsShader::GenerateVulkanDescriptorSetLayout()
+{
+	std::vector<VkDescriptorSetLayoutCreateInfo> descriptorSetLayoutCreateInfos;
+	std::vector<VkDescriptorSetLayoutBinding>    layoutBindings;
+
+	std::map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> setGroups;
+
+	for (const auto& [resourceName, metaData] : mReflectionDatas) 
+    {
+        VkDescriptorSetLayoutBinding binding = {};
+		VkShaderStageFlags           stageFlags = metaData.shaderStageFlag;
+		uint32_t                       set = metaData.set;
+
+        binding.binding = metaData.binding;
+        binding.descriptorCount = metaData.descriptorCount;
+        binding.descriptorType = metaData.descriptorType;
+        binding.stageFlags = stageFlags;
+
+		layoutBindings.push_back(binding);
+        setGroups[set].push_back(binding);
+	}
+
+	for (const auto& [setIndex, bindingVecs] : setGroups) 
+    {
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
+        descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        descriptorSetLayoutCreateInfo.bindingCount = (uint32_t)bindingVecs.size();
+        descriptorSetLayoutCreateInfo.pBindings = bindingVecs.data();
+        VkDescriptorSetLayout setLayout = VK_NULL_HANDLE;
+        vkCreateDescriptorSetLayout(mContext->device, &descriptorSetLayoutCreateInfo, nullptr, &setLayout);
+
+		mDescriptorSetLayouts.push_back(setLayout);
+	}
+}
+
+void VKGraphicsShader::GenerateDescriptorSets()
+{
+    for (auto &iter : mDescriptorSets)
+    {
+		VkDescriptorSetAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorPool = mContext->graphicsDescriptorPool;
+		allocInfo.descriptorSetCount = (uint32_t)mDescriptorSetLayouts.size();
+		allocInfo.pSetLayouts = mDescriptorSetLayouts.data();
+
+        iter.resize(mDescriptorSetLayouts.size());
+		if (vkAllocateDescriptorSets(mContext->device, &allocInfo, iter.data()) != VK_SUCCESS)
+        {
+            abort();
+		}
+    }
 }
 
 NAMESPACE_RENDERCORE_END

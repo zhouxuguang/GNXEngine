@@ -235,6 +235,12 @@ ShaderFunctionPtr VKRenderDevice::createShaderFunction(const ShaderCode& shaderS
     return shaderPtr;
 }
 
+GraphicsShaderPtr VKRenderDevice::createGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const
+{
+    VKGraphicsShaderPtr shader = std::make_shared<VKGraphicsShader>(mVulkanContext, vertexShader, fragmentShader);
+    return shader;
+}
+
 GraphicsPipelinePtr VKRenderDevice::createGraphicsPipeline(const GraphicsPipelineDescriptor& des) const
 {
     return std::make_shared<VKGraphicsPipeline>(mVulkanContext, des);

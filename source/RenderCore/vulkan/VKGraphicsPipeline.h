@@ -54,6 +54,8 @@ public:
     virtual void attachVertexShader(ShaderFunctionPtr shaderFunction);
     
     virtual void attachFragmentShader(ShaderFunctionPtr shaderFunction);
+
+    virtual void attachGraphicsShader(GraphicsShaderPtr graphicsShader);
     
     VkPipeline GetPipeline() const
     {

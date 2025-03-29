@@ -171,6 +171,10 @@ void VKGraphicsPipeline::attachFragmentShader(ShaderFunctionPtr shaderFunction)
     mShaders.push_back(std::dynamic_pointer_cast<VKShaderFunction>(shaderFunction));
 }
 
+void VKGraphicsPipeline::attachGraphicsShader(GraphicsShaderPtr graphicsShader)
+{
+}
+
 void VKGraphicsPipeline::Generate(const RenderPassFormat& passFormat)
 {
     if (mGenerated)
@@ -374,6 +378,7 @@ void VKGraphicsPipeline::CreatePipelineLayout()
         }
         descriptorSetLayoutBindingFlagsCreateInfo.pBindingFlags = desBindingFlags.data();
         desSetLayouts[i].create_info.pNext = &descriptorSetLayoutBindingFlagsCreateInfo;
+        desSetLayouts[i].create_info.pNext = nullptr;
 
         if (vkCreateDescriptorSetLayout(mContext->device, &desSetLayouts[i].create_info, nullptr, desLayouts.data() + i) != VK_SUCCESS)
         {

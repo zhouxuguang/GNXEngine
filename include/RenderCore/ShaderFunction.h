@@ -30,6 +30,18 @@ public:
 
 using ShaderFunctionPtr = std::shared_ptr<ShaderFunction>;
 
+class GraphicsShader
+{
+public:
+	GraphicsShader();
+	~GraphicsShader();
+
+private:
+
+};
+
+using GraphicsShaderPtr = std::shared_ptr<GraphicsShader>;
+
 NAMESPACE_RENDERCORE_END
 
 #endif /* GNX_ENGINE_SHADE_FUNCTION_INCLUDE_H */
