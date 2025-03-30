@@ -74,7 +74,7 @@ public:
 private:
     VulkanContextPtr mVulkanContext = nullptr;
     VulkanSwapChainPtr mSwapChain = nullptr;
-    VKDepthStencilBufferPtr mDSBuffer = nullptr;
+    
     
     std::vector<VkCommandBuffer> mCommandBuffers;         //用于渲染的commandbuffer
     std::vector<VkSemaphore> mImageAvailableSemaphores;   //图像可用的信号

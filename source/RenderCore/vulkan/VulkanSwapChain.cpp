@@ -21,15 +21,16 @@ static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities,
 
 VulkanSwapChain::VulkanSwapChain(VulkanContextPtr vulkanContext, uint32_t width, uint32_t height) : mVulkanContext(vulkanContext)
 {
+    mDSBuffer = std::make_shared<VKDepthStencilBuffer>(mVulkanContext);
     CreateSwapChain(vulkanContext, width, height);
 }
 
 void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t width, uint32_t height)
 {
-    if (mDisplaySize.width == width && mDisplaySize.height == height)
+    /*if (mDisplaySize.width == width && mDisplaySize.height == height)
     {
         return;
-    }
+    }*/
 
     //The Vulkan spec states : compositeAlpha must be one of the bits present in the supportedCompositeAlpha member of the 
     // VkSurfaceCapabilitiesKHR structure returned by vkGetPhysicalDeviceSurfaceCapabilitiesKHR for the surface
@@ -112,6 +113,9 @@ void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t w
         viewCreateInfo.flags = 0;
         vkCreateImageView(vulkanContext->device, &viewCreateInfo, nullptr, &mDisplayViews[i]);
     }
+
+    mDSBuffer->CreateDepthStencilBuffer(mVulkanContext, mDisplaySize.width, mDisplaySize.height);
+    
 }
 
 void VulkanSwapChain::CreateFrameBuffer(VulkanContextPtr vulkanContext, VkRenderPass renderPass, VkImageView depthStencilImage)

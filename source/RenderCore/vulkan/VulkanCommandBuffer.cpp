@@ -11,6 +11,7 @@
 #include "VKComputeEncoder.h"
 #include "BaseLib/LogService.h"
 #include "VKRenderTexture.h"
+#include "BaseLib/DebugBreaker.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -23,7 +24,7 @@ VulkanCommandBuffer::VulkanCommandBuffer(VkCommandBuffer commandBuffer, CommandB
     VkCommandBufferBeginInfo cmdBufferBeginInfo;
     cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     cmdBufferBeginInfo.pNext = nullptr;
-    cmdBufferBeginInfo.flags = 0;
+    cmdBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
     cmdBufferBeginInfo.pInheritanceInfo = nullptr;
 
     VkResult res = vkBeginCommandBuffer(mCommandBuffer, &cmdBufferBeginInfo);
@@ -252,7 +253,7 @@ void VulkanCommandBuffer::presentFrameBuffer()
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    vkResetFences(mCommandInfo->vulkanContext->device, 1, &mCommandInfo->flightFence);
+    //vkResetFences(mCommandInfo->vulkanContext->device, 1, &mCommandInfo->flightFence);
     res = vkQueueSubmit(mCommandInfo->vulkanContext->graphicsQueue, 1, &submitInfo, mCommandInfo->flightFence);
     
     if (res != VK_SUCCESS)
@@ -300,7 +301,10 @@ void VulkanCommandBuffer::presentFrameBuffer()
         }
     }
     
-    assert(res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR);
+    if (res != VK_SUCCESS)
+    {
+        //baselib::DebugBreak();
+    }
     
     // 更新当前帧的索引
     mCommandInfo->renderDevice->UpdateCurrentIndex();

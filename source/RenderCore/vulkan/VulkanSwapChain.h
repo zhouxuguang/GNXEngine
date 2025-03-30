@@ -9,6 +9,7 @@
 #define GNX_ENGINE_VULKAN_SWAPCHAIN_INCLUDE_JDSGHVDHGH
 
 #include "VulkanContext.h"
+#include "VKDepthStencilBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -74,6 +75,11 @@ public:
 
     void ClearImage();
 
+    VKDepthStencilBufferPtr GetDSBuffer() const
+    {
+        return mDSBuffer;
+    }
+
 private:
     VulkanContextPtr mVulkanContext = nullptr;
     VkSwapchainKHR mSwapchain = VK_NULL_HANDLE;                        //swapchain对象
@@ -89,6 +95,8 @@ private:
 
     VkSurfaceCapabilitiesKHR mSurfaceCapabilities;
     VkCompositeAlphaFlagBitsKHR mCompositeAlpha;
+
+    VKDepthStencilBufferPtr mDSBuffer = nullptr;
 };
 
 using VulkanSwapChainPtr = std::shared_ptr<VulkanSwapChain>;

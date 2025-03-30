@@ -116,6 +116,7 @@ VKRenderDevice::~VKRenderDevice()
 void VKRenderDevice::resize(uint32_t width, uint32_t height)
 {
     vkQueueWaitIdle(mVulkanContext->graphicsQueue);
+    //vkDeviceWaitIdle(mVulkanContext->device);
     
     if (!mSwapChain)
     {
@@ -123,17 +124,8 @@ void VKRenderDevice::resize(uint32_t width, uint32_t height)
     }
     else
     {
+        mSwapChain->Release();
         mSwapChain->CreateSwapChain(mVulkanContext, width, height);
-    }
-    
-    // 创建深度模板缓冲
-    if (!mDSBuffer)
-    {
-        mDSBuffer = std::make_shared<VKDepthStencilBuffer>(mVulkanContext, mSwapChain->GetWidth(), mSwapChain->GetHeight());
-    }
-    else
-    {
-        mDSBuffer->CreateDepthStencilBuffer(mVulkanContext, width, height);
     }
     
     // 创建命令缓冲区
@@ -263,24 +255,25 @@ CommandBufferPtr VKRenderDevice::createCommandBuffer()
         return nullptr;
     }
 
+    //VkResult res = vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]);
+
     VkResult res = vkWaitForFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame], VK_TRUE, UINT64_MAX);
     assert(res == VK_SUCCESS);  //这里返回值可能是VK_ERROR_DEVICE_LOST
 
     res = vkAcquireNextImageKHR(mVulkanContext->device, mSwapChain->GetSwapChain(), UINT64_MAX,
             mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE, &mNextFrameIndex);
 
-    if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
-    {
-        log_info("VKRenderDevice::createCommandBuffer vkAcquireNextImageKHR = %d", res);
-
-        if (res == VK_SUBOPTIMAL_KHR || res == VK_ERROR_OUT_OF_DATE_KHR)
-        {
-            resize(mSwapChain->GetWidth(), mSwapChain->GetHeight());
-        }
+	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
+	{
+		resize(mSwapChain->GetWidth(), mSwapChain->GetHeight());
+        //res = vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]);
         return nullptr;
-    }
+	}
+
+    res = vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]);
 
     VkCommandBuffer commandBuffer = mCommandBuffers[mNextFrameIndex];
+    //res = vkResetCommandBuffer(commandBuffer, 0);
     CommandBufferInfoPtr commandBufferInfo = std::make_shared<CommandBufferInfo>();
     commandBufferInfo->flightFence = mFlightFences[mCurrentFrame];
     commandBufferInfo->imageAvailableSemaphore = mImageAvailableSemaphores[mCurrentFrame];
@@ -290,7 +283,7 @@ CommandBufferPtr VKRenderDevice::createCommandBuffer()
     commandBufferInfo->renderFinishSemaphore = mRenderFinishedSemaphores[mCurrentFrame];
     commandBufferInfo->swapChain = mSwapChain;
     commandBufferInfo->vulkanContext = mVulkanContext;
-    commandBufferInfo->depthStencilBuffer = mDSBuffer;
+    commandBufferInfo->depthStencilBuffer = mSwapChain->GetDSBuffer();
     
     return std::make_shared<VulkanCommandBuffer>(commandBuffer, commandBufferInfo);
 }

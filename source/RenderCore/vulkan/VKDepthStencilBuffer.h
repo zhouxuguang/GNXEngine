@@ -16,6 +16,8 @@ NAMESPACE_RENDERCORE_BEGIN
 class VKDepthStencilBuffer
 {
 public:
+    VKDepthStencilBuffer(VulkanContextPtr context);
+
     VKDepthStencilBuffer(VulkanContextPtr context, uint32_t width, uint32_t height);
 
     ~VKDepthStencilBuffer();
@@ -35,7 +37,7 @@ private:
     VmaAllocation mAllocation = VK_NULL_HANDLE;
     VkImageView mDepthStencilImageView = VK_NULL_HANDLE;
     VulkanContextPtr mContext = nullptr;
-    VkFormat mFormat;
+    VkFormat mFormat = VK_FORMAT_UNDEFINED;
 };
 
 using VKDepthStencilBufferPtr = std::shared_ptr<VKDepthStencilBuffer>;

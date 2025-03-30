@@ -263,6 +263,10 @@ void WindowsVulkanView::Render()
 	sceneManager->Update(deltaTime);
 
 	CommandBufferPtr commandBuffer = mRenderDevice->createCommandBuffer();
+    if (!commandBuffer)
+    {
+        return;
+    }
 
 	RenderPass renderPass;
 	RenderPassColorAttachmentPtr colorAttachmentPtr = std::make_shared<RenderPassColorAttachment>();

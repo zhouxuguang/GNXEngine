@@ -17,6 +17,11 @@ VKDepthStencilBuffer::VKDepthStencilBuffer(VulkanContextPtr context, uint32_t wi
     CreateDepthStencilBuffer(context, width, height);
 }
 
+VKDepthStencilBuffer::VKDepthStencilBuffer(VulkanContextPtr context)
+{
+    mContext = context;
+}
+
 VKDepthStencilBuffer::~VKDepthStencilBuffer()
 {
     Release();
