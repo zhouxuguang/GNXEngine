@@ -24,7 +24,8 @@ public:
                     const RenderPassFormat& passFormat, 
                     const RenderPassImage& passImage,
                     const std::vector<VkClearValue> &clearValues,
-                    const RenderPassImageView& passImageView);
+                    const RenderPassImageView& passImageView,
+                    uint32_t currentFrameIndex);
     
     ~VKRenderEncoder();
     
@@ -37,6 +38,10 @@ public:
     virtual void setVertexUniformBuffer(UniformBufferPtr buffer, int index);
     
     virtual void setFragmentUniformBuffer(UniformBufferPtr buffer, int index);
+
+    virtual void setVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+
+    virtual void setFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
     
     virtual void drawPrimitves(PrimitiveMode mode, int offset, int size);
     
@@ -46,7 +51,13 @@ public:
     
     virtual void setFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index);
     
-    virtual void setFragmentRenderTextureAndSampler(RenderTexturePtr textureCube, TextureSamplerPtr sampler, int index);
+    virtual void setFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index);
+
+    virtual void setFragmentTextureAndSampler(const std::string& resourceName, Texture2DPtr texture, TextureSamplerPtr sampler);
+
+    virtual void setFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler);
+
+    virtual void setFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler);
     
 private:
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
@@ -56,6 +67,7 @@ private:
     RenderPassFormat mPassFormat;
     RenderPassImage mPassImage;
     VulkanContextPtr mContext = nullptr;
+    uint32_t mCurrentFrameIndex = 0;
     
     void BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInfo);
     void EndDynamicRenderPass();

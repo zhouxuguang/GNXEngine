@@ -23,6 +23,7 @@ struct CommandBufferInfo
     VkSemaphore renderFinishSemaphore;
     VkFence flightFence;
     VulkanSwapChainPtr swapChain;
+    uint32_t currentFrameIndex;
     uint32_t nextFrameIndex;
     VulkanContextPtr vulkanContext;
     VKDepthStencilBufferPtr depthStencilBuffer;

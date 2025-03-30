@@ -39,8 +39,10 @@ v2f VS(uint vertexID : SV_VertexID)
     return vout;
 }
 
-Texture2D texImage : register(t0, space0);
-SamplerState texImageSam  : register(s0, space1);
+//[[vk::combinedImageSampler]]
+Texture2D texImage;// : register(t0, space0);
+//[[vk::combinedImageSampler]]
+SamplerState texImageSam;//  : register(s0, space1);
 
 float3 aces_approx(float3 v)
 {

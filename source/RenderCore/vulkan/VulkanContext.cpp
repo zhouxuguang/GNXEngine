@@ -601,8 +601,8 @@ bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
 
 void CreateGraphicsDescriptorPool(VulkanContext& context)
 {
-	constexpr int maxCount = 100000;
-    constexpr int maxSetCount = 4;
+	constexpr int maxCount = 16;
+    constexpr int maxSetCount = 10000;
 	// 创建VkDescriptorPool
 
 	VkDescriptorPoolSize poolSizes[4] = {};

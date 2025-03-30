@@ -58,6 +58,22 @@ public:
      @param index index description
      */
     virtual void setFragmentUniformBuffer(UniformBufferPtr buffer, int index) = 0;
+
+    /**
+     设置顶点uniformbuffer
+
+     @param buffer buffer description
+     @param index index description
+     */
+    virtual void setVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer) = 0;
+
+    /**
+     设置片元uniformbuffer
+
+     @param buffer buffer description
+     @param index index description
+     */
+    virtual void setFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer) = 0;
     
     /**
      draw function
@@ -103,7 +119,34 @@ public:
      @param sampler 采样器句柄
      @param index 纹理通道索引
      */
-    virtual void setFragmentRenderTextureAndSampler(RenderTexturePtr textureCube, TextureSamplerPtr sampler, int index) = 0;
+    virtual void setFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index) = 0;
+
+    /**
+     设置片元纹理和采样器
+
+     @param resourceName 对应shader中的名字
+     @param texture 纹理句柄
+     @param sampler 采样器句柄
+     */
+    virtual void setFragmentTextureAndSampler(const std::string &resourceName, Texture2DPtr texture, TextureSamplerPtr sampler) = 0;
+
+    /**
+     设置片元立方体纹理和采样器
+
+     @param resourceName 对应shader中的名字
+     @param textureCube 纹理句柄
+     @param sampler 采样器句柄
+     */
+    virtual void setFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler) = 0;
+
+    /**
+     设置片元渲染纹理和采样器
+
+     @param resourceName 对应shader中的名字
+     @param rendertexture 纹理句柄
+     @param sampler 采样器句柄
+     */
+    virtual void setFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler) = 0;
 };
 
 typedef std::shared_ptr<RenderEncoder> RenderEncoderPtr;

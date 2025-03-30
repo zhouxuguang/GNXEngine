@@ -93,13 +93,6 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
         baselib::DebugBreak();
     }
     
-    // 删除VkDescriptorSetLayout
-//    for (auto iter : desLayouts)
-//    {
-//        vkDestroyDescriptorSetLayout(mContext->device, iter, nullptr);
-//    }
-//    desLayouts.clear();
-    
     // 创建管线
     VkComputePipelineCreateInfo pipelineInfo = {};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;

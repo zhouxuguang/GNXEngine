@@ -26,14 +26,16 @@ PostProcessing::PostProcessing(RenderDevicePtr renderDevice)
     
     ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
     ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
-    ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(*vertexShader, ShaderStage_Vertex);
-    ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(*fragmentShader, ShaderStage_Fragment);
+    /*ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(*vertexShader, ShaderStage_Vertex);
+    ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(*fragmentShader, ShaderStage_Fragment);*/
+
+    GraphicsShaderPtr graphicsShader = renderDevice->createGraphicsShader(*vertexShader, *fragmentShader);
+
     GraphicsPipelineDescriptor graphicsPipelineDescriptor;
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
     
     mPipeline = renderDevice->createGraphicsPipeline(graphicsPipelineDescriptor);
-    mPipeline->attachVertexShader(vertShader);
-    mPipeline->attachFragmentShader(fragShader);
+    mPipeline->attachGraphicsShader(graphicsShader);
 }
 
 PostProcessing::~PostProcessing()
@@ -49,7 +51,7 @@ void PostProcessing::SetRenderTexture(const RenderTexturePtr texture)
 void PostProcessing::Process(const RenderEncoderPtr &renderEncoder)
 {
     renderEncoder->setGraphicsPipeline(mPipeline);
-    renderEncoder->setFragmentRenderTextureAndSampler(mTexture, mTextureSampler, 0);
+    renderEncoder->setFragmentRenderTextureAndSampler("texImage", mTexture, mTextureSampler);
     
     renderEncoder->drawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
 }

@@ -173,6 +173,7 @@ void VKGraphicsPipeline::attachFragmentShader(ShaderFunctionPtr shaderFunction)
 
 void VKGraphicsPipeline::attachGraphicsShader(GraphicsShaderPtr graphicsShader)
 {
+    mShader = std::dynamic_pointer_cast<VKGraphicsShader>(graphicsShader);
 }
 
 void VKGraphicsPipeline::Generate(const RenderPassFormat& passFormat)
@@ -191,43 +192,33 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
 
     // 1、shader信息配置
     std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
-    int setIndex = 0;
-    for (auto &iter : mShaders)
-    {
-        VkPipelineShaderStageCreateInfo shaderStage = {};
-        shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        shaderStage.stage = iter->GetVKShaderStage();
-        shaderStage.module = iter->GetShaderModule();
-        shaderStage.pName = iter->GetEntryName().c_str();
-        shaderStages.push_back(shaderStage);
-        
-        const DescriptorSetLayoutDataVec& descriptorSets = iter->GetDescriptorSets();
-        for (const auto &iterDes : descriptorSets)
-        {
-            mStageSetOffsets[iter->getShaderStage()][iterDes.descriptorType] = setIndex;
-            setIndex ++;
-        }
-    }
+
+	VkPipelineShaderStageCreateInfo vertexShaderStage = {};
+	vertexShaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertexShaderStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertexShaderStage.module = mShader->GetVertexShaderModule();
+    vertexShaderStage.pName = mShader->GetVertexEntryName().c_str();
+	shaderStages.push_back(vertexShaderStage);
+
+	VkPipelineShaderStageCreateInfo fragmentShaderStage = {};
+    fragmentShaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragmentShaderStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragmentShaderStage.module = mShader->GetFragmentShaderModule();
+    fragmentShaderStage.pName = mShader->GetFragmentEntryName().c_str();
+	shaderStages.push_back(fragmentShaderStage);
     
     mPipeCreateInfo.stageCount = (uint32_t)shaderStages.size();
     mPipeCreateInfo.pStages = shaderStages.data();
 
     //2、顶点输入状态
-    const VertexInputLayout* vertexInputLayout = nullptr;
-    for (auto &iter : mShaders)
-    {
-        if (iter->GetVKShaderStage() == VK_SHADER_STAGE_VERTEX_BIT)
-        {
-            vertexInputLayout = &iter->GetVertexInputLayout();
-        }
-    }
+    const VertexInputLayout& vertexInputLayout = mShader->GetVertexInputLayout();
     
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = (uint32_t)vertexInputLayout->inputBindings.size();
-    vertexInputInfo.pVertexBindingDescriptions = vertexInputLayout->inputBindings.data();
-    vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)vertexInputLayout->attributeDescriptions.size();
-    vertexInputInfo.pVertexAttributeDescriptions = vertexInputLayout->attributeDescriptions.data();
+    vertexInputInfo.vertexBindingDescriptionCount = (uint32_t)vertexInputLayout.inputBindings.size();
+    vertexInputInfo.pVertexBindingDescriptions = vertexInputLayout.inputBindings.data();
+    vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)vertexInputLayout.attributeDescriptions.size();
+    vertexInputInfo.pVertexAttributeDescriptions = vertexInputLayout.attributeDescriptions.data();
     mPipeCreateInfo.pVertexInputState = &vertexInputInfo;
 
     //3、顶点输入组装
@@ -412,6 +403,11 @@ void VKGraphicsPipeline::CreatePipelineLayout()
     {
         printf("failed to create compute pipeline layout!");
     }
+}
+
+VKGraphicsShaderPtr VKGraphicsPipeline::GetCurrentShader() const
+{
+    return mShader;
 }
 
 NAMESPACE_RENDERCORE_END

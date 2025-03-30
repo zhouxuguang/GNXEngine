@@ -34,10 +34,9 @@ class GraphicsShader
 {
 public:
 	GraphicsShader();
-	~GraphicsShader();
+    virtual ~GraphicsShader();
 
-private:
-
+    virtual std::string GetName() const = 0;
 };
 
 using GraphicsShaderPtr = std::shared_ptr<GraphicsShader>;

@@ -98,7 +98,8 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
     
     passImage.isPresentStage = true;
     
-    return std::make_shared<VKRenderEncoder>(mCommandInfo->vulkanContext, mCommandBuffer, render_info, passFormat, passImage, clearValues, passImageView);
+    return std::make_shared<VKRenderEncoder>(mCommandInfo->vulkanContext, mCommandBuffer, render_info, 
+        passFormat, passImage, clearValues, passImageView, mCommandInfo->currentFrameIndex);
 }
 
 RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& renderPass) const
@@ -219,7 +220,8 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
     
     passImage.isPresentStage = false;
     
-    return std::make_shared<VKRenderEncoder>(mCommandInfo->vulkanContext, mCommandBuffer, renderingInfo, passFormat, passImage, clearValues, passImageView);
+    return std::make_shared<VKRenderEncoder>(mCommandInfo->vulkanContext, mCommandBuffer, renderingInfo, passFormat, passImage, 
+        clearValues, passImageView, mCommandInfo->currentFrameIndex);
 }
 
 ComputeEncoderPtr VulkanCommandBuffer::createComputeEncoder() const

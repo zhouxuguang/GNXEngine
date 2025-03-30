@@ -114,12 +114,25 @@ public:
         vertexAssemblyCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         mPipeCreateInfo.pInputAssemblyState = &vertexAssemblyCreateInfo;
     }
+
+    void SetCurrentFrameIndex(uint32_t currentFrameIndex)
+    {
+        mCurrentFrameIndex = currentFrameIndex;
+        if (mShader)
+        {
+            mShader->SetCurrentFrameIndex(mCurrentFrameIndex);
+        }
+    }
+
+    VKGraphicsShaderPtr GetCurrentShader() const;
     
 private:
     VkPipeline mPipeline = VK_NULL_HANDLE;
     VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;
     VulkanContextPtr mContext = nullptr;
     VkGraphicsPipelineCreateInfo mPipeCreateInfo;
+    uint32_t mCurrentFrameIndex = 0;
+    VKGraphicsShaderPtr mShader = nullptr;
     
     GraphicsPipelineDescriptor mGraphicsPipelineDes;
     

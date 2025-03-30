@@ -190,10 +190,12 @@ VKRenderEncoder::VKRenderEncoder(VulkanContextPtr context,
                                  const RenderPassFormat& passFormat, 
                                  const RenderPassImage& passImage,
                                  const std::vector<VkClearValue> &clearValues,
-                                 const RenderPassImageView& passImageView) : mPassFormat(passFormat), mPassImage(passImage)
+                                 const RenderPassImageView& passImageView,
+                                 uint32_t currentFrameIndex) : mPassFormat(passFormat), mPassImage(passImage)
 {
     mCommandBuffer = commandBuffer;
     mContext = context;
+    mCurrentFrameIndex = currentFrameIndex;
     
     if (mContext->vulkanExtension.enabledDynamicRendering)
     {
@@ -276,6 +278,7 @@ void VKRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     VKGraphicsPipeline *vkGraphicsPipieline = (VKGraphicsPipeline *)graphicsPipeline.get();
     assert(vkGraphicsPipieline);
     mGraphicsPipieline = vkGraphicsPipieline;
+    mGraphicsPipieline->SetCurrentFrameIndex(mCurrentFrameIndex);
     
     // 没有动态渲染时需要设置renderpass
     if (!mContext->vulkanExtension.enabledDynamicRendering)
@@ -353,6 +356,42 @@ void VKRenderEncoder::setFragmentUniformBuffer(UniformBufferPtr buffer, int inde
     
     vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
     //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, &writeDescriptorSet);
+}
+
+void VKRenderEncoder::setVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+{
+	if (!buffer)
+	{
+		return;
+	}
+	VKUniformBuffer* vkUniformBuffer = (VKUniformBuffer*)buffer.get();
+
+    VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+
+    ShaderBufferDesc bufferDesc;
+    bufferDesc.buffer = vkUniformBuffer->GetBuffer();
+    bufferDesc.offset = 0;
+    bufferDesc.range = VK_WHOLE_SIZE;
+
+    shader->BindUniformBuffer(resourceName, bufferDesc);
+}
+
+void VKRenderEncoder::setFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+{
+	if (!buffer)
+	{
+		return;
+	}
+	VKUniformBuffer* vkUniformBuffer = (VKUniformBuffer*)buffer.get();
+
+	VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+
+	ShaderBufferDesc bufferDesc;
+	bufferDesc.buffer = vkUniformBuffer->GetBuffer();
+	bufferDesc.offset = 0;
+	bufferDesc.range = VK_WHOLE_SIZE;
+
+	shader->BindUniformBuffer(resourceName, bufferDesc);
 }
 
 void VKRenderEncoder::drawPrimitves(PrimitiveMode mode, int offset, int size)
@@ -531,6 +570,66 @@ void VKRenderEncoder::setFragmentRenderTextureAndSampler(RenderTexturePtr render
     vkUpdateDescriptorSets(mContext->device, 1, writeDesSets + 1, 0, nullptr);
 
     //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), samOffset, 1, writeDesSets + 1);
+}
+
+void VKRenderEncoder::setFragmentTextureAndSampler(const std::string& resourceName, Texture2DPtr texture, TextureSamplerPtr sampler)
+{
+	if (!texture || !sampler)
+	{
+		return;
+	}
+	VKTexture2D* vkTexture2D = (VKTexture2D*)texture.get();
+	VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
+
+	VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+
+	ShaderImageDesc imageDesc;
+    imageDesc.image = vkTexture2D->getVKImageView()->GetHandle();
+    imageDesc.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageDesc.sampler = VK_NULL_HANDLE;
+
+	shader->BindTexture(resourceName, imageDesc);
+    shader->BindSampler(resourceName + "Sam", vkSampler->GetVKSampler());
+}
+
+void VKRenderEncoder::setFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler)
+{
+	if (!textureCube || !sampler)
+	{
+		return;
+	}
+    VKTextureCube* vkTextureCube = (VKTextureCube*)textureCube.get();
+	VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
+
+	VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+
+	ShaderImageDesc imageDesc;
+	imageDesc.image = vkTextureCube->GetImageView()->GetHandle();
+	imageDesc.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageDesc.sampler = VK_NULL_HANDLE;
+
+	shader->BindTexture(resourceName, imageDesc);
+	shader->BindSampler(resourceName + "Sam", vkSampler->GetVKSampler());
+}
+
+void VKRenderEncoder::setFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler)
+{
+	if (!renderTexture || !sampler)
+	{
+		return;
+	}
+    VKRenderTexture* vkTextureRender = (VKRenderTexture*)renderTexture.get();
+	VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
+
+	VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+
+	ShaderImageDesc imageDesc;
+	imageDesc.image = vkTextureRender->GetImageView()->GetHandle();
+	imageDesc.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageDesc.sampler = VK_NULL_HANDLE;
+
+	shader->BindTexture(resourceName, imageDesc);
+	shader->BindSampler(resourceName + "Sam", vkSampler->GetVKSampler());
 }
 
 NAMESPACE_RENDERCORE_END

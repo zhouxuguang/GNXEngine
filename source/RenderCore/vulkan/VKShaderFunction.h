@@ -107,6 +107,20 @@ private:
 
 using VKShaderFunctionPtr = std::shared_ptr<VKShaderFunction>;
 
+struct ShaderBufferDesc 
+{
+    VkBuffer buffer;
+	size_t offset;
+	size_t range;
+};
+
+struct ShaderImageDesc 
+{
+	VkImageView   image;
+    VkImageLayout imageLayout;
+	VkSampler sampler;
+};
+
 class VKGraphicsShader : public GraphicsShader
 {
 public:
@@ -125,14 +139,33 @@ public:
     VKGraphicsShader(VulkanContextPtr context, const ShaderCode& vertexShader, const ShaderCode& fragmentShader);
     ~VKGraphicsShader();
 
+    virtual std::string GetName() const
+    {
+        return "";
+    }
+
     VkShaderModule GetVertexShaderModule() const { return mVertexShader; }
     VkShaderModule GetFragmentShaderModule() const { return mFragShader; }
 
-    std::string GetVertexEntryName() const { return mVertexEntryName; }
-    std::string GetFragmentEntryName() const { return mFragmentEntryName; }
+    const std::string& GetVertexEntryName() const { return mVertexEntryName; }
+    const std::string& GetFragmentEntryName() const { return mFragmentEntryName; }
 
     auto& GetDescriptorSetLayouts() const { return mDescriptorSetLayouts; }
     auto& GetCurrentDescriptorSets() const { return mDescriptorSets[mCurrentFrame]; }
+
+	void BindUniformBuffer(const std::string& resourceName, const ShaderBufferDesc& bufferDesc);
+	void BindTexture(const std::string& resourceName, const ShaderImageDesc& imageDesc);
+	void BindSampler(const std::string& resourceName, VkSampler sampler);
+
+	void SetCurrentFrameIndex(uint32_t currentFrameIndex)
+	{
+        mCurrentFrame = currentFrameIndex;
+	}
+
+	const VertexInputLayout& GetVertexInputLayout() const
+	{
+		return mVertexInputLayout;
+	}
 
 private:
     void CollectResource(SpvReflectShaderModule shaderModule, ShaderStage shaderStage);
@@ -153,6 +186,9 @@ private:
 
 	std::vector<VkDescriptorSetLayout> mDescriptorSetLayouts;
 	std::vector<OneFrameDescriptorSets> mDescriptorSets;
+
+    // 顶点数据布局
+    VertexInputLayout mVertexInputLayout;
 };
 
 using VKGraphicsShaderPtr = std::shared_ptr<VKGraphicsShader>;

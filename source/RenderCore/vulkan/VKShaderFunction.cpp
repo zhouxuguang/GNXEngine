@@ -8,6 +8,7 @@
 #include "VKShaderFunction.h"
 #include "spirv_reflection.h"
 #include "VulkanBufferUtil.h"
+#include "VulkanDescriptorUtil.h"
 #include <set>
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -285,6 +286,9 @@ VKGraphicsShader::VKGraphicsShader(VulkanContextPtr context, const ShaderCode& v
 
 	CollectResource(vertexShaderModule, ShaderStage_Vertex);
 
+    // 收集顶点布局数据
+    mVertexInputLayout = GetVertexInfo(vertexShaderModule);
+
 	SpvReflectShaderModule fragShaderModule = {};
 	result = spvReflectCreateShaderModule(fragmentShader.size(), fragmentShader.data(), &fragShaderModule);
 	assert(result == SPV_REFLECT_RESULT_SUCCESS);
@@ -326,6 +330,76 @@ VKGraphicsShader::~VKGraphicsShader()
         iter.clear();
 	}
     mDescriptorSets.clear();
+}
+
+void VKGraphicsShader::BindUniformBuffer(const std::string& resourceName, const ShaderBufferDesc& bufferDesc)
+{
+    auto bindData = mReflectionDatas.find(resourceName);
+	if (bindData == mReflectionDatas.end()) 
+    {
+		printf("Fail to find shader resource %s", resourceName.c_str());
+        return;
+	}
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = bufferDesc.buffer;
+    bufferInfo.offset = bufferDesc.offset;
+    bufferInfo.range = bufferDesc.range;
+
+    uint32_t nextFrameIndex = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+	VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(
+        mDescriptorSets[nextFrameIndex][bindData->second.set],
+        bindData->second.descriptorType, 
+        bindData->second.binding, &bufferInfo, 
+        bindData->second.descriptorCount);
+
+    vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
+}
+
+void VKGraphicsShader::BindTexture(const std::string& resourceName, const ShaderImageDesc& imageDesc)
+{
+	auto bindData = mReflectionDatas.find(resourceName);
+	if (bindData == mReflectionDatas.end())
+	{
+		printf("Fail to find shader resource %s", resourceName.c_str());
+		return;
+	}
+	VkDescriptorImageInfo imageInfo = {};
+    imageInfo.imageView = imageDesc.image;
+    imageInfo.imageLayout = imageDesc.imageLayout;
+    imageInfo.sampler = imageDesc.sampler;
+
+	uint32_t nextFrameIndex = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+	VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(
+		mDescriptorSets[nextFrameIndex][bindData->second.set],
+		bindData->second.descriptorType,
+		bindData->second.binding, &imageInfo,
+		bindData->second.descriptorCount);
+
+	vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
+}
+
+void VKGraphicsShader::BindSampler(const std::string& resourceName, VkSampler sampler)
+{
+	auto bindData = mReflectionDatas.find(resourceName);
+	if (bindData == mReflectionDatas.end())
+	{
+		printf("Fail to find shader resource %s", resourceName.c_str());
+		return;
+	}
+	VkDescriptorImageInfo imageInfo = {};
+	imageInfo.sampler = sampler;
+
+	uint32_t nextFrameIndex = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+	VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(
+		mDescriptorSets[nextFrameIndex][bindData->second.set],
+		bindData->second.descriptorType,
+		bindData->second.binding, &imageInfo,
+		bindData->second.descriptorCount);
+
+	vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
 }
 
 void VKGraphicsShader::CollectResource(SpvReflectShaderModule shaderModule, ShaderStage shaderStage)
@@ -415,7 +489,8 @@ void VKGraphicsShader::GenerateDescriptorSets()
 		allocInfo.pSetLayouts = mDescriptorSetLayouts.data();
 
         iter.resize(mDescriptorSetLayouts.size());
-		if (vkAllocateDescriptorSets(mContext->device, &allocInfo, iter.data()) != VK_SUCCESS)
+        VkResult res = vkAllocateDescriptorSets(mContext->device, &allocInfo, iter.data());
+		if (res != VK_SUCCESS)
         {
             abort();
 		}

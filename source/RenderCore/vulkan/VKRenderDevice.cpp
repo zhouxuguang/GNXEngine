@@ -284,6 +284,7 @@ CommandBufferPtr VKRenderDevice::createCommandBuffer()
     CommandBufferInfoPtr commandBufferInfo = std::make_shared<CommandBufferInfo>();
     commandBufferInfo->flightFence = mFlightFences[mCurrentFrame];
     commandBufferInfo->imageAvailableSemaphore = mImageAvailableSemaphores[mCurrentFrame];
+    commandBufferInfo->currentFrameIndex = mCurrentFrame;
     commandBufferInfo->nextFrameIndex = mNextFrameIndex;
     commandBufferInfo->renderDevice = this;
     commandBufferInfo->renderFinishSemaphore = mRenderFinishedSemaphores[mCurrentFrame];

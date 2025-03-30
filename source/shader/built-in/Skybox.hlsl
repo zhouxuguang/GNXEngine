@@ -64,9 +64,9 @@ SkyVertexOut VS(appdata_skybox vin)
     return vout;
 }
 
-TextureCube gCubeMap : register(t0, space1);
+TextureCube gCubeMap;// : register(t0, space1);
 
-SamplerState gCubeMapSam : register(s0, space2);
+SamplerState gCubeMapSam;// : register(s0, space2);
 
 float4 PS(SkyVertexOut pin) : SV_Target
 {

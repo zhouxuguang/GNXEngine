@@ -159,16 +159,20 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     //        fwrite(fragmentShader, 1, strlen(fragmentShader), fp2);
     //        fclose(fp2);
     
-    ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(*vertexShader, ShaderStage_Vertex);
-    ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(*fragmentShader, ShaderStage_Fragment);
+    /*ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(*vertexShader, ShaderStage_Vertex);
+    ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(*fragmentShader, ShaderStage_Fragment);*/
+
+    GraphicsShaderPtr shader = renderDevice->createGraphicsShader(*vertexShader, *fragmentShader);
+
     GraphicsPipelineDescriptor graphicsPipelineDescriptor;
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
     graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionLessThanOrEqual;
     graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;
     
     mPipeline = renderDevice->createGraphicsPipeline(graphicsPipelineDescriptor);
-    mPipeline->attachVertexShader(vertShader);
-    mPipeline->attachFragmentShader(fragShader);
+    mPipeline->attachGraphicsShader(shader);
+    /*mPipeline->attachVertexShader(vertShader);
+    mPipeline->attachFragmentShader(fragShader);*/
     
     mRenderDevice = renderDevice;
     
@@ -185,8 +189,8 @@ void SkyBox::Render(const RenderEncoderPtr &renderEncoder, UniformBufferPtr came
     renderEncoder->setGraphicsPipeline(mPipeline);
     
     renderEncoder->setVertexBuffer(mVertexBuffer, 0, 0);
-    renderEncoder->setFragmentTextureCubeAndSampler(mTextureCube, mTextureSampler, 0);
-    renderEncoder->setVertexUniformBuffer(cameraUBO, 0);
+    renderEncoder->setFragmentTextureCubeAndSampler("gCubeMap", mTextureCube, mTextureSampler);
+    renderEncoder->setVertexUniformBuffer("cbPerCamera", cameraUBO);
     
     renderEncoder->drawPrimitves(PrimitiveMode_TRIANGLES, 0, 36);
 }
