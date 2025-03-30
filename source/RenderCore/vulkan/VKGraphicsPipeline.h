@@ -83,7 +83,7 @@ public:
         return mDescriptorSets[index];
     }
 
-    uint32_t GetSetCount() const
+    /*uint32_t GetSetCount() const
     {
         return mDescriptorSets.size();
     }
@@ -91,7 +91,7 @@ public:
     const std::vector<VkDescriptorSet>& GetDescriptorSets() const
     {
         return mDescriptorSets;
-    }
+    }*/
     
     void SetRenderPass(VkRenderPass renderPass)
     {

@@ -338,6 +338,8 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
 
 void VKGraphicsPipeline::CreatePipelineLayout()
 {
+#if 0
+
     // 根据shader反射出来的DescriptorSet信息创建各个DescriptorSetLayout
     DescriptorSetLayoutDataVec desSetLayouts;
     for (auto &iter : mShaders)
@@ -393,7 +395,10 @@ void VKGraphicsPipeline::CreatePipelineLayout()
         assert(result == VK_SUCCESS);
     }
 
+#endif
+
     // 创建管线布局
+    const std::vector<VkDescriptorSetLayout>& desLayouts = mShader->GetDescriptorSetLayouts();
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = (uint32_t)desLayouts.size();
