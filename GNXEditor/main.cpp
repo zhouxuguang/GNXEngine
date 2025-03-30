@@ -6,6 +6,7 @@
 
 int main(int argc, char *argv[])
 {
+    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_DEBUG);
     QApplication a(argc, argv);
 
     MainWindow w;

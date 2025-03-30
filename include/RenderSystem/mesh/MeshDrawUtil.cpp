@@ -59,12 +59,12 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
     {
         renderEncoder->setGraphicsPipeline(renderInfo.materials[n]->GetPSO());
         
-        renderEncoder->setVertexUniformBuffer(renderInfo.cameraUBO, 0);
-        renderEncoder->setVertexUniformBuffer(renderInfo.objectUBO, 1);
-        renderEncoder->setVertexUniformBuffer(renderInfo.lightUBO, 2);
+        renderEncoder->setVertexUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+        renderEncoder->setVertexUniformBuffer("cbPerObject", renderInfo.objectUBO);
+        renderEncoder->setVertexUniformBuffer("LightInfo", renderInfo.lightUBO);
         
-        renderEncoder->setFragmentUniformBuffer(renderInfo.cameraUBO, 0);
-        renderEncoder->setFragmentUniformBuffer(renderInfo.lightUBO, 2);
+        renderEncoder->setFragmentUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+        renderEncoder->setFragmentUniformBuffer("LightInfo", renderInfo.lightUBO);
         
         renderEncoder->setVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
         renderEncoder->setVertexBuffer(vertexBuffer, channels[kShaderChannelNormal].offset, 1);
@@ -77,15 +77,15 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
         TextureSamplerPtr textureSampler = mesh.GetSampler();
         
         //这里感觉采样器和纹理封装在一个对象里面会比较方便
-        renderEncoder->setFragmentTextureAndSampler(material->GetTexture("diffuseTexture"), textureSampler, 0);
-        renderEncoder->setFragmentTextureAndSampler(material->GetTexture("normalTexture"), textureSampler, 1);
+        renderEncoder->setFragmentTextureAndSampler("gDiffuseMap", material->GetTexture("diffuseTexture"), textureSampler);
+        /*renderEncoder->setFragmentTextureAndSampler(material->GetTexture("normalTexture"), textureSampler, 1);
         renderEncoder->setFragmentTextureAndSampler(material->GetTexture("roughnessTexture"), textureSampler, 2);
         renderEncoder->setFragmentTextureAndSampler(material->GetTexture("emissiveTexture"), textureSampler, 3);
-        renderEncoder->setFragmentTextureAndSampler(material->GetTexture("ambientTexture"), textureSampler, 4);
+        renderEncoder->setFragmentTextureAndSampler(material->GetTexture("ambientTexture"), textureSampler, 4);*/
         
-        renderEncoder->setFragmentTextureCubeAndSampler(envMap, cubeSampler, 5);
+        /*renderEncoder->setFragmentTextureCubeAndSampler(envMap, cubeSampler, 5);
         renderEncoder->setFragmentTextureCubeAndSampler(envMapIrradiance, cubeSampler, 6);
-        renderEncoder->setFragmentTextureAndSampler(brdfMap, textureSampler, 7);
+        renderEncoder->setFragmentTextureAndSampler(brdfMap, textureSampler, 7);*/
         
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
         
@@ -134,15 +134,15 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
     {
         renderEncoder->setGraphicsPipeline(renderInfo.materials[n]->GetPSO());
         
-        renderEncoder->setFragmentUniformBuffer(renderInfo.cameraUBO, 0);
-        renderEncoder->setFragmentUniformBuffer(renderInfo.lightUBO, 2);
+		renderEncoder->setFragmentUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+		renderEncoder->setFragmentUniformBuffer("LightInfo", renderInfo.lightUBO);
         
         if (isCPUSkin)
         {
-            renderEncoder->setVertexUniformBuffer(renderInfo.cameraUBO, 0);
-            renderEncoder->setVertexUniformBuffer(renderInfo.objectUBO, 1);
-            renderEncoder->setVertexUniformBuffer(renderInfo.lightUBO, 2);
-            
+			renderEncoder->setVertexUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+			renderEncoder->setVertexUniformBuffer("cbPerObject", renderInfo.objectUBO);
+			renderEncoder->setVertexUniformBuffer("LightInfo", renderInfo.lightUBO);
+			
             renderEncoder->setVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
             renderEncoder->setVertexBuffer(vertexBuffer, channels[kShaderChannelNormal].offset, 1);
             renderEncoder->setVertexBuffer(vertexBuffer, channels[kShaderChannelTangent].offset, 2);
@@ -150,10 +150,10 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
         }
         else
         {
-            renderEncoder->setVertexUniformBuffer(renderInfo.cameraUBO, 0);
-            renderEncoder->setVertexUniformBuffer(renderInfo.objectUBO, 1);
-            renderEncoder->setVertexUniformBuffer(renderInfo.lightUBO, 2);
-            renderEncoder->setVertexUniformBuffer(renderInfo.skinnedMatrixUBO, 3);
+			renderEncoder->setVertexUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+			renderEncoder->setVertexUniformBuffer("cbPerObject", renderInfo.objectUBO);
+			renderEncoder->setVertexUniformBuffer("LightInfo", renderInfo.lightUBO);
+            renderEncoder->setVertexUniformBuffer("cbSkinned", renderInfo.skinnedMatrixUBO);
             
             renderEncoder->setVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
             renderEncoder->setVertexBuffer(vertexBuffer, channels[kShaderChannelNormal].offset, 1);
@@ -169,15 +169,15 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
         TextureSamplerPtr textureSampler = mesh.GetSampler();
         
         //这里感觉采样器和纹理封装在一个对象里面会比较方便
-        renderEncoder->setFragmentTextureAndSampler(material->GetTexture("diffuseTexture"), textureSampler, 0);
-        renderEncoder->setFragmentTextureAndSampler(material->GetTexture("normalTexture"), textureSampler, 1);
+        renderEncoder->setFragmentTextureAndSampler("", material->GetTexture("diffuseTexture"), textureSampler);
+        /*renderEncoder->setFragmentTextureAndSampler(material->GetTexture("normalTexture"), textureSampler, 1);
         renderEncoder->setFragmentTextureAndSampler(material->GetTexture("roughnessTexture"), textureSampler, 2);
         renderEncoder->setFragmentTextureAndSampler(material->GetTexture("emissiveTexture"), textureSampler, 3);
         renderEncoder->setFragmentTextureAndSampler(material->GetTexture("ambientTexture"), textureSampler, 4);
         
         renderEncoder->setFragmentTextureCubeAndSampler(envMap, cubeSampler, 5);
         renderEncoder->setFragmentTextureCubeAndSampler(envMapIrradiance, cubeSampler, 6);
-        renderEncoder->setFragmentTextureAndSampler(brdfMap, textureSampler, 7);
+        renderEncoder->setFragmentTextureAndSampler(brdfMap, textureSampler, 7);*/
         
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
         

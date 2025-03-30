@@ -73,11 +73,11 @@ VertexOut VS(appdata_tan vin)
 }
 
 Texture2D gDiffuseMap; //: register(t0);
-SamplerState gSamLinearWrap; // : register(s0);
+SamplerState gDiffuseMapSam; // : register(s0);
 
 float4 PS(VertexOut pin) : SV_Target
 {
-    float3 diffuseColor = gDiffuseMap.Sample(gSamLinearWrap, pin.texCoord0).xyz;
+    //float3 diffuseColor = gDiffuseMap.Sample(gDiffuseMapSam, pin.texCoord0).xyz;
     // return float4(phongModel(pin.lightDir, pin.viewDir, pin.normal, diffuseColor), 1.0);
-    return gDiffuseMap.Sample(gSamLinearWrap, pin.texCoord0);
+    return gDiffuseMap.Sample(gDiffuseMapSam, pin.texCoord0);
 }
