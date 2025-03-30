@@ -448,7 +448,10 @@ void VKGraphicsShader::GenerateVulkanDescriptorSetLayout()
 	std::vector<VkDescriptorSetLayoutCreateInfo> descriptorSetLayoutCreateInfos;
 	std::vector<VkDescriptorSetLayoutBinding>    layoutBindings;
 
+    // 预先分配2个set，引擎约定就是2个set了，set 0是顶点shader，set 1是片元shader
 	std::map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> setGroups;
+    setGroups[0] = std::vector<VkDescriptorSetLayoutBinding>();
+    setGroups[1] = std::vector<VkDescriptorSetLayoutBinding>();
 
 	for (const auto& [resourceName, metaData] : mReflectionDatas) 
     {
