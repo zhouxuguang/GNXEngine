@@ -54,37 +54,37 @@ VertexOut VS(appdata_tan vin)
 
 // 纹理和采样器
 Texture2D gDiffuseMap : register(t0);
-SamplerState gDiffuseSamp  : register(s0);
+SamplerState gDiffuseMapSam  : register(s0);
 
 Texture2D gNormalMap : register(t1);
-SamplerState gNormalSamp  : register(s1);
+SamplerState gNormalMapSam  : register(s1);
 
 Texture2D gMetalRoughMap : register(t2);
-SamplerState gMetalRoughSamp  : register(s2);
+SamplerState gMetalRoughMapSam  : register(s2);
 
 Texture2D gEmissiveMap : register(t3);
-SamplerState gEmissiveSamp  : register(s3);
+SamplerState gEmissiveMapSam  : register(s3);
 
 Texture2D gAmbientMap : register(t4);
-SamplerState gAmbientSamp  : register(s4);
+SamplerState gAmbientMapSam  : register(s4);
 
 float4 PS(VertexOut pin) : SV_Target
 {
 #if 0
-    float3 diffuseColor = gDiffuseMap.Sample(gDiffuseSamp, pin.texCoord0).xyz;
-    float3 normal = gNormalMap.Sample(gNormalSamp, pin.texCoord0).xyz;
+    float3 diffuseColor = gDiffuseMap.Sample(gDiffuseMapSam, pin.texCoord0).xyz;
+    float3 normal = gNormalMap.Sample(gNormalMapSam, pin.texCoord0).xyz;
     
 	float3 bumpedNormalW = NormalSampleToWorldSpace(normal, pin.normal, pin.tangent);
 
     // 注释下面这行取消法线贴图
 	//bumpedNormalW = pin.normal;
 
-    float2 metalRough = gMetalRoughMap.Sample(gMetalRoughSamp, pin.texCoord0).xy;
+    float2 metalRough = gMetalRoughMap.Sample(gMetalRoughMapSam, pin.texCoord0).xy;
     float metallic = metalRough.x;
     float roughness = metalRough.y;
-    float3 emissive = gEmissiveMap.Sample(gEmissiveSamp, pin.texCoord0).xyz;
+    float3 emissive = gEmissiveMap.Sample(gEmissiveMapSam, pin.texCoord0).xyz;
 
-    float ao = gAmbientMap.Sample(gAmbientSamp, pin.texCoord0).r;
+    float ao = gAmbientMap.Sample(gAmbientMapSam, pin.texCoord0).r;
 
     // 法线
     float3 N = normalize(bumpedNormalW);
@@ -145,20 +145,20 @@ float4 PS(VertexOut pin) : SV_Target
     //return gDiffuseMap.Sample(gDiffuseSamp, pin.texCoord0);
 
 #else
-    float4 Kao = gAmbientMap.Sample(gAmbientSamp, pin.texCoord0);
-	float4 Ke  = gEmissiveMap.Sample(gEmissiveSamp, pin.texCoord0);
-	float4 Kd  = gDiffuseMap.Sample(gDiffuseSamp, pin.texCoord0);
+    float4 Kao = gAmbientMap.Sample(gAmbientMapSam, pin.texCoord0);
+	float4 Ke  = gEmissiveMap.Sample(gEmissiveMapSam, pin.texCoord0);
+	float4 Kd  = gDiffuseMap.Sample(gDiffuseMapSam, pin.texCoord0);
 	//float2 MeR = gMetalRoughMap.Sample(gMetalRoughSamp, pin.texCoord0).xy;
 
 	// world-space normal
 	float3 n = normalize(pin.normal);
 
-	float3 normalSample = gNormalMap.Sample(gNormalSamp, pin.texCoord0).xyz;
+	float3 normalSample = gNormalMap.Sample(gNormalMapSam, pin.texCoord0).xyz;
 
 	// normal mapping
 	n = perturbNormal(n, normalize(_WorldSpaceCameraPos - pin.position), normalSample, pin.texCoord0);
 
-	float4 mrSample = gMetalRoughMap.Sample(gMetalRoughSamp, pin.texCoord0);
+	float4 mrSample = gMetalRoughMap.Sample(gMetalRoughMapSam, pin.texCoord0);
 
 	PBRInfo pbrInputs;
 	//Ke.rgb = SRGBtoLINEAR(Ke).rgb;

@@ -61,36 +61,36 @@ VertexOut VS(appdata_skin vin)
 
 // 纹理和采样器
 Texture2D gDiffuseMap : register(t0, space2);
-SamplerState gDiffuseSamp  : register(s0, space3);
+SamplerState gDiffuseMapSam  : register(s0, space3);
 
 Texture2D gNormalMap : register(t1, space2);
-SamplerState gNormalSamp  : register(s1, space3);
+SamplerState gNormalMapSam  : register(s1, space3);
 
 Texture2D gMetalRoughMap : register(t2, space2);
-SamplerState gMetalRoughSamp  : register(s2, space3);
+SamplerState gMetalRoughMapSam  : register(s2, space3);
 
 Texture2D gEmissiveMap : register(t3, space2);
-SamplerState gEmissiveSamp  : register(s3, space3);
+SamplerState gEmissiveMapSam  : register(s3, space3);
 
 Texture2D gAmbientMap : register(t4, space2);
-SamplerState gAmbientSamp  : register(s4, space3);
+SamplerState gAmbientMapSam  : register(s4, space3);
 
 float4 PS(VertexOut pin) : SV_Target
 {
-    float4 Kao = gAmbientMap.Sample(gAmbientSamp, pin.texCoord0);
-	float4 Ke  = gEmissiveMap.Sample(gEmissiveSamp, pin.texCoord0);
-	float4 Kd  = gDiffuseMap.Sample(gDiffuseSamp, pin.texCoord0);
-	//float2 MeR = gMetalRoughMap.Sample(gMetalRoughSamp, pin.texCoord0).xy;
+    float4 Kao = gAmbientMap.Sample(gAmbientMapSam, pin.texCoord0);
+	float4 Ke  = gEmissiveMap.Sample(gEmissiveMapSam, pin.texCoord0);
+	float4 Kd  = gDiffuseMap.Sample(gDiffuseMapSam, pin.texCoord0);
+	//float2 MeR = gMetalRoughMap.Sample(gMetalRoughMapSam, pin.texCoord0).xy;
 
 	// world-space normal
 	float3 n = normalize(pin.normal);
 
-	float3 normalSample = gNormalMap.Sample(gNormalSamp, pin.texCoord0).xyz;
+	float3 normalSample = gNormalMap.Sample(gNormalMapSam, pin.texCoord0).xyz;
 
 	// normal mapping
 	n = perturbNormal(n, normalize(_WorldSpaceCameraPos - pin.position), normalSample, pin.texCoord0);
 
-	float4 mrSample = gMetalRoughMap.Sample(gMetalRoughSamp, pin.texCoord0);
+	float4 mrSample = gMetalRoughMap.Sample(gMetalRoughMapSam, pin.texCoord0);
 
 	PBRInfo pbrInputs;
 	//Ke.rgb = SRGBtoLINEAR(Ke).rgb;

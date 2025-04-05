@@ -263,13 +263,13 @@ float4 SRGBtoLINEAR(float4 srgbIn)
 }
 
 TextureCube texEnvMap : register(t5, space2);
-SamplerState texEnvSamp  : register(s5, space3);
+SamplerState texEnvMapSam  : register(s5, space3);
 
 TextureCube texEnvMapIrradiance : register(t6, space2);
-SamplerState texEnvMapIrradianceSamp  : register(s6, space3);
+SamplerState texEnvMapIrradianceSam  : register(s6, space3);
 
 Texture2D texBRDF_LUT : register(t7, space2);
-SamplerState texBRDF_LUTSamp  : register(s7, space3);
+SamplerState texBRDF_LUTSam  : register(s7, space3);
 
 // Calculation of the lighting contribution from an optional Image Based Light source.
 // Precomputed Environment Maps are required uniform inputs and are computed as outlined in [1].
@@ -284,11 +284,11 @@ float3 getIBLContribution(PBRInfo pbrInputs, float3 n, float3 reflection)
 	float lod = pbrInputs.perceptualRoughness * mipCount;
 	// retrieve a scale and bias to F0. See [1], Figure 3
 	float2 brdfSamplePoint = clamp(float2(pbrInputs.NdotV, pbrInputs.perceptualRoughness), float2(0.0, 0.0), float2(1.0, 1.0));
-	float3 brdf = texBRDF_LUT.SampleLevel(texBRDF_LUTSamp, brdfSamplePoint, 0).rgb;
+	float3 brdf = texBRDF_LUT.SampleLevel(texBRDF_LUTSam, brdfSamplePoint, 0).rgb;
 
 	// HDR envmaps are already linear
-	float3 diffuseLight = texEnvMapIrradiance.Sample(texEnvMapIrradianceSamp, n.xyz).rgb;
-	float3 specularLight = texEnvMap.SampleLevel(texEnvSamp, reflection.xyz, lod).rgb;
+	float3 diffuseLight = texEnvMapIrradiance.Sample(texEnvMapIrradianceSam, n.xyz).rgb;
+	float3 specularLight = texEnvMap.SampleLevel(texEnvMapSam, reflection.xyz, lod).rgb;
 
 	float3 diffuse = diffuseLight * pbrInputs.diffuseColor;
 	float3 specular = specularLight * (pbrInputs.specularColor * brdf.x + brdf.y);
