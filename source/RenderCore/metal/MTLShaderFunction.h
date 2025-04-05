@@ -34,7 +34,63 @@ private:
     id<MTLFunction> mFunction;
 };
 
-typedef std::shared_ptr<MTLShaderFunction> MTLShaderFunctionPtr;
+using MTLShaderFunctionPtr = std::shared_ptr<MTLShaderFunction>;
+
+#pragma mark region MTLGraphicsShader
+
+const NSUInteger InvalidBindingIndex = -1;
+
+class MTLGraphicsShader : public GraphicsShader
+{
+public:
+    MTLGraphicsShader(id<MTLDevice> device, const ShaderCode& vertexShader, const ShaderCode& fragmentShader);
+    
+    void GenerateRefectionInfo(MTLRenderPipelineReflection* reflectionObj);
+    
+    id<MTLFunction> GetVertexFunction() const
+    {
+        return mVertexFunction;
+    }
+    
+    id<MTLFunction> GetFragmentFunction() const
+    {
+        return mFragmentFunction;
+    }
+    
+    virtual std::string GetName() const
+    {
+        return "";
+    }
+    
+    NSUInteger GetVertexResourceBindIndex(const std::string& resourceName) const
+    {
+        auto iter = mVertexBindings.find(resourceName);
+        if (iter != mVertexBindings.end())
+        {
+            return iter->second;
+        }
+        
+        return InvalidBindingIndex;
+    }
+    
+    NSUInteger GetFragmentResourceBindIndex(const std::string& resourceName) const
+    {
+        auto iter = mFragmentBindings.find(resourceName);
+        if (iter != mFragmentBindings.end())
+        {
+            return iter->second;
+        }
+        
+        return InvalidBindingIndex;
+    }
+private:
+    id<MTLFunction> mVertexFunction = nil;
+    id<MTLFunction> mFragmentFunction = nil;
+    std::unordered_map<std::string, NSUInteger> mVertexBindings;
+    std::unordered_map<std::string, NSUInteger> mFragmentBindings;
+};
+
+using MTLGraphicsShaderPtr = std::shared_ptr<MTLGraphicsShader>;
 
 NAMESPACE_RENDERCORE_END
 

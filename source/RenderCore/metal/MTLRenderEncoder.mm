@@ -130,6 +130,78 @@ void MTLRenderEncoder::setFragmentUniformBuffer(UniformBufferPtr buffer, int ind
     }
 }
 
+void MTLRenderEncoder::setVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+{
+    if (!buffer)
+    {
+        return;
+    }
+    
+    if (!mMtlGraphicsPipeline)
+    {
+        return;
+    }
+    
+    MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
+    if (!shader)
+    {
+        return;
+    }
+    
+    NSUInteger realIndex = shader->GetVertexResourceBindIndex(resourceName);
+    if (realIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    
+    MTLUniformBuffer *mtlBuffer = (MTLUniformBuffer *)buffer.get();
+    if (mtlBuffer->isBuffer())
+    {
+        [mRenderEncoder setVertexBuffer:mtlBuffer->getMTLBuffer() offset:0 atIndex:realIndex];
+    }
+    else
+    {
+        const std::vector<uint8_t>& bufferData = mtlBuffer->getBufferData();
+        [mRenderEncoder setVertexBytes:bufferData.data() length:bufferData.size() atIndex:realIndex];
+    }
+}
+
+void MTLRenderEncoder::setFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+{
+    if (!buffer)
+    {
+        return;
+    }
+    
+    if (!mMtlGraphicsPipeline)
+    {
+        return;
+    }
+    
+    MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
+    if (!shader)
+    {
+        return;
+    }
+    
+    NSUInteger realIndex = shader->GetFragmentResourceBindIndex(resourceName);
+    if (realIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    
+    MTLUniformBuffer *mtlBuffer = (MTLUniformBuffer *)buffer.get();
+    if (mtlBuffer->isBuffer())
+    {
+        [mRenderEncoder setFragmentBuffer: mtlBuffer->getMTLBuffer() offset:0 atIndex:realIndex];
+    }
+    else
+    {
+        const std::vector<uint8_t>& bufferData = mtlBuffer->getBufferData();
+        [mRenderEncoder setFragmentBytes:bufferData.data() length:bufferData.size() atIndex:realIndex];
+    }
+}
+
 static MTLPrimitiveType ConvertPrimitiveType(const PrimitiveMode mode)
 {
     switch (mode)
@@ -213,8 +285,8 @@ void MTLRenderEncoder::drawIndexedPrimitives(PrimitiveMode mode, int size, Index
 /**
  设置纹理和采样器
 
- @param texture 纹理句柄
- @param sampler 采样器句柄
+ r param texture 纹理句柄
+ @aaaparam sampler 采样器句柄
  @param index 纹理通道索引
  */
 void MTLRenderEncoder::setFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index)
@@ -289,6 +361,131 @@ void MTLRenderEncoder::setFragmentRenderTextureAndSampler(RenderTexturePtr rende
     [mRenderEncoder setFragmentTexture:mtlTexture atIndex:index];
     id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
     [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:index];
+}
+
+/**
+ 设置片元纹理和采样器
+
+ @param resourceName 对应shader中的名字
+ @param texture 纹理句柄
+ @param sampler 采样器句柄
+ */
+void MTLRenderEncoder::setFragmentTextureAndSampler(const std::string &resourceName, Texture2DPtr texture, TextureSamplerPtr sampler)
+{
+    MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
+    if (!shader)
+    {
+        return;
+    }
+    
+    NSUInteger texIndex = shader->GetFragmentResourceBindIndex(resourceName);
+    if (texIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    NSUInteger samIndex = shader->GetFragmentResourceBindIndex(resourceName + "Sam");
+    if (samIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    
+    if (!texture)
+    {
+        [mRenderEncoder setFragmentTexture:nil atIndex:texIndex];
+        return;
+    }
+    
+    if (!sampler)
+    {
+        [mRenderEncoder setFragmentSamplerState:nil atIndex:samIndex];
+        return;
+    }
+
+    id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTexture2D>(texture)->getMTLTexture();
+    [mRenderEncoder setFragmentTexture:mtlTexture atIndex:texIndex];
+    id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
+    [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];
+}
+
+/**
+ 设置片元立方体纹理和采样器
+
+ @param resourceName 对应shader中的名字
+ @param textureCube 纹理句柄
+ @param sampler 采样器句柄
+ */
+void MTLRenderEncoder::setFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler)
+{
+    MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
+    if (!shader)
+    {
+        return;
+    }
+    
+    NSUInteger texIndex = shader->GetFragmentResourceBindIndex(resourceName);
+    if (texIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    NSUInteger samIndex = shader->GetFragmentResourceBindIndex(resourceName + "Sam");
+    if (samIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    
+    if (!textureCube)
+    {
+        [mRenderEncoder setFragmentTexture:nil atIndex:texIndex];
+        return;
+    }
+    
+    if (!sampler)
+    {
+        [mRenderEncoder setFragmentSamplerState:nil atIndex:samIndex];
+        return;
+    }
+
+    id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTextureCube>(textureCube)->getMTLTexture();
+    [mRenderEncoder setFragmentTexture:mtlTexture atIndex:texIndex];
+    id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
+    [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];
+}
+
+void MTLRenderEncoder::setFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler)
+{
+    MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
+    if (!shader)
+    {
+        return;
+    }
+    
+    NSUInteger texIndex = shader->GetFragmentResourceBindIndex(resourceName);
+    if (texIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    NSUInteger samIndex = shader->GetFragmentResourceBindIndex(resourceName + "Sam");
+    if (samIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    
+    if (!renderTexture)
+    {
+        [mRenderEncoder setFragmentTexture:nil atIndex:texIndex];
+        return;
+    }
+    
+    if (!sampler)
+    {
+        [mRenderEncoder setFragmentSamplerState:nil atIndex:samIndex];
+        return;
+    }
+
+    id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLRenderTexture>(renderTexture)->getMTLTexture();
+    [mRenderEncoder setFragmentTexture:mtlTexture atIndex:texIndex];
+    id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
+    [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];
 }
 
 NAMESPACE_RENDERCORE_END

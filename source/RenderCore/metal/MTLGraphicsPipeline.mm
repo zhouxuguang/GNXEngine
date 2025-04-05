@@ -259,6 +259,20 @@ void MTLGraphicsPipeline::attachFragmentShader(ShaderFunctionPtr shaderFunction)
     mRenderPipelineDes.fragmentFunction = shaderPtr->getShaderFunction();
 }
 
+void MTLGraphicsPipeline::attachGraphicsShader(GraphicsShaderPtr graphicsShader)
+{
+    if (!graphicsShader)
+    {
+        return;
+    }
+    
+    MTLGraphicsShaderPtr shaderPtr = std::dynamic_pointer_cast<MTLGraphicsShader>(graphicsShader);
+    mRenderPipelineDes.vertexFunction = shaderPtr->GetVertexFunction();
+    mRenderPipelineDes.fragmentFunction = shaderPtr->GetFragmentFunction();
+    
+    mShader = shaderPtr;
+}
+
 static void GetShaderReflectionInfo(MTLRenderPipelineReflection* reflectionObj)
 {
     for (MTLArgument *arg in reflectionObj.vertexArguments)
@@ -349,9 +363,13 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
         MTLRenderPipelineReflection* reflectionObj = nil;
         MTLPipelineOption option = MTLPipelineOptionBufferTypeInfo | MTLPipelineOptionArgumentInfo;
         mRenderPipelineState = [mDevice newRenderPipelineStateWithDescriptor:mRenderPipelineDes options:option reflection:&reflectionObj error:&error];
-        mReflectionObj = reflectionObj;
         
         GetShaderReflectionInfo(reflectionObj);
+        
+        if (mShader)
+        {
+            mShader->GenerateRefectionInfo(reflectionObj);
+        }
         
         //
         uint32_t maxVertexIndex = 0;
@@ -388,34 +406,6 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
             }
         }
         
-#if 0
-        //新版的反射信息
-        for (id<MTLBinding> arg in reflectionObj.vertexBindings)
-        {
-            NSLog(@"Found arg: %@\n", arg.name);
-            
-            MTLBindingType argType = arg.type;
-            int index = arg.index;
-            MTLArgumentAccess access = arg.access;
-            BOOL used = arg.isUsed;
-            BOOL arugment = arg.isArgument;   //arugment为true则是uniformbuffer
-            NSString* descStr = arg.debugDescription;
-            NSString* descStr1 = arg.description;
-            
-//            for (MTLStructMember* uniform in arg.bufferStructType.members)
-//            {
-//                NSLog(@"uniform: %@ type:%lu, location: %lu", uniform.name, (unsigned long)uniform.dataType, (unsigned long)uniform.offset);
-//            }
-            
-            id<MTLBufferBinding> bufferBinding = arg;
-            MTLDataType dataType = bufferBinding.bufferDataType;
-            uint32_t dataSize = bufferBinding.bufferDataSize;
-            
-            int a = 10;
-        }
-        
-#endif
-        
         mVertexUniformOffset = maxVertexIndex;
         if (vertexCount > 0)
         {
@@ -433,6 +423,11 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
 id<MTLRenderPipelineState> MTLGraphicsPipeline::getRenderPipelineState() const
 {
     return mRenderPipelineState;
+}
+
+MTLGraphicsShaderPtr MTLGraphicsPipeline::GetShader() const
+{
+    return mShader;
 }
 
 NAMESPACE_RENDERCORE_END

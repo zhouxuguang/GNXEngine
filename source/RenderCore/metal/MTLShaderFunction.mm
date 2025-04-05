@@ -80,4 +80,62 @@ id<MTLFunction> MTLShaderFunction::getShaderFunction() const
     return mFunction;
 }
 
+#pragma region MTLGraphicsShader
+
+static id<MTLFunction> CreateShaderFunction(id<MTLDevice> device, const ShaderCode& shaderSource, ShaderStage shaderStage)
+{
+    if (shaderSource.empty())
+    {
+        return nil;
+    }
+    
+    std::string shaderStr;
+    shaderStr.resize(shaderSource.size());
+    memcpy(shaderStr.data(), shaderSource.data(), shaderSource.size());
+    
+    NSError *error = nil;
+    id<MTLLibrary> library = [device newLibraryWithSource:[NSString stringWithUTF8String:shaderStr.c_str()] options:nil error:&error];
+    if (error)
+    {
+        //NSString* errorStr = error.domain;
+        NSLog(@"metal shader error %@", [error localizedDescription]);
+        library = nil;
+        return nil;
+    }
+    
+    NSString *strName = [NSString stringWithUTF8String:getFunctionName(shaderStage)];
+    id<MTLFunction> function = [library newFunctionWithName:strName];
+    library = nil;
+    
+    return function;
+}
+
+MTLGraphicsShader::MTLGraphicsShader(id<MTLDevice> device, const ShaderCode& vertexShader, const ShaderCode& fragmentShader)
+{
+    mVertexFunction = CreateShaderFunction(device, vertexShader, ShaderStage_Vertex);
+    mFragmentFunction = CreateShaderFunction(device, fragmentShader, ShaderStage_Fragment);
+}
+
+void MTLGraphicsShader::GenerateRefectionInfo(MTLRenderPipelineReflection* reflectionObj)
+{
+    if (!reflectionObj)
+    {
+        return;
+    }
+    
+    for (id<MTLBinding> arg in reflectionObj.vertexBindings)
+    {
+        NSLog(@"MTLGraphicsShader::GenerateRefectionInfo Found arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
+        
+        mVertexBindings[arg.name.UTF8String] = arg.index;
+    }
+    
+    for (id<MTLBinding> arg in reflectionObj.fragmentBindings)
+    {
+        NSLog(@"MTLGraphicsShader::GenerateRefectionInfo Found arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
+        
+        mFragmentBindings[arg.name.UTF8String] = arg.index;
+    }
+}
+
 NAMESPACE_RENDERCORE_END

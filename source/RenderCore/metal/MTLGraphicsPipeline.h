@@ -10,6 +10,7 @@
 
 #include "MTLRenderDefine.h"
 #include "GraphicsPipeline.h"
+#include "MTLShaderFunction.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -24,6 +25,8 @@ public:
     
     virtual void attachFragmentShader(ShaderFunctionPtr shaderFunction);
     
+    virtual void attachGraphicsShader(GraphicsShaderPtr graphicsShader);
+    
     void Generate(const FrameBufferFormat& frameBufferFormat);
     
     id<MTLRenderPipelineState> getRenderPipelineState() const;
@@ -33,24 +36,27 @@ public:
         return mDepthStencilState;
     }
     
-    MTLRenderPipelineReflection* GetReflectionObject() const
-    {
-        return mReflectionObj;
-    }
+//    MTLRenderPipelineReflection* GetReflectionObject() const
+//    {
+//        return mReflectionObj;
+//    }
     
     uint32_t GetVertexUniformOffset() const
     {
         return mVertexUniformOffset;
     }
     
+    MTLGraphicsShaderPtr GetShader() const;
+    
 private:
     id<MTLDevice> mDevice = nil;
     id<MTLRenderPipelineState> mRenderPipelineState = nil;
     MTLRenderPipelineDescriptor* mRenderPipelineDes = nil;
     id<MTLDepthStencilState> mDepthStencilState = nil;
-    MTLRenderPipelineReflection* mReflectionObj = nil;
     
     uint32_t mVertexUniformOffset = 0;
+    
+    MTLGraphicsShaderPtr mShader = nullptr;
     
     bool mGenerated = false;
 };

@@ -95,6 +95,11 @@ public:
     virtual ShaderFunctionPtr createShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const;
     
     /**
+    创建图形shader
+     */
+    virtual GraphicsShaderPtr createGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const;
+    
+    /**
      创建图形管线
      */
     virtual GraphicsPipelinePtr createGraphicsPipeline(const GraphicsPipelineDescriptor& des) const;

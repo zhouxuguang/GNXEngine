@@ -160,6 +160,12 @@ ShaderFunctionPtr MTLRenderDevice::createShaderFunction(const ShaderCode& shader
     return shaderFunction->initWithShaderSource(shaderSource, shaderStage);
 }
 
+GraphicsShaderPtr MTLRenderDevice::createGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const
+{
+    MTLGraphicsShaderPtr shaderPtr = std::make_shared<MTLGraphicsShader>(mMetalLayer.device, vertexShader, fragmentShader);
+    return shaderPtr;
+}
+
 /**
  创建图形管线
  */
