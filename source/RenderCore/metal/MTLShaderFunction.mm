@@ -123,6 +123,7 @@ void MTLGraphicsShader::GenerateRefectionInfo(MTLRenderPipelineReflection* refle
         return;
     }
     
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000 || __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_16_0
     for (id<MTLBinding> arg in reflectionObj.vertexBindings)
     {
         NSLog(@"MTLGraphicsShader::GenerateRefectionInfo Found arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
@@ -136,6 +137,21 @@ void MTLGraphicsShader::GenerateRefectionInfo(MTLRenderPipelineReflection* refle
         
         mFragmentBindings[arg.name.UTF8String] = arg.index;
     }
+#else
+    for (MTLArgument * arg in reflectionObj.vertexArguments)
+    {
+        NSLog(@"MTLGraphicsShader::GenerateRefectionInfo Found arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
+        
+        mVertexBindings[arg.name.UTF8String] = arg.index;
+    }
+    
+    for (MTLArgument * arg in reflectionObj.fragmentArguments)
+    {
+        NSLog(@"MTLGraphicsShader::GenerateRefectionInfo Found arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
+        
+        mFragmentBindings[arg.name.UTF8String] = arg.index;
+    }
+#endif
 }
 
 NAMESPACE_RENDERCORE_END

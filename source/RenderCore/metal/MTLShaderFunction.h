@@ -10,6 +10,7 @@
 
 #include "MTLRenderDefine.h"
 #include "ShaderFunction.h"
+#include <unordered_map>
 
 NAMESPACE_RENDERCORE_BEGIN
 
