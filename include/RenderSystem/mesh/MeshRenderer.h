@@ -29,7 +29,7 @@ public:
     
     void AddMaterial(const MaterialPtr& material);
     
-    void Render(RenderInfo &renderInfo);
+    virtual void Render(RenderInfo &renderInfo);
 private:
     MeshPtr mMeshPtr = nullptr;
     
