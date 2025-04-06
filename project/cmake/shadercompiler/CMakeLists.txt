@@ -9,7 +9,13 @@ file(GLOB_RECURSE SHADERCOMPILER_SOURCES CONFIGURE_DEPENDS ${shadercompiler_dir}
                                                            ${shadercompiler_dir}/spirv_cross/*.h)
 file(GLOB_RECURSE SHADERCOMPILER_INCLUDES CONFIGURE_DEPENDS ${shadercompiler_include_dir}/*.h)
 
-add_library(shadercompiler STATIC ${SHADERCOMPILER_SOURCES} ${SHADERCOMPILER_INCLUDES})
+include(../Common.cmake)
+
+set(SOURCE_FILES ${SHADERCOMPILER_SOURCES} ${SHADERCOMPILER_INCLUDES})
+
+add_library(shadercompiler STATIC ${SOURCE_FILES})
+SETUP_GROUPS("${SOURCE_FILES}")
+
 target_include_directories(shadercompiler PUBLIC ${shadercompiler_include_dir} 
                                                  ${CMAKE_CURRENT_SOURCE_DIR}/../../../include
                                                  ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/DirectXShaderCompiler/include)
