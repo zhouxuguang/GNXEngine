@@ -45,11 +45,10 @@ file(GLOB_RECURSE RENDERCORE_INCLUDES CONFIGURE_DEPENDS ${rendercore_include_dir
 
 set(SOURCE_FILES ${RENDERCORE_SOURCES} ${RENDERCORE_INCLUDES})
 
-include(../Common.cmake)
-
 add_library(rendercore STATIC ${SOURCE_FILES})
 
-SETUP_GROUPS("${SOURCE_FILES}")
+source_group(TREE ${rendercore_dir} FILES ${RENDERCORE_SOURCES})
+source_group(TREE ${rendercore_include_dir} FILES ${RENDERCORE_INCLUDES})
 
 target_include_directories(rendercore PUBLIC ${rendercore_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
 target_link_libraries(rendercore PRIVATE mathutil spirv_reflect)

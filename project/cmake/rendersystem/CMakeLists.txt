@@ -21,13 +21,12 @@ elseif(WIN32)
                                 ${rendersystem_include_dir}/*.c)
 endif()
 
-include(../Common.cmake)
-
 set(SOURCE_FILES ${RENDERSYSTEM_SOURCES} ${RENDERSYSTEM_INCLUDES})
 
 add_library(rendersystem STATIC ${SOURCE_FILES})
 
-SETUP_GROUPS("${SOURCE_FILES}")
+source_group(TREE ${rendersystem_dir} FILES ${RENDERSYSTEM_SOURCES})
+source_group(TREE ${rendersystem_include_dir} FILES ${RENDERSYSTEM_INCLUDES})
 
 target_include_directories(rendersystem PUBLIC ${rendersystem_include_dir} 
                                                 ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)

@@ -4,13 +4,12 @@ set(asset_process_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../../include/Asset
 file(GLOB_RECURSE MESH_PROCESS_SOURCES CONFIGURE_DEPENDS ${asset_process_dir}/*.cpp ${asset_process_dir}/*.c ${asset_process_dir}/*.h)
 file(GLOB_RECURSE MESH_PROCESS_INCLUDES CONFIGURE_DEPENDS ${asset_process_include_dir}/*.h)
 
-include(../Common.cmake)
-
 set(SOURCE_FILES ${MESH_PROCESS_SOURCES} ${MESH_PROCESS_INCLUDES})
 
 add_library(AssetProcess STATIC ${SOURCE_FILES})
 
-SETUP_GROUPS("${SOURCE_FILES}")
+source_group(TREE ${asset_process_dir} FILES ${MESH_PROCESS_SOURCES})
+source_group(TREE ${asset_process_include_dir} FILES ${MESH_PROCESS_INCLUDES})
 
 target_include_directories(AssetProcess PUBLIC ${asset_process_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
 

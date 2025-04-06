@@ -12,11 +12,10 @@ else()
     set(SOURCE_FILES ${MATHUTIL_SOURCES} ${MATHUTIL_INCLUDES})
 endif()
 
-include(../Common.cmake)
-
 add_library(mathutil STATIC ${SOURCE_FILES})
 
-SETUP_GROUPS("${SOURCE_FILES}")
+source_group(TREE ${mathutil_dir} FILES ${MATHUTIL_SOURCES})
+source_group(TREE ${mathutil_include_dir} FILES ${MATHUTIL_INCLUDES})
 
 target_include_directories(mathutil PUBLIC ${mathutil_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
 if(ANDROID)
