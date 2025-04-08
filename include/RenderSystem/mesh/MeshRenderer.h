@@ -30,6 +30,11 @@ public:
     void AddMaterial(const MaterialPtr& material);
     
     virtual void Render(RenderInfo &renderInfo);
+
+    const std::vector<MaterialPtr>& GetMaterials() const
+    {
+        return mMaterials;
+    }
 private:
     MeshPtr mMeshPtr = nullptr;
     
