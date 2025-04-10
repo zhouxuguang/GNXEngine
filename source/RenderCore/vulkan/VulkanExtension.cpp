@@ -37,9 +37,15 @@ void VulkanExtension::InitExtendedDynamicState(VkPhysicalDevice physicalDevice)
     
     // Check what dynamic states are supported by the current implementation
     // Checking for available features is probably sufficient, but retained redundant extension checks for clarity and consistency
-    enabledExtendedDynamicState = ExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) && extendedDynamicStateFeaturesEXT.extendedDynamicState;
-    enabledExtendedDynamicState2 = ExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME) && extendedDynamicState2FeaturesEXT.extendedDynamicState2;
-    enabledExtendedDynamicState3 = ExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME) && extendedDynamicState3FeaturesEXT.extendedDynamicState3ColorBlendEnable && extendedDynamicState3FeaturesEXT.extendedDynamicState3ColorBlendEquation;
+    enabledExtendedDynamicState = ExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) && 
+        extendedDynamicStateFeaturesEXT.extendedDynamicState;
+    enabledExtendedDynamicState2 = ExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME) && 
+        extendedDynamicState2FeaturesEXT.extendedDynamicState2;
+    enabledExtendedDynamicState3 = ExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME) && 
+        extendedDynamicState3FeaturesEXT.extendedDynamicState3ColorBlendEnable && 
+        extendedDynamicState3FeaturesEXT.extendedDynamicState3ColorBlendEquation;
+
+    enablePushDesDescriptor = ExtensionSupported(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
 }
 
 bool VulkanExtension::ExtensionSupported(const char* name)

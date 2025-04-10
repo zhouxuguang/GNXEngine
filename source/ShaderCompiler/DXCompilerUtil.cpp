@@ -151,7 +151,7 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
 
     if (shaderStage == ShaderStage_Fragment)
     {
-        arguments.push_back(L"-auto-binding-space 1");
+        //arguments.push_back(L"-auto-binding-space 1");
         //arguments.push_back(L"-fvk-auto-shift-bindings");
     }
 
@@ -204,7 +204,8 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
     result = pResults->GetStatus(&hrStatus);
     if (FAILED(hrStatus))
     {
-        printf("Compilation Failed\n");
+		const char* buffer = pErrors->GetStringPointer();
+		printf("Compilation Failed: %s\n", buffer);
         return nullptr;
     }
     

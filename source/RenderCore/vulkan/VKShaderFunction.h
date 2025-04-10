@@ -153,9 +153,18 @@ public:
     auto& GetDescriptorSetLayouts() const { return mDescriptorSetLayouts; }
     auto& GetCurrentDescriptorSets() const { return mDescriptorSets[mCurrentFrame]; }
 
-	void BindUniformBuffer(const std::string& resourceName, const ShaderBufferDesc& bufferDesc);
-	void BindTexture(const std::string& resourceName, const ShaderImageDesc& imageDesc);
-	void BindSampler(const std::string& resourceName, VkSampler sampler);
+	void BindUniformBuffer(VkCommandBuffer commandBuffer,
+        const std::string& resourceName, 
+        const ShaderBufferDesc& bufferDesc,
+        VkPipelineLayout layout);
+	void BindTexture(VkCommandBuffer commandBuffer,
+        const std::string& resourceName, 
+        const ShaderImageDesc& imageDesc,
+        VkPipelineLayout layout);
+	void BindSampler(VkCommandBuffer commandBuffer,
+        const std::string& resourceName, 
+        VkSampler sampler,
+        VkPipelineLayout layout);
 
 	void SetCurrentFrameIndex(uint32_t currentFrameIndex)
 	{

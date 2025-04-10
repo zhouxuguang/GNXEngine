@@ -332,31 +332,39 @@ VKGraphicsShader::~VKGraphicsShader()
     mDescriptorSets.clear();
 }
 
-void VKGraphicsShader::BindUniformBuffer(const std::string& resourceName, const ShaderBufferDesc& bufferDesc)
+void VKGraphicsShader::BindUniformBuffer(VkCommandBuffer commandBuffer, const std::string& resourceName, const ShaderBufferDesc& bufferDesc, VkPipelineLayout layout)
 {
-    auto bindData = mReflectionDatas.find(resourceName);
-	if (bindData == mReflectionDatas.end()) 
-    {
+	auto bindData = mReflectionDatas.find(resourceName);
+	if (bindData == mReflectionDatas.end())
+	{
 		printf("Fail to find shader resource %s", resourceName.c_str());
-        return;
+		return;
 	}
-    VkDescriptorBufferInfo bufferInfo = {};
-    bufferInfo.buffer = bufferDesc.buffer;
-    bufferInfo.offset = bufferDesc.offset;
-    bufferInfo.range = bufferDesc.range;
+	VkDescriptorBufferInfo bufferInfo = {};
+	bufferInfo.buffer = bufferDesc.buffer;
+	bufferInfo.offset = bufferDesc.offset;
+	bufferInfo.range = bufferDesc.range;
 
-    uint32_t nextFrameIndex = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	uint32_t nextFrameIndex = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    bool enablePushDesDescriptor = mContext->vulkanExtension.enablePushDesDescriptor;
 
 	VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(
-        mDescriptorSets[nextFrameIndex][bindData->second.set],
-        bindData->second.descriptorType, 
-        bindData->second.binding, &bufferInfo, 
-        bindData->second.descriptorCount);
+        !enablePushDesDescriptor ? mDescriptorSets[nextFrameIndex][bindData->second.set] : VK_NULL_HANDLE,
+		bindData->second.descriptorType,
+		bindData->second.binding, &bufferInfo,
+		bindData->second.descriptorCount);
 
-    vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
+    if (enablePushDesDescriptor)
+    {
+        vkCmdPushDescriptorSetKHR(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, bindData->second.set, 1, &writeDescriptorSet);
+    }
+    else
+    {
+        vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
+    }
 }
 
-void VKGraphicsShader::BindTexture(const std::string& resourceName, const ShaderImageDesc& imageDesc)
+void VKGraphicsShader::BindTexture(VkCommandBuffer commandBuffer, const std::string& resourceName, const ShaderImageDesc& imageDesc, VkPipelineLayout layout)
 {
 	auto bindData = mReflectionDatas.find(resourceName);
 	if (bindData == mReflectionDatas.end())
@@ -365,22 +373,30 @@ void VKGraphicsShader::BindTexture(const std::string& resourceName, const Shader
 		return;
 	}
 	VkDescriptorImageInfo imageInfo = {};
-    imageInfo.imageView = imageDesc.image;
-    imageInfo.imageLayout = imageDesc.imageLayout;
-    imageInfo.sampler = imageDesc.sampler;
+	imageInfo.imageView = imageDesc.image;
+	imageInfo.imageLayout = imageDesc.imageLayout;
+	imageInfo.sampler = imageDesc.sampler;
 
 	uint32_t nextFrameIndex = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    bool enablePushDesDescriptor = mContext->vulkanExtension.enablePushDesDescriptor;
 
 	VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(
-		mDescriptorSets[nextFrameIndex][bindData->second.set],
+        !enablePushDesDescriptor ? mDescriptorSets[nextFrameIndex][bindData->second.set] : VK_NULL_HANDLE,
 		bindData->second.descriptorType,
 		bindData->second.binding, &imageInfo,
 		bindData->second.descriptorCount);
 
-	vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
+	if (enablePushDesDescriptor)
+	{
+		vkCmdPushDescriptorSetKHR(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, bindData->second.set, 1, &writeDescriptorSet);
+	}
+	else
+	{
+		vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
+	}
 }
 
-void VKGraphicsShader::BindSampler(const std::string& resourceName, VkSampler sampler)
+void VKGraphicsShader::BindSampler(VkCommandBuffer commandBuffer, const std::string& resourceName, VkSampler sampler, VkPipelineLayout layout)
 {
 	auto bindData = mReflectionDatas.find(resourceName);
 	if (bindData == mReflectionDatas.end())
@@ -392,14 +408,22 @@ void VKGraphicsShader::BindSampler(const std::string& resourceName, VkSampler sa
 	imageInfo.sampler = sampler;
 
 	uint32_t nextFrameIndex = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    bool enablePushDesDescriptor = mContext->vulkanExtension.enablePushDesDescriptor;
 
 	VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(
-		mDescriptorSets[nextFrameIndex][bindData->second.set],
+        !enablePushDesDescriptor ? mDescriptorSets[nextFrameIndex][bindData->second.set] : VK_NULL_HANDLE,
 		bindData->second.descriptorType,
 		bindData->second.binding, &imageInfo,
 		bindData->second.descriptorCount);
 
-	vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
+	if (enablePushDesDescriptor)
+	{
+		vkCmdPushDescriptorSetKHR(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, bindData->second.set, 1, &writeDescriptorSet);
+	}
+	else
+	{
+		vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
+	}
 }
 
 void VKGraphicsShader::CollectResource(SpvReflectShaderModule shaderModule, ShaderStage shaderStage)
@@ -451,7 +475,7 @@ void VKGraphicsShader::GenerateVulkanDescriptorSetLayout()
     // 预先分配2个set，引擎约定就是2个set了，set 0是顶点shader，set 1是片元shader
 	std::map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> setGroups;
     setGroups[0] = std::vector<VkDescriptorSetLayoutBinding>();
-    setGroups[1] = std::vector<VkDescriptorSetLayoutBinding>();
+    //setGroups[1] = std::vector<VkDescriptorSetLayoutBinding>();
 
 	for (const auto& [resourceName, metaData] : mReflectionDatas) 
     {
@@ -468,10 +492,16 @@ void VKGraphicsShader::GenerateVulkanDescriptorSetLayout()
         setGroups[set].push_back(binding);
 	}
 
+    bool enablePushDesDescriptor = mContext->vulkanExtension.enablePushDesDescriptor;
+
 	for (const auto& [setIndex, bindingVecs] : setGroups) 
     {
         VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo = {};
         descriptorSetLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        if (enablePushDesDescriptor)
+        {
+            descriptorSetLayoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+        }
         descriptorSetLayoutCreateInfo.bindingCount = (uint32_t)bindingVecs.size();
         descriptorSetLayoutCreateInfo.pBindings = bindingVecs.data();
         VkDescriptorSetLayout setLayout = VK_NULL_HANDLE;
@@ -483,6 +513,13 @@ void VKGraphicsShader::GenerateVulkanDescriptorSetLayout()
 
 void VKGraphicsShader::GenerateDescriptorSets()
 {
+    // enablePushDesDescriptor 打开后就不需要创建DescriptorSet
+    bool enablePushDesDescriptor = mContext->vulkanExtension.enablePushDesDescriptor;
+    if (enablePushDesDescriptor)
+    {
+        return;
+    }
+
     for (auto &iter : mDescriptorSets)
     {
 		VkDescriptorSetAllocateInfo allocInfo = {};

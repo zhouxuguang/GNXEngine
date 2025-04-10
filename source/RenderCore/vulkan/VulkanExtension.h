@@ -19,6 +19,8 @@ struct VulkanExtension
     bool enabledExtendedDynamicState3 = false;
     
     bool enabledDynamicRendering = false;
+
+    bool enablePushDesDescriptor = false;
     
     std::vector<VkExtensionProperties> mDeviceExtensions;
     

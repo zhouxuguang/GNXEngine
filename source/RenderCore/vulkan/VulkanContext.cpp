@@ -173,7 +173,7 @@ bool SelectPhysicalDevice(VulkanContext& context)
         return ret;
     }
 
-    for (uint32_t i = 0; i < gpuDevices.size(); ++i)
+    for (uint32_t i = 1; i < gpuDevices.size(); ++i)
     {
         VkPhysicalDevice physicalDevice = gpuDevices[i];
         vkGetPhysicalDeviceProperties(physicalDevice, &context.physicalDeviceProperties);
@@ -437,8 +437,11 @@ bool CreateVirtualDevice(VulkanContext& context)
     //deviceExtensionNames.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
     
     // 打开 VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME    
-    // push descriptor默认开启
-    deviceExtensionNames.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    // push descriptor开启
+    if (context.vulkanExtension.enablePushDesDescriptor)
+    {
+        deviceExtensionNames.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    }
     
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature = {};
 	dynamicRenderingFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;

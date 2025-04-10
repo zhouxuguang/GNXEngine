@@ -377,7 +377,7 @@ void VKRenderEncoder::setVertexUniformBuffer(const std::string& resourceName, Un
     bufferDesc.offset = 0;
     bufferDesc.range = VK_WHOLE_SIZE;
 
-    shader->BindUniformBuffer(resourceName, bufferDesc);
+    shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
 }
 
 void VKRenderEncoder::setFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
@@ -395,7 +395,7 @@ void VKRenderEncoder::setFragmentUniformBuffer(const std::string& resourceName, 
 	bufferDesc.offset = 0;
 	bufferDesc.range = VK_WHOLE_SIZE;
 
-	shader->BindUniformBuffer(resourceName, bufferDesc);
+	shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
 }
 
 void VKRenderEncoder::drawPrimitves(PrimitiveMode mode, int offset, int size)
@@ -592,8 +592,8 @@ void VKRenderEncoder::setFragmentTextureAndSampler(const std::string& resourceNa
     imageDesc.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageDesc.sampler = VK_NULL_HANDLE;
 
-	shader->BindTexture(resourceName, imageDesc);
-    shader->BindSampler(resourceName + "Sam", vkSampler->GetVKSampler());
+	shader->BindTexture(mCommandBuffer, resourceName, imageDesc, mGraphicsPipieline->GetPipelineLayout());
+    shader->BindSampler(mCommandBuffer, resourceName + "Sam", vkSampler->GetVKSampler(), mGraphicsPipieline->GetPipelineLayout());
 }
 
 void VKRenderEncoder::setFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler)
@@ -612,8 +612,8 @@ void VKRenderEncoder::setFragmentTextureCubeAndSampler(const std::string& resour
 	imageDesc.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageDesc.sampler = VK_NULL_HANDLE;
 
-	shader->BindTexture(resourceName, imageDesc);
-	shader->BindSampler(resourceName + "Sam", vkSampler->GetVKSampler());
+	shader->BindTexture(mCommandBuffer, resourceName, imageDesc, mGraphicsPipieline->GetPipelineLayout());
+	shader->BindSampler(mCommandBuffer, resourceName + "Sam", vkSampler->GetVKSampler(), mGraphicsPipieline->GetPipelineLayout());
 }
 
 void VKRenderEncoder::setFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler)
@@ -632,8 +632,8 @@ void VKRenderEncoder::setFragmentRenderTextureAndSampler(const std::string& reso
 	imageDesc.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageDesc.sampler = VK_NULL_HANDLE;
 
-	shader->BindTexture(resourceName, imageDesc);
-	shader->BindSampler(resourceName + "Sam", vkSampler->GetVKSampler());
+	shader->BindTexture(mCommandBuffer, resourceName, imageDesc, mGraphicsPipieline->GetPipelineLayout());
+	shader->BindSampler(mCommandBuffer, resourceName + "Sam", vkSampler->GetVKSampler(), mGraphicsPipieline->GetPipelineLayout());
 }
 
 NAMESPACE_RENDERCORE_END
