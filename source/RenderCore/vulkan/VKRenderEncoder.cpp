@@ -264,12 +264,18 @@ void VKRenderEncoder::BindPipeline()
 		uint32_t                                    dynamicOffsetCount,
 		const uint32_t * pDynamicOffsets);*/
 
-    VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
-    const VKGraphicsShader::OneFrameDescriptorSets &desCriptors = shader->GetCurrentDescriptorSets();
+    if (!mContext->vulkanExtension.enablePushDesDescriptor)
+    {
+		VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+		const VKGraphicsShader::OneFrameDescriptorSets& desCriptors = shader->GetCurrentDescriptorSets();
 
-    vkCmdBindDescriptorSets(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-        mGraphicsPipieline->GetPipelineLayout(), 0, desCriptors.size(),
-        desCriptors.data(), 0, nullptr);
+        if (!desCriptors.empty())
+        {
+			vkCmdBindDescriptorSets(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+				mGraphicsPipieline->GetPipelineLayout(), 0, desCriptors.size(),
+				desCriptors.data(), 0, nullptr);
+        }
+    }
 }
 
 void VKRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
