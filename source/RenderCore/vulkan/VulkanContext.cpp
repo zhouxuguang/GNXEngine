@@ -131,12 +131,15 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
 
 		populateDebugMessengerCreateInfo(debugCreateInfo);
         instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+        
+        context.vulkanExtension.enableDebugUtils = true;
 	}
 	else 
     {
         instanceCreateInfo.enabledLayerCount = 0;
         instanceCreateInfo.pNext = nullptr;
         context.enableValidationLayers = false;
+        context.vulkanExtension.enableDebugUtils = false;
 	}
 
 #ifdef __APPLE__

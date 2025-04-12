@@ -47,6 +47,7 @@ void VulkanExtension::InitExtendedDynamicState(VkPhysicalDevice physicalDevice)
 
     enablePushDesDescriptor = ExtensionSupported(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     enableDescriptorUpdateTemplate = ExtensionSupported(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+    enableDebugUtils = ExtensionSupported(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 }
 
 bool VulkanExtension::ExtensionSupported(const char* name)

@@ -125,7 +125,17 @@ void VKTexture2D::createTexture(const VkDevice device, const TextureDescriptor& 
     
     VulkanBufferUtil::CreateImage2DVMA(mContext->vmaAllocator, des.width, des.height, format,
                                        VK_SAMPLE_COUNT_1_BIT, 1, VK_IMAGE_TILING_OPTIMAL, imageUsageFlags, mImage, mAllocation);
-
+    
+    if (mContext->vulkanExtension.enableDebugUtils)
+    {
+        VkDebugUtilsObjectNameInfoEXT debugNameInfo = {};
+        debugNameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        debugNameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
+        debugNameInfo.objectHandle = (uint64_t)mImage;
+        debugNameInfo.pObjectName = "Texture2d";
+        vkSetDebugUtilsObjectNameEXT(mContext->device, &debugNameInfo);
+    }
+    
 #if 0
     VkCommandBuffer commandBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, mContext->commandPool);
 

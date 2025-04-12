@@ -222,6 +222,15 @@ VKRenderEncoder::VKRenderEncoder(VulkanContextPtr context,
 
     //设置裁剪区域
     vkCmdSetScissor(mCommandBuffer, 0, 1, &renderInfo.renderArea);
+    
+    if (mContext->vulkanExtension.enableDebugUtils)
+    {
+        VkDebugUtilsLabelEXT debugLabel = {};
+        debugLabel.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+        debugLabel.pLabelName = "RenderPass";
+        float color[4] = {1.0, 1.0, 1.0, 1.0};
+        vkCmdBeginDebugUtilsLabelEXT(mCommandBuffer, &debugLabel);
+    }
 }
 
 VKRenderEncoder::~VKRenderEncoder()
@@ -231,6 +240,10 @@ VKRenderEncoder::~VKRenderEncoder()
 
 void VKRenderEncoder::EndEncode()
 {
+    if (mContext->vulkanExtension.enableDebugUtils)
+    {
+        vkCmdEndDebugUtilsLabelEXT(mCommandBuffer);
+    }
     if (mContext->vulkanExtension.enabledDynamicRendering)
     {
         EndDynamicRenderPass();
