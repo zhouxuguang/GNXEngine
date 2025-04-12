@@ -173,7 +173,7 @@ bool SelectPhysicalDevice(VulkanContext& context)
         return ret;
     }
 
-    for (uint32_t i = 1; i < gpuDevices.size(); ++i)
+    for (uint32_t i = 0; i < gpuDevices.size(); ++i)
     {
         VkPhysicalDevice physicalDevice = gpuDevices[i];
         vkGetPhysicalDeviceProperties(physicalDevice, &context.physicalDeviceProperties);

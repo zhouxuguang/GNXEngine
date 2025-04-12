@@ -22,6 +22,8 @@ struct VulkanExtension
 
     bool enablePushDesDescriptor = false;
     
+    bool enableDescriptorUpdateTemplate = false;
+    
     std::vector<VkExtensionProperties> mDeviceExtensions;
     
     void Init(VkPhysicalDevice physicalDevice);
