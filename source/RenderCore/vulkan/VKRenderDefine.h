@@ -25,6 +25,7 @@
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
 #include "vk_mem_alloc.h"
 #include "RenderDefine.h"
+#include "BaseLib/DebugBreaker.h"
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 #ifdef min
@@ -36,8 +37,37 @@
 #endif
 
 #include <assert.h>
+#include <iostream>
+
+NAMESPACE_RENDERCORE_BEGIN
 
 //#define ENABLE_VULKAN_MSAA  //开启msaa
 #define ENABLE_VULKAN_DEBUG   //开启DEBUG
+
+#define ENABLE_VK_RESULT_CHECK  //开启返回值检查
+
+/**
+ * @brief Helper function to convert a VkResult enum to a string
+ * @param result Vulkan result to convert.
+ * @return The string to return.
+ */
+const std::string toString(VkResult result);
+
+#ifdef ENABLE_VK_RESULT_CHECK
+    #define VK_CHECK(x)                                                                           \
+        do                                                                                        \
+        {                                                                                         \
+            VkResult err = x;                                                                     \
+            if (err)                                                                              \
+            {                                                                                     \
+                std::cerr << "Detected Vulkan error: " + toString(err);                           \
+                baselib::DebugBreak();                                                            \
+            }                                                                                     \
+        } while (0)
+#else
+    #define VK_CHECK(x) x
+#endif
+
+NAMESPACE_RENDERCORE_END
 
 #endif /* GNX_ENGINE_VK_RENDER_DEFINE_INCLUDE_GKDFGJ */
