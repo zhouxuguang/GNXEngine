@@ -259,6 +259,7 @@ CommandBufferPtr VKRenderDevice::createCommandBuffer()
 
     VkResult res = vkWaitForFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame], VK_TRUE, UINT64_MAX);
     assert(res == VK_SUCCESS);  //这里返回值可能是VK_ERROR_DEVICE_LOST
+    VK_CHECK(vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]));
 
     res = vkAcquireNextImageKHR(mVulkanContext->device, mSwapChain->GetSwapChain(), UINT64_MAX,
             mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE, &mNextFrameIndex);
@@ -270,9 +271,7 @@ CommandBufferPtr VKRenderDevice::createCommandBuffer()
         return nullptr;
 	}
 
-    res = vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]);
-
-    VkCommandBuffer commandBuffer = mCommandBuffers[mNextFrameIndex];
+    VkCommandBuffer commandBuffer = mCommandBuffers[mCurrentFrame];
     //res = vkResetCommandBuffer(commandBuffer, 0);
     CommandBufferInfoPtr commandBufferInfo = std::make_shared<CommandBufferInfo>();
     commandBufferInfo->flightFence = mFlightFences[mCurrentFrame];

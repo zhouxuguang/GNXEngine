@@ -27,6 +27,8 @@ VulkanCommandBuffer::VulkanCommandBuffer(VkCommandBuffer commandBuffer, CommandB
     cmdBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
     cmdBufferBeginInfo.pInheritanceInfo = nullptr;
 
+    vkResetCommandBuffer(commandBuffer, 0);
+
     VkResult res = vkBeginCommandBuffer(mCommandBuffer, &cmdBufferBeginInfo);
     assert(res == VK_SUCCESS);
 }
