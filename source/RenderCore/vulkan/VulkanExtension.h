@@ -19,21 +19,24 @@ struct VulkanExtension
     bool enabledExtendedDynamicState3 = false;
     
     bool enabledDynamicRendering = false;
-
     bool enablePushDesDescriptor = false;
-    
     bool enableDescriptorUpdateTemplate = false;
-    
     bool enableDebugUtils = false;
+    bool enableFormatFeatureFlags2 = false;
+    bool enableCopyCommands2 = false;
+    bool enableHostImageCopy = false;
     
     std::vector<VkExtensionProperties> mDeviceExtensions;
     
-    void Init(VkPhysicalDevice physicalDevice);
+    void Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties physicalDeviceProperties);
     
 private:
     void InitExtendedDynamicState(VkPhysicalDevice physicalDevice);
     
     bool ExtensionSupported(const char* name);
+
+private:
+    VkPhysicalDeviceProperties mPhysicalDeviceProperties;
 };
 
 struct VulkanFeature

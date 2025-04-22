@@ -9,11 +9,12 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-void VulkanExtension::Init(VkPhysicalDevice physicalDevice)
+void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties physicalDeviceProperties)
 {
-    InitExtendedDynamicState(physicalDevice);
-    
-    enabledDynamicRendering = ExtensionSupported(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    mPhysicalDeviceProperties = physicalDeviceProperties;
+	InitExtendedDynamicState(physicalDevice);
+
+	enabledDynamicRendering = ExtensionSupported(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
 }
 
 void VulkanExtension::InitExtendedDynamicState(VkPhysicalDevice physicalDevice)
@@ -48,6 +49,12 @@ void VulkanExtension::InitExtendedDynamicState(VkPhysicalDevice physicalDevice)
     enablePushDesDescriptor = ExtensionSupported(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     enableDescriptorUpdateTemplate = ExtensionSupported(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
     enableDebugUtils = ExtensionSupported(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
+    // host image copy关联的扩展
+    enableFormatFeatureFlags2 = ExtensionSupported(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
+    enableCopyCommands2 = ExtensionSupported(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    enableHostImageCopy = ExtensionSupported(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME) && 
+        enableFormatFeatureFlags2 && enableCopyCommands2 && mPhysicalDeviceProperties.deviceID != 0x1C81;
 }
 
 bool VulkanExtension::ExtensionSupported(const char* name)

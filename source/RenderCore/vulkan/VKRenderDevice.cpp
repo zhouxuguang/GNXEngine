@@ -79,7 +79,7 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
 	vkGetPhysicalDeviceFeatures2(mVulkanContext->physicalDevice, &mVulkanContext->features2);
     
     // 初始化扩展信息
-    mVulkanContext->vulkanExtension.Init(mVulkanContext->physicalDevice);
+    mVulkanContext->vulkanExtension.Init(mVulkanContext->physicalDevice, mVulkanContext->physicalDeviceProperties);
     
     // 创建虚拟设备
     if (!CreateVirtualDevice(*mVulkanContext))

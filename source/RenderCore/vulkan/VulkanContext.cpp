@@ -90,6 +90,8 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
     instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 #endif
 
+    instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+
     VkApplicationInfo appInfo = {};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pNext = nullptr;
@@ -456,6 +458,23 @@ bool CreateVirtualDevice(VulkanContext& context)
     
     // 开启负的高度
     deviceExtensionNames.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+
+    deviceExtensionNames.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    deviceExtensionNames.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+    deviceExtensionNames.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+
+    VkPhysicalDeviceHostImageCopyFeaturesEXT host_image_copy_features = {};
+    if (context.vulkanExtension.enableHostImageCopy)
+    {
+		host_image_copy_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES_EXT;
+		host_image_copy_features.hostImageCopy = VK_TRUE;
+
+        AppendToPNextChain(&context.features_11, &host_image_copy_features);
+
+        deviceExtensionNames.push_back(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
+        deviceExtensionNames.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+        deviceExtensionNames.push_back(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
+    }
 
     deviceQueueCreateInfo->sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     deviceQueueCreateInfo->queueFamilyIndex = context.graphicsQueueFamilyIndex;

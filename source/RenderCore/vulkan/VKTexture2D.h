@@ -56,6 +56,8 @@ private:
     
     TextureDescriptor mTextureDes;
 
+    bool m_bSupportHostImageCopy = false;
+
     void release();
 
     void createTexture(const VkDevice device, const TextureDescriptor& des);

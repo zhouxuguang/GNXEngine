@@ -113,7 +113,24 @@ void VKTexture2D::createTexture(const VkDevice device, const TextureDescriptor& 
     assert(format != VK_FORMAT_UNDEFINED);
     assert(des.width > 0 && des.height > 0);
 
-    VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	VkFormatProperties3 format_properties_3 = {};
+	format_properties_3.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_3_KHR;
+
+	// Properties3 need to be chained into Properties2
+	VkFormatProperties2 format_properties_2 = {};
+	format_properties_2.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
+	format_properties_2.pNext = &format_properties_3;
+
+	// 获得格式的属性
+	vkGetPhysicalDeviceFormatProperties2(mContext->physicalDevice, format, &format_properties_2);
+
+    m_bSupportHostImageCopy = mContext->vulkanExtension.enableHostImageCopy;
+	if ((format_properties_3.optimalTilingFeatures & VK_FORMAT_FEATURE_2_HOST_IMAGE_TRANSFER_BIT_EXT) == 0)
+	{
+        m_bSupportHostImageCopy = false;
+	}
+
+    VkImageUsageFlags imageUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT;
     if (des.usage & TextureUsageShaderWrite)
     {
         imageUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
@@ -122,6 +139,15 @@ void VKTexture2D::createTexture(const VkDevice device, const TextureDescriptor& 
 //    {
 //        imageUsageFlags |= VK_IMAGE_USAGE_STORAGE_BIT;
 //    }
+
+    if (m_bSupportHostImageCopy)
+    {
+        imageUsageFlags |= VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT;
+    }
+    else
+    {
+        imageUsageFlags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    }
     
     VulkanBufferUtil::CreateImage2DVMA(mContext->vmaAllocator, des.width, des.height, format,
                                        VK_SAMPLE_COUNT_1_BIT, 1, VK_IMAGE_TILING_OPTIMAL, imageUsageFlags, mImage, mAllocation);
@@ -171,51 +197,107 @@ void VKTexture2D::replaceRegion(const Rect2D &rect, const unsigned char *imageDa
     {
         return;
     }
-    
-    VkBuffer stageBuffer = VK_NULL_HANDLE;
-    VmaAllocation allocation = VK_NULL_HANDLE;
-    VkDeviceSize size = mTextureDes.height * mTextureDes.bytesPerRow;
-    VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, StorageModeShared, size,
-                                      VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-                                      stageBuffer, allocation, nullptr);
-    
-    void *data = nullptr;
-    vmaMapMemory(mContext->vmaAllocator, allocation, &data);
-    memcpy(data, imageData, size);
-    vmaUnmapMemory(mContext->vmaAllocator, allocation);
 
-	// Image barrier for optimal image (target)
-	// Set initial layout for single array layers (face) of the optimal (target) tiled texture
-	VkImageSubresourceRange subresourceRange = {};
-	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	subresourceRange.baseMipLevel = mipMapLevel;
-	subresourceRange.baseArrayLayer = 0;
-	subresourceRange.levelCount = 1;
-	subresourceRange.layerCount = 1;
-    
-    VkCommandBuffer commandBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, mContext->GetCommandPool());
+    if (m_bSupportHostImageCopy)
+    {
+        // 图像layout转换
+		VkImageSubresourceRange subresourceRange = {};
+		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		subresourceRange.baseMipLevel = 0;
+		subresourceRange.levelCount = 1;
+        subresourceRange.baseArrayLayer = 0;
+		subresourceRange.layerCount = 1;
 
-	VulkanBufferUtil::SetImageLayout(
-		commandBuffer,
-		mImage,
-		VK_IMAGE_LAYOUT_UNDEFINED,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		subresourceRange);
-    
-    VulkanBufferUtil::CopyBufferToImage(mContext->device, commandBuffer, stageBuffer, mImage, 
-                                        rect.offsetX, rect.offsetY, rect.width, rect.height, mipMapLevel);
+		// VK_EXT_host_image_copy also introduces a simplified way of doing the required image transition on the host
+		// This no longer requires a dedicated command buffer to submit the barrier
+		// We also no longer need multiple transitions, and only have to do one for the final layout
+		VkHostImageLayoutTransitionInfoEXT hostImageLayoutTransitionInfo = {};
+		hostImageLayoutTransitionInfo.sType = VK_STRUCTURE_TYPE_HOST_IMAGE_LAYOUT_TRANSITION_INFO_EXT;
+		hostImageLayoutTransitionInfo.image = mImage;
+		hostImageLayoutTransitionInfo.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		hostImageLayoutTransitionInfo.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		hostImageLayoutTransitionInfo.subresourceRange = subresourceRange;
 
-	// Change texture image layout to shader read after all faces have been copied
-	VulkanBufferUtil::SetImageLayout(
-		commandBuffer,
-		mImage,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		subresourceRange);
-    
-    VulkanBufferUtil::EndSingleTimeCommand(mContext->device, mContext->graphicsQueue, mContext->GetCommandPool(), commandBuffer);
-    
-    vmaDestroyBuffer(mContext->vmaAllocator, stageBuffer, allocation);
+		// Get the function pointers required host image copies
+        PFN_vkCopyMemoryToImageEXT vkCopyMemoryToImageEXT = (PFN_vkCopyMemoryToImageEXT)vkGetDeviceProcAddr(mContext->device, "vkCopyMemoryToImageEXT");
+        PFN_vkTransitionImageLayoutEXT vkTransitionImageLayoutEXT = (PFN_vkTransitionImageLayoutEXT)vkGetDeviceProcAddr(mContext->device, "vkTransitionImageLayoutEXT");
+
+		vkTransitionImageLayoutEXT(mContext->device, 1, &hostImageLayoutTransitionInfo);
+
+		// Setup host to image copy
+		VkMemoryToImageCopyEXT memory_to_image_copy = {};
+
+		memory_to_image_copy.sType = VK_STRUCTURE_TYPE_MEMORY_TO_IMAGE_COPY_EXT;
+		memory_to_image_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		memory_to_image_copy.imageSubresource.mipLevel = mipMapLevel;
+		memory_to_image_copy.imageSubresource.baseArrayLayer = 0;
+		memory_to_image_copy.imageSubresource.layerCount = 1;
+        memory_to_image_copy.imageOffset.x = rect.offsetX;
+        memory_to_image_copy.imageOffset.y = rect.offsetY;
+        memory_to_image_copy.imageOffset.z = 0;
+		memory_to_image_copy.imageExtent.width = rect.width;
+		memory_to_image_copy.imageExtent.height = rect.height;
+		memory_to_image_copy.imageExtent.depth = 1;
+		memory_to_image_copy.pHostPointer = imageData;
+
+		// With the image in the correct layout and copy information for all mip levels setup, we can now issue the copy to our taget image from the host
+		// The implementation will then convert this to an implementation specific optimal tiling layout
+		VkCopyMemoryToImageInfoEXT copyMemoryInfo = {};
+		copyMemoryInfo.sType = VK_STRUCTURE_TYPE_COPY_MEMORY_TO_IMAGE_INFO_EXT;
+		copyMemoryInfo.dstImage = mImage;
+		copyMemoryInfo.dstImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		copyMemoryInfo.regionCount = 1;
+		copyMemoryInfo.pRegions = &memory_to_image_copy;
+
+		vkCopyMemoryToImageEXT(mContext->device, &copyMemoryInfo);
+    }
+    else
+    {
+		VkBuffer stageBuffer = VK_NULL_HANDLE;
+		VmaAllocation allocation = VK_NULL_HANDLE;
+		VkDeviceSize size = mTextureDes.height * mTextureDes.bytesPerRow;
+		VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, StorageModeShared, size,
+			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+			stageBuffer, allocation, nullptr);
+
+		void* data = nullptr;
+		vmaMapMemory(mContext->vmaAllocator, allocation, &data);
+		memcpy(data, imageData, size);
+		vmaUnmapMemory(mContext->vmaAllocator, allocation);
+
+		// Image barrier for optimal image (target)
+		// Set initial layout for single array layers (face) of the optimal (target) tiled texture
+		VkImageSubresourceRange subresourceRange = {};
+		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		subresourceRange.baseMipLevel = mipMapLevel;
+		subresourceRange.baseArrayLayer = 0;
+		subresourceRange.levelCount = 1;
+		subresourceRange.layerCount = 1;
+
+		VkCommandBuffer commandBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, mContext->GetCommandPool());
+
+		VulkanBufferUtil::SetImageLayout(
+			commandBuffer,
+			mImage,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			subresourceRange);
+
+		VulkanBufferUtil::CopyBufferToImage(mContext->device, commandBuffer, stageBuffer, mImage,
+			rect.offsetX, rect.offsetY, rect.width, rect.height, mipMapLevel);
+
+		// Change texture image layout to shader read after all faces have been copied
+		VulkanBufferUtil::SetImageLayout(
+			commandBuffer,
+			mImage,
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+			subresourceRange);
+
+		VulkanBufferUtil::EndSingleTimeCommand(mContext->device, mContext->graphicsQueue, mContext->GetCommandPool(), commandBuffer);
+
+		vmaDestroyBuffer(mContext->vmaAllocator, stageBuffer, allocation);
+    }
 }
 
 void VKTexture2D::generateMipmapsTexture(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels)

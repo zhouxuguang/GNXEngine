@@ -114,7 +114,8 @@ void VulkanBufferUtil::CreateImage2DVMA(VmaAllocator vmaAllocator,
                                  VkImage& image,
                                  VmaAllocation& allocation)
 {
-    VkImageCreateInfo imageInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+    VkImageCreateInfo imageInfo = {};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
     imageInfo.extent.width = width;
     imageInfo.extent.height = height;
