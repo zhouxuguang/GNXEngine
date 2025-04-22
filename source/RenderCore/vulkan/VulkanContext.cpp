@@ -526,12 +526,11 @@ VkCommandPool VulkanContext::GetCommandPool()
 }
 
 // 创建内存分配器
-static void GetVulkanFunctions(VmaVulkanFunctions &vulkanFunctions)
+static void GetVulkanFunctions(VkDevice device, VmaVulkanFunctions &vulkanFunctions)
 {
     vulkanFunctions.vkGetInstanceProcAddr = (PFN_vkGetInstanceProcAddr)vkGetInstanceProcAddr;
     vulkanFunctions.vkGetDeviceProcAddr = (PFN_vkGetDeviceProcAddr)vkGetDeviceProcAddr;
     
-#if 1
     vulkanFunctions.vkGetPhysicalDeviceProperties = (PFN_vkGetPhysicalDeviceProperties)vkGetPhysicalDeviceProperties;
     vulkanFunctions.vkGetPhysicalDeviceMemoryProperties = (PFN_vkGetPhysicalDeviceMemoryProperties)vkGetPhysicalDeviceMemoryProperties;
     vulkanFunctions.vkAllocateMemory = (PFN_vkAllocateMemory)vkAllocateMemory;
@@ -550,14 +549,11 @@ static void GetVulkanFunctions(VmaVulkanFunctions &vulkanFunctions)
     vulkanFunctions.vkDestroyImage = (PFN_vkDestroyImage)vkDestroyImage;
     vulkanFunctions.vkCmdCopyBuffer = (PFN_vkCmdCopyBuffer)vkCmdCopyBuffer;
 
-    vulkanFunctions.vkGetBufferMemoryRequirements2KHR = (PFN_vkGetBufferMemoryRequirements2KHR)vkGetBufferMemoryRequirements2KHR;
-    vulkanFunctions.vkGetImageMemoryRequirements2KHR = (PFN_vkGetImageMemoryRequirements2KHR)vkGetImageMemoryRequirements2KHR;
-    vulkanFunctions.vkBindBufferMemory2KHR = (PFN_vkBindBufferMemory2KHR)vkBindBufferMemory2KHR;
-    vulkanFunctions.vkBindImageMemory2KHR = (PFN_vkBindImageMemory2KHR)vkBindImageMemory2KHR;
-    vulkanFunctions.vkGetPhysicalDeviceMemoryProperties2KHR = (PFN_vkGetPhysicalDeviceMemoryProperties2KHR)vkGetPhysicalDeviceMemoryProperties2KHR;
-
-    vulkanFunctions.vkGetPhysicalDeviceMemoryProperties2KHR = (PFN_vkGetPhysicalDeviceMemoryProperties2KHR)vkGetPhysicalDeviceMemoryProperties2KHR;
-#endif
+    vulkanFunctions.vkGetBufferMemoryRequirements2KHR = (PFN_vkGetBufferMemoryRequirements2KHR)vkGetDeviceProcAddr(device, "vkGetBufferMemoryRequirements2KHR");
+    vulkanFunctions.vkGetImageMemoryRequirements2KHR = (PFN_vkGetImageMemoryRequirements2KHR)vkGetDeviceProcAddr(device, "vkGetImageMemoryRequirements2KHR");;
+    vulkanFunctions.vkBindBufferMemory2KHR = (PFN_vkBindBufferMemory2KHR)vkGetDeviceProcAddr(device, "vkBindBufferMemory2KHR");;
+    vulkanFunctions.vkBindImageMemory2KHR = (PFN_vkBindImageMemory2KHR)vkGetDeviceProcAddr(device, "vkBindImageMemory2KHR");;
+    vulkanFunctions.vkGetPhysicalDeviceMemoryProperties2KHR = (PFN_vkGetPhysicalDeviceMemoryProperties2KHR)vkGetDeviceProcAddr(device, "vkGetPhysicalDeviceMemoryProperties2KHR");;
 }
 
 void CreateVMA(VulkanContext& context)
@@ -566,15 +562,15 @@ void CreateVMA(VulkanContext& context)
     vmaAllocatorCreateInfo.device = context.device;
     vmaAllocatorCreateInfo.physicalDevice = context.physicalDevice;
     vmaAllocatorCreateInfo.instance = context.instance;
+    vmaAllocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT | VMA_ALLOCATOR_CREATE_KHR_BIND_MEMORY2_BIT;
     vmaAllocatorCreateInfo.flags = 0;
     vmaAllocatorCreateInfo.pAllocationCallbacks = nullptr;
     vmaAllocatorCreateInfo.pDeviceMemoryCallbacks = nullptr;
-    vmaAllocatorCreateInfo.preferredLargeHeapBlockSize = 128 * 1024 * 1024;
+    //vmaAllocatorCreateInfo.preferredLargeHeapBlockSize = 128 * 1024 * 1024;
     vmaAllocatorCreateInfo.pHeapSizeLimit = nullptr;
-    vmaAllocatorCreateInfo.vulkanApiVersion = context.apiVersion;
     vmaAllocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_0;
     VmaVulkanFunctions vmaVulkanFunctions;
-    GetVulkanFunctions(vmaVulkanFunctions);
+    GetVulkanFunctions(context.device, vmaVulkanFunctions);
     vmaAllocatorCreateInfo.pVulkanFunctions = &vmaVulkanFunctions;
 
     vmaCreateAllocator(&vmaAllocatorCreateInfo, &context.vmaAllocator);
