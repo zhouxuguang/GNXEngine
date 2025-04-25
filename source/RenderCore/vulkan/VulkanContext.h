@@ -21,9 +21,9 @@ struct VulkanContext
     uint32_t apiVersion = 0;
     VkDevice device = VK_NULL_HANDLE;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    VkPhysicalDeviceProperties physicalDeviceProperties;
-    VkPhysicalDeviceFeatures physicalDeviceFeatures;
-    VkPhysicalDeviceMemoryProperties memoryProperties;
+    VkPhysicalDeviceProperties physicalDeviceProperties;         // 设备属性
+    VkPhysicalDeviceFeatures physicalDeviceFeatures;             // vulkan1.0的设备特性
+    VkPhysicalDeviceMemoryProperties memoryProperties;           //内存属性
 
     VkPhysicalDeviceFeatures2 features2 = {};
     VkPhysicalDeviceVulkan11Features features_11 = {};
@@ -37,6 +37,12 @@ struct VulkanContext
     uint32_t computeQueueFamilyIndex;
     uint32_t queueCount;
     VkQueue graphicsQueue = VK_NULL_HANDLE;
+
+    std::vector<VkQueueFamilyProperties> queueFamiliesProperties;
+
+    uint32_t transferQueueFamilyIndex = 0;
+    std::vector<VkQueue> availableTransferQueues;    // 所有可用的传输队列 
+
     VkSurfaceKHR surfaceKhr = VK_NULL_HANDLE;     //surface
     
     bool debugMarkersSupported;     // 是否支持调试

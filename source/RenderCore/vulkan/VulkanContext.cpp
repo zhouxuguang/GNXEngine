@@ -178,7 +178,7 @@ bool SelectPhysicalDevice(VulkanContext& context)
         return ret;
     }
 
-    for (uint32_t i = 0; i < gpuDevices.size(); ++i)
+    for (uint32_t i = 1; i < gpuDevices.size(); ++i)
     {
         VkPhysicalDevice physicalDevice = gpuDevices[i];
         vkGetPhysicalDeviceProperties(physicalDevice, &context.physicalDeviceProperties);
@@ -191,12 +191,13 @@ bool SelectPhysicalDevice(VulkanContext& context)
         {
             continue;
         }
-        std::vector<VkQueueFamilyProperties> queueFamiliesProperties(queueFamiliesCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamiliesCount, queueFamiliesProperties.data());
+        context.queueFamiliesProperties.resize(queueFamiliesCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamiliesCount, context.queueFamiliesProperties.data());
         context.graphicsQueueFamilyIndex = 0xffffffff;
+
         for (uint32_t j = 0; j < queueFamiliesCount; ++j)
         {
-            const VkQueueFamilyProperties& props = queueFamiliesProperties[j];
+            const VkQueueFamilyProperties& props = context.queueFamiliesProperties[j];
             if (props.queueCount == 0) 
             {
                 continue;
@@ -206,6 +207,22 @@ bool SelectPhysicalDevice(VulkanContext& context)
                 context.graphicsQueueFamilyIndex = j;
                 context.queueCount = props.queueCount;
             }
+
+			if (props.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+			{
+				// 图形队列族
+                //graphicsQueueFamilyIndex = j;
+			}
+			else if (props.queueFlags & VK_QUEUE_COMPUTE_BIT)
+			{
+				// 具有单独的计算队列族
+                //computeQueueFamilyIndex = j;
+			}
+			else if (props.queueFlags & VK_QUEUE_TRANSFER_BIT)
+			{
+				// 具有单独的传输队列族
+                context.transferQueueFamilyIndex = j;
+			}
         }
         if (context.graphicsQueueFamilyIndex == 0xffffffff) continue;
 
@@ -267,90 +284,8 @@ bool SelectPhysicalDevice(VulkanContext& context)
     return ret;
 }
 
-static VkBool32 VKAPI_PTR DebugReportCallback(
-        VkDebugReportFlagsEXT                       flags,
-        VkDebugReportObjectTypeEXT                  objectType,
-        uint64_t                                    object,
-        size_t                                      location,
-        int32_t                                     messageCode,
-        const char*                                 pLayerPrefix,
-        const char*                                 pMessage,
-        void*                                       pUserData)
-{
-    const char validation[]  = "Validation";
-    const char performance[] = "Performance";
-    const char error[]       = "ERROR";
-    const char warning[]     = "WARNING";
-    const char unknownType[] = "UNKNOWN_TYPE";
-    const char unknownSeverity[] = "UNKNOWN_SEVERITY";
-    const char* typeString      = unknownType;
-    const char* severityString  = unknownSeverity;
-    const char* messageIdName   = pLayerPrefix;
-    int32_t messageIdNumber     = messageCode;
-    const char* message         = pMessage;
-    
-
-    if (flags & VK_DEBUG_REPORT_ERROR_BIT_EXT) 
-    {
-        severityString = error;
-    }
-    if (flags & VK_DEBUG_REPORT_WARNING_BIT_EXT) 
-    {
-        severityString = warning;
-    }
-    if (flags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT) 
-    {
-        typeString = validation;
-    }
-    if (flags & VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT) 
-    {
-        typeString = performance;
-    }
-    if (flags & VK_DEBUG_REPORT_DEBUG_BIT_EXT) 
-    {
-        typeString = performance;
-    }
-
-    log_info(
-                        "%s %s: [%s] Code %i : %s",
-                        typeString,
-                        severityString,
-                        messageIdName,
-                        messageIdNumber,
-                        message);
-
-    // Returning false tells the layer not to stop when the event occurs, so
-    // they see the same behavior with and without validation layers enabled.
-    return VK_FALSE;
-}
-
-static void CreateDebugReport(VulkanContext& context)
-{
-    PFN_vkCreateDebugReportCallbackEXT vkCreateDebugReportCallbackEXT = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(context.instance, "vkCreateDebugReportCallbackEXT");
-    PFN_vkDestroyDebugReportCallbackEXT vkDestroyDebugReportCallbackEXT = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(context.instance, "vkDestroyDebugReportCallbackEXT");
-    PFN_vkDebugReportMessageEXT vkDebugReportMessageEXT = (PFN_vkDebugReportMessageEXT)vkGetInstanceProcAddr(context.instance, "vkDebugReportMessageEXT");
-    
-    if (vkCreateDebugReportCallbackEXT)
-    {
-        VkDebugReportCallbackCreateInfoEXT debugReportCallbackCreateInfoExt;
-
-        debugReportCallbackCreateInfoExt.flags = VK_DEBUG_REPORT_INFORMATION_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT |
-                VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT | VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_DEBUG_BIT_EXT;
-        debugReportCallbackCreateInfoExt.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-        debugReportCallbackCreateInfoExt.pNext = nullptr;
-        debugReportCallbackCreateInfoExt.pfnCallback = DebugReportCallback;
-        debugReportCallbackCreateInfoExt.pUserData = nullptr;
-
-        VkDebugReportCallbackEXT debugReportCallbackExt;
-        vkCreateDebugReportCallbackEXT(context.instance, &debugReportCallbackCreateInfoExt, nullptr, &debugReportCallbackExt);
-        context.debugReportCallbackExt = debugReportCallbackExt;
-    }
-}
-
 bool CreateVirtualDevice(VulkanContext& context)
 {
-    VkDeviceQueueCreateInfo deviceQueueCreateInfo[1] = {};
-
     VkDeviceCreateInfo deviceCreateInfo = {};
     std::vector<const char*> deviceExtensionNames;
     deviceExtensionNames.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
@@ -370,7 +305,6 @@ bool CreateVirtualDevice(VulkanContext& context)
     {
         deviceExtensionNames.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     }
-    CreateDebugReport(context);
 #endif
     
     // 扩展动态状态
@@ -476,19 +410,38 @@ bool CreateVirtualDevice(VulkanContext& context)
         deviceExtensionNames.push_back(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
     }
 
-    deviceQueueCreateInfo->sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    deviceQueueCreateInfo->queueFamilyIndex = context.graphicsQueueFamilyIndex;
+    // 队列优先级的属性
+    std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos;
+
+    // 图形队列
+    VkDeviceQueueCreateInfo deviceQueueCreateInfo = {};
+    deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    deviceQueueCreateInfo.queueFamilyIndex = context.graphicsQueueFamilyIndex;
     std::vector<float> queuePriority;
     for (int i = 0; i < context.queueCount; ++i)
     {
         queuePriority.push_back(1.0f);
     }
-    deviceQueueCreateInfo->queueCount = context.queueCount;
-    deviceQueueCreateInfo->pQueuePriorities = queuePriority.data();
+    deviceQueueCreateInfo.queueCount = context.queueCount;
+    deviceQueueCreateInfo.pQueuePriorities = queuePriority.data();
+    deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+
+    // 传输队列
+    uint32_t transferQueueCount = context.queueFamiliesProperties[context.transferQueueFamilyIndex].queueCount;
+	deviceQueueCreateInfo.queueFamilyIndex = context.transferQueueFamilyIndex;
+	std::vector<float> transQueuePriority;
+	for (int i = 0; i < transferQueueCount; ++i)
+	{
+        transQueuePriority.push_back(0.95f);
+	}
+	deviceQueueCreateInfo.queueCount = transferQueueCount;
+	deviceQueueCreateInfo.pQueuePriorities = transQueuePriority.data();
+    deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.pNext = &context.features_11;
-    deviceCreateInfo.queueCreateInfoCount = 1;
-    deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfo;
+    deviceCreateInfo.queueCreateInfoCount = (uint32_t)deviceQueueCreateInfos.size();
+    deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos.data();
 
     const auto& supportedFeatures = context.physicalDeviceFeatures;
     
@@ -509,7 +462,15 @@ bool CreateVirtualDevice(VulkanContext& context)
     
     volkLoadDevice(context.device);
     
+    // 获得图形队列
     vkGetDeviceQueue(context.device, context.graphicsQueueFamilyIndex, 0, &context.graphicsQueue);
+
+    // 获得传输队列
+    context.availableTransferQueues.resize(transferQueueCount);
+    for (uint32_t i = 0; i < transferQueueCount; i ++)
+    {
+        vkGetDeviceQueue(context.device, context.transferQueueFamilyIndex, i, context.availableTransferQueues.data() + i);
+    }
 
     return true;
 }
