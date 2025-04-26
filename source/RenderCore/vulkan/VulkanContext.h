@@ -12,6 +12,7 @@
 #include "RenderDevice.h"
 #include "VulkanExtension.h"
 #include "BaseLib/ThreadLocal.h"
+#include "VKUtil.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -30,8 +31,10 @@ struct VulkanContext
     VkPhysicalDeviceVulkan12Features features_12 = {};
     
     baselib::ThreadLocal commandPoolTls;
+    baselib::ThreadLocal transferCommandPoolTls;
     
     VkCommandPool GetCommandPool();
+    VkCommandPool GetTransferCommandPool();
     
     uint32_t graphicsQueueFamilyIndex;
     uint32_t computeQueueFamilyIndex;
@@ -41,6 +44,7 @@ struct VulkanContext
     std::vector<VkQueueFamilyProperties> queueFamiliesProperties;
 
     uint32_t transferQueueFamilyIndex = 0;
+    baselib::MutexLock transferQueuesLock;
     std::vector<VkQueue> availableTransferQueues;    // 所有可用的传输队列 
 
     VkSurfaceKHR surfaceKhr = VK_NULL_HANDLE;     //surface
@@ -64,6 +68,9 @@ struct VulkanContext
 	bool enableValidationLayers = true;
 #endif
     VkDebugUtilsMessengerEXT debugUtilsMessenger = VK_NULL_HANDLE;
+
+    VulkanFencePool fencePool;
+    UpLoadThreadPool upLoadPool;
 };
 
 using VulkanContextPtr = std::shared_ptr<VulkanContext>;

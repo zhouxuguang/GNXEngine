@@ -265,38 +265,25 @@ void VKTexture2D::replaceRegion(const Rect2D &rect, const unsigned char *imageDa
 		memcpy(data, imageData, size);
 		vmaUnmapMemory(mContext->vmaAllocator, allocation);
 
-		// Image barrier for optimal image (target)
-		// Set initial layout for single array layers (face) of the optimal (target) tiled texture
-		VkImageSubresourceRange subresourceRange = {};
-		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		subresourceRange.baseMipLevel = mipMapLevel;
-		subresourceRange.baseArrayLayer = 0;
-		subresourceRange.levelCount = 1;
-		subresourceRange.layerCount = 1;
+        UpLoadTaskPtr upLoadTask = std::make_shared<UpLoadTask>();
+        upLoadTask->subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        upLoadTask->subresourceRange.baseMipLevel = mipMapLevel;
+        upLoadTask->subresourceRange.baseArrayLayer = 0;
+        upLoadTask->subresourceRange.levelCount = 1;
+        upLoadTask->subresourceRange.layerCount = 1;
 
-		VkCommandBuffer commandBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, mContext->GetCommandPool());
+        VkImage image = mImage;
+        //mImage = VK_NULL_HANDLE;
 
-		VulkanBufferUtil::SetImageLayout(
-			commandBuffer,
-			mImage,
-			VK_IMAGE_LAYOUT_UNDEFINED,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			subresourceRange);
+        upLoadTask->allocation = allocation;
+        upLoadTask->rect = rect;
+        upLoadTask->mImage = image;
+        upLoadTask->stageBuffer = stageBuffer;
+        upLoadTask->mContext = mContext;
 
-		VulkanBufferUtil::CopyBufferToImage(mContext->device, commandBuffer, stageBuffer, mImage,
-			rect.offsetX, rect.offsetY, rect.width, rect.height, mipMapLevel);
+        mContext->upLoadPool.Execute(upLoadTask);
 
-		// Change texture image layout to shader read after all faces have been copied
-		VulkanBufferUtil::SetImageLayout(
-			commandBuffer,
-			mImage,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-			subresourceRange);
-
-		VulkanBufferUtil::EndSingleTimeCommand(mContext->device, mContext->graphicsQueue, mContext->GetCommandPool(), commandBuffer);
-
-		vmaDestroyBuffer(mContext->vmaAllocator, stageBuffer, allocation);
+		//vmaDestroyBuffer(mContext->vmaAllocator, stageBuffer, allocation);
     }
 }
 

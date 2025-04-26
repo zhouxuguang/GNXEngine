@@ -28,7 +28,7 @@ public:
     virtual void setTextureData(const unsigned char* imageData);
 
     /**
-      更新纹理数据
+      更新纹理数据
 
      @param rect 更新纹理区域
      @param mipmapLevel 纹理等级

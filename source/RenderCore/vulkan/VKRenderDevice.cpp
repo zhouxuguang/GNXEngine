@@ -91,6 +91,7 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     CreateVMA(*mVulkanContext);
     
     mVulkanContext->GetCommandPool();
+    mVulkanContext->upLoadPool.Start();
     
     // 创建交换链
     if (!CreateSurfaceKHR(*mVulkanContext, nativeWidow))
@@ -250,6 +251,7 @@ RenderTexturePtr VKRenderDevice::createRenderTexture(const TextureDescriptor& de
 
 CommandBufferPtr VKRenderDevice::createCommandBuffer()
 {
+    mVulkanContext->upLoadPool.Update(mVulkanContext->device);
     if (mSwapChain == nullptr || mSwapChain->GetSwapChain() == VK_NULL_HANDLE)
     {
         return nullptr;
@@ -258,7 +260,20 @@ CommandBufferPtr VKRenderDevice::createCommandBuffer()
     //VkResult res = vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]);
 
     VkResult res = vkWaitForFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame], VK_TRUE, UINT64_MAX);
-    assert(res == VK_SUCCESS);  //这里返回值可能是VK_ERROR_DEVICE_LOST
+    //assert(res == VK_SUCCESS);  //这里返回值可能是VK_ERROR_DEVICE_LOST
+    if (res == VK_ERROR_DEVICE_LOST)
+    {
+        PFN_vkGetDeviceFaultInfoEXT vkGetDeviceFaultInfoEXT = (PFN_vkGetDeviceFaultInfoEXT)vkGetDeviceProcAddr(mVulkanContext->device, "vkGetDeviceFaultInfoEXT");
+        VkDeviceFaultCountsEXT count = {};
+        count.sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT;
+        VkResult res = vkGetDeviceFaultInfoEXT(mVulkanContext->device, &count, nullptr);
+
+        VkDeviceFaultInfoEXT info = {};
+        info.sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_EXT;
+        res = vkGetDeviceFaultInfoEXT(mVulkanContext->device, &count, &info);
+
+        printf("error = %s", info.pVendorInfos->description);
+    }
     VK_CHECK(vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]));
 
     res = vkAcquireNextImageKHR(mVulkanContext->device, mSwapChain->GetSwapChain(), UINT64_MAX,
@@ -268,6 +283,11 @@ CommandBufferPtr VKRenderDevice::createCommandBuffer()
 	{
 		resize(mSwapChain->GetWidth(), mSwapChain->GetHeight());
         //res = vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]);
+        return nullptr;
+	}
+
+	if (res == VK_TIMEOUT)
+    {
         return nullptr;
 	}
 

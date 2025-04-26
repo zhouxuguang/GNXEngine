@@ -222,6 +222,7 @@ bool SelectPhysicalDevice(VulkanContext& context)
 			{
 				// 具有单独的传输队列族
                 context.transferQueueFamilyIndex = j;
+                context.transferQueueFamilyIndex = 1;
 			}
         }
         if (context.graphicsQueueFamilyIndex == 0xffffffff) continue;
@@ -381,6 +382,8 @@ bool CreateVirtualDevice(VulkanContext& context)
     {
         deviceExtensionNames.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     }
+
+    deviceExtensionNames.push_back(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
     
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature = {};
 	dynamicRenderingFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
@@ -503,6 +506,36 @@ VkCommandPool VulkanContext::GetCommandPool()
         commandPoolTls.set(commandPool);
         return commandPool;
     }
+}
+
+VkCommandPool VulkanContext::GetTransferCommandPool()
+{
+	void* pCommandPool = nullptr;
+	if ((pCommandPool = transferCommandPoolTls.get()))
+	{
+		return (VkCommandPool)pCommandPool;
+	}
+
+	else
+	{
+		//创建命令缓冲区池
+		VkCommandPoolCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+		createInfo.queueFamilyIndex = transferQueueFamilyIndex;
+		createInfo.pNext = nullptr;
+
+		VkCommandPool commandPool = VK_NULL_HANDLE;
+
+		VkResult result = vkCreateCommandPool(device, &createInfo, NULL, &commandPool);
+		if (result != VK_SUCCESS)
+		{
+			log_info("vkCreateCommandPool error");
+		}
+
+        transferCommandPoolTls.set(commandPool);
+		return commandPool;
+	}
 }
 
 // 创建内存分配器

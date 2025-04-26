@@ -153,6 +153,53 @@ private:
 	std::vector<VulkanFencePtr> mBusyFences;
 };
 
+struct VulkanContext;
+
+//纹理上传的task
+class UpLoadTask : public baselib::TaskRunner
+{
+public:
+	UpLoadTask();
+	~UpLoadTask();
+
+	VkImageSubresourceRange subresourceRange;
+	VkBuffer stageBuffer = VK_NULL_HANDLE;
+	VmaAllocation allocation = VK_NULL_HANDLE;
+	VkImage mImage = VK_NULL_HANDLE;
+	Rect2D rect;
+
+	std::shared_ptr<VulkanContext> mContext = nullptr;
+	VulkanFencePtr fence = nullptr;
+
+	void CleanUpResource();
+private:
+	virtual void Run();
+
+	VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
+	VkCommandPool commandPool = VK_NULL_HANDLE;
+};
+
+using UpLoadTaskPtr = std::shared_ptr<UpLoadTask>;
+
+// 资源异步上传线程池
+class UpLoadThreadPool
+{
+public:
+	UpLoadThreadPool();
+	~UpLoadThreadPool();
+
+	void Start();
+
+	void Execute(const UpLoadTaskPtr task);
+
+	void Update(VkDevice device);
+private:
+	baselib::ThreadPool mThreadPool;
+
+	baselib::MutexLock mLock;
+	std::unordered_set<UpLoadTaskPtr> mLoadingTask;
+};
+
 NAMESPACE_RENDERCORE_END
 
 #endif // GNX_ENGINE_VKUTIL_INCLUDE_SDGKDFKHFGKHK
