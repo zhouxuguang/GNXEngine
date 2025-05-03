@@ -261,7 +261,7 @@ CommandBufferPtr VKRenderDevice::createCommandBuffer()
 
     VkResult res = vkWaitForFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame], VK_TRUE, UINT64_MAX);
     //assert(res == VK_SUCCESS);  //这里返回值可能是VK_ERROR_DEVICE_LOST
-    if (res == VK_ERROR_DEVICE_LOST)
+    if (res == VK_ERROR_DEVICE_LOST && mVulkanContext->vulkanExtension.enableDeviceFault)
     {
         PFN_vkGetDeviceFaultInfoEXT vkGetDeviceFaultInfoEXT = (PFN_vkGetDeviceFaultInfoEXT)vkGetDeviceProcAddr(mVulkanContext->device, "vkGetDeviceFaultInfoEXT");
         VkDeviceFaultCountsEXT count = {};

@@ -55,6 +55,8 @@ void VulkanExtension::InitExtendedDynamicState(VkPhysicalDevice physicalDevice)
     enableCopyCommands2 = ExtensionSupported(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     enableHostImageCopy = ExtensionSupported(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME) && 
         enableFormatFeatureFlags2 && enableCopyCommands2 && mPhysicalDeviceProperties.deviceID != 0x1C81;
+    
+    enableDeviceFault = ExtensionSupported(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
 }
 
 bool VulkanExtension::ExtensionSupported(const char* name)
