@@ -151,6 +151,7 @@ public:
 private:
 	std::vector<VulkanFencePtr> mFreeFences;
 	std::vector<VulkanFencePtr> mBusyFences;
+	baselib::MutexLock mLock;
 };
 
 struct VulkanContext;

@@ -6,6 +6,7 @@ NAMESPACE_RENDERCORE_BEGIN
 
 VulkanFencePtr VulkanFencePool::createFence(VkDevice device)
 {
+	baselib::AutoLock lockGuard(mLock);
 	if (mFreeFences.size() > 0)
 	{
 		VulkanFencePtr fence = mFreeFences.back();
@@ -25,6 +26,7 @@ VulkanFencePtr VulkanFencePool::createFence(VkDevice device)
 
 void VulkanFencePool::releaseFence(VkDevice device, VulkanFencePtr fence)
 {
+	baselib::AutoLock lockGuard(mLock);
 	fence->reset(device);
 	for (uint32_t i = 0; i < mBusyFences.size(); ++i)
 	{
@@ -123,7 +125,7 @@ void UpLoadThreadPool::Update(VkDevice device)
 
 	for (auto it = tempTask.begin(); it != tempTask.end();)
 	{
-		if (VK_SUCCESS == (*it)->fence->getStatus(device))
+		if ((*it)->fence && VK_SUCCESS == (*it)->fence->getStatus(device))
 		{
 			(*it)->CleanUpResource();
 			it = tempTask.erase(it);

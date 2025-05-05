@@ -17,7 +17,7 @@ VkCommandBuffer VulkanBufferUtil::BeginSingleTimeCommand(VkDevice device, VkComm
     allocInfo.commandPool = cmdPool;
     allocInfo.commandBufferCount = 1;
     
-    VkCommandBuffer commandBuffer;
+    VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
     vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
     
     VkCommandBufferBeginInfo beginInfo = {};
