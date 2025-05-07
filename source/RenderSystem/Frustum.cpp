@@ -30,11 +30,76 @@ bool Frustum<T>::initFrustum(const Matrix4x4<T>& comboMatrix)
 	return true;
 }
 
+enum MyEnum
+{
+	INTERSECT = 0, 
+	INSIDE = 1,
+	OUTSIDE = 2,
+};
+
+// Returns: INTERSECT : 0 
+//          INSIDE : 1 
+//          OUTSIDE : 2 
+template<typename T>
+int FrustumAABBIntersect(const Plane<T>* planes, const Vector3<T>& mins, const Vector3<T>& maxs)
+{
+	int ret = INSIDE;
+	Vector3<T> vmin, vmax;
+
+	for (int i = 0; i < 6; ++i) 
+	{
+		// X axis 
+		if (planes[i].getNormal().x > 0)
+		{
+			vmin.x = mins.x;
+			vmax.x = maxs.x;
+		}
+		else 
+		{
+			vmin.x = maxs.x;
+			vmax.x = mins.x;
+		}
+		// Y axis 
+		if (planes[i].getNormal().y > 0)
+		{
+			vmin.y = mins.y;
+			vmax.y = maxs.y;
+		}
+		else 
+		{
+			vmin.y = maxs.y;
+			vmax.y = mins.y;
+		}
+		// Z axis 
+		if (planes[i].getNormal().z > 0)
+		{
+			vmin.z = mins.z;
+			vmax.z = maxs.z;
+		}
+		else 
+		{
+			vmin.z = maxs.z;
+			vmax.z = mins.z;
+		}
+		if (planes[i].getNormal().DotProduct(vmin) - planes[i].getDist() > 0)
+		{
+			return OUTSIDE;
+		}
+			
+		if (planes[i].getNormal().DotProduct(vmax) - planes[i].getDist() >= 0)
+		{
+			ret = INTERSECT;
+		}
+	}
+	return ret;
+}
+
 template<typename T>
 bool Frustum<T>::isOutOfFrustum(const AxisAlignedBox<T>& aabb) const
 {
 	if (mInitialized)
 	{
+#if 1
 		Vector3<T> point;
 		for (int i = 0; i < 6; i++)
 		{
@@ -46,6 +111,12 @@ bool Frustum<T>::isOutOfFrustum(const AxisAlignedBox<T>& aabb) const
 			if (mPlane[i].getSide(point) == PointSide::FRONT_PLANE)
 				return true;
 		}
+
+
+#else
+		int ret = FrustumAABBIntersect(mPlane, aabb.minimum, aabb.maximum);
+		return ret == OUTSIDE;
+#endif
 	}
 	return false;
 }
