@@ -77,7 +77,7 @@ bool TaskQueue::AddTask(const TaskRunnerPtr &task, ThreadPool::TaskStrategy stra
 
 bool TaskQueue::RemoveTask(const TaskRunnerPtr &task)
 {
-    AutoLock lock_guard(&mLock);
+    AutoLock lock_guard(mLock);
     
     //todo  这里面也需要处理条件变量
     TaskList::iterator iter = mTaskList.begin();
@@ -125,13 +125,13 @@ TaskRunnerPtr TaskQueue::GetHeadTask()
 
 bool TaskQueue::IsEmpty() const
 {
-	AutoLock lock_guard(&mLock);
+	AutoLock lock_guard(mLock);
     return mTaskList.empty();
 }
 
 void TaskQueue::Clear()
 {
-    AutoLock lock_guard(&mLock);
+    AutoLock lock_guard(mLock);
     mTaskList.clear();
     mFullCondition.NotifyAll();
     mEmptyCondition.NotifyAll();
@@ -144,7 +144,7 @@ void TaskQueue::SetMaxTaskCount(int nMaxTaskCount)
 
 int TaskQueue::GetTaskCount() const
 {
-	AutoLock lock_guard(&mLock);
+	AutoLock lock_guard(mLock);
     return (int)mTaskList.size();
 }
 

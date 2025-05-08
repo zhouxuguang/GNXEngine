@@ -11,37 +11,37 @@ public:
     friend class Condition;
     
 	MutexLock(void);
-    
-    explicit MutexLock(const char* name);
-    
-    explicit MutexLock(int type, const char* name = NULL);
 
 	~MutexLock(void);
 
-	void Lock() const;
+	void Lock();
 
-	bool TryLock() const;
+	bool TryLock();
     
     bool TryLock(unsigned long msecs);
 
-	void UnLock() const;
+	void UnLock();
 
 private:
+#if OS_WINDOWS
+    CRITICAL_SECTION mLock;
+#endif
 	MutexHandle m_Lock;
 };
 
 
-//自动锁(RAII) AutoLock( &Mutex );
+//自动锁(RAII) AutoLock( Mutex );
 class BASELIB_API AutoLock
 {
-public:
-    explicit AutoLock( const MutexLock* Mutex );
-    
-    explicit AutoLock( const MutexLock& Mutex );
+public:    
+    explicit AutoLock(MutexLock& Mutex);
     
     ~AutoLock();
+
+    AutoLock(const AutoLock&) = delete;
+    AutoLock& operator=(const AutoLock&) = delete;
 private:
-    const MutexLock* mMutex;
+    MutexLock& mMutex;
 };
 
 NS_BASELIB_END

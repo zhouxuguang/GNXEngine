@@ -79,11 +79,6 @@ void Condition::NotifyAll()
 
 #elif WIN32
 
-struct WindowsMutex
-{
-	CRITICAL_SECTION lock_t;
-};
-
 
 #if _WIN32_WINNT >= 0x0600
 
@@ -102,14 +97,12 @@ Condition::~Condition()
 
 void Condition::Wait()
 {
-	WindowsMutex* pMutexData = (WindowsMutex*)lock->m_Lock;
-    SleepConditionVariableCS(&condId, &pMutexData->lock_t, INFINITE);
+    SleepConditionVariableCS(&condId, &lock->mLock, INFINITE);
 }
 
 void Condition::Wait(long long mills)
 {
-	WindowsMutex* pMutexData = (WindowsMutex*)lock->m_Lock;
-    SleepConditionVariableCS(&condId, &pMutexData->lock_t, (DWORD)mills);
+    SleepConditionVariableCS(&condId, &lock->mLock, (DWORD)mills);
 }
 
 void Condition::Notify()

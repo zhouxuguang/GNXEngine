@@ -5,65 +5,32 @@ NS_BASELIB_BEGIN
 #if defined OS_WINDOWS 
 #include <windows.h>
 
-struct WindowsMutex
-{
-	CRITICAL_SECTION lock_t;
-};
-
 MutexLock::MutexLock(void)
 {
-	WindowsMutex* pMutexData = new(std::nothrow) WindowsMutex();
-
-    BOOL success = InitializeCriticalSectionAndSpinCount(&pMutexData->lock_t,4096);
+    BOOL success = InitializeCriticalSectionAndSpinCount(&mLock, 4096);
     assert(TRUE == success);
-
-	m_Lock = pMutexData;
 }
 
 MutexLock::~MutexLock(void)
 {
-	WindowsMutex* pMutexData = (WindowsMutex*)m_Lock;
-    if (NULL == pMutexData)
-    {
-        return;
-    }
-	DeleteCriticalSection(&pMutexData->lock_t);
-
-	delete pMutexData;
-	m_Lock = NULL;
+	DeleteCriticalSection(&mLock);
 }
 
-void MutexLock::Lock() const
+void MutexLock::Lock()
 {
-	WindowsMutex* pMutexData = (WindowsMutex*)m_Lock;
-    if (NULL == pMutexData)
-    {
-        return;
-    }
-	EnterCriticalSection(&pMutexData->lock_t);
+	EnterCriticalSection(&mLock);
 }
 
-bool MutexLock::TryLock() const
+bool MutexLock::TryLock()
 {
-	WindowsMutex* pMutexData = (WindowsMutex*)m_Lock;
-    if (NULL == pMutexData)
-    {
-        return false;
-    }
-	return TryEnterCriticalSection(&pMutexData->lock_t);
+	return TryEnterCriticalSection(&mLock);
 }
 
 bool MutexLock::TryLock(unsigned long msecs)
 {
-	WindowsMutex* pMutexData = (WindowsMutex*)m_Lock;
-    if (NULL == pMutexData)
-    {
-        return false;
-    }
-
 	bool bRet = true;
 	DWORD dTimeStart = GetTickCount();
-	while (!TryEnterCriticalSection(&pMutexData->lock_t))
+	while (!TryEnterCriticalSection(&mLock))
 	{
 		DWORD dTimeEnd = GetTickCount();
 		if (dTimeEnd - dTimeStart >= msecs)
@@ -75,14 +42,9 @@ bool MutexLock::TryLock(unsigned long msecs)
 	return bRet;
 }
 
-void MutexLock::UnLock() const
+void MutexLock::UnLock()
 {
-	WindowsMutex* pMutexData = (WindowsMutex*)m_Lock;
-    if (NULL == pMutexData)
-    {
-        return;
-    }
-	LeaveCriticalSection((LPCRITICAL_SECTION)&pMutexData->lock_t);
+	LeaveCriticalSection(&mLock);
 }
 
 #else
@@ -272,20 +234,14 @@ void MutexLock::UnLock() const
 
 #endif
 
-AutoLock::AutoLock( const MutexLock* Mutex ) : mMutex(Mutex)
+AutoLock::AutoLock(MutexLock& Mutex): mMutex(Mutex)
 {
-    mMutex->Lock();
-}
-
-AutoLock::AutoLock( const MutexLock& Mutex ): mMutex(&Mutex)
-{
-    mMutex->Lock();
+    mMutex.Lock();
 }
 
 AutoLock::~AutoLock()
 {
-    mMutex->UnLock();
+    mMutex.UnLock();
 }
-
 
 NS_BASELIB_END

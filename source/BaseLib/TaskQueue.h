@@ -69,7 +69,7 @@ public:
 private:
 	typedef std::deque<TaskRunnerPtr> TaskList;
 	TaskList mTaskList;         //任务列表
-    MutexLock mLock;            //队列的锁
+    mutable MutexLock mLock;            //队列的锁
     Condition mFullCondition;       //队列满的条件变量
     bool     m_bFullQueue;
     Condition mEmptyCondition;      //队列空的条件变量
