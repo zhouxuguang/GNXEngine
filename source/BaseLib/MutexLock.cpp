@@ -2,8 +2,96 @@
 
 NS_BASELIB_BEGIN
 
+#if USE_FUTEX
+
+// Note: the ordering of these values is important due to |unlock()|'s atomic decrement.
+static constexpr uint32_t kUnlocked = 0;
+static constexpr uint32_t kLocked = 1;
+static constexpr uint32_t kBlocked = 2;
+
+inline void MutexOnFutex::lock()
+{
+	uint32_t oldState = kUnlocked;
+	const bool lockTaken = mState.compare_exchange_strong(oldState, kLocked);
+
+	// In uncontended cases, the lock is acquired and there's nothing to do
+	if (!lockTaken)
+	{
+		assert(oldState == kLocked || oldState == kBlocked);
+
+		// If not already marked as such, signal that the mutex is contended.
+		if (oldState != kBlocked)
+		{
+			oldState = mState.exchange(kBlocked, std::memory_order_acq_rel);
+		}
+		// Wait until the lock is acquired
+		while (oldState != kUnlocked)
+		{
+			futexWait();
+			oldState = mState.exchange(kBlocked, std::memory_order_acq_rel);
+		}
+	}
+}
+
+inline void MutexOnFutex::unlock()
+{
+	// Unlock the mutex
+	const uint32_t oldState = mState.fetch_add(-1, std::memory_order_acq_rel);
+
+	// If another thread is waiting on this mutex, wake it up
+	if (oldState != kLocked)
+	{
+		mState.store(kUnlocked, std::memory_order_relaxed);
+		futexWake();
+	}
+}
+
+#else
+
+inline void MutexOnStd::lock() { mutex.lock(); }
+
+inline void MutexOnStd::unlock() { mutex.unlock(); }
+
+#endif
+
 #if defined OS_WINDOWS 
 #include <windows.h>
+
+#if USE_FUTEX
+#if OS_WINDOWS
+
+#pragma comment(lib, "Synchronization.lib")
+
+void MutexOnFutex::futexWait()
+{
+	int value = kBlocked;
+	WaitOnAddress(&mState, &value, sizeof(value), INFINITE);
+}
+
+void MutexOnFutex::futexWake()
+{
+	WakeByAddressSingle(&mState);
+}
+
+#else
+//Linux实现
+{
+inline void SysFutex(void* addr, int op, int val, int val3)
+{
+	syscall(SYS_futex, addr, op, val, nullptr, nullptr, val3);
+}
+}
+
+void MutexOnFutex::futexWait()
+{
+	SysFutex(&mState, FUTEX_WAIT_BITSET | FUTEX_PRIVATE_FLAG, kBlocked, FUTEX_BITSET_MATCH_ANY);
+}
+void MutexOnFutex::futexWake()
+{
+	SysFutex(&mState, FUTEX_WAKE | FUTEX_PRIVATE_FLAG, kLocked, 0);
+}
+#endif
+#endif
 
 MutexLock::MutexLock(void)
 {

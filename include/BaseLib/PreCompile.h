@@ -31,6 +31,7 @@
 #include <functional>
 #include <algorithm>
 #include <atomic>
+#include <mutex>
 #include <memory>
 #include <numeric>
 #include <filesystem>
@@ -187,6 +188,20 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 	#define BASE_IS_64_BIT_CPU 1
 #else
 	#define BASE_IS_32_BIT_CPU 1
+#endif
+
+// Enable futexes on:
+//
+// - Linux and derivatives (Android, ChromeOS, etc)
+// - Windows 8+
+//
+#if defined(OS_LINUX) || defined(OS_ANDROID)
+	// Linux has had futexes for a very long time.  Assume support.
+	#define USE_FUTEX 1
+#elif OS_WINDOWS
+	// Windows has futexes since version 8, which is already end of life (let alone older versions).
+	// Assume support.
+	#define USE_FUTEX 1
 #endif
 
 #endif // end of file_
