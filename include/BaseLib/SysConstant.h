@@ -2,7 +2,7 @@
 * @file              SysConstant.h
 * @brief             基本宏定义等
 * @details           
-* @author            周旭光 (zhouxuguang@.com)
+* @author            周旭光 (zhouxuguang236@126.com)
 * @date              2012年12月4日
 * @version           1.0.0.1
 * @par               Copyright (c): 2012
@@ -86,11 +86,6 @@ typedef unsigned int thread_id_t;
 #include <pthread.h>
 #include <semaphore.h>
     typedef pthread_t thread_handle_t;
-    typedef struct Mutex_Type
-    {
-        pthread_mutex_t mutex_t;
-        pthread_mutexattr_t mutex_attr_t;
-    }mutex_lock_t;
     typedef sem_t blsemaphore_t;
     typedef pthread_cond_t condition_t;
     typedef pthread_rwlock_t rwlock_t;
@@ -101,11 +96,6 @@ typedef unsigned int thread_id_t;
 #include <libkern/OSSpinLockDeprecated.h>
 #include <pthread.h>
     typedef pthread_t thread_handle_t;
-    typedef struct Mutex_Type
-    {
-        pthread_mutex_t mutex_t;
-        pthread_mutexattr_t mutex_attr_t;
-    }mutex_lock_t;
     typedef dispatch_semaphore_t blsemaphore_t;
     typedef pthread_cond_t condition_t;
     typedef pthread_rwlock_t rwlock_t;
@@ -114,7 +104,6 @@ typedef unsigned int thread_id_t;
 #elif defined WIN32
 #include <windows.h>
     typedef uintptr_t thread_handle_t;
-    typedef CRITICAL_SECTION mutex_lock_t;
     typedef HANDLE blsemaphore_t;
     typedef SRWLOCK rwlock_t;
 	typedef volatile long spin_lock_t;
