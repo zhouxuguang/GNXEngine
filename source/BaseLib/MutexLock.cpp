@@ -138,80 +138,49 @@ void MutexLock::UnLock()
 #else
 #include <pthread.h>
 
-struct LinuxMutex
-{
-    pthread_mutex_t mutex_t;
-    pthread_mutexattr_t mutex_attr_t;
-};
-
 extern unsigned long GetTickCount(void);
 
 //NDK pthread_mutex_timedlock代替pthread_mutex_lock_timeout_np
 
 MutexLock::MutexLock(void)
 {
-    LinuxMutex* pMutexData = new(std::nothrow) LinuxMutex();
-    int result = pthread_mutexattr_init(&pMutexData->mutex_attr_t);
+    int result = pthread_mutexattr_init(&mLockAttr);
+    assert(result == 0);
     // successful = 0
     // errors = ENOMEM
     
-    result = pthread_mutexattr_settype(&pMutexData->mutex_attr_t,PTHREAD_MUTEX_RECURSIVE);
+    result = pthread_mutexattr_settype(&mLockAttr, PTHREAD_MUTEX_RECURSIVE);
     // successful = 0
     
-    result = pthread_mutex_init(&pMutexData->mutex_t,&pMutexData->mutex_attr_t);
-    
-    m_Lock = pMutexData;
+    result = pthread_mutex_init(&mLock, &mLockAttr);
 }
 
 MutexLock::~MutexLock(void)
 {
-    LinuxMutex* pMutexData = (LinuxMutex*)m_Lock;
-    if (NULL == pMutexData)
-    {
-        return;
-    }
-    int result = pthread_mutex_destroy(&pMutexData->mutex_t);
+    int result = pthread_mutex_destroy(&mLock);
     // successful = 0
     // errors = EINVAL
     
-    result = pthread_mutexattr_destroy(&pMutexData->mutex_attr_t);
+    result = pthread_mutexattr_destroy(&mLockAttr);
     // successful = 0
     // errors = EBUSY, EINVAL
-    
-    delete pMutexData;
-    m_Lock = NULL;
 }
 
-void MutexLock::Lock() const
+void MutexLock::Lock()
 {
-    LinuxMutex* pMutexData = (LinuxMutex*)m_Lock;
-    if (NULL == pMutexData)
-    {
-        return;
-    }
-	pthread_mutex_lock(&pMutexData->mutex_t);
+	pthread_mutex_lock(&mLock);
 }
 
-bool MutexLock::TryLock() const
+bool MutexLock::TryLock()
 {
-    LinuxMutex* pMutexData = (LinuxMutex*)m_Lock;
-    if (NULL == pMutexData)
-    {
-        return false;
-    }
-    return 0 == pthread_mutex_trylock(&pMutexData->mutex_t);
+    return 0 == pthread_mutex_trylock(&mLock);
 }
 
 #ifdef __ANDROID__
 bool MutexLock::TryLock(unsigned long msecs)
 {
-    LinuxMutex* pMutexData = (LinuxMutex*)m_Lock;
-    if (NULL == pMutexData)
-    {
-        return false;
-    }
 #ifndef __LP64__
-    int ret = pthread_mutex_lock_timeout_np(&pMutexData->mutex_t,(unsigned)msecs);
+    int ret = pthread_mutex_lock_timeout_np(&mLock, (unsigned)msecs);
     return ret;
     
 #else
@@ -234,7 +203,7 @@ bool MutexLock::TryLock(unsigned long msecs)
         timeToWait.tv_sec++;
     }
     
-    return pthread_mutex_timedlock(&pMutexData->mutex_t, &timeToWait) == 0;
+    return pthread_mutex_timedlock(&mLock, &timeToWait) == 0;
     
 #endif
 
@@ -244,7 +213,7 @@ bool MutexLock::TryLock(unsigned long msecs)
 #include <sys/time.h>
 #include <errno.h>
 
-int pthread_mutex_timedlock (pthread_mutex_t *mutex, const struct timespec *timeout)
+static int pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *timeout)
 {
     struct timeval timenow;
     struct timespec sleepytime;
@@ -271,11 +240,6 @@ int pthread_mutex_timedlock (pthread_mutex_t *mutex, const struct timespec *time
 
 bool MutexLock::TryLock(unsigned long mills)
 {
-    LinuxMutex* pMutexData = (LinuxMutex*)m_Lock;
-    if (NULL == pMutexData)
-    {
-        return false;
-    }
 #if defined(_POSIX_TIMEOUTS) && (_POSIX_TIMEOUTS - 200112L) >= 0L
     struct timespec timeToWait;
     struct timeval now;
@@ -292,11 +256,11 @@ bool MutexLock::TryLock(unsigned long mills)
         timeToWait.tv_nsec -= 1000000000;
         timeToWait.tv_sec++;
     }
-    return pthread_mutex_timedlock(&pMutexData->mutex_t,&timeToWait) == 0;
+    return pthread_mutex_timedlock(&mLock, &timeToWait) == 0;
 
 #else
     unsigned long nStartTime = GetTickCount();
-    while ( !pthread_mutex_trylock(&pMutexData->mutex_t) )
+    while (!pthread_mutex_trylock(&mLock))
     {
         unsigned long nStopTime = GetTickCount();
         if (nStopTime - nStartTime >= mills)
@@ -310,14 +274,9 @@ bool MutexLock::TryLock(unsigned long mills)
 }
 #endif
 
-void MutexLock::UnLock() const
+void MutexLock::UnLock()
 {
-    LinuxMutex* pMutexData = (LinuxMutex*)m_Lock;
-    if (NULL == pMutexData)
-    {
-        return;
-    }
-	pthread_mutex_unlock(&pMutexData->mutex_t);
+	pthread_mutex_unlock(&mLock);
 }
 
 #endif

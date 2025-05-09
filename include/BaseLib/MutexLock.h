@@ -64,9 +64,10 @@ public:
 private:
 #if OS_WINDOWS
     CRITICAL_SECTION mLock;
-#elif
+#else
+    pthread_mutex_t mLock;
+    pthread_mutexattr_t mLockAttr;
 #endif
-	MutexHandle m_Lock;
 };
 
 

@@ -13,14 +13,8 @@ NS_BASELIB_BEGIN
 
 
 #if defined __linux__ || defined __ANDROID__ || ( defined(__MACH__) && defined(__APPLE__) )
-
-struct LinuxMutex
-{
-    pthread_mutex_t mutex_t;
-    pthread_mutexattr_t mutex_attr_t;
-};
-
 #include <sys/time.h>
+
 Condition::Condition(MutexLock* mutexLock) : lock(mutexLock)
 {
     pthread_cond_init(&condId,NULL);
@@ -33,12 +27,7 @@ Condition::~Condition()
 
 void Condition::Wait()
 {
-    LinuxMutex* pMutexData = (LinuxMutex*)lock->m_Lock;
-    if (!pMutexData)
-    {
-        return;
-    }
-    pthread_cond_wait(&condId,&pMutexData->mutex_t);
+    pthread_cond_wait(&condId, &lock->mLock);
 }
 
 void Condition::Wait(long long mills)
@@ -58,13 +47,7 @@ void Condition::Wait(long long mills)
         timeToWait.tv_nsec -= 1000000000;
         timeToWait.tv_sec++;
     }
-    
-    LinuxMutex* pMutexData = (LinuxMutex*)lock->m_Lock;
-    if (!pMutexData)
-    {
-        return;
-    }
-    pthread_cond_timedwait(&condId,&pMutexData->mutex_t,&timeToWait);
+    pthread_cond_timedwait(&condId, &lock->mLock, &timeToWait);
 }
 
 void Condition::Notify()
