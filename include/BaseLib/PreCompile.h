@@ -83,6 +83,10 @@ typedef std::basic_string<uint32_t> utf32String;
 	#endif
 #endif
 
+#if OS_MACOS
+#include <os/lock.h>
+#endif
+
 //跨平台cpu架构的宏定义
 #if defined(__ppc__)
     #define TARGET_PPC          1
@@ -202,6 +206,8 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 	// Windows has futexes since version 8, which is already end of life (let alone older versions).
 	// Assume support.
 	#define USE_FUTEX 1
+#elif OS_MACOS
+     #define USE_FUTEX 1
 #endif
 
 #endif // end of file_

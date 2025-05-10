@@ -4,6 +4,20 @@ NS_BASELIB_BEGIN
 
 #if USE_FUTEX
 
+#if OS_MACOS
+
+inline void MutexOnFutex::lock()
+{
+    os_unfair_lock_lock(&mLock);
+}
+
+inline void MutexOnFutex::unlock()
+{
+    os_unfair_lock_unlock(&mLock);
+}
+
+#else
+
 // Note: the ordering of these values is important due to |unlock()|'s atomic decrement.
 static constexpr uint32_t kUnlocked = 0;
 static constexpr uint32_t kLocked = 1;
@@ -45,6 +59,8 @@ inline void MutexOnFutex::unlock()
 		futexWake();
 	}
 }
+
+#endif
 
 #else
 

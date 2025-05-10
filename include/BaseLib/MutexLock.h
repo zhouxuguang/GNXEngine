@@ -21,7 +21,11 @@ private:
 	void futexWait();
 	void futexWake();
 
-	std::atomic_uint32_t mState = 0;
+#if OS_MACOS
+    os_unfair_lock mLock = OS_UNFAIR_LOCK_INIT;
+#else
+    std::atomic_uint32_t mState = 0;
+#endif
 };
 
 using SimpleMutex = MutexOnFutex;
