@@ -48,7 +48,7 @@ bool SpinLock::TryLock()
 
 SpinLock::SpinLock(void)
 {
-    m_SpinLock = OS_SPINLOCK_INIT;
+    m_SpinLock = OS_UNFAIR_LOCK_INIT;
 }
 
 SpinLock::~SpinLock(void)
@@ -59,7 +59,7 @@ SpinLock::~SpinLock(void)
 
 void SpinLock::Lock()
 {
-    OSSpinLockLock(&m_SpinLock);
+    os_unfair_lock_lock(&m_SpinLock);
     
 #if __has_feature(objc_arc)
     // ARC
@@ -72,12 +72,12 @@ void SpinLock::Lock()
 
 bool SpinLock::TryLock()
 {
-    return OSSpinLockTry(&m_SpinLock);
+    return os_unfair_lock_trylock(&m_SpinLock);
 }
 
 void SpinLock::UnLock()
 {
-    OSSpinLockUnlock(&m_SpinLock);
+    os_unfair_lock_unlock(&m_SpinLock);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -105,7 +105,7 @@ void SpinLock::Lock()
 
 bool SpinLock::TryLock()
 {
-    return !__sync_lock_test_and_set(&m_SpinLock,1);
+    return !__sync_lock_test_and_set(&m_SpinLock, 1);
 }
 
 void SpinLock::UnLock()

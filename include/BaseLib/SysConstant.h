@@ -95,11 +95,12 @@ typedef unsigned int thread_id_t;
 #include <dispatch/dispatch.h>
 #include <libkern/OSSpinLockDeprecated.h>
 #include <pthread.h>
+#include <os/lock.h>
     typedef pthread_t thread_handle_t;
     typedef dispatch_semaphore_t blsemaphore_t;
     typedef pthread_cond_t condition_t;
     typedef pthread_rwlock_t rwlock_t;
-    typedef volatile OSSpinLock spin_lock_t;
+    typedef os_unfair_lock spin_lock_t;
 
 #elif defined WIN32
 #include <windows.h>
