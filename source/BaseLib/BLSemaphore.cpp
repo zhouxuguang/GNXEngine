@@ -96,7 +96,7 @@ Semaphore::Semaphore(int initValue)
 
 Semaphore::~Semaphore()
 {
-#if __IPHONE_OS_VERSION_MIN_REQUIRED < 60000
+#if !OS_OBJECT_USE_OBJC
     dispatch_release(m_sem);
 #endif
 }
