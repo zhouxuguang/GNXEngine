@@ -8,7 +8,6 @@ NS_BASELIB_BEGIN
 /**
  * SimpleMutex 简单的互斥锁，有futex实现和std::mutex实现，主要用于不用和条件变量交互的场景
  */
-
 #if USE_FUTEX
 
 class BASELIB_API MutexOnFutex
@@ -16,7 +15,9 @@ class BASELIB_API MutexOnFutex
 public:
 	void lock();
 	void unlock();
-
+    
+    MutexOnFutex(const MutexOnFutex&) = delete;
+    MutexOnFutex& operator=(const MutexOnFutex&) = delete;
 private:
 	void futexWait();
 	void futexWake();
@@ -38,6 +39,8 @@ public:
 	void lock();
 	void unlock();
 
+    MutexOnStd(const MutexOnStd&) = delete;
+    MutexOnStd& operator=(const MutexOnStd&) = delete;
 private:
 	std::mutex mutex;
 };
