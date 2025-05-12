@@ -387,6 +387,9 @@ bool CreateVirtualDevice(VulkanContext& context)
     {
         deviceExtensionNames.push_back(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
     }
+
+	VkPhysicalDeviceProperties2 deviceProperties = {};
+	deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     
     VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature = {};
 	dynamicRenderingFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
@@ -403,18 +406,36 @@ bool CreateVirtualDevice(VulkanContext& context)
     deviceExtensionNames.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
     deviceExtensionNames.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
 
-    VkPhysicalDeviceHostImageCopyFeaturesEXT host_image_copy_features = {};
+    VkPhysicalDeviceHostImageCopyFeaturesEXT hostImageCopyFeatures = {};
+    hostImageCopyFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES_EXT;
+
+    // 这里先要获得hostImageCopyFeatures
+
+    VkPhysicalDeviceHostImageCopyPropertiesEXT hostImageCopyProperties = {};
+    hostImageCopyProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_PROPERTIES_EXT;
+	std::vector<VkImageLayout> hostImageCopySrcLayoutsStorage;
+	std::vector<VkImageLayout> hostImageCopyDstLayoutsStorage;
     if (context.vulkanExtension.enableHostImageCopy)
     {
-		host_image_copy_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES_EXT;
-		host_image_copy_features.hostImageCopy = VK_TRUE;
-
-        AppendToPNextChain(&context.features_11, &host_image_copy_features);
+        hostImageCopyFeatures.hostImageCopy = VK_TRUE;
+        AppendToPNextChain(&context.features_11, &hostImageCopyFeatures);
 
         deviceExtensionNames.push_back(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
         deviceExtensionNames.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
         deviceExtensionNames.push_back(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
+
+		constexpr uint32_t kMaxLayoutCount = 200;
+        hostImageCopySrcLayoutsStorage.resize(kMaxLayoutCount, VK_IMAGE_LAYOUT_UNDEFINED);
+        hostImageCopyDstLayoutsStorage.resize(kMaxLayoutCount, VK_IMAGE_LAYOUT_UNDEFINED);
+        hostImageCopyProperties.copySrcLayoutCount = kMaxLayoutCount;
+        hostImageCopyProperties.copyDstLayoutCount = kMaxLayoutCount;
+        hostImageCopyProperties.pCopySrcLayouts = hostImageCopySrcLayoutsStorage.data();
+        hostImageCopyProperties.pCopyDstLayouts = hostImageCopyDstLayoutsStorage.data();
+
+        AppendToPNextChain(&deviceProperties, &hostImageCopyProperties);
     }
+
+    vkGetPhysicalDeviceProperties2(context.physicalDevice, &deviceProperties);
 
     // 队列优先级的属性
     std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos;
@@ -465,6 +486,9 @@ bool CreateVirtualDevice(VulkanContext& context)
         log_info("vkCreateDevice error");
         return false;
     }
+
+    context.vulkanExtension.enableHostImageCopy = (hostImageCopyFeatures.hostImageCopy == VK_TRUE && 
+        hostImageCopyProperties.identicalMemoryTypeRequirements);
     
     volkLoadDevice(context.device);
     
