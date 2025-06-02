@@ -133,7 +133,7 @@ Vector3<T> Matrix4x4<T>::operator * ( const Vector3<T> &v ) const
 {
 	Vector3<T> r;
 
-	T fInvW = 1.0f / ( mVecArray[3][0] * v.x + mVecArray[3][1] * v.y + mVecArray[3][2] * v.z + mVecArray[3][3] );
+	T fInvW = 1.0 / ( mVecArray[3][0] * v.x + mVecArray[3][1] * v.y + mVecArray[3][2] * v.z + mVecArray[3][3] );
 
 	r.x = ( mVecArray[0][0] * v.x + mVecArray[0][1] * v.y + mVecArray[0][2] * v.z + mVecArray[0][3] ) * fInvW;
 	r.y = ( mVecArray[1][0] * v.x + mVecArray[1][1] * v.y + mVecArray[1][2] * v.z + mVecArray[1][3] ) * fInvW;

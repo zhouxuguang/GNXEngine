@@ -15,9 +15,17 @@ enum COMPRESS_TYPE
 	COMPRESS_LZMA
 };
 
-BASELIB_API bool DataCompress(const void* pSrcData,size_t nLen,void* pDstData,size_t* pOutLen,COMPRESS_TYPE eType);
+// 获得压缩后数据大小的上界
+BASELIB_API size_t CompressBound(const void* pSrcData, size_t nLen, COMPRESS_TYPE eType);
 
-BASELIB_API bool DataUnCompress(const void* pSrcData,size_t nLen,void* pDstData,size_t* pOutLen,COMPRESS_TYPE eType);
+// 获得解压后数据大小的上界
+BASELIB_API size_t UnCompressBound(const void* pSrcData, size_t nLen, COMPRESS_TYPE eType);
+
+// 数据压缩
+BASELIB_API bool DataCompress(const void* pSrcData, size_t nLen, void* pDstData, size_t* pOutLen, COMPRESS_TYPE eType);
+
+// 数据解压
+BASELIB_API bool DataUnCompress(const void* pSrcData, size_t nLen, void* pDstData, size_t* pOutLen, COMPRESS_TYPE eType);
 
 NS_BASELIB_END
 
