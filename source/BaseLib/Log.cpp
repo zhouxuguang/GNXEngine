@@ -9,6 +9,21 @@
 
 #if defined WIN32 || defined _WIN64
     #include <Windows.h>
+
+std::atomic<bool> consoleChecked(false);
+std::atomic<bool> hasConsole(false);
+
+bool HasConsole() 
+{
+	if (!consoleChecked.load()) 
+    {
+		bool result = GetConsoleWindow() != nullptr;
+		hasConsole.store(result);
+		consoleChecked.store(true);
+	}
+	return hasConsole.load();
+}
+
 #endif
 #ifdef __ANDROID__
     #include <android/log.h>
@@ -67,18 +82,30 @@ public:
     
     void Run()
     {
-        va_list cp_List;
-        va_copy(cp_List, m_PraList);
+        //va_list cp_List;
+        //va_copy(cp_List, m_PraList);
         
 #ifdef __APPLE__
-        char buf[1024];
-        ::vsnprintf(buf, sizeof(buf), m_msg.c_str(), cp_List);
+        //char buf[1024];
+        //::vsnprintf(buf, sizeof(buf), m_msg.c_str(), m_PraList);
+        //va_end(m_PraList);
         //printf(buf);
-        vprintf(m_msg.c_str(), cp_List);
+        vprintf(m_msg.c_str(), m_PraList);
 #elif defined __ANDROID__
-        Android_Print(m_logLevel,m_msg.c_str(), cp_List);
+        Android_Print(m_logLevel, m_msg.c_str(), m_PraList);
 #elif defined WIN32
-        //
+        if (HasConsole())
+        {
+            vprintf(m_msg.c_str(), m_PraList);
+        }
+        else
+        {
+            //va_start(m_PraList, m_msg.c_str());
+			char buf[1024];
+			::vsnprintf(buf, sizeof(buf), m_msg.c_str(), m_PraList);
+            //va_end(m_PraList);
+            OutputDebugStringA(buf);
+        }
 #endif
     }
 };
@@ -117,14 +144,18 @@ void Log::LogPrint(LogLevel lev, const char* msg, va_list args)
     strMsg += ", ";
     strMsg += msg;
     strMsg += "\n";
+
+	char buf[1024];
+	::vsnprintf(buf, sizeof(buf), strMsg.c_str(), args);
+	OutputDebugStringA(buf);
     
-    std::shared_ptr<LogTask> ptrTask = std::make_shared<LogTask>();
-    ptrTask->m_msg = strMsg;
+    /*std::shared_ptr<LogTask> ptrTask = std::make_shared<LogTask>();
+    ptrTask->m_msg = msg;
     ptrTask->m_logLevel = lev;
     va_copy(ptrTask->m_PraList, args);
     
     mLogQueue.AddTask(ptrTask);
-	mEmptyCond.Notify();
+	mEmptyCond.Notify();*/
     
 }
 
