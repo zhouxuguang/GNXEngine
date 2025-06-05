@@ -15,7 +15,7 @@ void LogService::DebugPrint(const char* msg, ...)
 {
     va_list args;
     va_start(args, msg);
-    Log::DebugPrint(msg,args);
+    Log::DebugPrint(msg, args);
     va_end(args);
 }
 
@@ -23,7 +23,7 @@ void LogService::InfoPrint(const char* msg, ...)
 {
     va_list args;
     va_start(args, msg);
-    Log::InfoPrint(msg,args);
+    Log::InfoPrint(msg, args);
     va_end(args);
 }
 
@@ -31,7 +31,7 @@ void LogService::WarnPrint(const char* msg, ...)
 {
     va_list args;
     va_start(args, msg);
-    Log::WarnPrint(msg,args);
+    Log::WarnPrint(msg, args);
     va_end(args);
 }
 
@@ -39,7 +39,7 @@ void LogService::ErrorPrint(const char* msg, ...)
 {
     va_list args;
     va_start(args, msg);
-    Log::ErrorPrint(msg,args);
+    Log::ErrorPrint(msg, args);
     va_end(args);
 }
 

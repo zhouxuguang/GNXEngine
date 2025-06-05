@@ -58,14 +58,14 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     
     if (mVulkanContext->instance == VK_NULL_HANDLE)
     {
-        log_info("instance ERROR");
+        LOG_INFO("instance ERROR");
         return;
     }
     
     // 选择物理设备
     if (!SelectPhysicalDevice(*mVulkanContext))
     {
-        log_info("SelectPhysicalDevice ERROR");
+        LOG_INFO("SelectPhysicalDevice ERROR");
         return;
     }
 
@@ -84,7 +84,7 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     // 创建虚拟设备
     if (!CreateVirtualDevice(*mVulkanContext))
     {
-        log_info("CreateVirtualDevice ERROR");
+        LOG_INFO("CreateVirtualDevice ERROR");
         return;
     }
     
@@ -96,7 +96,7 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     // 创建交换链
     if (!CreateSurfaceKHR(*mVulkanContext, nativeWidow))
     {
-        log_info("CreateSurfaceKHR ERROR");
+        LOG_INFO("CreateSurfaceKHR ERROR");
         return;
     }
     

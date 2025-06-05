@@ -145,9 +145,22 @@ void Log::LogPrint(LogLevel lev, const char* msg, va_list args)
     strMsg += msg;
     strMsg += "\n";
 
-	char buf[1024];
-	::vsnprintf(buf, sizeof(buf), strMsg.c_str(), args);
-	OutputDebugStringA(buf);
+#ifdef __APPLE__
+	vprintf(strMsg.c_str(), args);
+#elif defined __ANDROID__
+	Android_Print(m_logLevel, strMsg.c_str(), args);
+#elif defined WIN32
+	if (HasConsole())
+	{
+		vprintf(strMsg.c_str(), args);
+	}
+	else
+	{
+        char buf[2048] = {0};
+		::vsnprintf(buf, sizeof(buf), strMsg.c_str(), args);
+		OutputDebugStringA(buf);
+	}
+#endif
     
     /*std::shared_ptr<LogTask> ptrTask = std::make_shared<LogTask>();
     ptrTask->m_msg = msg;
@@ -191,7 +204,7 @@ void Log::vprint(LogLevel lev, const char* msg, va_list args)
         ::_vsnprintf(buf, sizeof(buf), msg, argsCopy);
 #if defined WIN32 || defined _WIN64
         buf[LogBufSize - 1] = 0;
-        OutputDebugString(buf);
+        OutputDebugStringA(buf);
 #elif ORYOL_PNACL
         // replace non-jsonable characters
         char* p = buf;

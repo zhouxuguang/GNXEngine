@@ -335,7 +335,7 @@ bool CreateVirtualDevice(VulkanContext& context)
 	if (!indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind) 
     {
 		// 设备不支持，需要处理回退逻辑或报错
-        log_info("descriptorBindingUniformBufferUpdateAfterBind NOT SUPPORTED");
+        LOG_INFO("descriptorBindingUniformBufferUpdateAfterBind NOT SUPPORTED");
 	}
     
     // 构建设备创建时的开启的特性
@@ -483,7 +483,7 @@ bool CreateVirtualDevice(VulkanContext& context)
 
     if (result != VK_SUCCESS) 
     {
-        log_info("vkCreateDevice error");
+        LOG_INFO("vkCreateDevice error");
         return false;
     }
 
@@ -527,7 +527,7 @@ VkCommandPool VulkanContext::GetCommandPool()
         VkResult result = vkCreateCommandPool(device, &createInfo, NULL, &commandPool);
         if (result != VK_SUCCESS)
         {
-            log_info("vkCreateCommandPool error");
+            LOG_INFO("vkCreateCommandPool error");
         }
         
         commandPoolTls.set(commandPool);
@@ -557,7 +557,7 @@ VkCommandPool VulkanContext::GetTransferCommandPool()
 		VkResult result = vkCreateCommandPool(device, &createInfo, NULL, &commandPool);
 		if (result != VK_SUCCESS)
 		{
-			log_info("vkCreateCommandPool error");
+            LOG_INFO("vkCreateCommandPool error");
 		}
 
         transferCommandPoolTls.set(commandPool);

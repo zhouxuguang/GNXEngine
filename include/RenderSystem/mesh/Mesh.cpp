@@ -17,14 +17,14 @@ Mesh::Mesh()
 
 Mesh::~Mesh()
 {
-    log_info("Mesh::~Mesh()");
+    LOG_INFO("Mesh::~Mesh()");
 }
 
 void Mesh::SetPositions(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
-        log_info("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
         return;
     }
 
@@ -41,7 +41,7 @@ void Mesh::SetNormals(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
-        log_info("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
         return;
     }
 
@@ -58,7 +58,7 @@ void Mesh::SetTangents(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
-        log_info("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
         return;
     }
 
@@ -77,7 +77,7 @@ void Mesh::SetUv(int uvIndex, Vector2f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
-        log_info("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
         return;
     }
 
@@ -94,7 +94,7 @@ void Mesh::SetColors(uint32_t const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
-        log_info("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
         return;
     }
 

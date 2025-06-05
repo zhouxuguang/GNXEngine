@@ -1,10 +1,14 @@
 #include "RenderSystem/RenderEngine.h"
 #include "AssetProcess/AssetImporter.h"
 #include "BaseLib/ThreadPool.h"
+#include "BaseLib/LogService.h"
 
 int main(int argc, char* argv[])
 {
 	fs::path currentPath = getMediaDir();
+
+	int a = 100;
+	LOG_INFO("BaseLib/LogService.h %d", a);
 
 	fs::path filePath = (currentPath/fs::path("backpack/backpack.obj")).lexically_normal();
 	std::string modelPath = filePath.string();

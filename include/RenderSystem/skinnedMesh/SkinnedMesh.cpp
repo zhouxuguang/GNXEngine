@@ -12,14 +12,14 @@ SkinnedMesh::SkinnedMesh()
 
 SkinnedMesh::~SkinnedMesh()
 {
-    log_info("Mesh::~Mesh()");
+    LOG_INFO("Mesh::~Mesh()");
 }
 
 void SkinnedMesh::SetPositions(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
-        log_info("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
         return;
     }
 
@@ -36,7 +36,7 @@ void SkinnedMesh::SetNormals(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
-        log_info("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
         return;
     }
 
@@ -53,7 +53,7 @@ void SkinnedMesh::SetTangents(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
-        log_info("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
         return;
     }
 
@@ -70,7 +70,7 @@ void SkinnedMesh::SetUv(int uvIndex, Vector2f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
-        log_info("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
         return;
     }
 
@@ -87,7 +87,7 @@ void SkinnedMesh::SetColors(uint32_t const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
-        log_info("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
         return;
     }
 
@@ -104,7 +104,7 @@ void SkinnedMesh::SetBoneIndexs(BoneIndexInfo const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
-        log_info("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
         return;
     }
 
@@ -121,7 +121,7 @@ void SkinnedMesh::SetBoneWeights(Vector4f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
-        log_info("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
         return;
     }
 

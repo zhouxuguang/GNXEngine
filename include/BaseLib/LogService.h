@@ -33,15 +33,15 @@ private:
     LogService& operator = (const LogService&);
 };
 
-#define log_debug(...) { do { baselib::LogService::DebugPrint(__VA_ARGS__); } while(0);}
-
-#define log_info(...) { do { baselib::LogService::InfoPrint(__VA_ARGS__); } while(0);}
-
-#define log_warn(...) { do { baselib::LogService::WarnPrint(__VA_ARGS__); } while(0);}
-
-#define log_error(...) { do { baselib::LogService::ErrorPrint(__VA_ARGS__); } while(0);}
-
 NS_BASELIB_END
+
+#define LOG_DEBUG(...) { do { baselib::LogService::DebugPrint(__VA_ARGS__); } while(0);}
+
+#define LOG_INFO(...) { do { baselib::LogService::InfoPrint(__VA_ARGS__); } while(0);}
+
+#define LOG_WARN(...) { do { baselib::LogService::WarnPrint(__VA_ARGS__); } while(0);}
+
+#define LOG_ERROR(...) { do { baselib::LogService::ErrorPrint(__VA_ARGS__); } while(0);}
 
 
 #endif /* BASELIB_LOGSERVICE_INCLUDE_HD97762HFD */

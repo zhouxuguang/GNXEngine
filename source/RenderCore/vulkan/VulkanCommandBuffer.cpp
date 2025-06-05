@@ -260,7 +260,7 @@ void VulkanCommandBuffer::presentFrameBuffer()
     
     if (res != VK_SUCCESS)
     {
-        log_info("VulkanCommandBuffer::presentFrameBuffer vkQueueSubmit = %d", res);
+        LOG_INFO("VulkanCommandBuffer::presentFrameBuffer vkQueueSubmit = %d", res);
 
         if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
         {
@@ -291,7 +291,7 @@ void VulkanCommandBuffer::presentFrameBuffer()
     {
         char szBuf[32] = {0};
         snprintf(szBuf, 32, "%d", (int)res);
-        log_info("VulkanCommandBuffer::presentFrameBuffer vkQueuePresentKHR = %s", szBuf);
+        LOG_INFO("VulkanCommandBuffer::presentFrameBuffer vkQueuePresentKHR = %s", szBuf);
 
         if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
         {
