@@ -12,7 +12,7 @@
 
 NS_BASELIB_BEGIN
 
-static std::string InfoPrintEx(
+static std::string InfoPrintEx(Log::LogLevel lev,
 	const std::string& file,
 	const std::string& func,
 	int line,
@@ -47,14 +47,32 @@ static std::string InfoPrintEx(
 	header << "[" << std::put_time(&local_tm, "%Y-%m-%d %H:%M:%S")
 		<< "." << std::setfill('0') << std::setw(3) << ms.count()
 		<< "][" << base_name
-		<< ":" << func << ":" << line << "] " << msg;
+		<< ":" << func << ":" << line << "]";
+#if OS_ANDROID == 0
+	switch (lev)
+	{
+	case Log::LogLevel::Debug:
+		header << "[Debug]";
+		break;
+	case Log::LogLevel::Info:
+		header << "[Info]";
+		break;
+	case Log::LogLevel::Warn:
+		header << "[Warn]";
+		break;
+	case Log::LogLevel::Error:
+		header << "[Error]";
+		break;
+	}
+#endif
+	header << msg;
 
 	return header.str();
 }
 
 void LogService::DebugPrint(const std::string& file, const std::string& func, int line, const char* msg, ...)
 {
-	std::string fullMsg = InfoPrintEx(file, func, line, msg);
+	std::string fullMsg = InfoPrintEx(Log::LogLevel::Debug, file, func, line, msg);
 	const char* szFullMsg = fullMsg.c_str();
     va_list args;
     va_start(args, szFullMsg);
@@ -64,7 +82,7 @@ void LogService::DebugPrint(const std::string& file, const std::string& func, in
 
 void LogService::InfoPrint(const std::string& file, const std::string& func, int line, const char* msg, ...)
 {
-	std::string fullMsg = InfoPrintEx(file, func, line, msg);
+	std::string fullMsg = InfoPrintEx(Log::LogLevel::Info, file, func, line, msg);
 	const char* szFullMsg = fullMsg.c_str();
     va_list args;
     va_start(args, szFullMsg);
@@ -74,7 +92,7 @@ void LogService::InfoPrint(const std::string& file, const std::string& func, int
 
 void LogService::WarnPrint(const std::string& file, const std::string& func, int line, const char* msg, ...)
 {
-	std::string fullMsg = InfoPrintEx(file, func, line, msg);
+	std::string fullMsg = InfoPrintEx(Log::LogLevel::Warn, file, func, line, msg);
 	const char* szFullMsg = fullMsg.c_str();
     va_list args;
     va_start(args, szFullMsg);
@@ -84,7 +102,7 @@ void LogService::WarnPrint(const std::string& file, const std::string& func, int
 
 void LogService::ErrorPrint(const std::string& file, const std::string& func, int line, const char* msg, ...)
 {
-	std::string fullMsg = InfoPrintEx(file, func, line, msg);
+	std::string fullMsg = InfoPrintEx(Log::LogLevel::Error, file, func, line, msg);
 	const char* szFullMsg = fullMsg.c_str();
     va_list args;
     va_start(args, szFullMsg);
