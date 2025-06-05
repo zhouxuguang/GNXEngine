@@ -130,34 +130,21 @@ void* Log::LogThreadFunc(void* pPara)
 
 void Log::LogPrint(LogLevel lev, const char* msg, va_list args)
 {
-    //获取日期、时间、文件以及所在行数等信息
-    std::string strFile = __FILE__;
-    char szLine[20];
-    memset(szLine, 0, 20);
-    sprintf(szLine, "line : %d",__LINE__);
-    std::string strLine = szLine;
-    
-    std::string strDateTime = __TIMESTAMP__;
-    
-    std::string strMsg = strDateTime + ", ";
-    strMsg += strLine;
-    strMsg += ", ";
-    strMsg += msg;
-    strMsg += "\n";
-
 #ifdef __APPLE__
-	vprintf(strMsg.c_str(), args);
+	vprintf(msg, args);
+    printf("\n");
 #elif defined __ANDROID__
-	Android_Print(m_logLevel, strMsg.c_str(), args);
+	Android_Print(m_logLevel, msg, args);
 #elif defined WIN32
 	if (HasConsole())
 	{
-		vprintf(strMsg.c_str(), args);
+		::vprintf(msg, args);
+        ::printf("\n");
 	}
 	else
 	{
-        char buf[2048] = {0};
-		::vsnprintf(buf, sizeof(buf), strMsg.c_str(), args);
+        char buf[LogBufSize] = {0};
+		::vsnprintf(buf, sizeof(buf), msg, args);
 		OutputDebugStringA(buf);
 	}
 #endif
@@ -232,44 +219,44 @@ void Log::vprint(LogLevel lev, const char* msg, va_list args)
     lock.UnLock();
 }
 
-void Log::DebugPrint(const char* msg, va_list args)
-{
-    if (!mbLogStart)
-    {
-        mLogThread.Start(LogThreadFunc, NULL);
-        mbLogStart = true;
-    }
-    Log::LogPrint(Debug, msg, args);
-}
-
-void Log::InfoPrint(const char* msg, va_list args)
-{
-    if (!mbLogStart)
-    {
-        mLogThread.Start(LogThreadFunc, NULL);
-        mbLogStart = true;
-    }
-    Log::LogPrint(Info, msg, args);
-}
-
-void Log::WarnPrint(const char* msg, va_list args)
-{
-    if (!mbLogStart)
-    {
-        mLogThread.Start(LogThreadFunc, NULL);
-        mbLogStart = true;
-    }
-    Log::LogPrint(Warn, msg, args);
-}
-
-void Log::ErrorPrint(const char* msg, va_list args)
-{
-    if (!mbLogStart)
-    {
-        mLogThread.Start(LogThreadFunc, NULL);
-        mbLogStart = true;
-    }
-    Log::LogPrint(Error, msg, args);
-}
+//void Log::DebugPrint(const char* msg, va_list args)
+//{
+//    if (!mbLogStart)
+//    {
+//        mLogThread.Start(LogThreadFunc, NULL);
+//        mbLogStart = true;
+//    }
+//    Log::LogPrint(Debug, msg, args);
+//}
+//
+//void Log::InfoPrint(const char* msg, va_list args)
+//{
+//    if (!mbLogStart)
+//    {
+//        mLogThread.Start(LogThreadFunc, NULL);
+//        mbLogStart = true;
+//    }
+//    Log::LogPrint(Info, msg, args);
+//}
+//
+//void Log::WarnPrint(const char* msg, va_list args)
+//{
+//    if (!mbLogStart)
+//    {
+//        mLogThread.Start(LogThreadFunc, NULL);
+//        mbLogStart = true;
+//    }
+//    Log::LogPrint(Warn, msg, args);
+//}
+//
+//void Log::ErrorPrint(const char* msg, va_list args)
+//{
+//    if (!mbLogStart)
+//    {
+//        mLogThread.Start(LogThreadFunc, NULL);
+//        mbLogStart = true;
+//    }
+//    Log::LogPrint(Error, msg, args);
+//}
 
 NS_BASELIB_END
