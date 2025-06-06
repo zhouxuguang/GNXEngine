@@ -52,18 +52,23 @@ static std::string InfoPrintEx(Log::LogLevel lev,
 	switch (lev)
 	{
 	case Log::LogLevel::Debug:
-		header << "[Debug]";
+		header << "[DEBUG]";
 		break;
 	case Log::LogLevel::Info:
-		header << "[Info]";
+		header << "[INFO]";
 		break;
 	case Log::LogLevel::Warn:
-		header << "[Warn]";
+		header << "[WARN]";
 		break;
 	case Log::LogLevel::Error:
-		header << "[Error]";
+		header << "[ERROR]";
 		break;
-	}
+    case Log::NumLevels:
+        break;
+    case Log::InvalidLevel:
+        header << "[INVALID]";
+        break;
+    }
 #endif
 	header << msg;
 
