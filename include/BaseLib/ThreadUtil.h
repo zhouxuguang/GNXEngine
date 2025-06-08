@@ -51,7 +51,7 @@ public:
 	typedef void  (* OnceInitProc)(void);
 
 	 /**
-     *  任意个线程调用，只调用pInitFunc一次，保证某些资源只初始化一次
+     *  任意线程调用，只调用pInitFunc一次，保证资源只初始化一次
      *  @return
      */
 	static bool ThreadOnceCall(thread_once_t nInitValue, OnceInitProc pInitFunc);
@@ -66,7 +66,7 @@ public:
     static void SetName(const char* pszName);
     
     /**
-     * @brief Stop 获得当前调用线程名字
+     * @brief 获得当前调用线程名字
      * @return void
      * @author zxg
      * @date 2015

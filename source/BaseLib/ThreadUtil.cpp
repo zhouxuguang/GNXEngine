@@ -192,13 +192,12 @@ bool ThreadUtil::ThreadOnceCall(thread_once_t nInitValue, OnceInitProc pInitFunc
 #ifdef WIN32
     using namespace windows_pthread;
 #endif
-    return 0 == pthread_once(&nInitValue,pInitFunc);
+    return 0 == pthread_once(&nInitValue, pInitFunc);
 }
 
 void ThreadUtil::SetName(const char *pszName)
 {
 #ifdef __ANDROID__
-    //pthread_setname_np(m_hThread, pszName);
     prctl(PR_SET_NAME,pszName);
 #elif __APPLE__
     pthread_setname_np(pszName);
@@ -212,7 +211,7 @@ void ThreadUtil::GetName(char *pszName, int len)
 #ifdef __APPLE__
     pthread_getname_np(pthread_self(), pszName, len);
 #elif __ANDROID__
-    prctl(PR_GET_NAME,pszName);
+    prctl(PR_GET_NAME, pszName);
 #elif WIN32
     const char *pszNameWin = GetThreadName();
     memset(pszName, 0, len);
