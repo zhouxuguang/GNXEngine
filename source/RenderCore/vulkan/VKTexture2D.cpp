@@ -106,6 +106,10 @@ void VKTexture2D::createTexture(const VkDevice device, const TextureDescriptor& 
             format = VK_FORMAT_R32G32B32A32_SFLOAT;
             break;
 
+		case kTexFormatDXT1_RGB:
+			format = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+			break;
+
         default:
             break;
     }

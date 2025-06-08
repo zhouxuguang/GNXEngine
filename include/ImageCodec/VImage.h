@@ -15,20 +15,20 @@ NAMESPACE_IMAGECODEC_BEGIN
 typedef uint32_t ImagePixelFormat;
 enum
 {
-    FORMAT_UNKNOWN,
-    FORMAT_GRAY8,            //gray
-    FORMAT_GRAY8_ALPHA8,     //GRAY AND ALPHA
-    FORMAT_RGBA8,            //RGBA32位
-    FORMAT_RGB8,             //RGB
-    FORMAT_RGBA4444,
-    FORMAT_RGB5A1,
-    FORMAT_R5G6B5,
+    FORMAT_UNKNOWN = -1,
+    FORMAT_GRAY8 = 0,            //gray
+    FORMAT_GRAY8_ALPHA8 = 1,     //GRAY AND ALPHA
+    FORMAT_RGBA8 = 2,            //RGBA32位
+    FORMAT_RGB8 = 3,             //RGB
+    FORMAT_RGBA4444 = 4,
+    FORMAT_RGB5A1 = 5,
+    FORMAT_R5G6B5 = 6,
     
-    FORMAT_SRGB8_ALPHA8,             //sRGB_alpha
-    FORMAT_SRGB8,             //sRGB
+    FORMAT_SRGB8_ALPHA8 = 7,             //sRGB_alpha
+    FORMAT_SRGB8 = 8,             //sRGB
 
-	FORMAT_RGBA32Float,            //RGBA32位float
-	FORMAT_RGB32Float,             //RGB float
+	FORMAT_RGBA32Float = 9,            //RGBA32位float
+	FORMAT_RGB32Float = 10,             //RGB float
     
     //压缩纹理
     // EAC and ETC2 compressed formats, mandated by OpenGL ES 3.0
@@ -44,6 +44,10 @@ enum
     FORMAT_ETC2_SRGBA8 = 50,
     
     FORMAT_ETC1_RGB = 51,
+
+    // S3TC
+    FORMAT_DXT1_RGB = 60,
+    FORMAT_DXT1_SRGB = 61,
 };
 
 inline bool IsCompressedFormat(ImagePixelFormat format)
@@ -162,7 +166,7 @@ private:
     uint32_t                    m_nEncodedWidth;        //压缩纹理编码后的宽
     uint32_t                    m_nEncodedHeight;       //压缩纹理编码后的高
     uint32_t                    m_nBytesPerRow;        //每个像素的字节数，根据m_eFormat决定
-    uint16_t                   m_mipCount;             //mipcount
+    uint16_t                    m_mipCount;             //mipcount
     ImagePixelFormat            m_eFormat;               //数据格式
     bool                        m_bPremultipliedAlpha;   //是否预先乘以alpha
     void *                      m_pData;                 //数据

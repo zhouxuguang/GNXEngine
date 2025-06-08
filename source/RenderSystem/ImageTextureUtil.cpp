@@ -98,6 +98,15 @@ TextureDescriptor ImageTextureUtil::getTextureDescriptor(const VImage& image)
             break;
             
         //ASTC
+
+        // s3tc
+		case imagecodec::FORMAT_DXT1_RGB:
+			textureDescriptor.format = kTexFormatDXT1_RGB;
+			break;
+
+		case imagecodec::FORMAT_DXT1_SRGB:
+			textureDescriptor.format = kTexFormatDXT1_SRGB;
+			break;
             
         default:
             break;

@@ -31,12 +31,15 @@ enum
     // as Alpha (OpenGL) or RGB (D3D9). Can be reduced to 8 bit alpha/luminance on lower hardware.
     // Why it's not Luminance on GL: for some reason alpha seems to be faster.
     kTexFormatAlphaLum16 = 20,
-    kTexFormatDXT1 = 21,
-    kTexFormatDXT3 = 22,
-    kTexFormatDXT5 = 23,
+    kTexFormatDXT1_RGB = 21,
+    kTexFormatDXT1_SRGB = 22,
+    kTexFormatDXT3_RGB = 23,
+    kTexFormatDXT3_SRGB = 24,
+    kTexFormatDXT5_RGB = 25,
+    kTexFormatDXT5_SRGB = 26,
     
 
-    kTexFormatPCCount = 24,
+    kTexFormatPCCount = 27,
 
     // iPhone
     kTexFormatPVRTC_RGB2 = 30,
@@ -112,7 +115,7 @@ bool IsValidTextureFormat(TextureFormat format);
 
 inline bool IsCompressedDXTTextureFormat(TextureFormat format)
 {
-	return format >= kTexFormatDXT1 && format <= kTexFormatDXT5;
+	return format >= kTexFormatDXT1_RGB && format <= kTexFormatDXT5_SRGB;
 }
 
 inline bool IsCompressedPVRTCTextureFormat(TextureFormat format)

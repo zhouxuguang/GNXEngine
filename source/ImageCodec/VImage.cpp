@@ -3,6 +3,7 @@
 //
 
 #include "VImage.h"
+#include "BaseLib/AlignedMalloc.h"
 #include <stddef.h>
 
 NAMESPACE_IMAGECODEC_BEGIN
@@ -86,6 +87,16 @@ static uint32_t GetFormatBytesPerRow(ImagePixelFormat format, uint32_t width, ui
             encodedHeight = yBlockCount * 4;
             return xBlockCount * 16;
         }
+
+		case FORMAT_DXT1_RGB:
+		case FORMAT_DXT1_SRGB:
+		{
+			int xBlockCount = (width + 3) / 4;
+			int yBlockCount = (height + 3) / 4;
+			encodedWidth = xBlockCount * 4;
+			encodedHeight = yBlockCount * 4;
+			return xBlockCount * 8;
+		}
             
         default:
             break;
@@ -146,8 +157,8 @@ void VImage::AllocPixels()
         return;
     }
 
-    m_pData = malloc(nByteCount);
-    m_pDeleteFunc = free;
+    m_pData = baselib::AlignedMalloc(nByteCount, 64);
+    m_pDeleteFunc = baselib::AlignedFree;
 }
 
 uint32_t VImage::GetWidth(int level) const
@@ -184,11 +195,11 @@ uint8_t* VImage::GetPixels(int level) const
     uint8_t* data = (uint8_t*)m_pData;
     if (0 == level)
     {
-        if (IsCompressedFormat(m_eFormat))
+        /*if (IsCompressedFormat(m_eFormat))
         {
             return data + m_dataSizeAndOffsets[0].offset;
         }
-        else
+        else*/
         {
             return (uint8_t*)data;
         }
@@ -243,11 +254,11 @@ int VImage::GetImageSize(int level) const
     //TODO 这里也需要重构
     if (0 == level)
     {
-        if (IsCompressedFormat(m_eFormat))
+        /*if (IsCompressedFormat(m_eFormat))
         {
             return m_dataSizeAndOffsets[0].dataSize;;
         }
-        else
+        else*/
         {
             return m_nBytesPerRow * m_nHeight;
         }
