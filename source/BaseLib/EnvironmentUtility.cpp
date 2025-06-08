@@ -14,31 +14,10 @@ NS_BASELIB_BEGIN
 #  define ENVIRONMENT_UTILITY_UNIX 1
 #endif
 
-//EnvironmentUtility* EnvironmentUtility::m_pInstance = NULL;
-//
-//EnvironmentUtility* EnvironmentUtility::GetInstance()
-//{
-//	if(NULL == m_pInstance)
-//	{
-//		m_pInstance = new EnvironmentUtility;
-//	}
-//
-//	return m_pInstance;
-//}
-
-//EnvironmentUtility::EnvironmentUtility(void)
-//{
-//}
-//
-//EnvironmentUtility::~EnvironmentUtility(void)
-//{
-//}
-
 std::string EnvironmentUtility::GetEnvironmentVariable(const std::string& variable) const
 {
 	std::string result;
 	char* lookup = getenv(variable.c_str());
-	// 鈭毬€濃€撀捖碘垰鈭懧德縉ULL.
 	if (lookup != NULL)
 	{
 		result = (const char*)lookup;
@@ -73,7 +52,18 @@ std::string EnvironmentUtility::GetCurrentWorkingDir() const
 	std::string result;
 
 #if ENVIRONMENT_UTILITY_UNIX
-	result = GetEnvironmentVariable("PWD");
+	//result = GetEnvironmentVariable("PWD");
+    char buffer[PATH_MAX] = {0};
+    if (getcwd(buffer, sizeof(buffer)))
+    {
+        result = std::string(buffer);
+    }
+    else
+    {
+        // 错误处理
+        //perror("getcwd() error");
+        return "";
+    }
 #else
 	char buf[512];
 	_getcwd(buf, 512);
@@ -90,14 +80,9 @@ int EnvironmentUtility::GetProcessorCount() const
 	GetSystemInfo(&sysinfo);
 	return sysinfo.dwNumberOfProcessors;
 #elif defined(__linux__)
-
-#ifdef __ANDROID__
-	return 8;   // 先写一个假的
-#else
 	int count = sysconf(_SC_NPROCESSORS_ONLN);   //这个是返回当前可用的核心数目，我需要返回总的核心数
 	if (count <= 0) count = 1;
 	return count;
-#endif
 
 #elif __open_bsd__
 	int mib[2] = { CTL_HW, HW_NCPU };
@@ -384,8 +369,6 @@ std::string EnvironmentUtility::GetArchitecture() const
 {
 	struct utsname uts;
 	uname(&uts);
-    
-    //iiOS涓婅幏寰楃殑鏈哄櫒鐨勭被鍨嬪悕绉帮紝鍙互纭畾iPhone鎴栬€卛pad鐨勫悕绉?
 	return uts.machine;
 }
 

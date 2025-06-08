@@ -16,7 +16,6 @@
 
 NS_BASELIB_BEGIN
 
-
 class BASELIB_API EnvironmentUtility : public Singleton<EnvironmentUtility>
 {
 public:
