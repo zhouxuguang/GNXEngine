@@ -35,7 +35,7 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     VkResult result = volkInitialize();
     if (result != VK_SUCCESS)
     {
-        printf("vulkan loader加载失败！\n");
+        LOG_INFO("vulkan loader加载失败！\n");
         return;
     }
     mVulkanContext = std::make_shared<VulkanContext>();
@@ -51,7 +51,7 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
         
         uint32_t major = VK_API_VERSION_MAJOR(apiVersions[i]);
         uint32_t minor = VK_API_VERSION_MINOR(apiVersions[i]);
-        printf("create instance success : api version : major = %u, minor = %u", major, minor);
+        LOG_INFO("create instance success : api version : major = %u, minor = %u", major, minor);
         mVulkanContext->apiVersion = apiVersions[i];
         break;
     }
@@ -272,7 +272,7 @@ CommandBufferPtr VKRenderDevice::createCommandBuffer()
         info.sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_EXT;
         res = vkGetDeviceFaultInfoEXT(mVulkanContext->device, &count, &info);
 
-        printf("error = %s", info.pVendorInfos->description);
+        LOG_INFO("error = %s", info.pVendorInfos->description);
     }
     VK_CHECK(vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]));
 

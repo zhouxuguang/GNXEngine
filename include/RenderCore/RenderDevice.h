@@ -128,7 +128,7 @@ typedef std::shared_ptr<RenderDevice> RenderDevicePtr;
 
 /**
  *    创建渲染设备
- *        @param[in] deviceType 渲染平台类型分：GL/METAL/VULKAN
+ *        @param[in] deviceType 渲染平台类型分：GLES/METAL/VULKAN
  *        @return 渲染设备实例
  */
 RenderDevicePtr createRenderDevice(RenderDeviceType deviceType, ViewHandle handle);

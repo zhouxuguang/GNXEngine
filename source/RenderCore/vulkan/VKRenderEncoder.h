@@ -44,8 +44,13 @@ public:
     virtual void setFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
     
     virtual void drawPrimitves(PrimitiveMode mode, int offset, int size);
+
+    virtual void drawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount);
     
     virtual void drawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset);
+
+    virtual void drawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
+        uint32_t firstInstance, uint32_t instanceCount);
     
     virtual void setFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index);
     

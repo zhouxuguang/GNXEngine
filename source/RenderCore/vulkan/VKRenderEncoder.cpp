@@ -454,6 +454,31 @@ void VKRenderEncoder::drawPrimitves(PrimitiveMode mode, int offset, int size)
     vkCmdDraw(mCommandBuffer, size, 1, offset, 0);
 }
 
+void VKRenderEncoder::drawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount)
+{
+	//设置图元拓扑类型，需要使用扩展动态状态
+	if (mContext->vulkanExtension.enabledExtendedDynamicState)
+	{
+		vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+	}
+	else
+	{
+		//mGraphicsPipieline->SetPrimitiveType(ConvertToVulkanPrimitiveTopology(mode));
+	}
+
+#if 0
+	// Provided by VK_VERSION_1_0
+	void vkCmdDraw(
+		VkCommandBuffer                             commandBuffer,
+		uint32_t                                    vertexCount,
+		uint32_t                                    instanceCount,
+		uint32_t                                    firstVertex,
+		uint32_t                                    firstInstance);
+#endif
+
+	vkCmdDraw(mCommandBuffer, size, instanceCount, offset, firstInstance);
+}
+
 void VKRenderEncoder::drawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset)
 {
     VKIndexBuffer *indexBuffer = (VKIndexBuffer*)buffer.get();
@@ -506,6 +531,50 @@ void VKRenderEncoder::drawIndexedPrimitives(PrimitiveMode mode, int size, IndexB
     //BindPipeline();
     
     vkCmdDrawIndexed(mCommandBuffer, size, 1, offset, 0, 0);
+}
+
+void VKRenderEncoder::drawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, uint32_t firstInstance, uint32_t instanceCount)
+{
+	VKIndexBuffer* indexBuffer = (VKIndexBuffer*)buffer.get();
+	if (!indexBuffer)
+	{
+		return;
+	}
+
+	// vkCmdBindIndexBuffer 的 offset is the starting offset in bytes within buffer used in index buffer address calculations.
+
+	IndexType type = indexBuffer->getIndexType();
+
+	int byteOffset = offset * sizeof(uint16_t);
+	VkIndexType indexType = VK_INDEX_TYPE_UINT16;
+	if (type == IndexType_UInt)
+	{
+		byteOffset = offset * sizeof(uint32_t);
+		indexType = VK_INDEX_TYPE_UINT32;
+	}
+
+#if 0
+	// Provided by VK_VERSION_1_0
+	void vkCmdDrawIndexed(
+		VkCommandBuffer                             commandBuffer,
+		uint32_t                                    indexCount,
+		uint32_t                                    instanceCount,
+		uint32_t                                    firstIndex,
+		int32_t                                     vertexOffset,
+		uint32_t                                    firstInstance);
+#endif
+
+	vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer->GetBuffer(), 0, indexType);
+	if (mContext->vulkanExtension.enabledExtendedDynamicState)
+	{
+		vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+	}
+	else
+	{
+		//mGraphicsPipieline->SetPrimitiveType(ConvertToVulkanPrimitiveTopology(mode));
+	}
+
+	vkCmdDrawIndexed(mCommandBuffer, size, instanceCount, offset, 0, firstInstance);
 }
 
 void VKRenderEncoder::setFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index)
