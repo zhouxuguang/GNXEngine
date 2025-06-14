@@ -4,7 +4,7 @@ project(GNXEngine VERSION 0.1 LANGUAGES C CXX)
 
 include(cmake/ISPC.cmake)
 
-message("ISPC: ${ISPC_EXECUTABLE}")
+message("ISPC: ${CMAKE_ISPC_COMPILER}")
 
 set(GNXEngine_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../source/GNXEngine)
 set(GNXEngine_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../include/GNXEngine)
@@ -12,8 +12,6 @@ file(GLOB_RECURSE GNXEngine_Source CONFIGURE_DEPENDS ${GNXEngine_dir}/*.cpp ${GN
 file(GLOB_RECURSE GNXEngine_Include CONFIGURE_DEPENDS ${GNXEngine_include_dir}/*.h)
 
 add_library(GNXEngine SHARED ${GNXEngine_Source} ${GNXEngine_Include})
-
-message("GNXEngine_Include 的值是: ${GNXEngine_Include}")
 
 target_include_directories(GNXEngine PUBLIC ${GNXEngine_include_dir})
 

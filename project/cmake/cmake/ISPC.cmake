@@ -22,34 +22,56 @@ function(add_ispc_target)
     if(NOT ISPC_OUTPUT_DIR)
         set(ISPC_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
     endif()
+
+    set(ISPC_KNOWN_TARGETS "sse2" "sse4" "avx1-" "avx2" "avx512skx" "avx512knl" "neon")
     
-    # 创建目标文件列表
-    set(OBJECT_FILES)
+    # 创建目标文件列表，最后的文件列表
+    set(ALL_ISPC_BUILD_OUTPUT)
     
     foreach(ispc_src ${ISPC_SOURCES})
         get_filename_component(ispc_name ${ispc_src} NAME_WE)
-        
+
         # 生成目标文件名
-        set(obj_file ${ISPC_OUTPUT_DIR}/${ispc_name}.o)
-        set(h_file ${ISPC_OUTPUT_DIR}/${ispc_name}_ispc.h)
+        set(ISPC_HEADER_NAME "${CMAKE_CURRENT_BINARY_DIR}/${ispc_name}_ispc.h")
+        set(ISPC_OBJ_NAME "${CMAKE_CURRENT_BINARY_DIR}/${ispc_name}.ispc${CMAKE_CXX_OUTPUT_EXTENSION}")
+
+        set(ISPC_BUILD_OUTPUT)
+        list(APPEND ISPC_BUILD_OUTPUT ${ISPC_HEADER_NAME} ${ISPC_OBJ_NAME})
+
+        string(FIND ${ISPC_TARGET} "," MULTI_TARGET)
+        if (${MULTI_TARGET} GREATER -1)
+            foreach (ispc_target ${ISPC_KNOWN_TARGETS})
+                string(FIND ${ISPC_TARGET} ${ispc_target} FOUND_TARGET)
+                if (${FOUND_TARGET} GREATER -1)
+                    set(OUTPUT_TARGET ${ispc_target})
+                    if (${ispc_target} STREQUAL "avx1-")
+                        set(OUTPUT_TARGET "avx")
+                    endif()
+                    list(APPEND ISPC_BUILD_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${ispc_name}_ispc_${OUTPUT_TARGET}.h"
+                                "${CMAKE_CURRENT_BINARY_DIR}/${ispc_name}.ispc_${OUTPUT_TARGET}${CMAKE_CXX_OUTPUT_EXTENSION}")
+                endif()
+            endforeach()
+        endif()
         
         # 添加编译命令
         add_custom_command(
-            OUTPUT ${obj_file} ${h_file}
+            OUTPUT ${ISPC_BUILD_OUTPUT}
             COMMAND ${CMAKE_ISPC_COMPILER}
                 ${ispc_src}
-                -o ${obj_file}
-                -h ${h_file}
+                -o ${ISPC_OBJ_NAME}
+                -h ${ISPC_HEADER_NAME}
                 --arch=${CMAKE_SYSTEM_PROCESSOR}
                 --target=${ISPC_TARGET}
                 ${ISPC_FLAGS}
             DEPENDS ${ispc_src} ${ISPC_HEADER_DEPENDENCIES}
             COMMENT "Compiling ISPC file: ${ispc_src}"
+            VERBATIM
         )
-        
-        list(APPEND OBJECT_FILES ${obj_file})
+    
+        # 7. 收集到全局列表（用于最终目标）
+        list(APPEND ALL_ISPC_BUILD_OUTPUT ${ISPC_BUILD_OUTPUT})
     endforeach()
     
     # 返回目标文件列表
-    set(OBJECT_FILES ${OBJECT_FILES} PARENT_SCOPE)
+    set(ALL_ISPC_BUILD_OUTPUT ${ALL_ISPC_BUILD_OUTPUT} PARENT_SCOPE)
 endfunction()

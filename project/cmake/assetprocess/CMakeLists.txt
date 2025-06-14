@@ -21,12 +21,11 @@ set(ISPC_SOURCES
 add_ispc_target(
     SOURCES ${ISPC_SOURCES}
     TARGET ${ISPC_TARGET}
-    HEADER_DEPENDENCIES ${PROJECT_SOURCE_DIR}/include/common.h
 )
 
 set(SOURCE_FILES ${MESH_PROCESS_SOURCES} ${MESH_PROCESS_INCLUDES})
 
-add_library(AssetProcess STATIC ${SOURCE_FILES} ${OBJECT_FILES})
+add_library(AssetProcess STATIC ${SOURCE_FILES} ${ALL_ISPC_BUILD_OUTPUT} ${ISPC_SOURCES})
 
 source_group(TREE ${asset_process_dir} FILES ${MESH_PROCESS_SOURCES})
 source_group(TREE ${asset_process_include_dir} FILES ${MESH_PROCESS_INCLUDES})
