@@ -77,6 +77,8 @@ public:
      */
     virtual void drawPrimitves(PrimitiveMode mode, int offset, int size);
     
+    virtual void drawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount);
+    
     /**
      draw funton with index
      
@@ -86,6 +88,19 @@ public:
      @param offset offset description
      */
     virtual void drawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset);
+    
+    /**
+     draw function with index instance
+     
+     @param mode mode description
+     @param size size description
+     @param buffer buffer description
+     @param offset offset 索引的偏移
+     @param offset firstInstance 第一个实例的索引
+     @param offset instanceCount 实例的个数
+     */
+    virtual void drawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
+                                               uint32_t firstInstance, uint32_t instanceCount);
     
     /**
      设置纹理和采样器

@@ -246,6 +246,12 @@ void MTLRenderEncoder::drawPrimitves(PrimitiveMode mode, int offset, int size)
                                                  vertexStart:offset vertexCount:size];
 }
 
+void MTLRenderEncoder::drawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount)
+{
+    [mRenderEncoder drawPrimitives: ConvertPrimitiveType(mode) vertexStart : offset vertexCount : size
+                    instanceCount : instanceCount baseInstance : firstInstance];
+}
+
 /**
  draw funton with index
  
@@ -280,6 +286,36 @@ void MTLRenderEncoder::drawIndexedPrimitives(PrimitiveMode mode, int size, Index
     //注意：indexBufferOffset是字节的偏移量
     [mRenderEncoder drawIndexedPrimitives:(MTLPrimitiveType)mode indexCount : size
                                                          indexType : (MTLIndexType)type indexBuffer : mtlBuffer indexBufferOffset : byteOffset];
+}
+
+void MTLRenderEncoder::drawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
+                                           uint32_t firstInstance, uint32_t instanceCount)
+{
+    if (!buffer)
+    {
+        return;
+    }
+    
+    MTLIndexBufferPtr mtlBufferPtr = std::dynamic_pointer_cast<MTLIndexBuffer>(buffer);
+    
+    id<MTLBuffer> mtlBuffer = mtlBufferPtr->getMTLBuffer();
+    if (!mtlBuffer)
+    {
+        return;
+    }
+    
+    IndexType type = mtlBufferPtr->getIndexType();
+    
+    int byteOffset = offset * sizeof(uint16_t);
+    if (type == IndexType_UInt)
+    {
+        byteOffset = offset * sizeof(uint32_t);
+    }
+    
+    //注意：indexBufferOffset是字节的偏移量
+    [mRenderEncoder drawIndexedPrimitives:(MTLPrimitiveType)mode indexCount : size
+                               indexType : (MTLIndexType)type indexBuffer : mtlBuffer indexBufferOffset : byteOffset
+                            instanceCount: instanceCount baseVertex : 0 baseInstance : firstInstance];
 }
 
 /**
