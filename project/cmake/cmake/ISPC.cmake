@@ -12,7 +12,7 @@ if(NOT CMAKE_ISPC_COMPILER)
 endif()
 
 # 定义 ISPC 编译函数
-function(add_ispc_target)
+function(add_ispc_target ISPC_OUTPUT_FILES)
     set(options)
     set(oneValueArgs TARGET OUTPUT_DIR)
     set(multiValueArgs SOURCES HEADER_DEPENDENCIES)
@@ -26,7 +26,7 @@ function(add_ispc_target)
     set(ISPC_KNOWN_TARGETS "sse2" "sse4" "avx1-" "avx2" "avx512skx" "avx512knl" "neon")
     
     # 创建目标文件列表，最后的文件列表
-    set(ALL_ISPC_BUILD_OUTPUT)
+    set(ALL_ISPC_BUILD_OUTPUT_FILES)
     
     foreach(ispc_src ${ISPC_SOURCES})
         get_filename_component(ispc_name ${ispc_src} NAME_WE)
@@ -69,9 +69,9 @@ function(add_ispc_target)
         )
     
         # 7. 收集到全局列表（用于最终目标）
-        list(APPEND ALL_ISPC_BUILD_OUTPUT ${ISPC_BUILD_OUTPUT})
+        list(APPEND ALL_ISPC_BUILD_OUTPUT_FILES ${ISPC_BUILD_OUTPUT})
     endforeach()
     
     # 返回目标文件列表
-    set(ALL_ISPC_BUILD_OUTPUT ${ALL_ISPC_BUILD_OUTPUT} PARENT_SCOPE)
+    set(${ISPC_OUTPUT_FILES} ${ALL_ISPC_BUILD_OUTPUT_FILES} PARENT_SCOPE)
 endfunction()

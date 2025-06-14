@@ -19,9 +19,14 @@ set(ISPC_SOURCES
 
 # 编译 ISPC 文件
 add_ispc_target(
+    ALL_ISPC_BUILD_OUTPUT
     SOURCES ${ISPC_SOURCES}
     TARGET ${ISPC_TARGET}
 )
+
+foreach(ispc_src ${ALL_ISPC_BUILD_OUTPUT})
+    message("ispc_src: ${ispc_src}")
+endforeach()
 
 set(SOURCE_FILES ${MESH_PROCESS_SOURCES} ${MESH_PROCESS_INCLUDES})
 
