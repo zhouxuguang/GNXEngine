@@ -1,6 +1,10 @@
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.20)
 
 project(GNXEngine VERSION 0.1 LANGUAGES C CXX)
+
+include(cmake/ISPC.cmake)
+
+message("ISPC: ${ISPC_EXECUTABLE}")
 
 set(GNXEngine_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../source/GNXEngine)
 set(GNXEngine_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../include/GNXEngine)
