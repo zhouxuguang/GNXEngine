@@ -174,7 +174,8 @@ bool ImageDecoderJPEG::onDecode(const void *buffer, size_t size, VImage *bitmap)
     bool hasAlpha = hasAlphaChannel(pixelFormat);
     if (hasAlpha)
     {
-        PremultipliedAlpha(pData, nWidth, nHeight, nChannelCount);
+        nChannelCount = 4;
+        PremultipliedAlpha(pDataNew, nWidth, nHeight, nChannelCount);
     }
     bitmap->SetPremultipliedAlpha(hasAlpha);
     return true;
