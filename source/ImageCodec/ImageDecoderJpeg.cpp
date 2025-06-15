@@ -154,7 +154,21 @@ bool ImageDecoderJPEG::onDecode(const void *buffer, size_t size, VImage *bitmap)
     {
         return false;
     }
-    bitmap->SetImageInfo(pixelFormat, nWidth, nHeight, pData, free);
+
+    // 创建4通道的数据
+    uint32_t pixelCount = nWidth * nHeight;
+    uint8_t* pDataNew = (uint8_t*)malloc(nWidth * nHeight * 4);
+    for (uint32_t i = 0; i < pixelCount; i ++)
+    {
+        pDataNew[i * 4 + 0] = pData[i * 3 + 0];
+        pDataNew[i * 4 + 1] = pData[i * 3 + 1];
+        pDataNew[i * 4 + 2] = pData[i * 3 + 2];
+        pDataNew[i * 4 + 3] = 255;
+    }
+    pixelFormat = FORMAT_SRGB8_ALPHA8;
+
+    bitmap->SetImageInfo(pixelFormat, nWidth, nHeight, pDataNew, free);
+    free(pData);
     
     bool hasAlpha = hasAlphaChannel(pixelFormat);
     if (hasAlpha)
