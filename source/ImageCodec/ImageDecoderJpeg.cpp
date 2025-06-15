@@ -165,7 +165,7 @@ bool ImageDecoderJPEG::onDecode(const void *buffer, size_t size, VImage *bitmap)
         pDataNew[i * 4 + 2] = pData[i * 3 + 2];
         pDataNew[i * 4 + 3] = 255;
     }
-    pixelFormat = FORMAT_SRGB8_ALPHA8;
+    pixelFormat = FORMAT_RGBA8;
 
     bitmap->SetImageInfo(pixelFormat, nWidth, nHeight, pDataNew, free);
     free(pData);
