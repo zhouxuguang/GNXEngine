@@ -23,6 +23,17 @@ function(add_ispc_target ISPC_OUTPUT_FILES)
         set(ISPC_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
     endif()
 
+    # error : Unsupported value for --arch, supported values are: x86, x86-64, arm, aarch64, xe64 ispc
+    # CMAKE_SYSTEM_PROCESSOR在windows上输出AMD64
+    # 检查目标处理器架构
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+        set(ISPC_ARCH "x86-64")
+        message(STATUS "Building for x86-64 architecture")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+        set(ISPC_ARCH "aarch64")
+        message(STATUS "Building for ARM architecture")
+    endif()
+
     set(ISPC_KNOWN_TARGETS "sse2" "sse4" "avx1-" "avx2" "avx512skx" "avx512knl" "neon")
     
     # 创建目标文件列表，最后的文件列表
@@ -38,7 +49,7 @@ function(add_ispc_target ISPC_OUTPUT_FILES)
         set(ISPC_BUILD_OUTPUT)
         list(APPEND ISPC_BUILD_OUTPUT ${ISPC_HEADER_NAME} ${ISPC_OBJ_NAME})
 
-        string(FIND ${ISPC_TARGET} "," MULTI_TARGET)
+        string(FIND "${ISPC_TARGET}" "," MULTI_TARGET)
         if (${MULTI_TARGET} GREATER -1)
             foreach (ispc_target ${ISPC_KNOWN_TARGETS})
                 string(FIND ${ISPC_TARGET} ${ispc_target} FOUND_TARGET)
@@ -60,7 +71,7 @@ function(add_ispc_target ISPC_OUTPUT_FILES)
                 ${ispc_src}
                 -o ${ISPC_OBJ_NAME}
                 -h ${ISPC_HEADER_NAME}
-                --arch=${CMAKE_SYSTEM_PROCESSOR}
+                --arch=${ISPC_ARCH}
                 --target=${ISPC_TARGET}
                 ${ISPC_FLAGS}
             DEPENDS ${ispc_src} ${ISPC_HEADER_DEPENDENCIES}
