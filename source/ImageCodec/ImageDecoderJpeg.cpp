@@ -4,6 +4,7 @@
 
 #include "ImageDecoderJpeg.h"
 #include "ImageDecoderFactory.h"
+#include "BaseLib/AlignedMalloc.h"
 
 #ifdef USE_JPEG_LIB
 extern "C"
@@ -157,7 +158,7 @@ bool ImageDecoderJPEG::onDecode(const void *buffer, size_t size, VImage *bitmap)
 
     // 创建4通道的数据
     uint32_t pixelCount = nWidth * nHeight;
-    uint8_t* pDataNew = (uint8_t*)malloc(nWidth * nHeight * 4);
+    uint8_t* pDataNew = (uint8_t*)baselib::AlignedMalloc(nWidth * nHeight * 4, 64);
     for (uint32_t i = 0; i < pixelCount; i ++)
     {
         pDataNew[i * 4 + 0] = pData[i * 3 + 0];
@@ -167,7 +168,7 @@ bool ImageDecoderJPEG::onDecode(const void *buffer, size_t size, VImage *bitmap)
     }
     pixelFormat = FORMAT_RGBA8;
 
-    bitmap->SetImageInfo(pixelFormat, nWidth, nHeight, pDataNew, free);
+    bitmap->SetImageInfo(pixelFormat, nWidth, nHeight, pDataNew, baselib::AlignedFree);
     free(pData);
     
     bool hasAlpha = hasAlphaChannel(pixelFormat);
