@@ -24,10 +24,6 @@ add_ispc_target(
     TARGET ${ISPC_TARGET}
 )
 
-foreach(ispc_src ${ALL_ISPC_BUILD_OUTPUT})
-    message("ispc_src: ${ispc_src}")
-endforeach()
-
 set(SOURCE_FILES ${MESH_PROCESS_SOURCES} ${MESH_PROCESS_INCLUDES})
 
 add_library(AssetProcess STATIC ${SOURCE_FILES} ${ALL_ISPC_BUILD_OUTPUT} ${ISPC_SOURCES})

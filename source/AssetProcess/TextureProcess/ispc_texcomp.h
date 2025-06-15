@@ -20,6 +20,9 @@
 // IN THE SOFTWARE.
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef ISPC_TEXCOMPRESS_INCLUDE_HSDJHVJSD
+#define ISPC_TEXCOMPRESS_INCLUDE_HSDJHVJSD
+
 #include <stdint.h>
 
 struct rgba_surface
@@ -123,3 +126,5 @@ extern "C" void CompressBlocksBC6H(const rgba_surface* src, uint8_t* dst, bc6h_e
 extern "C" void CompressBlocksBC7(const rgba_surface* src, uint8_t* dst, bc7_enc_settings* settings);
 extern "C" void CompressBlocksETC1(const rgba_surface* src, uint8_t* dst, etc_enc_settings* settings);
 extern "C" void CompressBlocksASTC(const rgba_surface* src, uint8_t* dst, astc_enc_settings* settings);
+
+#endif
