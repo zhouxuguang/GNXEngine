@@ -2,6 +2,7 @@
 #include "AssetProcess/AssetImporter.h"
 #include "BaseLib/ThreadPool.h"
 #include "BaseLib/LogService.h"
+#include "BaseLib/TimeCost.h"
 #include "AssetProcess/ASTCCompressor.h"
 #include "ImageCodec/ImageDecoder.h"
 
@@ -72,7 +73,20 @@ int main(int argc, char* argv[])
     uint32_t yBlockCount = (image->GetHeight() + block_height - 1) / block_height;
     
     uint8_t* pOut = new uint8_t[xBlockCount * yBlockCount * 16];
+    baselib::TimeCost cost;
+    cost.Begin();
     AssetProcess::CompressASTC(pOut, image->GetPixels(), image->GetWidth(), image->GetHeight(), block_width, block_height, image->GetBytesPerRow());
+    cost.End();
+    
+    uint64_t t1 = cost.GetCostTime();
+    LOG_INFO("AssetProcess::CompressASTC cost time = %lf", t1 / 1000.0);
+    
+    cost.Begin();
+    AssetProcess::CompressASTC_MT(pOut, image->GetPixels(), image->GetWidth(), image->GetHeight(), block_width, block_height, image->GetBytesPerRow());
+    cost.End();
+    t1 = cost.GetCostTime();
+    LOG_INFO("AssetProcess::CompressASTC_MT cost time = %lf", t1 / 1000.0);
+    
     store_astc(pOut, xBlockCount * yBlockCount * 16, image->GetWidth(), image->GetHeight(), block_width, block_height, "test.astc");
     delete [] pOut;
 

@@ -9,7 +9,7 @@
 #ifndef BASELIB_LOGSERVICE_INCLUDE_HD97762HFD
 #define BASELIB_LOGSERVICE_INCLUDE_HD97762HFD
 
-//跨平台轻量级日志d打印服务
+//跨平台轻量级日志打印服务
 
 #include "PreCompile.h"
 

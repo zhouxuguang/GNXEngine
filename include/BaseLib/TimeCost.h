@@ -1,8 +1,9 @@
 #ifndef BASELIB_TIMECOST_INCLUDE_H
 #define BASELIB_TIMECOST_INCLUDE_H
 
-
 #include "PreCompile.h"
+
+// 跨平台时间计时工具类
 
 NS_BASELIB_BEGIN
 
