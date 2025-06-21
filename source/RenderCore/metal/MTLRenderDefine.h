@@ -120,6 +120,13 @@ inline MTLPixelFormat ConvertTextureFormatToMetal(uint32_t textureFormat)
         case kTexFormatETC1_RGB:
             return MTLPixelFormatInvalid;
             
+        // dxt
+        case kTexFormatDXT1_RGB:
+            return MTLPixelFormatBC1_RGBA;
+            
+        case kTexFormatDXT1_SRGB:
+            return MTLPixelFormatBC1_RGBA_sRGB;
+            
         default:
             return MTLPixelFormatInvalid;
     }
