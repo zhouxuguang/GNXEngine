@@ -34,6 +34,9 @@ public:
     */
     std::string GetCurrentWorkingDir() const;
 
+	// 设置当前目录
+	bool SetCurrentDir(const char* path);
+
 	//获得处理器个数
 	int GetProcessorCount() const;
 

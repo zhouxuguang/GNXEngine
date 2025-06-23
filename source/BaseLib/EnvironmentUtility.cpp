@@ -73,6 +73,15 @@ std::string EnvironmentUtility::GetCurrentWorkingDir() const
 	return result;
 }
 
+bool EnvironmentUtility::SetCurrentDir(const char* path)
+{
+#ifdef _WIN32
+	return SetCurrentDirectoryA(path);
+#else
+	return chdir(path) == 0;
+#endif
+}
+
 int EnvironmentUtility::GetProcessorCount() const
 {
 #if defined(WIN32)
