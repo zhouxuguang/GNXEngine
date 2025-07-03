@@ -25,7 +25,7 @@ public:
     {
     }
 
-    virtual void setTextureData(const unsigned char* imageData);
+    virtual void SetTextureData(const unsigned char* imageData);
 
     /**
       更新纹理数据
@@ -34,9 +34,9 @@ public:
      @param mipmapLevel 纹理等级
      @param image_data 更新数据
      */
-    virtual void replaceRegion(const Rect2D& rect, const unsigned char* imageData, unsigned int mipMapLevel = 0);
+    virtual void ReplaceRegion(const Rect2D& rect, const unsigned char* imageData, unsigned int mipMapLevel = 0);
     
-    virtual bool isValid() const
+    virtual bool IsValid() const
     {
         return mImage != VK_NULL_HANDLE;
     }

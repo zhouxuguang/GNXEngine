@@ -11,7 +11,7 @@ NS_RENDERSYSTEM_BEGIN
 
 SampleApplication::SampleApplication(RenderDeviceType deviceType, ViewHandle nativeWindow)
 {
-    mRenderdevice = createRenderDevice(deviceType, nativeWindow);
+    mRenderdevice = CreateRenderDevice(deviceType, nativeWindow);
 }
 
 SampleApplication::~SampleApplication()
@@ -28,7 +28,7 @@ void SampleApplication::Resize(uint32_t width, uint32_t height)
 {
     if (mRenderdevice)
     {
-        mRenderdevice->resize((uint32_t)width, (uint32_t)height);
+        mRenderdevice->Resize((uint32_t)width, (uint32_t)height);
     }
     mWidth = width;
     mHeight = height;
@@ -39,14 +39,14 @@ void SampleApplication::Resize(uint32_t width, uint32_t height)
     textureDescriptor.height = height;
     textureDescriptor.mipmaped = false;
     textureDescriptor.format = kTexFormatRGBA16Float;
-    mRenderTexture = mRenderdevice->createRenderTexture(textureDescriptor);
-    mComputeTexture = mRenderdevice->createRenderTexture(textureDescriptor);
+    mRenderTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
+    mComputeTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
     
     textureDescriptor.width = width;
     textureDescriptor.height = height;
     textureDescriptor.mipmaped = false;
     textureDescriptor.format = kTexFormatDepth32FloatStencil8;
-    mDepthStencilTexture = mRenderdevice->createRenderTexture(textureDescriptor);
+    mDepthStencilTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
     
     mSceneManager = SceneManager::GetInstance();
     SkyBox* skybox = nullptr;//initSky(mRenderdevice);

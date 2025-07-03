@@ -20,7 +20,7 @@ PostProcessing::PostProcessing(RenderDevicePtr renderDevice)
 
     
     SamplerDescriptor samplerDescriptor;
-    mTextureSampler = renderDevice->createSamplerWithDescriptor(samplerDescriptor);
+    mTextureSampler = renderDevice->CreateSamplerWithDescriptor(samplerDescriptor);
     
     ShaderAssetString shaderAssetString = LoadShaderAsset("PostProcessShader");
     
@@ -29,13 +29,13 @@ PostProcessing::PostProcessing(RenderDevicePtr renderDevice)
     /*ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(*vertexShader, ShaderStage_Vertex);
     ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(*fragmentShader, ShaderStage_Fragment);*/
 
-    GraphicsShaderPtr graphicsShader = renderDevice->createGraphicsShader(*vertexShader, *fragmentShader);
+    GraphicsShaderPtr graphicsShader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
 
     GraphicsPipelineDescriptor graphicsPipelineDescriptor;
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
     
-    mPipeline = renderDevice->createGraphicsPipeline(graphicsPipelineDescriptor);
-    mPipeline->attachGraphicsShader(graphicsShader);
+    mPipeline = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);
+    mPipeline->AttachGraphicsShader(graphicsShader);
 }
 
 PostProcessing::~PostProcessing()
@@ -50,10 +50,10 @@ void PostProcessing::SetRenderTexture(const RenderTexturePtr texture)
 
 void PostProcessing::Process(const RenderEncoderPtr &renderEncoder)
 {
-    renderEncoder->setGraphicsPipeline(mPipeline);
-    renderEncoder->setFragmentRenderTextureAndSampler("texImage", mTexture, mTextureSampler);
+    renderEncoder->SetGraphicsPipeline(mPipeline);
+    renderEncoder->SetFragmentRenderTextureAndSampler("texImage", mTexture, mTextureSampler);
     
-    renderEncoder->drawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
+    renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
 }
 
 NS_RENDERSYSTEM_END

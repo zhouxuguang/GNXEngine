@@ -25,20 +25,20 @@ public:
      获取Buffer的长度
      @return buffer长度,单位btye
      */
-    virtual uint32_t getBufferLength() const {return 0;}
+    virtual uint32_t GetBufferLength() const {return 0;}
     
     /**
      映射buffer数据
      @return buffer数据起始地址
      */
-    virtual void* mapBufferData() const { return nullptr; }
+    virtual void* MapBufferData() const { return nullptr; }
     
     /**
      解除buffer数据
      */
-    virtual void unmapBufferData(void* bufferData) const {}
+    virtual void UnmapBufferData(void* bufferData) const {}
     
-    virtual bool isValid() const { return false; }
+    virtual bool IsValid() const { return false; }
 };
 
 typedef std::shared_ptr<ComputeBuffer> ComputeBufferPtr;

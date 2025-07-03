@@ -23,9 +23,9 @@ public:
     
     virtual ~ShaderFunction();
     
-    virtual std::shared_ptr<ShaderFunction> initWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage) = 0;
+    virtual std::shared_ptr<ShaderFunction> InitWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage) = 0;
     
-    virtual ShaderStage getShaderStage() const = 0;
+    virtual ShaderStage GetShaderStage() const = 0;
 };
 
 using ShaderFunctionPtr = std::shared_ptr<ShaderFunction>;

@@ -59,9 +59,9 @@ public:
     
     ~GLGraphicsPipeline();
     
-    virtual void attachVertexShader(ShaderFunctionPtr shaderFunction);
+    virtual void AttachVertexShader(ShaderFunctionPtr shaderFunction);
     
-    virtual void attachFragmentShader(ShaderFunctionPtr shaderFunction);
+    virtual void AttachFragmentShader(ShaderFunctionPtr shaderFunction);
     
     /**
      Call Opengl function to apply pipline state,

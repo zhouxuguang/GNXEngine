@@ -82,12 +82,12 @@ VKVertexBuffer::~VKVertexBuffer()
     //vmaDestroyBuffer(mContext->vmaAllocator, mBuffer, mAllocation);
 }
 
-uint32_t VKVertexBuffer::getBufferLength() const
+uint32_t VKVertexBuffer::GetBufferLength() const
 {
     return mBufferLength;
 }
 
-void* VKVertexBuffer::mapBufferData() const
+void* VKVertexBuffer::MapBufferData() const
 {
     if (mStorageMode == StorageModeShared)
     {
@@ -101,12 +101,12 @@ void* VKVertexBuffer::mapBufferData() const
     }
 }
 
-void VKVertexBuffer::unmapBufferData(void* bufferData) const
+void VKVertexBuffer::UnmapBufferData(void* bufferData) const
 {
     vmaUnmapMemory(mContext->vmaAllocator, mAllocation);
 }
 
-bool VKVertexBuffer::isValid() const
+bool VKVertexBuffer::IsValid() const
 {
     return mBuffer != VK_NULL_HANDLE;
 }

@@ -31,7 +31,7 @@ public:
 
      @param imageData image data
      */
-    virtual void setTextureData(const uint8_t* imageData) = 0;
+    virtual void SetTextureData(const uint8_t* imageData) = 0;
     
     /**
       更新纹理数据
@@ -40,14 +40,14 @@ public:
      @param mipMapLevel 纹理等级
      @param imageData 跟新数据
      */
-    virtual void replaceRegion(const Rect2D& rect, const uint8_t* imageData, uint32_t mipMapLevel = 0) = 0;
+    virtual void ReplaceRegion(const Rect2D& rect, const uint8_t* imageData, uint32_t mipMapLevel = 0) = 0;
     
     /**
      纹理是否有效
 
      @return ture or false
      */
-    virtual bool isValid() const = 0;
+    virtual bool IsValid() const = 0;
 };
 
 typedef std::shared_ptr<Texture2D> Texture2DPtr;

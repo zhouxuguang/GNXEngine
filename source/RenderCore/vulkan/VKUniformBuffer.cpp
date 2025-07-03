@@ -37,7 +37,7 @@ VKUniformBuffer::~VKUniformBuffer()
 //    }
 }
 
-void VKUniformBuffer::setData(const void* data, uint32_t offset, uint32_t dataSize)
+void VKUniformBuffer::SetData(const void* data, uint32_t offset, uint32_t dataSize)
 {
     uint8_t *pData = nullptr;
     vmaMapMemory(mContext->vmaAllocator, mAllocation, (void**)&pData);

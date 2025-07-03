@@ -103,7 +103,7 @@ GraphicsShader::~GraphicsShader()
 
 static RenderDevicePtr renderDevicePtr = nullptr;
 
-RenderDevicePtr createRenderDevice(RenderDeviceType deviceType, ViewHandle viewHandle)
+RenderDevicePtr CreateRenderDevice(RenderDeviceType deviceType, ViewHandle viewHandle)
 {
     
     if (GLES == deviceType)
@@ -125,7 +125,7 @@ RenderDevicePtr createRenderDevice(RenderDeviceType deviceType, ViewHandle viewH
     return renderDevicePtr;
 }
 
-RenderDevicePtr getRenderDevice()
+RenderDevicePtr GetRenderDevice()
 {
     return renderDevicePtr;
 }

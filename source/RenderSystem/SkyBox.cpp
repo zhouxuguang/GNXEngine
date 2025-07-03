@@ -142,7 +142,7 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     mTextureCube = LoadEquirectangularMap(getMediaDir() + "IBL" + pathSplit + "piazza_bologni_1k.hdr");
     
     SamplerDescriptor samplerDescriptor;
-    mTextureSampler = renderDevice->createSamplerWithDescriptor(samplerDescriptor);
+    mTextureSampler = renderDevice->CreateSamplerWithDescriptor(samplerDescriptor);
     
     initBuffers(renderDevice);
     
@@ -162,15 +162,15 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     /*ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(*vertexShader, ShaderStage_Vertex);
     ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(*fragmentShader, ShaderStage_Fragment);*/
 
-    GraphicsShaderPtr shader = renderDevice->createGraphicsShader(*vertexShader, *fragmentShader);
+    GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
 
     GraphicsPipelineDescriptor graphicsPipelineDescriptor;
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
     graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionLessThanOrEqual;
     graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;
     
-    mPipeline = renderDevice->createGraphicsPipeline(graphicsPipelineDescriptor);
-    mPipeline->attachGraphicsShader(shader);
+    mPipeline = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);
+    mPipeline->AttachGraphicsShader(shader);
     /*mPipeline->attachVertexShader(vertShader);
     mPipeline->attachFragmentShader(fragShader);*/
     
@@ -186,13 +186,13 @@ void SkyBox::Render(const RenderEncoderPtr &renderEncoder, UniformBufferPtr came
         return;
     }
     
-    renderEncoder->setGraphicsPipeline(mPipeline);
+    renderEncoder->SetGraphicsPipeline(mPipeline);
     
-    renderEncoder->setVertexBuffer(mVertexBuffer, 0, 0);
-    renderEncoder->setFragmentTextureCubeAndSampler("gCubeMap", mTextureCube, mTextureSampler);
-    renderEncoder->setVertexUniformBuffer("cbPerCamera", cameraUBO);
+    renderEncoder->SetVertexBuffer(mVertexBuffer, 0, 0);
+    renderEncoder->SetFragmentTextureCubeAndSampler("gCubeMap", mTextureCube, mTextureSampler);
+    renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
     
-    renderEncoder->drawPrimitves(PrimitiveMode_TRIANGLES, 0, 36);
+    renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 36);
 }
 
 void SkyBox::initBuffers(RenderDevicePtr renderDevice)
@@ -242,7 +242,7 @@ void SkyBox::initBuffers(RenderDevicePtr renderDevice)
         -1.0f, -1.0f,  1.0f, 1.0f,
          1.0f, -1.0f,  1.0f, 1.0f
     };
-    mVertexBuffer = renderDevice->createVertexBufferWithBytes(skyboxVertices, sizeof(skyboxVertices), StorageModePrivate);
+    mVertexBuffer = renderDevice->CreateVertexBufferWithBytes(skyboxVertices, sizeof(skyboxVertices), StorageModePrivate);
 }
 
 NS_RENDERSYSTEM_END

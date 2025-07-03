@@ -20,9 +20,9 @@ public:
     
     ~VKTextureCube();
     
-    virtual void setTextureData(CubemapFace cubeFace, uint32_t imageSize, const uint8_t* imageData);
+    virtual void SetTextureData(CubemapFace cubeFace, uint32_t imageSize, const uint8_t* imageData);
     
-    virtual bool isValid() const;
+    virtual bool IsValid() const;
     
     VulkanImageViewPtr GetImageView() const
     {

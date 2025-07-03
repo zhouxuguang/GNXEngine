@@ -56,11 +56,11 @@ public:
     VKShaderFunction(VulkanContextPtr context);
     ~VKShaderFunction();
     
-    virtual ShaderFunctionPtr initWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage);
+    virtual ShaderFunctionPtr InitWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage);
     
     virtual std::shared_ptr<VKShaderFunction> initWithShaderSourceInner(const ShaderCode& shaderSource, ShaderStage shaderStage);
     
-    virtual ShaderStage getShaderStage() const;
+    virtual ShaderStage GetShaderStage() const;
     
     VkShaderModule GetShaderModule() const
     {

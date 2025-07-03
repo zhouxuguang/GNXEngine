@@ -19,7 +19,7 @@ public:
     
     virtual ~UniformBuffer();
     
-    virtual void setData(const void* data, uint32_t offset, uint32_t dataSize) = 0;
+    virtual void SetData(const void* data, uint32_t offset, uint32_t dataSize) = 0;
 };
 
 typedef std::shared_ptr<UniformBuffer> UniformBufferPtr;

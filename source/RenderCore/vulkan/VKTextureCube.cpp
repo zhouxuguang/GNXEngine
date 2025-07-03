@@ -53,7 +53,7 @@ VKTextureCube::~VKTextureCube()
     Release();
 }
 
-void VKTextureCube::setTextureData(CubemapFace cubeFace, uint32_t imageSize, const uint8_t* imageData)
+void VKTextureCube::SetTextureData(CubemapFace cubeFace, uint32_t imageSize, const uint8_t* imageData)
 {
     if (!imageData || imageSize == 0)
     {
@@ -126,7 +126,7 @@ void VKTextureCube::setTextureData(CubemapFace cubeFace, uint32_t imageSize, con
     
 }
 
-bool VKTextureCube::isValid() const
+bool VKTextureCube::IsValid() const
 {
     return mImage != VK_NULL_HANDLE;
 }

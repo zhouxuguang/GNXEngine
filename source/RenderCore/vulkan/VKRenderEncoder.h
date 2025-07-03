@@ -31,38 +31,38 @@ public:
     
     virtual void EndEncode();
     
-    virtual void setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline);
+    virtual void SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline);
     
-    virtual void setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index);
+    virtual void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index);
     
-    virtual void setVertexUniformBuffer(UniformBufferPtr buffer, int index);
+    virtual void SetVertexUniformBuffer(UniformBufferPtr buffer, int index);
     
-    virtual void setFragmentUniformBuffer(UniformBufferPtr buffer, int index);
+    virtual void SetFragmentUniformBuffer(UniformBufferPtr buffer, int index);
 
-    virtual void setVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+    virtual void SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
 
-    virtual void setFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+    virtual void SetFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
     
-    virtual void drawPrimitves(PrimitiveMode mode, int offset, int size);
+    virtual void DrawPrimitves(PrimitiveMode mode, int offset, int size);
 
-    virtual void drawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount);
+    virtual void DrawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount);
     
-    virtual void drawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset);
+    virtual void DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset);
 
-    virtual void drawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
+    virtual void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
         uint32_t firstInstance, uint32_t instanceCount);
     
-    virtual void setFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index);
+    virtual void SetFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index);
     
-    virtual void setFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index);
+    virtual void SetFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index);
     
-    virtual void setFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index);
+    virtual void SetFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index);
 
-    virtual void setFragmentTextureAndSampler(const std::string& resourceName, Texture2DPtr texture, TextureSamplerPtr sampler);
+    virtual void SetFragmentTextureAndSampler(const std::string& resourceName, Texture2DPtr texture, TextureSamplerPtr sampler);
 
-    virtual void setFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler);
+    virtual void SetFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler);
 
-    virtual void setFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler);
+    virtual void SetFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler);
     
 private:
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;

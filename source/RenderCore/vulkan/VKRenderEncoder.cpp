@@ -291,7 +291,7 @@ void VKRenderEncoder::BindPipeline()
     }
 }
 
-void VKRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
+void VKRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
 {
     if (!graphicsPipeline)
     {
@@ -312,7 +312,7 @@ void VKRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     BindPipeline();
 }
 
-void VKRenderEncoder::setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index)
+void VKRenderEncoder::SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index)
 {
 //    void vkCmdBindVertexBuffers(
 //        VkCommandBuffer                             commandBuffer,
@@ -332,7 +332,7 @@ void VKRenderEncoder::setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, i
     vkCmdBindVertexBuffers(mCommandBuffer, index, 1, &innerBuffer, &deviceOffset);
 }
 
-void VKRenderEncoder::setVertexUniformBuffer(UniformBufferPtr buffer, int index)
+void VKRenderEncoder::SetVertexUniformBuffer(UniformBufferPtr buffer, int index)
 {
     if (!buffer)
     {
@@ -359,7 +359,7 @@ void VKRenderEncoder::setVertexUniformBuffer(UniformBufferPtr buffer, int index)
     //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, &writeDescriptorSet);
 }
 
-void VKRenderEncoder::setFragmentUniformBuffer(UniformBufferPtr buffer, int index)
+void VKRenderEncoder::SetFragmentUniformBuffer(UniformBufferPtr buffer, int index)
 {
     if (!buffer)
     {
@@ -381,7 +381,7 @@ void VKRenderEncoder::setFragmentUniformBuffer(UniformBufferPtr buffer, int inde
     //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, &writeDescriptorSet);
 }
 
-void VKRenderEncoder::setVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+void VKRenderEncoder::SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
 {
 	if (!buffer)
 	{
@@ -399,7 +399,7 @@ void VKRenderEncoder::setVertexUniformBuffer(const std::string& resourceName, Un
     shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
 }
 
-void VKRenderEncoder::setFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+void VKRenderEncoder::SetFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
 {
 	if (!buffer)
 	{
@@ -417,7 +417,7 @@ void VKRenderEncoder::setFragmentUniformBuffer(const std::string& resourceName, 
 	shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
 }
 
-void VKRenderEncoder::drawPrimitves(PrimitiveMode mode, int offset, int size)
+void VKRenderEncoder::DrawPrimitves(PrimitiveMode mode, int offset, int size)
 {
     //设置图元拓扑类型，需要使用扩展动态状态
 #if 0
@@ -454,7 +454,7 @@ void VKRenderEncoder::drawPrimitves(PrimitiveMode mode, int offset, int size)
     vkCmdDraw(mCommandBuffer, size, 1, offset, 0);
 }
 
-void VKRenderEncoder::drawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount)
+void VKRenderEncoder::DrawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount)
 {
 	//设置图元拓扑类型，需要使用扩展动态状态
 	if (mContext->vulkanExtension.enabledExtendedDynamicState)
@@ -479,7 +479,7 @@ void VKRenderEncoder::drawInstancePrimitves(PrimitiveMode mode, int offset, int 
 	vkCmdDraw(mCommandBuffer, size, instanceCount, offset, firstInstance);
 }
 
-void VKRenderEncoder::drawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset)
+void VKRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset)
 {
     VKIndexBuffer *indexBuffer = (VKIndexBuffer*)buffer.get();
     if (!indexBuffer)
@@ -533,7 +533,7 @@ void VKRenderEncoder::drawIndexedPrimitives(PrimitiveMode mode, int size, IndexB
     vkCmdDrawIndexed(mCommandBuffer, size, 1, offset, 0, 0);
 }
 
-void VKRenderEncoder::drawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, uint32_t firstInstance, uint32_t instanceCount)
+void VKRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, uint32_t firstInstance, uint32_t instanceCount)
 {
 	VKIndexBuffer* indexBuffer = (VKIndexBuffer*)buffer.get();
 	if (!indexBuffer)
@@ -577,7 +577,7 @@ void VKRenderEncoder::drawIndexedInstancePrimitives(PrimitiveMode mode, int size
 	vkCmdDrawIndexed(mCommandBuffer, size, instanceCount, offset, 0, firstInstance);
 }
 
-void VKRenderEncoder::setFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index)
+void VKRenderEncoder::SetFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index)
 {
     if (!texture || !sampler)
     {
@@ -607,7 +607,7 @@ void VKRenderEncoder::setFragmentTextureAndSampler(Texture2DPtr texture, Texture
     //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), samOffset, 1, writeDesSets + 1);
 }
 
-void VKRenderEncoder::setFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index)
+void VKRenderEncoder::SetFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index)
 {
     if (!textureCube || !sampler)
     {
@@ -635,7 +635,7 @@ void VKRenderEncoder::setFragmentTextureCubeAndSampler(TextureCubePtr textureCub
     //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), samOffset, 1, writeDesSets + 1);
 }
 
-void VKRenderEncoder::setFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index)
+void VKRenderEncoder::SetFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index)
 {
     if (!renderTexture || !sampler)
     {
@@ -664,7 +664,7 @@ void VKRenderEncoder::setFragmentRenderTextureAndSampler(RenderTexturePtr render
     //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), samOffset, 1, writeDesSets + 1);
 }
 
-void VKRenderEncoder::setFragmentTextureAndSampler(const std::string& resourceName, Texture2DPtr texture, TextureSamplerPtr sampler)
+void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceName, Texture2DPtr texture, TextureSamplerPtr sampler)
 {
 	if (!texture || !sampler)
 	{
@@ -684,7 +684,7 @@ void VKRenderEncoder::setFragmentTextureAndSampler(const std::string& resourceNa
     shader->BindSampler(mCommandBuffer, resourceName + "Sam", vkSampler->GetVKSampler(), mGraphicsPipieline->GetPipelineLayout());
 }
 
-void VKRenderEncoder::setFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler)
+void VKRenderEncoder::SetFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler)
 {
 	if (!textureCube || !sampler)
 	{
@@ -704,7 +704,7 @@ void VKRenderEncoder::setFragmentTextureCubeAndSampler(const std::string& resour
 	shader->BindSampler(mCommandBuffer, resourceName + "Sam", vkSampler->GetVKSampler(), mGraphicsPipieline->GetPipelineLayout());
 }
 
-void VKRenderEncoder::setFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler)
+void VKRenderEncoder::SetFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler)
 {
 	if (!renderTexture || !sampler)
 	{

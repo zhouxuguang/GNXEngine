@@ -24,21 +24,21 @@ public:
      
      @return buffer长度,单位btye
      */
-    virtual uint32_t getBufferLength() const = 0;
+    virtual uint32_t GetBufferLength() const = 0;
     
     /**
      映射buffer数据
      
      @return buffer数据起始地址
      */
-    virtual void* mapBufferData() const = 0;
+    virtual void* MapBufferData() const = 0;
     
     /**
      解除buffer数据
      */
-    virtual void unmapBufferData(void* bufferData) const = 0;
+    virtual void UnmapBufferData(void* bufferData) const = 0;
     
-    virtual bool isValid() const = 0;
+    virtual bool IsValid() const = 0;
 };
 
 

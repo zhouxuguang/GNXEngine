@@ -114,7 +114,7 @@ VKRenderDevice::~VKRenderDevice()
 {
 }
 
-void VKRenderDevice::resize(uint32_t width, uint32_t height)
+void VKRenderDevice::Resize(uint32_t width, uint32_t height)
 {
     vkQueueWaitIdle(mVulkanContext->graphicsQueue);
     //vkDeviceWaitIdle(mVulkanContext->device);
@@ -143,84 +143,84 @@ void VKRenderDevice::resize(uint32_t width, uint32_t height)
     
     // for test
     uint8_t data[4] = {4, 1, 2, 3};
-    createVertexBufferWithBytes(data, 4, StorageModeShared);
+    CreateVertexBufferWithBytes(data, 4, StorageModeShared);
     
     TextureDescriptor des;
     des.width = 1;
     des.height = 1;
     des.bytesPerRow = 4;
-    Texture2DPtr texture = createTextureWithDescriptor(des);
-    texture->setTextureData(data);
+    Texture2DPtr texture = CreateTextureWithDescriptor(des);
+    texture->SetTextureData(data);
     
     std::vector<TextureDescriptor> desArray;
     desArray.push_back(des);
-    TextureCubePtr textureCube = createTextureCubeWithDescriptor(desArray);
-    textureCube->setTextureData(kCubeFacePX, 4, data);
-    textureCube->setTextureData(kCubeFaceNX, 4, data);
-    textureCube->setTextureData(kCubeFacePY, 4, data);
-    textureCube->setTextureData(kCubeFaceNY, 4, data);
-    textureCube->setTextureData(kCubeFacePZ, 4, data);
-    textureCube->setTextureData(kCubeFaceNZ, 4, data);
+    TextureCubePtr textureCube = CreateTextureCubeWithDescriptor(desArray);
+    textureCube->SetTextureData(kCubeFacePX, 4, data);
+    textureCube->SetTextureData(kCubeFaceNX, 4, data);
+    textureCube->SetTextureData(kCubeFacePY, 4, data);
+    textureCube->SetTextureData(kCubeFaceNY, 4, data);
+    textureCube->SetTextureData(kCubeFacePZ, 4, data);
+    textureCube->SetTextureData(kCubeFaceNZ, 4, data);
     
-    IndexBufferPtr indexBuffer = createIndexBufferWithBytes(data, 4, IndexType_UInt);
+    IndexBufferPtr indexBuffer = CreateIndexBufferWithBytes(data, 4, IndexType_UInt);
     
-    UniformBufferPtr uniformBuffer = createUniformBufferWithSize(4);
-    uniformBuffer->setData(data, 0, 4);
+    UniformBufferPtr uniformBuffer = CreateUniformBufferWithSize(4);
+    uniformBuffer->SetData(data, 0, 4);
     
-    ComputeBufferPtr computeBuffer = createComputeBuffer(data, 4, StorageModePrivate);
+    ComputeBufferPtr computeBuffer = CreateComputeBuffer(data, 4, StorageModePrivate);
     
-    CommandBufferPtr commandBuffer = createCommandBuffer();
-    RenderEncoderPtr renderEncoder = commandBuffer->createDefaultRenderEncoder();
+    CommandBufferPtr commandBuffer = CreateCommandBuffer();
+    RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
     renderEncoder->EndEncode();
-    commandBuffer->presentFrameBuffer();
+    commandBuffer->PresentFrameBuffer();
 }
 
-VertexBufferPtr VKRenderDevice::createVertexBufferWithLength(uint32_t size) const
+VertexBufferPtr VKRenderDevice::CreateVertexBufferWithLength(uint32_t size) const
 {
     return std::make_shared<VKVertexBuffer>(mVulkanContext, size, StorageModePrivate);
 }
 
-VertexBufferPtr VKRenderDevice::createVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const
+VertexBufferPtr VKRenderDevice::CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const
 {
     return std::make_shared<VKVertexBuffer>(mVulkanContext, buffer, size, mode);
 }
 
-ComputeBufferPtr VKRenderDevice::createComputeBuffer(uint32_t size) const
+ComputeBufferPtr VKRenderDevice::CreateComputeBuffer(uint32_t size) const
 {
     return std::make_shared<VKComputeBuffer>(mVulkanContext, size);
 }
 
-ComputeBufferPtr VKRenderDevice::createComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const
+ComputeBufferPtr VKRenderDevice::CreateComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const
 {
     return std::make_shared<VKComputeBuffer>(mVulkanContext, buffer, size, mode);
 }
 
-IndexBufferPtr VKRenderDevice::createIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const
+IndexBufferPtr VKRenderDevice::CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const
 {
     return std::make_shared<VKIndexBuffer>(mVulkanContext, indexType, buffer, size);
 }
 
-Texture2DPtr VKRenderDevice::createTextureWithDescriptor(const TextureDescriptor& des) const
+Texture2DPtr VKRenderDevice::CreateTextureWithDescriptor(const TextureDescriptor& des) const
 {
     return std::make_shared<VKTexture2D>(mVulkanContext, des);
 }
 
-TextureCubePtr VKRenderDevice::createTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const
+TextureCubePtr VKRenderDevice::CreateTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const
 {
     return std::make_shared<VKTextureCube>(mVulkanContext, desArray);
 }
 
-TextureSamplerPtr VKRenderDevice::createSamplerWithDescriptor(const SamplerDescriptor& des) const
+TextureSamplerPtr VKRenderDevice::CreateSamplerWithDescriptor(const SamplerDescriptor& des) const
 {
     return std::make_shared<VKTextureSampler>(mVulkanContext, des);
 }
 
-UniformBufferPtr VKRenderDevice::createUniformBufferWithSize(uint32_t bufSize) const
+UniformBufferPtr VKRenderDevice::CreateUniformBufferWithSize(uint32_t bufSize) const
 {
     return std::make_shared<VKUniformBuffer>(mVulkanContext, bufSize);
 }
 
-ShaderFunctionPtr VKRenderDevice::createShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const
+ShaderFunctionPtr VKRenderDevice::CreateShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const
 {
     VKShaderFunctionPtr shaderPtr = std::make_shared<VKShaderFunction>(mVulkanContext);
     shaderPtr = shaderPtr->initWithShaderSourceInner(shaderSource, shaderStage);
@@ -228,28 +228,28 @@ ShaderFunctionPtr VKRenderDevice::createShaderFunction(const ShaderCode& shaderS
     return shaderPtr;
 }
 
-GraphicsShaderPtr VKRenderDevice::createGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const
+GraphicsShaderPtr VKRenderDevice::CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const
 {
     VKGraphicsShaderPtr shader = std::make_shared<VKGraphicsShader>(mVulkanContext, vertexShader, fragmentShader);
     return shader;
 }
 
-GraphicsPipelinePtr VKRenderDevice::createGraphicsPipeline(const GraphicsPipelineDescriptor& des) const
+GraphicsPipelinePtr VKRenderDevice::CreateGraphicsPipeline(const GraphicsPipelineDescriptor& des) const
 {
     return std::make_shared<VKGraphicsPipeline>(mVulkanContext, des);
 }
 
-ComputePipelinePtr VKRenderDevice::createComputePipeline(const ShaderCode& shaderSource) const
+ComputePipelinePtr VKRenderDevice::CreateComputePipeline(const ShaderCode& shaderSource) const
 {
     return std::make_shared<VKComputePipeline>(mVulkanContext, shaderSource);
 }
 
-RenderTexturePtr VKRenderDevice::createRenderTexture(const TextureDescriptor& des) const
+RenderTexturePtr VKRenderDevice::CreateRenderTexture(const TextureDescriptor& des) const
 {
     return std::make_shared<VKRenderTexture>(mVulkanContext, des);
 }
 
-CommandBufferPtr VKRenderDevice::createCommandBuffer()
+CommandBufferPtr VKRenderDevice::CreateCommandBuffer()
 {
     mVulkanContext->upLoadPool.Update(mVulkanContext->device);
     if (mSwapChain == nullptr || mSwapChain->GetSwapChain() == VK_NULL_HANDLE)
@@ -281,7 +281,7 @@ CommandBufferPtr VKRenderDevice::createCommandBuffer()
 
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 	{
-		resize(mSwapChain->GetWidth(), mSwapChain->GetHeight());
+		Resize(mSwapChain->GetWidth(), mSwapChain->GetHeight());
         //res = vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]);
         return nullptr;
 	}

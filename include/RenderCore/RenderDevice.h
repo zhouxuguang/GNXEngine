@@ -29,11 +29,11 @@ public:
     
     virtual ~RenderDevice();
     
-    virtual void resize(uint32_t width, uint32_t height) = 0;
+    virtual void Resize(uint32_t width, uint32_t height) = 0;
     
-    virtual DeviceExtensionPtr getDeviceExtension() const = 0;
+    virtual DeviceExtensionPtr GetDeviceExtension() const = 0;
     
-    virtual RenderDeviceType getRenderDeviceType() const = 0;
+    virtual RenderDeviceType GetRenderDeviceType() const = 0;
     
     /**
      以指定长度创建buffer
@@ -41,7 +41,7 @@ public:
      @param size 申请buffer长度，单位（byte）
      @return 成功申请buffer句柄，失败返回0；
      */
-    virtual VertexBufferPtr createVertexBufferWithLength(uint32_t size) const = 0;
+    virtual VertexBufferPtr CreateVertexBufferWithLength(uint32_t size) const = 0;
     
     /**
      以指定buffer和长度以内存拷贝方式创建顶点buffer
@@ -51,11 +51,11 @@ public:
      @param mode 申请Buffer类型
      @return 成功申请buffer句柄，失败返回0；
      */
-    virtual VertexBufferPtr createVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const = 0;
+    virtual VertexBufferPtr CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const = 0;
     
-    virtual ComputeBufferPtr createComputeBuffer(uint32_t size) const = 0;
+    virtual ComputeBufferPtr CreateComputeBuffer(uint32_t size) const = 0;
     
-    virtual ComputeBufferPtr createComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const = 0;
+    virtual ComputeBufferPtr CreateComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const = 0;
     
     /**
      以指定buffer和长度以内存拷贝方式创建索引buffer
@@ -65,7 +65,7 @@ public:
      @param indexType 索引类型
      @return 成功申请buffer句柄，失败返回0；
      */
-    virtual IndexBufferPtr createIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const = 0;
+    virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const = 0;
     
     /**
      根据纹理描述创建纹理对象
@@ -73,7 +73,7 @@ public:
      @param des the description for texture to be created
      @return shared pointer to texture object
      */
-    virtual Texture2DPtr createTextureWithDescriptor(const TextureDescriptor& des) const = 0;
+    virtual Texture2DPtr CreateTextureWithDescriptor(const TextureDescriptor& des) const = 0;
     
     /**
      根据纹理描述创建立方体纹理对象
@@ -81,7 +81,7 @@ public:
      @param desArray the description for texture to be created
      @return shared pointer to texturecube object
      */
-    virtual TextureCubePtr createTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const = 0;
+    virtual TextureCubePtr CreateTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const = 0;
     
     /**
      根据采样描述创建纹理采样器
@@ -89,39 +89,39 @@ public:
      @param des the description for sampler to be created.
      @return shared pointer to sampler object.
      */
-    virtual TextureSamplerPtr createSamplerWithDescriptor(const SamplerDescriptor& des) const = 0;
+    virtual TextureSamplerPtr CreateSamplerWithDescriptor(const SamplerDescriptor& des) const = 0;
     
     /**
      创建uniform buffer
      */
-    virtual UniformBufferPtr createUniformBufferWithSize(uint32_t bufSize) const = 0;
+    virtual UniformBufferPtr CreateUniformBufferWithSize(uint32_t bufSize) const = 0;
     
     /**
      创建ShaderFunctionPtr
      */
-    virtual ShaderFunctionPtr createShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const = 0;
+    virtual ShaderFunctionPtr CreateShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const = 0;
 
     /**
      创建GraphicsShader
      */
-    virtual GraphicsShaderPtr createGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const = 0;
+    virtual GraphicsShaderPtr CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const = 0;
     
     /**
      创建图形管线
      */
-    virtual GraphicsPipelinePtr createGraphicsPipeline(const GraphicsPipelineDescriptor& des) const = 0;
+    virtual GraphicsPipelinePtr CreateGraphicsPipeline(const GraphicsPipelineDescriptor& des) const = 0;
     
     /**
      创建计算管线
      */
-    virtual ComputePipelinePtr createComputePipeline(const ShaderCode& shaderString) const = 0;
+    virtual ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderString) const = 0;
     
-    virtual CommandBufferPtr createCommandBuffer() = 0;
+    virtual CommandBufferPtr CreateCommandBuffer() = 0;
     
     /**
      创建renderTexture
      */
-    virtual RenderTexturePtr createRenderTexture(const TextureDescriptor& des) const = 0;
+    virtual RenderTexturePtr CreateRenderTexture(const TextureDescriptor& des) const = 0;
 };
 
 typedef std::shared_ptr<RenderDevice> RenderDevicePtr;
@@ -131,9 +131,9 @@ typedef std::shared_ptr<RenderDevice> RenderDevicePtr;
  *        @param[in] deviceType 渲染平台类型分：GLES/METAL/VULKAN
  *        @return 渲染设备实例
  */
-RenderDevicePtr createRenderDevice(RenderDeviceType deviceType, ViewHandle handle);
+RenderDevicePtr CreateRenderDevice(RenderDeviceType deviceType, ViewHandle handle);
 
-RenderDevicePtr getRenderDevice();
+RenderDevicePtr GetRenderDevice();
 
 NAMESPACE_RENDERCORE_END
 

@@ -38,7 +38,7 @@ VulkanCommandBuffer::~VulkanCommandBuffer()
 }
 
 //创建默认的encoder，也就是屏幕渲染的encoder
-RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
+RenderEncoderPtr VulkanCommandBuffer::CreateDefaultRenderEncoder() const
 {
     VkClearValue clearColor;
     clearColor.color.float32[0] = 0.0;
@@ -105,7 +105,7 @@ RenderEncoderPtr VulkanCommandBuffer::createDefaultRenderEncoder() const
         passFormat, passImage, clearValues, passImageView, mCommandInfo->currentFrameIndex);
 }
 
-RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& renderPass) const
+RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& renderPass) const
 {
     std::vector<VkRenderingAttachmentInfo> colorAttachments;
     
@@ -227,13 +227,13 @@ RenderEncoderPtr VulkanCommandBuffer::createRenderEncoder(const RenderPass& rend
         clearValues, passImageView, mCommandInfo->currentFrameIndex);
 }
 
-ComputeEncoderPtr VulkanCommandBuffer::createComputeEncoder() const
+ComputeEncoderPtr VulkanCommandBuffer::CreateComputeEncoder() const
 {
     return std::make_shared<VKComputeEncoder>(mCommandInfo->vulkanContext, mCommandBuffer);
 }
 
 //呈现到屏幕上，上屏
-void VulkanCommandBuffer::presentFrameBuffer()
+void VulkanCommandBuffer::PresentFrameBuffer()
 {
     //结束commandbuffer
     VkResult res = vkEndCommandBuffer(mCommandBuffer);
@@ -264,7 +264,7 @@ void VulkanCommandBuffer::presentFrameBuffer()
 
         if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
         {
-            mCommandInfo->renderDevice->resize(mCommandInfo->swapChain->GetWidth(), mCommandInfo->swapChain->GetHeight());
+            mCommandInfo->renderDevice->Resize(mCommandInfo->swapChain->GetWidth(), mCommandInfo->swapChain->GetHeight());
         }
         else
         {
@@ -295,7 +295,7 @@ void VulkanCommandBuffer::presentFrameBuffer()
 
         if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
         {
-            mCommandInfo->renderDevice->resize(mCommandInfo->swapChain->GetWidth(), mCommandInfo->swapChain->GetHeight());
+            mCommandInfo->renderDevice->Resize(mCommandInfo->swapChain->GetWidth(), mCommandInfo->swapChain->GetHeight());
         }
         else
         {
@@ -313,7 +313,7 @@ void VulkanCommandBuffer::presentFrameBuffer()
 }
 
 //等待命令缓冲区执行完成
-void VulkanCommandBuffer::waitUntilCompleted()
+void VulkanCommandBuffer::WaitUntilCompleted()
 {
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

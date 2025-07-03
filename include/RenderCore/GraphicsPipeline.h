@@ -20,11 +20,11 @@ public:
     
     virtual ~GraphicsPipeline();
     
-    virtual void attachVertexShader(ShaderFunctionPtr shaderFunction) = 0;
+    virtual void AttachVertexShader(ShaderFunctionPtr shaderFunction) = 0;
     
-    virtual void attachFragmentShader(ShaderFunctionPtr shaderFunction) = 0;
+    virtual void AttachFragmentShader(ShaderFunctionPtr shaderFunction) = 0;
 
-    virtual void attachGraphicsShader(GraphicsShaderPtr graphicsShader) = 0;
+    virtual void AttachGraphicsShader(GraphicsShaderPtr graphicsShader) = 0;
 };
 
 typedef std::shared_ptr<GraphicsPipeline> GraphicsPipelinePtr;

@@ -161,17 +161,17 @@ VKGraphicsPipeline::VKGraphicsPipeline(VulkanContextPtr context, const GraphicsP
     memset(mStageSetOffsets, 0, ShaderStage_Max * DESCRIPTOR_TYPE_MAX * sizeof(uint32_t));
 }
 
-void VKGraphicsPipeline::attachVertexShader(ShaderFunctionPtr shaderFunction)
+void VKGraphicsPipeline::AttachVertexShader(ShaderFunctionPtr shaderFunction)
 {
     mShaders.push_back(std::dynamic_pointer_cast<VKShaderFunction>(shaderFunction));
 }
 
-void VKGraphicsPipeline::attachFragmentShader(ShaderFunctionPtr shaderFunction)
+void VKGraphicsPipeline::AttachFragmentShader(ShaderFunctionPtr shaderFunction)
 {
     mShaders.push_back(std::dynamic_pointer_cast<VKShaderFunction>(shaderFunction));
 }
 
-void VKGraphicsPipeline::attachGraphicsShader(GraphicsShaderPtr graphicsShader)
+void VKGraphicsPipeline::AttachGraphicsShader(GraphicsShaderPtr graphicsShader)
 {
     mShader = std::dynamic_pointer_cast<VKGraphicsShader>(graphicsShader);
 }

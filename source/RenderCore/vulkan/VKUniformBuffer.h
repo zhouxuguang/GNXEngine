@@ -20,7 +20,7 @@ public:
     
     ~VKUniformBuffer();
     
-    void setData(const void* data, uint32_t offset, uint32_t dataSize);
+    void SetData(const void* data, uint32_t offset, uint32_t dataSize);
     
     VkBuffer GetBuffer() const
     {

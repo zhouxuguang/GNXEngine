@@ -65,7 +65,7 @@ MaterialPtr Material::CreateMaterial(const char *shaderStrPath)
     /*ShaderFunctionPtr vertShader = getRenderDevice()->createShaderFunction(*vertexShader, ShaderStage_Vertex);
     ShaderFunctionPtr fragShader = getRenderDevice()->createShaderFunction(*fragmentShader, ShaderStage_Fragment);*/
 
-    GraphicsShaderPtr shader = getRenderDevice()->createGraphicsShader(*vertexShader, *fragmentShader);
+    GraphicsShaderPtr shader = GetRenderDevice()->CreateGraphicsShader(*vertexShader, *fragmentShader);
     
     GraphicsPipelineDescriptor graphicsPipelineDescriptor;
     VertextAttributesDescritptor vertextAttributesDescritptor;
@@ -76,8 +76,8 @@ MaterialPtr Material::CreateMaterial(const char *shaderStrPath)
     graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionLess;
     graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;
     
-    GraphicsPipelinePtr pso = getRenderDevice()->createGraphicsPipeline(graphicsPipelineDescriptor);
-    pso->attachGraphicsShader(shader);
+    GraphicsPipelinePtr pso = GetRenderDevice()->CreateGraphicsPipeline(graphicsPipelineDescriptor);
+    pso->AttachGraphicsShader(shader);
     /*pso->attachVertexShader(vertShader);
     pso->attachFragmentShader(fragShader);*/
     

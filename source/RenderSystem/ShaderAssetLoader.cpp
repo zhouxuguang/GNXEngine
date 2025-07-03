@@ -27,7 +27,7 @@ ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName)
 {
     ShaderAssetString shaderAssetString;
     
-    RenderDeviceType renderType = getRenderDevice()->getRenderDeviceType();
+    RenderDeviceType renderType = GetRenderDevice()->GetRenderDeviceType();
     
     CompiledShaderInfoPtr vertexShaderInfo = CompileShader(shaderName, ShaderStage_Vertex, renderType);
     

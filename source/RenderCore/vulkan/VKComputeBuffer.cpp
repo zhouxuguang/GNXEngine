@@ -66,12 +66,12 @@ VKComputeBuffer::~VKComputeBuffer()
     vmaDestroyBuffer(mContext->vmaAllocator, mBuffer, mAllocation);
 }
 
-uint32_t VKComputeBuffer::getBufferLength() const
+uint32_t VKComputeBuffer::GetBufferLength() const
 {
     return mBufferLength;
 }
 
-void* VKComputeBuffer::mapBufferData() const
+void* VKComputeBuffer::MapBufferData() const
 {
     if (mStorageMode == StorageModeShared)
     {
@@ -85,12 +85,12 @@ void* VKComputeBuffer::mapBufferData() const
     }
 }
 
-void VKComputeBuffer::unmapBufferData(void* bufferData) const
+void VKComputeBuffer::UnmapBufferData(void* bufferData) const
 {
     vmaUnmapMemory(mContext->vmaAllocator, mAllocation);
 }
 
-bool VKComputeBuffer::isValid() const
+bool VKComputeBuffer::IsValid() const
 {
     return mBuffer != VK_NULL_HANDLE;
 }

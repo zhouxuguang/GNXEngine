@@ -26,7 +26,7 @@ VKShaderFunction::~VKShaderFunction()
     }
 }
 
-std::shared_ptr<ShaderFunction> VKShaderFunction::initWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage)
+std::shared_ptr<ShaderFunction> VKShaderFunction::InitWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage)
 {
     VkShaderModuleCreateInfo shaderModuleCreateInfo = {};
     shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -46,7 +46,7 @@ std::shared_ptr<ShaderFunction> VKShaderFunction::initWithShaderSource(const Sha
 
 static DescriptorType GetDescriptorType(VkDescriptorType bindingType)
 {
-    DescriptorType retType;
+    DescriptorType retType = DESCRIPTOR_TYPE_MAX;
     switch (bindingType)
     {
         case VK_DESCRIPTOR_TYPE_SAMPLER:
@@ -256,7 +256,7 @@ std::shared_ptr<VKShaderFunction> VKShaderFunction::initWithShaderSourceInner(co
     return shared_from_this();
 }
 
-ShaderStage VKShaderFunction::getShaderStage() const
+ShaderStage VKShaderFunction::GetShaderStage() const
 {
     return mShaderStage;
 }

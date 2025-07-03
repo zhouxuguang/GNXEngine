@@ -28,10 +28,10 @@ SceneManager::SceneManager()
 {
     mRootSceneNode = new SceneNode();
     mSkyBoxNode = new SkyBoxNode();
-    mPostProcessing = new PostProcessing(getRenderDevice());
+    mPostProcessing = new PostProcessing(GetRenderDevice());
     
-    mCameraUBO = getRenderDevice()->createUniformBufferWithSize(sizeof(cbPerCamera));
-    mLightUBO = getRenderDevice()->createUniformBufferWithSize(sizeof(cbLighting));
+    mCameraUBO = GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbPerCamera));
+    mLightUBO = GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbLighting));
 }
 
 SceneManager::~SceneManager()
@@ -98,7 +98,7 @@ bool SceneManager::hasLight(const std::string &name) const
 
 CameraPtr SceneManager::createCamera(const std::string &name)
 {
-    CameraPtr camera = std::make_shared<Camera>(getRenderDevice()->getRenderDeviceType(), name);
+    CameraPtr camera = std::make_shared<Camera>(GetRenderDevice()->GetRenderDeviceType(), name);
     
     mCameraMani = new ArcballManipulate(camera);
     
@@ -135,12 +135,12 @@ void SceneManager::Render(RenderEncoderPtr renderEncoder)
         TransformComponent *transformCom = iter->QueryComponentT<TransformComponent>();
         assert(transformCom);
         
-        UniformBufferPtr modelUniform = getRenderDevice()->createUniformBufferWithSize(sizeof(cbPerObject));
+        UniformBufferPtr modelUniform = GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbPerObject));
         cbPerObject modelMatrix;
         modelMatrix.MATRIX_M = transformCom->transform.TransformToMat4();
         modelMatrix.MATRIX_M_INV = transformCom->transform.Inverse().TransformToMat4();
         modelMatrix.MATRIX_Normal = modelMatrix.MATRIX_M.Transpose();
-        modelUniform->setData(&modelMatrix, 0, sizeof(cbPerObject));
+        modelUniform->SetData(&modelMatrix, 0, sizeof(cbPerObject));
         
         renderInfo.objectUBO = modelUniform;
         
@@ -190,7 +190,7 @@ void SceneManager::Update(float deltaTime)
     cbPerCamera perCamera;
     perCamera.MATRIX_P = cameraPtr->GetProjectionMatrix();
     perCamera.MATRIX_V = cameraPtr->GetViewMatrix();
-    mCameraUBO->setData(&perCamera, 0, sizeof(perCamera));
+    mCameraUBO->SetData(&perCamera, 0, sizeof(perCamera));
     
     //更新灯光
     Light * pointLight = getLight("mainLight");
@@ -204,7 +204,7 @@ void SceneManager::Update(float deltaTime)
     lightInfo.FalloffStart = pointLight->getFalloffStart();
     lightInfo.FalloffEnd = pointLight->getFalloffEnd();
     
-    mLightUBO->setData(&lightInfo, 0, sizeof(cbLighting));
+    mLightUBO->SetData(&lightInfo, 0, sizeof(cbLighting));
     
     for (const auto &iter : mRootSceneNode->GetAllNodes())
     {

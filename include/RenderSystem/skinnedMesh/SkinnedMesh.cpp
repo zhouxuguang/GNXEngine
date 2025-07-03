@@ -183,9 +183,9 @@ void SkinnedMesh::CPUSkin(Skeleton& skeleton, AnimationPose& pose)
     }
     
     // 更新gpu buffer
-    void *data = mVertexBuffer->mapBufferData();
+    void *data = mVertexBuffer->MapBufferData();
     memcpy(data, mSkinnedVertexData.GetDataPtr(), mSkinnedVertexData.GetDataSize());
-    mVertexBuffer->unmapBufferData(data);
+    mVertexBuffer->UnmapBufferData(data);
 }
 
 struct SkinnedMatrix
@@ -207,7 +207,7 @@ void SkinnedMesh::GPUSkin(Skeleton& skeleton, AnimationPose& pose)
         posePalette[i] = posePalette[i] * invPosePalette[i];
     }
     
-    mSkinnedMatrixBuffer->setData(posePalette.data(), 0, (uint32_t)posePalette.size() * sizeof(Matrix4x4f));
+    mSkinnedMatrixBuffer->SetData(posePalette.data(), 0, (uint32_t)posePalette.size() * sizeof(Matrix4x4f));
     //mSkinnedMatrixBuffer->setData(invPosePalette.data(), offsetof(SkinnedMatrix, invBindPose), (uint32_t)invPosePalette.size() * sizeof(Matrix4x4f));
 }
 
@@ -218,17 +218,17 @@ void SkinnedMesh::AddSubMeshInfo(const SubMeshInfo& subMeshInfo)
 
 void SkinnedMesh::SetUpBuffer()
 {
-    mVertexBuffer = getRenderDevice()->createVertexBufferWithBytes(mVertexData.GetDataPtr(),
+    mVertexBuffer = GetRenderDevice()->CreateVertexBufferWithBytes(mVertexData.GetDataPtr(),
             (uint32_t)mVertexData.GetDataSize(), StorageModeShared);
     
-    mIndexBuffer = getRenderDevice()->createIndexBufferWithBytes(mIndices.data(),
+    mIndexBuffer = GetRenderDevice()->CreateIndexBufferWithBytes(mIndices.data(),
             (uint32_t)mIndices.size() * sizeof(uint32_t), IndexType_UInt);
     
     SamplerDescriptor samplerDescriptor;
     samplerDescriptor.filterMip = MIN_LINEAR_MIPMAP_LINEAR;
-    mTextureSampler = getRenderDevice()->createSamplerWithDescriptor(samplerDescriptor);
+    mTextureSampler = GetRenderDevice()->CreateSamplerWithDescriptor(samplerDescriptor);
     
-    mSkinnedMatrixBuffer = getRenderDevice()->createUniformBufferWithSize(sizeof(SkinnedMatrix));
+    mSkinnedMatrixBuffer = GetRenderDevice()->CreateUniformBufferWithSize(sizeof(SkinnedMatrix));
 }
 
 NS_RENDERSYSTEM_END

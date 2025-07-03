@@ -187,15 +187,15 @@ void VKTexture2D::createTexture(const VkDevice device, const TextureDescriptor& 
     mVulkanImageViewPtr = std::make_shared<VulkanImageView>(mContext->device, imageView);
 }
 
-void VKTexture2D::setTextureData(const unsigned char *imageData)
+void VKTexture2D::SetTextureData(const unsigned char *imageData)
 {
     Rect2D rect = {};
     rect.width = mTextureDes.width;
     rect.height = mTextureDes.height;
-    replaceRegion(rect, imageData, 0);
+    ReplaceRegion(rect, imageData, 0);
 }
 
-void VKTexture2D::replaceRegion(const Rect2D &rect, const unsigned char *imageData, unsigned int mipMapLevel)
+void VKTexture2D::ReplaceRegion(const Rect2D &rect, const unsigned char *imageData, unsigned int mipMapLevel)
 {
     if (!imageData)
     {

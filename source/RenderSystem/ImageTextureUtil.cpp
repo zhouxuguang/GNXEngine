@@ -177,7 +177,7 @@ TextureCubePtr LoadEquirectangularMap(const std::string& fileName)
     cubeDes.push_back(des);
     cubeDes.push_back(des);
     
-    TextureCubePtr cubeMapPtr = getRenderDevice()->createTextureCubeWithDescriptor(cubeDes);
+    TextureCubePtr cubeMapPtr = GetRenderDevice()->CreateTextureCubeWithDescriptor(cubeDes);
     
     const uint8_t* data = cubemap.data_.data();
 
@@ -187,7 +187,7 @@ TextureCubePtr LoadEquirectangularMap(const std::string& fileName)
         int imageSize = cubemap.w_ * cubemap.h_ * cubemap.comp_ * Bitmap::getBytesPerComponent(cubemap.fmt_);
         
         int face = (int)kCubeFacePX + i;
-        cubeMapPtr->setTextureData((CubemapFace)face, imageSize, data);
+        cubeMapPtr->SetTextureData((CubemapFace)face, imageSize, data);
         data += cubemap.w_ * cubemap.h_ * cubemap.comp_ * Bitmap::getBytesPerComponent(cubemap.fmt_);
     }
     

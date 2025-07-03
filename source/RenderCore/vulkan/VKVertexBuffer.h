@@ -22,13 +22,13 @@ public:
 
     ~VKVertexBuffer();
 
-    virtual uint32_t getBufferLength() const;
+    virtual uint32_t GetBufferLength() const;
     
-    virtual void* mapBufferData() const;
+    virtual void* MapBufferData() const;
 
-    virtual void unmapBufferData(void* bufferData) const;
+    virtual void UnmapBufferData(void* bufferData) const;
     
-    virtual bool isValid() const;
+    virtual bool IsValid() const;
 
     VkBuffer GetGpuBuffer() const;
 private:

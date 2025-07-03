@@ -30,9 +30,9 @@ static Texture2DPtr TextureFromFile(const char *filename)
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     textureDescriptor.mipmaped = true;
     
-    Texture2DPtr texture = getRenderDevice()->createTextureWithDescriptor(textureDescriptor);
+    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->replaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, image->GetPixels());
     return texture;
 }
 
@@ -49,9 +49,9 @@ static Texture2DPtr CreateDiffuseTexture(float r, float g, float b)
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
-    Texture2DPtr texture = getRenderDevice()->createTextureWithDescriptor(textureDescriptor);
+    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->replaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, image->GetPixels());
     return texture;
 }
 
@@ -68,9 +68,9 @@ static Texture2DPtr CreateMetalRoughTexture()
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
-    Texture2DPtr texture = getRenderDevice()->createTextureWithDescriptor(textureDescriptor);
+    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->replaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, image->GetPixels());
     return texture;
 }
 
@@ -87,9 +87,9 @@ static Texture2DPtr CreateNormalTexture()
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
-    Texture2DPtr texture = getRenderDevice()->createTextureWithDescriptor(textureDescriptor);
+    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->replaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, image->GetPixels());
     return texture;
 }
 
@@ -106,9 +106,9 @@ static Texture2DPtr CreateEmmisveTexture()
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
-    Texture2DPtr texture = getRenderDevice()->createTextureWithDescriptor(textureDescriptor);
+    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->replaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, image->GetPixels());
     return texture;
 }
 
@@ -125,9 +125,9 @@ static Texture2DPtr CreateAOTexture()
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
-    Texture2DPtr texture = getRenderDevice()->createTextureWithDescriptor(textureDescriptor);
+    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->replaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, image->GetPixels());
     return texture;
 }
 
@@ -146,9 +146,9 @@ static Texture2DPtr TextureFromMemory(const uint8_t* pImageData, uint32_t dataSi
     
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     
-    Texture2DPtr texture = getRenderDevice()->createTextureWithDescriptor(textureDescriptor);
+    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->replaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, image->GetPixels());
     return texture;
 }
 

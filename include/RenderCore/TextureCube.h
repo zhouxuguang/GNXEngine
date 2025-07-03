@@ -25,14 +25,14 @@ public:
 
      @param imageData image data
      */
-    virtual void setTextureData(CubemapFace cubeFace, uint32_t imageSize, const uint8_t* imageData) = 0;
+    virtual void SetTextureData(CubemapFace cubeFace, uint32_t imageSize, const uint8_t* imageData) = 0;
     
     /**
      纹理是否有效
 
      @return ture or false
      */
-    virtual bool isValid() const = 0;
+    virtual bool IsValid() const = 0;
 };
 
 typedef std::shared_ptr<TextureCube> TextureCubePtr;

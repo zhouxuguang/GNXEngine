@@ -23,47 +23,47 @@ public:
     
     ~VKRenderDevice();
     
-    virtual void resize(uint32_t width, uint32_t height);
+    virtual void Resize(uint32_t width, uint32_t height);
     
-    virtual DeviceExtensionPtr getDeviceExtension() const
+    virtual DeviceExtensionPtr GetDeviceExtension() const
     {
         return nullptr;
     }
     
-    virtual RenderDeviceType getRenderDeviceType() const
+    virtual RenderDeviceType GetRenderDeviceType() const
     {
         return RenderDeviceType::VULKAN;
     }
     
-    virtual VertexBufferPtr createVertexBufferWithLength(uint32_t size) const;
+    virtual VertexBufferPtr CreateVertexBufferWithLength(uint32_t size) const;
     
-    virtual VertexBufferPtr createVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const;
+    virtual VertexBufferPtr CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const;
     
-    virtual ComputeBufferPtr createComputeBuffer(uint32_t size) const;
+    virtual ComputeBufferPtr CreateComputeBuffer(uint32_t size) const;
     
-    virtual ComputeBufferPtr createComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const;
+    virtual ComputeBufferPtr CreateComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const;
     
-    virtual IndexBufferPtr createIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const;
+    virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const;
     
-    virtual Texture2DPtr createTextureWithDescriptor(const TextureDescriptor& des) const;
+    virtual Texture2DPtr CreateTextureWithDescriptor(const TextureDescriptor& des) const;
     
-    virtual TextureCubePtr createTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const;
+    virtual TextureCubePtr CreateTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const;
     
-    virtual TextureSamplerPtr createSamplerWithDescriptor(const SamplerDescriptor& des) const;
+    virtual TextureSamplerPtr CreateSamplerWithDescriptor(const SamplerDescriptor& des) const;
     
-    virtual UniformBufferPtr createUniformBufferWithSize(uint32_t bufSize) const;
+    virtual UniformBufferPtr CreateUniformBufferWithSize(uint32_t bufSize) const;
     
-    virtual ShaderFunctionPtr createShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const;
+    virtual ShaderFunctionPtr CreateShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const;
 
-    virtual GraphicsShaderPtr createGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const;
+    virtual GraphicsShaderPtr CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const;
     
-    virtual GraphicsPipelinePtr createGraphicsPipeline(const GraphicsPipelineDescriptor& des) const;
+    virtual GraphicsPipelinePtr CreateGraphicsPipeline(const GraphicsPipelineDescriptor& des) const;
     
-    virtual ComputePipelinePtr createComputePipeline(const ShaderCode& shaderString) const;
+    virtual ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderString) const;
     
-    virtual CommandBufferPtr createCommandBuffer();
+    virtual CommandBufferPtr CreateCommandBuffer();
     
-    virtual RenderTexturePtr createRenderTexture(const TextureDescriptor& des) const;
+    virtual RenderTexturePtr CreateRenderTexture(const TextureDescriptor& des) const;
     
     void UpdateCurrentIndex()
     {

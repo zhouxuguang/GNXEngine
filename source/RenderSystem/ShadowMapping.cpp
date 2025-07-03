@@ -43,14 +43,14 @@ ShadowMapping::ShadowMapping(const RenderDevicePtr& renderDevice)
     textureDescriptor.width = 1024;
     textureDescriptor.height = 1024;
     textureDescriptor.mipmaped = false;
-    m_DepthTexture = renderDevice->createTextureWithDescriptor(textureDescriptor);
+    m_DepthTexture = renderDevice->CreateTextureWithDescriptor(textureDescriptor);
     m_DepthTexture->allocMemory();
     
     //创建采样函数
     SamplerDescriptor samplerDescriptor;
     samplerDescriptor.filterMin = MIN_LINEAR;
     samplerDescriptor.filterMag = MAG_NEAREST;
-    m_DepthTextureSampler = renderDevice->createSamplerWithDescriptor(samplerDescriptor);
+    m_DepthTextureSampler = renderDevice->CreateSamplerWithDescriptor(samplerDescriptor);
     
     //创建阴影渲染管线
     GraphicsPipelineDescriptor graphicsPipelineDescriptor;
@@ -61,7 +61,7 @@ ShadowMapping::ShadowMapping(const RenderDevicePtr& renderDevice)
     graphicsPipelineDescriptor.vertexDescriptor.attributes.push_back(vertextAttributesDescritptor);
     
     graphicsPipelineDescriptor.colorAttachmentDescriptor.writeMask = ColorWriteMaskNone;
-    m_GraphicsPipeline = renderDevice->createGraphicsPipeline(graphicsPipelineDescriptor);
+    m_GraphicsPipeline = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);
     
 //    ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(vShadowMapShaderStr, ShaderStage_Vertex);
 //    ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(fShadowMapShaderStr, ShaderStage_Fragment);

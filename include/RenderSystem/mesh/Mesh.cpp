@@ -120,16 +120,16 @@ void Mesh::AddSubMeshInfo(const SubMeshInfo& subMeshInfo)
 
 void Mesh::SetUpBuffer()
 {
-    mVertexBuffer = getRenderDevice()->createVertexBufferWithBytes(mVertexData.GetDataPtr(),
+    mVertexBuffer = GetRenderDevice()->CreateVertexBufferWithBytes(mVertexData.GetDataPtr(),
             (uint32_t)mVertexData.GetDataSize(), StorageModePrivate);
     
-    mIndexBuffer = getRenderDevice()->createIndexBufferWithBytes(mIndices.data(),
+    mIndexBuffer = GetRenderDevice()->CreateIndexBufferWithBytes(mIndices.data(),
             (uint32_t)mIndices.size() * sizeof(uint32_t), IndexType_UInt);
     //mIndiceCount = (uint32_t)mIndices.size();
     
     SamplerDescriptor samplerDescriptor;
     samplerDescriptor.filterMip = MIN_LINEAR_MIPMAP_LINEAR;
-    mTextureSampler = getRenderDevice()->createSamplerWithDescriptor(samplerDescriptor);
+    mTextureSampler = GetRenderDevice()->CreateSamplerWithDescriptor(samplerDescriptor);
 }
 
 NS_RENDERSYSTEM_END
