@@ -34,22 +34,22 @@ void TestADD()
     {
         data_a[i] = i + 1;
     }
-    ComputeBufferPtr buffer1 = getRenderDevice()->createComputeBuffer(data_a, count * 4, StorageModePrivate);
+    ComputeBufferPtr buffer1 = GetRenderDevice()->CreateComputeBuffer(data_a, count * 4, StorageModePrivate);
     
     float *data_b = new float[count];
     for (int i = 0; i < count; i ++)
     {
         data_b[i] = (i + 1) * 2;
     }
-    ComputeBufferPtr buffer2 = getRenderDevice()->createComputeBuffer(data_b, count * 4, StorageModePrivate);
+    ComputeBufferPtr buffer2 = GetRenderDevice()->CreateComputeBuffer(data_b, count * 4, StorageModePrivate);
     
-    ComputeBufferPtr buffer3 = getRenderDevice()->createComputeBuffer(data_b, count * 4, StorageModeShared);
+    ComputeBufferPtr buffer3 = GetRenderDevice()->CreateComputeBuffer(data_b, count * 4, StorageModeShared);
     
-    ComputePipelinePtr computePipeline = getRenderDevice()->createComputePipeline(*computeShader);
+    ComputePipelinePtr computePipeline = GetRenderDevice()->CreateComputePipeline(*computeShader);
     
-    CommandBufferPtr command = getRenderDevice()->createCommandBuffer();
+    CommandBufferPtr command = GetRenderDevice()->CreateCommandBuffer();
     
-    ComputeEncoderPtr computeEncoder = command->createComputeEncoder();
+    ComputeEncoderPtr computeEncoder = command->CreateComputeEncoder();
     computeEncoder->SetComputePipeline(computePipeline);
     computeEncoder->SetBuffer(buffer1, 0);
     computeEncoder->SetBuffer(buffer2, 1);
@@ -63,12 +63,12 @@ void TestADD()
     computeEncoder->Dispatch(groupX, 1, 1);
     
     computeEncoder->EndEncode();
-    command->waitUntilCompleted();
+    command->WaitUntilCompleted();
     
     //检查结果
     float* a = data_a;
     float* b = data_b;
-    float* result = (float*)buffer3->mapBufferData();
+    float* result = (float*)buffer3->MapBufferData();
 
     for (unsigned long index = 0; index < count; index++)
     {
@@ -80,7 +80,7 @@ void TestADD()
         }
     }
     printf("Compute results as expected\n");
-    buffer3->unmapBufferData(result);
+    buffer3->UnmapBufferData(result);
     
     delete [] data_a;
     delete [] data_b;
@@ -99,7 +99,7 @@ ComputePipelinePtr initTestimageGray()
     fwrite(computeShader->data(), 1, computeShader->size(), fp1);
     fclose(fp1);
     
-    ComputePipelinePtr computePipeline = getRenderDevice()->createComputePipeline(*computeShader);
+    ComputePipelinePtr computePipeline = GetRenderDevice()->CreateComputePipeline(*computeShader);
     
     return computePipeline;
 #elif
@@ -142,20 +142,20 @@ RenderTexturePtr TestImageGray()
     TextureDescriptor inputDes = ImageTextureUtil::getTextureDescriptor(*image);
     inputDes.format = kTexFormatRGBA32;
     
-    Texture2DPtr inputTexture = getRenderDevice()->createTextureWithDescriptor(inputDes);
-    inputTexture->setTextureData(image->GetPixels());
+    Texture2DPtr inputTexture = GetRenderDevice()->CreateTextureWithDescriptor(inputDes);
+    inputTexture->SetTextureData(image->GetPixels());
     
     inputDes.usage = TextureUsage(TextureUsageShaderRead | TextureUsageShaderWrite);
     inputDes.format = kTexFormatRGBA32;
     //RenderTexturePtr outputTexture = getRenderDevice()->createRenderTexture(inputDes);
     
-    Texture2DPtr outputTexture = getRenderDevice()->createTextureWithDescriptor(inputDes);
+    Texture2DPtr outputTexture = GetRenderDevice()->CreateTextureWithDescriptor(inputDes);
     
-    ComputePipelinePtr computePipeline = getRenderDevice()->createComputePipeline(*computeShader);
+    ComputePipelinePtr computePipeline = GetRenderDevice()->CreateComputePipeline(*computeShader);
     
-    CommandBufferPtr command = getRenderDevice()->createCommandBuffer();
+    CommandBufferPtr command = GetRenderDevice()->CreateCommandBuffer();
     
-    ComputeEncoderPtr computeEncoder = command->createComputeEncoder();
+    ComputeEncoderPtr computeEncoder = command->CreateComputeEncoder();
     computeEncoder->SetComputePipeline(computePipeline);
     computeEncoder->SetTexture(inputTexture, 0);
     computeEncoder->SetTexture(outputTexture, 1);
@@ -169,7 +169,7 @@ RenderTexturePtr TestImageGray()
     computeEncoder->Dispatch(groupX, groupY, 1);
     
     computeEncoder->EndEncode();
-    command->waitUntilCompleted();
+    command->WaitUntilCompleted();
     
     return nullptr;
 #endif

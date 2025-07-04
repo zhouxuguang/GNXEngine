@@ -65,14 +65,14 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
 
 - (void)initRenderWithHandle:(nonnull CALayer *)layer andType:(RenderType)renderType
 {
-    mRenderdevice = createRenderDevice(convertToRenderDeviceType(renderType), (__bridge void*)layer);
+    mRenderdevice = CreateRenderDevice(convertToRenderDeviceType(renderType), (__bridge void*)layer);
 }
 
 - (void)resizeRender:(NSUInteger)width andHeight:(NSUInteger)height
 {
     if (mRenderdevice)
     {
-        mRenderdevice->resize((uint32_t)width, (uint32_t)height);
+        mRenderdevice->Resize((uint32_t)width, (uint32_t)height);
     }
     mViewSize = CGSizeMake(width, height);
     
@@ -82,14 +82,14 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     textureDescriptor.height = height;
     textureDescriptor.mipmaped = false;
     textureDescriptor.format = kTexFormatRGBA16Float;
-    renderTexture = mRenderdevice->createRenderTexture(textureDescriptor);
-    computeTexture = mRenderdevice->createRenderTexture(textureDescriptor);
+    renderTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
+    computeTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
     
     textureDescriptor.width = width;
     textureDescriptor.height = height;
     textureDescriptor.mipmaped = false;
     textureDescriptor.format = kTexFormatDepth32FloatStencil8;
-    depthStencilTexture = mRenderdevice->createRenderTexture(textureDescriptor);
+    depthStencilTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
     
     sceneManager = SceneManager::GetInstance();
     SkyBox* skybox = initSky(mRenderdevice);
@@ -140,7 +140,7 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     lastTime = thisTime;
     sceneManager->Update(deltaTime);
     
-    CommandBufferPtr commandBuffer = mRenderdevice->createCommandBuffer();
+    CommandBufferPtr commandBuffer = mRenderdevice->CreateCommandBuffer();
     
     RenderPass renderPass;
     RenderPassColorAttachmentPtr colorAttachmentPtr = std::make_shared<RenderPassColorAttachment>();
@@ -157,20 +157,20 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     renderPass.stencilAttachment->clearStencil = 0x00;
 
     renderPass.renderRegion = Rect2D(0, 0, mViewSize.width, mViewSize.height);
-    RenderEncoderPtr renderEncoder1 = commandBuffer->createRenderEncoder(renderPass);
+    RenderEncoderPtr renderEncoder1 = commandBuffer->CreateRenderEncoder(renderPass);
     
     sceneManager->Render(renderEncoder1);
     
     renderEncoder1->EndEncode();
     
-    ComputeEncoderPtr computeEncoder = commandBuffer->createComputeEncoder();
+    ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
     testImageGrayDraw(computeEncoder, computePipeline, renderTexture, computeTexture);
     computeEncoder->EndEncode();
     
-    RenderEncoderPtr renderEncoder = commandBuffer->createDefaultRenderEncoder();
+    RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
     testPost(renderEncoder, renderTexture);
     renderEncoder->EndEncode();
-    commandBuffer->presentFrameBuffer();
+    commandBuffer->PresentFrameBuffer();
 }
 
 @end
