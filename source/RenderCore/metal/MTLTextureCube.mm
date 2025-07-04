@@ -52,7 +52,7 @@ MTLTextureCube::~MTLTextureCube()
 
  @param imageData image data
  */
-void MTLTextureCube::setTextureData(CubemapFace cubeFace, uint32_t imageSize, const uint8_t* imageData)
+void MTLTextureCube::SetTextureData(CubemapFace cubeFace, uint32_t imageSize, const uint8_t* imageData)
 {
     if (0 == imageSize || nullptr == imageData)
     {
@@ -81,7 +81,7 @@ void MTLTextureCube::setTextureData(CubemapFace cubeFace, uint32_t imageSize, co
 
  @return ture or false
  */
-bool MTLTextureCube::isValid() const
+bool MTLTextureCube::IsValid() const
 {
     return mTexture != nil;
 }

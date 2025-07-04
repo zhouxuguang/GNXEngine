@@ -29,7 +29,7 @@ public:
 
      @param imageData image data
      */
-    virtual void setTextureData(const uint8_t* imageData);
+    virtual void SetTextureData(const uint8_t* imageData);
     
     /**
       更新纹理数据
@@ -38,14 +38,14 @@ public:
      @param mipMapLevel 纹理等级
      @param imageData 跟新数据
      */
-    virtual void replaceRegion(const Rect2D& rect, const uint8_t* imageData, uint32_t mipMapLevel = 0);
+    virtual void ReplaceRegion(const Rect2D& rect, const uint8_t* imageData, uint32_t mipMapLevel = 0);
     
     /**
      纹理是否有效
 
      @return ture or false
      */
-    virtual bool isValid() const;
+    virtual bool IsValid() const;
     
     id<MTLTexture> getMTLTexture(){return mTexture;};
 

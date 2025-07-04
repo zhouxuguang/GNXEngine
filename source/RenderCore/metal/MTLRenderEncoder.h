@@ -26,7 +26,7 @@ public:
     /**
      设置图形管线
      */
-    virtual void setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline);
+    virtual void SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline);
     
     /**
      Description
@@ -34,7 +34,7 @@ public:
      @param buffer buffer对象
      @param index 绑定的索引
      */
-    virtual void setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index);
+    virtual void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index);
     
     /**
      设置uniformbuffer的索引
@@ -42,7 +42,7 @@ public:
      @param buffer buffer description
      @param index index description
      */
-    virtual void setVertexUniformBuffer(UniformBufferPtr buffer, int index);
+    virtual void SetVertexUniformBuffer(UniformBufferPtr buffer, int index);
     
     /**
      设置uniformbuffer的索引
@@ -50,7 +50,7 @@ public:
      @param buffer buffer description
      @param index index description
      */
-    virtual void setFragmentUniformBuffer(UniformBufferPtr buffer, int index);
+    virtual void SetFragmentUniformBuffer(UniformBufferPtr buffer, int index);
     
     /**
      设置顶点uniformbuffer
@@ -58,7 +58,7 @@ public:
      @param buffer buffer description
      @param index index description
      */
-    virtual void setVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+    virtual void SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
 
     /**
      设置片元uniformbuffer
@@ -66,7 +66,7 @@ public:
      @param buffer buffer description
      @param index index description
      */
-    virtual void setFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+    virtual void SetFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
     
     /**
      draw function
@@ -75,9 +75,9 @@ public:
      @param offset offset description
      @param size size description
      */
-    virtual void drawPrimitves(PrimitiveMode mode, int offset, int size);
+    virtual void DrawPrimitves(PrimitiveMode mode, int offset, int size);
     
-    virtual void drawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount);
+    virtual void DrawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount);
     
     /**
      draw funton with index
@@ -87,7 +87,7 @@ public:
      @param buffer buffer description
      @param offset offset description
      */
-    virtual void drawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset);
+    virtual void DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset);
     
     /**
      draw function with index instance
@@ -99,7 +99,7 @@ public:
      @param offset firstInstance 第一个实例的索引
      @param offset instanceCount 实例的个数
      */
-    virtual void drawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
+    virtual void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
                                                uint32_t firstInstance, uint32_t instanceCount);
     
     /**
@@ -109,7 +109,7 @@ public:
      @param sampler 采样器句柄
      @param index 纹理通道索引
      */
-    virtual void setFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index);
+    virtual void SetFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index);
     
     /**
      设置立方体纹理和采样器
@@ -118,7 +118,7 @@ public:
      @param sampler 采样器句柄
      @param index 纹理通道索引
      */
-    virtual void setFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index);
+    virtual void SetFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index);
     
     /**
      设置渲染纹理和采样器
@@ -127,7 +127,7 @@ public:
      @param sampler 采样器句柄
      @param index 纹理通道索引
      */
-    virtual void setFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index);
+    virtual void SetFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index);
     
     /**
      设置片元纹理和采样器
@@ -136,7 +136,7 @@ public:
      @param texture 纹理句柄
      @param sampler 采样器句柄
      */
-    virtual void setFragmentTextureAndSampler(const std::string &resourceName, Texture2DPtr texture, TextureSamplerPtr sampler);
+    virtual void SetFragmentTextureAndSampler(const std::string &resourceName, Texture2DPtr texture, TextureSamplerPtr sampler);
 
     /**
      设置片元立方体纹理和采样器
@@ -145,7 +145,7 @@ public:
      @param textureCube 纹理句柄
      @param sampler 采样器句柄
      */
-    virtual void setFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler);
+    virtual void SetFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler);
 
     /**
      设置片元渲染纹理和采样器
@@ -154,7 +154,7 @@ public:
      @param rendertexture 纹理句柄
      @param sampler 采样器句柄
      */
-    virtual void setFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler);
+    virtual void SetFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler);
 
 private:
     id <MTLRenderCommandEncoder> mRenderEncoder = nil;

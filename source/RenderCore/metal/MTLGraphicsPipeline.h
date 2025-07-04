@@ -21,11 +21,11 @@ public:
     
     ~MTLGraphicsPipeline();
     
-    virtual void attachVertexShader(ShaderFunctionPtr shaderFunction);
+    virtual void AttachVertexShader(ShaderFunctionPtr shaderFunction);
     
-    virtual void attachFragmentShader(ShaderFunctionPtr shaderFunction);
+    virtual void AttachFragmentShader(ShaderFunctionPtr shaderFunction);
     
-    virtual void attachGraphicsShader(GraphicsShaderPtr graphicsShader);
+    virtual void AttachGraphicsShader(GraphicsShaderPtr graphicsShader);
     
     void Generate(const FrameBufferFormat& frameBufferFormat);
     

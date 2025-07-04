@@ -27,21 +27,21 @@ public:
      
      @return buffer长度,单位btye
      */
-    virtual uint32_t getBufferLength() const;
+    virtual uint32_t GetBufferLength() const;
     
     /**
      映射buffer数据
      
      @return buffer数据起始地址
      */
-    virtual void* mapBufferData() const;
+    virtual void* MapBufferData() const;
     
     /**
      解除buffer数据
      */
-    virtual void unmapBufferData(void* bufferData) const;
+    virtual void UnmapBufferData(void* bufferData) const;
     
-    virtual bool isValid() const;
+    virtual bool IsValid() const;
     
     id<MTLBuffer> getMTLBuffer()
     {

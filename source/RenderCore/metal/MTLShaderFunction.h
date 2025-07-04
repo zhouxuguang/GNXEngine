@@ -22,11 +22,11 @@ public:
     
     ~MTLShaderFunction();
     
-    virtual ShaderFunctionPtr initWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage);
+    virtual ShaderFunctionPtr InitWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage);
     
-    virtual ShaderStage getShaderStage() const;
+    virtual ShaderStage GetShaderStage() const;
     
-    id<MTLFunction> getShaderFunction() const;
+    id<MTLFunction> GetShaderFunction() const;
     
 private:
     ShaderStage mShaderStage;

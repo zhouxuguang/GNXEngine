@@ -36,7 +36,7 @@ void MTLRenderEncoder::EndEncode()
 /**
  设置图形管线
  */
-void MTLRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
+void MTLRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
 {
     MTLGraphicsPipelinePtr mtlGraphicsPipeline = std::dynamic_pointer_cast<MTLGraphicsPipeline>(graphicsPipeline);
     if (nullptr == mtlGraphicsPipeline)
@@ -58,7 +58,7 @@ void MTLRenderEncoder::setGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
  @param buffer buffer对象
  @param index 绑定的索引
  */
-void MTLRenderEncoder::setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index)
+void MTLRenderEncoder::SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index)
 {
     if (buffer == nullptr)
     {
@@ -74,7 +74,7 @@ void MTLRenderEncoder::setVertexBuffer(VertexBufferPtr buffer, uint32_t offset, 
  @param buffer buffer description
  @param index index description
  */
-void MTLRenderEncoder::setVertexUniformBuffer(UniformBufferPtr buffer, int index)
+void MTLRenderEncoder::SetVertexUniformBuffer(UniformBufferPtr buffer, int index)
 {
     if (!buffer)
     {
@@ -106,7 +106,7 @@ void MTLRenderEncoder::setVertexUniformBuffer(UniformBufferPtr buffer, int index
  @param buffer buffer description
  @param index index description
  */
-void MTLRenderEncoder::setFragmentUniformBuffer(UniformBufferPtr buffer, int index)
+void MTLRenderEncoder::SetFragmentUniformBuffer(UniformBufferPtr buffer, int index)
 {
     if (!buffer)
     {
@@ -130,7 +130,7 @@ void MTLRenderEncoder::setFragmentUniformBuffer(UniformBufferPtr buffer, int ind
     }
 }
 
-void MTLRenderEncoder::setVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+void MTLRenderEncoder::SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
 {
     if (!buffer)
     {
@@ -166,7 +166,7 @@ void MTLRenderEncoder::setVertexUniformBuffer(const std::string& resourceName, U
     }
 }
 
-void MTLRenderEncoder::setFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+void MTLRenderEncoder::SetFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
 {
     if (!buffer)
     {
@@ -240,13 +240,13 @@ static MTLPrimitiveType ConvertPrimitiveType(const PrimitiveMode mode)
  @param offset offset description
  @param size size description
  */
-void MTLRenderEncoder::drawPrimitves(PrimitiveMode mode, int offset, int size)
+void MTLRenderEncoder::DrawPrimitves(PrimitiveMode mode, int offset, int size)
 {
     [mRenderEncoder drawPrimitives: ConvertPrimitiveType(mode)
                                                  vertexStart:offset vertexCount:size];
 }
 
-void MTLRenderEncoder::drawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount)
+void MTLRenderEncoder::DrawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount)
 {
     [mRenderEncoder drawPrimitives: ConvertPrimitiveType(mode) vertexStart : offset vertexCount : size
                     instanceCount : instanceCount baseInstance : firstInstance];
@@ -260,7 +260,7 @@ void MTLRenderEncoder::drawInstancePrimitves(PrimitiveMode mode, int offset, int
  @param buffer buffer description
  @param offset offset description
  */
-void MTLRenderEncoder::drawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset)
+void MTLRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset)
 {
     if (!buffer)
     {
@@ -288,7 +288,7 @@ void MTLRenderEncoder::drawIndexedPrimitives(PrimitiveMode mode, int size, Index
                                                          indexType : (MTLIndexType)type indexBuffer : mtlBuffer indexBufferOffset : byteOffset];
 }
 
-void MTLRenderEncoder::drawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
+void MTLRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
                                            uint32_t firstInstance, uint32_t instanceCount)
 {
     if (!buffer)
@@ -325,7 +325,7 @@ void MTLRenderEncoder::drawIndexedInstancePrimitives(PrimitiveMode mode, int siz
  @aaaparam sampler 采样器句柄
  @param index 纹理通道索引
  */
-void MTLRenderEncoder::setFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index)
+void MTLRenderEncoder::SetFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index)
 {
     if (!texture)
     {
@@ -352,7 +352,7 @@ void MTLRenderEncoder::setFragmentTextureAndSampler(Texture2DPtr texture, Textur
  @param sampler 采样器句柄
  @param index 纹理通道索引
  */
-void MTLRenderEncoder::setFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index)
+void MTLRenderEncoder::SetFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index)
 {
     if (!textureCube)
     {
@@ -379,8 +379,8 @@ void MTLRenderEncoder::setFragmentTextureCubeAndSampler(TextureCubePtr textureCu
  @param sampler 采样器句柄
  @param index 纹理通道索引
  */
-void MTLRenderEncoder::setFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index)
-{    
+void MTLRenderEncoder::SetFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index)
+{
     if (!renderTexture)
     {
         [mRenderEncoder setFragmentTexture:nil atIndex:index];
@@ -406,7 +406,7 @@ void MTLRenderEncoder::setFragmentRenderTextureAndSampler(RenderTexturePtr rende
  @param texture 纹理句柄
  @param sampler 采样器句柄
  */
-void MTLRenderEncoder::setFragmentTextureAndSampler(const std::string &resourceName, Texture2DPtr texture, TextureSamplerPtr sampler)
+void MTLRenderEncoder::SetFragmentTextureAndSampler(const std::string &resourceName, Texture2DPtr texture, TextureSamplerPtr sampler)
 {
     MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
     if (!shader)
@@ -450,7 +450,7 @@ void MTLRenderEncoder::setFragmentTextureAndSampler(const std::string &resourceN
  @param textureCube 纹理句柄
  @param sampler 采样器句柄
  */
-void MTLRenderEncoder::setFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler)
+void MTLRenderEncoder::SetFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler)
 {
     MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
     if (!shader)
@@ -487,7 +487,7 @@ void MTLRenderEncoder::setFragmentTextureCubeAndSampler(const std::string& resou
     [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];
 }
 
-void MTLRenderEncoder::setFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler)
+void MTLRenderEncoder::SetFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler)
 {
     MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
     if (!shader)

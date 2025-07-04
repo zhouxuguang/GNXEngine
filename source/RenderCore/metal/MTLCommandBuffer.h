@@ -23,18 +23,18 @@ public:
     ~MTLCommandBuffer();
     
     //创建默认的encoder，也就是屏幕渲染的encoder
-    virtual RenderEncoderPtr createDefaultRenderEncoder() const;
+    virtual RenderEncoderPtr CreateDefaultRenderEncoder() const;
     
-    virtual RenderEncoderPtr createRenderEncoder(const RenderPass& renderPass) const;
+    virtual RenderEncoderPtr CreateRenderEncoder(const RenderPass& renderPass) const;
     
     // 创建计算着色器的encoder
-    virtual ComputeEncoderPtr createComputeEncoder() const;
+    virtual ComputeEncoderPtr CreateComputeEncoder() const;
     
     //呈现到屏幕上，上屏
-    virtual void presentFrameBuffer();
+    virtual void PresentFrameBuffer();
     
     //等待命令缓冲区执行完成
-    virtual void waitUntilCompleted();
+    virtual void WaitUntilCompleted();
     
 private:
     id<MTLCommandBuffer> mCommandBuffer;

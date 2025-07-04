@@ -41,7 +41,7 @@ static const char* getFunctionName(ShaderStage shaderStage)
     return "";
 }
 
-ShaderFunctionPtr MTLShaderFunction::initWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage)
+ShaderFunctionPtr MTLShaderFunction::InitWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage)
 {
     if (shaderSource.empty())
     {
@@ -70,12 +70,12 @@ ShaderFunctionPtr MTLShaderFunction::initWithShaderSource(const ShaderCode& shad
     return shared_from_this();
 }
 
-ShaderStage MTLShaderFunction::getShaderStage() const
+ShaderStage MTLShaderFunction::GetShaderStage() const
 {
     return mShaderStage;
 }
 
-id<MTLFunction> MTLShaderFunction::getShaderFunction() const
+id<MTLFunction> MTLShaderFunction::GetShaderFunction() const
 {
     return mFunction;
 }

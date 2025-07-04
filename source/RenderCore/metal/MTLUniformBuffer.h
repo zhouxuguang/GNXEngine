@@ -20,7 +20,7 @@ public:
     
     ~MTLUniformBuffer();
     
-    virtual void setData(const void* data, uint32_t offset, uint32_t dataSize);
+    virtual void SetData(const void* data, uint32_t offset, uint32_t dataSize);
     
     id<MTLBuffer> getMTLBuffer()
     {

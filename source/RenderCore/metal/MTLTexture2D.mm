@@ -58,7 +58,7 @@ MTLTexture2D::~MTLTexture2D()
 {
 }
 
-void MTLTexture2D::setTextureData(const uint8_t* imageData)
+void MTLTexture2D::SetTextureData(const uint8_t* imageData)
 {
     if (mTexture == nil || imageData == nullptr)
     {
@@ -74,7 +74,7 @@ void MTLTexture2D::setTextureData(const uint8_t* imageData)
     }
 }
 
-void MTLTexture2D::replaceRegion(const Rect2D& rect, const uint8_t* imageData, uint32_t mipMapLevel)
+void MTLTexture2D::ReplaceRegion(const Rect2D& rect, const uint8_t* imageData, uint32_t mipMapLevel)
 {
     if (mTexture == nil || imageData == nullptr)
     {
@@ -90,7 +90,7 @@ void MTLTexture2D::replaceRegion(const Rect2D& rect, const uint8_t* imageData, u
     }
 }
 
-bool MTLTexture2D::isValid() const
+bool MTLTexture2D::IsValid() const
 {
     return mTexture != nil;
 }

@@ -237,7 +237,7 @@ MTLGraphicsPipeline::~MTLGraphicsPipeline()
     //
 }
 
-void MTLGraphicsPipeline::attachVertexShader(ShaderFunctionPtr shaderFunction)
+void MTLGraphicsPipeline::AttachVertexShader(ShaderFunctionPtr shaderFunction)
 {
     if (!shaderFunction)
     {
@@ -245,10 +245,10 @@ void MTLGraphicsPipeline::attachVertexShader(ShaderFunctionPtr shaderFunction)
     }
     
     MTLShaderFunctionPtr shaderPtr = std::dynamic_pointer_cast<MTLShaderFunction>(shaderFunction);
-    mRenderPipelineDes.vertexFunction = shaderPtr->getShaderFunction();
+    mRenderPipelineDes.vertexFunction = shaderPtr->GetShaderFunction();
 }
 
-void MTLGraphicsPipeline::attachFragmentShader(ShaderFunctionPtr shaderFunction)
+void MTLGraphicsPipeline::AttachFragmentShader(ShaderFunctionPtr shaderFunction)
 {
     if (!shaderFunction)
     {
@@ -256,10 +256,10 @@ void MTLGraphicsPipeline::attachFragmentShader(ShaderFunctionPtr shaderFunction)
     }
     
     MTLShaderFunctionPtr shaderPtr = std::dynamic_pointer_cast<MTLShaderFunction>(shaderFunction);
-    mRenderPipelineDes.fragmentFunction = shaderPtr->getShaderFunction();
+    mRenderPipelineDes.fragmentFunction = shaderPtr->GetShaderFunction();
 }
 
-void MTLGraphicsPipeline::attachGraphicsShader(GraphicsShaderPtr graphicsShader)
+void MTLGraphicsPipeline::AttachGraphicsShader(GraphicsShaderPtr graphicsShader)
 {
     if (!graphicsShader)
     {

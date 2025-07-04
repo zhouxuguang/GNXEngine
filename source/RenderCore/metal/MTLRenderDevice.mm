@@ -34,7 +34,7 @@ MTLRenderDevice::~MTLRenderDevice()
     //
 }
 
-void MTLRenderDevice::resize(uint32_t width, uint32_t height)
+void MTLRenderDevice::Resize(uint32_t width, uint32_t height)
 {
     [mMetalLayer setDrawableSize:CGSizeMake(width, height)];
     mDepthTexture = createDepthTexture(mMetalLayer.device,
@@ -45,12 +45,12 @@ void MTLRenderDevice::resize(uint32_t width, uint32_t height)
                                 mMetalLayer.drawableSize.width, mMetalLayer.drawableSize.height);
 }
 
-DeviceExtensionPtr MTLRenderDevice::getDeviceExtension() const
+DeviceExtensionPtr MTLRenderDevice::GetDeviceExtension() const
 {
     return mMTLDeviceExtension;
 }
 
-RenderDeviceType MTLRenderDevice::getRenderDeviceType() const
+RenderDeviceType MTLRenderDevice::GetRenderDeviceType() const
 {
     return RenderDeviceType::METAL;
 }
@@ -61,7 +61,7 @@ RenderDeviceType MTLRenderDevice::getRenderDeviceType() const
  @param size 申请buffer长度，单位（byte）
  @return 成功申请buffer句柄，失败返回0；
  */
-VertexBufferPtr MTLRenderDevice::createVertexBufferWithLength(uint32_t size) const
+VertexBufferPtr MTLRenderDevice::CreateVertexBufferWithLength(uint32_t size) const
 {
     auto vertexBuffer = std::make_shared<MTLVertexBuffer>(mMetalLayer.device, size, StorageModeShared);
     return vertexBuffer;
@@ -75,19 +75,19 @@ VertexBufferPtr MTLRenderDevice::createVertexBufferWithLength(uint32_t size) con
  @param mode 申请Buffer类型
  @return 成功申请buffer句柄，失败返回0；
  */
-VertexBufferPtr MTLRenderDevice::createVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const
+VertexBufferPtr MTLRenderDevice::CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const
 {
     auto vertexBuffer = std::make_shared<MTLVertexBuffer>(mMetalLayer.device, mCommandQueue, buffer, size, mode);
     return vertexBuffer;
 }
 
-ComputeBufferPtr MTLRenderDevice::createComputeBuffer(uint32_t size) const
+ComputeBufferPtr MTLRenderDevice::CreateComputeBuffer(uint32_t size) const
 {
     auto vertexBuffer = std::make_shared<MTLComputeBuffer>(mMetalLayer.device, size, StorageModeShared);
     return vertexBuffer;
 }
 
-ComputeBufferPtr MTLRenderDevice::createComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const
+ComputeBufferPtr MTLRenderDevice::CreateComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const
 {
     auto vertexBuffer = std::make_shared<MTLComputeBuffer>(mMetalLayer.device, mCommandQueue, buffer, size, mode);
     return vertexBuffer;
@@ -101,7 +101,7 @@ ComputeBufferPtr MTLRenderDevice::createComputeBuffer(const void* buffer, uint32
  @param indexType 索引类型
  @return 成功申请buffer句柄，失败返回0；
  */
-IndexBufferPtr MTLRenderDevice::createIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const
+IndexBufferPtr MTLRenderDevice::CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const
 {
     auto indexBuffer = std::make_shared<MTLIndexBuffer>(mMetalLayer.device, mCommandQueue, indexType, buffer, size);
     return indexBuffer;
@@ -113,7 +113,7 @@ IndexBufferPtr MTLRenderDevice::createIndexBufferWithBytes(const void* buffer, u
  @param des the description for texture to be created
  @return shared pointer to texture object
  */
-Texture2DPtr MTLRenderDevice::createTextureWithDescriptor(const TextureDescriptor& des) const
+Texture2DPtr MTLRenderDevice::CreateTextureWithDescriptor(const TextureDescriptor& des) const
 {
     auto texture2d = std::make_shared<MTLTexture2D>(mMetalLayer.device, mCommandQueue, des);
     return texture2d;
@@ -125,7 +125,7 @@ Texture2DPtr MTLRenderDevice::createTextureWithDescriptor(const TextureDescripto
  @param desArray the description for texture to be created
  @return shared pointer to texturecube object
  */
-TextureCubePtr MTLRenderDevice::createTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const
+TextureCubePtr MTLRenderDevice::CreateTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const
 {
     return std::make_shared<MTLTextureCube>(mMetalLayer.device, mCommandQueue, desArray);
 }
@@ -136,7 +136,7 @@ TextureCubePtr MTLRenderDevice::createTextureCubeWithDescriptor(const std::vecto
  @param des the description for sampler to be created.
  @return shared pointer to sampler object.
  */
-TextureSamplerPtr MTLRenderDevice::createSamplerWithDescriptor(const SamplerDescriptor& des) const
+TextureSamplerPtr MTLRenderDevice::CreateSamplerWithDescriptor(const SamplerDescriptor& des) const
 {
     auto textureSampler = std::make_shared<MTLTextureSampler>(mMetalLayer.device, des);
     return textureSampler;
@@ -145,7 +145,7 @@ TextureSamplerPtr MTLRenderDevice::createSamplerWithDescriptor(const SamplerDesc
 /**
  创建uniform buffer
  */
-UniformBufferPtr MTLRenderDevice::createUniformBufferWithSize(uint32_t bufSize) const
+UniformBufferPtr MTLRenderDevice::CreateUniformBufferWithSize(uint32_t bufSize) const
 {
     auto uniformBuffer = std::make_shared<MTLUniformBuffer>(mMetalLayer.device, bufSize);
     return uniformBuffer;
@@ -154,13 +154,13 @@ UniformBufferPtr MTLRenderDevice::createUniformBufferWithSize(uint32_t bufSize) 
 /**
  创建ShaderFunctionPtr
  */
-ShaderFunctionPtr MTLRenderDevice::createShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const
+ShaderFunctionPtr MTLRenderDevice::CreateShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const
 {
     MTLShaderFunctionPtr shaderFunction = std::make_shared<MTLShaderFunction>(mMetalLayer.device);
-    return shaderFunction->initWithShaderSource(shaderSource, shaderStage);
+    return shaderFunction->InitWithShaderSource(shaderSource, shaderStage);
 }
 
-GraphicsShaderPtr MTLRenderDevice::createGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const
+GraphicsShaderPtr MTLRenderDevice::CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const
 {
     MTLGraphicsShaderPtr shaderPtr = std::make_shared<MTLGraphicsShader>(mMetalLayer.device, vertexShader, fragmentShader);
     return shaderPtr;
@@ -169,23 +169,23 @@ GraphicsShaderPtr MTLRenderDevice::createGraphicsShader(const ShaderCode& vertex
 /**
  创建图形管线
  */
-GraphicsPipelinePtr MTLRenderDevice::createGraphicsPipeline(const GraphicsPipelineDescriptor& des) const
+GraphicsPipelinePtr MTLRenderDevice::CreateGraphicsPipeline(const GraphicsPipelineDescriptor& des) const
 {
     return std::make_shared<MTLGraphicsPipeline>(mMetalLayer.device, des);
 }
 
-ComputePipelinePtr MTLRenderDevice::createComputePipeline(const ShaderCode& shaderSource) const
+ComputePipelinePtr MTLRenderDevice::CreateComputePipeline(const ShaderCode& shaderSource) const
 {
-    ShaderFunctionPtr shaderFunction = createShaderFunction(shaderSource, ShaderStage_Compute);
+    ShaderFunctionPtr shaderFunction = CreateShaderFunction(shaderSource, ShaderStage_Compute);
     return std::make_shared<MTLComputePipeline>(mMetalLayer.device, shaderFunction);
 }
 
-CommandBufferPtr MTLRenderDevice::createCommandBuffer()
+CommandBufferPtr MTLRenderDevice::CreateCommandBuffer()
 {
     return std::make_shared<MTLCommandBuffer>(mCommandQueue, mMetalLayer, mDepthTexture, mStencilTexture, mDepthStencilTexture);
 }
 
-RenderTexturePtr MTLRenderDevice::createRenderTexture(const TextureDescriptor& des) const
+RenderTexturePtr MTLRenderDevice::CreateRenderTexture(const TextureDescriptor& des) const
 {
     return std::make_shared<MTLRenderTexture>(mMetalLayer.device, des);
 }

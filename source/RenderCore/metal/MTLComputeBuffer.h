@@ -32,22 +32,22 @@ public:
     
     virtual uint32_t getBufferLength() const 
     {
-        return MTLVertexBuffer::getBufferLength();
+        return MTLVertexBuffer::GetBufferLength();
     }
     
     virtual void* mapBufferData() const 
     {
-        return MTLVertexBuffer::mapBufferData();
+        return MTLVertexBuffer::MapBufferData();
     }
     
     virtual void unmapBufferData(void* bufferData) const 
     {
-        return MTLVertexBuffer::unmapBufferData(bufferData);
+        return MTLVertexBuffer::UnmapBufferData(bufferData);
     }
     
     virtual bool isValid() const 
     {
-        return MTLVertexBuffer::isValid();
+        return MTLVertexBuffer::IsValid();
     }
     
 };

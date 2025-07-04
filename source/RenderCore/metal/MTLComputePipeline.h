@@ -25,7 +25,7 @@ public:
             //assert(kernelFunction);
             NSError* error = nil;
             MTLShaderFunctionPtr shaderPtr = std::dynamic_pointer_cast<MTLShaderFunction>(kernelFunction);
-            mComputePSO = [device newComputePipelineStateWithFunction: shaderPtr->getShaderFunction() error:&error];
+            mComputePSO = [device newComputePipelineStateWithFunction: shaderPtr->GetShaderFunction() error:&error];
         }
     }
     

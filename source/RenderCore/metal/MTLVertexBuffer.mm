@@ -24,7 +24,7 @@ MTLVertexBuffer::~MTLVertexBuffer()
     //
 }
 
-uint32_t MTLVertexBuffer::getBufferLength() const
+uint32_t MTLVertexBuffer::GetBufferLength() const
 {
     if (mBuffer)
     {
@@ -33,7 +33,7 @@ uint32_t MTLVertexBuffer::getBufferLength() const
     return 0;
 }
 
-void* MTLVertexBuffer::mapBufferData() const
+void* MTLVertexBuffer::MapBufferData() const
 {
     if (mBuffer)
     {
@@ -42,12 +42,12 @@ void* MTLVertexBuffer::mapBufferData() const
     return nullptr;
 }
 
-void MTLVertexBuffer::unmapBufferData(void* bufferData) const
+void MTLVertexBuffer::UnmapBufferData(void* bufferData) const
 {
     //
 }
 
-bool MTLVertexBuffer::isValid() const
+bool MTLVertexBuffer::IsValid() const
 {
     return false;
 }

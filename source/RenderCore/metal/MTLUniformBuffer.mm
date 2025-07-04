@@ -27,7 +27,7 @@ MTLUniformBuffer::~MTLUniformBuffer()
     mBufferData.clear();
 }
 
-void MTLUniformBuffer::setData(const void* data, uint32_t offset, uint32_t dataSize)
+void MTLUniformBuffer::SetData(const void* data, uint32_t offset, uint32_t dataSize)
 {
     if (mIsBuufer)
     {

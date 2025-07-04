@@ -25,14 +25,14 @@ public:
 
      @param imageData image data
      */
-    virtual void setTextureData(CubemapFace cubeFace, uint32_t imageSize, const uint8_t* imageData);
+    virtual void SetTextureData(CubemapFace cubeFace, uint32_t imageSize, const uint8_t* imageData);
     
     /**
      纹理是否有效
 
      @return ture or false
      */
-    virtual bool isValid() const;
+    virtual bool IsValid() const;
     
     id<MTLTexture> getMTLTexture() const
     {

@@ -30,9 +30,10 @@ MTLCommandBuffer::~MTLCommandBuffer()
 }
 
 //创建默认的encoder，也就是屏幕渲染的encoder
-RenderEncoderPtr MTLCommandBuffer::createDefaultRenderEncoder() const
+RenderEncoderPtr MTLCommandBuffer::CreateDefaultRenderEncoder() const
 {
-    @autoreleasepool {
+    @autoreleasepool 
+    {
         mCurrentDrawable =  [mMetalLayer nextDrawable];
         id<MTLTexture> texture = mCurrentDrawable.texture;
 
@@ -72,9 +73,10 @@ RenderEncoderPtr MTLCommandBuffer::createDefaultRenderEncoder() const
     }
 }
 
-RenderEncoderPtr MTLCommandBuffer::createRenderEncoder(const RenderPass& renderPass) const
+RenderEncoderPtr MTLCommandBuffer::CreateRenderEncoder(const RenderPass& renderPass) const
 {
-    @autoreleasepool {
+    @autoreleasepool 
+    {
         FrameBufferFormat frameBufferFormat;
         frameBufferFormat.depthFormat = MTLPixelFormatInvalid;
         frameBufferFormat.stencilFormat = MTLPixelFormatInvalid;
@@ -144,13 +146,13 @@ RenderEncoderPtr MTLCommandBuffer::createRenderEncoder(const RenderPass& renderP
     }
 }
 
-ComputeEncoderPtr MTLCommandBuffer::createComputeEncoder() const
+ComputeEncoderPtr MTLCommandBuffer::CreateComputeEncoder() const
 {
     return std::make_shared<MTLComputeEncoder>(mCommandBuffer);
 }
 
 //呈现到屏幕上，上屏
-void MTLCommandBuffer::presentFrameBuffer()
+void MTLCommandBuffer::PresentFrameBuffer()
 {
     @autoreleasepool
     {
@@ -167,7 +169,7 @@ void MTLCommandBuffer::presentFrameBuffer()
     }
 }
 
-void MTLCommandBuffer::waitUntilCompleted()
+void MTLCommandBuffer::WaitUntilCompleted()
 {
     @autoreleasepool 
     {
