@@ -174,7 +174,7 @@ bool WindowsVulkanView::createWindow(int width, int height)
 
 bool WindowsVulkanView::createRenderDevice()
 {
-	mRenderDevice = RenderCore::createRenderDevice(RenderCore::RenderDeviceType::VULKAN, mWindow);
+	mRenderDevice = RenderCore::CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, mWindow);
 
 	{
 		baselib::ThreadPool threadPool(32);
@@ -192,7 +192,7 @@ bool WindowsVulkanView::createRenderDevice()
 
 void WindowsVulkanView::resize(int width, int height)
 {
-    mRenderDevice->resize(width, height);
+    mRenderDevice->Resize(width, height);
     mWidth = width;
     mHeight = height;
 
@@ -202,14 +202,14 @@ void WindowsVulkanView::resize(int width, int height)
     textureDescriptor.height = height;
     textureDescriptor.mipmaped = false;
     textureDescriptor.format = kTexFormatRGBA16Float;
-    renderTexture = mRenderDevice->createRenderTexture(textureDescriptor);
-    computeTexture = mRenderDevice->createRenderTexture(textureDescriptor);
+    renderTexture = mRenderDevice->CreateRenderTexture(textureDescriptor);
+    computeTexture = mRenderDevice->CreateRenderTexture(textureDescriptor);
     
     textureDescriptor.width = width;
     textureDescriptor.height = height;
     textureDescriptor.mipmaped = false;
     textureDescriptor.format = kTexFormatDepth32FloatStencil8;
-    depthStencilTexture = mRenderDevice->createRenderTexture(textureDescriptor);
+    depthStencilTexture = mRenderDevice->CreateRenderTexture(textureDescriptor);
     
     sceneManager = SceneManager::GetInstance();
     SkyBox* skybox = initSky(mRenderDevice);
@@ -262,7 +262,7 @@ void WindowsVulkanView::Render()
 	lastTime = thisTime;
 	sceneManager->Update(deltaTime);
 
-	CommandBufferPtr commandBuffer = mRenderDevice->createCommandBuffer();
+	CommandBufferPtr commandBuffer = mRenderDevice->CreateCommandBuffer();
     if (!commandBuffer)
     {
         return;
@@ -283,7 +283,7 @@ void WindowsVulkanView::Render()
 	renderPass.stencilAttachment->clearStencil = 0x00;
 
 	renderPass.renderRegion = Rect2D(0, 0, mWidth, mHeight);
-	RenderEncoderPtr renderEncoder1 = commandBuffer->createRenderEncoder(renderPass);
+	RenderEncoderPtr renderEncoder1 = commandBuffer->CreateRenderEncoder(renderPass);
 
 	sceneManager->Render(renderEncoder1);
 
@@ -293,8 +293,8 @@ void WindowsVulkanView::Render()
 	testImageGrayDraw(computeEncoder, computePipeline, renderTexture, computeTexture);
 	computeEncoder->EndEncode();*/
 
-	RenderEncoderPtr renderEncoder = commandBuffer->createDefaultRenderEncoder();
+	RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
 	testPost(renderEncoder, renderTexture);
 	renderEncoder->EndEncode();
-	commandBuffer->presentFrameBuffer();
+	commandBuffer->PresentFrameBuffer();
 }
