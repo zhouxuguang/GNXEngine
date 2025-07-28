@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if(MSVC)
   add_compile_options(/wd4819)
   add_compile_options(/wd4828)
-  add_compile_options(/Zc:__cplusplus)
+  add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>")
   add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 

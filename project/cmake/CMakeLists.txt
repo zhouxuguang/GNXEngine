@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (MSVC)
     # 添加标志以启用__cplusplus宏的更新
-    add_compile_options(/Zc:__cplusplus)
+    add_compile_options("$<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>")
 endif()
 
 include(cmake/ISPC.cmake)
