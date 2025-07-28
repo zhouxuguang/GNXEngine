@@ -2,6 +2,14 @@ cmake_minimum_required(VERSION 3.20)
 
 project(GNXEngine VERSION 0.1 LANGUAGES C CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if (MSVC)
+    # 添加标志以启用__cplusplus宏的更新
+    add_compile_options(/Zc:__cplusplus)
+endif()
+
 include(cmake/ISPC.cmake)
 
 message("ISPC: ${CMAKE_ISPC_COMPILER}")
@@ -30,4 +38,4 @@ add_subdirectory(../../source/thirdparty/tbb tbb)
 add_subdirectory(../../source/thirdparty/meshoptimizer meshoptimizer)
 add_subdirectory(../../source/thirdparty/nanopb nanopb)
 add_subdirectory(../../source/thirdparty/glfw glfw)
-#add_subdirectory(../../source/thirdparty/tinyktx2 tinyktx2)
+add_subdirectory(../../source/thirdparty/ktx ktx)

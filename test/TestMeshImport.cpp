@@ -6,6 +6,8 @@
 #include "AssetProcess/ASTCCompressor.h"
 #include "ImageCodec/ImageDecoder.h"
 
+#include "ktx.h"
+
 // little endian
 struct astc_header
 {
@@ -46,9 +48,47 @@ void store_astc(uint8_t* pData, uint32_t dataSize, uint32_t width, uint32_t heig
     fclose(f);
 }
 
+void testKTX()
+{
+	fs::path currentPath = getMediaDir();
+
+	fs::path filePath = (currentPath / fs::path("backpack/diffuse.jpg")).lexically_normal();
+	std::string imageFilePath = filePath.string();
+    imagecodec::VImage image;
+    imagecodec::ImageDecoder::DecodeFile(imageFilePath.c_str(), &image);
+	// create a KTX2 texture for RGBA data
+    ktxTextureCreateInfo createInfoKTX2 = {};
+    createInfoKTX2.glInternalformat = 0x8058;
+    createInfoKTX2.vkFormat = 37;
+    createInfoKTX2.baseWidth = (uint32_t)image.GetWidth();
+    createInfoKTX2.baseHeight = (uint32_t)image.GetHeight();
+    createInfoKTX2.baseDepth = 1u;
+    createInfoKTX2.numDimensions = 2u;
+    createInfoKTX2.numLevels = 1;
+    createInfoKTX2.numLayers = 1u;
+    createInfoKTX2.numFaces = 1u;
+    createInfoKTX2.generateMipmaps = KTX_FALSE;
+    ktxTexture1* textureKTX2 = nullptr;
+	(ktxTexture1_Create(&createInfoKTX2, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &textureKTX2) == KTX_SUCCESS);
+
+	for (uint32_t i = 0; i != 1; ++i) 
+    {
+		size_t offset = 0;
+		ktxTexture_GetImageOffset(ktxTexture(textureKTX2), i, 0, 0, &offset);
+
+        uint8_t* pDst = ktxTexture_GetData(ktxTexture(textureKTX2)) + offset;
+        memcpy(pDst, image.GetPixels(), image.GetWidth() * image.GetHeight() * 4);
+	}
+
+	ktxTexture_WriteToNamedFile(ktxTexture(textureKTX2), "image1.ktx");
+	ktxTexture_Destroy(ktxTexture(textureKTX2));
+}
+
 int main(int argc, char* argv[])
 {
 	fs::path currentPath = getMediaDir();
+
+    testKTX();
 
 	int a = 100;
 	LOG_INFO("BaseLib/LogService.h %d", a);
