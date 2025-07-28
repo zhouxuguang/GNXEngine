@@ -35,7 +35,6 @@
 #include "filestream.h"
 #include "memstream.h"
 #include "texture1.h"
-#include "texture2.h"
 #include "unused.h"
 
 ktx_size_t ktxTexture_GetDataSize(ktxTexture* This);
