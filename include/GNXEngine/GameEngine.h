@@ -13,7 +13,7 @@
 NAMESPACE_GNXENGINE_BEGIN
 
 //游戏引擎的入口类
-class GameEngine
+class GNXENGINE_API GameEngine
 {
 public:
     GameEngine(/* args */);

@@ -13,7 +13,7 @@
 NAMESPACE_GNXENGINE_BEGIN
 
 //渲染窗口
-class RenderWindow
+class GNXENGINE_API RenderWindow
 {
 public:
 
