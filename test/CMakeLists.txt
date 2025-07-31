@@ -2,7 +2,7 @@
 
 add_executable(TestMeshImport TestMeshImport.cpp)
 
-target_link_libraries(TestMeshImport PRIVATE baselib imagecodec mathutil rendercore rendersystem shadercompiler spirv_reflect AssetProcess tbb_static)
+target_link_libraries(TestMeshImport PRIVATE baselib imagecodec mathutil rendercore rendersystem shadercompiler spirv_reflect AssetProcess tbb)
 
 if(APPLE)
     target_link_libraries(TestMeshImport PRIVATE "-framework CoreGraphics" "-framework CoreVideo" "-framework QuartzCore" 

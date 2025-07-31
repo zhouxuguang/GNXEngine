@@ -1,4 +1,4 @@
-# Copyright (c) 2019-2020 Intel Corporation
+# Copyright (c) 2019-2025 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required(VERSION 3.0.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5.0...3.31.3)
 
 project(fibonacci CXX)
 
-if (NOT CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 11)
-    set(CXX_STANDARD_REQUIRED ON)
-endif()
+include(../../common/cmake/common.cmake)
 
-add_executable(fibonacci Fibonacci.cpp)
+set_common_project_settings(tbb)
 
-# find_package will search for available TBBConfig using variables CMAKE_PREFIX_PATH and TBB_DIR.
-find_package(TBB REQUIRED tbb)
-
+add_executable(fibonacci fibonacci.cpp)
 target_link_libraries(fibonacci
-                      ${TBB_IMPORTED_TARGETS}      # Link TBB imported targets to the executable; "TBB::tbb" can be used instead of "${TBB_IMPORTED_TARGETS}".
+                      TBB::tbb
+                      Threads::Threads
                       $<$<PLATFORM_ID:Linux>:rt>)  # Link "rt" library on Linux
+target_compile_options(fibonacci PRIVATE ${TBB_CXX_STD_FLAG})
+
+set(EXECUTABLE "$<TARGET_FILE:fibonacci>")
+set(ARGS "")
+
+add_execution_target(run_fibonacci fibonacci ${EXECUTABLE} "${ARGS}")
