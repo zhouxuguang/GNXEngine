@@ -23,7 +23,7 @@ add_library(GNXEngine SHARED ${GNXEngine_Source} ${GNXEngine_Include})
 
 target_include_directories(GNXEngine PUBLIC ${GNXEngine_include_dir})
 
-target_link_libraries(GNXEngine PUBLIC baselib imagecodec mathutil rendercore rendersystem shadercompiler spirv_reflect tbb_static AssetProcess)
+target_link_libraries(GNXEngine PUBLIC baselib imagecodec mathutil rendercore rendersystem shadercompiler spirv_reflect tbb AssetProcess)
 target_compile_definitions(GNXEngine PRIVATE GNXENGINE_EXPORTS)
 
 add_subdirectory(baselib)

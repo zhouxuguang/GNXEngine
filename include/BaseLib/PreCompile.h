@@ -96,9 +96,9 @@ typedef std::basic_string<uint32_t> utf32String;
     #define TARGET_X86          1
 #elif defined(__x86_64__) || defined(_M_X64)
     #define TARGET_X86_64       1
-#elif defined(__arm__) 
+#elif defined(__arm__) || defined(_M_ARM)
     #define TARGET_ARM          1
-#elif defined(__arm64__)
+#elif defined(__arm64__) || defined(_M_ARM64)
     #define TARGET_ARM64        1
 #endif
 
