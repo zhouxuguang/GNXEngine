@@ -30,7 +30,7 @@ void thread_request_serializer::update(int delta) {
     constexpr std::uint64_t delta_mask = (pending_delta_base << 1) - 1;
     constexpr std::uint64_t counter_value = delta_mask + 1;
 
-    int prev_pending_delta = my_pending_delta.fetch_add(counter_value + delta);
+    unsigned long long prev_pending_delta = my_pending_delta.fetch_add(counter_value + delta);
 
     // There is a pseudo request aggregator, so only thread that see pending_delta_base in my_pending_delta
     // Will enter to critical section and call adjust_job_count_estimate

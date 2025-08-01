@@ -222,7 +222,7 @@ int AvailableHwConcurrency() {
 #elif defined(_SC_NPROCESSORS_ONLN)
 
 int AvailableHwConcurrency() {
-    int n = sysconf(_SC_NPROCESSORS_ONLN);
+    int n = (int)sysconf(_SC_NPROCESSORS_ONLN);
     return (n > 0) ? n : 1;
 }
 

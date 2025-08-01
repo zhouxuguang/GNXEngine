@@ -79,7 +79,7 @@ class alignas(max_nfs_size) allowed_parallelism_control : public control_storage
         control_storage::apply_active(new_active);
         __TBB_ASSERT(my_active_value >= 1, nullptr);
         // -1 to take external thread into account
-        threading_control::set_active_num_workers(my_active_value - 1);
+        threading_control::set_active_num_workers((unsigned)my_active_value - 1);
     }
     std::size_t active_value() override {
         spin_mutex::scoped_lock lock(my_list_mutex); // protect my_list.empty() call

@@ -40,16 +40,16 @@ std::pair<unsigned, unsigned> threading_control_impl::calculate_workers_limits()
     // computation of the hard limit, in order to separate responsibilities
     // and avoid complicated interactions between global_control and task_scheduler_init.
     // The threading control guarantees that at least 256 threads might be created.
-    unsigned workers_app_limit = global_control_active_value_unsafe(global_control::max_allowed_parallelism);
-    unsigned workers_hard_limit = max(max(factor * governor::default_num_threads(), 256u), workers_app_limit);
+    size_t workers_app_limit = global_control_active_value_unsafe(global_control::max_allowed_parallelism);
+    unsigned workers_hard_limit = std::max(std::max(factor * governor::default_num_threads(), 256u), (unsigned)workers_app_limit);
     unsigned workers_soft_limit = calc_workers_soft_limit(workers_hard_limit);
     
     return std::make_pair(workers_soft_limit, workers_hard_limit);
 }
 
 unsigned threading_control_impl::calc_workers_soft_limit(unsigned workers_hard_limit) {
-    unsigned workers_soft_limit{};
-    unsigned soft_limit = global_control_active_value_unsafe(global_control::max_allowed_parallelism);
+    std::size_t workers_soft_limit{};
+    std::size_t soft_limit = global_control_active_value_unsafe(global_control::max_allowed_parallelism);
 
     // if user set no limits (yet), use default value
     workers_soft_limit = soft_limit != 0 ? soft_limit - 1 : governor::default_num_threads() - 1;
@@ -58,7 +58,7 @@ unsigned threading_control_impl::calc_workers_soft_limit(unsigned workers_hard_l
         workers_soft_limit = workers_hard_limit - 1;
     }
 
-    return workers_soft_limit;
+    return (unsigned)workers_soft_limit;
 }
 
 cache_aligned_unique_ptr<permit_manager> threading_control_impl::make_permit_manager(unsigned workers_soft_limit) {
