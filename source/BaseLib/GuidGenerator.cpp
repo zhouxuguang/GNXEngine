@@ -116,6 +116,13 @@ bool CreateGUID(GUID *guid)
 
 #endif
 
+struct GUID CreateGUIDFromBytes(const uint8_t* pBytes)
+{
+    GUID guid;
+    memcpy(&guid, pBytes, 16);
+    return guid;
+}
+
 bool GUIDToString(const GUID *guid, std::string& bufStr)
 {
     if (NULL == guid)

@@ -3,18 +3,19 @@
 
 //GUID跨平台的封装
 
-#include "PreCompile.h" 
+#include "PreCompile.h"
 
 NS_BASELIB_BEGIN
-
 
 #if !defined(WIN32) && !defined(_WIN64)
 struct GUID;
 #endif
 
-
 //创建GUID
 BASELIB_API bool CreateGUID(GUID *guid);
+
+//从内存创建
+BASELIB_API struct GUID CreateGUIDFromBytes(const uint8_t* pBytes);
 
 //GUID转字符串
 BASELIB_API bool GUIDToString(const GUID *guid, std::string& buf);
