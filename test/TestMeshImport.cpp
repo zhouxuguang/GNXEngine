@@ -3,8 +3,11 @@
 #include "BaseLib/ThreadPool.h"
 #include "BaseLib/LogService.h"
 #include "BaseLib/TimeCost.h"
+#include "BaseLib/SHA256.h"
+#include "BaseLib/GuidGenerator.h"
 #include "AssetProcess/ASTCCompressor.h"
 #include "ImageCodec/ImageDecoder.h"
+#include <iostream>
 
 #include "ktx.h"
 
@@ -89,6 +92,15 @@ int main(int argc, char* argv[])
 	fs::path currentPath = getMediaDir();
 
     testKTX();
+    
+    std::string s = "hello worldsfdsfsdkkkkkkk;;;;llpppiodfidjvijdivdsnvmnvdfnsbvnbnfknvkdsnvkdsnvkdsnvdsnvdnkvndskvnsdnvsnvdnvdnsvnvksvnsvsnvdsnvklsnvdsdsnvd";
+    baselib::SHA256 sha;
+    sha.update(s);
+    std::array<uint8_t, 32> digest = sha.digest();
+    
+    baselib::GUID guid = baselib::CreateGUIDFromBytes(digest.data());
+
+    std::cout << baselib::SHA256::toString(digest) << std::endl;
 
 	int a = 100;
 	LOG_INFO("BaseLib/LogService.h %d", a);

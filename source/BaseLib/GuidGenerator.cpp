@@ -22,17 +22,6 @@ NS_BASELIB_BEGIN
 
 #endif
 
-#if !defined(WIN32) && !defined(_WIN64)
-struct GUID
-{
-    uint32_t Data1;
-    uint16_t Data2;
-    uint16_t Data3;
-    uint8_t  Data4[8];
-};
-#endif
-
-
 class BASELIB_API_HIDE GUIDGenerator
 {
 public:
@@ -72,7 +61,6 @@ public:
         UInt32ToBytes(&guid->Data4[0], GetRandom());
         UInt32ToBytes(&guid->Data4[4], GetRandom());
         return true;
-
 	}
 };
 
@@ -109,7 +97,7 @@ bool CreateGUID(GUID *guid)
     guid->Data1 = GUIDGenerator::BytesToUInt32(pUUID);
     guid->Data2 = GUIDGenerator::BytesToUInt16(pUUID+4);
     guid->Data3 = GUIDGenerator::BytesToUInt16(pUUID+6);
-    memcpy(guid->Data4, pUUID+8, 8 * sizeof(uint8_t));
+    memcpy(guid->Data4, pUUID + 8, 8 * sizeof(uint8_t));
     return true;
 #endif
 }
@@ -131,20 +119,22 @@ bool GUIDToString(const GUID *guid, std::string& bufStr)
     }
     
 	size_t nLen = GUIDStringLength;
-	bufStr.resize(nLen+1);
-	int num = sprintf((char *)bufStr.c_str(), GUIDFormatString,
+	bufStr.resize(nLen + 1);
+	int num = snprintf((char *)bufStr.c_str(), nLen + 1, GUIDFormatString,
 		guid->Data1, guid->Data2, guid->Data3,
 		GUIDGenerator::BytesToUInt32(&(guid->Data4[0])),
 		GUIDGenerator::BytesToUInt32(&(guid->Data4[4])));
 
 	if (num != GUIDStringLength)
-		return false;
+    {
+        return false;
+    }
 
 	bufStr[num] = '\0';
 	return true;
 }
 
-bool IsGUIDEqual(const GUID &guid1,const GUID& guid2)
+bool IsGUIDEqual(const GUID &guid1, const GUID& guid2)
 {
     return 0 == memcmp(&guid1, &guid2, sizeof(GUID));
 }

@@ -7,9 +7,13 @@
 
 NS_BASELIB_BEGIN
 
-#if !defined(WIN32) && !defined(_WIN64)
-struct GUID;
-#endif
+struct GUID
+{
+    uint32_t Data1;
+    uint16_t Data2;
+    uint16_t Data3;
+    uint8_t  Data4[8];
+};
 
 //创建GUID
 BASELIB_API bool CreateGUID(GUID *guid);
@@ -21,7 +25,7 @@ BASELIB_API struct GUID CreateGUIDFromBytes(const uint8_t* pBytes);
 BASELIB_API bool GUIDToString(const GUID *guid, std::string& buf);
 
 //guid是否相等
-BASELIB_API bool IsGUIDEqual(const GUID &guid1,const GUID& guid2);
+BASELIB_API bool IsGUIDEqual(const GUID &guid1, const GUID& guid2);
 
 NS_BASELIB_END
 
