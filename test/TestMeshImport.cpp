@@ -69,7 +69,7 @@ void testKTX()
     createInfoKTX2.numFaces = 1u;
     createInfoKTX2.generateMipmaps = KTX_FALSE;
     ktxTexture1* textureKTX2 = nullptr;
-	(ktxTexture1_Create(&createInfoKTX2, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &textureKTX2) == KTX_SUCCESS);
+	ktxTexture1_Create(&createInfoKTX2, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &textureKTX2);
 
 	for (uint32_t i = 0; i != 1; ++i) 
     {
