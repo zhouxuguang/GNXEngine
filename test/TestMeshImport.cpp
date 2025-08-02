@@ -98,9 +98,6 @@ int main(int argc, char* argv[])
 
 	AssetProcess::AssetImporter assetImporter;
 	assetImporter.ImportFromFile(modelPath, filePath.parent_path().string());
-
-	// 这个是ktx2格式的轻量级的库
-	// https://github.com/DeanoC/tiny_ktx/tree/master
     
     imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
     filePath = (currentPath/fs::path("backpack/diffuse.jpg")).lexically_normal();
