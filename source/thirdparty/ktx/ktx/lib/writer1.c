@@ -60,7 +60,7 @@ lcm4(uint32_t a)
     return (a*4) / gcd(a, 4);
 }
 
-#if OS_WINDOWS
+#ifdef _WIN32
 
 static char* strnstr(const char* haystack, const char* needle, size_t len)
 {

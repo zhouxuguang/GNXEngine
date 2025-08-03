@@ -75,7 +75,7 @@ bool CreateGUID(GUID *guid)
         return false;
     }
     
-	return CoCreateGuid(guid) == S_OK;
+	return CoCreateGuid((::GUID*)guid) == S_OK;
 }
 
 #else

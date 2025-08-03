@@ -22,6 +22,7 @@
 #include <time.h>
 #include <stddef.h>
 #include <fcntl.h>
+#include <array>
 #include <string>
 #include <vector>
 #include <list>
