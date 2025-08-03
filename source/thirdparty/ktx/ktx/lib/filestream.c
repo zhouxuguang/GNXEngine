@@ -272,9 +272,9 @@ KTX_error_code ktxFileStream_setpos(ktxStream* str, ktx_off_t pos)
         return KTX_INVALID_OPERATION;
 
     if (fseeko(str->data.file, pos, SEEK_SET) < 0)
-            return KTX_FILE_SEEK_ERROR;
+        return KTX_FILE_SEEK_ERROR;
     else
-            return KTX_SUCCESS;
+        return KTX_SUCCESS;
 }
 
 /**
