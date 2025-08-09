@@ -43,6 +43,9 @@ public:
     
     //是否可执行
     static bool IsExecutable(const std::string &strFileName);
+
+    //获得文件所在的路径
+    static std::string GetParentPath(const std::string& strFileName);
     
     //获得文件大小
     static int64_t GetFileSize(const std::string &strFileName);

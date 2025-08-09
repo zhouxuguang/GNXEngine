@@ -190,6 +190,16 @@ bool FileUtil::IsExecutable(const std::string &strFileName)
 #endif
 }
 
+std::string FileUtil::GetParentPath(const std::string& strFileName)
+{
+    fs::path file_path = strFileName;
+
+	// 获取所在目录
+	fs::path parent_dir = file_path.parent_path();
+
+    return parent_dir.string();
+}
+
 int64_t FileUtil::GetFileSize(const std::string &strFileName)
 {
     return fs::file_size(strFileName);
