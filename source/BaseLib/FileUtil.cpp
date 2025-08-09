@@ -22,6 +22,7 @@
 #  include <fcntl.h>
 #  include <string.h>
 #endif
+#include <fstream>
 
 #ifndef WIN32
 
@@ -191,33 +192,7 @@ bool FileUtil::IsExecutable(const std::string &strFileName)
 
 int64_t FileUtil::GetFileSize(const std::string &strFileName)
 {
-    struct stat sbuf;
-    
-    //还有点问题
-    
-#ifndef __BORLANDC__
-    if (stat(strFileName.c_str(), &sbuf) == 0)
-    {
-        return (int64_t)sbuf.st_size;
-    }
-    else
-    {
-//        std::ifstream in(strFileName.c_str());
-//        if(in)
-//        {
-//            in.seekg(SEEK_END);
-//            return (int64_t)in.tellg();
-//        }
-    }
-#else
-    ifstream in(strFileName.c_str());
-    if(in)
-    {
-        in.seekg(SEEK_END);
-        return (int64_t)in.tellg();
-    }
-#endif
-    return 0;
+    return fs::file_size(strFileName);
 }
 
 bool FileUtil::IsRelative(const std::string &strFileName)
@@ -291,85 +266,72 @@ bool FileUtil::MakeDirectory(const std::string &directoryPath)
     {
         return false;
     }
-    
-//    struct stat64 stbuf;
-//#ifdef OSG_USE_UTF8_FILENAME
-//    if( _wstat64( OSGDB_STRING_TO_FILENAME(path).c_str(), &stbuf ) == 0 )
-//#else
-//        if( stat64( path.c_str(), &stbuf ) == 0 )
-//#endif
-//        {
-//            if( S_ISDIR(stbuf.st_mode))
-//                return true;
-//            else
-//            {
-//                OSG_DEBUG << "osgDB::makeDirectory(): "  <<
-//                path << " already exists and is not a directory!" << std::endl;
-//                return false;
-//            }
-//        }
-//
-//    std::string dir = path;
-//    std::stack<std::string> paths;
-//    while( true )
-//    {
-//        if( dir.empty() )
-//            break;
-//
-//#ifdef OSG_USE_UTF8_FILENAME
-//        if( _wstat64( OSGDB_STRING_TO_FILENAME(dir).c_str(), &stbuf ) < 0 )
-//#else
-//            if( stat64( dir.c_str(), &stbuf ) < 0 )
-//#endif
-//            {
-//                switch( errno )
-//                {
-//                    case ENOENT:
-//                    case ENOTDIR:
-//                        paths.push( dir );
-//                        break;
-//
-//                    default:
-//                        OSG_DEBUG << "osgDB::makeDirectory(): "  << strerror(errno) << std::endl;
-//                        return false;
-//                }
-//            }
-//        dir = osgDB::getFilePath(std::string(dir));
-//    }
-//
-//    while( !paths.empty() )
-//    {
-//        std::string dir = paths.top();
-//
-//#if defined(WIN32)
-//        //catch drive name
-//        if (dir.size() == 2 && dir.c_str()[1] == ':') {
-//            paths.pop();
-//            continue;
-//        }
-//#endif
-//
-//#ifdef OSG_USE_UTF8_FILENAME
-//        if ( _wmkdir(OSGDB_STRING_TO_FILENAME(dir).c_str())< 0 )
-//#else
-//            if( mkdir( dir.c_str(), 0755 )< 0 )
-//#endif
-//            {
-//                if (osgDB::fileExists(dir))
-//                {
-//                    OE_DEBUG << "Attempt to create directory that already exists " << dir << std::endl;
-//                }
-//                else
-//                {
-//                    OSG_DEBUG << "osgDB::makeDirectory(): "  << strerror(errno) << std::endl;
-//                    return false;
-//                }
-//            }
-//        paths.pop();
-//    }
-//    return true;
-    
-    return false;
+
+    std::error_code ec;
+    fs::create_directories(directoryPath, ec);
+    return !ec;
+}
+
+std::vector<uint8_t> FileUtil::ReadBinaryFile(const std::string& path)
+{
+	if (!IsFile(path)) return {};
+
+	// 打开文件并定位到末尾
+	std::ifstream file(path, std::ios::binary | std::ios::ate);
+	if (!file.is_open()) return {};
+
+	// 获取文件大小
+	size_t size = static_cast<size_t>(file.tellg());
+	if (size == 0) return {};
+
+	// 创建足够容纳文件的向量
+	std::vector<uint8_t> buffer(size);
+
+	// 回到文件开头并读取内容
+	file.seekg(0);
+	if (!file.read(reinterpret_cast<char*>(buffer.data()), size))
+	{
+		return {}; // 读取失败
+	}
+
+	return buffer;
+}
+
+bool FileUtil::WriteBinaryFile(const std::string& path, const void* data, size_t size) 
+{
+	if (size == 0 || nullptr == data)
+	{
+		return false; // 避免创建0字节文件
+	}
+
+	// 确保目录存在
+	auto dir = fs::path(path).parent_path();
+	if (!dir.empty() && !fs::exists(dir))
+	{
+		if (!MakeDirectory(dir.string()))
+		{
+			return false;
+		}
+	}
+
+	// 以二进制模式写入
+	std::ofstream file(path, std::ios::binary);
+	if (!file.is_open())
+	{
+		return false;
+	}
+
+	if (!file.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(size)))
+	{
+		return false;
+	}
+
+	return file.good();
+}
+
+bool FileUtil::WriteBinaryFile(const std::string& path, const std::vector<uint8_t>& data)
+{
+    return WriteBinaryFile(path, data.data(), data.size());
 }
 
 NS_BASELIB_END

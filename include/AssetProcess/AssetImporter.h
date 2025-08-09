@@ -2,6 +2,7 @@
 #define GNX_ENGINE_ASSET_IMPORTER_INCLUDE_SGMDFGNJ
 
 #include "AssetProcessDefine.h"
+#include "BaseLib/BaseLib.h"
 
 NS_ASSETPROCESS_BEGIN
 
@@ -18,6 +19,8 @@ public:
 private:
 	
 };
+
+baselib::GUID CreateGUIDFromBinaryData(const uint8_t* data, size_t size);
 
 NS_ASSETPROCESS_END
 

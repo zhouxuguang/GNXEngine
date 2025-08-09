@@ -87,6 +87,14 @@ std::string getAssetsDir()
 	return path.string();
 }
 
+std::string GetProjectAssetDir()
+{
+	fs::path path = __FILE__;
+	fs::path parentDir = path.parent_path();
+	path = (parentDir / fs::path("../../data_asset/")).lexically_normal();
+	return path.string();
+}
+
 bool EnsurePathExists(const fs::path& path) 
 {
 	if (fs::exists(path)) 

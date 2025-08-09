@@ -1,5 +1,6 @@
 #include "AssimpAssetImporter.h"
 #include "AssimpMeshImporter.h"
+#include "BaseLib/BaseLib.h"
 
 NS_ASSETPROCESS_BEGIN
 
@@ -13,6 +14,16 @@ AssimpAssetImporter::~AssimpAssetImporter()
 
 bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std::string& saveDir)
 {
+	std::vector<uint8_t> data = baselib::FileUtil::ReadBinaryFile(fileName);
+	if (data.empty())
+	{
+		return false;
+	}
+
+	// 计算GUID
+	baselib::GUID guid = CreateGUIDFromBinaryData(data.data(), data.size());
+	std::string guidStr = baselib::GUIDToString(guid);
+
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(fileName.c_str(),
 		aiProcess_SplitLargeMeshes |
@@ -42,7 +53,7 @@ bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std:
 	{
 		// 导入mesh
 		AssimpMeshImporter assimpMeshImport(scene, saveDir);
-		assimpMeshImport.LoadMesh();
+		assimpMeshImport.LoadMesh(guid);
 	}
 
 	if (scene->HasTextures())

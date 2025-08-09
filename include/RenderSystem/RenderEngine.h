@@ -18,6 +18,8 @@ std::string getMediaDir();
 
 std::string getAssetsDir();
 
+std::string GetProjectAssetDir();
+
 bool EnsurePathExists(const fs::path& path);
 
 #endif /* RenderEngine_hpp */

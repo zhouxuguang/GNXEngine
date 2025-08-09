@@ -22,7 +22,7 @@ BASELIB_API bool CreateGUID(GUID *guid);
 BASELIB_API struct GUID CreateGUIDFromBytes(const uint8_t* pBytes);
 
 //GUID转字符串
-BASELIB_API bool GUIDToString(const GUID *guid, std::string& buf);
+BASELIB_API std::string GUIDToString(const GUID &guid);
 
 //guid是否相等
 BASELIB_API bool IsGUIDEqual(const GUID &guid1, const GUID& guid2);

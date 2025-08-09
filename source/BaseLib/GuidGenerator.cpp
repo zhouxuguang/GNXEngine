@@ -111,27 +111,18 @@ struct GUID CreateGUIDFromBytes(const uint8_t* pBytes)
     return guid;
 }
 
-bool GUIDToString(const GUID *guid, std::string& bufStr)
+std::string GUIDToString(const GUID &guid)
 {
-    if (NULL == guid)
-    {
-        return false;
-    }
-    
 	size_t nLen = GUIDStringLength;
+    std::string bufStr;
 	bufStr.resize(nLen + 1);
 	int num = snprintf((char *)bufStr.c_str(), nLen + 1, GUIDFormatString,
-		guid->Data1, guid->Data2, guid->Data3,
-		GUIDGenerator::BytesToUInt32(&(guid->Data4[0])),
-		GUIDGenerator::BytesToUInt32(&(guid->Data4[4])));
-
-	if (num != GUIDStringLength)
-    {
-        return false;
-    }
+		guid.Data1, guid.Data2, guid.Data3,
+		GUIDGenerator::BytesToUInt32(&(guid.Data4[0])),
+		GUIDGenerator::BytesToUInt32(&(guid.Data4[4])));
 
 	bufStr[num] = '\0';
-	return true;
+    return bufStr;
 }
 
 bool IsGUIDEqual(const GUID &guid1, const GUID& guid2)
