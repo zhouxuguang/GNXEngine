@@ -25,7 +25,7 @@ bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std:
 	std::string ktxfile = parentDir + ".ktx";
 
 	// 计算GUID
-	baselib::GUID guid = CreateGUIDFromBinaryData(data.data(), data.size());
+	baselib::NXGUID guid = CreateGUIDFromBinaryData(data.data(), data.size());
 	std::string guidStr = baselib::GUIDToString(guid);
 
 	size_t n = guidStr.length();

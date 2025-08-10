@@ -208,7 +208,7 @@ bool ImageImporter::Load()
 	}
 
 	// 计算GUID
-	baselib::GUID guid = CreateGUIDFromBinaryData(data.data(), data.size());
+	baselib::NXGUID guid = CreateGUIDFromBinaryData(data.data(), data.size());
 	std::string guidStr = baselib::GUIDToString(guid);
 
 	imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();

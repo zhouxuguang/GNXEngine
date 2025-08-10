@@ -47,7 +47,7 @@ public:
 		bytes[3] = (n >> 24) & 0xff;
 	}
 
-	static bool CreateGUID(GUID *guid) 
+	static bool CreateGUID(NXGUID *guid) 
 	{
         if (NULL == guid)
         {
@@ -68,7 +68,7 @@ public:
 
 #include <Windows.h> 
 
-bool CreateGUID(GUID *guid)
+bool CreateGUID(NXGUID *guid)
 {
     if (NULL == guid)
     {
@@ -104,14 +104,14 @@ bool CreateGUID(GUID *guid)
 
 #endif
 
-struct GUID CreateGUIDFromBytes(const uint8_t* pBytes)
+struct NXGUID CreateGUIDFromBytes(const uint8_t* pBytes)
 {
-    GUID guid;
+    NXGUID guid;
     memcpy(&guid, pBytes, 16);
     return guid;
 }
 
-std::string GUIDToString(const GUID &guid)
+std::string GUIDToString(const NXGUID &guid)
 {
 	size_t nLen = GUIDStringLength;
     std::string bufStr;
@@ -125,9 +125,9 @@ std::string GUIDToString(const GUID &guid)
     return bufStr;
 }
 
-bool IsGUIDEqual(const GUID &guid1, const GUID& guid2)
+bool IsGUIDEqual(const NXGUID &guid1, const NXGUID& guid2)
 {
-    return 0 == memcmp(&guid1, &guid2, sizeof(GUID));
+    return 0 == memcmp(&guid1, &guid2, sizeof(NXGUID));
 }
 
 NS_BASELIB_END

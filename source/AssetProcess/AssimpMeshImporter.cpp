@@ -12,7 +12,7 @@ AssimpMeshImporter::~AssimpMeshImporter()
 {
 }
 
-void AssimpMeshImporter::LoadMesh(const baselib::GUID& guid)
+void AssimpMeshImporter::LoadMesh(const baselib::NXGUID& guid)
 {
 	getVertexCountAndLayout(mScene->mRootNode, mScene);
 	processMeshVertex(mScene);

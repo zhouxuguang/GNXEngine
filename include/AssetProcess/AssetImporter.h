@@ -20,7 +20,7 @@ private:
 	
 };
 
-baselib::GUID CreateGUIDFromBinaryData(const uint8_t* data, size_t size);
+baselib::NXGUID CreateGUIDFromBinaryData(const uint8_t* data, size_t size);
 
 NS_ASSETPROCESS_END
 

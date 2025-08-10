@@ -50,7 +50,7 @@ bool AssetImporter::ImportFromFile(const std::string& fileName, const std::strin
 	}
 }
 
-baselib::GUID CreateGUIDFromBinaryData(const uint8_t* data, size_t size)
+baselib::NXGUID CreateGUIDFromBinaryData(const uint8_t* data, size_t size)
 {
 	baselib::SHA256 sha;
 	sha.update(data, size);

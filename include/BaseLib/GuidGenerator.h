@@ -7,7 +7,7 @@
 
 NS_BASELIB_BEGIN
 
-struct GUID
+struct NXGUID
 {
     uint32_t Data1;
     uint16_t Data2;
@@ -16,16 +16,16 @@ struct GUID
 };
 
 //创建GUID
-BASELIB_API bool CreateGUID(GUID *guid);
+BASELIB_API bool CreateGUID(NXGUID *guid);
 
 //从内存创建
-BASELIB_API struct GUID CreateGUIDFromBytes(const uint8_t* pBytes);
+BASELIB_API struct NXGUID CreateGUIDFromBytes(const uint8_t* pBytes);
 
 //GUID转字符串
-BASELIB_API std::string GUIDToString(const GUID &guid);
+BASELIB_API std::string GUIDToString(const NXGUID &guid);
 
 //guid是否相等
-BASELIB_API bool IsGUIDEqual(const GUID &guid1, const GUID& guid2);
+BASELIB_API bool IsGUIDEqual(const NXGUID &guid1, const NXGUID& guid2);
 
 NS_BASELIB_END
 
