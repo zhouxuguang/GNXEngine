@@ -165,6 +165,7 @@ std::vector<uint8_t> CreateKTXFormatData(imagecodec::VImagePtr image, bool gener
 	uint32_t h = height;
 
 	uint8_t* pTmpData = (uint8_t*)baselib::AlignedMalloc(width * height * image->GetBytesPerPixels() * 2, 64);
+	uint8_t* pFormatData = (uint8_t*)baselib::AlignedMalloc(width * height * image->GetBytesPerPixels() * 2, 64);
 
 	for (uint32_t i = 0; i != numMipLevels; ++i)
 	{
@@ -173,13 +174,30 @@ std::vector<uint8_t> CreateKTXFormatData(imagecodec::VImagePtr image, bool gener
 
 		stbir_resize_uint8_linear(
 			(const unsigned char*)image->GetPixels(), width, height, 0, pTmpData, w, h, 0, ktxFormat.stbLayout);
-		CompressTexture(pTmpData, w, h, ktxTexture_GetData(ktxTexture(textureKTX1)) + offset, ktxFormat.vkFormat);
+
+		uint8_t* pDestImage = pTmpData;
+
+		if (image->GetFormat() == imagecodec::FORMAT_RGB8 || image->GetFormat() == imagecodec::FORMAT_SRGB8)
+		{
+			uint32_t pixelCount = w * h;
+			for (uint32_t i = 0; i < pixelCount; i++)
+			{
+				pFormatData[i * 4 + 0] = pTmpData[i * 3 + 0];
+				pFormatData[i * 4 + 1] = pTmpData[i * 3 + 1];
+				pFormatData[i * 4 + 2] = pTmpData[i * 3 + 2];
+				pFormatData[i * 4 + 3] = 255;
+			}
+			pDestImage = pFormatData;
+		}
+
+		CompressTexture(pDestImage, w, h, ktxTexture_GetData(ktxTexture(textureKTX1)) + offset, ktxFormat.vkFormat);
 
 		h = h > 1 ? h >> 1 : 1;
 		w = w > 1 ? w >> 1 : 1;
 	}
 
 	baselib::AlignedFree(pTmpData);
+	baselib::AlignedFree(pFormatData);
 
 
 	//std::string fileName = guidStr + ".ktx";
