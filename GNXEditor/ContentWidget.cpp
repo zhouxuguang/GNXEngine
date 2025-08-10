@@ -1,6 +1,7 @@
 #include "ContentWidget.h"
 #include <QPushButton>
 #include <QFileDialog>
+#include <QSettings>
 
 #include "ImageCodec/ImageDecoder.h"
 #include "AssetProcess/AssetImporter.h"
@@ -89,13 +90,40 @@ void ContentWidget::showContextMenu(const QPoint& pos)
 
 void ContentWidget::OpenImportAssetDialog()
 {
+	// 读取历史记录
+	QSettings settings("GNXEngine", "GNXEngine");
+	QStringList history = settings.value("FileDialogHistory").toStringList();
+	QString lastDir = history.isEmpty() ? QDir::homePath() : history.first();
+
 	// 使用 QFileDialog::getOpenFileName 显示文件打开对话框
 	QString filePath = QFileDialog::getOpenFileName(
 		this,
 		"导入资产",          // 对话框标题
-		QDir::homePath(),       // 默认目录
+		lastDir,       // 默认目录
 		"模型文件 (*.obj *.fbx *.gltf *.glb);;图像文件 (*.png *.jpg *.bmp *.tga *.hdr *.webp)" // 文件过滤器
 	);
+
+	if (!filePath.isEmpty())
+	{
+		// 更新历史记录
+		QFileInfo fileInfo(filePath);
+		QString dirPath = fileInfo.absolutePath();
+
+		// 移重复项并添加到开头
+		history.removeAll(dirPath);
+		history.prepend(dirPath);
+
+		// 限制历史记录数量
+		while (history.size() > 10) 
+		{
+			history.removeLast();
+		}
+
+		// 保存历史
+		settings.setValue("FileDialogHistory", history);
+	}
+
+	
 
 	//选择了文件，进行导入操作
 	if (!filePath.isEmpty())
