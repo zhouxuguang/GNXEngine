@@ -76,3 +76,11 @@ enum VertexDataFormat
     VertexDataFormatHalfFloat3 = 42;
     VertexDataFormatHalfFloat4 = 43;
 };
+
+//数据的压缩方式
+enum CompressType 
+{
+    NONE = 0;
+    ZLIB = 1;
+    LZ4 = 2;
+};

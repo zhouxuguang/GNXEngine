@@ -75,6 +75,13 @@ typedef enum _VertexDataFormat {
     VertexDataFormat_VertexDataFormatHalfFloat4 = 43
 } VertexDataFormat;
 
+/* 数据的压缩方式 */
+typedef enum _CompressType {
+    CompressType_NONE = 0,
+    CompressType_ZLIB = 1,
+    CompressType_LZ4 = 2
+} CompressType;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -95,6 +102,10 @@ extern "C" {
 #define _VertexDataFormat_MIN VertexDataFormat_VertexDataFormatInvalid
 #define _VertexDataFormat_MAX VertexDataFormat_VertexDataFormatHalfFloat4
 #define _VertexDataFormat_ARRAYSIZE ((VertexDataFormat)(VertexDataFormat_VertexDataFormatHalfFloat4+1))
+
+#define _CompressType_MIN CompressType_NONE
+#define _CompressType_MAX CompressType_LZ4
+#define _CompressType_ARRAYSIZE ((CompressType)(CompressType_LZ4+1))
 
 
 #ifdef __cplusplus

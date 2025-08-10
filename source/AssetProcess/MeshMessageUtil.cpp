@@ -3,57 +3,10 @@
 #include "pb_decode.h"
 #include "pb_encode.h"
 #include "MeshMessage.pb.h"
+#include "BaseLib/LogService.h"
+#include "PBUtils.h"
 
 NS_ASSETPROCESS_BEGIN
-
-bool nanopb_decode_gnx_bytes(pb_istream_t* stream, const pb_field_t* field, void** arg)
-{
-	if (*arg != NULL)
-	{
-		pb_bytes_array_t* pByteArray = (pb_bytes_array_t*)*arg;
-		if (pByteArray)
-		{
-			free(pByteArray);
-		}
-		pByteArray->size = 0;
-		*arg = NULL;
-	}
-
-	size_t alloc_size = stream->bytes_left;
-	pb_bytes_array_t* pByteArray = (pb_bytes_array_t*)malloc(PB_BYTES_ARRAY_T_ALLOCSIZE(alloc_size));
-	if (!pByteArray)
-		return false;
-
-	pByteArray->size = alloc_size;
-
-	bool status = pb_read(stream, pByteArray->bytes, pByteArray->size);
-	*arg = pByteArray;
-
-	return status;
-}
-
-bool nanopb_encode_gnx_bytes(pb_ostream_t* stream, const pb_field_t* field, void* const* arg)
-{
-	if (!*arg)
-	{
-		return true;
-	}
-
-	if (!pb_encode_tag_for_field(stream, field))
-		return false;
-
-	pb_bytes_array_t* pByteArray = (pb_bytes_array_t*)*arg;
-
-	// 这里要写入二进制的大小，要不然pb不知道这个二进制的大小
-	bool status = pb_encode_varint(stream, pByteArray->size);
-	if (!status)
-	{
-		return false;
-	}
-	status = pb_write(stream, pByteArray->bytes, pByteArray->size);
-
-	return status;
-}
 
 bool nanopb_encode_gnx_submeshinfo(pb_ostream_t* stream, const pb_field_t* field, void* const* arg) 
 {
@@ -179,7 +132,7 @@ bool MeshMessageUtil::DecodeMeshMessage(const uint8_t* pData, uint32_t dataSize,
 	pb_istream_t dec_stream = pb_istream_from_buffer(pData, dataSize);
 	if (!pb_decode(&dec_stream, MeshMessage_fields, &meshMessage))
 	{
-		printf("pb decode error in %s, error %s\n", __func__, dec_stream.errmsg);
+		LOG_INFO("pb decode error in %s, error %s\n", __func__, dec_stream.errmsg);
 		return false;
 	}
 
@@ -289,7 +242,7 @@ ByteVectorPtr MeshMessageUtil::EncodeMeshMessage(const Mesh* mesh)
 	if (!pb_encode(&enc_stream, MeshMessage_fields, &meshMessage))
 	{
 		//encode error happened
-		printf("pb encode error in %s [%s]\n", __func__, PB_GET_ERROR(&enc_stream));
+		LOG_INFO("pb encode error in %s [%s]\n", __func__, PB_GET_ERROR(&enc_stream));
 		buffer->clear();
 		return buffer;
 	}
