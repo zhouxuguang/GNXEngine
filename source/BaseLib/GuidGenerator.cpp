@@ -121,7 +121,7 @@ std::string GUIDToString(const GUID &guid)
 		GUIDGenerator::BytesToUInt32(&(guid.Data4[0])),
 		GUIDGenerator::BytesToUInt32(&(guid.Data4[4])));
 
-	bufStr[num] = '\0';
+    bufStr.resize(num);
     return bufStr;
 }
 

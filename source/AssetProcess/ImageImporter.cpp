@@ -1,6 +1,9 @@
 #include "ImageImporter.h"
 #include "AssetImporter.h"
 #include "ktx.h"
+#include "imagecodec/ImageUtil.h"
+#include "TextureProcess/stb_image_resize2.h"
+#include "DXTCompressor.h"
 
 NS_ASSETPROCESS_BEGIN
 
@@ -8,6 +11,7 @@ struct KTXFormat
 {
 	uint32_t glInternalformat;
 	uint32_t vkFormat;
+	stbir_pixel_layout stbLayout;
 };
 
 //FORMAT_GRAY8 = 0,            //gray
@@ -69,33 +73,39 @@ static const uint32_t VK_FORMAT_BC7_SRGB_BLOCK = 146;
 // 创建导入的格式信息
 KTXFormat CreateImportedKTXFormat(uint32_t imageFormat)
 {
-	KTXFormat ktxFormat;
+	KTXFormat ktxFormat = {};
 #if TARGET_X86_64
 	switch (imageFormat)
 	{
 	case imagecodec::FORMAT_GRAY8:
 		ktxFormat.glInternalformat = GL_COMPRESSED_RED_RGTC1;
 		ktxFormat.vkFormat = VK_FORMAT_BC4_UNORM_BLOCK;
+		ktxFormat.stbLayout = STBIR_1CHANNEL;
 		break;
 	case imagecodec::FORMAT_GRAY8_ALPHA8:
 		ktxFormat.glInternalformat = GL_COMPRESSED_RG_RGTC2;
 		ktxFormat.vkFormat = VK_FORMAT_BC5_UNORM_BLOCK;
+		ktxFormat.stbLayout = STBIR_2CHANNEL;
 		break;
 	case imagecodec::FORMAT_RGBA8:
 		ktxFormat.glInternalformat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
-		ktxFormat.vkFormat = VK_FORMAT_BC3_UNORM_BLOCK;
+		ktxFormat.vkFormat = VK_FORMAT_BC7_UNORM_BLOCK;
+		ktxFormat.stbLayout = STBIR_RGBA;
 		break;
 	case imagecodec::FORMAT_RGB8:
 		ktxFormat.glInternalformat = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
 		ktxFormat.vkFormat = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+		ktxFormat.stbLayout = STBIR_RGB;
 		break;
 	case imagecodec::FORMAT_SRGB8_ALPHA8:
 		ktxFormat.glInternalformat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
-		ktxFormat.vkFormat = VK_FORMAT_BC3_SRGB_BLOCK;
+		ktxFormat.vkFormat = VK_FORMAT_BC7_SRGB_BLOCK;
+		ktxFormat.stbLayout = STBIR_RGBA;
 		break;
 	case imagecodec::FORMAT_SRGB8:
 		ktxFormat.glInternalformat = GL_COMPRESSED_SRGB_S3TC_DXT1_EXT;
 		ktxFormat.vkFormat = VK_FORMAT_BC1_RGB_SRGB_BLOCK;
+		ktxFormat.stbLayout = STBIR_RGB;
 		break;
 	case imagecodec::FORMAT_RGBA32Float:
 		ktxFormat.glInternalformat = GL_RGBA32F;
@@ -111,33 +121,68 @@ KTXFormat CreateImportedKTXFormat(uint32_t imageFormat)
 	return ktxFormat;
 }
 
-std::vector<uint8_t> CreateKTXFormatData(imagecodec::VImagePtr image, bool generateMipmap)
+static void CompressTexture(const uint8_t* imageData, uint32_t width, uint32_t height, uint8_t* pDest, uint32_t vkFormat)
+{
+	if (vkFormat == VK_FORMAT_BC1_RGB_UNORM_BLOCK || vkFormat == VK_FORMAT_BC1_RGB_SRGB_BLOCK)
+	{
+		CompressDXT1_ISPC(pDest, imageData, width, height, width * 3);
+	}
+	if (vkFormat == VK_FORMAT_BC7_UNORM_BLOCK || vkFormat == VK_FORMAT_BC7_SRGB_BLOCK)
+	{
+		CompressBC7(pDest, imageData, width, height, width * 4);
+	}
+}
+
+std::vector<uint8_t> CreateKTXFormatData(imagecodec::VImagePtr image, bool generateMipmap, const std::string & guidStr)
 {
 	KTXFormat ktxFormat = CreateImportedKTXFormat(image->GetFormat());
+
+	uint32_t width = image->GetWidth();
+	uint32_t height = image->GetHeight();
+
+	uint32_t numMipLevels = 1;
+	if (generateMipmap)
+	{
+		numMipLevels = imagecodec::ImageUtil::CalcNumMipLevels(width, height);
+	}
+
 	ktxTextureCreateInfo createInfoKTX = {};
 	createInfoKTX.glInternalformat = ktxFormat.glInternalformat;
 	createInfoKTX.vkFormat = ktxFormat.vkFormat;
-	createInfoKTX.baseWidth = (uint32_t)image->GetWidth();
-	createInfoKTX.baseHeight = (uint32_t)image->GetHeight();
+	createInfoKTX.baseWidth = width;
+	createInfoKTX.baseHeight = height;
 	createInfoKTX.baseDepth = 1u;
 	createInfoKTX.numDimensions = 2u;
-	createInfoKTX.numLevels = 1;
+	createInfoKTX.numLevels = numMipLevels;
 	createInfoKTX.numLayers = 1u;
 	createInfoKTX.numFaces = 1u;
-	createInfoKTX.generateMipmaps = generateMipmap;
+	createInfoKTX.generateMipmaps = KTX_FALSE;
 	ktxTexture1* textureKTX1 = nullptr;
 	ktxTexture1_Create(&createInfoKTX, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &textureKTX1);
 
-	for (uint32_t i = 0; i != 1; ++i)
+	uint32_t w = width;
+	uint32_t h = height;
+
+	uint8_t* pTmpData = new uint8_t[width * height * image->GetBytesPerPixels()];
+
+	for (uint32_t i = 0; i != numMipLevels; ++i)
 	{
 		size_t offset = 0;
 		ktxTexture_GetImageOffset(ktxTexture(textureKTX1), i, 0, 0, &offset);
 
-		uint8_t* pDst = ktxTexture_GetData(ktxTexture(textureKTX1)) + offset;
-		memcpy(pDst, image->GetPixels(), image->GetWidth() * image->GetHeight() * 4);
+		stbir_resize_uint8_linear(
+			(const unsigned char*)image->GetPixels(), width, height, 0, pTmpData, w, h, 0, ktxFormat.stbLayout);
+		CompressTexture(pTmpData, w, h, ktxTexture_GetData(ktxTexture(textureKTX1)) + offset, ktxFormat.vkFormat);
+
+		h = h > 1 ? h >> 1 : 1;
+		w = w > 1 ? w >> 1 : 1;
 	}
 
-	ktxTexture_WriteToNamedFile(ktxTexture(textureKTX1), "image1.ktx");
+	delete []pTmpData;
+
+
+	//std::string fileName = guidStr + ".ktx";
+	ktxTexture_WriteToNamedFile(ktxTexture(textureKTX1), guidStr.c_str());
 	ktxTexture_Destroy(ktxTexture(textureKTX1));
 
 	return std::vector<uint8_t>();
@@ -172,8 +217,11 @@ bool ImageImporter::Load()
 		return result;
 	}
 
+	fs::path currentPath = mSaveDir;
+	std::string fileName = guidStr + ".ktx";
+
 	//生成ktx的压缩格式以及保存一些元数据
-	std::vector<uint8_t> ktxData = CreateKTXFormatData(image, false);
+	std::vector<uint8_t> ktxData = CreateKTXFormatData(image, true, (currentPath / fileName).string());
 
 	//保存文件
 }

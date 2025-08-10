@@ -111,6 +111,8 @@ public:
     uint32_t GetHeight(int level = 0) const;
 
     uint32_t GetBytesPerRow() const;
+
+    uint32_t GetBytesPerPixels() const;
     
     bool HasPremultipliedAlpha() const;
     
@@ -166,6 +168,7 @@ private:
     uint32_t                    m_nEncodedWidth;        //压缩纹理编码后的宽
     uint32_t                    m_nEncodedHeight;       //压缩纹理编码后的高
     uint32_t                    m_nBytesPerRow;        //每个像素的字节数，根据m_eFormat决定
+    uint32_t                    m_nBytesPerPixels;      //每个像素多少个字节
     uint16_t                    m_mipCount;             //mipcount
     ImagePixelFormat            m_eFormat;               //数据格式
     bool                        m_bPremultipliedAlpha;   //是否预先乘以alpha

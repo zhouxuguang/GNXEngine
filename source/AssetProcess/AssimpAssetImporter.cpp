@@ -22,9 +22,13 @@ bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std:
 		return false;
 	}
 
+	std::string ktxfile = parentDir + ".ktx";
+
 	// 计算GUID
 	baselib::GUID guid = CreateGUIDFromBinaryData(data.data(), data.size());
 	std::string guidStr = baselib::GUIDToString(guid);
+
+	size_t n = guidStr.length();
 
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(fileName.c_str(),
@@ -87,12 +91,20 @@ bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std:
 		aiString diffuseMap;
 		material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuseMap);
 		printf("diffuse texname = %s\n", diffuseMap.C_Str());
+		{
+			ImageImporter imageImporter((parentDir + std::string("/") + std::string(diffuseMap.C_Str())).c_str(), saveDir);
+			imageImporter.Load();
+		}
 
 		aiString baseColorMap;
 		material->GetTexture(AI_MATKEY_BASE_COLOR_TEXTURE, &baseColorMap);
 		
 		aiString normalMap;
 		material->Get(AI_MATKEY_TEXTURE_NORMALS(0), normalMap);
+		{
+			ImageImporter imageImporter((parentDir + std::string("/") + std::string(normalMap.C_Str())).c_str(), saveDir);
+			imageImporter.Load();
+		}
 		
 		
 		//加载metallic贴图
