@@ -4,6 +4,7 @@
 #include "imagecodec/ImageUtil.h"
 #include "TextureProcess/stb_image_resize2.h"
 #include "DXTCompressor.h"
+#include "BaseLib/AlignedMalloc.h"
 
 NS_ASSETPROCESS_BEGIN
 
@@ -88,7 +89,7 @@ KTXFormat CreateImportedKTXFormat(uint32_t imageFormat)
 		ktxFormat.stbLayout = STBIR_2CHANNEL;
 		break;
 	case imagecodec::FORMAT_RGBA8:
-		ktxFormat.glInternalformat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+		ktxFormat.glInternalformat = GL_COMPRESSED_RGBA_BPTC_UNORM;
 		ktxFormat.vkFormat = VK_FORMAT_BC7_UNORM_BLOCK;
 		ktxFormat.stbLayout = STBIR_RGBA;
 		break;
@@ -98,7 +99,7 @@ KTXFormat CreateImportedKTXFormat(uint32_t imageFormat)
 		ktxFormat.stbLayout = STBIR_RGB;
 		break;
 	case imagecodec::FORMAT_SRGB8_ALPHA8:
-		ktxFormat.glInternalformat = GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT;
+		ktxFormat.glInternalformat = GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM;
 		ktxFormat.vkFormat = VK_FORMAT_BC7_SRGB_BLOCK;
 		ktxFormat.stbLayout = STBIR_RGBA;
 		break;
@@ -125,7 +126,7 @@ static void CompressTexture(const uint8_t* imageData, uint32_t width, uint32_t h
 {
 	if (vkFormat == VK_FORMAT_BC1_RGB_UNORM_BLOCK || vkFormat == VK_FORMAT_BC1_RGB_SRGB_BLOCK)
 	{
-		CompressDXT1_ISPC(pDest, imageData, width, height, width * 3);
+		CompressDXT1(pDest, imageData, width, height, width * 4);
 	}
 	if (vkFormat == VK_FORMAT_BC7_UNORM_BLOCK || vkFormat == VK_FORMAT_BC7_SRGB_BLOCK)
 	{
@@ -163,7 +164,7 @@ std::vector<uint8_t> CreateKTXFormatData(imagecodec::VImagePtr image, bool gener
 	uint32_t w = width;
 	uint32_t h = height;
 
-	uint8_t* pTmpData = new uint8_t[width * height * image->GetBytesPerPixels()];
+	uint8_t* pTmpData = (uint8_t*)baselib::AlignedMalloc(width * height * image->GetBytesPerPixels() * 2, 64);
 
 	for (uint32_t i = 0; i != numMipLevels; ++i)
 	{
@@ -178,7 +179,7 @@ std::vector<uint8_t> CreateKTXFormatData(imagecodec::VImagePtr image, bool gener
 		w = w > 1 ? w >> 1 : 1;
 	}
 
-	delete []pTmpData;
+	baselib::AlignedFree(pTmpData);
 
 
 	//std::string fileName = guidStr + ".ktx";
@@ -221,7 +222,7 @@ bool ImageImporter::Load()
 	std::string fileName = guidStr + ".ktx";
 
 	//生成ktx的压缩格式以及保存一些元数据
-	std::vector<uint8_t> ktxData = CreateKTXFormatData(image, true, (currentPath / fileName).string());
+	std::vector<uint8_t> ktxData = CreateKTXFormatData(image, false, (currentPath / fileName).string());
 
 	//保存文件
 }
