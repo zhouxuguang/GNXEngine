@@ -15,7 +15,7 @@ void CompressASTC(uint8_t* result, const uint8_t* input, uint32_t width, uint32_
     srcData.ptr = (uint8_t*)input;
     
     rgba_surface fillboderData;
-    fill_borders(&fillboderData, &srcData, blockWidth, blockHeight);
+    fill_borders(&fillboderData, &srcData, blockWidth, blockHeight, 32);
     
     astc_enc_settings astcSettings;
     GetProfile_astc_alpha_fast(&astcSettings, blockWidth, blockHeight);

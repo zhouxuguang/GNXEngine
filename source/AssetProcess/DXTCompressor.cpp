@@ -17,7 +17,7 @@ void CompressDXT1_ISPC(uint8_t* result, const uint8_t* input, uint32_t width, ui
 	srcData.ptr = (uint8_t*)input;
 
 	rgba_surface fillboderData;
-	fill_borders(&fillboderData, &srcData, 4, 4);
+	fill_borders(&fillboderData, &srcData, 4, 4, 32);
 
 	CompressBlocksBC1(&fillboderData, result);
 	free(fillboderData.ptr);
@@ -42,7 +42,7 @@ void CompressBC7(uint8_t* result, const uint8_t* input, uint32_t width, uint32_t
 	srcData.ptr = (uint8_t*)input;
 
 	rgba_surface fillboderData;
-	fill_borders(&fillboderData, &srcData, 4, 4);
+	fill_borders(&fillboderData, &srcData, 4, 4, 32);
 
     bc7_enc_settings settings;
     GetProfile_alpha_veryfast(&settings);
