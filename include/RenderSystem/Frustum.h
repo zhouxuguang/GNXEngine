@@ -30,9 +30,9 @@ public:
     bool initFrustum(const Matrix4x4<T>& comboMatrix);
 
     /**
-     * 判断AABB和视锥体的关系
+     * 判断AABB和视锥体的关系，判断AABB是否在Frustum内
      */
-    bool isOutOfFrustum(const AxisAlignedBox<T>& aabb) const;
+    bool IsBoxInFrustum(const AxisAlignedBox<T>& aabb) const;
 
     /**
      * 判断OBB和视锥体的关系
@@ -45,7 +45,8 @@ private:
      */
     void createPlane(const Matrix4x4<T>& comboMatrix);
 
-    Plane<T> mPlane[6];             // 裁剪平面, left, right, top, bottom, near, far
+    Vector4<T> mPlane[6];             // 裁剪平面, left, right, top, bottom, near, far
+    Vector4<T> mFrustumCorners[8];
     bool mInitialized = false;
 };
 

@@ -67,7 +67,7 @@ public:
     
     //操作符重载
     Vector3<T> operator * ( const Vector3<T> &v ) const;
-    Vector4<T> operator * (const Vector4<T>& other);
+    Vector4<T> operator * (const Vector4<T>& other) const;
 
     Matrix4x4 operator * (const Matrix4x4& other);
     

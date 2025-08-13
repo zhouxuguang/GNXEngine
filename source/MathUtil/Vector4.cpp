@@ -104,6 +104,12 @@ Vector4<T>& Vector4<T>::operator=(const Vector3<T>& rhs)
 	return *this;
 }
 
+template <typename T>
+T Vector4<T>::DotProduct(const Vector4 &a, const Vector4 &b)
+{
+    return a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w;
+}
+
 template class Vector4<float>;
 template class Vector4<double>;
 

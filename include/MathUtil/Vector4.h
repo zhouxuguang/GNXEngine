@@ -127,6 +127,8 @@ public:
 		return Vector3<T>(x, y, z);
 	}
 
+	static T DotProduct(const Vector4 &a, const Vector4 &b);
+
 public:
 	T x, y, z, w;
 };

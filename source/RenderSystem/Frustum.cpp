@@ -95,24 +95,83 @@ int FrustumAABBIntersect(const Plane<T>* planes, const Vector3<T>& mins, const V
 }
 
 template<typename T>
-bool Frustum<T>::isOutOfFrustum(const AxisAlignedBox<T>& aabb) const
+static inline void GetFrustumCorners(const Matrix4x4<T> viewProj, Vector4<T>* points)
+{
+	const Vector4<T> corners[] = { Vector4<T>(-1, -1, -1, 1), Vector4<T>(1, -1, -1, 1), Vector4<T>(1, 1, -1, 1), Vector4<T>(-1, 1, -1, 1),
+							 Vector4<T>(-1, -1, 1, 1),  Vector4<T>(1, -1, 1, 1),  Vector4<T>(1, 1, 1, 1),  Vector4<T>(-1, 1, 1, 1) };
+
+	const Matrix4x4<T> invViewProj = viewProj.Inverse();
+
+	for (int i = 0; i != 8; i++)
+	{
+		const Vector4<T> q = invViewProj * corners[i];
+		points[i] = q / q.w;
+	}
+}
+
+template<typename T>
+static inline bool IsBoxInFrustumIMPL(const Vector4<T>* frustumPlanes, const Vector4<T>* frustumCorners, const AxisAlignedBox<T>& box)
+{
+	for (int i = 0; i < 6; i++) 
+	{
+		int r = 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.minimum.y, box.minimum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.minimum.y, box.minimum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.maximum.y, box.minimum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.maximum.y, box.minimum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.minimum.y, box.maximum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.minimum.y, box.maximum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.maximum.y, box.maximum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.maximum.y, box.maximum.z, 1.0)) < 0.0) ? 1 : 0;
+		if (r == 8)
+		{
+			return false;
+		}
+	}
+
+	// check frustum outside/inside box
+	int r = 0;
+	r = 0;
+	for (int i = 0; i < 8; i++)
+		r += ((frustumCorners[i].x > box.maximum.x) ? 1 : 0);
+	if (r == 8)
+		return false;
+	r = 0;
+	for (int i = 0; i < 8; i++)
+		r += ((frustumCorners[i].x < box.minimum.x) ? 1 : 0);
+	if (r == 8)
+		return false;
+	r = 0;
+	for (int i = 0; i < 8; i++)
+		r += ((frustumCorners[i].y > box.maximum.y) ? 1 : 0);
+	if (r == 8)
+		return false;
+	r = 0;
+	for (int i = 0; i < 8; i++)
+		r += ((frustumCorners[i].y < box.minimum.y) ? 1 : 0);
+	if (r == 8)
+		return false;
+	r = 0;
+	for (int i = 0; i < 8; i++)
+		r += ((frustumCorners[i].z > box.maximum.z) ? 1 : 0);
+	if (r == 8)
+		return false;
+	r = 0;
+	for (int i = 0; i < 8; i++)
+		r += ((frustumCorners[i].z < box.minimum.z) ? 1 : 0);
+	if (r == 8)
+		return false;
+
+	return true;
+}
+
+template<typename T>
+bool Frustum<T>::IsBoxInFrustum(const AxisAlignedBox<T>& aabb) const
 {
 	if (mInitialized)
 	{
 #if 1
-		Vector3<T> point;
-		for (int i = 0; i < 6; i++)
-		{
-			const Vector3<T>& normal = mPlane[i].getNormal();
-			point.x = normal.x < 0.0 ? aabb.maximum.x : aabb.minimum.x;
-			point.y = normal.y < 0.0 ? aabb.maximum.y : aabb.minimum.y;
-			point.z = normal.z < 0.0 ? aabb.maximum.z : aabb.minimum.z;
-
-			if (mPlane[i].getSide(point) == PointSide::FRONT_PLANE)
-				return true;
-		}
-
-
+		return IsBoxInFrustumIMPL(mPlane, mFrustumCorners, aabb);
 #else
 		int ret = FrustumAABBIntersect(mPlane, aabb.minimum, aabb.maximum);
 		return ret == OUTSIDE;
@@ -124,7 +183,7 @@ bool Frustum<T>::isOutOfFrustum(const AxisAlignedBox<T>& aabb) const
 template<typename T>
 bool Frustum<T>::isOutOfFrustum(const OrientedBoundingBox<T>& obb) const
 {
-	if (mInitialized)
+	/*if (mInitialized)
 	{
 		Vector3<T> point;
 		Vector3<T> obbExtentX = obb.mHalfAxes.col(0) * 2.0;
@@ -142,7 +201,7 @@ bool Frustum<T>::isOutOfFrustum(const OrientedBoundingBox<T>& obb) const
 			if (mPlane[i].getSide(point) == PointSide::FRONT_PLANE)
 				return true;
 		}
-	}
+	}*/
 	return  false;
 }
 
@@ -156,12 +215,14 @@ void Frustum<T>::createPlane(const Matrix4x4<T>& comboMatrix)
     //Fast Extraction of Viewing Frustum Planes from the WorldView-Projection Matrix
     
     // 提取平面方程的系数
-    mPlane[0].initPlane(comboMatrix[3] + comboMatrix[0]);//left
-    mPlane[1].initPlane(comboMatrix[3] - comboMatrix[0]);//right
-    mPlane[2].initPlane(comboMatrix[3] + comboMatrix[1]);//bottom
-    mPlane[3].initPlane(comboMatrix[3] - comboMatrix[1]);//top
-    mPlane[4].initPlane(comboMatrix[3] + comboMatrix[2]);//near
-    mPlane[5].initPlane(comboMatrix[3] - comboMatrix[2]);//far
+    mPlane[0] = (comboMatrix[3] + comboMatrix[0]);//left
+    mPlane[1] = (comboMatrix[3] - comboMatrix[0]);//right
+    mPlane[2] = (comboMatrix[3] + comboMatrix[1]);//bottom
+    mPlane[3] = (comboMatrix[3] - comboMatrix[1]);//top
+    mPlane[4] = (comboMatrix[3] + comboMatrix[2]);//near
+    mPlane[5] = (comboMatrix[3] - comboMatrix[2]);//far
+
+	GetFrustumCorners(comboMatrix, mFrustumCorners);
 }
 
 template class Frustum<float>;

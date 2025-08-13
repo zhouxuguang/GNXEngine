@@ -143,7 +143,7 @@ Vector3<T> Matrix4x4<T>::operator * ( const Vector3<T> &v ) const
 }
 
 template <typename T>
-Vector4<T> Matrix4x4<T>::operator*(const Vector4<T>& v)
+Vector4<T> Matrix4x4<T>::operator*(const Vector4<T>& v) const
 {
 	return Vector4<T>(
 		mVecArray[0][0] * v[0] + mVecArray[0][1] * v[1] + mVecArray[0][2] * v[2] + mVecArray[0][3] * v[3], 
