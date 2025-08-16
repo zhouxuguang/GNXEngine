@@ -8,7 +8,7 @@
 NS_ASSETPROCESS_BEGIN
 
 // DXT1数据压缩, input需要是rgba32的数据
-void CompressDXT1_ISPC(uint8_t* result, const uint8_t* input, uint32_t width, uint32_t height, uint32_t stride)
+static void CompressDXT1_ISPC(uint8_t* result, const uint8_t* input, uint32_t width, uint32_t height, uint32_t stride)
 {
 	rgba_surface srcData;
 	srcData.width = width;

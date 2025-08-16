@@ -276,6 +276,7 @@ void VImage::SetImageInfo(ImagePixelFormat format, uint32_t nWidth, uint32_t nHe
 {
     m_eFormat = format;
     m_nBytesPerRow = GetFormatBytesPerRow(m_eFormat, nWidth, nHeight, m_nEncodedWidth, m_nEncodedHeight);
+    m_nBytesPerPixels = GetFormatBytes(m_eFormat);
     m_nWidth = nWidth;
     m_nHeight = nHeight;
     m_pData = (void*)pData;
