@@ -12,23 +12,23 @@ public:
     T b;
     
     ColorRgb()
-        : b(0)
+        : r(0)
         , g(0)
-        , r(0) 
+        , b(0)
     {
     }
 
     ColorRgb(T red, T green, T blue)
-        : b(blue)
+        : r(blue)
         , g(green)
-        , r(red) 
+        , b(red)
     {
     }
 
     ColorRgb(const ColorRgb<T> &x)
-        : b(x.b)
+        : r(x.b)
         , g(x.g)
-        , r(x.r) 
+        , b(x.r)
     {
     }
 
