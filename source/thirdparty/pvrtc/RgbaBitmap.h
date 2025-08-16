@@ -9,8 +9,12 @@ namespace Javelin
 class RgbaBitmap : public Bitmap 
 {
 public:
+    RgbaBitmap()
+    {
+    }
+    
     RgbaBitmap(int w, int h)
-        : Bitmap(w, h, 4) 
+        : Bitmap(w, h, 4)
     {
     }
 
@@ -20,7 +24,7 @@ public:
     }
 
     ColorRgba<unsigned char> *GetData() 
-    { 
+    {
         return reinterpret_cast<ColorRgba<unsigned char> *>(data);
     }
 };

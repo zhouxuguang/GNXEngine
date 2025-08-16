@@ -33,5 +33,5 @@ source_group(TREE ${asset_process_include_dir} FILES ${MESH_PROCESS_INCLUDES})
 
 target_include_directories(AssetProcess PUBLIC ${asset_process_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
 
-target_link_libraries(AssetProcess PUBLIC assimp rendersystem nanopb tbb ktx)
+target_link_libraries(AssetProcess PUBLIC assimp rendersystem nanopb tbb ktx pvrtc)
 

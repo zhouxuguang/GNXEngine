@@ -2,13 +2,17 @@
 
 #include "Point2.h"
 
-namespace Javelin {
+namespace Javelin 
+{
 
-class Bitmap {
+class Bitmap 
+{
 public:
     int width;
     int height;
     unsigned char *data;
+    
+    Bitmap() {}
 
     Bitmap(int w, int h, int bytesPerPixel)
         : width(w)
@@ -19,7 +23,7 @@ public:
 
     virtual ~Bitmap() 
     {
-        delete [] data;
+        delete []data;
     }
 
     Point2<int> GetSize() const { return Point2<int>(width, height); }
