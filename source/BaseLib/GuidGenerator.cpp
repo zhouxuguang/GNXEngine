@@ -79,7 +79,7 @@ bool CreateGUID(NXGUID *guid)
 }
 
 #else
-bool CreateGUID(GUID *guid)
+bool CreateGUID(NXGUID *guid)
 {
     if (NULL == guid)
     {
