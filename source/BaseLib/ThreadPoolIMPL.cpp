@@ -7,8 +7,7 @@
 
 #include "ThreadPoolIMPL.h"
 
-namespace baselib
-{
+NS_BASELIB_BEGIN
 
 ThreadPoolIMPL::ThreadPoolIMPL():mShutDown(true),mFullCondition(&mLock),mEmptyCondition(&mLock)
 {
@@ -188,5 +187,4 @@ void ThreadPoolIMPL::Start()
     
 }
 
-}
-
+NS_BASELIB_END

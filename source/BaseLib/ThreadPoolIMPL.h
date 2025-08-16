@@ -8,7 +8,6 @@
 #ifndef BASELIB_THREADPOOL_IMPL_INCLUDE_H_FFGD3FGGHR
 #define BASELIB_THREADPOOL_IMPL_INCLUDE_H_FFGD3FGGHR
 
-
 #include <thread>
 #include <deque>
 #include <vector>
@@ -17,7 +16,7 @@
 #include "Condition.h"
 #include "ThreadPool.h"
 
-namespace baselib {
+NS_BASELIB_BEGIN
 
 class ThreadPoolIMPL : public std::enable_shared_from_this<ThreadPoolIMPL>
 {
@@ -94,7 +93,7 @@ private:
     static void* WorkFunc(std::weak_ptr<ThreadPoolIMPL> weakThreadPool);
 };
 
-}
+NS_BASELIB_END
 
 #endif /* BASELIB_THREADPOOL_IMPL_INCLUDE_H_FFGD3FGGHR */
 
