@@ -14,21 +14,10 @@ struct KTXFormat
 	uint32_t glInternalformat;
 	uint32_t vkFormat;
 	stbir_pixel_layout stbLayout;
+    stbir_datatype stbDatatype;
+    stbir_edge stbEdge;
+    stbir_filter stbFilter;
 };
-
-//FORMAT_GRAY8 = 0,            //gray
-//FORMAT_GRAY8_ALPHA8 = 1,     //GRAY AND ALPHA
-//FORMAT_RGBA8 = 2,            //RGBA32位
-//FORMAT_RGB8 = 3,             //RGB
-//FORMAT_RGBA4444 = 4,
-//FORMAT_RGB5A1 = 5,
-//FORMAT_R5G6B5 = 6,
-//
-//FORMAT_SRGB8_ALPHA8 = 7,             //sRGB_alpha
-//FORMAT_SRGB8 = 8,             //sRGB
-//
-//FORMAT_RGBA32Float = 9,            //RGBA32位float
-//FORMAT_RGB32Float = 10,             //RGB float
 
 static const uint32_t VK_FORMAT_R32G32B32A32_SFLOAT = 109;
 static const uint32_t VK_FORMAT_BC1_RGB_UNORM_BLOCK = 131;
@@ -101,39 +90,63 @@ KTXFormat CreateImportedKTXFormat(uint32_t imageFormat)
 		ktxFormat.glInternalformat = GL_COMPRESSED_RED_RGTC1;
 		ktxFormat.vkFormat = VK_FORMAT_BC4_UNORM_BLOCK;
 		ktxFormat.stbLayout = STBIR_1CHANNEL;
+        ktxFormat.stbDatatype = STBIR_TYPE_UINT8;
+        ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
+        ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
 		break;
 	case imagecodec::FORMAT_GRAY8_ALPHA8:
 		ktxFormat.glInternalformat = GL_COMPRESSED_RG_RGTC2;
 		ktxFormat.vkFormat = VK_FORMAT_BC5_UNORM_BLOCK;
 		ktxFormat.stbLayout = STBIR_2CHANNEL;
+        ktxFormat.stbDatatype = STBIR_TYPE_UINT8;
+        ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
+        ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
 		break;
 	case imagecodec::FORMAT_RGBA8:
-		ktxFormat.glInternalformat = GL_COMPRESSED_RGBA_BPTC_UNORM;
-		ktxFormat.vkFormat = VK_FORMAT_BC7_UNORM_BLOCK;
+		ktxFormat.glInternalformat = GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG;
+		ktxFormat.vkFormat = VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG;
 		ktxFormat.stbLayout = STBIR_RGBA;
+        ktxFormat.stbDatatype = STBIR_TYPE_UINT8;
+        ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
+        ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
 		break;
 	case imagecodec::FORMAT_RGB8:
 		ktxFormat.glInternalformat = GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
 		ktxFormat.vkFormat = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
 		ktxFormat.stbLayout = STBIR_RGB;
+        ktxFormat.stbDatatype = STBIR_TYPE_UINT8;
+        ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
+        ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
 		break;
 	case imagecodec::FORMAT_SRGB8_ALPHA8:
 		ktxFormat.glInternalformat = GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM;
 		ktxFormat.vkFormat = VK_FORMAT_BC7_SRGB_BLOCK;
 		ktxFormat.stbLayout = STBIR_RGBA;
+        ktxFormat.stbDatatype = STBIR_TYPE_UINT8_SRGB_ALPHA;
+        ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
+        ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
 		break;
 	case imagecodec::FORMAT_SRGB8:
 		ktxFormat.glInternalformat = GL_COMPRESSED_SRGB_S3TC_DXT1_EXT;
 		ktxFormat.vkFormat = VK_FORMAT_BC1_RGB_SRGB_BLOCK;
 		ktxFormat.stbLayout = STBIR_RGB;
+        ktxFormat.stbDatatype = STBIR_TYPE_UINT8_SRGB;
+        ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
+        ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
 		break;
 	case imagecodec::FORMAT_RGBA32Float:
 		ktxFormat.glInternalformat = GL_RGBA32F;
 		ktxFormat.vkFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+        ktxFormat.stbDatatype = STBIR_TYPE_FLOAT;
+        ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
+        ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
 		break;
 	case imagecodec::FORMAT_RGB32Float:
 		ktxFormat.glInternalformat = GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT;
 		ktxFormat.vkFormat = VK_FORMAT_BC6H_UFLOAT_BLOCK;
+        ktxFormat.stbDatatype = STBIR_TYPE_FLOAT;
+        ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
+        ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
 		break;
 	}
 #endif
@@ -195,8 +208,8 @@ std::vector<uint8_t> CreateKTXFormatData(imagecodec::VImagePtr image, bool gener
 		size_t offset = 0;
 		ktxTexture_GetImageOffset(ktxTexture(textureKTX1), i, 0, 0, &offset);
 
-		stbir_resize_uint8_linear(
-			(const unsigned char*)image->GetPixels(), width, height, 0, pTmpData, w, h, 0, ktxFormat.stbLayout);
+        stbir_resize((const unsigned char*)image->GetPixels(), width, height, 0, pTmpData, w, h, 0,
+                     ktxFormat.stbLayout, ktxFormat.stbDatatype, ktxFormat.stbEdge, ktxFormat.stbFilter);
 
 		uint8_t* pDestImage = pTmpData;
 
@@ -222,8 +235,6 @@ std::vector<uint8_t> CreateKTXFormatData(imagecodec::VImagePtr image, bool gener
 	baselib::AlignedFree(pTmpData);
 	baselib::AlignedFree(pFormatData);
 
-
-	//std::string fileName = guidStr + ".ktx";
 	ktxTexture_WriteToNamedFile(ktxTexture(textureKTX1), guidStr.c_str());
 	ktxTexture_Destroy(ktxTexture(textureKTX1));
 
