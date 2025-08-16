@@ -1,9 +1,10 @@
 #include "ImageImporter.h"
 #include "AssetImporter.h"
 #include "ktx.h"
-#include "imagecodec/ImageUtil.h"
+#include "ImageCodec/ImageUtil.h"
 #include "TextureProcess/stb_image_resize2.h"
 #include "DXTCompressor.h"
+#include "PVRCompressor.h"
 #include "BaseLib/AlignedMalloc.h"
 
 NS_ASSETPROCESS_BEGIN
@@ -47,28 +48,46 @@ static const uint32_t VK_FORMAT_BC6H_SFLOAT_BLOCK = 144;
 static const uint32_t VK_FORMAT_BC7_UNORM_BLOCK = 145;
 static const uint32_t VK_FORMAT_BC7_SRGB_BLOCK = 146;
 
+static const uint32_t VK_FORMAT_PVRTC1_2BPP_UNORM_BLOCK_IMG = 1000054000;
+static const uint32_t VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG = 1000054001;
+static const uint32_t VK_FORMAT_PVRTC2_2BPP_UNORM_BLOCK_IMG = 1000054002;
+static const uint32_t VK_FORMAT_PVRTC2_4BPP_UNORM_BLOCK_IMG = 1000054003;
+static const uint32_t VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG = 1000054004;
+static const uint32_t VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG = 1000054005;
+static const uint32_t VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG = 1000054006;
+static const uint32_t VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG = 1000054007;
 
-#define GL_COMPRESSED_RGB_S3TC_DXT1_EXT 0x83F0
-#define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT 0x83F1
-#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x83F2
-#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT 0x83F3
 
-#define GL_COMPRESSED_SRGB_S3TC_DXT1_EXT 0x8C4C
-#define GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT 0x8C4D
-#define GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT 0x8C4E
-#define GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT 0x8C4F
+#define GL_COMPRESSED_RGB_S3TC_DXT1_EXT                      0x83F0
+#define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT                     0x83F1
+#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT                     0x83F2
+#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT                     0x83F3
 
-#define GL_COMPRESSED_RED_RGTC1 0x8DBB
-#define GL_COMPRESSED_SIGNED_RED_RGTC1 0x8DBC
-#define GL_COMPRESSED_RG_RGTC2 0x8DBD
-#define GL_COMPRESSED_SIGNED_RG_RGTC2 0x8DBE
+#define GL_COMPRESSED_SRGB_S3TC_DXT1_EXT                     0x8C4C
+#define GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT               0x8C4D
+#define GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT               0x8C4E
+#define GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT               0x8C4F
 
-#define GL_COMPRESSED_RGBA_BPTC_UNORM 0x8E8C
-#define GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM 0x8E8D
-#define GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT 0x8E8E
-#define GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT 0x8E8F
+#define GL_COMPRESSED_RED_RGTC1                              0x8DBB
+#define GL_COMPRESSED_SIGNED_RED_RGTC1                       0x8DBC
+#define GL_COMPRESSED_RG_RGTC2                               0x8DBD
+#define GL_COMPRESSED_SIGNED_RG_RGTC2                        0x8DBE
+
+#define GL_COMPRESSED_RGBA_BPTC_UNORM                        0x8E8C
+#define GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM                  0x8E8D
+#define GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT                  0x8E8E
+#define GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT                0x8E8F
 
 #define GL_RGBA32F 0x8814
+
+#define GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG                   0x8C00
+#define GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG                   0x8C01
+#define GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG                  0x8C02
+#define GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG                  0x8C03
+#define GL_COMPRESSED_SRGB_PVRTC_2BPPV1_EXT                  0x8A54
+#define GL_COMPRESSED_SRGB_PVRTC_4BPPV1_EXT                  0x8A55
+#define GL_COMPRESSED_SRGB_ALPHA_PVRTC_2BPPV1_EXT            0x8A56
+#define GL_COMPRESSED_SRGB_ALPHA_PVRTC_4BPPV1_EXT            0x8A57
 
 
 // 创建导入的格式信息
@@ -128,10 +147,14 @@ static void CompressTexture(const uint8_t* imageData, uint32_t width, uint32_t h
 	{
 		CompressDXT1(pDest, imageData, width, height, width * 4);
 	}
-	if (vkFormat == VK_FORMAT_BC7_UNORM_BLOCK || vkFormat == VK_FORMAT_BC7_SRGB_BLOCK)
+	else if (vkFormat == VK_FORMAT_BC7_UNORM_BLOCK || vkFormat == VK_FORMAT_BC7_SRGB_BLOCK)
 	{
 		CompressBC7(pDest, imageData, width, height, width * 4);
 	}
+    else if (vkFormat == VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG || vkFormat == VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG)
+    {
+        CompressPVRRGBA4Bpp(pDest, imageData, width, height);
+    }
 }
 
 std::vector<uint8_t> CreateKTXFormatData(imagecodec::VImagePtr image, bool generateMipmap, const std::string & guidStr)

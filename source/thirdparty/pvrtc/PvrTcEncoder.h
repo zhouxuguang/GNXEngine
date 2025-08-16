@@ -2,16 +2,15 @@
 
 #pragma once
 #include "ColorRgba.h"
+#include "AlphaBitmap.h"
+#include "RgbBitmap.h"
+#include "RgbaBitmap.h"
 
 //============================================================================
 
 namespace Javelin
 {
 //============================================================================
-
-	class AlphaBitmap;
-	class RgbBitmap;
-	class RgbaBitmap;
 	
 	class PvrTcEncoder
 	{

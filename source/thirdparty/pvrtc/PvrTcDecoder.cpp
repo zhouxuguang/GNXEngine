@@ -28,9 +28,9 @@ void PvrTcDecoder::DecodeRgb4Bpp(ColorRgb<unsigned char>* result, const Point2<i
 	const int blockMask = blocks-1;
     const PvrTcPacket* packets = static_cast<const PvrTcPacket*>(data);
     
-    for(int y = 0; y < blocks; ++y)
+    for (int y = 0; y < blocks; ++y)
     {
-        for(int x = 0; x < blocks; ++x)
+        for (int x = 0; x < blocks; ++x)
         {
             const PvrTcPacket* packet = packets + GetMortonNumber(x, y);
             
@@ -38,13 +38,13 @@ void PvrTcDecoder::DecodeRgb4Bpp(ColorRgb<unsigned char>* result, const Point2<i
 			const unsigned char (*weights)[4] = PvrTcPacket::WEIGHTS + 4*packet->usePunchthroughAlpha;
             const unsigned char (*factor)[4] = PvrTcPacket::BILINEAR_FACTORS;
 			
-			for(int py = 0; py < 4; ++py)
+			for (int py = 0; py < 4; ++py)
 			{
 				const int yOffset = (py < 2) ? -1 : 0;
 				const int y0 = (y + yOffset) & blockMask;
 				const int y1 = (y0+1) & blockMask;
 				
-				for(int px = 0; px < 4; ++px)
+				for (int px = 0; px < 4; ++px)
 				{
 					const int xOffset = (px < 2) ? -1 : 0;
 					const int x0 = (x + xOffset) & blockMask;
@@ -88,9 +88,9 @@ void PvrTcDecoder::DecodeRgba4Bpp(ColorRgba<unsigned char>* result, const Point2
 	const int blockMask = blocks-1;
     const PvrTcPacket* packets = static_cast<const PvrTcPacket*>(data);
     
-    for(int y = 0; y < blocks; ++y)
+    for (int y = 0; y < blocks; ++y)
     {
-        for(int x = 0; x < blocks; ++x)
+        for (int x = 0; x < blocks; ++x)
         {
             const PvrTcPacket* packet = packets + GetMortonNumber(x, y);
             
@@ -98,13 +98,13 @@ void PvrTcDecoder::DecodeRgba4Bpp(ColorRgba<unsigned char>* result, const Point2
             const unsigned char (*weights)[4] = PvrTcPacket::WEIGHTS + 4*packet->usePunchthroughAlpha;
             const unsigned char (*factor)[4] = PvrTcPacket::BILINEAR_FACTORS;
 			
-			for(int py = 0; py < 4; ++py)
+			for (int py = 0; py < 4; ++py)
 			{
 				const int yOffset = (py < 2) ? -1 : 0;
 				const int y0 = (y + yOffset) & blockMask;
 				const int y1 = (y0+1) & blockMask;
 				
-				for(int px = 0; px < 4; ++px)
+				for (int px = 0; px < 4; ++px)
 				{
 					const int xOffset = (px < 2) ? -1 : 0;
 					const int x0 = (x + xOffset) & blockMask;

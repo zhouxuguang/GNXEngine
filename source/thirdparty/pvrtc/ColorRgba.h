@@ -1,16 +1,16 @@
 #pragma once
 
-namespace Javelin {
+namespace Javelin 
+{
 
 template<typename T>
 class ColorRgb 
 {
 public:
-    T b;
-    T g;
     T r;
+    T g;
+    T b;
     
-
     ColorRgb()
         : b(0)
         , g(0)
@@ -28,7 +28,8 @@ public:
     ColorRgb(const ColorRgb<T> &x)
         : b(x.b)
         , g(x.g)
-        , r(x.r) {
+        , r(x.r) 
+    {
     }
 
     ColorRgb<int> operator *(int x) 
@@ -164,7 +165,8 @@ public:
     void SetMin(const ColorRgba<T> &x) 
     {
         ColorRgb<T>::SetMin(x);
-        if (x.a < a) {
+        if (x.a < a) 
+        {
             a = x.a;
         }
     }
@@ -172,7 +174,8 @@ public:
     void SetMax(const ColorRgba<T> &x) 
     {
         ColorRgb<T>::SetMax(x);
-        if (x.a > a) {
+        if (x.a > a) 
+        {
             a = x.a;
         }
     }

@@ -9,6 +9,10 @@ namespace Javelin
 class RgbBitmap : public Bitmap 
 {
 public:
+    RgbBitmap()
+    {
+    }
+    
     RgbBitmap(int w, int h)
         : Bitmap(w, h, 3) 
     {

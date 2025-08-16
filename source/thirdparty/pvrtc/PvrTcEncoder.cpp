@@ -46,9 +46,9 @@ void PvrTcEncoder::EncodeAlpha2Bpp(void* result, const AlphaBitmap& bitmap)
 	const unsigned char* bitmapData = bitmap.GetRawData();
 	
 	PvrTcPacket* packets = static_cast<PvrTcPacket*>(result);
-	for(int y = 0; y < yBlocks; ++y)
+	for (int y = 0; y < yBlocks; ++y)
 	{
-		for(int x = 0; x < xBlocks; ++x)
+		for (int x = 0; x < xBlocks; ++x)
 		{
 			PvrTcPacket* packet = packets + GetMortonNumber(x, y);
 			packet->usePunchthroughAlpha = 0;
@@ -60,10 +60,10 @@ void PvrTcEncoder::EncodeAlpha2Bpp(void* result, const AlphaBitmap& bitmap)
 			const unsigned char* blockBitmapData = &bitmapData[y*4*size + x*8];
 			
 			uint32_t modulationData = 0;
-			for(int py = 0; py < 4; ++py)
+			for (int py = 0; py < 4; ++py)
 			{
 				const unsigned char* rowBitmapData = blockBitmapData;
-				for(int px = 0; px < 8; ++px)
+				for (int px = 0; px < 8; ++px)
 				{
 					unsigned char pixel = *rowBitmapData++;
 					modulationData = BitUtility::RotateRight(modulationData | (pixel >> 7), 1);
@@ -87,9 +87,9 @@ void PvrTcEncoder::EncodeAlpha4Bpp(void* result, const AlphaBitmap& bitmap)
 	const unsigned char* bitmapData = bitmap.GetRawData();
 	
 	PvrTcPacket* packets = static_cast<PvrTcPacket*>(result);
-	for(int y = 0; y < blocks; ++y)
+	for (int y = 0; y < blocks; ++y)
 	{
-		for(int x = 0; x < blocks; ++x)
+		for (int x = 0; x < blocks; ++x)
 		{
 			PvrTcPacket* packet = packets + GetMortonNumber(x, y);
 			packet->usePunchthroughAlpha = 0;
@@ -101,10 +101,10 @@ void PvrTcEncoder::EncodeAlpha4Bpp(void* result, const AlphaBitmap& bitmap)
 			const unsigned char* blockBitmapData = &bitmapData[(y*size + x)*4];
 			
 			uint32_t modulationData = 0;
-			for(int py = 0; py < 4; ++py)
+			for (int py = 0; py < 4; ++py)
 			{
 				const unsigned char* rowBitmapData = blockBitmapData;
-				for(int px = 0; px < 4; ++px)
+				for (int px = 0; px < 4; ++px)
 				{
 					unsigned char pixel = *rowBitmapData++;
 					modulationData = BitUtility::RotateRight(modulationData | MODULATION_LUT[pixel>>4], 2);
@@ -157,9 +157,9 @@ void PvrTcEncoder::EncodeRgb4Bpp(void* result, const RgbBitmap& bitmap)
 	
 	PvrTcPacket* packets = static_cast<PvrTcPacket*>(result);
 
-	for(int y = 0; y < blocks; ++y)
+	for (int y = 0; y < blocks; ++y)
 	{
-		for(int x = 0; x < blocks; ++x)
+		for (int x = 0; x < blocks; ++x)
 		{
 			ColorRgbBoundingBox cbb;
 			CalculateBoundingBox(cbb, bitmap, x, y);
@@ -170,22 +170,22 @@ void PvrTcEncoder::EncodeRgb4Bpp(void* result, const RgbBitmap& bitmap)
 		}
 	}
 	
-	for(int y = 0; y < blocks; ++y)
+	for (int y = 0; y < blocks; ++y)
 	{
-		for(int x = 0; x < blocks; ++x)
+		for (int x = 0; x < blocks; ++x)
 		{
 			const unsigned char (*factor)[4] = PvrTcPacket::BILINEAR_FACTORS;
 			const ColorRgb<unsigned char>* data = bitmap.GetData() + y * 4 * size + x * 4;
 
 			uint32_t modulationData = 0;
 			
-			for(int py = 0; py < 4; ++py)
+			for (int py = 0; py < 4; ++py)
 			{
 				const int yOffset = (py < 2) ? -1 : 0;
 				const int y0 = (y + yOffset) & blockMask;
 				const int y1 = (y0+1) & blockMask;
 
-				for(int px = 0; px < 4; ++px)
+				for (int px = 0; px < 4; ++px)
 				{
 					const int xOffset = (px < 2) ? -1 : 0;
 					const int x0 = (x + xOffset) & blockMask;
@@ -209,18 +209,18 @@ void PvrTcEncoder::EncodeRgb4Bpp(void* result, const RgbBitmap& bitmap)
 					const ColorRgb<unsigned char>& pixel = data[py*size + px];
 					ColorRgb<int> d = cb - ca;
 					ColorRgb<int> p;
-					p.r=pixel.r*16;
-					p.g=pixel.g*16;
-					p.b=pixel.b*16;
+					p.r = pixel.r * 16;
+					p.g = pixel.g * 16;
+					p.b = pixel.b * 16;
 					ColorRgb<int> v = p - ca;
 					
 					// PVRTC uses weightings of 0, 3/8, 5/8 and 1
 					// The boundaries for these are 3/16, 1/2 (=8/16), 13/16
 					int projection = (v % d) * 16;
 					int lengthSquared = d % d;
-					if(projection > 3*lengthSquared) modulationData++;
-					if(projection > 8*lengthSquared) modulationData++;
-					if(projection > 13*lengthSquared) modulationData++;
+					if (projection > 3 * lengthSquared) modulationData++;
+					if (projection > 8 * lengthSquared) modulationData++;
+					if (projection > 13 * lengthSquared) modulationData++;
 					
 					modulationData = BitUtility::RotateRight(modulationData, 2);
 					
@@ -274,9 +274,9 @@ void PvrTcEncoder::EncodeRgb4Bpp(void* result, const RgbaBitmap& bitmap)
 	
 	PvrTcPacket* packets = static_cast<PvrTcPacket*>(result);
 	
-	for(int y = 0; y < blocks; ++y)
+	for (int y = 0; y < blocks; ++y)
 	{
-		for(int x = 0; x < blocks; ++x)
+		for (int x = 0; x < blocks; ++x)
 		{
 			ColorRgbBoundingBox cbb;
 			CalculateBoundingBox(cbb, bitmap, x, y);
@@ -287,22 +287,22 @@ void PvrTcEncoder::EncodeRgb4Bpp(void* result, const RgbaBitmap& bitmap)
 		}
 	}
 	
-	for(int y = 0; y < blocks; ++y)
+	for (int y = 0; y < blocks; ++y)
 	{
-		for(int x = 0; x < blocks; ++x)
+		for (int x = 0; x < blocks; ++x)
 		{
 			const unsigned char (*factor)[4] = PvrTcPacket::BILINEAR_FACTORS;
 			const ColorRgba<unsigned char>* data = bitmap.GetData() + y * 4 * size + x * 4;
 			
 			uint32_t modulationData = 0;
 			
-			for(int py = 0; py < 4; ++py)
+			for (int py = 0; py < 4; ++py)
 			{
 				const int yOffset = (py < 2) ? -1 : 0;
 				const int y0 = (y + yOffset) & blockMask;
 				const int y1 = (y0+1) & blockMask;
 
-				for(int px = 0; px < 4; ++px)
+				for (int px = 0; px < 4; ++px)
 				{
 					const int xOffset = (px < 2) ? -1 : 0;
 					const int x0 = (x + xOffset) & blockMask;
@@ -326,18 +326,18 @@ void PvrTcEncoder::EncodeRgb4Bpp(void* result, const RgbaBitmap& bitmap)
 					const ColorRgb<unsigned char>& pixel = data[py*size + px];
 					ColorRgb<int> d = cb - ca;
 					ColorRgb<int> p;
-					p.r=pixel.r*16;
-					p.g=pixel.g*16;
-					p.b=pixel.b*16;
+					p.r = pixel.r * 16;
+					p.g = pixel.g * 16;
+					p.b = pixel.b * 16;
 					ColorRgb<int> v = p - ca;
 					
 					// PVRTC uses weightings of 0, 3/8, 5/8 and 1
 					// The boundaries for these are 3/16, 1/2 (=8/16), 13/16
 					int projection = (v % d) * 16;
 					int lengthSquared = d % d;
-					if(projection > 3*lengthSquared) modulationData++;
-					if(projection > 8*lengthSquared) modulationData++;
-					if(projection > 13*lengthSquared) modulationData++;
+					if (projection > 3 * lengthSquared) modulationData++;
+					if (projection > 8 * lengthSquared) modulationData++;
+					if (projection > 13 * lengthSquared) modulationData++;
 					
 					modulationData = BitUtility::RotateRight(modulationData, 2);
 					
@@ -393,9 +393,9 @@ void PvrTcEncoder::EncodeRgba4Bpp(void* result, const RgbaBitmap& bitmap)
 	
 	PvrTcPacket* packets = static_cast<PvrTcPacket*>(result);
 	
-	for(int y = 0; y < blocks; ++y)
+	for (int y = 0; y < blocks; ++y)
 	{
-		for(int x = 0; x < blocks; ++x)
+		for (int x = 0; x < blocks; ++x)
 		{
 			ColorRgbaBoundingBox cbb;
 			CalculateBoundingBox(cbb, bitmap, x, y);
@@ -406,26 +406,26 @@ void PvrTcEncoder::EncodeRgba4Bpp(void* result, const RgbaBitmap& bitmap)
 		}
 	}
 	
-	for(int y = 0; y < blocks; ++y)
+	for (int y = 0; y < blocks; ++y)
 	{
-		for(int x = 0; x < blocks; ++x)
+		for (int x = 0; x < blocks; ++x)
 		{
 			const unsigned char (*factor)[4] = PvrTcPacket::BILINEAR_FACTORS;
 			const ColorRgba<unsigned char>* data = bitmap.GetData() + y * 4 * size + x * 4;
 			
 			uint32_t modulationData = 0;
 			
-			for(int py = 0; py < 4; ++py)
+			for (int py = 0; py < 4; ++py)
 			{
 				const int yOffset = (py < 2) ? -1 : 0;
 				const int y0 = (y + yOffset) & blockMask;
 				const int y1 = (y0+1) & blockMask;
 				
-				for(int px = 0; px < 4; ++px)
+				for (int px = 0; px < 4; ++px)
 				{
 					const int xOffset = (px < 2) ? -1 : 0;
 					const int x0 = (x + xOffset) & blockMask;
-					const int x1 = (x0+1) & blockMask;
+					const int x1 = (x0 + 1) & blockMask;
 					
 					const PvrTcPacket* p0 = packets + GetMortonNumber(x0, y0);
 					const PvrTcPacket* p1 = packets + GetMortonNumber(x1, y0);
@@ -442,22 +442,22 @@ void PvrTcEncoder::EncodeRgba4Bpp(void* result, const RgbaBitmap& bitmap)
 										p2->GetColorRgbaB() * (*factor)[2] +
 										p3->GetColorRgbaB() * (*factor)[3];
 					
-					const ColorRgba<unsigned char>& pixel = data[py*size + px];
+					const ColorRgba<unsigned char>& pixel = data[py * size + px];
 					ColorRgba<int> d = cb - ca;
 					ColorRgba<int> p;
-					p.r=pixel.r*16;
-					p.g=pixel.g*16;
-					p.b=pixel.b*16;
-					p.a=pixel.a*16;
+					p.r = pixel.r * 16;
+					p.g = pixel.g * 16;
+					p.b = pixel.b * 16;
+					p.a = pixel.a * 16;
 					ColorRgba<int> v = p - ca;
 					
 					// PVRTC uses weightings of 0, 3/8, 5/8 and 1
 					// The boundaries for these are 3/16, 1/2 (=8/16), 13/16
 					int projection = (v % d) * 16;
 					int lengthSquared = d % d;
-					if(projection > 3*lengthSquared) modulationData++;
-					if(projection > 8*lengthSquared) modulationData++;
-					if(projection > 13*lengthSquared) modulationData++;
+					if (projection > 3 * lengthSquared) modulationData++;
+					if (projection > 8 * lengthSquared) modulationData++;
+					if (projection > 13 * lengthSquared) modulationData++;
 					
 					modulationData = BitUtility::RotateRight(modulationData, 2);
 					

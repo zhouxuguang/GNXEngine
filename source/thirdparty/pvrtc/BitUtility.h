@@ -1,8 +1,10 @@
 #pragma once
 
-namespace Javelin {
+namespace Javelin 
+{
 
-class BitUtility {
+class BitUtility 
+{
 public:
     static bool IsPowerOf2(unsigned int x) 
     {
