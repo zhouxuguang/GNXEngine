@@ -27,6 +27,26 @@ private:
 	SpinLock& operator= (const SpinLock&);
 };
 
+class BASELIB_API SpinLockGuard
+{
+public:
+    SpinLockGuard(SpinLock &spinLock) : mSpinLock(spinLock)
+    {
+        mSpinLock.Lock();
+    }
+    
+    ~SpinLockGuard()
+    {
+        mSpinLock.UnLock();
+    }
+    
+private:
+    SpinLock &mSpinLock;
+    
+    SpinLockGuard(const SpinLockGuard&);
+    SpinLockGuard& operator= (const SpinLockGuard&);
+};
+
 NS_BASELIB_END
 
 #endif
