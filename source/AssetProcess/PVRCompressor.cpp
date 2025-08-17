@@ -8,7 +8,7 @@ NS_ASSETPROCESS_BEGIN
 // https://docs.vulkan.org/spec/latest/chapters/formats.html
 // https://github.com/bkaradzic/bimg/blob/master/src/image_encode.cpp
 
-// PVR数据压缩,input是RGBA4个通道的数据
+// PVR数据压缩,input是RGB3个通道的数据
 void CompressPVRRGB4Bpp(uint8_t* result, const uint8_t* input, uint32_t width, uint32_t height)
 {
     Javelin::RgbBitmap bmp;
