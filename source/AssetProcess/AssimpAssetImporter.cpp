@@ -1,5 +1,7 @@
 #include "AssimpAssetImporter.h"
 #include "AssimpMeshImporter.h"
+#include "ImageImporter.h"
+#include "BaseLib/BaseLib.h"
 
 NS_ASSETPROCESS_BEGIN
 
@@ -13,6 +15,21 @@ AssimpAssetImporter::~AssimpAssetImporter()
 
 bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std::string& saveDir)
 {
+	std::string parentDir = baselib::FileUtil::GetParentPath(fileName);
+	std::vector<uint8_t> data = baselib::FileUtil::ReadBinaryFile(fileName);
+	if (data.empty())
+	{
+		return false;
+	}
+
+	std::string ktxfile = parentDir + ".ktx";
+
+	// 计算GUID
+	baselib::NXGUID guid = CreateGUIDFromBinaryData(data.data(), data.size());
+	std::string guidStr = baselib::GUIDToString(guid);
+
+	size_t n = guidStr.length();
+
 	Assimp::Importer importer;
 	const aiScene* scene = importer.ReadFile(fileName.c_str(),
 		aiProcess_SplitLargeMeshes |
@@ -42,7 +59,7 @@ bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std:
 	{
 		// 导入mesh
 		AssimpMeshImporter assimpMeshImport(scene, saveDir);
-		assimpMeshImport.LoadMesh();
+		assimpMeshImport.LoadMesh(guid);
 	}
 
 	if (scene->HasTextures())
@@ -63,6 +80,57 @@ bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std:
 			}
 		}
 	}
+
+	// 处理材质
+	for (size_t i = 0; i < scene->mNumMaterials; i++)
+	{
+		aiMaterial* material = scene->mMaterials[i];
+
+		//获得相关的纹理贴图
+
+		aiString diffuseMap;
+		material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuseMap);
+		printf("diffuse texname = %s\n", diffuseMap.C_Str());
+		{
+			ImageImporter imageImporter((parentDir + std::string("/") + std::string(diffuseMap.C_Str())).c_str(), saveDir);
+			imageImporter.Load();
+		}
+
+		aiString baseColorMap;
+		material->GetTexture(AI_MATKEY_BASE_COLOR_TEXTURE, &baseColorMap);
+		
+		aiString normalMap;
+		material->Get(AI_MATKEY_TEXTURE_NORMALS(0), normalMap);
+		{
+			ImageImporter imageImporter((parentDir + std::string("/") + std::string(normalMap.C_Str())).c_str(), saveDir);
+			imageImporter.Load();
+		}
+		
+		
+		//加载metallic贴图
+		aiString metallicMap;
+		material->GetTexture(AI_MATKEY_METALLIC_TEXTURE, &metallicMap);
+		
+		//加载roughness贴图
+		aiString roughnessMap;
+		material->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &roughnessMap);
+		assert(roughnessMap == metallicMap);
+		
+		if (roughnessMap == metallicMap)
+		{
+			printf("");
+		}
+		
+		//加载自发光材质贴图
+		aiString emissiveMap;
+		material->GetTexture(aiTextureType_EMISSIVE, 0, &emissiveMap);
+		
+		// 加载AO贴图
+		aiString aoMap;
+		material->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 0, &aoMap);
+		printf("aoMap texname = %s\n", aoMap.C_Str());
+	}
+	
 
     return true;
 }

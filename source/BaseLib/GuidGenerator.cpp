@@ -47,7 +47,7 @@ public:
 		bytes[3] = (n >> 24) & 0xff;
 	}
 
-	static bool CreateGUID(GUID *guid) 
+	static bool CreateGUID(NXGUID *guid) 
 	{
         if (NULL == guid)
         {
@@ -68,7 +68,7 @@ public:
 
 #include <Windows.h> 
 
-bool CreateGUID(GUID *guid)
+bool CreateGUID(NXGUID *guid)
 {
     if (NULL == guid)
     {
@@ -79,7 +79,7 @@ bool CreateGUID(GUID *guid)
 }
 
 #else
-bool CreateGUID(GUID *guid)
+bool CreateGUID(NXGUID *guid)
 {
     if (NULL == guid)
     {
@@ -104,39 +104,30 @@ bool CreateGUID(GUID *guid)
 
 #endif
 
-struct GUID CreateGUIDFromBytes(const uint8_t* pBytes)
+struct NXGUID CreateGUIDFromBytes(const uint8_t* pBytes)
 {
-    GUID guid;
+    NXGUID guid;
     memcpy(&guid, pBytes, 16);
     return guid;
 }
 
-bool GUIDToString(const GUID *guid, std::string& bufStr)
+std::string GUIDToString(const NXGUID &guid)
 {
-    if (NULL == guid)
-    {
-        return false;
-    }
-    
 	size_t nLen = GUIDStringLength;
+    std::string bufStr;
 	bufStr.resize(nLen + 1);
 	int num = snprintf((char *)bufStr.c_str(), nLen + 1, GUIDFormatString,
-		guid->Data1, guid->Data2, guid->Data3,
-		GUIDGenerator::BytesToUInt32(&(guid->Data4[0])),
-		GUIDGenerator::BytesToUInt32(&(guid->Data4[4])));
+		guid.Data1, guid.Data2, guid.Data3,
+		GUIDGenerator::BytesToUInt32(&(guid.Data4[0])),
+		GUIDGenerator::BytesToUInt32(&(guid.Data4[4])));
 
-	if (num != GUIDStringLength)
-    {
-        return false;
-    }
-
-	bufStr[num] = '\0';
-	return true;
+    bufStr.resize(num);
+    return bufStr;
 }
 
-bool IsGUIDEqual(const GUID &guid1, const GUID& guid2)
+bool IsGUIDEqual(const NXGUID &guid1, const NXGUID& guid2)
 {
-    return 0 == memcmp(&guid1, &guid2, sizeof(GUID));
+    return 0 == memcmp(&guid1, &guid2, sizeof(NXGUID));
 }
 
 NS_BASELIB_END

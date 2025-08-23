@@ -50,4 +50,13 @@ bool AssetImporter::ImportFromFile(const std::string& fileName, const std::strin
 	}
 }
 
+baselib::NXGUID CreateGUIDFromBinaryData(const uint8_t* data, size_t size)
+{
+	baselib::SHA256 sha;
+	sha.update(data, size);
+	std::array<uint8_t, 32> digest = sha.digest();
+
+	return baselib::CreateGUIDFromBytes(digest.data());
+}
+
 NS_ASSETPROCESS_END

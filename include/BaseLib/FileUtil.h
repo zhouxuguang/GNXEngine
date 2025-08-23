@@ -43,6 +43,9 @@ public:
     
     //是否可执行
     static bool IsExecutable(const std::string &strFileName);
+
+    //获得文件所在的路径
+    static std::string GetParentPath(const std::string& strFileName);
     
     //获得文件大小
     static int64_t GetFileSize(const std::string &strFileName);
@@ -59,8 +62,38 @@ public:
     //移除文件或者目录
     static bool Remove(const std::string& strPathName);
     
-    //创建目录，递归的创建
+    /**
+     * 创建目录，递归的创建
+     * 
+     */
     static bool MakeDirectory(const std::string& directoryPath);
+
+    /**
+     * 读取整个二进制文件到字节向量
+     *
+     * @param path 文件路径
+     * @return 包含文件内容的字节向量，如果出错则返回空向量
+     */
+    static std::vector<uint8_t> ReadBinaryFile(const std::string& path);
+
+    /**
+     * 将原始内存数据写入二进制文件
+     *
+     * @param path 文件路径
+     * @param data 指向数据的指针
+     * @param size 数据字节数
+     * @return 写入成功返回true，否则false
+     */
+    static bool WriteBinaryFile(const std::string& path, const void* data, size_t size);
+
+    /**
+     * 将字节向量写入二进制文件
+     *
+     * @param path 文件路径
+     * @param data 包含数据的字节向量
+     * @return 写入成功返回true，否则false
+     */
+    static bool WriteBinaryFile(const std::string& path, const std::vector<uint8_t>& data);
     
 private:
     FileUtil();

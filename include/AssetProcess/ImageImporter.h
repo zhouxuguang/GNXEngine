@@ -20,7 +20,7 @@ public:
 	bool Load();
 
 private:
-	std::string fileName;
+	std::string mFileName;
 	std::string mSaveDir;
 };
 

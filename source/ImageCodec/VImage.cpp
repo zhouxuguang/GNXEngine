@@ -105,6 +105,48 @@ static uint32_t GetFormatBytesPerRow(ImagePixelFormat format, uint32_t width, ui
     return 0;
 }
 
+static uint32_t GetFormatBytes(ImagePixelFormat format)
+{
+	switch (format)
+	{
+	case FORMAT_GRAY8:
+    {
+        return 1;
+    }
+	case FORMAT_GRAY8_ALPHA8:
+    {
+        return 2;
+    }
+
+	case FORMAT_RGBA8:
+	case FORMAT_SRGB8_ALPHA8:
+	{
+		return 4;
+	}
+
+	case FORMAT_RGB8:
+	case FORMAT_SRGB8:
+	{
+		return 3;
+	}
+
+	case FORMAT_RGBA32Float:
+	{
+		return 16;
+	}
+
+	case FORMAT_RGB32Float:
+	{
+		return 12;
+	}
+
+	default:
+		break;
+	}
+
+	return 0;
+}
+
 VImage::VImage(ImagePixelFormat format, uint32_t nWidth, uint32_t nHeight, const void *pData) :
                  m_eFormat(format),
                  m_nWidth(nWidth),
@@ -115,6 +157,7 @@ VImage::VImage(ImagePixelFormat format, uint32_t nWidth, uint32_t nHeight, const
 {
     m_pData = (void *)pData;
     m_nBytesPerRow = GetFormatBytesPerRow(format, nWidth, nHeight, m_nEncodedWidth, m_nEncodedHeight);
+    m_nBytesPerPixels = GetFormatBytes(format);
 }
 
 VImage::VImage()
@@ -184,6 +227,11 @@ uint32_t VImage::GetBytesPerRow() const
     return m_nBytesPerRow;
 }
 
+uint32_t VImage::GetBytesPerPixels() const
+{
+    return m_nBytesPerPixels;
+}
+
 ImagePixelFormat VImage::GetFormat() const
 {
     return m_eFormat;
@@ -216,6 +264,7 @@ void VImage::SetImageInfo(ImagePixelFormat format, uint32_t nWidth, uint32_t nHe
 {
     m_eFormat = format;
     m_nBytesPerRow = GetFormatBytesPerRow(m_eFormat, nWidth, nHeight, m_nEncodedWidth, m_nEncodedHeight);
+    m_nBytesPerPixels = GetFormatBytes(m_eFormat);
     m_nWidth = nWidth;
     m_nHeight = nHeight;
     m_pData = NULL;
@@ -227,6 +276,7 @@ void VImage::SetImageInfo(ImagePixelFormat format, uint32_t nWidth, uint32_t nHe
 {
     m_eFormat = format;
     m_nBytesPerRow = GetFormatBytesPerRow(m_eFormat, nWidth, nHeight, m_nEncodedWidth, m_nEncodedHeight);
+    m_nBytesPerPixels = GetFormatBytes(m_eFormat);
     m_nWidth = nWidth;
     m_nHeight = nHeight;
     m_pData = (void*)pData;

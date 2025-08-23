@@ -21,7 +21,7 @@ public:
 	AssimpMeshImporter(const aiScene* scene, const std::string& saveDir);
 	~AssimpMeshImporter();
 
-	void LoadMesh();
+	void LoadMesh(const baselib::NXGUID & guid);
 
 private:
 	const aiScene* mScene = nullptr;

@@ -527,7 +527,8 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
             int textureId = std::stoi(subName);
             if (textureId < fileTextures.size())
             {
-                if (fileTextures[textureId]) {
+                if (fileTextures[textureId]) 
+                {
                     mat->SetTexture("diffuseTexture", fileTextures[textureId]);
                 }
             }
@@ -558,7 +559,8 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuseMap);
     //Texture2DPtr diffuseTexture = TextureFromFile((mDirectory + "Woman.png").c_str());
     Texture2DPtr diffuseTexture = TextureFromFile((mDirectory + diffuseMap.C_Str()).c_str());
-    if (diffuseTexture) {
+    if (diffuseTexture) 
+    {
         mat->SetTexture("diffuseTexture", diffuseTexture);
     }
     
@@ -567,14 +569,16 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     aiString normalMap;
     material->Get(AI_MATKEY_TEXTURE_NORMALS(0), normalMap);
     Texture2DPtr normalTexture = TextureFromFile((mDirectory + normalMap.C_Str()).c_str());
-    if (normalTexture) {
+    if (normalTexture) 
+    {
         mat->SetTexture("normalTexture", normalTexture);
     }
     
     aiString specularMap;
     material->Get(AI_MATKEY_TEXTURE_SPECULAR(0), specularMap);
     Texture2DPtr specularTexture = TextureFromFile((mDirectory + specularMap.C_Str()).c_str());
-    if (specularTexture) {
+    if (specularTexture) 
+    {
         mat->SetTexture("specularTexture", specularTexture);
     }
     

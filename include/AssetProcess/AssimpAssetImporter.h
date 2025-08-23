@@ -7,6 +7,7 @@
 #include <assimp/material.h>
 #include <assimp/cimport.h>
 #include "AssetProcessDefine.h"
+#include "AssetImporter.h"
 
 NS_ASSETPROCESS_BEGIN
 

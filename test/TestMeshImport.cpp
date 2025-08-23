@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
     sha.update(s);
     std::array<uint8_t, 32> digest = sha.digest();
     
-    baselib::GUID guid = baselib::CreateGUIDFromBytes(digest.data());
+    baselib::NXGUID guid = baselib::CreateGUIDFromBytes(digest.data());
 
     std::cout << baselib::SHA256::toString(digest) << std::endl;
 

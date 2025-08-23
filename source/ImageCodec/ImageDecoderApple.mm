@@ -175,8 +175,8 @@ uint8_t* DecodeImageData_APPLE(const uint8_t* pImageData,
                              bool& bPreMultyAlpha)
 {
     uint8_t *pData = NULL;
-    @autoreleasepool {
-        
+    @autoreleasepool 
+    {
         NSData *data = [NSData dataWithBytesNoCopy: (void *)pImageData length: dataLen freeWhenDone: NO];
         
 #if TARGET_OS_MAC
@@ -213,22 +213,26 @@ uint8_t* DecodeImageData_APPLE(const uint8_t* pImageData,
         
         //处理16位的图片，渲染的时候不支持，必须转换为8位的
         size_t nBitsPerComponent = CGImageGetBitsPerComponent(imageRef);
-        if (nBitsPerComponent > 8) {
+        if (nBitsPerComponent > 8) 
+        {
             unSupportedColorSpace = YES;
         }
-        if (colorModel == kCGColorSpaceModelMonochrome) {
+        if (colorModel == kCGColorSpaceModelMonochrome) 
+        {
             geneRGBImage = NO;
             
             // 如果是带alpha的图像，则生成RGBA的图像
             CGImageAlphaInfo alphaInfo = CGImageGetAlphaInfo(imageRef);
             BOOL hasAlpha = alphaInfo != kCGImageAlphaNone;
             
-            if (hasAlpha) {
+            if (hasAlpha) 
+            {
                 geneRGBImage = YES;
             }
         }
        
-        if (unSupportedColorSpace) {
+        if (unSupportedColorSpace) 
+        {
             // 不支持ColorSpace，ColorSpace使用RGB或者灰度模式
             size_t nLineBytes = 4 * (*uiWidth);
             uint32_t bitmapInfo = kCGBitmapByteOrderDefault|kCGImageAlphaPremultipliedLast;
@@ -245,7 +249,8 @@ uint8_t* DecodeImageData_APPLE(const uint8_t* pImageData,
             
             size_t dataLength = nLineBytes * *uiHeight;
             pData = (uint8_t*)malloc(dataLength);
-            if (nullptr == pData) {
+            if (nullptr == pData) 
+            {
                 CGColorSpaceRelease(colorSpace);
                 return nullptr;
             }
@@ -270,14 +275,17 @@ uint8_t* DecodeImageData_APPLE(const uint8_t* pImageData,
             CGImageRelease(imageRef);
             CGColorSpaceRelease(colorSpace);
             
-        } else {
-            if (@available(iOS 7.0, *)) {
-
+        } 
+        else
+        {
+            if (@available(iOS 7.0, *)) 
+            {
                 //这里可能做了字节对齐，所以用原始的字节数
                 size_t nLineBytes = CGImageGetBitsPerPixel(imageRef) / 8;
                 nLineBytes *= (*uiWidth);
                 pData = (uint8_t*)malloc(nLineBytes * *uiHeight);
-                if (nullptr == pData) {
+                if (nullptr == pData) 
+                {
                     return nullptr;
                 }
 
@@ -293,15 +301,19 @@ uint8_t* DecodeImageData_APPLE(const uint8_t* pImageData,
                 format.colorSpace = colorSpace;
                 format.renderingIntent = CGImageGetRenderingIntent(imageRef);
                 vImage_Error error = vImageBuffer_InitWithCGImage(&imageBuffer, &format, nullptr, imageRef, kvImageNoAllocate);
-                if (error != kvImageNoError) {
+                if (error != kvImageNoError) 
+                {
                     free(pData);
                     pData = NULL;
                 }
-            } else {
+            } 
+            else
+            {
                 CFDataRef rawData = CGDataProviderCopyData(CGImageGetDataProvider(imageRef));
                 size_t dataLength = CFDataGetLength(rawData);
                 pData = (uint8_t*)malloc(dataLength);
-                if (nullptr == pData) {
+                if (nullptr == pData) 
+                {
                     CFRelease(rawData);
                     return nullptr;
                 }

@@ -10,6 +10,7 @@
 #define BASELIB_INCLUDE_H_HEADER_H
 
 #include "PreCompile.h"
+#include "FileUtil.h"
 #include "Thread.h"
 #include "ThreadUtil.h"
 #include "ThreadPool.h"
@@ -23,6 +24,7 @@
 #include "StringUtil.h"
 
 #include "Singleton.h"
+#include "SHA256.h"
 
 #include "AtomicOps.h"
 #include "Base64.h"
