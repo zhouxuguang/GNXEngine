@@ -45,7 +45,7 @@ struct TimerOption
 	WindowsTimeFuncST *pFuncPara;
 };
 
-VOID NTAPI  WindowsTimeFunc (PVOID pPara, BOOLEAN flag)
+VOID NTAPI  WindowsTimeFunc(PVOID pPara, BOOLEAN flag)
 {
 	WindowsTimeFuncST *stTimeFunc = (WindowsTimeFuncST *)pPara;
 	TimerProc pTimerFun = stTimeFunc->pTimerFun;
@@ -58,7 +58,7 @@ VOID NTAPI  WindowsTimeFunc (PVOID pPara, BOOLEAN flag)
 	
 }
 
-Timer* Timer::CreateTimer(int64_t nStartLater,int64_t nInterval,TimerProc pFun,void* pParameter)
+Timer* Timer::CreateTimer(int64_t nStartLater, int64_t nInterval, TimerProc pFun, void* pParameter)
 {
 	HANDLE hTimer = INVALID_HANDLE_VALUE;
 	HANDLE hQueue = CreateTimerQueue();
@@ -70,7 +70,7 @@ Timer* Timer::CreateTimer(int64_t nStartLater,int64_t nInterval,TimerProc pFun,v
 	WindowsTimeFuncST *stTimeFunc = new(std::nothrow) WindowsTimeFuncST;
 	stTimeFunc->pTimerFun = pFun;
 	stTimeFunc->pParameter = pParameter;
-	if (!CreateTimerQueueTimer(&hTimer,hQueue,WindowsTimeFunc,stTimeFunc,nStartLater,nInterval,0))
+	if (!CreateTimerQueueTimer(&hTimer,hQueue, WindowsTimeFunc, stTimeFunc, nStartLater, nInterval, 0))
 	{
 		DeleteTimerQueue(hQueue);
 		return NULL;
@@ -100,57 +100,6 @@ void Timer::UnInit()
 }
 
 #elif defined __linux__ || defined __ANDROID__
-
-//#if defined(__MACH__) && defined(__APPLE__)
-//#include <sys/ioctl.h>
-//#include <sys/mount.h>
-//#include <sys/types.h>
-//#include <sys/time.h>
-//#include <ftw.h>
-//#include <mach/mach_time.h>
-//#include <inttypes.h>
-//
-//#define CLOCK_REALTIME ITIMER_REAL
-//#define itimerspec itimerval
-//typedef uint64_t timer_t;
-//typedef double   timer_c;
-//typedef clock_id_t clockid_t;
-//
-//#define sigval_t sigval
-//
-//
-//static inline int timer_create (clockid_t __clock_id,
-//                                 struct sigevent *__restrict __evp,
-//                                 timer_t *__restrict timer)
-//{
-//    // set something, to initialize the variable, just in case
-//    *timer = 0;
-//    return 0;
-//}
-//
-//static inline int timer_settime (timer_t timerid, int flags,
-//                                  const struct itimerspec *__restrict timerspec,
-//                                  struct itimerspec *__restrict ovalue)
-//{
-//    return setitimer(ITIMER_REAL, timerspec, ovalue);
-//}
-//
-//static inline int timer_delete (timer_t timerid)
-//{
-//    struct itimerspec timespec;
-//    timespec.it_interval.tv_sec=0;
-//    timespec.it_interval.tv_usec=0;
-//    timespec.it_value.tv_sec=0;
-//    timespec.it_value.tv_usec=0;
-//
-//    return setitimer(ITIMER_REAL, &timespec, NULL);
-//}
-//
-//static inline int timer_gettime (timer_t timerid, struct itimerspec *value)
-//{
-//    return getitimer(ITIMER_REAL, value);
-//}
-//#endif
 
 struct FuncOption
 {
@@ -191,7 +140,7 @@ static void TimerFunction(sigval_t value)
 	pFun(pArgs,eArgs);
 }
 
-Timer* Timer::CreateTimer(int64_t nStartLater,int64_t nInterval,TimerProc pFun,void* pParameter)
+Timer* Timer::CreateTimer(int64_t nStartLater, int64_t nInterval, TimerProc pFun, void* pParameter)
 {
 	timer_t timerid;
 	struct sigevent evp;
@@ -202,7 +151,6 @@ Timer* Timer::CreateTimer(int64_t nStartLater,int64_t nInterval,TimerProc pFun,v
 	pOption->pArgs = pParameter;
 	pOption->pFun = pFun;
 
-	//evp.sigev_value.sival_int = 111;
 	evp.sigev_value.sival_ptr = pOption;
 	evp.sigev_notify = SIGEV_THREAD;           
 	evp.sigev_notify_function = TimerFunction;       
@@ -214,18 +162,16 @@ Timer* Timer::CreateTimer(int64_t nStartLater,int64_t nInterval,TimerProc pFun,v
 	}
 
 	struct itimerspec it;
-	//���ü����Ӧʱ��
-	int nSecond = nInterval/1000;
-	int nMilliSecond = nInterval%1000;
+	int nSecond = nInterval / 1000;
+	int nMilliSecond = nInterval % 1000;
 	it.it_interval.tv_sec = nSecond;
 #if defined(__MACH__) && defined(__APPLE__)
 	it.it_interval.tv_usec = nMilliSecond;
 #else
     it.it_interval.tv_nsec = nMilliSecond;
 #endif
-	//���õ�һ����Ӧʱ��
-	nSecond = nStartLater/1000;
-	nMilliSecond = nStartLater%1000;
+	nSecond = nStartLater / 1000;
+	nMilliSecond = nStartLater % 1000;
 	it.it_value.tv_sec = nSecond;
 #if defined(__MACH__) && defined(__APPLE__)
 	it.it_value.tv_usec = nMilliSecond;
@@ -259,7 +205,7 @@ void Timer::UnInit()
 }
 
 
-#elif defined __IOS__ || ( defined(__MACH__) && defined(__APPLE__) )
+#elif defined(__MACH__) && defined(__APPLE__)
 
 #include <dispatch/dispatch.h>
 
@@ -269,16 +215,14 @@ struct TimerOption
 	dispatch_source_t timer;
 };
 
-Timer* Timer::CreateTimer(int64_t nStartLater,int64_t nInterval,TimerProc pFun,void* pParameter)
+Timer* Timer::CreateTimer(int64_t nStartLater, int64_t nInterval, TimerProc pFun, void* pParameter)
 {
 	dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
 	dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
 	if (timer)
 	{
-        //gcd��ʱ�䵥λ�����룬ע��ʱ��ת��
 		dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, nInterval * NSEC_PER_MSEC), nInterval * NSEC_PER_MSEC, (1ull * NSEC_PER_MSEC) / 10);
         
-        //����ִ�е��¼�
         dispatch_source_set_event_handler(timer, ^{pFun(pParameter,false);});
 		dispatch_resume(timer);
 
@@ -299,7 +243,6 @@ void Timer::UnInit()
 		dispatch_source_t timer = m_Option->timer;
 		dispatch_source_cancel(timer);
         
-        //6.0sdk֮ǰ
     #if __IPHONE_OS_VERSION_MIN_REQUIRED < 60000
 		dispatch_release(timer);
     #endif
