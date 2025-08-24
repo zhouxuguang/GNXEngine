@@ -21,7 +21,7 @@
 #include "oneapi/tbb/detail/_exception.h"
 #include "oneapi/tbb/detail/_aligned_space.h"
 #include "concurrent_monitor_mutex.h"
-#include "semaphore.h"
+#include "tbb_semaphore.h"
 
 #include <atomic>
 
