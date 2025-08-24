@@ -48,6 +48,10 @@ elseif(WIN32)
 target_link_libraries(rendersystem PRIVATE baselib rendercore shadercompiler 
     assimp
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/DirectXShaderCompiler/lib/win/dxcompiler.lib)
+elseif(LINUX)
+target_link_libraries(rendersystem PRIVATE baselib rendercore shadercompiler 
+    assimp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/DirectXShaderCompiler/lib/linux/libdxcompiler.so)
 endif() 
 
 #/Users/zhouxuguang/work/mycode/DirectXShaderCompiler/build/lib
