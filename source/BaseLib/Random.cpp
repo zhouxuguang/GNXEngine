@@ -22,13 +22,15 @@ unsigned int GetRandom()
 #if defined _WIN32_WCE
     CeGenRandom(sizeof(nNum), (PBYTE)&nNum);
 #else
-    HMODULE hLib = LoadLibraryA("ADVAPI32.DLL");
-    if (hLib) {
+    HMODULE hLib = LoadLibraryW(L"Advapi32.dll");
+    if (hLib) 
+    {
         BOOLEAN (APIENTRY *pfn)(void*, ULONG) =
-        (BOOLEAN (APIENTRY *)(void*,ULONG))GetProcAddress(hLib,"SystemFunction036");
-        if (pfn) {
+        (BOOLEAN (APIENTRY *)(void*, ULONG))GetProcAddress(hLib, "SystemFunction036");
+        if (pfn) 
+        {
             ULONG ulCbBuff = sizeof(nNum);
-            if(pfn(&nNum,ulCbBuff))
+            if (pfn(&nNum, ulCbBuff))
             {
             }
         }
