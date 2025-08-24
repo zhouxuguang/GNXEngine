@@ -56,8 +56,8 @@ public:
         
         //使用真随机数接口实现
         guid->Data1 = GetRandom();
-        guid->Data2 = ( uint16_t)(GetRandom(0,65535));
-        guid->Data3 = ( uint16_t)(GetRandom(0,65535));
+        guid->Data2 = (uint16_t)(GetRandom(0, 65535));
+        guid->Data3 = (uint16_t)(GetRandom(0, 65535));
         UInt32ToBytes(&guid->Data4[0], GetRandom());
         UInt32ToBytes(&guid->Data4[4], GetRandom());
         return true;
@@ -95,8 +95,8 @@ bool CreateGUID(NXGUID *guid)
     unsigned char *pUUID = uuid;
     
     guid->Data1 = GUIDGenerator::BytesToUInt32(pUUID);
-    guid->Data2 = GUIDGenerator::BytesToUInt16(pUUID+4);
-    guid->Data3 = GUIDGenerator::BytesToUInt16(pUUID+6);
+    guid->Data2 = GUIDGenerator::BytesToUInt16(pUUID + 4);
+    guid->Data3 = GUIDGenerator::BytesToUInt16(pUUID + 6);
     memcpy(guid->Data4, pUUID + 8, 8 * sizeof(uint8_t));
     return true;
 #endif
@@ -131,4 +131,3 @@ bool IsGUIDEqual(const NXGUID &guid1, const NXGUID& guid2)
 }
 
 NS_BASELIB_END
-

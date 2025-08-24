@@ -206,6 +206,10 @@ bool Thread::WaitFor() const
 #include <sys/time.h>
 #include <errno.h>
 
+#if OS_LINUX
+#include <signal.h>
+#endif
+
 //apple系统需要引入的
 #if defined __APPLE__
 #include <mach/mach.h>

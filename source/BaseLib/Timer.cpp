@@ -1,5 +1,9 @@
 #include "Timer.h"
 
+#if OS_LINUX
+#include <signal.h>
+#endif
+
 NS_BASELIB_BEGIN
 
 //
@@ -150,9 +154,9 @@ void Timer::UnInit()
 
 struct FuncOption
 {
-	void* pArgs;		//����
-	uint8_t eArgs;		//����
-	TimerProc pFun;		//�ص�����
+	void* pArgs;		//参数
+	uint8_t eArgs;		//参数个数
+	TimerProc pFun;		//入口函数
 };
 
 struct TimerOption
@@ -191,7 +195,7 @@ Timer* Timer::CreateTimer(int64_t nStartLater,int64_t nInterval,TimerProc pFun,v
 {
 	timer_t timerid;
 	struct sigevent evp;
-	memset(&evp, 0, sizeof(struct sigevent));       //�����ʼ��
+	memset(&evp, 0, sizeof(struct sigevent));       
 
 	FuncOption* pOption = new FuncOption;
 	pOption->eArgs = 0;
@@ -200,8 +204,8 @@ Timer* Timer::CreateTimer(int64_t nStartLater,int64_t nInterval,TimerProc pFun,v
 
 	//evp.sigev_value.sival_int = 111;
 	evp.sigev_value.sival_ptr = pOption;
-	evp.sigev_notify = SIGEV_THREAD;            //�߳�֪ͨ�ķ�ʽ����פ���߳�
-	evp.sigev_notify_function = TimerFunction;       	//�̺߳�����ַ
+	evp.sigev_notify = SIGEV_THREAD;           
+	evp.sigev_notify_function = TimerFunction;       
 
 	if (timer_create(CLOCK_REALTIME, &evp, &timerid) == -1)
 	{

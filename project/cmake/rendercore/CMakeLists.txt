@@ -32,7 +32,7 @@ elseif(ANDROID) #android平台
                                                     ${rendercore_dir}/vulkan/*.c
                                                     ${rendercore_dir}/vulkan/*.h) 
 
-elseif(WIN32) #WINDOWS平台
+elseif(WIN32 OR LINUX) #WINDOWS平台和Linux
     file(GLOB RENDERCORE_SOURCES CONFIGURE_DEPENDS  ${rendercore_dir}/*.cpp 
                                                     ${rendercore_dir}/*.c 
                                                     ${rendercore_dir}/*.h

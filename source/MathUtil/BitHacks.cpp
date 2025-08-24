@@ -7,6 +7,7 @@
 //
 
 #include "BitHacks.h"
+#include <climits>
 
 NS_MATHUTIL_BEGIN
 

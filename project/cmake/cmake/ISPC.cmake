@@ -73,6 +73,7 @@ function(add_ispc_target ISPC_OUTPUT_FILES)
                 -h ${ISPC_HEADER_NAME}
                 --arch=${ISPC_ARCH}
                 --target=${ISPC_TARGET}
+                --pic 
                 ${ISPC_FLAGS}
             DEPENDS ${ispc_src} ${ISPC_HEADER_DEPENDENCIES}
             COMMENT "Compiling ISPC file: ${ispc_src}"

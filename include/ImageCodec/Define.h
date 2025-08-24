@@ -14,6 +14,8 @@
 
 #define USING_NS_IMAGECODEC                     using namespace imagecodec;
 
+#include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <memory.h>
 #include <vector>

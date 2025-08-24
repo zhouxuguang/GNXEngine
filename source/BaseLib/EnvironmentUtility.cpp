@@ -11,6 +11,7 @@ NS_BASELIB_BEGIN
 #  define ENVIRONMENT_UTILITY_UNIX 0
 #  include <direct.h>
 #else
+#include <unistd.h>
 #  define ENVIRONMENT_UTILITY_UNIX 1
 #endif
 
@@ -53,6 +54,7 @@ std::string EnvironmentUtility::GetCurrentWorkingDir() const
 
 #if ENVIRONMENT_UTILITY_UNIX
 	//result = GetEnvironmentVariable("PWD");
+	const int PATH_MAX = 1024;
     char buffer[PATH_MAX] = {0};
     if (getcwd(buffer, sizeof(buffer)))
     {

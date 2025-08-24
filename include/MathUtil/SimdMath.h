@@ -15,7 +15,7 @@
 
 NS_MATHUTIL_BEGIN
 
-#ifdef _MSC_VER
+#if defined _MSC_VER || (defined(__GNUC__) && !defined(__clang__)) 
 struct simd_float2
 {
 	float x;

@@ -15,6 +15,7 @@
 
 #ifdef __linux__
 #include <errno.h>
+#include <sys/resource.h>
 extern char *program_invocation_name;
 #endif
 

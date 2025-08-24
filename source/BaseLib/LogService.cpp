@@ -9,6 +9,7 @@
 #include "LogService.h"
 #include "Log.h"
 #include <sstream>
+#include <stdarg.h>
 
 NS_BASELIB_BEGIN
 

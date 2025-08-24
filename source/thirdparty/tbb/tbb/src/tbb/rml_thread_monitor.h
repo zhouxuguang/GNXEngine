@@ -40,7 +40,7 @@
 #include "oneapi/tbb/detail/_template_helpers.h"
 
 #include "itt_notify.h"
-#include "semaphore.h"
+#include "tbb_semaphore.h"
 
 // All platform-specific threading support is in this header.
 

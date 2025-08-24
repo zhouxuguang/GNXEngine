@@ -9,6 +9,10 @@
 #include "AlignedMalloc.h"
 #include <assert.h>
 
+#if OS_LINUX
+#include <malloc.h>
+#endif
+
 NS_BASELIB_BEGIN
 
 void* AlignedMalloc(size_t size, size_t alignment)

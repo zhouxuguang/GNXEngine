@@ -19,6 +19,13 @@ elseif(WIN32)
     file(GLOB_RECURSE RENDERSYSTEM_INCLUDES CONFIGURE_DEPENDS ${rendersystem_include_dir}/*.h
                                 ${rendersystem_include_dir}/*.cpp
                                 ${rendersystem_include_dir}/*.c)
+elseif(UNIX AND NOT APPLE)  # linux
+    file(GLOB_RECURSE RENDERSYSTEM_SOURCES CONFIGURE_DEPENDS ${rendersystem_dir}/*.cpp 
+                                ${rendersystem_dir}/*.c 
+                                ${rendersystem_dir}/*.h) 
+    file(GLOB_RECURSE RENDERSYSTEM_INCLUDES CONFIGURE_DEPENDS ${rendersystem_include_dir}/*.h
+                                ${rendersystem_include_dir}/*.cpp
+                                ${rendersystem_include_dir}/*.c)
 endif()
 
 set(SOURCE_FILES ${RENDERSYSTEM_SOURCES} ${RENDERSYSTEM_INCLUDES})

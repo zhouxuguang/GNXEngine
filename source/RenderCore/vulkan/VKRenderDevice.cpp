@@ -107,7 +107,6 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     void * p = (void*)vkCmdBeginRenderingKHR;
     void *p2 = (void*)vkCmdPushDescriptorSetKHR;
     void* p3 = (void*)vkCmdTraceRaysKHR;
-    printf("");
 }
 
 VKRenderDevice::~VKRenderDevice()

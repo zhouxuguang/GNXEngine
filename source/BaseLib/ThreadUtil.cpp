@@ -9,9 +9,11 @@
 #include "ThreadUtil.h"
 #include "Thread.h"
 
-#ifdef __ANDROID__
+#if OS_ANDROID
 #include <sys/prctl.h>
 #include <sys/types.h>
+#include <unistd.h>
+#elif OS_LINUX
 #include <unistd.h>
 #endif
 
@@ -127,7 +129,7 @@ void ThreadUtil::Sleep(long long nMiliSeconds)
 
 void ThreadUtil::Sleep(long long nMiliSeconds)
 {
-    usleep((unsigned int)nMiliSeconds*1000);
+    usleep((unsigned int)nMiliSeconds * 1000);
 }
 
 #endif
