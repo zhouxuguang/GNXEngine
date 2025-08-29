@@ -54,8 +54,8 @@ std::string EnvironmentUtility::GetCurrentWorkingDir() const
 
 #if ENVIRONMENT_UTILITY_UNIX
 	//result = GetEnvironmentVariable("PWD");
-	const int PATH_MAX = 1024;
-    char buffer[PATH_MAX] = {0};
+	const int BL_PATH_MAX = 1024;
+    char buffer[BL_PATH_MAX] = {0};
     if (getcwd(buffer, sizeof(buffer)))
     {
         result = std::string(buffer);
