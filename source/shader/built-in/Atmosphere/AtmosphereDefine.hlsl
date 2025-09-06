@@ -1,3 +1,5 @@
+#ifndef GNX_ENGINE_ATMOSPHERE_COMMON_DEFINE_INCLUDE
+#define GNX_ENGINE_ATMOSPHERE_COMMON_DEFINE_INCLUDE
 
 #define m 1.0          //米
 #define nm 1.0         //纳米
@@ -10,7 +12,22 @@
 #define km (1000.0 * m) //千米
 #define m2 (m * m)  //平方米
 
-struct DensityProfileLayer //大气层密度剖面
+// 光学长度纹理size
+#define TRANSMITTANCE_TEXTURE_WIDTH 256
+#define TRANSMITTANCE_TEXTURE_HEIGHT 64
+
+// 内散射(r,mu,mu_s,nu)的size
+#define SCATTERING_TEXTURE_R_SIZE 32
+#define SCATTERING_TEXTURE_MU_SIZE 128
+#define SCATTERING_TEXTURE_MU_S_SIZE 32
+#define SCATTERING_TEXTURE_NU_SIZE 8
+
+// 辐照度纹理size
+#define IRRADIANCE_TEXTURE_WIDTH 64
+#define IRRADIANCE_TEXTURE_HEIGHT 16
+
+//大气层密度剖面
+struct DensityProfileLayer 
 {
 	float width;
 	float exp_term;
@@ -24,7 +41,8 @@ struct DensityProfile
 	DensityProfileLayer layers[2];
 };
 
-struct AtmosphereParameters //大气层参数模型
+//大气层参数模型
+struct AtmosphereParameters
 {
 	// 大气层顶部的太阳辐照度
 	float3 solar_irradiance;
@@ -55,3 +73,5 @@ struct AtmosphereParameters //大气层参数模型
   	// 太阳天最大天顶角的cos值(cos因此最小)，用于后面大气散射的预计算
   	float mu_s_min;
 };
+
+#endif
