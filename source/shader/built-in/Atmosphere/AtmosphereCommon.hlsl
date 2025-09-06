@@ -948,10 +948,10 @@ float3 ComputeIndirectIrradiance(
 	float r, float mu_s, int scattering_order)
 {
 	const int	SAMPLE_COUNT	= 32;/* 积分采样数 */
-	const float	dphi		= pi / float( SAMPLE_COUNT );/* 采样步长 */
-	const float	dtheta		= pi / float( SAMPLE_COUNT );
+	const float	dphi		= PI / float(SAMPLE_COUNT);/* 采样步长 */
+	const float	dtheta		= PI / float(SAMPLE_COUNT);
 
-	float3 result = float3(0.0 * watt_per_square_meter_per_nm );
+	float3 result = float3(0.0, 0.0, 0.0);
 	/* 射线(r,mu_s)的方向向量 */
 	float3 omega_s = float3( sqrt( 1.0 - mu_s * mu_s ), 0.0, mu_s );
 	/* 对整个半球进行双重积分 */
@@ -970,9 +970,9 @@ float3 ComputeIndirectIrradiance(
 			float nu = dot(omega, omega_s);
 			result += GetScattering(atmosphere, single_rayleigh_scattering_texture, single_rayleigh_scattering_sampler,
 						 single_mie_scattering_texture, single_mie_scattering_sampler, 
-						 multiple_scattering_texture, multiple_scattering_sampler
+						 multiple_scattering_texture, multiple_scattering_sampler,
 						 r, omega.z, mu_s, nu, false /* ray_r_theta_intersects_ground */,
-						 scattering_order ) * omega.z * domega;
+						 scattering_order) * omega.z * domega;
 		}
 	}
 	return result;
