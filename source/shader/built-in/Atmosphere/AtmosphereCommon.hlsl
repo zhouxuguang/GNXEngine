@@ -1180,7 +1180,7 @@ float3 GetSkyRadiance(
 	{
 		/* 视线与大气层无交点,直接返回0 */
 		transmittance = float3(1.0, 1.0, 1.0);
-		return float3(0.0 * watt_per_square_meter_per_sr_per_nm);
+		return float3(0.0, 0.0, 0.0);
 	}
 	/* 计算(r,mu,mu_s,nu)即(高度,天顶角cos,太阳天顶角cos,太阳方向向量与视线夹角cos) */
 	float	mu		= rmu / r;
@@ -1189,7 +1189,7 @@ float3 GetSkyRadiance(
 	/* 检测视线是否与地面相交 */
 	bool ray_r_mu_intersects_ground = RayIntersectsGround(atmosphere, r, mu);
 	/* 与地面相交则光学深度为0 */
-	transmittance = ray_r_mu_intersects_ground ? DimensionlessSpectrum( 0.0 ) :
+	transmittance = ray_r_mu_intersects_ground ? float3(0.0, 0.0, 0.0) :
 			GetTransmittanceToTopAtmosphereBoundary(atmosphere, transmittance_texture, transmittance_sampler, r, mu );
 	float3	single_mie_scattering;
 	float3	scattering;
@@ -1199,7 +1199,7 @@ float3 GetSkyRadiance(
 		scattering = GetCombinedScattering(
 				atmosphere, scattering_texture, scattering_sampler, 
 				single_mie_scattering_texture, single_mie_scattering_sampler, 
-				r, mu, mu_s, nu, ray_r_mu_intersects_ground,single_mie_scattering );
+				r, mu, mu_s, nu, ray_r_mu_intersects_ground, single_mie_scattering );
 	} 
 	else 
 	{
@@ -1210,7 +1210,8 @@ float3 GetSkyRadiance(
 		float	mu_p	= (r * mu + d) / r_p;
 		float	mu_s_p	= (r * mu_s + d * nu) / r_p;
 		scattering 	= GetCombinedScattering(
-				atmosphere, scattering_texture, single_mie_scattering_texture,
+				atmosphere, scattering_texture, scattering_sampler, 
+				single_mie_scattering_texture, single_mie_scattering_sampler,
 				r_p, mu_p, mu_s_p, nu, ray_r_mu_intersects_ground,
 				single_mie_scattering);
 		/* 视点p到沿视线在长度shadow_length处的点的光学深度 */
@@ -1240,10 +1241,10 @@ float3 GetSkyRadianceToPoint(
 	SamplerState scattering_sampler,
 	Texture3D single_mie_scattering_texture,
 	SamplerState single_mie_scattering_sampler,
-	float3 camera, float3 point, float shadow_length,
+	float3 camera, float3 pos, float shadow_length,
 	float3 sun_direction, out float3 transmittance)
 {
-	float3	view_ray	= normalize( point - camera );/* 视线方向向量 */
+	float3	view_ray	= normalize(pos - camera);      /* 视线方向向量 */
 	float		r			= length(camera);             /* 海拔高度 */
 	float		rmu			= dot(camera, view_ray);      /* r*天顶角cos值 */
 	/* 到达大气层顶部的距离 */
@@ -1260,7 +1261,7 @@ float3 GetSkyRadianceToPoint(
 	float	mu		= rmu / r;
 	float	mu_s	= dot(camera, sun_direction)/r;
 	float	nu		= dot(view_ray, sun_direction);
-	float	d		= length(point - camera); /* 目标point到摄像机的距离 */
+	float	d		= length(pos - camera); /* 目标pos到摄像机的距离 */
 	/* 检测视线是否与地面相交 */
 	bool ray_r_mu_intersects_ground = RayIntersectsGround(atmosphere, r, mu);
 	/* 获取在camera到point的光学长度 */
@@ -1286,7 +1287,8 @@ float3 GetSkyRadianceToPoint(
 	/* 查找point点处的内散射纹理 */
 	float3	single_mie_scattering_p;
 	float3	scattering_p = GetCombinedScattering(
-			atmosphere, scattering_texture, single_mie_scattering_texture,
+			atmosphere, scattering_texture, scattering_sampler, 
+			single_mie_scattering_texture, single_mie_scattering_sampler, 
 			r_p, mu_p, mu_s_p, nu, ray_r_mu_intersects_ground,
 			single_mie_scattering_p);
 	/* 把以上查找结果综合起来得到camera到point之间的散射 */
@@ -1326,14 +1328,14 @@ float3 GetSunAndSkyIrradiance(
 	SamplerState transmittance_sampler,
 	Texture2D irradiance_texture,
 	SamplerState irradiance_sampler,
-	float3 point, float3 normal, float3 sun_direction,
+	float3 pos, float3 normal, float3 sun_direction,
 	out float3 sky_irradiance)
 {
-	float r = length(point);/* point点海拔高度 */
-	float mu_s = dot(point, sun_direction) / r;/* 相应的天顶角 */
+	float r = length(pos);                       /* point点海拔高度 */
+	float mu_s = dot(pos, sun_direction) / r;  /* 相应的天顶角 */
 	/* 间接辐照度 */
 	sky_irradiance = GetIrradiance(atmosphere, irradiance_texture, irradiance_sampler, r, mu_s) *
-			 				(1.0 + dot( normal, point ) / r) * 0.5;
+			 				(1.0 + dot(normal, pos) / r) * 0.5;
 	/* 直接辐照度 */
 	return atmosphere.solar_irradiance *
 	       GetTransmittanceToSun(atmosphere, transmittance_texture, transmittance_sampler, r, mu_s) *
