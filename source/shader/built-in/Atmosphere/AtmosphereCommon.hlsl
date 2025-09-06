@@ -33,7 +33,130 @@ float PhaseFunctionR(float Mu)
 /** Mie phase function */
 float PhaseFunctionM(float Mu, float MieG)
 {
-	return 1.5 * 1.0 / (4.0 * PI) * (1.0 - MieG * MieG) * pow( abs(1.0 + (MieG * MieG) - 2.0 * MieG * Mu), -3.0/2.0) * (1.0 + Mu * Mu) / (2.0 + MieG * MieG);
+	return 1.5 * 1.0 / (4.0 * PI) * (1.0 - MieG * MieG) * pow( abs(1.0 + (MieG * MieG) - 2.0 * MieG * Mu), -3.0/2.0) * (1.0 + Mu * Mu) / 
+		(2.0 + MieG * MieG);
+}
+
+/**
+ * 功能:
+ *  用求根公式求解二元一次方程x^2+2urx+r^2-t^2=0
+ *  其中u(即下面的mu)是视线天顶角的cos值,而t(即下面的top_radius)是大气层最外层半径
+ *  r是视点位置向量的z分量,求解的根是视点p沿视线到大气层顶层的距离
+ * 传入参数：
+ *  atmosphere大气模型参数(其中top_radius要用到),r为视点高度,mu是视线天顶角的cos值
+ **/
+float DistanceToTopAtmosphereBoundary(AtmosphereParameters atmosphere, float r, float mu)
+{
+	float discriminant = r * r * (mu * mu-1.0) + atmosphere.top_radius * atmosphere.top_radius;//判别式
+	return(ClampDistance(-r * mu + SafeSqrt( discriminant ) ) ); /* 这里是方程解中"+"的那个根 */
+}
+
+/**
+ * 功能:
+ *  与函数DistanceToTopAtmosphereBoundary类似
+ *  不过这里计算的是视点沿视线方向到地球表面交点的距离
+ * 传入参数：
+ *  atmosphere大气模型参数(其中top_radius要用到),r为视点高度,mu是视线天顶角的cos值
+ **/
+float DistanceToBottomAtmosphereBoundary(AtmosphereParameters atmosphere, float r, float mu)
+{
+	float discriminant = r * r * (mu * mu-1.0) + atmosphere.bottom_radius * atmosphere.bottom_radius;
+	return(ClampDistance( -r * mu - SafeSqrt( discriminant ) ) ); /* 这里是方程解中"-"的那个根 */
+}
+
+/**
+ * 功能:
+ *  设i为视点沿视线方向与地球表面的交点,视点所在为p
+ *  则当二元一次方程d^2+2rud+r^2-t^2=0有解d>=0时,射线pi与地面有交点
+ *  该方程意义前面已经说明,求得是距离,而距离一定>=0,故只需该方程有解，那么就有交点
+ *  这个函数判断通过方程的判别式判断方程是否有解
+ * 传入参数：
+ *  atmosphere大气模型参数(其中top_radius要用到),r为视点高度,mu是视线天顶角的cos值
+ **/
+bool RayIntersectsGround(AtmosphereParameters atmosphere, float r, float mu)
+{
+	// 天顶角大于90度(cos值<0) 且 判别式>=0
+	return(mu < 0.0 && r * r * (mu * mu - 1.0) +
+	       atmosphere.bottom_radius * atmosphere.bottom_radius >= 0.0 * m2);
+}
+
+/**
+ * 功能:
+ *  根据给定高度计算密度,密度='exp_term'*exp('exp_scale' * h)+'linear_term'*h+'constant_term'
+ * 传入参数：
+ *  layer大气层,altitude为海拔高度
+ **/
+float GetLayerDensity(DensityProfileLayer layer, float altitude)
+{
+	/* 密度计算'exp_term' * exp('exp_scale' * h) + 'linear_term' * h + 'constant_term' */
+	float density = layer.exp_term * exp( layer.exp_scale * altitude ) +
+			 layer.linear_term * altitude + layer.constant_term;
+	return(clamp(density, float(0.0), float(1.0) ) );
+}
+
+/**
+ * 功能:
+ *  根据给定海拔高度，计算相应的密度值，整个大气层的密度模型有两层
+ * 传入参数：
+ *  profile为大气层,altitude为海拔高度
+ **/
+float GetProfileDensity(DensityProfile profile, float altitude)
+{
+	return(altitude < profile.layers[0].width ?
+	       GetLayerDensity( profile.layers[0], altitude ) :
+	       GetLayerDensity( profile.layers[1], altitude ) );
+}
+
+/**
+ * 功能:
+ *  用梯度法和光线步进法(Ray Marching)计算从p到大气层顶层点的光学长度
+ * 传入参数：
+ *  atmosphere为大气模型,profile为相应的密度分布,r为视点高度,mu是视线天顶角的cos值
+ **/
+float ComputeOpticalLengthToTopAtmosphereBoundary(
+						AtmosphereParameters atmosphere, DensityProfile profile, 
+						float r, float mu)
+{
+	/* 取500个采样进行积分 */
+	const int SAMPLE_COUNT = 500;
+	/* 积分区间步长 */
+	float dx = DistanceToTopAtmosphereBoundary(atmosphere, r, mu) / float(SAMPLE_COUNT);
+	/* 用梯度法循环计算进行积分 */
+	float result = 0.0 * m;
+	for ( int i = 0; i <= SAMPLE_COUNT; ++i) 
+	{
+		float d_i = float(i) * dx;
+		/* 当前采样点到星球中心的距离 */
+		float r_i = sqrt(d_i * d_i + 2.0 * r * mu * d_i + r * r);
+		/* 获取当前采样点的密度值,注意传入的是海拔高度 */
+		float y_i = GetProfileDensity( profile, r_i - atmosphere.bottom_radius );
+		/* (根据梯度计算法则,在积分段两端取0.5的权值，其余为1.0 */
+		float weight_i = i == 0 || i == SAMPLE_COUNT ? 0.5 : 1.0;
+		result += y_i * weight_i * dx;
+	}
+	return result;
+}
+
+/**
+ * 功能:
+ *  计算视点沿视线方向与大气层顶部交点的透射率(或称光学深度)
+ *  结果为三部分叠加取负的exp值:rayleigh光学长度+mie光学长度+吸收光线分子的光学长度
+ *  对应的介质分别为:空气分子、气溶胶、吸收光线的介质
+ * 传入参数：
+ *  atmosphere为大气模型,r为视点高度,mu是视线天顶角的cos值
+ **/
+float3 ComputeTransmittanceToTopAtmosphereBoundary(AtmosphereParameters atmosphere, float r, float mu)
+{
+	return(exp( -(
+			    atmosphere.rayleigh_scattering *
+			    ComputeOpticalLengthToTopAtmosphereBoundary(
+				    atmosphere, atmosphere.rayleigh_density, r, mu ) +
+			    atmosphere.mie_extinction *
+			    ComputeOpticalLengthToTopAtmosphereBoundary(
+				    atmosphere, atmosphere.mie_density, r, mu ) +
+			    atmosphere.absorption_extinction *
+			    ComputeOpticalLengthToTopAtmosphereBoundary(
+				    atmosphere, atmosphere.absorption_density, r, mu ) ) ) );
 }
 
 /**
@@ -61,27 +184,825 @@ float GetUnitRangeFromTextureCoord(float u, int texture_size)
 
 /**
  * 功能:
- *  用求根公式求解二元一次方程x^2+2urx+r^2-t^2=0
- *  其中u(即下面的mu)是视线天顶角的cos值,而t(即下面的top_radius)是大气层最外层半径
- *  r是视点位置向量的z分量,求解的根是视点p沿视线到大气层顶层的距离
+ *  将(r,mu)通过哈希函数映射到纹理坐标(u,v)
  * 传入参数：
- *  atmosphere大气模型参数(其中top_radius要用到),r为视点高度,mu是视线天顶角的cos值
+ *  atmosphere大气模型参数,r为视点高度,mu是视线天顶角的cos值
  **/
-float DistanceToTopAtmosphereBoundary(AtmosphereParameters atmosphere, float r, float mu)
+float2 GetTransmittanceTextureUvFromRMu(AtmosphereParameters atmosphere, float r, float mu)
 {
-	float discriminant = r * r * (mu * mu-1.0) + atmosphere.top_radius * atmosphere.top_radius;//判别式
-	return(ClampDistance(-r * mu + SafeSqrt( discriminant ) ) ); /* 这里是方程解中"+"的那个根 */
+	/* 地表切线射线与大气层顶部的交点与切线的起点之间的距离 */
+	float H = sqrt( atmosphere.top_radius * atmosphere.top_radius -
+			 atmosphere.bottom_radius * atmosphere.bottom_radius );
+	/* 过视点的地表切线的切点到视点的距离 */
+	float rho = SafeSqrt(r*r-atmosphere.bottom_radius * atmosphere.bottom_radius);
+	/* d为视点沿视线方向与大气层外层的交点的距离,后两个是d的上界、下界*/
+	float	d		= DistanceToTopAtmosphereBoundary(atmosphere, r, mu );
+	float	d_min	= atmosphere.top_radius - r;// 下界是视点到大气层的垂直距离
+	float	d_max	= rho + H; // 上界的情况是视线刚好与地表相切
+	float	x_mu	= (d - d_min) / (d_max - d_min); // 将mu映射到[0,1]
+	float	x_r		= rho / H; 
+	return float2(GetTextureCoordFromUnitRange(x_mu, TRANSMITTANCE_TEXTURE_WIDTH),
+		     	  GetTextureCoordFromUnitRange(x_r, TRANSMITTANCE_TEXTURE_HEIGHT));
 }
 
 /**
  * 功能:
- *  与函数DistanceToTopAtmosphereBoundary类似
- *  不过这里计算的是视点沿视线方向到地球表面交点的距离
+ *  将(u,v)映射到纹理坐标(r,mu),即上面函数的逆过程
  * 传入参数：
- *  atmosphere大气模型参数(其中top_radius要用到),r为视点高度,mu是视线天顶角的cos值
+ *  atmosphere大气模型参数,r为视点高度,mu是视线天顶角的cos值,uv是要变换的纹理坐标
  **/
-float DistanceToBottomAtmosphereBoundary(AtmosphereParameters atmosphere, float r, float mu)
+void GetRMuFromTransmittanceTextureUv(AtmosphereParameters atmosphere, float2 uv, out float r, out float mu)
 {
-	float discriminant = r*r*(mu*mu-1.0)+atmosphere.bottom_radius*atmosphere.bottom_radius;
-	return(ClampDistance( -r * mu - SafeSqrt( discriminant ) ) ); /* 这里是方程解中"-"的那个根 */
+	/* 变换回来 */
+	float	x_mu	= GetUnitRangeFromTextureCoord(uv.x, TRANSMITTANCE_TEXTURE_WIDTH);
+	float	x_r		= GetUnitRangeFromTextureCoord(uv.y, TRANSMITTANCE_TEXTURE_HEIGHT);
+	/* 地表切线射线与大气层顶部的交点与切线的起点之间的距离 */
+	float H = sqrt(atmosphere.top_radius * atmosphere.top_radius -
+			 		   atmosphere.bottom_radius * atmosphere.bottom_radius);
+	/* 过视点的地表切线的切点到视点的距离,用于计算r(三角形勾股定理) */
+	float rho = H * x_r;
+	r = sqrt(rho * rho + atmosphere.bottom_radius * atmosphere.bottom_radius);
+	/* d为视点沿视线方向与大气层外层的交点的距离,这里计算d的上、下界,从而得出d */
+	float	d_min	= atmosphere.top_radius - r;
+	float	d_max	= rho + H;
+	float	d		= d_min + x_mu * (d_max - d_min);
+    // 根据H、rho、d推出视线天顶角cos值，由前面提到的求d方程d^2+2rud+r^2-t^2=0推出其中的u
+	mu	= d == 0.0 * m ? float(1.0) : (H * H - rho * rho - d * d) / (2.0 * r * d);
+	mu	= ClampCosine(mu);
+}
+
+/**
+ * 功能:
+ *  将传入的纹理坐标(u,v)映射回(r,mu),然后(r,mu)用于计算光学深度
+ * 传入参数：
+ *  atmosphere大气参数模型,frag_coord为当前的片元坐标
+ **/
+float3 ComputeTransmittanceToTopAtmosphereBoundaryTexture(AtmosphereParameters atmosphere, float2 frag_coord)
+{
+	const float2 TRANSMITTANCE_TEXTURE_SIZE =
+				float2(TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
+	float	r;/* r为视点高度,mu是视线天顶角的cos值 */
+	float	mu;
+	GetRMuFromTransmittanceTextureUv(atmosphere, 
+						frag_coord/TRANSMITTANCE_TEXTURE_SIZE, r, mu );
+	return	ComputeTransmittanceToTopAtmosphereBoundary(atmosphere, r, mu);
+}
+
+/**
+ * 功能:
+ *  将(r,mu)映射到纹理坐标(u,v),然后根据(u,v)获取相应纹理单元存储的光学深度
+ *  即用(r,mu)去查找预计算存放的纹理,返回相应单元的值
+ * 传入参数：
+ *  atmosphere大气参数模型,transmittance_texture透射率纹理,
+ *  r为视点高度,mu是视线方向天顶角的cos值
+ **/
+float3 GetTransmittanceToTopAtmosphereBoundary(AtmosphereParameters atmosphere, 
+												Texture2D transmittance_texture, 
+												SamplerState transmittance_sampler,
+												float r, float mu)
+{
+	float2 uv = GetTransmittanceTextureUvFromRMu(atmosphere, r, mu);
+	return float3(transmittance_texture.Sample(transmittance_sampler, uv).rgb);
+}
+
+/**
+ * 功能:
+ *  计算视点p与从视点触发沿视线长度为d的点q之间的光学深度
+ *  pq光学深度=pi光学深度/qi光学深度,i是p沿视线与大气顶层的交点
+ * 传入参数：
+ *  atmosphere大气参数模型,transmittance_texture光学深度纹理,r为视点p高度
+ *  ,mu是视线天顶角的cos值,d是向量pq的长度,ray_r_mu_intersects_ground射线是否与地面相交
+ **/
+float3 GetTransmittance(
+	AtmosphereParameters atmosphere,
+	Texture2D transmittance_texture,
+	SamplerState transmittance_sampler,
+	float r, float mu, float d, bool ray_r_mu_intersects_ground){
+	/* 计算点q处的高度与天顶角cos值 */
+	float	r_d		= ClampRadius(atmosphere, sqrt(d * d + 2.0 * r * mu * d + r * r));
+	float	mu_d	= ClampCosine((r * mu + d) / r_d);// oq向量与pi向量点积除以两向量长度之积
+
+	/* 如果射线pi与地面有交点,取反向的天顶角 */
+	if ( ray_r_mu_intersects_ground ){
+		return min(
+			       GetTransmittanceToTopAtmosphereBoundary(
+				       atmosphere, transmittance_texture, transmittance_sampler, r_d, -mu_d ) /
+			       GetTransmittanceToTopAtmosphereBoundary(
+				       atmosphere, transmittance_texture, transmittance_sampler, r, -mu ),
+			       float3(1.0, 1.0, 1.0));
+	} else {
+		return min(
+			       GetTransmittanceToTopAtmosphereBoundary(
+				       atmosphere, transmittance_texture, transmittance_sampler, r, mu ) /
+			       GetTransmittanceToTopAtmosphereBoundary(
+				       atmosphere, transmittance_texture, transmittance_sampler, r_d, mu_d ),
+			       float3(1.0, 1.0, 1.0));
+	}
+}
+
+/**
+ * 功能:
+ *  计算某一点到太阳的光学
+ * 传入参数：
+ *  atmosphere大气参数模型,transmittance_texture透射率纹理,r为视点p海拔高度
+ *  ,mu_s是射线与太阳夹角的cos值
+ **/
+float3 GetTransmittanceToSun(
+	AtmosphereParameters atmosphere,
+	Texture2D transmittance_texture,
+	SamplerState transmittance_sampler,
+	float r, float mu_s)
+{
+	/* 计算过视点p的地面切线射线的天顶角的sin和cos值 */
+	float	sin_theta_h	= atmosphere.bottom_radius / r;
+	float	cos_theta_h	= -sqrt(max(1.0-sin_theta_h*sin_theta_h, 0.0));//取负是因为theta一定大于等于90度
+	/* 到太阳的透射率=光学长度*太阳在地平面以上部分的区域部分 */
+	return(GetTransmittanceToTopAtmosphereBoundary(
+		       atmosphere, transmittance_texture, transmittance_sampler, r, mu_s ) *
+	       smoothstep(-sin_theta_h * atmosphere.sun_angular_radius/rad,// rad为弧度单位
+			   			  sin_theta_h * atmosphere.sun_angular_radius/rad,
+			   			  mu_s-cos_theta_h));
+}
+
+/**
+ * 功能:
+ *  计算单次散射积分,返回rayleigh散射系数和mie散射系数积分值,即光学深度(不是光学长度)
+ * 传入参数：
+ *  atmosphere大气参数模型,transmittance_texture光学长度纹理,r为视点p高度
+ *  mu为视线天顶角cos值,mu_s是太阳方向天顶角的cos值,d为视点p沿视线方向与q的距离,
+ *  nu是视线与太阳单位方向向量的夹角cos值,ray_r_mu_intersects_ground射线是否与地面相交
+ **/
+void ComputeSingleScatteringIntegrand(
+	AtmosphereParameters atmosphere,
+	Texture2D transmittance_texture,
+	SamplerState transmittance_sampler,
+	float r, float mu, float mu_s, float nu, float d,
+	bool ray_r_mu_intersects_ground,
+	out float3 rayleigh, out float3 mie)
+{
+	/* 设q为射线pi上的一点,r_d为q的海拔高度 */
+	float r_d 	 = ClampRadius( atmosphere, sqrt( d * d + 2.0 * r * mu * d + r * r ) );
+	/* mu_s_d为向量0q与太阳单位方向向量的夹角的cos值 */
+	float mu_s_d = ClampCosine( (r * mu_s + d * nu) / r_d );
+	/* 相乘是因为GetTransmittance返回的是exp,相乘即他们的指数相加 */
+	float3 transmittance =
+		GetTransmittance(atmosphere, transmittance_texture, transmittance_sampler, r, mu, d,ray_r_mu_intersects_ground) *
+		GetTransmittanceToSun(atmosphere, transmittance_texture, transmittance_sampler, r_d, mu_s_d);
+	rayleigh = transmittance * GetProfileDensity(
+		atmosphere.rayleigh_density, r_d - atmosphere.bottom_radius);
+	mie = transmittance * GetProfileDensity(
+		atmosphere.mie_density, r_d - atmosphere.bottom_radius);
+}
+
+/**
+ * 功能:
+ *  计算射线(r,mu)到大气层边界最近的距离
+ * 传入参数：
+ *  atmosphere大气参数模型,r为视点p高度,mu为视线天顶角cos值,
+ *	 ray_r_mu_intersects_ground射线是否与地面相交
+ **/
+float DistanceToNearestAtmosphereBoundary(AtmosphereParameters atmosphere,
+					    float r, float mu, bool ray_r_mu_intersects_ground)
+{
+	/* 若射线与地面有交点,返回射点到地球表面的距离 */
+	if ( ray_r_mu_intersects_ground )
+	{
+		return DistanceToBottomAtmosphereBoundary(atmosphere, r, mu);
+	}
+	else
+	{ 
+		/* 否则返回到大气层顶部的距离 */
+		return DistanceToTopAtmosphereBoundary( atmosphere, r, mu);
+	}
+}
+
+/**
+ * 功能:
+ *  用梯度法和光线步进计算单次内散射积分
+ * 传入参数：
+ *  atmosphere大气参数模型,transmittance_texture光学长度纹理,r为视点p高度
+ *  mu为视线天顶角cos值,mu_s是太阳方向天顶角的cos值,
+ *  nu是向量pq与太阳单位方向向量的夹角cos值,ray_r_mu_intersects_ground射线是否与地面相交
+ **/
+void ComputeSingleScattering(
+	AtmosphereParameters atmosphere,
+	Texture2D transmittance_texture,
+	SamplerState transmittance_sampler,
+	float r, float mu, float mu_s, float nu,
+	bool ray_r_mu_intersects_ground,
+	out float3 rayleigh, out float3 mie)
+{
+	/* 数值积分采样个数 */
+	const int SAMPLE_COUNT = 50;
+	/* 积分步长,取一个最近的交点作为积分终点,或地面或大气顶层 */
+	float dx = DistanceToNearestAtmosphereBoundary(atmosphere, r, mu,
+						     ray_r_mu_intersects_ground) / float(SAMPLE_COUNT);
+	float3	rayleigh_sum	= float3(0.0, 0.0, 0.0);
+	float3	mie_sum		= float3(0.0, 0.0, 0.0);
+	for (int i = 0; i <= SAMPLE_COUNT; ++i)
+	{
+		float d_i = float(i) * dx;
+		/* 当前点的rayleigh散射系数与mie散射系数. */
+		float3	rayleigh_i;
+		float3	mie_i;
+		ComputeSingleScatteringIntegrand(atmosphere, transmittance_texture, transmittance_sampler,
+						  r, mu, mu_s, nu, d_i, ray_r_mu_intersects_ground, rayleigh_i, mie_i);
+		float weight_i = (i == 0 || i == SAMPLE_COUNT) ? 0.5 : 1.0;
+		rayleigh_sum	  += rayleigh_i * weight_i;
+		mie_sum		  += mie_i * weight_i;
+	}
+	// 此时尚未乘上相位函数,为了减少计算量,因为是均匀采样,所以将dx放到外循环去
+	rayleigh = rayleigh_sum * dx * atmosphere.solar_irradiance * atmosphere.rayleigh_scattering;
+	mie 	  = mie_sum * dx * atmosphere.solar_irradiance * atmosphere.mie_scattering;
+}
+
+/**
+ * 功能:
+ *  计算rayleigh相位函数
+ * 传入参数：
+ *  nu是向量pq与太阳单位方向向量的夹角cos值
+ **/
+float RayleighPhaseFunction(float nu)
+{
+	float k = 3.0 / (16.0 * PI * sr); // sr为立体角单位
+	return(k * (1.0 + nu * nu) );
+}
+
+/**
+ * 功能:
+ *  计算mie相位函数
+ * 传入参数：
+ *  nu是向量pq与太阳单位方向向量的夹角cos值, g是散射的对称性因子
+ *  g为正数表示光线大多数向后方散射,为负数说明更多的光线向前方散射
+ **/
+float MiePhaseFunction(float g, float nu)
+{
+	float k = 3.0 / (8.0 * PI * sr) * (1.0 - g * g) / (2.0 + g * g);
+	return(k * (1.0 + nu * nu) / pow(1.0 + g * g - 2.0 * g * nu, 1.5));
+}
+
+/**
+ * 功能:
+ *  将计算散射积分需要的四个参数(r,mu,mu_s,nu)映射到纹理坐标(u,v,w,z)
+ * 传入参数：
+ *  atmosphere大气参数模型,r为视点p高度,mu为视线天顶角cos值,
+ *  mu_s是太阳方向天顶角的cos值,nu是向量pq与太阳单位方向向量的夹角cos值,
+ *  ray_r_mu_intersects_ground射线是否与地面相交
+ **/
+float4 GetScatteringTextureUvwzFromRMuMuSNu(AtmosphereParameters atmosphere,
+					   float r, float mu, float mu_s, float nu,
+					   bool ray_r_mu_intersects_ground)
+{
+	/* 过视点的与地表相切的射线的切点到大气顶层的距离 */
+	float H = sqrt(atmosphere.top_radius * atmosphere.top_radius -
+			 			atmosphere.bottom_radius * atmosphere.bottom_radius);
+	/* 视点p到过视线的与地表相切的切线的切点的距离 */
+	float rho = SafeSqrt(r * r - atmosphere.bottom_radius * atmosphere.bottom_radius);
+	float u_r = GetTextureCoordFromUnitRange(rho / H, SCATTERING_TEXTURE_R_SIZE);
+
+	/* 二元一次方程判别式,用于二元一次方程求根公式(求解射线(r,mu)与地表的交点) */
+	float	r_mu = r * mu;
+	float	discriminant	= r_mu*r_mu - r*r+atmosphere.bottom_radius*atmosphere.bottom_radius;
+	float u_mu;
+	/* 若射线(r,mu)与地面有交点 */
+	if (ray_r_mu_intersects_ground)
+	{
+		/* 射线(r,mu)射点到与地面交点的距离d,纯粹的求根公式,以及d的上、下界 */
+		float d 		= -r_mu - SafeSqrt(discriminant);
+		float	d_min	= r - atmosphere.bottom_radius;
+		float	d_max	= rho;
+		u_mu = 0.5 - 0.5 * GetTextureCoordFromUnitRange(
+								 d_max == d_min ? 0.0:(d - d_min) / (d_max - d_min),
+								 SCATTERING_TEXTURE_MU_SIZE / 2 );
+	} 
+	else 
+	{
+		/* 计算射线(r,mu)射点到大气层顶层边界交点的距离及其上界、下界 */
+		float	d		= -r_mu + SafeSqrt(discriminant + H * H);
+		float	d_min	= atmosphere.top_radius - r;
+		float	d_max	= rho + H;
+		u_mu = 0.5 + 0.5 * GetTextureCoordFromUnitRange(
+								(d - d_min) / (d_max - d_min), SCATTERING_TEXTURE_MU_SIZE / 2);
+	}
+	
+	/* 对于mu_s,借用地表上有相同mu_s的点进行映射 */
+	float d 		  = DistanceToTopAtmosphereBoundary(
+								atmosphere, atmosphere.bottom_radius, mu_s);
+	float	d_min	  = atmosphere.top_radius-atmosphere.bottom_radius;
+	float	d_max	  = H;
+	float	a		  = (d - d_min) / (d_max - d_min);
+	float	A		  = -2.0*atmosphere.mu_s_min*atmosphere.bottom_radius/(d_max-d_min);
+	float	u_mu_s   = GetTextureCoordFromUnitRange(max(1.0-a/A, 0.0)/(1.0+a),
+							  SCATTERING_TEXTURE_MU_S_SIZE);
+	float u_nu = (nu + 1.0) / 2.0; //将nu从[-1,1]映射到[0,1]
+	return float4(u_nu, u_mu_s, u_mu, u_r);
+}
+
+/**
+ * 功能:
+ *  将纹理坐标(u,v,w,z)映射到计算散射积分需要的四个参数(r,mu,mu_s,nu)
+ * 传入参数：
+ *  atmosphere大气参数模型,r为视点p高度,mu为视线天顶角cos值,uvwz是4D纹理坐标
+ *  mu_s是太阳方向天顶角的cos值,nu是向量pq与太阳单位方向向量的夹角cos值,
+ *  ray_r_mu_intersects_ground射线是否与地面相交
+ **/
+void GetRMuMuSNuFromScatteringTextureUvwz(AtmosphereParameters atmosphere,
+					   float4 uvwz, out float r, out float mu, out float mu_s,
+					   out float nu, out bool ray_r_mu_intersects_ground)
+{
+	float H = sqrt(atmosphere.top_radius * atmosphere.top_radius -
+			 		   atmosphere.bottom_radius * atmosphere.bottom_radius );
+	float rho = H * GetUnitRangeFromTextureCoord( uvwz.w, SCATTERING_TEXTURE_R_SIZE );
+	r = sqrt( rho * rho + atmosphere.bottom_radius * atmosphere.bottom_radius );
+	if (uvwz.z < 0.5)
+	{
+		float	d_min	= r - atmosphere.bottom_radius;
+		float	d_max	= rho;
+		float	d	= d_min + (d_max - d_min) * GetUnitRangeFromTextureCoord(
+						1.0 - 2.0 * uvwz.z, SCATTERING_TEXTURE_MU_SIZE / 2 );
+		mu = d == 0.0 * m ? float(-1.0) :
+		     			ClampCosine(-(rho * rho + d * d) / (2.0 * r * d));
+		ray_r_mu_intersects_ground = true;
+	} 
+	else 
+	{
+		float	d_min	= atmosphere.top_radius - r;
+		float	d_max	= rho + H;
+		float	d	= d_min + (d_max - d_min) * GetUnitRangeFromTextureCoord(
+						2.0 * uvwz.z - 1.0, SCATTERING_TEXTURE_MU_SIZE / 2 );
+		mu = d == 0.0 * m ? float(1.0) :
+		     			ClampCosine((H * H - rho * rho - d * d) / (2.0 * r * d));
+		ray_r_mu_intersects_ground = false;
+	}
+	float x_mu_s = GetUnitRangeFromTextureCoord(uvwz.y, SCATTERING_TEXTURE_MU_S_SIZE);
+	float	d_min	= atmosphere.top_radius - atmosphere.bottom_radius;
+	float	d_max	= H;
+	float	A	= -2.0 * atmosphere.mu_s_min * atmosphere.bottom_radius / (d_max - d_min);
+	float	a	= (A - x_mu_s * A) / (1.0 + x_mu_s * A);
+	float	d	= d_min + min( a, A ) * (d_max - d_min);
+	mu_s = d == 0.0 * m ? float(1.0) :
+	       			ClampCosine((H * H - d * d) / (2.0 * atmosphere.bottom_radius * d));
+	nu = ClampCosine(uvwz.x * 2.0 - 1.0);
+}
+
+/**
+ * 功能:
+ *  实际中只有3D纹理坐标,这里将3D转成4D,然后根据4D纹理获取(r,mu,mu_s,nu)参数
+ * 传入参数：
+ *  atmosphere大气参数模型,r为视点p高度,mu为视线天顶角cos值,uvwz是4D纹理坐标
+ *  mu_s是太阳方向天顶角的cos值,nu是向量pq与太阳单位方向向量的夹角cos值,
+ *  ray_r_mu_intersects_ground射线是否与地面相交
+ **/
+void GetRMuMuSNuFromScatteringTextureFragCoord(
+	AtmosphereParameters atmosphere, float3 frag_coord,
+	out float r, out float mu, out float mu_s, out float nu,
+	out bool ray_r_mu_intersects_ground)
+{
+	const float4 SCATTERING_TEXTURE_SIZE = float4(
+						SCATTERING_TEXTURE_NU_SIZE - 1,
+						SCATTERING_TEXTURE_MU_S_SIZE,
+						SCATTERING_TEXTURE_MU_SIZE,
+						SCATTERING_TEXTURE_R_SIZE);
+	/* nu和mu_s的坐标值均由frag_cood.x获取,前者取整,后者取模 */
+	float frag_coord_nu =
+				floor(frag_coord.x/ float(SCATTERING_TEXTURE_MU_S_SIZE));
+	float frag_coord_mu_s = modf(frag_coord.x, float(SCATTERING_TEXTURE_MU_S_SIZE));
+	float4 uvwz = float4(frag_coord_nu, frag_coord_mu_s, frag_coord.y, frag_coord.z)/
+						SCATTERING_TEXTURE_SIZE;
+	/* 根据uvwz这个4D纹理坐标从散射纹理中获取对应的(r,mu,mu_s,nu) */
+	GetRMuMuSNuFromScatteringTextureUvwz(
+				atmosphere, uvwz, r, mu, mu_s, nu, ray_r_mu_intersects_ground);
+	/* 对于nu,根据给定的mu和mu_s对其做一些上下界约束[cos(x+y),cos(x-y)] */
+	nu = clamp(nu, mu * mu_s - sqrt( (1.0 - mu * mu) * (1.0 - mu_s * mu_s) ),
+		    			mu * mu_s + sqrt( (1.0 - mu * mu) * (1.0 - mu_s * mu_s)));
+}
+
+/**
+ * 功能:
+ *  有了以上的函数,现在我们可以计算一个指定的纹理单元对应的单次散射,结果存入rayleigh和mie
+ * 传入参数：
+ *  atmosphere大气参数模型,frag_coord为3D纹理坐标
+ *  ray_r_mu_intersects_ground射线是否与地面相交
+ **/
+void ComputeSingleScatteringTexture(AtmosphereParameters atmosphere,
+				     Texture2D transmittance_texture,
+					 SamplerState transmittance_sampler, float3 frag_coord,
+				     out float3 rayleigh, out float3 mie)
+{
+	float	r;
+	float	mu;
+	float	mu_s;
+	float	nu;
+	bool	ray_r_mu_intersects_ground;
+	GetRMuMuSNuFromScatteringTextureFragCoord(atmosphere, frag_coord,
+						   r, mu, mu_s, nu, ray_r_mu_intersects_ground);
+	ComputeSingleScattering(atmosphere, transmittance_texture, transmittance_sampler, 
+				 r, mu, mu_s, nu, ray_r_mu_intersects_ground, rayleigh, mie);
+}
+
+/**
+ * 功能:
+ *  获取射点到与最近大气层边界交点之间的散射量,需要两次3D的纹理查找
+ * 传入参数：
+ *  atmosphere大气参数模型,scattering_texture为散射预存纹理,r为视点p海拔高度,
+ *  mu为视线天顶角cos值,mu_s是太阳方向天顶角的cos值,nu是向量pq与太阳单位方向向量的夹角cos值
+ *  ray_r_mu_intersects_ground射线是否与地面相交
+ **/
+float3 GetScattering(AtmosphereParameters atmosphere,
+	Texture3D scattering_texture,
+	SamplerState scattering_sampler,
+	float r, float mu, float mu_s, float nu,
+	bool ray_r_mu_intersects_ground)
+{
+	/* 根据给定的(r,mu,mu_s,nu)计算对应的4D纹理坐标uvwz */
+	float4 uvwz = GetScatteringTextureUvwzFromRMuMuSNu(
+						atmosphere, r, mu, mu_s, nu, ray_r_mu_intersects_ground );
+	float	tex_coord_x	= uvwz.x * float(SCATTERING_TEXTURE_NU_SIZE - 1);
+	float	tex_x			= floor(tex_coord_x); /* 整数部分 */
+	float	lerp			= tex_coord_x - tex_x;  /* 小数部分 */
+	float3 uvw0 = float3((tex_x + uvwz.y) / float( SCATTERING_TEXTURE_NU_SIZE ),
+			  			uvwz.z, uvwz.w);
+	float3 uvw1 = float3((tex_x + 1.0 + uvwz.y) / float( SCATTERING_TEXTURE_NU_SIZE ),
+			  			uvwz.z, uvwz.w);
+	/* 根据lerp线性插值 */
+	return float3(scattering_texture.Sample(scattering_sampler, uvw0).rgb * (1.0 - lerp) +
+				 			    scattering_texture.Sample(scattering_sampler, uvw1).rgb * lerp);
+}
+
+/**
+ * 功能:
+ *  获取射点到与大气层边界交点(或大气顶层,或地表面)之间的散射辐照度,需要两次3D的纹理查找
+ * 传入参数：
+ *  atmosphere大气参数模型,single_rayleigh_scattering_texture为rayleigh单次散射纹理,
+ *  single_mie_scattering_texture为mie单词散射纹理,multiple_scattering_texture
+ *  r为视点p高度,mu为视线天顶角cos值,mu_s是太阳方向天顶角的cos值,
+ *  nu是向量pq与太阳单位方向向量的夹角cos值,ray_r_mu_intersects_ground射线是否与地面相交
+ *  multiple_scattering_texture为多次散射纹理,scattering_order为散射重数
+ **/
+float3 GetScattering(
+    AtmosphereParameters atmosphere,
+    Texture3D single_rayleigh_scattering_texture,
+	SamplerState single_rayleigh_scattering_sampler,
+    Texture3D single_mie_scattering_texture,
+	SamplerState single_mie_scattering_sampler,
+    Texture3D multiple_scattering_texture,
+	SamplerState multiple_scattering_sampler,
+    float r, float mu, float mu_s, float nu,
+    bool ray_r_mu_intersects_ground,
+    int scattering_order) 
+{
+	if (scattering_order == 1) 
+	{
+		//单次散射
+		float3 rayleigh = GetScattering(
+        		atmosphere, single_rayleigh_scattering_texture, single_rayleigh_scattering_sampler, r, mu, mu_s, nu,
+        		ray_r_mu_intersects_ground);
+		float3 mie = GetScattering(
+        		atmosphere, single_mie_scattering_texture, single_mie_scattering_sampler, r, mu, mu_s, nu,
+        		ray_r_mu_intersects_ground);
+	 	// 最后还要乘上相应的相位函数
+    	return rayleigh * RayleighPhaseFunction(nu) +
+        		mie * MiePhaseFunction(atmosphere.mie_phase_function_g, nu);
+	} 
+	else 
+	{
+		//多次散射
+		return GetScattering(atmosphere, multiple_scattering_texture, multiple_scattering_sampler, r, mu, mu_s, nu,
+        						ray_r_mu_intersects_ground);
+	}
+}
+
+/**
+ * 功能:
+ *  经过n-2次散射地面接收的辐照度
+ * 传入参数：
+ *  atmosphere大气参数模型,irradiance_texture辐照度纹理,
+ *  single_mie_scattering_texture为mie单词散射纹理,multiple_scattering_texture
+ *  r为视点p海拔高度,mu为视线天顶角cos值,mu_s是太阳方向天顶角的cos值,
+ **/
+float3 GetIrradiance(AtmosphereParameters atmosphere,
+									    Texture2D irradiance_texture,
+										SamplerState irradiance_sampler,
+										float r, float mu_s);
+
+/**
+ * 功能:
+ *  根据n-1重的散射纹理计算第n重的散射密度,返回辐射密度谱
+ * 传入参数：
+ *  atmosphere大气参数模型,transmittance_texture为透射率纹理,
+ *  single_rayleigh_scattering_texture单次rayleigh散射纹理,
+ *  single_mie_scattering_texture为mie单次散射纹理,multiple_scattering_texture多次散射纹理
+ *  irradiance_texture地面接收的辐照度纹理,r为积分点p高度,mu为视线天顶角cos值,
+ *  mu_s是太阳方向天顶角的cos值,nu是向量pq与太阳单位方向向量的夹角cos值,
+ *  scattering_order散射次数
+ **/
+RadianceDensitySpectrum ComputeScatteringDensity(
+	AtmosphereParameters atmosphere,
+	Texture2D transmittance_texture,
+	SamplerState transmittance_sampler,
+	Texture3D single_rayleigh_scattering_texture,
+	SamplerState single_rayleigh_scattering_sampler,
+	Texture3D single_mie_scattering_texture,
+	SamplerState single_mie_scattering_sampler,
+	Texture3D multiple_scattering_texture,
+	SamplerState multiple_scattering_sampler,
+	Texture2D irradiance_texture,
+	SamplerState irradiance_sampler,
+	float r, float mu, float mu_s, float nu, int scattering_order)
+{
+	float3 zenith_direction = float3(0.0, 0.0, 1.0);
+	float3	omega		= float3(sqrt(1.0 - mu * mu), 0.0, mu);/* 视线方向向量 */
+	float	sun_dir_x	= omega.x == 0.0 ? 0.0 : (nu - mu * mu_s) / omega.x;
+	float3	sun_dir_y	= sqrt(max( 1.0 - sun_dir_x * sun_dir_x - mu_s * mu_s, 0.0));
+	float3	omega_s	= float3(sun_dir_x, sun_dir_y, mu_s);/* 太阳方向向量 */
+	const int		SAMPLE_COUNT	= 16;//积分采样数u
+	const float		dphi		= pi / float(SAMPLE_COUNT);//采样步长
+	const float		dtheta		= pi / float(SAMPLE_COUNT);
+	float3 rayleigh_mie	= float3(0.0 * watt_per_cubic_meter_per_sr_per_nm);
+	/* 双重积分,theta为天顶角 */
+	for (int l = 0; l < SAMPLE_COUNT; ++l)
+	{
+		float	theta		= (float(l) + 0.5) * dtheta;
+		float	cos_theta	= cos(theta);
+		float	sin_theta	= sin(theta);
+		/* 判断是否与地面有交点 */
+		bool ray_r_theta_intersects_ground = RayIntersectsGround(atmosphere, r, cos_theta);
+		/* 当前射线到地表交点的距离以及光学深度仅取决于theta(即天顶角),所以放到外循环计算 */
+		float	distance_to_ground = 0.0 * m;
+		float3 transmittance_to_ground = float3(0.0, 0.0, 0.0);
+		float3 ground_albedo = float3(0.0, 0.0, 0.0);
+		/* 与地面有交点 */
+		if (ray_r_theta_intersects_ground)
+		{
+			/* 射点沿射线到地面的距离 */
+			distance_to_ground = DistanceToBottomAtmosphereBoundary(atmosphere, r, cos_theta);
+			/* 相应的到地面的透射率 */
+			transmittance_to_ground =
+				GetTransmittance(atmosphere, transmittance_texture, transmittance_sampler, r, cos_theta,
+						  distance_to_ground, true);
+			ground_albedo = atmosphere.ground_albedo;/* 地面反照率 */
+		}
+		for (int m = 0; m < 2 * SAMPLE_COUNT; ++m)
+		{
+			/* 内循环积分,这里积的是方位角 */
+			float phi = (float(m) + 0.5) * dphi;
+			/* 由phi(方位角)和theta(天顶角)两个角度指定的方向向量 */
+			float3 omega_i = float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
+			/* 立体角domega=sin(theta)*dtheta*dphi; */
+			float domega_i = (dtheta / rad) * (dphi / rad) * sin(theta) * sr;
+			/*经过n-1次反射从omega_i方向的辐射度L_i由n-1重散射的散射值累加。
+			 * 太阳方向向量与omge_i向量夹角的cos值 */
+			float nu1 = dot(omega_s, omega_i);
+			/* 获取n-1散射在此采样点接收的入射光线辐射度 */
+			float3 incident_radiance = GetScattering(atmosphere,
+									    single_rayleigh_scattering_texture, single_rayleigh_scattering_sampler, 
+										single_mie_scattering_texture, single_mie_scattering_sampler,
+									    multiple_scattering_texture, multiple_scattering_sampler, 
+										r, omega_i.z, mu_s, nu1,
+									    ray_r_theta_intersects_ground, scattering_order - 1);
+			/* 采样点接收地面辐射的光线,这部分的值主要是由采样点到地面的光学深度、
+			 * 地面反照率、地面的BRDF以及地面吸收的n-2次反射的辐照度的乘积 */
+			float3 ground_normal = normalize(zenith_direction * r + omega_i * distance_to_ground);
+			/* 地面吸收的n-2次反射的辐照度 */
+			float3 ground_irradiance = GetIrradiance(
+								atmosphere, irradiance_texture, atmosphere.bottom_radius,
+								dot(ground_normal, omega_s));
+			incident_radiance += transmittance_to_ground *
+					     ground_albedo * (1.0 / (PI * sr)) * ground_irradiance;
+
+			/* 从omega_i方向向-omega方向散射的辐射度为incident_radiance、
+			 * 散射系数、方向omega和omega_i的相位函数之积 */
+			float	nu2			= dot(omega, omega_i);
+			float	rayleigh_density	= GetProfileDensity(
+						atmosphere.rayleigh_density, r - atmosphere.bottom_radius );
+			float mie_density = GetProfileDensity(
+						atmosphere.mie_density, r - atmosphere.bottom_radius );
+			rayleigh_mie += incident_radiance * (
+						atmosphere.rayleigh_scattering * rayleigh_density *
+						RayleighPhaseFunction( nu2 ) +
+						atmosphere.mie_scattering * mie_density *
+						MiePhaseFunction( atmosphere.mie_phase_function_g, nu2 ) ) * domega_i;
+		}
+	}
+	return rayleigh_mie;
+}
+
+/**
+ * 功能:
+ *  计算多重散射系数(从视点r处到与边界(或大气顶层或地面)交点的内散射积分)
+ * 传入参数：
+ *  atmosphere大气参数模型,transmittance_texture为透射率纹理,
+ *  scattering_density_texture散射密度纹理,
+ *  r为视点p高度,mu为视线天顶角cos值,
+ *  mu_s是太阳方向天顶角的cos值,nu是向量pq与太阳单位方向向量的夹角cos值,
+ *  ray_r_mu_intersects_ground是否与地面相交
+ **/
+float3 ComputeMultipleScattering(
+	AtmosphereParameters atmosphere,
+	Texture2D transmittance_texture,
+	SamplerState transmittance_sampler,
+	Texture3D scattering_density_texture,
+	SamplerState scattering_density_sampler,
+	float r, float mu, float mu_s, float nu,
+	bool ray_r_mu_intersects_ground)
+{
+	const int SAMPLE_COUNT = 50; /* 积分采样数 */
+
+	/* 积分步长 */
+	float dx =	DistanceToNearestAtmosphereBoundary(
+					atmosphere, r, mu, ray_r_mu_intersects_ground ) / float(SAMPLE_COUNT);
+	float3 rayleigh_mie_sum = float3(0.0 * watt_per_square_meter_per_sr_per_nm);
+	for (int i = 0; i <= SAMPLE_COUNT; ++i)
+	{
+		float d_i = float(i) * dx;
+		/* 当前采样积分点的高度r_i */
+		float r_i = ClampRadius(atmosphere, sqrt(d_i * d_i + 2.0 * r * mu * d_i + r * r));
+		float	mu_i	= ClampCosine((r * mu + d_i) / r_i);
+		float	mu_s_i	= ClampCosine((r * mu_s + d_i * nu) / r_i);
+		/* 当前采样点的rayleigh散射系数、mie散射系数 */
+		float3 rayleigh_mie_i =
+				GetScattering(
+					atmosphere, scattering_density_texture, r_i, mu_i, mu_s_i, nu,
+					ray_r_mu_intersects_ground ) *
+				GetTransmittance(
+					atmosphere, transmittance_texture, r, mu, d_i,
+					ray_r_mu_intersects_ground ) * dx;
+		float weight_i = (i == 0 || i == SAMPLE_COUNT) ? 0.5 : 1.0;
+		rayleigh_mie_sum += rayleigh_mie_i * weight_i;
+	}
+	return rayleigh_mie_sum;
+}
+
+/**
+ * 功能:
+ *  计算当前3D纹理坐标对应的(r,mu,mu_s,nu)处接收的散射辐照度
+ * 传入参数：
+ *  atmosphere大气参数模型,transmittance_texture为光学深度纹理,
+ *  single_rayleigh_scattering_texture单次rayleigh散射纹理,
+ *  single_mie_scattering_texture为mie单次散射纹理,
+ *  multiple_scattering_texture多次散射纹理
+ *  irradiance_texture地面接收的辐照度纹理,frag_coord为3D纹理坐标,
+ *  scattering_order散射重数
+ **/
+float3 ComputeScatteringDensityTexture(
+	AtmosphereParameters atmosphere,
+	Texture2D transmittance_texture,
+	SamplerState transmittance_sampler,
+	Texture3D single_rayleigh_scattering_texture,
+	SamplerState single_rayleigh_scattering_sampler,
+	Texture3D single_mie_scattering_texture,
+	SamplerState single_mie_scattering_sampler,
+	Texture3D multiple_scattering_texture,
+	SamplerState multiple_scattering_sampler,
+	Texture2D irradiance_texture,
+	SamplerState irradiance_sampler,
+	float3 frag_coord, int scattering_order)
+{
+	float	r;
+	float	mu;
+	float	mu_s;
+	float	nu;
+	bool	ray_r_mu_intersects_ground;
+	/* 从frag_coord的3D纹理坐标计算出当前的(r,mu,mu_s,nu) */
+	GetRMuMuSNuFromScatteringTextureFragCoord(atmosphere, frag_coord,
+						   r, mu, mu_s, nu, ray_r_mu_intersects_ground);
+	return ComputeScatteringDensity(atmosphere, transmittance_texture, transmittance_sampler,
+					 single_rayleigh_scattering_texture, single_rayleigh_scattering_sampler,
+					 single_mie_scattering_texture, single_mie_scattering_sampler,
+					 multiple_scattering_texture, multiple_scattering_sampler,
+					 irradiance_texture, irradiance_sampler, r, mu, mu_s, nu,
+					 scattering_order);
+}
+
+/**
+ * 功能:
+ *  计算当前3D纹理坐标对应的(r,mu,mu_s,nu)处的多重散射系数
+ *  从视点到大气顶层的路径上的光学深度
+ * 传入参数：
+ *  atmosphere大气参数模型,transmittance_texture为光学深度纹理,
+ *  scattering_density_texture为散射谱纹理,frag_coord为3D纹理坐标,
+ *  nu为射线(r,mu)与太阳方向向量夹角cos值
+ **/
+float3 ComputeMultipleScatteringTexture(
+	AtmosphereParameters atmosphere,
+	Texture2D transmittance_texture,
+	SamplerState transmittance_sampler,
+	Texture3D scattering_density_texture,
+	SamplerState scattering_density_sampler,
+	float3 frag_coord, out float nu)
+{
+	float	r;
+	float	mu;
+	float	mu_s;
+	bool	ray_r_mu_intersects_ground;
+	/* 从frag_coord的3D纹理坐标计算出当前的(r,mu,mu_s,nu) */
+	GetRMuMuSNuFromScatteringTextureFragCoord(atmosphere, frag_coord,
+						   r, mu, mu_s, nu, ray_r_mu_intersects_ground);
+	return ComputeMultipleScattering(atmosphere, transmittance_texture,
+					  scattering_density_texture, r, mu, mu_s, nu,
+					  ray_r_mu_intersects_ground);
+}
+
+/**
+ * 功能:
+ *  计算地面接收的直接辐照度
+ * 传入参数：
+ *  atmosphere大气参数模型,transmittance_texture为光学深度纹理,
+ *  scattering_density_texture为散射谱纹理,(r,mu_s)为(视点高度,天顶角)
+ **/
+float3 ComputeDirectIrradiance(
+	AtmosphereParameters atmosphere,
+	Texture2D transmittance_texture,
+	SamplerState transmittance_sampler,
+	float r, float mu_s)
+{
+	float alpha_s = atmosphere.sun_angular_radius / rad;//太阳角半径
+	/* 太阳圆盘可见部分的近似平均余弦因子 */
+	float average_cosine_factor = mu_s < -alpha_s ? 0.0 : (mu_s > alpha_s ? mu_s :
+					 (mu_s + alpha_s) * (mu_s + alpha_s) / (4.0 * alpha_s) );
+	return atmosphere.solar_irradiance *
+	       GetTransmittanceToTopAtmosphereBoundary(atmosphere,
+				 transmittance_texture, transmittance_sampler, r, mu_s ) * average_cosine_factor;
+}
+
+/**
+ * 功能:
+ *  计算地面的间接辐照度,对以地面法线为轴的半球进行积分
+ * 传入参数：
+ *  atmosphere大气参数模型,single_rayleigh_scattering_texture为单次rayleigh散射纹理,
+ *  single_mie_scattering_texture为单次mie散射纹理,
+ *  multiple_scattering_texture多次散射纹理,
+ *  (r,mu_s)为(海拔高度,天顶角),scattering_order散射次数
+ **/
+float3 ComputeIndirectIrradiance(
+	AtmosphereParameters atmosphere,
+	Texture3D single_rayleigh_scattering_texture,
+	SamplerState single_rayleigh_scattering_sampler,
+	Texture3D single_mie_scattering_texture,
+	SamplerState single_mie_scattering_sampler,
+	Texture3D multiple_scattering_texture,
+	SamplerState multiple_scattering_sampler,
+	float r, float mu_s, int scattering_order)
+{
+	const int	SAMPLE_COUNT	= 32;/* 积分采样数 */
+	const float	dphi		= pi / float( SAMPLE_COUNT );/* 采样步长 */
+	const float	dtheta		= pi / float( SAMPLE_COUNT );
+
+	float3 result = float3(0.0 * watt_per_square_meter_per_nm );
+	/* 射线(r,mu_s)的方向向量 */
+	float3 omega_s = float3( sqrt( 1.0 - mu_s * mu_s ), 0.0, mu_s );
+	/* 对整个半球进行双重积分 */
+	for (int j = 0; j < SAMPLE_COUNT / 2; ++j)
+	{
+		//这里除以2是因为只对半球积分
+		float theta = (float(j) + 0.5) * dtheta;
+		for ( int i = 0; i < 2 * SAMPLE_COUNT; ++i )
+		{
+			float phi = (float(i) + 0.5) * dphi;
+			/* (theta,phi)指定的方向向量 */
+			float3 omega = float3( cos( phi ) * sin( theta ), sin( phi ) * sin( theta ), cos( theta ) );
+			/* 立体角微元domega */
+			float domega = (dtheta / rad) * (dphi / rad) * sin( theta ) * sr;
+			/* omega与omega_s的夹角cos值 */
+			float nu = dot( omega, omega_s );
+			result += GetScattering( atmosphere, single_rayleigh_scattering_texture, single_rayleigh_scattering_sampler,
+						 single_mie_scattering_texture, single_mie_scattering_sampler, 
+						 multiple_scattering_texture, multiple_scattering_sampler
+						 r, omega.z, mu_s, nu, false /* ray_r_theta_intersects_ground */,
+						 scattering_order ) * omega.z * domega;
+		}
+	}
+	return result;
+}
+
+/**
+ * 功能:
+ *  将参数(r,mu_s)映射到(u,v)纹理坐标,用于地面接收的辐照度的预计算
+ *  因为地面辐照度的计算仅考虑了水平面,所以辐照度计算仅需参数(r,mu_s)
+ * 传入参数：
+ *  atmosphere大气参数模型, (r,mu_s)为(高度,天顶角)
+ **/
+float2 GetIrradianceTextureUvFromRMuS(AtmosphereParameters atmosphere, float r, float mu_s)
+{
+	float x_r = (r - atmosphere.bottom_radius) /
+		     (atmosphere.top_radius - atmosphere.bottom_radius);/* 将r投影到[0,1]之间 */
+	float x_mu_s = mu_s * 0.5 + 0.5;/* 同理将mu_s由[-1,1]投影到[0,1] */
+	return(float2(GetTextureCoordFromUnitRange( x_mu_s, IRRADIANCE_TEXTURE_WIDTH ),
+		     GetTextureCoordFromUnitRange( x_r, IRRADIANCE_TEXTURE_HEIGHT)));
+}
+
+/**
+ * 功能:
+ *  将纹理坐标(u,v)映射到参数(r,mu_s),GetIrradianceTextureUvFromRMuS的逆过程
+ * 传入参数：
+ *  atmosphere大气参数模型,uv为2D纹理坐标,(r,mu_s)为(高度,天顶角)
+ **/
+void GetRMuSFromIrradianceTextureUv(AtmosphereParameters atmosphere,
+				     float2 uv, out float r, out float mu_s)
+{
+	float	x_mu_s	= GetUnitRangeFromTextureCoord(uv.x, IRRADIANCE_TEXTURE_WIDTH);
+	float	x_r		= GetUnitRangeFromTextureCoord(uv.y, IRRADIANCE_TEXTURE_HEIGHT);
+	r = atmosphere.bottom_radius +
+	    	x_r * (atmosphere.top_radius - atmosphere.bottom_radius);
+	mu_s = ClampCosine(2.0 * x_mu_s - 1.0);
 }
