@@ -699,7 +699,7 @@ float3 GetIrradiance(AtmosphereParameters atmosphere,
  *  mu_s是太阳方向天顶角的cos值,nu是向量pq与太阳单位方向向量的夹角cos值,
  *  scattering_order散射次数
  **/
-RadianceDensitySpectrum ComputeScatteringDensity(
+float3 ComputeScatteringDensity(
 	AtmosphereParameters atmosphere,
 	Texture2D transmittance_texture,
 	SamplerState transmittance_sampler,
@@ -716,12 +716,12 @@ RadianceDensitySpectrum ComputeScatteringDensity(
 	float3 zenith_direction = float3(0.0, 0.0, 1.0);
 	float3	omega		= float3(sqrt(1.0 - mu * mu), 0.0, mu);/* 视线方向向量 */
 	float	sun_dir_x	= omega.x == 0.0 ? 0.0 : (nu - mu * mu_s) / omega.x;
-	float3	sun_dir_y	= sqrt(max( 1.0 - sun_dir_x * sun_dir_x - mu_s * mu_s, 0.0));
+	float	sun_dir_y	= sqrt(max( 1.0 - sun_dir_x * sun_dir_x - mu_s * mu_s, 0.0));
 	float3	omega_s	= float3(sun_dir_x, sun_dir_y, mu_s);/* 太阳方向向量 */
 	const int		SAMPLE_COUNT	= 16;//积分采样数u
-	const float		dphi		= pi / float(SAMPLE_COUNT);//采样步长
-	const float		dtheta		= pi / float(SAMPLE_COUNT);
-	float3 rayleigh_mie	= float3(0.0 * watt_per_cubic_meter_per_sr_per_nm);
+	const float		dphi		= PI / float(SAMPLE_COUNT);//采样步长
+	const float		dtheta		= PI / float(SAMPLE_COUNT);
+	float3 rayleigh_mie	= float3(0.0, 0.0, 0.0);
 	/* 双重积分,theta为天顶角 */
 	for (int l = 0; l < SAMPLE_COUNT; ++l)
 	{
@@ -745,10 +745,10 @@ RadianceDensitySpectrum ComputeScatteringDensity(
 						  distance_to_ground, true);
 			ground_albedo = atmosphere.ground_albedo;/* 地面反照率 */
 		}
-		for (int m = 0; m < 2 * SAMPLE_COUNT; ++m)
+		for (int i = 0; i < 2 * SAMPLE_COUNT; ++i)
 		{
 			/* 内循环积分,这里积的是方位角 */
-			float phi = (float(m) + 0.5) * dphi;
+			float phi = (float(i) + 0.5) * dphi;
 			/* 由phi(方位角)和theta(天顶角)两个角度指定的方向向量 */
 			float3 omega_i = float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
 			/* 立体角domega=sin(theta)*dtheta*dphi; */
@@ -768,7 +768,7 @@ RadianceDensitySpectrum ComputeScatteringDensity(
 			float3 ground_normal = normalize(zenith_direction * r + omega_i * distance_to_ground);
 			/* 地面吸收的n-2次反射的辐照度 */
 			float3 ground_irradiance = GetIrradiance(
-								atmosphere, irradiance_texture, atmosphere.bottom_radius,
+								atmosphere, irradiance_texture, irradiance_sampler, atmosphere.bottom_radius,
 								dot(ground_normal, omega_s));
 			incident_radiance += transmittance_to_ground *
 					     ground_albedo * (1.0 / (PI * sr)) * ground_irradiance;
@@ -779,12 +779,12 @@ RadianceDensitySpectrum ComputeScatteringDensity(
 			float	rayleigh_density	= GetProfileDensity(
 						atmosphere.rayleigh_density, r - atmosphere.bottom_radius );
 			float mie_density = GetProfileDensity(
-						atmosphere.mie_density, r - atmosphere.bottom_radius );
+						atmosphere.mie_density, r - atmosphere.bottom_radius);
 			rayleigh_mie += incident_radiance * (
 						atmosphere.rayleigh_scattering * rayleigh_density *
-						RayleighPhaseFunction( nu2 ) +
+						RayleighPhaseFunction(nu2) +
 						atmosphere.mie_scattering * mie_density *
-						MiePhaseFunction( atmosphere.mie_phase_function_g, nu2 ) ) * domega_i;
+						MiePhaseFunction(atmosphere.mie_phase_function_g, nu2)) * domega_i;
 		}
 	}
 	return rayleigh_mie;
@@ -814,7 +814,7 @@ float3 ComputeMultipleScattering(
 	/* 积分步长 */
 	float dx =	DistanceToNearestAtmosphereBoundary(
 					atmosphere, r, mu, ray_r_mu_intersects_ground ) / float(SAMPLE_COUNT);
-	float3 rayleigh_mie_sum = float3(0.0 * watt_per_square_meter_per_sr_per_nm);
+	float3 rayleigh_mie_sum = float3(0.0, 0.0, 0.0);
 	for (int i = 0; i <= SAMPLE_COUNT; ++i)
 	{
 		float d_i = float(i) * dx;
@@ -825,10 +825,10 @@ float3 ComputeMultipleScattering(
 		/* 当前采样点的rayleigh散射系数、mie散射系数 */
 		float3 rayleigh_mie_i =
 				GetScattering(
-					atmosphere, scattering_density_texture, r_i, mu_i, mu_s_i, nu,
+					atmosphere, scattering_density_texture, scattering_density_sampler, r_i, mu_i, mu_s_i, nu,
 					ray_r_mu_intersects_ground ) *
 				GetTransmittance(
-					atmosphere, transmittance_texture, r, mu, d_i,
+					atmosphere, transmittance_texture, transmittance_sampler, r, mu, d_i,
 					ray_r_mu_intersects_ground ) * dx;
 		float weight_i = (i == 0 || i == SAMPLE_COUNT) ? 0.5 : 1.0;
 		rayleigh_mie_sum += rayleigh_mie_i * weight_i;
