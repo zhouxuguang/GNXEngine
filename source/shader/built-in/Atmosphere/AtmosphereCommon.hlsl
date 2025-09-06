@@ -1057,8 +1057,8 @@ float3 ComputeIndirectIrradianceTexture(
 			atmosphere, frag_coord / IRRADIANCE_TEXTURE_SIZE, r, mu_s);
 	return(ComputeIndirectIrradiance(atmosphere, single_rayleigh_scattering_texture, single_rayleigh_scattering_sampler,
 					 	single_mie_scattering_texture, single_mie_scattering_sampler,
-						multiple_scattering_texture, multiple_scattering_sampler
-						 r, mu_s, scattering_order));
+						multiple_scattering_texture, multiple_scattering_sampler,
+						r, mu_s, scattering_order));
 }
 
 /**
@@ -1133,11 +1133,11 @@ float3 GetCombinedScattering(
 			scattering_texture.Sample(scattering_sampler, uvw0).rgb * (1.0 - lerp) +
 			scattering_texture.Sample(scattering_sampler, uvw1).rgb * lerp;
 	single_mie_scattering =
-			GetExtrapolatedSingleMieScattering( atmosphere, combined_scattering );
+			GetExtrapolatedSingleMieScattering(atmosphere, combined_scattering);
 #else/* 非合并的情况,直接采样各自的纹理 */
 	float3 scattering = 
 	scattering_texture.Sample(scattering_sampler, uvw0 ).rgb * (1.0 - lerp) +
-			scattering_texture.Sample(scattering_sampler, uvw1) * lerp;
+			scattering_texture.Sample(scattering_sampler, uvw1).rgb * lerp;
 	single_mie_scattering = 
 			single_mie_scattering_texture.Sample(single_mie_scattering_sampler, uvw0).rgb * (1.0 - lerp) +
 			single_mie_scattering_texture.Sample(single_mie_scattering_sampler, uvw1).rgb * lerp;
