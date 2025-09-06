@@ -901,8 +901,8 @@ float3 ComputeMultipleScatteringTexture(
 	/* 从frag_coord的3D纹理坐标计算出当前的(r,mu,mu_s,nu) */
 	GetRMuMuSNuFromScatteringTextureFragCoord(atmosphere, frag_coord,
 						   r, mu, mu_s, nu, ray_r_mu_intersects_ground);
-	return ComputeMultipleScattering(atmosphere, transmittance_texture,
-					  scattering_density_texture, r, mu, mu_s, nu,
+	return ComputeMultipleScattering(atmosphere, transmittance_texture, transmittance_sampler, 
+					  scattering_density_texture, scattering_density_sampler, r, mu, mu_s, nu,
 					  ray_r_mu_intersects_ground);
 }
 
