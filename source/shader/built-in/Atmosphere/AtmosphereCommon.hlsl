@@ -477,7 +477,7 @@ float4 GetScatteringTextureUvwzFromRMuMuSNu(AtmosphereParameters atmosphere,
 		float	d_min	= r - atmosphere.bottom_radius;
 		float	d_max	= rho;
 		u_mu = 0.5 - 0.5 * GetTextureCoordFromUnitRange(
-								 d_max == d_min ? 0.0:(d - d_min) / (d_max - d_min),
+								 d_max == d_min ? 0.0 : (d - d_min) / (d_max - d_min),
 								 SCATTERING_TEXTURE_MU_SIZE / 2);
 	} 
 	else 
@@ -496,7 +496,7 @@ float4 GetScatteringTextureUvwzFromRMuMuSNu(AtmosphereParameters atmosphere,
 	float	d_min	  = atmosphere.top_radius-atmosphere.bottom_radius;
 	float	d_max	  = H;
 	float	a		  = (d - d_min) / (d_max - d_min);
-	float	A		  = -2.0*atmosphere.mu_s_min*atmosphere.bottom_radius/(d_max-d_min);
+	float	A		  = -2.0 * atmosphere.mu_s_min * atmosphere.bottom_radius / (d_max - d_min);
 	float	u_mu_s   = GetTextureCoordFromUnitRange(max(1.0-a/A, 0.0)/(1.0+a),
 							  SCATTERING_TEXTURE_MU_S_SIZE);
 	float u_nu = (nu + 1.0) / 2.0; //将nu从[-1,1]映射到[0,1]
@@ -552,7 +552,7 @@ void GetRMuMuSNuFromScatteringTextureUvwz(AtmosphereParameters atmosphere,
 
 /**
  * 功能:
- *  实际中只有3D纹理坐标,这里将3D转成4D,然后根据4D纹理获取(r,mu,mu_s,nu)参数
+ *  实际中只有3D纹理坐标, 这里将3D转成4D, 然后根据4D纹理获取(r,mu,mu_s,nu)参数
  * 传入参数：
  *  atmosphere大气参数模型,r为视点p高度,mu为视线天顶角cos值,uvwz是4D纹理坐标
  *  mu_s是太阳方向天顶角的cos值,nu是向量pq与太阳单位方向向量的夹角cos值,
@@ -568,13 +568,12 @@ void GetRMuMuSNuFromScatteringTextureFragCoord(
 						SCATTERING_TEXTURE_MU_S_SIZE,
 						SCATTERING_TEXTURE_MU_SIZE,
 						SCATTERING_TEXTURE_R_SIZE);
-	/* nu和mu_s的坐标值均由frag_cood.x获取,前者取整,后者取模 */
-	float frag_coord_nu =
-				floor(frag_coord.x/ float(SCATTERING_TEXTURE_MU_S_SIZE));
+	/* nu和mu_s的坐标值均由frag_cood.x获取,前者取整, 后者取模 */
+	float frag_coord_nu = floor(frag_coord.x/ float(SCATTERING_TEXTURE_MU_S_SIZE));
 	float frag_coord_mu_s = modf(frag_coord.x, float(SCATTERING_TEXTURE_MU_S_SIZE));
 	float4 uvwz = float4(frag_coord_nu, frag_coord_mu_s, frag_coord.y, frag_coord.z)/
 						SCATTERING_TEXTURE_SIZE;
-	/* 根据uvwz这个4D纹理坐标从散射纹理中获取对应的(r,mu,mu_s,nu) */
+	/* 将4D纹理坐标转为物理参数 根据uvwz这个4D纹理坐标从散射纹理中获取对应的(r,mu,mu_s,nu) */
 	GetRMuMuSNuFromScatteringTextureUvwz(
 				atmosphere, uvwz, r, mu, mu_s, nu, ray_r_mu_intersects_ground);
 	/* 对于nu,根据给定的mu和mu_s对其做一些上下界约束[cos(x+y),cos(x-y)] */
@@ -584,10 +583,9 @@ void GetRMuMuSNuFromScatteringTextureFragCoord(
 
 /**
  * 功能:
- *  有了以上的函数,现在我们可以计算一个指定的纹理单元对应的单次散射,结果存入rayleigh和mie
- * 传入参数：
- *  atmosphere大气参数模型,frag_coord为3D纹理坐标
- *  ray_r_mu_intersects_ground射线是否与地面相交
+ *  有了以上的函数,现在我们可以计算一个指定的纹理单元对应的单次散射, 结果存入rayleigh和mie
+ *  传入参数：
+ *  atmosphere大气参数模型, frag_coord为3D纹理坐标, ray_r_mu_intersects_ground射线是否与地面相交
  **/
 void ComputeSingleScatteringTexture(AtmosphereParameters atmosphere,
 				     Texture2D transmittance_texture,
@@ -608,7 +606,7 @@ void ComputeSingleScatteringTexture(AtmosphereParameters atmosphere,
 /**
  * 功能:
  *  获取射点到与最近大气层边界交点之间的散射量,需要两次3D的纹理查找
- * 传入参数：
+ *  传入参数：
  *  atmosphere大气参数模型,scattering_texture为散射预存纹理,r为视点p海拔高度,
  *  mu为视线天顶角cos值,mu_s是太阳方向天顶角的cos值,nu是向量pq与太阳单位方向向量的夹角cos值
  *  ray_r_mu_intersects_ground射线是否与地面相交
