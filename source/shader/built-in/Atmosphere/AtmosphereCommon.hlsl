@@ -497,7 +497,7 @@ float4 GetScatteringTextureUvwzFromRMuMuSNu(AtmosphereParameters atmosphere,
 	float	d_max	  = H;
 	float	a		  = (d - d_min) / (d_max - d_min);
 	float	A		  = -2.0 * atmosphere.mu_s_min * atmosphere.bottom_radius / (d_max - d_min);
-	float	u_mu_s   = GetTextureCoordFromUnitRange(max(1.0-a/A, 0.0)/(1.0+a),
+	float	u_mu_s   = GetTextureCoordFromUnitRange(max(1.0 - a / A, 0.0) / (1.0 + a),
 							  SCATTERING_TEXTURE_MU_S_SIZE);
 	float u_nu = (nu + 1.0) / 2.0; //将nu从[-1,1]映射到[0,1]
 	return float4(u_nu, u_mu_s, u_mu, u_r);
@@ -569,8 +569,8 @@ void GetRMuMuSNuFromScatteringTextureFragCoord(
 						SCATTERING_TEXTURE_MU_SIZE,
 						SCATTERING_TEXTURE_R_SIZE);
 	/* nu和mu_s的坐标值均由frag_cood.x获取,前者取整, 后者取模 */
-	float frag_coord_nu = floor(frag_coord.x/ float(SCATTERING_TEXTURE_MU_S_SIZE));
-	float frag_coord_mu_s = modf(frag_coord.x, float(SCATTERING_TEXTURE_MU_S_SIZE));
+	float frag_coord_nu = floor(frag_coord.x / float(SCATTERING_TEXTURE_MU_S_SIZE));
+	float frag_coord_mu_s = fmod(frag_coord.x, float(SCATTERING_TEXTURE_MU_S_SIZE));
 	float4 uvwz = float4(frag_coord_nu, frag_coord_mu_s, frag_coord.y, frag_coord.z)/
 						SCATTERING_TEXTURE_SIZE;
 	/* 将4D纹理坐标转为物理参数 根据uvwz这个4D纹理坐标从散射纹理中获取对应的(r,mu,mu_s,nu) */
