@@ -1,16 +1,7 @@
 #ifndef GNX_ENGINE_ATMOSPHERE_COMMON_DEFINE_INCLUDE
 #define GNX_ENGINE_ATMOSPHERE_COMMON_DEFINE_INCLUDE
 
-#define m 1.0          //米
-#define nm 1.0         //纳米
-#define rad 1.0         //弧度
-#define sr 1.0        //立体弧度
-#define watt 1.0       //瓦特
-
 #define PI 3.14159265358979323846
-
-#define km (1000.0 * m) //千米
-#define m2 (m * m)  //平方米
 
 // 光学长度纹理size
 #define TRANSMITTANCE_TEXTURE_WIDTH 256

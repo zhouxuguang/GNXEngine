@@ -1,3 +1,6 @@
+#ifndef GNX_ENGINE_ATMOSPHERE_COMMON_FUNCTION_HJFHJDSHJH_INCLUDE
+#define GNX_ENGINE_ATMOSPHERE_COMMON_FUNCTION_HJFHJDSHJH_INCLUDE
+
 #include "AtmosphereDefine.hlsl"
 
 /**
@@ -11,7 +14,7 @@ float ClampCosine(float mu)
 
 float ClampDistance(float d)
 {
-	return(max(d, 0.0 * m));
+	return(max(d, 0.0));
 }
 
 float ClampRadius(AtmosphereParameters atmosphere, float r)
@@ -21,7 +24,7 @@ float ClampRadius(AtmosphereParameters atmosphere, float r)
 
 float SafeSqrt(float a)
 {
-	return(sqrt(max( a, 0.0 * m2 )));
+	return(sqrt(max( a, 0.0)));
 }
 
 /** Rayleigh phase function */
@@ -77,7 +80,7 @@ bool RayIntersectsGround(AtmosphereParameters atmosphere, float r, float mu)
 {
 	// 天顶角大于90度(cos值<0) 且 判别式>=0
 	return(mu < 0.0 && r * r * (mu * mu - 1.0) +
-	       atmosphere.bottom_radius * atmosphere.bottom_radius >= 0.0 * m2);
+	       atmosphere.bottom_radius * atmosphere.bottom_radius >= 0.0);
 }
 
 /**
@@ -122,7 +125,7 @@ float ComputeOpticalLengthToTopAtmosphereBoundary(
 	/* 积分区间步长 */
 	float dx = DistanceToTopAtmosphereBoundary(atmosphere, r, mu) / float(SAMPLE_COUNT);
 	/* 用梯度法循环计算进行积分 */
-	float result = 0.0 * m;
+	float result = 0.0;
 	for (int i = 0; i <= SAMPLE_COUNT; ++i) 
 	{
 		float d_i = float(i) * dx;
@@ -227,7 +230,7 @@ void GetRMuFromTransmittanceTextureUv(AtmosphereParameters atmosphere, float2 uv
 	float	d_max	= rho + H;
 	float	d		= d_min + x_mu * (d_max - d_min);
     // 根据H、rho、d推出视线天顶角cos值，由前面提到的求d方程d^2+2rud+r^2-t^2=0推出其中的u
-	mu	= d == 0.0 * m ? float(1.0) : (H * H - rho * rho - d * d) / (2.0 * r * d);
+	mu	= d == 0.0 ? float(1.0) : (H * H - rho * rho - d * d) / (2.0 * r * d);
 	mu	= ClampCosine(mu);
 }
 
@@ -429,7 +432,7 @@ void ComputeSingleScattering(
  **/
 float RayleighPhaseFunction(float nu)
 {
-	float k = 3.0 / (16.0 * PI * sr); // sr为立体角单位
+	float k = 3.0 / (16.0 * PI); // sr为立体角单位
 	return(k * (1.0 + nu * nu) );
 }
 
@@ -442,7 +445,7 @@ float RayleighPhaseFunction(float nu)
  **/
 float MiePhaseFunction(float g, float nu)
 {
-	float k = 3.0 / (8.0 * PI * sr) * (1.0 - g * g) / (2.0 + g * g);
+	float k = 3.0 / (8.0 * PI) * (1.0 - g * g) / (2.0 + g * g);
 	return(k * (1.0 + nu * nu) / pow(1.0 + g * g - 2.0 * g * nu, 1.5));
 }
 
@@ -525,7 +528,7 @@ void GetRMuMuSNuFromScatteringTextureUvwz(AtmosphereParameters atmosphere,
 		float	d_max	= rho;
 		float	d	= d_min + (d_max - d_min) * GetUnitRangeFromTextureCoord(
 						1.0 - 2.0 * uvwz.z, SCATTERING_TEXTURE_MU_SIZE / 2);
-		mu = d == 0.0 * m ? float(-1.0) :
+		mu = d == 0.0 ? float(-1.0) :
 		     			ClampCosine(-(rho * rho + d * d) / (2.0 * r * d));
 		ray_r_mu_intersects_ground = true;
 	} 
@@ -535,7 +538,7 @@ void GetRMuMuSNuFromScatteringTextureUvwz(AtmosphereParameters atmosphere,
 		float	d_max	= rho + H;
 		float	d	= d_min + (d_max - d_min) * GetUnitRangeFromTextureCoord(
 						2.0 * uvwz.z - 1.0, SCATTERING_TEXTURE_MU_SIZE / 2);
-		mu = d == 0.0 * m ? float(1.0) :
+		mu = d == 0.0 ? float(1.0) :
 		     			ClampCosine((H * H - rho * rho - d * d) / (2.0 * r * d));
 		ray_r_mu_intersects_ground = false;
 	}
@@ -545,7 +548,7 @@ void GetRMuMuSNuFromScatteringTextureUvwz(AtmosphereParameters atmosphere,
 	float	A	= -2.0 * atmosphere.mu_s_min * atmosphere.bottom_radius / (d_max - d_min);
 	float	a	= (A - x_mu_s * A) / (1.0 + x_mu_s * A);
 	float	d	= d_min + min( a, A ) * (d_max - d_min);
-	mu_s = d == 0.0 * m ? float(1.0) :
+	mu_s = d == 0.0 ? float(1.0) :
 	       			ClampCosine((H * H - d * d) / (2.0 * atmosphere.bottom_radius * d));
 	nu = ClampCosine(uvwz.x * 2.0 - 1.0);
 }
@@ -731,7 +734,7 @@ float3 ComputeScatteringDensity(
 		/* 判断是否与地面有交点 */
 		bool ray_r_theta_intersects_ground = RayIntersectsGround(atmosphere, r, cos_theta);
 		/* 当前射线到地表交点的距离以及光学深度仅取决于theta(即天顶角),所以放到外循环计算 */
-		float	distance_to_ground = 0.0 * m;
+		float	distance_to_ground = 0.0;
 		float3 transmittance_to_ground = float3(0.0, 0.0, 0.0);
 		float3 ground_albedo = float3(0.0, 0.0, 0.0);
 		/* 与地面有交点 */
@@ -752,7 +755,7 @@ float3 ComputeScatteringDensity(
 			/* 由phi(方位角)和theta(天顶角)两个角度指定的方向向量 */
 			float3 omega_i = float3(cos(phi) * sin_theta, sin(phi) * sin_theta, cos_theta);
 			/* 立体角domega=sin(theta)*dtheta*dphi; */
-			float domega_i = (dtheta / rad) * (dphi / rad) * sin(theta) * sr;
+			float domega_i = dtheta * dphi * sin(theta);
 			/*经过n-1次反射从omega_i方向的辐射度L_i由n-1重散射的散射值累加。
 			 * 太阳方向向量与omge_i向量夹角的cos值 */
 			float nu1 = dot(omega_s, omega_i);
@@ -771,7 +774,7 @@ float3 ComputeScatteringDensity(
 								atmosphere, irradiance_texture, irradiance_sampler, atmosphere.bottom_radius,
 								dot(ground_normal, omega_s));
 			incident_radiance += transmittance_to_ground *
-					     ground_albedo * (1.0 / (PI * sr)) * ground_irradiance;
+					     ground_albedo * (1.0 / PI) * ground_irradiance;
 
 			/* 从omega_i方向向-omega方向散射的辐射度为incident_radiance、
 			 * 散射系数、方向omega和omega_i的相位函数之积 */
@@ -919,7 +922,7 @@ float3 ComputeDirectIrradiance(
 	SamplerState transmittance_sampler,
 	float r, float mu_s)
 {
-	float alpha_s = atmosphere.sun_angular_radius / rad;//太阳角半径
+	float alpha_s = atmosphere.sun_angular_radius; //太阳角半径
 	/* 太阳圆盘可见部分的近似平均余弦因子 */
 	float average_cosine_factor = mu_s < -alpha_s ? 0.0 : (mu_s > alpha_s ? mu_s :
 					 (mu_s + alpha_s) * (mu_s + alpha_s) / (4.0 * alpha_s));
@@ -965,7 +968,7 @@ float3 ComputeIndirectIrradiance(
 			/* (theta,phi)指定的方向向量 */
 			float3 omega = float3(cos(phi) * sin(theta), sin(phi) * sin(theta), cos(theta));
 			/* 立体角微元domega */
-			float domega = (dtheta / rad) * (dphi / rad) * sin(theta) * sr;
+			float domega = dtheta * dphi * sin(theta);
 			/* omega与omega_s的夹角cos值 */
 			float nu = dot(omega, omega_s);
 			result += GetScattering(atmosphere, single_rayleigh_scattering_texture, single_rayleigh_scattering_sampler,
@@ -1171,7 +1174,7 @@ float3 GetSkyRadiance(
 	float distance_to_top_atmosphere_boundary = -rmu -
 					sqrt(rmu * rmu - r * r + atmosphere.top_radius * atmosphere.top_radius);
 	/* 如果观察者在太空且视线与大气层有交点,把观察者移到视线与大气层顶部交点的位置 */
-	if (distance_to_top_atmosphere_boundary > 0.0 * m)
+	if (distance_to_top_atmosphere_boundary > 0.0)
 	{
 		camera	= camera + view_ray * distance_to_top_atmosphere_boundary;
 		r	= atmosphere.top_radius;
@@ -1194,7 +1197,7 @@ float3 GetSkyRadiance(
 			GetTransmittanceToTopAtmosphereBoundary(atmosphere, transmittance_texture, transmittance_sampler, r, mu);
 	float3	single_mie_scattering;
 	float3	scattering;
-	if (shadow_length == 0.0 * m)
+	if (shadow_length == 0.0)
 	{
 		/* 如果不需要体积光效果 */
 		scattering = GetCombinedScattering(
@@ -1252,7 +1255,7 @@ float3 GetSkyRadianceToPoint(
 	float distance_to_top_atmosphere_boundary = -rmu -
 				sqrt(rmu * rmu - r * r + atmosphere.top_radius * atmosphere.top_radius);
 	/* 如果视点在太空中, 且视线与大气层有交点,那么把view沿着视线移动到大气层顶部 */
-	if (distance_to_top_atmosphere_boundary > 0.0 * m)
+	if (distance_to_top_atmosphere_boundary > 0.0)
 	{
 		camera	= camera + view_ray * distance_to_top_atmosphere_boundary;
 		r		= atmosphere.top_radius;
@@ -1279,7 +1282,7 @@ float3 GetSkyRadianceToPoint(
 	/* 计算(r,mu,mu_s,nu)用于第二次纹理查找,获取点point到大气层边界的内散射积分
 	 * 如果需要实现体积光效果(shadow_length>0),那么我们应该忽略视线方向末端的shadow_length长度的散射
 	 * 因此令d=d-shadow_length*/
-	d = max(d - shadow_length, 0.0 * m);
+	d = max(d - shadow_length, 0.0);
 	/* point处高度 */
 	float r_p = ClampRadius(atmosphere, sqrt(d * d + 2.0 * r * mu * d + r * r ));
 	float	mu_p	= (r * mu + d) / r_p;/* point处天顶角cos */
@@ -1294,7 +1297,7 @@ float3 GetSkyRadianceToPoint(
 			single_mie_scattering_p);
 	/* 把以上查找结果综合起来得到camera到point之间的散射 */
 	float3 shadow_transmittance = transmittance;
-	if (shadow_length > 0.0 * m)
+	if (shadow_length > 0.0)
 	{
 		/* 要实现体积光效果 */
 		shadow_transmittance = GetTransmittance(atmosphere, transmittance_texture, transmittance_sampler,
@@ -1342,3 +1345,5 @@ float3 GetSunAndSkyIrradiance(
 	       GetTransmittanceToSun(atmosphere, transmittance_texture, transmittance_sampler, r, mu_s) *
 	       max(dot(normal, sun_direction), 0.0);
 }
+
+#endif
