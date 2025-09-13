@@ -7,6 +7,7 @@
 
 #include "DXCompilerUtil.h"
 #include "spirv_reflection.h"
+#include "BaseLib/LogService.h"
 #include <assert.h>
 
 //代码可以参考这个博客。https://simoncoenen.com/blog/programming/graphics/DxcCompiling
@@ -194,7 +195,7 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
     if (pErrors != nullptr && pErrors->GetStringLength() != 0)
     {
         const char* buffer = pErrors->GetStringPointer();
-        printf("Warnings and Errors: %s\n", buffer);
+        LOG_ERROR("Warnings and Errors: %s\n", buffer);
     }
 
     //
@@ -205,7 +206,7 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
     if (FAILED(hrStatus))
     {
 		const char* buffer = pErrors->GetStringPointer();
-		printf("Compilation Failed: %s\n", buffer);
+        LOG_ERROR("Compilation Failed: %s\n", buffer);
         return nullptr;
     }
     
