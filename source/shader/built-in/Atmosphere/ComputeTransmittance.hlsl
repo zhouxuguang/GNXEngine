@@ -23,10 +23,10 @@ VS_OUTPUT VS(uint vertexID : SV_VertexID)
 
 struct PSOutput
 {
-    float3 transmittance : SV_Target0; // 对应 location = 0
+    float4 transmittance : SV_Target0; // 对应 location = 0
 };
 
-cbuffer AtmosphereCB : register(b0)
+cbuffer AtmosphereParametersCB : register(b0)
 {
     AtmosphereParameters ATMOSPHERE;
 };
@@ -40,8 +40,9 @@ PSOutput PS(float4 position : SV_Position)
     float2 frag_coord = position.xy;
     
     // 计算透射率
-    output.transmittance = ComputeTransmittanceToTopAtmosphereBoundaryTexture(
+    float3 transmittance = ComputeTransmittanceToTopAtmosphereBoundaryTexture(
         ATMOSPHERE, frag_coord);
+    output.transmittance = float4(transmittance, 1.0);
     
     return output;
 }
