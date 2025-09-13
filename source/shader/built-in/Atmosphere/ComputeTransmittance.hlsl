@@ -1,4 +1,4 @@
-#include “AtmosphereDefine.hlsl”
+#include "AtmosphereCommon.hlsl"
 
 // 输入结构体
 struct VS_INPUT
@@ -13,7 +13,7 @@ struct VS_OUTPUT
 };
 
 [shader("vertex")]
-VS_OUTPUT VSMain(VS_INPUT input)
+VS_OUTPUT VS(VS_INPUT input)
 {
     VS_OUTPUT output;
     output.position = float4(input.vertex, 0.0, 1.0);
@@ -27,11 +27,11 @@ struct PSOutput
 
 cbuffer AtmosphereCB : register(b0)
 {
-    //AtmosphereParameters ATMOSPHERE;
+    AtmosphereParameters ATMOSPHERE;
 };
 
 [shader("pixel")]
-PSOutput PSMain(float4 position : SV_Position)
+PSOutput PS(float4 position : SV_Position)
 {
     PSOutput output;
     
@@ -39,8 +39,8 @@ PSOutput PSMain(float4 position : SV_Position)
     float2 frag_coord = position.xy;
     
     // 计算透射率
-    // output.transmittance = ComputeTransmittanceToTopAtmosphereBoundaryTexture(
-    //     ATMOSPHERE, frag_coord);
+    output.transmittance = ComputeTransmittanceToTopAtmosphereBoundaryTexture(
+        ATMOSPHERE, frag_coord);
     
     return output;
 }
