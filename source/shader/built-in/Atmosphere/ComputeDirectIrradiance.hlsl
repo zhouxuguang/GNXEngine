@@ -21,9 +21,10 @@ VS_OUTPUT VS(uint vertexID : SV_VertexID)
     return output;
 }
 
-struct PSOutput
+struct PSOutput 
 {
-    float4 transmittance : SV_Target0; // 对应 location = 0
+    float4 delta_irradiance : SV_Target0; // 对应 location = 0
+    float4 irradiance       : SV_Target1; // 对应 location = 1
 };
 
 cbuffer AtmosphereParametersCB : register(b0)
@@ -31,18 +32,24 @@ cbuffer AtmosphereParametersCB : register(b0)
     AtmosphereParameters ATMOSPHERE;
 };
 
+Texture2D transmittance_texture : register(t0);
+SamplerState transmittance_sampler : register(s0);
+
 [shader("pixel")]
 PSOutput PS(float4 position : SV_Position)
 {
     PSOutput output;
     
-    // 获取当前像素坐标 (等效于 GLSL 的 gl_FragCoord.xy)
-    float2 frag_coord = position.xy;
+    // 计算直接辐照度增量
+    output.delta_irradiance = float4(ComputeDirectIrradianceTexture(
+        ATMOSPHERE, 
+        transmittance_texture, 
+        transmittance_sampler, 
+        position.xy
+    ), 1.0);
     
-    // 计算透射率
-    float3 transmittance = ComputeTransmittanceToTopAtmosphereBoundaryTexture(
-        ATMOSPHERE, frag_coord);
-    output.transmittance = float4(transmittance, 1.0);
+    // 初始化总辐照度为0
+    output.irradiance = float4(0.0, 0.0, 0.0, 0.0);
     
     return output;
 }
