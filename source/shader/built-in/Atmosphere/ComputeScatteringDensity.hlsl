@@ -21,20 +21,6 @@ VS_OUTPUT VS(uint vertexID : SV_VertexID)
     return output;
 }
 
-// 输出结构体定义
-struct PSOutput 
-{
-    float4 delta_rayleigh : SV_Target0;        // location = 0
-    float4 delta_mie       : SV_Target1;        // location = 1
-    float4 scattering      : SV_Target2;        // location = 2
-    float4 single_mie_scattering : SV_Target3;  // location = 3
-};
-
-cbuffer AtmosphereParametersCB : register(b0)
-{
-    AtmosphereParameters ATMOSPHERE;
-};
-
 cbuffer ScatteringCB : register(b1) 
 {
     int layer;  // 当前散射层
@@ -72,38 +58,61 @@ void GS(triangle GeometryInput input[3], inout TriangleStream<GeometryOutput> ou
     outputStream.RestartStrip();
 }
 
+// 输出结构体
+struct PSOutput 
+{
+    float4 scattering_density : SV_Target0; // 对应 location = 0
+};
+
+cbuffer AtmosphereParametersCB : register(b0)
+{
+    AtmosphereParameters ATMOSPHERE;
+};
+
 Texture2D transmittance_texture : register(t0);
-SamplerState transmittance_sampler : register(s0);
+Texture3D single_rayleigh_scattering_texture : register(t1);
+Texture3D single_mie_scattering_texture : register(t2);
+Texture3D multiple_scattering_texture : register(t3);
+Texture2D irradiance_texture : register(t4);
+
+SamplerState linear_sampler : register(s0)
+{
+    Filter = MIN_MAG_MIP_LINEAR;
+    AddressU = Clamp;
+    AddressV = Clamp;
+    AddressW = Clamp;
+    MaxAnisotropy = 1;
+    ComparisonFunc = NEVER;
+    MinLOD = 0;
+    MaxLOD = FLOAT32_MAX;
+};
 
 [shader("pixel")]
 PSOutput PS(float4 position : SV_Position)
 {
     PSOutput output;
-
-    // 计算单次散射
+    
+    // 计算片段坐标 (x, y, layer + 0.5)
     float3 frag_coord = float3(position.xy, layer + 0.5f);
-    float3 delta_rayleigh = float3(0.0, 0.0, 0.0);
-    float3 delta_mie = float3(0.0, 0.0, 0.0);
-    ComputeSingleScatteringTexture(
+    
+    // 计算散射密度
+    float3 scattering_density = ComputeScatteringDensityTexture(
         ATMOSPHERE,
         transmittance_texture,
-        transmittance_sampler,
+        linear_sampler,
+        single_rayleigh_scattering_texture,
+        linear_sampler,
+        single_mie_scattering_texture,
+        linear_sampler,
+        multiple_scattering_texture,
+        linear_sampler,
+        irradiance_texture,
+        linear_sampler,
         frag_coord,
-        delta_rayleigh,
-        delta_mie
-    );
-    
-    // 组合散射结果
-    output.scattering = float4(
-        delta_rayleigh.rgb,  // RGB 通道存储 Rayleigh 散射
-        delta_mie.r          // Alpha 通道存储 Mie 散射的 R 分量
+        scattering_order
     );
 
-    output.delta_rayleigh = float4(delta_rayleigh, 1.0);
-    output.delta_mie = float4(delta_mie, 1.0);
-    
-    // 存储完整的 Mie 散射
-    output.single_mie_scattering = output.delta_mie;
+    output.scattering_density = float4(scattering_density, 1.0);
     
     return output;
 }
