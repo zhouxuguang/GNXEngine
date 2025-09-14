@@ -361,24 +361,24 @@ void VKRenderEncoder::SetVertexUniformBuffer(UniformBufferPtr buffer, int index)
 
 void VKRenderEncoder::SetFragmentUniformBuffer(UniformBufferPtr buffer, int index)
 {
-    if (!buffer)
-    {
-        return;
-    }
-    VKUniformBuffer *vkUniformBuffer = (VKUniformBuffer*)buffer.get();
-    
-    VkDescriptorBufferInfo bufferInfo = {};
-    bufferInfo.range = VK_WHOLE_SIZE;
-    bufferInfo.buffer = vkUniformBuffer->GetBuffer();
-    
-    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
-    uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_UNIFORM_BUFFER);
-    VkDescriptorSet descriptorSet = mGraphicsPipieline->GetDescriptorSet(texOffset);
-    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(descriptorSet,
-                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, index, &bufferInfo);
-    
-    vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
-    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, &writeDescriptorSet);
+    //if (!buffer)
+    //{
+    //    return;
+    //}
+    //VKUniformBuffer *vkUniformBuffer = (VKUniformBuffer*)buffer.get();
+    //
+    //VkDescriptorBufferInfo bufferInfo = {};
+    //bufferInfo.range = VK_WHOLE_SIZE;
+    //bufferInfo.buffer = vkUniformBuffer->GetBuffer();
+    //
+    //// 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
+    //uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    //VkDescriptorSet descriptorSet = mGraphicsPipieline->GetDescriptorSet(texOffset);
+    //VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(descriptorSet,
+    //            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, index, &bufferInfo);
+    //
+    //vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
+    ////vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, &writeDescriptorSet);
 }
 
 void VKRenderEncoder::SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
