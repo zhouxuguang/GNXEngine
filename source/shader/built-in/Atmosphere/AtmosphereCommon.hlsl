@@ -244,10 +244,9 @@ float3 ComputeTransmittanceToTopAtmosphereBoundaryTexture(AtmosphereParameters a
 {
 	const float2 TRANSMITTANCE_TEXTURE_SIZE =
 				float2(TRANSMITTANCE_TEXTURE_WIDTH, TRANSMITTANCE_TEXTURE_HEIGHT);
-	float	r;/* r为视点高度,mu是视线天顶角的cos值 */
+	float	r;  /* r为视点高度,mu是视线天顶角的cos值 */
 	float	mu;
-	GetRMuFromTransmittanceTextureUv(atmosphere, 
-						frag_coord/TRANSMITTANCE_TEXTURE_SIZE, r, mu);
+	GetRMuFromTransmittanceTextureUv(atmosphere, frag_coord / TRANSMITTANCE_TEXTURE_SIZE, r, mu);
 	return ComputeTransmittanceToTopAtmosphereBoundary(atmosphere, r, mu);
 }
 
