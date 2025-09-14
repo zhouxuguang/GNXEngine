@@ -35,7 +35,7 @@ static Vector3f GetInterpolateValue(const std::vector<double>& wavelengths, cons
     return Vector3f(r, g, b);
 }
 
-static void FillDensityProfile(std::vector<DensityProfileLayer> layers, Atmosphere::DensityProfile & densityProfile)
+static void FillDensityProfile(std::vector<DensityProfileLayer> layers, Atmosphere::DensityProfile & densityProfile, double length_unit_in_meters)
 {
     constexpr int kLayerCount = 2;
     while (layers.size() < kLayerCount) 
@@ -45,11 +45,11 @@ static void FillDensityProfile(std::vector<DensityProfileLayer> layers, Atmosphe
     
     for (int i = 0; i < kLayerCount; ++i) 
     {
-        densityProfile.layers[i].width = layers[i].width;
+        densityProfile.layers[i].width = layers[i].width / length_unit_in_meters ;
         densityProfile.layers[i].constant_term = layers[i].constant_term;
-        densityProfile.layers[i].exp_scale = layers[i].exp_scale;
+        densityProfile.layers[i].exp_scale = layers[i].exp_scale * length_unit_in_meters;
         densityProfile.layers[i].exp_term = layers[i].exp_term;
-        densityProfile.layers[i].linear_term = layers[i].linear_term;
+        densityProfile.layers[i].linear_term = layers[i].linear_term * length_unit_in_meters;
     }
 };
 
@@ -80,15 +80,15 @@ AtmosphereModel::AtmosphereModel(
     mAtomSphere.sun_angular_radius = sun_angular_radius;
     mAtomSphere.bottom_radius = bottom_radius / length_unit_in_meters;
     mAtomSphere.top_radius = top_radius / length_unit_in_meters;
-    FillDensityProfile(rayleigh_density, mAtomSphere.rayleigh_density);
+    FillDensityProfile(rayleigh_density, mAtomSphere.rayleigh_density, length_unit_in_meters);
     mAtomSphere.rayleigh_scattering = GetInterpolateValue(wavelengths, rayleigh_scattering, lambdas, length_unit_in_meters);
-    FillDensityProfile(mie_density, mAtomSphere.mie_density);
+    FillDensityProfile(mie_density, mAtomSphere.mie_density, length_unit_in_meters);
     mAtomSphere.mie_scattering = GetInterpolateValue(wavelengths, mie_scattering, lambdas, length_unit_in_meters);
     mAtomSphere.mie_extinction = GetInterpolateValue(wavelengths, mie_extinction, lambdas, length_unit_in_meters);
     mAtomSphere.mie_phase_function_g = mie_phase_function_g;
-    FillDensityProfile(absorption_density, mAtomSphere.absorption_density);
+    FillDensityProfile(absorption_density, mAtomSphere.absorption_density, length_unit_in_meters);
     mAtomSphere.absorption_extinction = GetInterpolateValue(wavelengths, absorption_extinction, lambdas, length_unit_in_meters);
-    mAtomSphere.ground_albedo = GetInterpolateValue(wavelengths, ground_albedo, lambdas, length_unit_in_meters);
+    mAtomSphere.ground_albedo = GetInterpolateValue(wavelengths, ground_albedo, lambdas, 1.0);
     mAtomSphere.mu_s_min = cos(max_sun_zenith_angle);
     
 }

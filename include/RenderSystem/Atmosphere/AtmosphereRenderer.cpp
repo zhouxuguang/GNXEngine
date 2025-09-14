@@ -43,7 +43,7 @@ AtmosphereModel *CreateAtmoModel()
     constexpr double kMieAngstromBeta = 5.328e-3;
     constexpr double kMieSingleScatteringAlbedo = 0.9;
     
-    double kMiePhaseFunctionG = 0.88;
+    double kMiePhaseFunctionG = 0.8;
     constexpr double kGroundAlbedo = 0.1;
     const double max_sun_zenith_angle = (120.0) / 180.0 * Atmosphere::kPi;
 
@@ -72,7 +72,7 @@ AtmosphereModel *CreateAtmoModel()
         wavelengths.push_back(l);
         
         // 太阳辐照度
-        if (1)  // use_constant_solar_spectrum_
+        if (0)  // use_constant_solar_spectrum_
         {
             //常量
             solar_irradiance.push_back(kConstantSolarIrradiance);
@@ -105,9 +105,9 @@ AtmosphereModel *CreateAtmoModel()
                 absorption_extinction,                  // 大气中吸收光线的消光系数=海拔高度h处absorption_extinction*absorption_density
                 ground_albedo,                          // 地面的平均反照率
                 max_sun_zenith_angle,                   // 太阳最大的天顶角,弧度制
-                Atmosphere::kLengthUnitInMeters,            // 长度单位
-                false,                                   // 是否把单次mie散射和rayleigh散射以及多次散射合并到一个纹理
-                false);                                  // 采用半精度浮点数还是单精度浮点数
+                Atmosphere::kLengthUnitInMeters,        // 长度单位
+                true,                                   // 是否把单次mie散射和rayleigh散射以及多次散射合并到一个纹理
+                true);                                  // 采用半精度浮点数还是单精度浮点数
     
     return model;
 }
