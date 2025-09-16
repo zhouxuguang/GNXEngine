@@ -32,8 +32,8 @@ cbuffer AtmosphereParametersCB : register(b0)
     AtmosphereParameters ATMOSPHERE;
 };
 
-Texture2D transmittance_texture : register(t0);
-SamplerState transmittance_sampler : register(s0);
+Texture2D transmittance_texture;
+SamplerState transmittance_textureSam;
 
 [shader("pixel")]
 PSOutput PS(float4 position : SV_Position)
@@ -44,7 +44,7 @@ PSOutput PS(float4 position : SV_Position)
     output.delta_irradiance = float4(ComputeDirectIrradianceTexture(
         ATMOSPHERE, 
         transmittance_texture, 
-        transmittance_sampler, 
+        transmittance_textureSam, 
         position.xy
     ), 1.0);
     
