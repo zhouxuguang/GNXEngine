@@ -9,6 +9,7 @@
 #define GNX_ENGINE_VKUTIL_INCLUDE_SDGKDFKHFGKHK
 
 #include "VKRenderDefine.h"
+#include "RenderPass.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -200,6 +201,10 @@ private:
 	baselib::MutexLock mLock;
 	std::unordered_set<UpLoadTaskPtr> mLoadingTask;
 };
+
+VkAttachmentLoadOp GetLoadOP(AttachmentLoadOp loadOp);
+
+VkAttachmentStoreOp GetStoreOP(AttachmentStoreOp storeOp);
 
 NAMESPACE_RENDERCORE_END
 

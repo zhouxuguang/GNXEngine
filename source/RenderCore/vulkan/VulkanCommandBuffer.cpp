@@ -12,6 +12,7 @@
 #include "BaseLib/LogService.h"
 #include "VKRenderTexture.h"
 #include "BaseLib/DebugBreaker.h"
+#include "VKUtil.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -141,22 +142,12 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         clearColor.color.float32[3] = iter->clearColor.alpha;
         clearValues.push_back(clearColor);
         
-//        const VkRenderingAttachmentInfoKHR color_attachment_info
-//        {
-//            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-//            .imageView = vkRenderTexture->GetImageView()->GetHandle(),
-//            .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR,
-//            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-//            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-//            .clearValue = clearColor,
-//        };
-        
         VkRenderingAttachmentInfoKHR colorAttachment = {};
         colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
         colorAttachment.imageView = vkRenderTexture->GetImageView()->GetHandle();
         colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment.loadOp = GetLoadOP(iter->loadOp);
+        colorAttachment.storeOp = GetStoreOP(iter->storeOp);
         colorAttachment.clearValue = clearColor;
         
         width = vkRenderTexture->getWidth();
@@ -175,11 +166,11 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         VKRenderTexturePtr vkRenderTexture = std::dynamic_pointer_cast<VKRenderTexture>(renderPass.depthAttachment->texture);
         
         VkRenderingAttachmentInfoKHR depth_attachment_info = {};
-        depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-        depth_attachment_info.imageView = vkRenderTexture->GetImageView()->GetHandle(),
-        depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-        depth_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        depth_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+        depth_attachment_info.imageView = vkRenderTexture->GetImageView()->GetHandle();
+        depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depth_attachment_info.loadOp = GetLoadOP(renderPass.depthAttachment->loadOp);
+        depth_attachment_info.storeOp = GetStoreOP(renderPass.depthAttachment->storeOp);
         depth_attachment_info.clearValue.depthStencil.depth = renderPass.depthAttachment->clearDepth;
         depth_attachment_info.clearValue.depthStencil.stencil = renderPass.stencilAttachment->clearStencil;
         depthAttachments.push_back(depth_attachment_info);
@@ -197,11 +188,11 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         VKRenderTexturePtr vkRenderTexture = std::dynamic_pointer_cast<VKRenderTexture>(renderPass.stencilAttachment->texture);
         
         VkRenderingAttachmentInfoKHR stencil_attachment_info = {};
-        stencil_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,
-        stencil_attachment_info.imageView = vkRenderTexture->GetImageView()->GetHandle(),
-        stencil_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-        stencil_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-        stencil_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        stencil_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+        stencil_attachment_info.imageView = vkRenderTexture->GetImageView()->GetHandle();
+        stencil_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        stencil_attachment_info.loadOp = GetLoadOP(renderPass.stencilAttachment->loadOp);
+        stencil_attachment_info.storeOp = GetStoreOP(renderPass.stencilAttachment->storeOp);
         stencil_attachment_info.clearValue.depthStencil.stencil = 0x0;
         stencilAttachments.push_back(stencil_attachment_info);
         passFormat.stencilFormat = vkRenderTexture->GetVKFormat();
