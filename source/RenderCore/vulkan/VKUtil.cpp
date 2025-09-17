@@ -140,4 +140,47 @@ void UpLoadThreadPool::Update(VkDevice device)
 	mLoadingTask = tempTask;
 }
 
+VkAttachmentLoadOp GetLoadOP(AttachmentLoadOp loadOp)
+{
+	VkAttachmentLoadOp loadOP = VK_ATTACHMENT_LOAD_OP_MAX_ENUM;
+	switch (loadOp)
+	{
+	case AttachmentLoadOp::ATTACHMENT_LOAD_OP_CLEAR:
+		loadOP = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		break;
+	case AttachmentLoadOp::ATTACHMENT_LOAD_OP_LOAD:
+		loadOP = VK_ATTACHMENT_LOAD_OP_LOAD;
+		break;
+
+	case AttachmentLoadOp::ATTACHMENT_LOAD_OP_DONT_CARE:
+		loadOP = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		break;
+
+	case AttachmentLoadOp::ATTACHMENT_LOAD_OP_NONE:
+		loadOP = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
+		break;
+	}
+	return loadOP;
+}
+
+VkAttachmentStoreOp GetStoreOP(AttachmentStoreOp storeOp)
+{
+	VkAttachmentStoreOp storeOP = VK_ATTACHMENT_STORE_OP_MAX_ENUM;
+	switch (storeOp)
+	{
+	case AttachmentStoreOp::ATTACHMENT_STORE_OP_STORE:
+		storeOP = VK_ATTACHMENT_STORE_OP_STORE;
+		break;
+	case AttachmentStoreOp::ATTACHMENT_STORE_OP_DONT_CARE:
+		storeOP = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		break;
+
+	case AttachmentStoreOp::ATTACHMENT_STORE_OP_NONE:
+		storeOP = VK_ATTACHMENT_STORE_OP_NONE;
+		break;
+	}
+	return storeOP;
+}
+
 NAMESPACE_RENDERCORE_END
+

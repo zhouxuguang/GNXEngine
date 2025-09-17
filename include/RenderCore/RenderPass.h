@@ -13,6 +13,22 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+// Attachment的load和store的操作方式
+enum AttachmentLoadOp 
+{
+	ATTACHMENT_LOAD_OP_LOAD = 0,
+	ATTACHMENT_LOAD_OP_CLEAR = 1,
+	ATTACHMENT_LOAD_OP_DONT_CARE = 2,
+	ATTACHMENT_LOAD_OP_NONE = 3
+};
+
+enum AttachmentStoreOp 
+{
+	ATTACHMENT_STORE_OP_STORE = 0,
+	ATTACHMENT_STORE_OP_DONT_CARE = 1,
+	ATTACHMENT_STORE_OP_NONE = 2,
+};
+
 //渲染附件基类
 struct RenderPassAttachment
 {
@@ -44,6 +60,8 @@ inline ClearColor MakeClearColor(float red, float green, float blue, float alpha
 struct RenderPassColorAttachment : public RenderPassAttachment
 {
     ClearColor clearColor;
+	AttachmentLoadOp       loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+	AttachmentStoreOp      storeOp = ATTACHMENT_STORE_OP_STORE;
 };
 
 typedef std::shared_ptr<RenderPassColorAttachment> RenderPassColorAttachmentPtr;
@@ -52,6 +70,8 @@ typedef std::shared_ptr<RenderPassColorAttachment> RenderPassColorAttachmentPtr;
 struct RenderPassDepthAttachment : public RenderPassAttachment
 {
     float clearDepth;
+	AttachmentLoadOp       loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+	AttachmentStoreOp      storeOp = ATTACHMENT_STORE_OP_DONT_CARE;
 };
 
 typedef std::shared_ptr<RenderPassDepthAttachment> RenderPassDepthAttachmentPtr;
@@ -60,6 +80,8 @@ typedef std::shared_ptr<RenderPassDepthAttachment> RenderPassDepthAttachmentPtr;
 struct RenderPassStencilAttachment : RenderPassAttachment
 {
     uint32_t clearStencil;
+	AttachmentLoadOp       loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+	AttachmentStoreOp      storeOp = ATTACHMENT_STORE_OP_DONT_CARE;
 };
 
 typedef std::shared_ptr<RenderPassStencilAttachment> RenderPassStencilAttachmentPtr;
@@ -71,6 +93,8 @@ public:
     RenderPass();
     
     ~RenderPass();
+
+    uint32_t layerCount = 1;
     
     std::vector<RenderPassColorAttachmentPtr> colorAttachments; //color attach 0, 1 2, 3
     RenderPassDepthAttachmentPtr depthAttachment = nullptr;
