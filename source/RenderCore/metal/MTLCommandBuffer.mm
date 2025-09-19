@@ -12,6 +12,50 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+static MTLLoadAction GetLoadAction(AttachmentLoadOp loadOp)
+{
+    MTLLoadAction resultOP = MTLLoadActionLoad;
+    switch (loadOp)
+    {
+        case ATTACHMENT_LOAD_OP_LOAD:
+            resultOP = MTLLoadActionLoad;
+            break;
+            
+        case ATTACHMENT_LOAD_OP_CLEAR:
+            resultOP = MTLLoadActionClear;
+            break;
+            
+        case ATTACHMENT_LOAD_OP_DONT_CARE:
+            resultOP = MTLLoadActionDontCare;
+            break;
+            
+        default:
+            break;
+    }
+    
+    return resultOP;
+}
+
+static MTLStoreAction GetStoreAction(AttachmentStoreOp storeOp)
+{
+    MTLStoreAction resultOP = MTLStoreActionDontCare;
+    switch (storeOp)
+    {
+        case ATTACHMENT_STORE_OP_STORE:
+            resultOP = MTLStoreActionStore;
+            break;
+            
+        case ATTACHMENT_STORE_OP_DONT_CARE:
+            resultOP = MTLStoreActionDontCare;
+            break;
+            
+        default:
+            break;
+    }
+    
+    return resultOP;
+}
+
 MTLCommandBuffer::MTLCommandBuffer(id<MTLCommandQueue> commandQueue, CAMetalLayer *metalLayer,
                                    id<MTLTexture> depthTexture, id<MTLTexture> stencilTexture, id<MTLTexture> depthStencilTexture)
 {
@@ -99,8 +143,8 @@ RenderEncoderPtr MTLCommandBuffer::CreateRenderEncoder(const RenderPass& renderP
             }
             
             passDescriptor.colorAttachments[i].texture = mtlRenderTexture->getMTLTexture();
-            passDescriptor.colorAttachments[i].loadAction = MTLLoadActionClear;
-            passDescriptor.colorAttachments[i].storeAction = MTLStoreActionStore;   //这里使用了memoryless的话，就不能store
+            passDescriptor.colorAttachments[i].loadAction = GetLoadAction(iter->loadOp);
+            passDescriptor.colorAttachments[i].storeAction = GetStoreAction(iter->storeOp);   //这里使用了memoryless的话，就不能store
             passDescriptor.colorAttachments[i].clearColor = MTLClearColorMake(iter->clearColor.red,
                                                                               iter->clearColor.green,
                                                                               iter->clearColor.blue,
@@ -114,8 +158,8 @@ RenderEncoderPtr MTLCommandBuffer::CreateRenderEncoder(const RenderPass& renderP
             MTLRenderTexturePtr mtlRenderTexture = std::dynamic_pointer_cast<MTLRenderTexture>(renderPass.depthAttachment->texture);
             
             passDescriptor.depthAttachment.texture = mtlRenderTexture->getMTLTexture();
-            passDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
-            passDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
+            passDescriptor.depthAttachment.loadAction = GetLoadAction(renderPass.depthAttachment->loadOp);
+            passDescriptor.depthAttachment.storeAction = GetStoreAction(renderPass.depthAttachment->storeOp);
             passDescriptor.depthAttachment.clearDepth = renderPass.depthAttachment->clearDepth;
             frameBufferFormat.depthFormat = mtlRenderTexture->getMTLTexture().pixelFormat;
         }
@@ -125,8 +169,8 @@ RenderEncoderPtr MTLCommandBuffer::CreateRenderEncoder(const RenderPass& renderP
             MTLRenderTexturePtr mtlRenderTexture = std::dynamic_pointer_cast<MTLRenderTexture>(renderPass.stencilAttachment->texture);
             
             passDescriptor.stencilAttachment.texture = mtlRenderTexture->getMTLTexture();
-            passDescriptor.stencilAttachment.loadAction = MTLLoadActionClear;
-            passDescriptor.stencilAttachment.storeAction = MTLStoreActionDontCare;
+            passDescriptor.stencilAttachment.loadAction = GetLoadAction(renderPass.stencilAttachment->loadOp);
+            passDescriptor.stencilAttachment.storeAction = GetStoreAction(renderPass.stencilAttachment->storeOp);
             passDescriptor.stencilAttachment.clearStencil = renderPass.stencilAttachment->clearStencil;
             frameBufferFormat.stencilFormat = mtlRenderTexture->getMTLTexture().pixelFormat;
         }
