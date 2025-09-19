@@ -155,10 +155,6 @@ VkAttachmentLoadOp GetLoadOP(AttachmentLoadOp loadOp)
 	case AttachmentLoadOp::ATTACHMENT_LOAD_OP_DONT_CARE:
 		loadOP = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		break;
-
-	case AttachmentLoadOp::ATTACHMENT_LOAD_OP_NONE:
-		loadOP = VK_ATTACHMENT_LOAD_OP_NONE_EXT;
-		break;
 	}
 	return loadOP;
 }
@@ -173,10 +169,6 @@ VkAttachmentStoreOp GetStoreOP(AttachmentStoreOp storeOp)
 		break;
 	case AttachmentStoreOp::ATTACHMENT_STORE_OP_DONT_CARE:
 		storeOP = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		break;
-
-	case AttachmentStoreOp::ATTACHMENT_STORE_OP_NONE:
-		storeOP = VK_ATTACHMENT_STORE_OP_NONE;
 		break;
 	}
 	return storeOP;
