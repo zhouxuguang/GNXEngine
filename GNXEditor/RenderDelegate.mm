@@ -52,12 +52,12 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     CGSize mViewSize;
     
     //test
-    RenderTexturePtr renderTexture;
-    RenderTexturePtr depthStencilTexture;
+    RCTexturePtr renderTexture;
+    RCTexturePtr depthStencilTexture;
     
     SceneManager* sceneManager;
     
-    RenderTexturePtr computeTexture;
+    RCTexturePtr computeTexture;
     ComputePipelinePtr computePipeline;
     
     uint64_t lastTime;
@@ -77,19 +77,14 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     mViewSize = CGSizeMake(width, height);
     
     //test
-    TextureDescriptor textureDescriptor;
-    textureDescriptor.width = width;
-    textureDescriptor.height = height;
-    textureDescriptor.mipmaped = false;
-    textureDescriptor.format = kTexFormatRGBA16Float;
-    renderTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
-    computeTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
+    renderTexture = mRenderdevice->CreateTexture2D(kTexFormatRGBA16Float,
+                                                   TextureUsage::TextureUsageRenderTarget, width, height, 1);
+    computeTexture = mRenderdevice->CreateTexture2D(kTexFormatRGBA16Float,
+                                                    TextureUsage::TextureUsageRenderTarget, width, height, 1);
     
-    textureDescriptor.width = width;
-    textureDescriptor.height = height;
-    textureDescriptor.mipmaped = false;
-    textureDescriptor.format = kTexFormatDepth32FloatStencil8;
-    depthStencilTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
+    depthStencilTexture = mRenderdevice->CreateTexture2D(kTexFormatDepth32FloatStencil8,
+                                                         TextureUsage::TextureUsageRenderTarget,
+                                                         width, height, 1);
     
     sceneManager = SceneManager::GetInstance();
     SkyBox* skybox = initSky(mRenderdevice);
@@ -163,9 +158,9 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     
     renderEncoder1->EndEncode();
     
-    ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
-    testImageGrayDraw(computeEncoder, computePipeline, renderTexture, computeTexture);
-    computeEncoder->EndEncode();
+//    ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
+//    testImageGrayDraw(computeEncoder, computePipeline, renderTexture, computeTexture);
+//    computeEncoder->EndEncode();
     
     RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
     testPost(renderEncoder, renderTexture);
