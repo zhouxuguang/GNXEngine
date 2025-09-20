@@ -121,7 +121,7 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
         memory_to_image_copy.imageSubresource.layerCount = 1;
         memory_to_image_copy.imageOffset.x = rect.offsetX;
         memory_to_image_copy.imageOffset.y = rect.offsetY;
-        memory_to_image_copy.imageOffset.z = 0;
+        memory_to_image_copy.imageOffset.z = 0;      // 3d纹理这里如何处理
         memory_to_image_copy.imageExtent.width = rect.width;
         memory_to_image_copy.imageExtent.height = rect.height;
         memory_to_image_copy.imageExtent.depth = 1;
@@ -211,6 +211,16 @@ VKRCTexture3D::~VKRCTexture3D()
 {
 }
 
+void VKRCTexture3D::ReplaceRegion(const Rect2D& rect,
+                    uint32_t level,
+                    uint32_t slice,
+                    const uint8_t* pixelBytes,
+                    uint32_t bytesPerRow,
+                    uint32_t bytesPerImage)
+{
+    VKTextureBase::ReplaceRegion(rect, level, slice, pixelBytes, bytesPerRow, bytesPerImage);
+}
+
 #pragma mark VKRCTextureCube
 
 VKRCTextureCube::VKRCTextureCube(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo)
@@ -222,6 +232,16 @@ VKRCTextureCube::~VKRCTextureCube()
 {
 }
 
+void VKRCTextureCube::ReplaceRegion(const Rect2D& rect,
+                    uint32_t level,
+                    uint32_t slice,
+                    const uint8_t* pixelBytes,
+                    uint32_t bytesPerRow,
+                    uint32_t bytesPerImage)
+{
+    VKTextureBase::ReplaceRegion(rect, level, slice, pixelBytes, bytesPerRow, bytesPerImage);
+}
+
 #pragma mark VKRCTexture2DArray
 
 VKRCTexture2DArray::VKRCTexture2DArray(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo)
@@ -231,6 +251,16 @@ VKRCTexture2DArray::VKRCTexture2DArray(const VulkanContextPtr& context, const Vk
 
 VKRCTexture2DArray::~VKRCTexture2DArray()
 {
+}
+
+void VKRCTexture2DArray::ReplaceRegion(const Rect2D& rect,
+                    uint32_t level,
+                    uint32_t slice,
+                    const uint8_t* pixelBytes,
+                    uint32_t bytesPerRow,
+                    uint32_t bytesPerImage)
+{
+    VKTextureBase::ReplaceRegion(rect, level, slice, pixelBytes, bytesPerRow, bytesPerImage);
 }
 
 NAMESPACE_RENDERCORE_END

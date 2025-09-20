@@ -84,6 +84,18 @@ public:
     VKRCTexture3D(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo);
     
     ~VKRCTexture3D();
+    
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage);
+    
+    virtual bool IsValid() const
+    {
+        return VKTextureBase::IsValid();
+    }
 };
 
 using VKRCTexture3DPtr = std::shared_ptr<VKRCTexture3D>;
@@ -96,6 +108,18 @@ public:
     VKRCTextureCube(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo);
     
     ~VKRCTextureCube();
+    
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage);
+    
+    virtual bool IsValid() const
+    {
+        return VKTextureBase::IsValid();
+    }
 };
 
 using VKRCTextureCubePtr = std::shared_ptr<VKRCTextureCube>;
@@ -108,6 +132,18 @@ public:
     VKRCTexture2DArray(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo);
     
     ~VKRCTexture2DArray();
+    
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage);
+    
+    virtual bool IsValid() const
+    {
+        return VKTextureBase::IsValid();
+    }
 };
 
 using VKRCTexture2DArrayPtr = std::shared_ptr<VKRCTexture2DArray>;
