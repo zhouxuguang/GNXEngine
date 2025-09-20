@@ -71,6 +71,26 @@ public:
                                         uint32_t height,
                                         uint32_t levels) const;
     
+    virtual RCTexture3DPtr CreateTexture3D(TextureFormat format,
+                                        TextureUsage usage,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        uint32_t depth,
+                                        uint32_t levels) const;
+
+    virtual RCTextureCubePtr CreateTextureCube(TextureFormat format,
+                                        TextureUsage usage,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        uint32_t levels) const;
+
+    virtual RCTexture2DArrayPtr CreateTexture2DArray(TextureFormat format,
+                                        TextureUsage usage,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        uint32_t levels,
+                                        uint32_t arraySize) const;
+    
     void UpdateCurrentIndex()
     {
         // 更新当前帧的索引

@@ -275,6 +275,35 @@ RCTexture2DPtr VKRenderDevice::CreateTexture2D(TextureFormat format,
     return std::make_shared<VKRCTexture2D>(mVulkanContext, imageCreateInfo);
 }
 
+RCTexture3DPtr VKRenderDevice::CreateTexture3D(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t depth,
+                                    uint32_t levels) const
+{
+    //
+}
+
+RCTextureCubePtr VKRenderDevice::CreateTextureCube(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t levels) const
+{
+    //
+}
+
+RCTexture2DArrayPtr VKRenderDevice::CreateTexture2DArray(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t levels,
+                                    uint32_t arraySize) const
+{
+    //
+}
+
 CommandBufferPtr VKRenderDevice::CreateCommandBuffer()
 {
     mVulkanContext->upLoadPool.Update(mVulkanContext->device);

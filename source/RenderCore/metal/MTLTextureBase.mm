@@ -82,6 +82,16 @@ MTLRCTexture3D::~MTLRCTexture3D()
     //
 }
 
+void MTLRCTexture3D::ReplaceRegion(const Rect2D& rect,
+                    uint32_t level,
+                    uint32_t slice,
+                    const uint8_t* pixelBytes,
+                    uint32_t bytesPerRow,
+                    uint32_t bytesPerImage)
+{
+    MTLTextureBase::ReplaceRegion(rect, level, slice, pixelBytes, bytesPerRow, bytesPerImage);
+}
+
 #pragma mark MTLRCTextureCube
 
 MTLRCTextureCube::MTLRCTextureCube(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes)
@@ -94,6 +104,16 @@ MTLRCTextureCube::~MTLRCTextureCube()
     //
 }
 
+void MTLRCTextureCube::ReplaceRegion(const Rect2D& rect,
+                    uint32_t level,
+                    uint32_t slice,
+                    const uint8_t* pixelBytes,
+                    uint32_t bytesPerRow,
+                    uint32_t bytesPerImage)
+{
+    MTLTextureBase::ReplaceRegion(rect, level, slice, pixelBytes, bytesPerRow, bytesPerImage);
+}
+
 #pragma mark MTLRCTexture2DArray
 
 MTLRCTexture2DArray::MTLRCTexture2DArray(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes)
@@ -104,6 +124,16 @@ MTLRCTexture2DArray::MTLRCTexture2DArray(id<MTLDevice> device, id<MTLCommandQueu
 MTLRCTexture2DArray::~MTLRCTexture2DArray()
 {
     //
+}
+
+void MTLRCTexture2DArray::ReplaceRegion(const Rect2D& rect,
+                    uint32_t level,
+                    uint32_t slice,
+                    const uint8_t* pixelBytes,
+                    uint32_t bytesPerRow,
+                    uint32_t bytesPerImage)
+{
+    MTLTextureBase::ReplaceRegion(rect, level, slice, pixelBytes, bytesPerRow, bytesPerImage);
 }
 
 NAMESPACE_RENDERCORE_END

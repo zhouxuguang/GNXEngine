@@ -98,6 +98,18 @@ public:
     MTLRCTexture3D(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes);
     
     ~MTLRCTexture3D();
+    
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage);
+    
+    virtual bool IsValid() const
+    {
+        return MTLTextureBase::IsValid();
+    }
 };
 
 using MTLRCTexture3DPtr = std::shared_ptr<MTLRCTexture3D>;
@@ -110,6 +122,18 @@ public:
     MTLRCTextureCube(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes);
     
     ~MTLRCTextureCube();
+    
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage);
+    
+    virtual bool IsValid() const
+    {
+        return MTLTextureBase::IsValid();
+    }
 };
 
 using MTLRCTextureCubePtr = std::shared_ptr<MTLRCTextureCube>;
@@ -122,6 +146,18 @@ public:
     MTLRCTexture2DArray(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes);
     
     ~MTLRCTexture2DArray();
+    
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage);
+    
+    virtual bool IsValid() const
+    {
+        return MTLTextureBase::IsValid();
+    }
 };
 
 using MTLRCTexture2DArrayPtr = std::shared_ptr<MTLRCTexture2DArray>;

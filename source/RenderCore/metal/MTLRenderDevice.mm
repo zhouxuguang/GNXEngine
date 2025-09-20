@@ -220,8 +220,179 @@ RCTexture2DPtr MTLRenderDevice::CreateTexture2D(TextureFormat format,
     
     MTLTextureUsage textureUsage = ConvertTextureUsageToMetal(usage);
     textureDes.usage = textureUsage;
+    if (HasRenderTargetFlag(textureUsage))
+    {
+        // 属性设置为shader可读写以及rendertarget
+        textureDes.resourceOptions = MTLResourceStorageModePrivate;
+        textureDes.usage |= MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+        textureDes.storageMode = MTLStorageModePrivate;
+        if (@available(iOS 10.0, *))
+        {
+            //textureDes.storageMode = MTLStorageModeMemoryless;
+        }
+    }
 
     return std::make_shared<MTLRCTexture2D>(mMetalLayer.device, mCommandQueue, textureDes);
+}
+
+RCTexture3DPtr MTLRenderDevice::CreateTexture3D(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t depth,
+                                    uint32_t levels) const
+{
+    MTLPixelFormat mtlFormat = ConvertTextureFormatToMetal(format);
+    if (format == MTLPixelFormatInvalid)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    if (0 == width || 0 == height || 0 == depth || 0 == levels)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    bool mipmap = (levels > 1);
+    
+    MTLTextureDescriptor *textureDes = [MTLTextureDescriptor new];
+    if (!textureDes)
+    {
+        return nullptr;
+    }
+    
+    MTLTextureUsage textureUsage = ConvertTextureUsageToMetal(usage);
+    textureDes.usage = textureUsage;
+    textureDes.width = width;
+    textureDes.height = height;
+    textureDes.depth = depth;
+    textureDes.mipmapLevelCount = levels;
+    textureDes.pixelFormat = mtlFormat;
+    textureDes.sampleCount = 1;
+    textureDes.textureType = MTLTextureType3D;
+    if (HasRenderTargetFlag(textureUsage))
+    {
+        // 属性设置为shader可读写以及rendertarget
+        textureDes.resourceOptions = MTLResourceStorageModePrivate;
+        textureDes.usage |= MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+        textureDes.storageMode = MTLStorageModePrivate;
+        if (@available(iOS 10.0, *))
+        {
+            //textureDes.storageMode = MTLStorageModeMemoryless;
+        }
+    }
+
+    return std::make_shared<MTLRCTexture3D>(mMetalLayer.device, mCommandQueue, textureDes);
+}
+
+RCTextureCubePtr MTLRenderDevice::CreateTextureCube(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t levels) const
+{
+    MTLPixelFormat mtlFormat = ConvertTextureFormatToMetal(format);
+    if (format == MTLPixelFormatInvalid)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    if (0 == width || 0 == height || 0 == levels)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    // 立方体纹理宽高需要一致
+    if (width != height)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    bool mipmap = (levels > 1);
+    MTLTextureDescriptor *textureDes = [MTLTextureDescriptor textureCubeDescriptorWithPixelFormat:mtlFormat size:width mipmapped:mipmap];
+    if (!textureDes)
+    {
+        return nullptr;
+    }
+    
+    MTLTextureUsage textureUsage = ConvertTextureUsageToMetal(usage);
+    textureDes.usage = textureUsage;
+    if (HasRenderTargetFlag(textureUsage))
+    {
+        // 属性设置为shader可读写以及rendertarget
+        textureDes.resourceOptions = MTLResourceStorageModePrivate;
+        textureDes.usage |= MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+        textureDes.storageMode = MTLStorageModePrivate;
+        if (@available(iOS 10.0, *))
+        {
+            //textureDes.storageMode = MTLStorageModeMemoryless;
+        }
+    }
+    
+    new MTLRCTextureCube(mMetalLayer.device, mCommandQueue, textureDes);
+
+    return std::make_shared<MTLRCTextureCube>(mMetalLayer.device, mCommandQueue, textureDes);
+}
+
+RCTexture2DArrayPtr MTLRenderDevice::CreateTexture2DArray(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t levels,
+                                    uint32_t arraySize) const
+{
+    MTLPixelFormat mtlFormat = ConvertTextureFormatToMetal(format);
+    if (format == MTLPixelFormatInvalid)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    if (0 == width || 0 == height || 0 == levels)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    bool mipmap = (levels > 1);
+    
+    MTLTextureDescriptor *textureDes = [MTLTextureDescriptor new];
+    if (!textureDes)
+    {
+        return nullptr;
+    }
+    
+    MTLTextureUsage textureUsage = ConvertTextureUsageToMetal(usage);
+    textureDes.usage = textureUsage;
+    textureDes.width = width;
+    textureDes.height = height;
+    textureDes.depth = 1;
+    textureDes.mipmapLevelCount = levels;
+    textureDes.pixelFormat = mtlFormat;
+    textureDes.sampleCount = 1;
+    textureDes.arrayLength = arraySize;
+    textureDes.textureType = MTLTextureType2DArray;
+    
+    if (HasRenderTargetFlag(textureUsage))
+    {
+        // 属性设置为shader可读写以及rendertarget
+        textureDes.resourceOptions = MTLResourceStorageModePrivate;
+        textureDes.usage |= MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+        textureDes.storageMode = MTLStorageModePrivate;
+        if (@available(iOS 10.0, *))
+        {
+            //textureDes.storageMode = MTLStorageModeMemoryless;
+        }
+    }
+    
+    new MTLRCTexture2DArray(mMetalLayer.device, mCommandQueue, textureDes);
+
+    //return std::make_shared<MTLRCTexture2D>(mMetalLayer.device, mCommandQueue, textureDes);
 }
 
 NAMESPACE_RENDERCORE_END

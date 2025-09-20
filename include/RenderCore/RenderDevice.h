@@ -139,6 +139,58 @@ public:
                                     uint32_t width,
                                     uint32_t height,
                                     uint32_t levels) const = 0;
+
+    /**
+     * @brief Create a Texture3D object
+     * 
+     * @param format 格式
+     * @param usage 用途
+     * @param width 宽
+     * @param height 高
+     * @param depth 深度
+     * @param levels mipmap层数
+     * @return RCTexture3DPtr 
+     */
+    virtual RCTexture3DPtr CreateTexture3D(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t depth,
+                                    uint32_t levels) const = 0;
+
+    /**
+     * @brief Create a TextureCube object
+     * 
+     * @param format 格式
+     * @param usage 用途
+     * @param width 宽
+     * @param height 高
+     * @param levels mipmap的层数
+     * @return RCTextureCubePtr 
+     */
+    virtual RCTextureCubePtr CreateTextureCube(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t levels) const = 0;
+
+    /**
+     * @brief Create a Texture2DArray object
+     * 
+     * @param format 格式
+     * @param usage 用途
+     * @param width 宽
+     * @param height 高
+     * @param levels mipmap的层数
+     * @param arraySize 数组长度
+     * @return RCTexture2DArrayPtr 
+     */
+    virtual RCTexture2DArrayPtr CreateTexture2DArray(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t levels,
+                                    uint32_t arraySize) const = 0;
 };
 
 typedef std::shared_ptr<RenderDevice> RenderDevicePtr;
