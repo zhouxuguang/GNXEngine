@@ -9,6 +9,7 @@
 #include "MTLRenderEncoder.h"
 #include "MTLComputeEncoder.h"
 #include "MTLRenderTexture.h"
+#include "MTLTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -135,7 +136,7 @@ RenderEncoderPtr MTLCommandBuffer::CreateRenderEncoder(const RenderPass& renderP
                 continue;
             }
             
-            MTLRenderTexturePtr mtlRenderTexture = std::dynamic_pointer_cast<MTLRenderTexture>(iter->texture);
+            MTLTextureBasePtr mtlRenderTexture = std::dynamic_pointer_cast<MTLTextureBase>(iter->texture);
             
             if (mtlRenderTexture == nullptr)
             {
@@ -155,7 +156,7 @@ RenderEncoderPtr MTLCommandBuffer::CreateRenderEncoder(const RenderPass& renderP
         
         if (renderPass.depthAttachment)
         {
-            MTLRenderTexturePtr mtlRenderTexture = std::dynamic_pointer_cast<MTLRenderTexture>(renderPass.depthAttachment->texture);
+            MTLTextureBasePtr mtlRenderTexture = std::dynamic_pointer_cast<MTLTextureBase>(renderPass.depthAttachment->texture);
             
             passDescriptor.depthAttachment.texture = mtlRenderTexture->getMTLTexture();
             passDescriptor.depthAttachment.loadAction = GetLoadAction(renderPass.depthAttachment->loadOp);
@@ -166,7 +167,7 @@ RenderEncoderPtr MTLCommandBuffer::CreateRenderEncoder(const RenderPass& renderP
         
         if (renderPass.stencilAttachment)
         {
-            MTLRenderTexturePtr mtlRenderTexture = std::dynamic_pointer_cast<MTLRenderTexture>(renderPass.stencilAttachment->texture);
+            MTLTextureBasePtr mtlRenderTexture = std::dynamic_pointer_cast<MTLTextureBase>(renderPass.stencilAttachment->texture);
             
             passDescriptor.stencilAttachment.texture = mtlRenderTexture->getMTLTexture();
             passDescriptor.stencilAttachment.loadAction = GetLoadAction(renderPass.stencilAttachment->loadOp);

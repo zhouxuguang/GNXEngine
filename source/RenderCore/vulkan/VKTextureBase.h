@@ -38,7 +38,24 @@ public:
     
     virtual bool IsValid() const;
     
-    const VulkanImageViewPtr GetImageView() const noexcept {return mVulkanImageViewPtr;}
+    virtual uint32_t getWidth() const;
+    
+    virtual uint32_t getHeight() const;
+    
+    VulkanImageViewPtr GetImageView() const
+    {
+        return mVulkanImageViewPtr;
+    }
+    
+    VkFormat GetVKFormat() const
+    {
+        return mFormat;
+    }
+    
+    VkImage GetVKImage() const
+    {
+        return mImage;
+    }
     
 private:
     VkImage mImage = VK_NULL_HANDLE;
@@ -50,6 +67,8 @@ private:
     VulkanImageViewPtr mVulkanImageViewPtr = nullptr;
     bool mSupportHostImageCopy = false;
 };
+
+using VKTextureBasePtr = std::shared_ptr<VKTextureBase>;
 
 #pragma mark VKRCTexture2D
 

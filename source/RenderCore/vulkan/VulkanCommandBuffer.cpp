@@ -13,6 +13,7 @@
 #include "VKRenderTexture.h"
 #include "BaseLib/DebugBreaker.h"
 #include "VKUtil.h"
+#include "VKTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -128,7 +129,7 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
             continue;
         }
         
-        VKRenderTexturePtr vkRenderTexture = std::dynamic_pointer_cast<VKRenderTexture>(iter->texture);
+        VKTextureBasePtr vkRenderTexture = std::dynamic_pointer_cast<VKTextureBase>(iter->texture);
         
         if (vkRenderTexture == nullptr)
         {
@@ -163,7 +164,7 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
     
     if (renderPass.depthAttachment)
     {
-        VKRenderTexturePtr vkRenderTexture = std::dynamic_pointer_cast<VKRenderTexture>(renderPass.depthAttachment->texture);
+        VKTextureBasePtr vkRenderTexture = std::dynamic_pointer_cast<VKTextureBase>(renderPass.depthAttachment->texture);
         
         VkRenderingAttachmentInfoKHR depth_attachment_info = {};
         depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
@@ -185,7 +186,7 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
     std::vector<VkRenderingAttachmentInfo> stencilAttachments;
     if (renderPass.stencilAttachment)
     {
-        VKRenderTexturePtr vkRenderTexture = std::dynamic_pointer_cast<VKRenderTexture>(renderPass.stencilAttachment->texture);
+        VKTextureBasePtr vkRenderTexture = std::dynamic_pointer_cast<VKTextureBase>(renderPass.stencilAttachment->texture);
         
         VkRenderingAttachmentInfoKHR stencil_attachment_info = {};
         stencil_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;

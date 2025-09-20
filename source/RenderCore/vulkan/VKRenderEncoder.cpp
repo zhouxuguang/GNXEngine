@@ -731,7 +731,8 @@ void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceNa
     {
         return;
     }
-    VKTextureBase* vkTexture = (VKTextureBase*)texture.get();
+    //VKTextureBase* vkTexture = (VKTextureBase*)texture.get();
+    VKTextureBasePtr vkTexture = std::dynamic_pointer_cast<VKTextureBase>(texture);
     VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
 
     VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();

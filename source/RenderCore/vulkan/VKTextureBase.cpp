@@ -10,7 +10,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo)
+VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo) : mContext(context)
 {
     // 判断该格式是否支持HostImageCopy
     VkFormatProperties3 formatProperties3 = {};
@@ -174,6 +174,16 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
 bool VKTextureBase::IsValid() const
 {
     return mImage != VK_NULL_HANDLE && mVulkanImageViewPtr;
+}
+
+uint32_t VKTextureBase::getWidth() const
+{
+    return mWidth;
+}
+
+uint32_t VKTextureBase::getHeight() const
+{
+    return mHeight;
 }
 
 #pragma mark VKRCTexture2D

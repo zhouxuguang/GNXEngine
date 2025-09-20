@@ -43,7 +43,7 @@ PostProcessing::~PostProcessing()
     //
 }
 
-void PostProcessing::SetRenderTexture(const RenderTexturePtr texture)
+void PostProcessing::SetRenderTexture(const RCTexturePtr texture)
 {
     mTexture = texture;
 }
@@ -51,7 +51,7 @@ void PostProcessing::SetRenderTexture(const RenderTexturePtr texture)
 void PostProcessing::Process(const RenderEncoderPtr &renderEncoder)
 {
     renderEncoder->SetGraphicsPipeline(mPipeline);
-    renderEncoder->SetFragmentRenderTextureAndSampler("texImage", mTexture, mTextureSampler);
+    renderEncoder->SetFragmentTextureAndSampler("texImage", mTexture, mTextureSampler);
     
     renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
 }

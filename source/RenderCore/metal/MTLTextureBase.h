@@ -62,6 +62,8 @@ private:
     id<MTLDevice> mDevice;
 };
 
+using MTLTextureBasePtr = std::shared_ptr<MTLTextureBase>;
+
 #pragma mark MTLRCTexture2D
 
 class MTLRCTexture2D : public MTLTextureBase, public RCTexture2D
