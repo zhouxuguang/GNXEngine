@@ -64,6 +64,8 @@ public:
 
     virtual void SetFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler);
     
+    virtual void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
+    
 private:
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
     VKGraphicsPipeline *mGraphicsPipieline = nullptr;

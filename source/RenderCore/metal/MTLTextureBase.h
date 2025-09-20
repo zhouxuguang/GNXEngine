@@ -54,6 +54,8 @@ public:
         return mTexture != nil;
     }
     
+    id<MTLTexture> getMTLTexture() {return mTexture;};
+    
 private:
     id<MTLTexture> mTexture;
     id<MTLCommandQueue> mCommandQueue;

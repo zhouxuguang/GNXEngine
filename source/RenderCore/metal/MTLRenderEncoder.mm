@@ -14,6 +14,7 @@
 #include "MTLTextureSampler.h"
 #include "MTLRenderTexture.h"
 #include "MTLGraphicsPipeline.h"
+#include "MTLTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -519,6 +520,43 @@ void MTLRenderEncoder::SetFragmentRenderTextureAndSampler(const std::string& res
     }
 
     id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLRenderTexture>(renderTexture)->getMTLTexture();
+    [mRenderEncoder setFragmentTexture:mtlTexture atIndex:texIndex];
+    id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
+    [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];
+}
+
+void MTLRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
+{
+    MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
+    if (!shader)
+    {
+        return;
+    }
+    
+    NSUInteger texIndex = shader->GetFragmentResourceBindIndex(resourceName);
+    if (texIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    NSUInteger samIndex = shader->GetFragmentResourceBindIndex(resourceName + "Sam");
+    if (samIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    
+    if (!texture)
+    {
+        [mRenderEncoder setFragmentTexture:nil atIndex:texIndex];
+        return;
+    }
+    
+    if (!sampler)
+    {
+        [mRenderEncoder setFragmentSamplerState:nil atIndex:samIndex];
+        return;
+    }
+
+    id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTextureBase>(texture)->getMTLTexture();
     [mRenderEncoder setFragmentTexture:mtlTexture atIndex:texIndex];
     id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
     [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];

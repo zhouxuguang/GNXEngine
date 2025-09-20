@@ -38,6 +38,8 @@ public:
     
     virtual bool IsValid() const;
     
+    const VulkanImageViewPtr GetImageView() const noexcept {return mVulkanImageViewPtr;}
+    
 private:
     VkImage mImage = VK_NULL_HANDLE;
     VmaAllocation mAllocation = VK_NULL_HANDLE;

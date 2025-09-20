@@ -16,6 +16,7 @@
 #include "VKGraphicsPipeline.h"
 #include "VulkanDescriptorUtil.h"
 #include "VulkanBufferUtil.h"
+#include "VKTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -722,6 +723,26 @@ void VKRenderEncoder::SetFragmentRenderTextureAndSampler(const std::string& reso
 
 	shader->BindTexture(mCommandBuffer, resourceName, imageDesc, mGraphicsPipieline->GetPipelineLayout());
 	shader->BindSampler(mCommandBuffer, resourceName + "Sam", vkSampler->GetVKSampler(), mGraphicsPipieline->GetPipelineLayout());
+}
+
+void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
+{
+    if (!texture || !sampler)
+    {
+        return;
+    }
+    VKTextureBase* vkTexture = (VKTextureBase*)texture.get();
+    VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
+
+    VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+
+    ShaderImageDesc imageDesc;
+    imageDesc.image = vkTexture->GetImageView()->GetHandle();
+    imageDesc.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageDesc.sampler = VK_NULL_HANDLE;
+
+    shader->BindTexture(mCommandBuffer, resourceName, imageDesc, mGraphicsPipieline->GetPipelineLayout());
+    shader->BindSampler(mCommandBuffer, resourceName + "Sam", vkSampler->GetVKSampler(), mGraphicsPipieline->GetPipelineLayout());
 }
 
 NAMESPACE_RENDERCORE_END

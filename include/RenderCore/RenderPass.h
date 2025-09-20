@@ -10,6 +10,7 @@
 
 #include "RenderDefine.h"
 #include "RenderTexture.h"
+#include "RCTexture.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 

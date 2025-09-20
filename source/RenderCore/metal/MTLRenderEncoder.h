@@ -155,6 +155,8 @@ public:
      @param sampler 采样器句柄
      */
     virtual void SetFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler);
+    
+    virtual void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
 
 private:
     id <MTLRenderCommandEncoder> mRenderEncoder = nil;

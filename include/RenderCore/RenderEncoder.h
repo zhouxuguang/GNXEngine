@@ -17,6 +17,7 @@
 #include "TextureSampler.h"
 #include "TextureCube.h"
 #include "RenderTexture.h"
+#include "RCTexture.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -171,6 +172,15 @@ public:
      @param sampler 采样器句柄
      */
     virtual void SetFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler) = 0;
+
+    /**
+     * @brief 设置片源的纹理和采样器
+     * 
+     * @param resourceName 对应shader中的名字
+     * @param texture 纹理句柄
+     * @param sampler 采样器句柄
+     */
+    virtual void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler) = 0;
 };
 
 typedef std::shared_ptr<RenderEncoder> RenderEncoderPtr;
