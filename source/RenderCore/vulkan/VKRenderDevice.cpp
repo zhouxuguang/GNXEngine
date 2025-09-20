@@ -20,6 +20,8 @@
 #include "VKComputePipeline.h"
 #include "VKGraphicsPipeline.h"
 #include "VKShaderFunction.h"
+#include "VKTextureBase.h"
+#include "VulkanBufferUtil.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -246,6 +248,31 @@ ComputePipelinePtr VKRenderDevice::CreateComputePipeline(const ShaderCode& shade
 RenderTexturePtr VKRenderDevice::CreateRenderTexture(const TextureDescriptor& des) const
 {
     return std::make_shared<VKRenderTexture>(mVulkanContext, des);
+}
+
+RCTexture2DPtr VKRenderDevice::CreateTexture2D(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t levels) const
+{
+    VkImageCreateInfo imageCreateInfo = {};
+    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.extent.width = width;
+    imageCreateInfo.extent.height = height;
+    imageCreateInfo.extent.depth = 1;
+    imageCreateInfo.mipLevels = levels;
+    imageCreateInfo.arrayLayers = 1;
+    imageCreateInfo.format = VulkanBufferUtil::ConvertTextureFormat(format);
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageCreateInfo.usage = VulkanBufferUtil::ConvertTextureUsage(usage);
+    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.flags = 0;
+    
+    return std::make_shared<VKRCTexture2D>(mVulkanContext, imageCreateInfo);
 }
 
 CommandBufferPtr VKRenderDevice::CreateCommandBuffer()

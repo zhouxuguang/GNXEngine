@@ -13,8 +13,6 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-#define ASSERT assert
-
 // 将ptr连接到chainStart的next指针，ptr的next指向chainStart原先的pNext
 template <typename VulkanStruct1, typename VulkanStruct2>
 void AddToPNextChain(VulkanStruct1 *chainStart, VulkanStruct2 *ptr)
@@ -82,7 +80,7 @@ public:
 
 protected:
 	WrappedObject() : mHandle(VK_NULL_HANDLE) {}
-	~WrappedObject() { ASSERT(!valid()); }
+	~WrappedObject() { assert(!valid()); }
 
 	WrappedObject(WrappedObject&& other) : mHandle(other.mHandle)
 	{
@@ -92,7 +90,7 @@ protected:
 	// Only works to initialize empty objects, since we don't have the device handle.
 	WrappedObject& operator=(WrappedObject&& other)
 	{
-		ASSERT(!valid());
+        assert(!valid());
 		std::swap(mHandle, other.mHandle);
 		return *this;
 	}
@@ -100,6 +98,7 @@ protected:
 	HandleT mHandle;
 };
 
+// VK Fence的封装
 class VulkanFence final : public WrappedObject<VulkanFence, VkFence>
 {
 public:
@@ -116,25 +115,25 @@ public:
 
 	VkResult init(VkDevice device, const VkFenceCreateInfo& createInfo)
 	{
-		ASSERT(!valid());
+        assert(!valid());
 		return vkCreateFence(device, &createInfo, nullptr, &mHandle);
 	}
 
 	VkResult reset(VkDevice device)
 	{
-		ASSERT(valid());
+        assert(valid());
 		return vkResetFences(device, 1, &mHandle);
 	}
 
 	VkResult getStatus(VkDevice device) const
 	{
-		ASSERT(valid());
+        assert(valid());
 		return vkGetFenceStatus(device, mHandle);
 	}
 
 	VkResult wait(VkDevice device, uint64_t timeout) const
 	{
-		ASSERT(valid());
+		assert(valid());
 		return vkWaitForFences(device, 1, &mHandle, true, timeout);
 	}
 };

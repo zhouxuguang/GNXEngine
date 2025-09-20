@@ -66,6 +66,12 @@ public:
                                 VkImageUsageFlags usage,
                                 VkImage& image,
                                 VmaAllocation& allocation);
+    
+    // 创建纹理的实用函数
+    static void CreateImageGeneral(VmaAllocator vmaAllocator,
+                                const VkImageCreateInfo& imageCreateInfo,
+                                VkImage& image,
+                                VmaAllocation& allocation);
 
     //拷贝buffer到图像
     static void CopyBufferToImage(VkDevice device, VkCommandBuffer commandBuffer,
@@ -119,6 +125,8 @@ public:
             VkImageSubresourceRange subresourceRange);
     
     static VkFormat ConvertTextureFormat(TextureFormat texFormat);
+    
+    static VkImageUsageFlagBits ConvertTextureUsage(TextureUsage textureUsage);
     
     // 获得格式对应的大小
     static uint32_t GetFormatSize(VkFormat format);

@@ -176,6 +176,18 @@ void VulkanBufferUtil::CreateImageCube(VmaAllocator vmaAllocator,
     vmaCreateImage(vmaAllocator, &imageCreateInfo, &imageAllocCreateInfo, &image, &allocation, nullptr);
 }
 
+void VulkanBufferUtil::CreateImageGeneral(VmaAllocator vmaAllocator,
+                            const VkImageCreateInfo& imageCreateInfo,
+                            VkImage& image,
+                            VmaAllocation& allocation)
+{
+    VmaAllocationCreateInfo imageAllocCreateInfo = {};
+    imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    imageAllocCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    
+    vmaCreateImage(vmaAllocator, &imageCreateInfo, &imageAllocCreateInfo, &image, &allocation, nullptr);
+}
+
 void VulkanBufferUtil::CopyBufferToImage(VkDevice device, VkCommandBuffer commandBuffer,
                                      VkBuffer buffer, VkImage image, int32_t offsetX,
                                      int32_t offsetY, uint32_t width, uint32_t height, uint32_t mipLevel)
@@ -569,6 +581,14 @@ VkFormat VulkanBufferUtil::ConvertTextureFormat(TextureFormat texFormat)
             format = VK_FORMAT_D24_UNORM_S8_UINT;
             break;
 
+        case kTexFormatDXT1_RGB:
+            format = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
+            break;
+            
+        case kTexFormatDXT1_SRGB:
+            format = VK_FORMAT_BC1_RGB_SRGB_BLOCK;
+            break;
+
         default:
             break;
     }
@@ -576,10 +596,31 @@ VkFormat VulkanBufferUtil::ConvertTextureFormat(TextureFormat texFormat)
     return format;
 }
 
+VkImageUsageFlagBits VulkanBufferUtil::ConvertTextureUsage(TextureUsage textureUsage)
+{
+    switch (textureUsage)
+    {
+        case TextureUsageShaderRead:
+            return VK_IMAGE_USAGE_SAMPLED_BIT;
+            
+        case TextureUsageShaderWrite:
+            return VK_IMAGE_USAGE_STORAGE_BIT;
+            
+        case TextureUsageRenderTarget:
+            return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            
+        default:
+            break;
+    }
+    
+    return VK_IMAGE_USAGE_SAMPLED_BIT;
+}
+
 uint32_t VulkanBufferUtil::GetFormatSize(VkFormat format)
 {
     uint32_t result = 0;
-    switch (format) {
+    switch (format) 
+    {
     case VK_FORMAT_UNDEFINED:
       result = 0;
       break;

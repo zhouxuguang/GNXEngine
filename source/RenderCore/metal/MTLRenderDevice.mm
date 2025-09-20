@@ -18,6 +18,7 @@
 #include "MTLCommandBuffer.h"
 #include "MTLRenderTexture.h"
 #include "MTLComputeBuffer.h"
+#include "MTLTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -188,6 +189,39 @@ CommandBufferPtr MTLRenderDevice::CreateCommandBuffer()
 RenderTexturePtr MTLRenderDevice::CreateRenderTexture(const TextureDescriptor& des) const
 {
     return std::make_shared<MTLRenderTexture>(mMetalLayer.device, des);
+}
+
+RCTexture2DPtr MTLRenderDevice::CreateTexture2D(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t levels) const
+{
+    MTLPixelFormat mtlFormat = ConvertTextureFormatToMetal(format);
+    if (format == MTLPixelFormatInvalid)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    if (0 == width || 0 == height || 0 == levels)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    bool mipmap = (levels > 1);
+    
+    MTLTextureDescriptor *textureDes = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:mtlFormat width:width height:height mipmapped:mipmap];
+    if (!textureDes)
+    {
+        return nullptr;
+    }
+    
+    MTLTextureUsage textureUsage = ConvertTextureUsageToMetal(usage);
+    textureDes.usage = textureUsage;
+
+    return std::make_shared<MTLRCTexture2D>(mMetalLayer.device, mCommandQueue, textureDes);
 }
 
 NAMESPACE_RENDERCORE_END

@@ -132,6 +132,11 @@ inline MTLPixelFormat ConvertTextureFormatToMetal(uint32_t textureFormat)
     }
 }
 
+inline MTLTextureUsage ConvertTextureUsageToMetal(TextureUsage textureUsage)
+{
+    return (MTLTextureUsage)textureUsage;
+}
+
 struct FrameBufferFormat
 {
     std::vector<MTLPixelFormat> colorFormats;

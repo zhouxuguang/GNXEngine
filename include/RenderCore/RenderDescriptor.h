@@ -229,33 +229,10 @@ struct TextureDescriptor
     TextureFormat format = kTexFormatRGBA32;
     TextureUsage usage = TextureUsageShaderRead;
     bool mipmaped = false;
-    uint32_t width = 0;
-    uint32_t height = 0;
+    uint32_t width = 1;
+    uint32_t height = 1;
+    uint32_t depth = 1;
     uint32_t bytesPerRow = 0;
-//public:
-//    int getBytesPerPixel() const
-//    {
-//        int bytes = 0;
-//        switch (format)
-//        {
-//            case kTexFormatAlpha8:
-//            case kTexFormatLuma:
-//                bytes = 1;
-//                break;
-//            case kTexFormatRGBA4444:
-//            case kTexFormatRGBA5551:
-//            case kTexFormatRGB565:
-//            case kTexFormatAlphaLum16:
-//                bytes = 2;
-//                break;
-//            case kTexFormatRGBA32:
-//                bytes = 4;
-//                break;
-//            default:
-//                break;
-//        }
-//        return bytes;
-//    }
 };
 
 struct ColorAttachmentDescriptor
