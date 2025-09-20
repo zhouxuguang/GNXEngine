@@ -65,6 +65,12 @@ public:
     
     virtual RenderTexturePtr CreateRenderTexture(const TextureDescriptor& des) const;
     
+    virtual RCTexture2DPtr CreateTexture2D(TextureFormat format,
+                                        TextureUsage usage,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        uint32_t levels) const;
+    
     void UpdateCurrentIndex()
     {
         // 更新当前帧的索引

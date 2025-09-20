@@ -19,6 +19,7 @@
 #include "RenderPass.h"
 #include "RenderTexture.h"
 #include "ComputeBuffer.h"
+#include "RCTexture.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -122,6 +123,22 @@ public:
      创建renderTexture
      */
     virtual RenderTexturePtr CreateRenderTexture(const TextureDescriptor& des) const = 0;
+    
+    /**
+     * @brief Create a Texture2D object
+     * 
+     * @param format 格式
+     * @param usage 用途
+     * @param width 宽
+     * @param height 高
+     * @param levels mipmap的层数
+     * @return RCTexture2DPtr 返回的2d纹理
+     */
+    virtual RCTexture2DPtr CreateTexture2D(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t levels) const = 0;
 };
 
 typedef std::shared_ptr<RenderDevice> RenderDevicePtr;

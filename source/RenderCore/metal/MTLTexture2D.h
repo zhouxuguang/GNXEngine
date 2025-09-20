@@ -32,11 +32,11 @@ public:
     virtual void SetTextureData(const uint8_t* imageData);
     
     /**
-      更新纹理数据
+      更新纹理数据
      
      @param rect 更新纹理区域
      @param mipMapLevel 纹理等级
-     @param imageData 跟新数据
+     @param imageData 更新数据
      */
     virtual void ReplaceRegion(const Rect2D& rect, const uint8_t* imageData, uint32_t mipMapLevel = 0);
     
