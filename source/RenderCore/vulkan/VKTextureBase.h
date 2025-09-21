@@ -17,7 +17,7 @@ class VKTextureBase : public RCTexture
 {
 public:
     VKTextureBase(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo);
-    ~VKTextureBase();
+    virtual ~VKTextureBase();
     
     /**
        更新纹理数据
@@ -68,6 +68,7 @@ private:
     uint32_t mHeight = 0;
     uint32_t mDepth = 0;
     VulkanImageViewPtr mVulkanImageViewPtr = nullptr;
+    std::vector<VulkanImageViewPtr> mRenderTargetViews;
     bool mSupportHostImageCopy = false;
 };
 

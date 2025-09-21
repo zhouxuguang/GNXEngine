@@ -17,7 +17,7 @@ class MTLTextureBase : public RCTexture
 {
 public:
     MTLTextureBase(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes);
-    ~MTLTextureBase();
+    virtual ~MTLTextureBase();
     
     /**
        更新纹理数据
