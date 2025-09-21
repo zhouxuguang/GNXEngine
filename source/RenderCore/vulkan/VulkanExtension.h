@@ -26,6 +26,7 @@ struct VulkanExtension
     bool enableCopyCommands2 = false;
     bool enableHostImageCopy = false;
     bool enableDeviceFault = false;
+    bool enablePortabilitySubset = false;
     
     std::vector<VkExtensionProperties> mDeviceExtensions;
     
