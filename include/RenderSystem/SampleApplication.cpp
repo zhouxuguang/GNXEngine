@@ -39,14 +39,14 @@ void SampleApplication::Resize(uint32_t width, uint32_t height)
     textureDescriptor.height = height;
     textureDescriptor.mipmaped = false;
     textureDescriptor.format = kTexFormatRGBA16Float;
-    mRenderTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
-    mComputeTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
-    
-    textureDescriptor.width = width;
-    textureDescriptor.height = height;
-    textureDescriptor.mipmaped = false;
-    textureDescriptor.format = kTexFormatDepth32FloatStencil8;
-    mDepthStencilTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
+//    mRenderTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
+//    mComputeTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
+//    
+//    textureDescriptor.width = width;
+//    textureDescriptor.height = height;
+//    textureDescriptor.mipmaped = false;
+//    textureDescriptor.format = kTexFormatDepth32FloatStencil8;
+//    mDepthStencilTexture = mRenderdevice->CreateRenderTexture(textureDescriptor);
     
     mSceneManager = SceneManager::GetInstance();
     SkyBox* skybox = nullptr;//initSky(mRenderdevice);

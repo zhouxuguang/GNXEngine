@@ -10,7 +10,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo)
+VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo) : mContext(context)
 {
     // 判断该格式是否支持HostImageCopy
     VkFormatProperties3 formatProperties3 = {};
@@ -48,6 +48,7 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
     mFormat = imageCreateInfoCopy.format;
     mWidth = imageCreateInfoCopy.extent.width;
     mHeight = imageCreateInfoCopy.extent.height;
+    mDepth = imageCreateInfoCopy.extent.depth;
 
     //创建图像视图
     VkImageView imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat, nullptr, VK_IMAGE_ASPECT_COLOR_BIT, 1);
@@ -121,7 +122,7 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
         memory_to_image_copy.imageSubresource.layerCount = 1;
         memory_to_image_copy.imageOffset.x = rect.offsetX;
         memory_to_image_copy.imageOffset.y = rect.offsetY;
-        memory_to_image_copy.imageOffset.z = 0;
+        memory_to_image_copy.imageOffset.z = 0;      // 3d纹理这里如何处理
         memory_to_image_copy.imageExtent.width = rect.width;
         memory_to_image_copy.imageExtent.height = rect.height;
         memory_to_image_copy.imageExtent.depth = 1;
@@ -176,6 +177,21 @@ bool VKTextureBase::IsValid() const
     return mImage != VK_NULL_HANDLE && mVulkanImageViewPtr;
 }
 
+uint32_t VKTextureBase::GetWidth() const
+{
+    return mWidth;
+}
+
+uint32_t VKTextureBase::GetHeight() const
+{
+    return mHeight;
+}
+
+uint32_t VKTextureBase::GetDepth() const
+{
+    return mDepth;
+}
+
 #pragma mark VKRCTexture2D
 
 VKRCTexture2D::VKRCTexture2D(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo)
@@ -211,6 +227,16 @@ VKRCTexture3D::~VKRCTexture3D()
 {
 }
 
+void VKRCTexture3D::ReplaceRegion(const Rect2D& rect,
+                    uint32_t level,
+                    uint32_t slice,
+                    const uint8_t* pixelBytes,
+                    uint32_t bytesPerRow,
+                    uint32_t bytesPerImage)
+{
+    VKTextureBase::ReplaceRegion(rect, level, slice, pixelBytes, bytesPerRow, bytesPerImage);
+}
+
 #pragma mark VKRCTextureCube
 
 VKRCTextureCube::VKRCTextureCube(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo)
@@ -222,6 +248,16 @@ VKRCTextureCube::~VKRCTextureCube()
 {
 }
 
+void VKRCTextureCube::ReplaceRegion(const Rect2D& rect,
+                    uint32_t level,
+                    uint32_t slice,
+                    const uint8_t* pixelBytes,
+                    uint32_t bytesPerRow,
+                    uint32_t bytesPerImage)
+{
+    VKTextureBase::ReplaceRegion(rect, level, slice, pixelBytes, bytesPerRow, bytesPerImage);
+}
+
 #pragma mark VKRCTexture2DArray
 
 VKRCTexture2DArray::VKRCTexture2DArray(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo)
@@ -231,6 +267,16 @@ VKRCTexture2DArray::VKRCTexture2DArray(const VulkanContextPtr& context, const Vk
 
 VKRCTexture2DArray::~VKRCTexture2DArray()
 {
+}
+
+void VKRCTexture2DArray::ReplaceRegion(const Rect2D& rect,
+                    uint32_t level,
+                    uint32_t slice,
+                    const uint8_t* pixelBytes,
+                    uint32_t bytesPerRow,
+                    uint32_t bytesPerImage)
+{
+    VKTextureBase::ReplaceRegion(rect, level, slice, pixelBytes, bytesPerRow, bytesPerImage);
 }
 
 NAMESPACE_RENDERCORE_END

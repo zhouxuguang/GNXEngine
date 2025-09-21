@@ -13,10 +13,8 @@
 #include "VertexBuffer.h"
 #include "UniformBuffer.h"
 #include "IndexBuffer.h"
-#include "Texture2D.h"
 #include "TextureSampler.h"
-#include "TextureCube.h"
-#include "RenderTexture.h"
+#include "RCTexture.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -117,60 +115,15 @@ public:
      */
     virtual void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, 
         uint32_t firstInstance, uint32_t instanceCount) = 0;
-    
-    /**
-     设置纹理和采样器
-
-     @param texture 纹理句柄
-     @param sampler 采样器句柄
-     @param index 纹理通道索引
-     */
-    virtual void SetFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index) = 0;
-    
-    /**
-     设置立方体纹理和采样器
-
-     @param textureCube 纹理句柄
-     @param sampler 采样器句柄
-     @param index 纹理通道索引
-     */
-    virtual void SetFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index) = 0;
-    
-    /**
-     设置渲染纹理和采样器
-
-     @param rendertexture 纹理句柄
-     @param sampler 采样器句柄
-     @param index 纹理通道索引
-     */
-    virtual void SetFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index) = 0;
 
     /**
-     设置片元纹理和采样器
-
-     @param resourceName 对应shader中的名字
-     @param texture 纹理句柄
-     @param sampler 采样器句柄
+     * @brief 设置片源的纹理和采样器
+     * 
+     * @param resourceName 对应shader中的名字
+     * @param texture 纹理句柄
+     * @param sampler 采样器句柄
      */
-    virtual void SetFragmentTextureAndSampler(const std::string &resourceName, Texture2DPtr texture, TextureSamplerPtr sampler) = 0;
-
-    /**
-     设置片元立方体纹理和采样器
-
-     @param resourceName 对应shader中的名字
-     @param textureCube 纹理句柄
-     @param sampler 采样器句柄
-     */
-    virtual void SetFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler) = 0;
-
-    /**
-     设置片元渲染纹理和采样器
-
-     @param resourceName 对应shader中的名字
-     @param rendertexture 纹理句柄
-     @param sampler 采样器句柄
-     */
-    virtual void SetFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler) = 0;
+    virtual void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler) = 0;
 };
 
 typedef std::shared_ptr<RenderEncoder> RenderEncoderPtr;

@@ -38,13 +38,8 @@ ShadowMapping::ShadowMapping(const RenderDevicePtr& renderDevice)
     assert(renderDevice);
     
     //创建深度纹理
-    TextureDescriptor textureDescriptor;
-    textureDescriptor.format = kTexFormatDepth24;
-    textureDescriptor.width = 1024;
-    textureDescriptor.height = 1024;
-    textureDescriptor.mipmaped = false;
-    m_DepthTexture = renderDevice->CreateTextureWithDescriptor(textureDescriptor);
-    m_DepthTexture->allocMemory();
+    m_DepthTexture = renderDevice->CreateTexture2D(kTexFormatDepth24,
+                                            TextureUsage::TextureUsageRenderTarget, 1024, 1024, 1);
     
     //创建采样函数
     SamplerDescriptor samplerDescriptor;

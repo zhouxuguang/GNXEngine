@@ -38,6 +38,27 @@ public:
     
     virtual bool IsValid() const;
     
+    virtual uint32_t GetWidth() const;
+    
+    virtual uint32_t GetHeight() const;
+    
+    virtual uint32_t GetDepth() const;
+    
+    VulkanImageViewPtr GetImageView() const
+    {
+        return mVulkanImageViewPtr;
+    }
+    
+    VkFormat GetVKFormat() const
+    {
+        return mFormat;
+    }
+    
+    VkImage GetVKImage() const
+    {
+        return mImage;
+    }
+    
 private:
     VkImage mImage = VK_NULL_HANDLE;
     VmaAllocation mAllocation = VK_NULL_HANDLE;
@@ -45,9 +66,12 @@ private:
     VkFormat mFormat = VK_FORMAT_UNDEFINED;
     uint32_t mWidth = 0;
     uint32_t mHeight = 0;
+    uint32_t mDepth = 0;
     VulkanImageViewPtr mVulkanImageViewPtr = nullptr;
     bool mSupportHostImageCopy = false;
 };
+
+using VKTextureBasePtr = std::shared_ptr<VKTextureBase>;
 
 #pragma mark VKRCTexture2D
 
@@ -72,6 +96,21 @@ public:
                         uint32_t bytesPerRow);
     
     virtual bool IsValid() const;
+    
+    virtual uint32_t GetWidth() const
+    {
+        return VKTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return VKTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return VKTextureBase::GetDepth();
+    }
 };
 
 using VKRCTexture2DPtr = std::shared_ptr<VKRCTexture2D>;
@@ -84,6 +123,33 @@ public:
     VKRCTexture3D(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo);
     
     ~VKRCTexture3D();
+    
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage);
+    
+    virtual bool IsValid() const
+    {
+        return VKTextureBase::IsValid();
+    }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return VKTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return VKTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return VKTextureBase::GetDepth();
+    }
 };
 
 using VKRCTexture3DPtr = std::shared_ptr<VKRCTexture3D>;
@@ -96,6 +162,33 @@ public:
     VKRCTextureCube(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo);
     
     ~VKRCTextureCube();
+    
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage);
+    
+    virtual bool IsValid() const
+    {
+        return VKTextureBase::IsValid();
+    }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return VKTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return VKTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return VKTextureBase::GetDepth();
+    }
 };
 
 using VKRCTextureCubePtr = std::shared_ptr<VKRCTextureCube>;
@@ -108,6 +201,33 @@ public:
     VKRCTexture2DArray(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo);
     
     ~VKRCTexture2DArray();
+    
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage);
+    
+    virtual bool IsValid() const
+    {
+        return VKTextureBase::IsValid();
+    }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return VKTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return VKTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return VKTextureBase::GetDepth();
+    }
 };
 
 using VKRCTexture2DArrayPtr = std::shared_ptr<VKRCTexture2DArray>;

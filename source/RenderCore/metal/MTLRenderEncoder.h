@@ -102,59 +102,7 @@ public:
     virtual void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
                                                uint32_t firstInstance, uint32_t instanceCount);
     
-    /**
-     设置纹理和采样器
-
-     @param texture 纹理句柄
-     @param sampler 采样器句柄
-     @param index 纹理通道索引
-     */
-    virtual void SetFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index);
-    
-    /**
-     设置立方体纹理和采样器
-
-     @param textureCube 纹理句柄
-     @param sampler 采样器句柄
-     @param index 纹理通道索引
-     */
-    virtual void SetFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index);
-    
-    /**
-     设置渲染纹理和采样器
-
-     @param renderTexture 纹理句柄
-     @param sampler 采样器句柄
-     @param index 纹理通道索引
-     */
-    virtual void SetFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index);
-    
-    /**
-     设置片元纹理和采样器
-
-     @param resourceName 对应shader中的名字
-     @param texture 纹理句柄
-     @param sampler 采样器句柄
-     */
-    virtual void SetFragmentTextureAndSampler(const std::string &resourceName, Texture2DPtr texture, TextureSamplerPtr sampler);
-
-    /**
-     设置片元立方体纹理和采样器
-
-     @param resourceName 对应shader中的名字
-     @param textureCube 纹理句柄
-     @param sampler 采样器句柄
-     */
-    virtual void SetFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler);
-
-    /**
-     设置片元渲染纹理和采样器
-
-     @param resourceName 对应shader中的名字
-     @param rendertexture 纹理句柄
-     @param sampler 采样器句柄
-     */
-    virtual void SetFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler);
+    virtual void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
 
 private:
     id <MTLRenderCommandEncoder> mRenderEncoder = nil;

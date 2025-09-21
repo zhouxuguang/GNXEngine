@@ -41,7 +41,7 @@ private:
     
     void initBuffers(RenderDevicePtr renderDevice);
     
-    TextureCubePtr mTextureCube = nullptr;
+    RCTextureCubePtr mTextureCube = nullptr;
     TextureSamplerPtr mTextureSampler = nullptr;
     VertexBufferPtr mVertexBuffer = nullptr;
     

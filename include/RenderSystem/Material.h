@@ -11,7 +11,7 @@
 #include "RSDefine.h"
 #include "MathUtil/Vector3.h"
 #include "MathUtil/Vector4.h"
-#include "RenderCore/Texture2D.h"
+#include "RenderCore/RCTexture.h"
 #include "RenderCore/GraphicsPipeline.h"
 #include "ShaderAsset.h"
 #include <unordered_map>
@@ -49,8 +49,8 @@ public:
     void SetValue(const std::string& name, const float value);
     bool GetValue(const std::string& name, float &value);
     
-    void SetTexture(const std::string& name, Texture2DPtr texture);
-    Texture2DPtr GetTexture(const std::string& name);
+    void SetTexture(const std::string& name, RCTexturePtr texture);
+    RCTexturePtr GetTexture(const std::string& name);
     
     void SetPSO(GraphicsPipelinePtr pso)
     {
@@ -63,7 +63,7 @@ public:
     }
     
 private:
-    typedef std::unordered_map<std::string, Texture2DPtr> TextureMap;
+    typedef std::unordered_map<std::string, RCTexturePtr> TextureMap;
     TextureMap mTextureMapProps;   //纹理信息
     
     typedef std::unordered_map<std::string, float> FloatMap;

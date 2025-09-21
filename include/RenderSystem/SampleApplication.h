@@ -39,12 +39,12 @@ protected:
     uint32_t mWidth;
     uint32_t mHeight;
     
-    RenderTexturePtr mRenderTexture;
-    RenderTexturePtr mDepthStencilTexture;
+//    RenderTexturePtr mRenderTexture;
+//    RenderTexturePtr mDepthStencilTexture;
     
     SceneManager* mSceneManager;
     
-    RenderTexturePtr mComputeTexture;
+    //RenderTexturePtr mComputeTexture;
     ComputePipelinePtr mComputePipeline;
     
     uint64_t mLastTime;

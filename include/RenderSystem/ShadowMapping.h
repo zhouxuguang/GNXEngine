@@ -9,7 +9,6 @@
 #define RENDERSYSTEM_SHADOWMAPPING_INCLUDE_H
 
 #include "Plane.h"
-#include "RenderCore/RenderTexture.h"
 #include "RenderCore/TextureSampler.h"
 #include "RenderCore/RenderDevice.h"
 #include "RenderCore/GraphicsPipeline.h"
@@ -28,7 +27,7 @@ public:
     void SetUp();
     
 private:
-    Texture2DPtr m_DepthTexture = 0;
+    RCTexture2DPtr m_DepthTexture = 0;
     TextureSamplerPtr m_DepthTextureSampler = 0;
     GraphicsPipelinePtr m_GraphicsPipeline = 0;
     

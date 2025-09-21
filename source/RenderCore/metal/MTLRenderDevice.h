@@ -61,22 +61,6 @@ public:
     virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const;
     
     /**
-     根据纹理描述创建纹理对象
-
-     @param des the description for texture to be created
-     @return shared pointer to texture object
-     */
-    virtual Texture2DPtr CreateTextureWithDescriptor(const TextureDescriptor& des) const;
-    
-    /**
-     根据纹理描述创建立方体纹理对象
-
-     @param desArray the description for texture to be created
-     @return shared pointer to texturecube object
-     */
-    virtual TextureCubePtr CreateTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const;
-    
-    /**
      根据采样描述创建纹理采样器
 
      @param des the description for sampler to be created.
@@ -111,16 +95,31 @@ public:
     
     virtual CommandBufferPtr CreateCommandBuffer();
     
-    /**
-     创建renderTexture
-     */
-    virtual RenderTexturePtr CreateRenderTexture(const TextureDescriptor& des) const;
-    
     virtual RCTexture2DPtr CreateTexture2D(TextureFormat format,
                                         TextureUsage usage,
                                         uint32_t width,
                                         uint32_t height,
                                         uint32_t levels) const;
+    
+    virtual RCTexture3DPtr CreateTexture3D(TextureFormat format,
+                                        TextureUsage usage,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        uint32_t depth,
+                                        uint32_t levels) const;
+
+    virtual RCTextureCubePtr CreateTextureCube(TextureFormat format,
+                                        TextureUsage usage,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        uint32_t levels) const;
+
+    virtual RCTexture2DArrayPtr CreateTexture2DArray(TextureFormat format,
+                                        TextureUsage usage,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        uint32_t levels,
+                                        uint32_t arraySize) const;
     
 private:
     CAMetalLayer *mMetalLayer;
