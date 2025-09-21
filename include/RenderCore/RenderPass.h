@@ -30,7 +30,9 @@ enum AttachmentStoreOp
 //渲染附件基类
 struct RenderPassAttachment
 {
-    RCTexturePtr texture;
+    RCTexturePtr texture = nullptr;
+    uint32_t level = 0;
+    uint32_t slice = 0;
 };
 
 typedef std::shared_ptr<RenderPassAttachment> RenderPassAttachmentPtr;

@@ -155,7 +155,7 @@ inline bool IsCompressedASTCTextureFormat(TextureFormat format)
 
 inline bool IsAnyCompressedTextureFormat(TextureFormat format)
 {
-	return     IsCompressedDXTTextureFormat(format) || IsCompressedPVRTCTextureFormat(format)
+	return IsCompressedDXTTextureFormat(format) || IsCompressedPVRTCTextureFormat(format)
 			|| IsCompressedETCTextureFormat(format) || IsCompressedATCTextureFormat(format)
             || IsCompressedEACTextureFormat(format)
 			|| IsCompressedETC2TextureFormat(format) || IsCompressedASTCTextureFormat(format) || kTexFormatETC1_RGB == format;
@@ -171,16 +171,19 @@ TextureFormat ConvertToAlphaTextureFormat(TextureFormat format);
 
 bool HasAlphaTextureFormat(TextureFormat format);
 
-//bool IsDepthRTFormat( RenderTextureFormat format );
-//bool IsHalfRTFormat( RenderTextureFormat format );
-
 const char* GetCompressionTypeString(TextureFormat format);
 const char* GetTextureFormatString(TextureFormat format);
-//const char* GetTextureColorSpaceString (TextureColorSpace colorSpace);
-
-//TextureColorSpace ColorSpaceToTextureColorSpace(BuildTargetPlatform platform, ColorSpace colorSpace);
 
 std::pair<int,int> RoundTextureDimensionsToBlocks(TextureFormat fmt, int w, int h);
+
+enum TextureType 
+{
+    TextureType_Unkown =       -1,
+    TextureType_2D =            0,
+    TextureType_3D =            1,
+    TextureType_2D_ARRAY =      2,
+    TextureType_CUBE =          3
+};
 
 NAMESPACE_RENDERCORE_END
 

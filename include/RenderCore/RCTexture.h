@@ -9,6 +9,7 @@
 #define GNX_ENGINE_RCTEXTURE_INCLUDE_FHJDSVJ
 
 #include "RenderDefine.h"
+#include "TextureFormat.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -35,6 +36,11 @@ public:
     virtual uint32_t GetHeight() const = 0;
     
     virtual uint32_t GetDepth() const = 0;
+    
+    virtual TextureType GetTextureType() const
+    {
+        return TextureType_Unkown;
+    }
 };
 
 typedef std::shared_ptr<RCTexture> RCTexturePtr;
@@ -61,6 +67,11 @@ public:
                         uint32_t level, 
                         const uint8_t* pixelBytes, 
                         uint32_t bytesPerRow) = 0;
+    
+    virtual TextureType GetTextureType() const
+    {
+        return TextureType_2D;
+    }
 };
 
 typedef std::shared_ptr<RCTexture2D> RCTexture2DPtr;
@@ -91,6 +102,11 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage) = 0;
+    
+    virtual TextureType GetTextureType() const
+    {
+        return TextureType_3D;
+    }
 };
 
 using RCTexture3DPtr = std::shared_ptr<RCTexture3D>;
@@ -121,6 +137,11 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage) = 0;
+    
+    virtual TextureType GetTextureType() const
+    {
+        return TextureType_CUBE;
+    }
 };
 
 using RCTextureCubePtr = std::shared_ptr<RCTextureCube>;
@@ -151,6 +172,11 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage) = 0;
+    
+    virtual TextureType GetTextureType() const
+    {
+        return TextureType_2D_ARRAY;
+    }
 };
 
 using RCTexture2DArrayPtr = std::shared_ptr<RCTexture2DArray>;
