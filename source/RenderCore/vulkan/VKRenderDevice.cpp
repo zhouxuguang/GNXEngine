@@ -227,7 +227,9 @@ RCTexture2DPtr VKRenderDevice::CreateTexture2D(TextureFormat format,
     imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageCreateInfo.flags = 0;
     
-    return std::make_shared<VKRCTexture2D>(mVulkanContext, imageCreateInfo);
+    auto texture = std::make_shared<VKRCTexture2D>(mVulkanContext, imageCreateInfo);
+    texture->CreateImageViews(imageCreateInfo);
+    return texture;
 }
 
 RCTexture3DPtr VKRenderDevice::CreateTexture3D(TextureFormat format,
@@ -261,7 +263,9 @@ RCTexture3DPtr VKRenderDevice::CreateTexture3D(TextureFormat format,
     imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageCreateInfo.flags = 0;
     
-    return std::make_shared<VKRCTexture3D>(mVulkanContext, imageCreateInfo);
+    auto texture = std::make_shared<VKRCTexture3D>(mVulkanContext, imageCreateInfo);
+	texture->CreateImageViews(imageCreateInfo);
+	return texture;
 }
 
 RCTextureCubePtr VKRenderDevice::CreateTextureCube(TextureFormat format,
@@ -303,7 +307,9 @@ RCTextureCubePtr VKRenderDevice::CreateTextureCube(TextureFormat format,
     // This flag is required for cube map images
     imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     
-    return std::make_shared<VKRCTextureCube>(mVulkanContext, imageCreateInfo);
+    auto texture = std::make_shared<VKRCTextureCube>(mVulkanContext, imageCreateInfo);
+	texture->CreateImageViews(imageCreateInfo);
+	return texture;
 }
 
 RCTexture2DArrayPtr VKRenderDevice::CreateTexture2DArray(TextureFormat format,
@@ -337,7 +343,9 @@ RCTexture2DArrayPtr VKRenderDevice::CreateTexture2DArray(TextureFormat format,
     imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageCreateInfo.flags = 0;
     
-    return std::make_shared<VKRCTexture2DArray>(mVulkanContext, imageCreateInfo);
+    auto texture = std::make_shared<VKRCTexture2DArray>(mVulkanContext, imageCreateInfo);
+	texture->CreateImageViews(imageCreateInfo);
+	return texture;
 }
 
 CommandBufferPtr VKRenderDevice::CreateCommandBuffer()
