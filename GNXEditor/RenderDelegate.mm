@@ -158,12 +158,12 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     
     renderEncoder1->EndEncode();
     
-//    ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
-//    testImageGrayDraw(computeEncoder, computePipeline, renderTexture, computeTexture);
-//    computeEncoder->EndEncode();
+    ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
+    testImageGrayDraw(computeEncoder, computePipeline, renderTexture, computeTexture);
+    computeEncoder->EndEncode();
     
     RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
-    testPost(renderEncoder, renderTexture);
+    testPost(renderEncoder, computeTexture);
     renderEncoder->EndEncode();
     commandBuffer->PresentFrameBuffer();
 }

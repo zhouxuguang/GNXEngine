@@ -29,6 +29,12 @@ public:
      @return ture or false
      */
     virtual bool IsValid() const = 0;
+    
+    virtual uint32_t GetWidth() const = 0;
+    
+    virtual uint32_t GetHeight() const = 0;
+    
+    virtual uint32_t GetDepth() const = 0;
 };
 
 typedef std::shared_ptr<RCTexture> RCTexturePtr;

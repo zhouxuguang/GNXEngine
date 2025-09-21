@@ -54,6 +54,12 @@ public:
         return mTexture != nil;
     }
     
+    virtual uint32_t GetWidth() const;
+    
+    virtual uint32_t GetHeight() const;
+    
+    virtual uint32_t GetDepth() const;
+    
     id<MTLTexture> getMTLTexture() {return mTexture;};
     
 private:
@@ -90,6 +96,21 @@ public:
     {
         return MTLTextureBase::IsValid();
     }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return MTLTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return MTLTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return MTLTextureBase::GetDepth();
+    }
 };
 
 using MTLRCTexture2DPtr = std::shared_ptr<MTLRCTexture2D>;
@@ -113,6 +134,21 @@ public:
     virtual bool IsValid() const
     {
         return MTLTextureBase::IsValid();
+    }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return MTLTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return MTLTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return MTLTextureBase::GetDepth();
     }
 };
 
@@ -138,6 +174,21 @@ public:
     {
         return MTLTextureBase::IsValid();
     }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return MTLTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return MTLTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return MTLTextureBase::GetDepth();
+    }
 };
 
 using MTLRCTextureCubePtr = std::shared_ptr<MTLRCTextureCube>;
@@ -161,6 +212,21 @@ public:
     virtual bool IsValid() const
     {
         return MTLTextureBase::IsValid();
+    }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return MTLTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return MTLTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return MTLTextureBase::GetDepth();
     }
 };
 

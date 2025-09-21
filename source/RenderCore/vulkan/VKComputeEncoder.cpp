@@ -12,6 +12,7 @@
 #include "VKRenderTexture.h"
 #include "VKComputePipeline.h"
 #include "VulkanDescriptorUtil.h"
+#include "VKTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -91,13 +92,13 @@ void VKComputeEncoder::SetTexture(Texture2DPtr texture, uint32_t index)
     vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), imageSetOffset, 1, &writeDescriptorSet);
 }
 
-void VKComputeEncoder::SetTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index)
+void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint32_t index)
 {
     if (!texture)
     {
         return;
     }
-    VKRenderTexture *vkRenderTex = (VKRenderTexture*)texture.get();
+    VKTextureBase *vkRenderTex = (VKTextureBase*)texture.get();
     
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();
@@ -133,13 +134,13 @@ void VKComputeEncoder::SetOutTexture(Texture2DPtr texture, uint32_t index)
     vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), imageSetOffset, 1, &writeDescriptorSet);
 }
 
-void VKComputeEncoder::SetOutTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index)
+void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t mipLevel, uint32_t index)
 {
     if (!texture)
     {
         return;
     }
-    VKRenderTexture *vkRenderTex = (VKRenderTexture*)texture.get();
+    VKTextureBase *vkRenderTex = (VKTextureBase*)texture.get();
     
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();

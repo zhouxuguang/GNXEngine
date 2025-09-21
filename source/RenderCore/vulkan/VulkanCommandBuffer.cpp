@@ -151,8 +151,8 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         colorAttachment.storeOp = GetStoreOP(iter->storeOp);
         colorAttachment.clearValue = clearColor;
         
-        width = vkRenderTexture->getWidth();
-        height = vkRenderTexture->getHeight();
+        width = vkRenderTexture->GetWidth();
+        height = vkRenderTexture->GetHeight();
         
         colorAttachments.push_back(colorAttachment);
         passFormat.colorFormats.push_back(vkRenderTexture->GetVKFormat());

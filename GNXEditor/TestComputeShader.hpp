@@ -23,7 +23,7 @@ RenderTexturePtr TestImageGray();
 ComputePipelinePtr initTestimageGray();
 
 void testImageGrayDraw(ComputeEncoderPtr computeEncoder, ComputePipelinePtr computePipeline,
-                       RenderTexturePtr inputTexture, RenderTexturePtr outputTexture);
+                       RCTexturePtr inputTexture, RCTexturePtr outputTexture);
 
 
 

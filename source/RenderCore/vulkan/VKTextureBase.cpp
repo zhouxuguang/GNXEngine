@@ -48,6 +48,7 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
     mFormat = imageCreateInfoCopy.format;
     mWidth = imageCreateInfoCopy.extent.width;
     mHeight = imageCreateInfoCopy.extent.height;
+    mDepth = imageCreateInfoCopy.extent.depth;
 
     //创建图像视图
     VkImageView imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat, nullptr, VK_IMAGE_ASPECT_COLOR_BIT, 1);
@@ -176,14 +177,19 @@ bool VKTextureBase::IsValid() const
     return mImage != VK_NULL_HANDLE && mVulkanImageViewPtr;
 }
 
-uint32_t VKTextureBase::getWidth() const
+uint32_t VKTextureBase::GetWidth() const
 {
     return mWidth;
 }
 
-uint32_t VKTextureBase::getHeight() const
+uint32_t VKTextureBase::GetHeight() const
 {
     return mHeight;
+}
+
+uint32_t VKTextureBase::GetDepth() const
+{
+    return mDepth;
 }
 
 #pragma mark VKRCTexture2D

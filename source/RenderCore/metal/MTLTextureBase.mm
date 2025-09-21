@@ -50,6 +50,21 @@ void MTLTextureBase::ReplaceRegion(const Rect2D& rect,
     ReplaceRegion(rect, level, 0, pixelBytes, bytesPerRow, 0);
 }
 
+uint32_t MTLTextureBase::GetWidth() const
+{
+    return (uint32_t)mTexture.width;
+}
+
+uint32_t MTLTextureBase::GetHeight() const
+{
+    return (uint32_t)mTexture.height;
+}
+
+uint32_t MTLTextureBase::GetDepth() const
+{
+    return (uint32_t)mTexture.depth;
+}
+
 #pragma mark MTLRCTexture2D
 
 MTLRCTexture2D::MTLRCTexture2D(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes)

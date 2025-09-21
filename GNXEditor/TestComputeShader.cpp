@@ -108,7 +108,7 @@ ComputePipelinePtr initTestimageGray()
 }
 
 void testImageGrayDraw(ComputeEncoderPtr computeEncoder, ComputePipelinePtr computePipeline,
-                       RenderTexturePtr inputTexture, RenderTexturePtr outputTexture)
+                       RCTexturePtr inputTexture, RCTexturePtr outputTexture)
 {
     computeEncoder->SetComputePipeline(computePipeline);
     computeEncoder->SetTexture(inputTexture, 0, 0);
@@ -117,8 +117,8 @@ void testImageGrayDraw(ComputeEncoderPtr computeEncoder, ComputePipelinePtr comp
     uint32_t x, y ,z;
     computePipeline->GetThreadGroupSizes(x, y, z);
     
-    int groupX = (inputTexture->getWidth() + x - 1) / x;
-    int groupY = (inputTexture->getHeight() + y - 1) / y;
+    uint32_t groupX = (inputTexture->GetWidth() + x - 1) / x;
+    uint32_t groupY = (inputTexture->GetHeight() + y - 1) / y;
 
     computeEncoder->Dispatch(groupX, groupY, 1);
 }

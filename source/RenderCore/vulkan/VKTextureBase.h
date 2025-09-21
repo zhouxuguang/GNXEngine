@@ -38,9 +38,11 @@ public:
     
     virtual bool IsValid() const;
     
-    virtual uint32_t getWidth() const;
+    virtual uint32_t GetWidth() const;
     
-    virtual uint32_t getHeight() const;
+    virtual uint32_t GetHeight() const;
+    
+    virtual uint32_t GetDepth() const;
     
     VulkanImageViewPtr GetImageView() const
     {
@@ -64,6 +66,7 @@ private:
     VkFormat mFormat = VK_FORMAT_UNDEFINED;
     uint32_t mWidth = 0;
     uint32_t mHeight = 0;
+    uint32_t mDepth = 0;
     VulkanImageViewPtr mVulkanImageViewPtr = nullptr;
     bool mSupportHostImageCopy = false;
 };
@@ -93,6 +96,21 @@ public:
                         uint32_t bytesPerRow);
     
     virtual bool IsValid() const;
+    
+    virtual uint32_t GetWidth() const
+    {
+        return VKTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return VKTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return VKTextureBase::GetDepth();
+    }
 };
 
 using VKRCTexture2DPtr = std::shared_ptr<VKRCTexture2D>;
@@ -116,6 +134,21 @@ public:
     virtual bool IsValid() const
     {
         return VKTextureBase::IsValid();
+    }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return VKTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return VKTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return VKTextureBase::GetDepth();
     }
 };
 
@@ -141,6 +174,21 @@ public:
     {
         return VKTextureBase::IsValid();
     }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return VKTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return VKTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return VKTextureBase::GetDepth();
+    }
 };
 
 using VKRCTextureCubePtr = std::shared_ptr<VKRCTextureCube>;
@@ -164,6 +212,21 @@ public:
     virtual bool IsValid() const
     {
         return VKTextureBase::IsValid();
+    }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return VKTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return VKTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return VKTextureBase::GetDepth();
     }
 };
 
