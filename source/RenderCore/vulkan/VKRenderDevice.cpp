@@ -139,41 +139,6 @@ void VKRenderDevice::Resize(uint32_t width, uint32_t height)
     
     // 创建相关同步对象
     CreateSyncObject();
-    
-    return;
-    
-    // for test
-    uint8_t data[4] = {4, 1, 2, 3};
-    CreateVertexBufferWithBytes(data, 4, StorageModeShared);
-    
-    TextureDescriptor des;
-    des.width = 1;
-    des.height = 1;
-    des.bytesPerRow = 4;
-    Texture2DPtr texture = CreateTextureWithDescriptor(des);
-    texture->SetTextureData(data);
-    
-    std::vector<TextureDescriptor> desArray;
-    desArray.push_back(des);
-    TextureCubePtr textureCube = CreateTextureCubeWithDescriptor(desArray);
-    textureCube->SetTextureData(kCubeFacePX, 4, data);
-    textureCube->SetTextureData(kCubeFaceNX, 4, data);
-    textureCube->SetTextureData(kCubeFacePY, 4, data);
-    textureCube->SetTextureData(kCubeFaceNY, 4, data);
-    textureCube->SetTextureData(kCubeFacePZ, 4, data);
-    textureCube->SetTextureData(kCubeFaceNZ, 4, data);
-    
-    IndexBufferPtr indexBuffer = CreateIndexBufferWithBytes(data, 4, IndexType_UInt);
-    
-    UniformBufferPtr uniformBuffer = CreateUniformBufferWithSize(4);
-    uniformBuffer->SetData(data, 0, 4);
-    
-    ComputeBufferPtr computeBuffer = CreateComputeBuffer(data, 4, StorageModePrivate);
-    
-    CommandBufferPtr commandBuffer = CreateCommandBuffer();
-    RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
-    renderEncoder->EndEncode();
-    commandBuffer->PresentFrameBuffer();
 }
 
 VertexBufferPtr VKRenderDevice::CreateVertexBufferWithLength(uint32_t size) const

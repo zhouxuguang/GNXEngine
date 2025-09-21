@@ -9,10 +9,11 @@
 
 //foe test
 #include "ImageTextureUtil.h"
+#include "RCTexture.h"
 #include "RenderEngine.h"
 
-TextureCubePtr envMap = nullptr;
-TextureCubePtr envMapIrradiance = nullptr;
+RCTextureCubePtr envMap = nullptr;
+RCTextureCubePtr envMapIrradiance = nullptr;
 TextureSamplerPtr cubeSampler = nullptr;
 Texture2DPtr brdfMap = nullptr;
 
@@ -83,8 +84,8 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
         renderEncoder->SetFragmentTextureAndSampler("gEmissiveMap", material->GetTexture("emissiveTexture"), textureSampler);
         renderEncoder->SetFragmentTextureAndSampler("gAmbientMap", material->GetTexture("ambientTexture"), textureSampler);
         
-        renderEncoder->SetFragmentTextureCubeAndSampler("texEnvMap", envMap, cubeSampler);
-        renderEncoder->SetFragmentTextureCubeAndSampler("texEnvMapIrradiance", envMapIrradiance, cubeSampler);
+        renderEncoder->SetFragmentTextureAndSampler("texEnvMap", envMap, cubeSampler);
+        renderEncoder->SetFragmentTextureAndSampler("texEnvMapIrradiance", envMapIrradiance, cubeSampler);
         renderEncoder->SetFragmentTextureAndSampler("texBRDF_LUT", brdfMap, textureSampler);
         
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
@@ -175,8 +176,8 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
         renderEncoder->SetFragmentTextureAndSampler("gEmissiveMap", material->GetTexture("emissiveTexture"), textureSampler);
         renderEncoder->SetFragmentTextureAndSampler("gAmbientMap", material->GetTexture("ambientTexture"), textureSampler);
         
-        renderEncoder->SetFragmentTextureCubeAndSampler("texEnvMap", envMap, cubeSampler);
-        renderEncoder->SetFragmentTextureCubeAndSampler("texEnvMapIrradiance", envMapIrradiance, cubeSampler);
+        renderEncoder->SetFragmentTextureAndSampler("texEnvMap", envMap, cubeSampler);
+        renderEncoder->SetFragmentTextureAndSampler("texEnvMapIrradiance", envMapIrradiance, cubeSampler);
         renderEncoder->SetFragmentTextureAndSampler("texBRDF_LUT", brdfMap, textureSampler);
         
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);

@@ -333,8 +333,6 @@ RCTextureCubePtr MTLRenderDevice::CreateTextureCube(TextureFormat format,
             //textureDes.storageMode = MTLStorageModeMemoryless;
         }
     }
-    
-    new MTLRCTextureCube(mMetalLayer.device, mCommandQueue, textureDes);
 
     return std::make_shared<MTLRCTextureCube>(mMetalLayer.device, mCommandQueue, textureDes);
 }
@@ -389,10 +387,8 @@ RCTexture2DArrayPtr MTLRenderDevice::CreateTexture2DArray(TextureFormat format,
             //textureDes.storageMode = MTLStorageModeMemoryless;
         }
     }
-    
-    new MTLRCTexture2DArray(mMetalLayer.device, mCommandQueue, textureDes);
 
-    //return std::make_shared<MTLRCTexture2D>(mMetalLayer.device, mCommandQueue, textureDes);
+    return std::make_shared<MTLRCTexture2DArray>(mMetalLayer.device, mCommandQueue, textureDes);
 }
 
 NAMESPACE_RENDERCORE_END

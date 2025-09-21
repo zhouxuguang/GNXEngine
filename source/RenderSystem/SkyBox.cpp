@@ -130,14 +130,6 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
         desArray.push_back(textureDescriptor);
     }
     
-    /*mTextureCube = renderDevice->createTextureCubeWithDescriptor(desArray);
-    mTextureCube->setTextureData(kCubeFacePX, positive_x->GetImageSize(), positive_x->GetPixels());
-    mTextureCube->setTextureData(kCubeFaceNX, negative_x->GetImageSize(), negative_x->GetPixels());
-    mTextureCube->setTextureData(kCubeFacePY, positive_y->GetImageSize(), positive_y->GetPixels());
-    mTextureCube->setTextureData(kCubeFaceNY, negative_y->GetImageSize(), negative_y->GetPixels());
-    mTextureCube->setTextureData(kCubeFacePZ, positive_z->GetImageSize(), positive_z->GetPixels());
-    mTextureCube->setTextureData(kCubeFaceNZ, negative_z->GetImageSize(), negative_z->GetPixels());*/
-    
     std::string pathSplit = std::string(1, PATHSPLIT);
     mTextureCube = LoadEquirectangularMap(getMediaDir() + "IBL" + pathSplit + "piazza_bologni_1k.hdr");
     
@@ -189,7 +181,7 @@ void SkyBox::Render(const RenderEncoderPtr &renderEncoder, UniformBufferPtr came
     renderEncoder->SetGraphicsPipeline(mPipeline);
     
     renderEncoder->SetVertexBuffer(mVertexBuffer, 0, 0);
-    renderEncoder->SetFragmentTextureCubeAndSampler("gCubeMap", mTextureCube, mTextureSampler);
+    renderEncoder->SetFragmentTextureAndSampler("gCubeMap", mTextureCube, mTextureSampler);
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
     
     renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 36);
