@@ -13,9 +13,6 @@
 #include "VulkanCommandBuffer.h"
 #include "VKComputeBuffer.h"
 #include "VKComputePipeline.h"
-#include "VKTexture2D.h"
-#include "VKTextureCube.h"
-#include "VKRenderTexture.h"
 #include "VKUniformBuffer.h"
 #include "VKComputePipeline.h"
 #include "VKGraphicsPipeline.h"
@@ -166,16 +163,6 @@ IndexBufferPtr VKRenderDevice::CreateIndexBufferWithBytes(const void* buffer, ui
     return std::make_shared<VKIndexBuffer>(mVulkanContext, indexType, buffer, size);
 }
 
-Texture2DPtr VKRenderDevice::CreateTextureWithDescriptor(const TextureDescriptor& des) const
-{
-    return std::make_shared<VKTexture2D>(mVulkanContext, des);
-}
-
-TextureCubePtr VKRenderDevice::CreateTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const
-{
-    return std::make_shared<VKTextureCube>(mVulkanContext, desArray);
-}
-
 TextureSamplerPtr VKRenderDevice::CreateSamplerWithDescriptor(const SamplerDescriptor& des) const
 {
     return std::make_shared<VKTextureSampler>(mVulkanContext, des);
@@ -208,11 +195,6 @@ GraphicsPipelinePtr VKRenderDevice::CreateGraphicsPipeline(const GraphicsPipelin
 ComputePipelinePtr VKRenderDevice::CreateComputePipeline(const ShaderCode& shaderSource) const
 {
     return std::make_shared<VKComputePipeline>(mVulkanContext, shaderSource);
-}
-
-RenderTexturePtr VKRenderDevice::CreateRenderTexture(const TextureDescriptor& des) const
-{
-    return std::make_shared<VKRenderTexture>(mVulkanContext, des);
 }
 
 RCTexture2DPtr VKRenderDevice::CreateTexture2D(TextureFormat format,

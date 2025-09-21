@@ -12,12 +12,10 @@
 #include "IndexBuffer.h"
 #include "VertexBuffer.h"
 #include "UniformBuffer.h"
-#include "TextureCube.h"
 #include "GraphicsPipeline.h"
 #include "DeviceExtension.h"
 #include "CommandBuffer.h"
 #include "RenderPass.h"
-#include "RenderTexture.h"
 #include "ComputeBuffer.h"
 #include "RCTexture.h"
 
@@ -69,22 +67,6 @@ public:
     virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const = 0;
     
     /**
-     根据纹理描述创建纹理对象
-
-     @param des the description for texture to be created
-     @return shared pointer to texture object
-     */
-    virtual Texture2DPtr CreateTextureWithDescriptor(const TextureDescriptor& des) const = 0;
-    
-    /**
-     根据纹理描述创建立方体纹理对象
-
-     @param desArray the description for texture to be created
-     @return shared pointer to texturecube object
-     */
-    virtual TextureCubePtr CreateTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const = 0;
-    
-    /**
      根据采样描述创建纹理采样器
 
      @param des the description for sampler to be created.
@@ -118,11 +100,6 @@ public:
     virtual ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderString) const = 0;
     
     virtual CommandBufferPtr CreateCommandBuffer() = 0;
-    
-    /**
-     创建renderTexture
-     */
-    virtual RenderTexturePtr CreateRenderTexture(const TextureDescriptor& des) const = 0;
     
     /**
      * @brief Create a Texture2D object

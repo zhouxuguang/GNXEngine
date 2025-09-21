@@ -6,8 +6,6 @@
 //
 
 #include "MTLRenderDevice.h"
-#include "MTLTexture2D.h"
-#include "MTLTextureCube.h"
 #include "MTLVertexBuffer.h"
 #include "MTLIndexBuffer.h"
 #include "MTLTextureSampler.h"
@@ -16,7 +14,6 @@
 #include "MTLComputePipeline.h"
 #include "MTLShaderFunction.h"
 #include "MTLCommandBuffer.h"
-#include "MTLRenderTexture.h"
 #include "MTLComputeBuffer.h"
 #include "MTLTextureBase.h"
 
@@ -109,29 +106,6 @@ IndexBufferPtr MTLRenderDevice::CreateIndexBufferWithBytes(const void* buffer, u
 }
 
 /**
- 根据纹理描述创建纹理对象
-
- @param des the description for texture to be created
- @return shared pointer to texture object
- */
-Texture2DPtr MTLRenderDevice::CreateTextureWithDescriptor(const TextureDescriptor& des) const
-{
-    auto texture2d = std::make_shared<MTLTexture2D>(mMetalLayer.device, mCommandQueue, des);
-    return texture2d;
-}
-
-/**
- 根据纹理描述创建立方体纹理对象
-
- @param desArray the description for texture to be created
- @return shared pointer to texturecube object
- */
-TextureCubePtr MTLRenderDevice::CreateTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const
-{
-    return std::make_shared<MTLTextureCube>(mMetalLayer.device, mCommandQueue, desArray);
-}
-
-/**
  根据采样描述创建纹理采样器
 
  @param des the description for sampler to be created.
@@ -184,11 +158,6 @@ ComputePipelinePtr MTLRenderDevice::CreateComputePipeline(const ShaderCode& shad
 CommandBufferPtr MTLRenderDevice::CreateCommandBuffer()
 {
     return std::make_shared<MTLCommandBuffer>(mCommandQueue, mMetalLayer, mDepthTexture, mStencilTexture, mDepthStencilTexture);
-}
-
-RenderTexturePtr MTLRenderDevice::CreateRenderTexture(const TextureDescriptor& des) const
-{
-    return std::make_shared<MTLRenderTexture>(mMetalLayer.device, des);
 }
 
 RCTexture2DPtr MTLRenderDevice::CreateTexture2D(TextureFormat format,

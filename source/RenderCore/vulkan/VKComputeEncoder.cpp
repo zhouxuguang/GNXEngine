@@ -8,8 +8,6 @@
 #include "VKComputeEncoder.h"
 #include "VKComputePipeline.h"
 #include "VKComputeBuffer.h"
-#include "VKTexture2D.h"
-#include "VKRenderTexture.h"
 #include "VKComputePipeline.h"
 #include "VulkanDescriptorUtil.h"
 #include "VKTextureBase.h"

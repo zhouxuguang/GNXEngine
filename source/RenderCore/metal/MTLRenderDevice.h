@@ -61,22 +61,6 @@ public:
     virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const;
     
     /**
-     根据纹理描述创建纹理对象
-
-     @param des the description for texture to be created
-     @return shared pointer to texture object
-     */
-    virtual Texture2DPtr CreateTextureWithDescriptor(const TextureDescriptor& des) const;
-    
-    /**
-     根据纹理描述创建立方体纹理对象
-
-     @param desArray the description for texture to be created
-     @return shared pointer to texturecube object
-     */
-    virtual TextureCubePtr CreateTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const;
-    
-    /**
      根据采样描述创建纹理采样器
 
      @param des the description for sampler to be created.
@@ -110,11 +94,6 @@ public:
     virtual ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderSource) const;
     
     virtual CommandBufferPtr CreateCommandBuffer();
-    
-    /**
-     创建renderTexture
-     */
-    virtual RenderTexturePtr CreateRenderTexture(const TextureDescriptor& des) const;
     
     virtual RCTexture2DPtr CreateTexture2D(TextureFormat format,
                                         TextureUsage usage,

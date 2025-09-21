@@ -33,10 +33,6 @@ private:
     GraphicsPipelinePtr mPipeline = nullptr;   //渲染管线
     
     RCTexturePtr mTexture = nullptr;
-    
-    Texture2DPtr mTextures[2];
-    Texture2DPtr mPingPangTexture = nullptr;
-    
 };
 
 NS_RENDERSYSTEM_END

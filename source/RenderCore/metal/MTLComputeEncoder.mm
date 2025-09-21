@@ -8,8 +8,6 @@
 #include "MTLComputeEncoder.h"
 #include "MTLComputePipeline.h"
 #include "MTLComputeBuffer.h"
-#include "MTLTexture2D.h"
-#include "MTLRenderTexture.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 

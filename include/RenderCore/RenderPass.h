@@ -9,7 +9,6 @@
 #define GNXENGINE_RENDERPASS_INCLUDE_HHFEGGH_
 
 #include "RenderDefine.h"
-#include "RenderTexture.h"
 #include "RCTexture.h"
 
 NAMESPACE_RENDERCORE_BEGIN

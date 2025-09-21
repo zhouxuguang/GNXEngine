@@ -15,9 +15,6 @@ PostProcessing::PostProcessing(RenderDevicePtr renderDevice)
 {
     assert(renderDevice);
     mRenderDevice = renderDevice;
-    mTextures[0] = nullptr;
-    mTextures[1] = nullptr;
-
     
     SamplerDescriptor samplerDescriptor;
     mTextureSampler = renderDevice->CreateSamplerWithDescriptor(samplerDescriptor);

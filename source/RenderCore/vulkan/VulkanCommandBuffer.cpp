@@ -10,7 +10,6 @@
 #include "VKRenderEncoder.h"
 #include "VKComputeEncoder.h"
 #include "BaseLib/LogService.h"
-#include "VKRenderTexture.h"
 #include "BaseLib/DebugBreaker.h"
 #include "VKUtil.h"
 #include "VKTextureBase.h"

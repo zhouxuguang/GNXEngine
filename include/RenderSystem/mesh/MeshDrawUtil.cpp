@@ -15,7 +15,7 @@
 RCTextureCubePtr envMap = nullptr;
 RCTextureCubePtr envMapIrradiance = nullptr;
 TextureSamplerPtr cubeSampler = nullptr;
-Texture2DPtr brdfMap = nullptr;
+RCTexture2DPtr brdfMap = nullptr;
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -41,12 +41,15 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
         cubeSampler = GetRenderDevice()->CreateSamplerWithDescriptor(sampleDes);
     }
     
-    if (!brdfMap) {
+    if (!brdfMap) 
+    {
         VImage image;
         imagecodec::ImageDecoder::DecodeFile((getMediaDir() + "IBL" + pathSplit + "brdfLUT.ktx").c_str(), &image);
         TextureDescriptor des = ImageTextureUtil::getTextureDescriptor(image);
-        brdfMap = GetRenderDevice()->CreateTextureWithDescriptor(des);
-        brdfMap->SetTextureData(image.GetPixels());
+        brdfMap = GetRenderDevice()->CreateTexture2D(des.format, TextureUsageShaderRead,
+                                                     image.GetWidth(), image.GetHeight(), 1);
+        Rect2D rect = Rect2D(0, 0, image.GetWidth(), image.GetHeight());
+        brdfMap->ReplaceRegion(rect, 0, image.GetPixels(), image.GetBytesPerRow());
     }
     
     RenderEncoderPtr renderEncoder = renderInfo.renderEncoder;
@@ -116,12 +119,15 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
         cubeSampler = GetRenderDevice()->CreateSamplerWithDescriptor(sampleDes);
     }
     
-    if (!brdfMap) {
+    if (!brdfMap) 
+    {
         VImage image;
         imagecodec::ImageDecoder::DecodeFile((getMediaDir() + "IBL" + pathSplit + "brdfLUT.ktx").c_str(), &image);
         TextureDescriptor des = ImageTextureUtil::getTextureDescriptor(image);
-        brdfMap = GetRenderDevice()->CreateTextureWithDescriptor(des);
-        brdfMap->SetTextureData(image.GetPixels());
+        brdfMap = GetRenderDevice()->CreateTexture2D(des.format, TextureUsageShaderRead,
+                                                     image.GetWidth(), image.GetHeight(), 1);
+        Rect2D rect = Rect2D(0, 0, image.GetWidth(), image.GetHeight());
+        brdfMap->ReplaceRegion(rect, 0, image.GetPixels(), image.GetBytesPerRow());
     }
     
     RenderEncoderPtr renderEncoder = renderInfo.renderEncoder;

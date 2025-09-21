@@ -232,6 +232,15 @@ public:
 
 using MTLRCTexture2DArrayPtr = std::shared_ptr<MTLRCTexture2DArray>;
 
+//创建默认的深度纹理和模板纹理
+id<MTLTexture> createDepthStencilTexture(id<MTLDevice> device, uint32_t width, uint32_t height);
+
+//创建深度纹理
+id<MTLTexture> createDepthTexture(id<MTLDevice> device, uint32_t width, uint32_t height);
+
+//创建模板纹理
+id<MTLTexture> createStencilTexture(id<MTLDevice> device, uint32_t width, uint32_t height);
+
 NAMESPACE_RENDERCORE_END
 
 #endif /* GNX_ENGINE_MTLTEXTURE_BASE_INCLUDE_H_HDSJJD */

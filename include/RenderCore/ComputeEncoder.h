@@ -11,8 +11,6 @@
 #include "RenderDefine.h"
 #include "GraphicsPipeline.h"
 #include "ComputeBuffer.h"
-#include "Texture2D.h"
-#include "RenderTexture.h"
 #include "RCTexture.h"
 
 NAMESPACE_RENDERCORE_BEGIN

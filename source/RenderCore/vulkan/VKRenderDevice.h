@@ -45,10 +45,6 @@ public:
     
     virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const;
     
-    virtual Texture2DPtr CreateTextureWithDescriptor(const TextureDescriptor& des) const;
-    
-    virtual TextureCubePtr CreateTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const;
-    
     virtual TextureSamplerPtr CreateSamplerWithDescriptor(const SamplerDescriptor& des) const;
     
     virtual UniformBufferPtr CreateUniformBufferWithSize(uint32_t bufSize) const;
@@ -62,8 +58,6 @@ public:
     virtual ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderString) const;
     
     virtual CommandBufferPtr CreateCommandBuffer();
-    
-    virtual RenderTexturePtr CreateRenderTexture(const TextureDescriptor& des) const;
     
     virtual RCTexture2DPtr CreateTexture2D(TextureFormat format,
                                         TextureUsage usage,

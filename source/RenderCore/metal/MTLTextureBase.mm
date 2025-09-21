@@ -151,4 +151,58 @@ void MTLRCTexture2DArray::ReplaceRegion(const Rect2D& rect,
     MTLTextureBase::ReplaceRegion(rect, level, slice, pixelBytes, bytesPerRow, bytesPerImage);
 }
 
+static id<MTLTexture> createDefaultDepthStencilTexture(id<MTLDevice> device, uint32_t width, uint32_t height, MTLPixelFormat pixelFormat)
+{
+    //创建深度纹理
+    MTLTextureDescriptor *depthStencilDescriptor
+                            = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:pixelFormat
+                                                                                          width:width
+                                                                                         height:height
+                                                                                      mipmapped:NO];
+    
+    if (@available(iOS 9.0, macOS 10.11, *))
+    {
+        depthStencilDescriptor.resourceOptions = MTLResourceStorageModePrivate;
+        depthStencilDescriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
+        depthStencilDescriptor.storageMode = MTLStorageModePrivate;
+        
+#ifndef TARGET_OS_MAC
+        if (@available(iOS 10.0, *))
+        {
+            depthStencilDescriptor.storageMode = MTLStorageModeMemoryless;
+        }
+#endif
+    }
+    depthStencilDescriptor.textureType = MTLTextureType2D;
+    id<MTLTexture> depthStencilTexture = [device newTextureWithDescriptor:depthStencilDescriptor];
+    
+    return depthStencilTexture;
+}
+
+id<MTLTexture> createDepthStencilTexture(id<MTLDevice> device, uint32_t width, uint32_t height)
+{
+    id<MTLTexture> depthTexture = createDefaultDepthStencilTexture(device, width, height, MTLPixelFormatDepth32Float_Stencil8);
+    [depthTexture setLabel:@"Default Depth Stencil Texture"];
+    
+    return depthTexture;
+}
+
+//创建深度纹理
+id<MTLTexture> createDepthTexture(id<MTLDevice> device, uint32_t width, uint32_t height)
+{
+    id<MTLTexture> depthTexture = createDefaultDepthStencilTexture(device, width, height, MTLPixelFormatDepth32Float);
+    [depthTexture setLabel:@"Default Depth Texture"];
+    
+    return depthTexture;
+}
+
+//创建模板纹理
+id<MTLTexture> createStencilTexture(id<MTLDevice> device, uint32_t width, uint32_t height)
+{
+    id<MTLTexture> stencilTexture = createDefaultDepthStencilTexture(device, width, height, MTLPixelFormatStencil8);
+    [stencilTexture setLabel:@"Default Stencil Texture"];
+    
+    return stencilTexture;
+}
+
 NAMESPACE_RENDERCORE_END
