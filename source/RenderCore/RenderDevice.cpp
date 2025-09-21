@@ -7,11 +7,9 @@
 
 #include "RenderDevice.h"
 #include "ShaderFunction.h"
-#include "TextureCube.h"
 #include "RenderEncoder.h"
 #include "CommandBuffer.h"
 #include "RenderPass.h"
-#include "RenderTexture.h"
 
 #ifdef __APPLE__
 #include <TargetConditionals.h>
@@ -48,18 +46,6 @@ TextureSampler::~TextureSampler(){}
 IndexBuffer::IndexBuffer(IndexType indexType, const void* pData, uint32_t dataLen){}
 
 IndexBuffer::~IndexBuffer(){}
-
-Texture2D::Texture2D(const TextureDescriptor& des){}
-
-Texture2D::~Texture2D(){}
-
-TextureCube::TextureCube(const std::vector<TextureDescriptor>& des){}
-
-TextureCube::~TextureCube(){}
-
-RenderTexture::RenderTexture(const TextureDescriptor& des){}
-
-RenderTexture::~RenderTexture(){}
 
 GraphicsPipeline::GraphicsPipeline(const GraphicsPipelineDescriptor& des){}
 

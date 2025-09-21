@@ -9,7 +9,6 @@
 #define TestComputeShader_hpp
 
 #include <stdio.h>
-#include "RenderCore/RenderTexture.h"
 #include "RenderCore/GraphicsPipeline.h"
 #include "RenderCore/ComputeEncoder.h"
 
@@ -18,12 +17,10 @@ USING_NS_RENDERCORE
 
 void TestADD();
 
-RenderTexturePtr TestImageGray();
-
 ComputePipelinePtr initTestimageGray();
 
 void testImageGrayDraw(ComputeEncoderPtr computeEncoder, ComputePipelinePtr computePipeline,
-                       RenderTexturePtr inputTexture, RenderTexturePtr outputTexture);
+                       RCTexturePtr inputTexture, RCTexturePtr outputTexture);
 
 
 

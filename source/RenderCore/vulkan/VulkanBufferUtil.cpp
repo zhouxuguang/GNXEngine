@@ -596,24 +596,39 @@ VkFormat VulkanBufferUtil::ConvertTextureFormat(TextureFormat texFormat)
     return format;
 }
 
-VkImageUsageFlagBits VulkanBufferUtil::ConvertTextureUsage(TextureUsage textureUsage)
+/*
+ VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT = 0x00000010,
+ VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT = 0x00000020,
+ */
+VkImageUsageFlags VulkanBufferUtil::ConvertTextureUsage(TextureUsage textureUsage, VkFormat format)
 {
+    
+    VkImageUsageFlags flags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
+                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     switch (textureUsage)
     {
         case TextureUsageShaderRead:
-            return VK_IMAGE_USAGE_SAMPLED_BIT;
+            flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
             
         case TextureUsageShaderWrite:
-            return VK_IMAGE_USAGE_STORAGE_BIT;
+            flags |= VK_IMAGE_USAGE_STORAGE_BIT;
             
         case TextureUsageRenderTarget:
-            return VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            // 还要区分是深度模板还是颜色缓冲
+            if (VulkanBufferUtil::IsDepthStencilFormat(format))
+            {
+                flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+            }
+            else
+            {
+                flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+            }
             
         default:
             break;
     }
     
-    return VK_IMAGE_USAGE_SAMPLED_BIT;
+    return flags;
 }
 
 uint32_t VulkanBufferUtil::GetFormatSize(VkFormat format)

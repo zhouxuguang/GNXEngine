@@ -137,6 +137,11 @@ inline MTLTextureUsage ConvertTextureUsageToMetal(TextureUsage textureUsage)
     return (MTLTextureUsage)textureUsage;
 }
 
+inline bool HasRenderTargetFlag(MTLTextureUsage textureUsage)
+{
+    return (textureUsage & MTLTextureUsageRenderTarget) == MTLTextureUsageRenderTarget;
+}
+
 struct FrameBufferFormat
 {
     std::vector<MTLPixelFormat> colorFormats;

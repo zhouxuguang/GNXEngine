@@ -14,6 +14,6 @@ using namespace RenderSystem;
 
 void initPostResource(RenderDevicePtr renderDevice);
 
-void testPost(const RenderEncoderPtr &renderEncoder, const RenderTexturePtr texture);
+void testPost(const RenderEncoderPtr &renderEncoder, const RCTexturePtr texture);
 
 #endif /* TestPost_hpp */

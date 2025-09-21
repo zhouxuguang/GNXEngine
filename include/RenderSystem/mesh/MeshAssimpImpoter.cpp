@@ -14,7 +14,7 @@
 
 NS_RENDERSYSTEM_BEGIN
 
-static Texture2DPtr TextureFromFile(const char *filename)
+static RCTexture2DPtr TextureFromFile(const char *filename)
 {
     if (filename == nullptr)
     {
@@ -30,13 +30,14 @@ static Texture2DPtr TextureFromFile(const char *filename)
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     textureDescriptor.mipmaped = true;
     
-    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
+    RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
+                    TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
     return texture;
 }
 
-static Texture2DPtr CreateDiffuseTexture(float r, float g, float b)
+static RCTexture2DPtr CreateDiffuseTexture(float r, float g, float b)
 {
     uint8_t *pData = (uint8_t*)malloc(4);
     pData[0] = r * 255;
@@ -49,13 +50,14 @@ static Texture2DPtr CreateDiffuseTexture(float r, float g, float b)
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
-    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
+    RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
+                    TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
     return texture;
 }
 
-static Texture2DPtr CreateMetalRoughTexture()
+static RCTexture2DPtr CreateMetalRoughTexture()
 {
     uint8_t *pData = (uint8_t*)malloc(4);
     pData[0] = 0;
@@ -68,13 +70,14 @@ static Texture2DPtr CreateMetalRoughTexture()
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
-    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
+    RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
+                    TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
     return texture;
 }
 
-static Texture2DPtr CreateNormalTexture()
+static RCTexture2DPtr CreateNormalTexture()
 {
     uint8_t *pData = (uint8_t*)malloc(4);
     pData[0] = 0;
@@ -87,13 +90,14 @@ static Texture2DPtr CreateNormalTexture()
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
-    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
+    RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
+                    TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
     return texture;
 }
 
-static Texture2DPtr CreateEmmisveTexture()
+static RCTexture2DPtr CreateEmmisveTexture()
 {
     uint8_t *pData = (uint8_t*)malloc(4);
     pData[0] = 0;
@@ -106,13 +110,14 @@ static Texture2DPtr CreateEmmisveTexture()
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
-    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
+    RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
+                    TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
     return texture;
 }
 
-static Texture2DPtr CreateAOTexture()
+static RCTexture2DPtr CreateAOTexture()
 {
     uint8_t *pData = (uint8_t*)malloc(4);
     pData[0] = 255;
@@ -125,13 +130,14 @@ static Texture2DPtr CreateAOTexture()
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
-    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
+    RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
+                    TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
     return texture;
 }
 
-static Texture2DPtr TextureFromMemory(const uint8_t* pImageData, uint32_t dataSize)
+static RCTexture2DPtr TextureFromMemory(const uint8_t* pImageData, uint32_t dataSize)
 {
     if (pImageData == nullptr || 0 == dataSize)
     {
@@ -146,9 +152,10 @@ static Texture2DPtr TextureFromMemory(const uint8_t* pImageData, uint32_t dataSi
     
     TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     
-    Texture2DPtr texture = GetRenderDevice()->CreateTextureWithDescriptor(textureDescriptor);
+    RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
+                    TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, image->GetPixels());
+    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
     return texture;
 }
 
@@ -515,7 +522,7 @@ void MeshAssimpImpoter::getVertexCountAndLayout(aiNode *node, const aiScene *sce
     }
 }
 
-void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const material, const std::vector<Texture2DPtr>& fileTextures)
+void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const material, const std::vector<RCTexturePtr>& fileTextures)
 {
     aiString s;
     if (AI_SUCCESS == material->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), s))
@@ -558,8 +565,8 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     aiString diffuseMap;
     material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuseMap);
     //Texture2DPtr diffuseTexture = TextureFromFile((mDirectory + "Woman.png").c_str());
-    Texture2DPtr diffuseTexture = TextureFromFile((mDirectory + diffuseMap.C_Str()).c_str());
-    if (diffuseTexture) 
+    RCTexture2DPtr diffuseTexture = TextureFromFile((mDirectory + diffuseMap.C_Str()).c_str());
+    if (diffuseTexture)
     {
         mat->SetTexture("diffuseTexture", diffuseTexture);
     }
@@ -568,23 +575,23 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     
     aiString normalMap;
     material->Get(AI_MATKEY_TEXTURE_NORMALS(0), normalMap);
-    Texture2DPtr normalTexture = TextureFromFile((mDirectory + normalMap.C_Str()).c_str());
-    if (normalTexture) 
+    RCTexture2DPtr normalTexture = TextureFromFile((mDirectory + normalMap.C_Str()).c_str());
+    if (normalTexture)
     {
         mat->SetTexture("normalTexture", normalTexture);
     }
     
     aiString specularMap;
     material->Get(AI_MATKEY_TEXTURE_SPECULAR(0), specularMap);
-    Texture2DPtr specularTexture = TextureFromFile((mDirectory + specularMap.C_Str()).c_str());
-    if (specularTexture) 
+    RCTexture2DPtr specularTexture = TextureFromFile((mDirectory + specularMap.C_Str()).c_str());
+    if (specularTexture)
     {
         mat->SetTexture("specularTexture", specularTexture);
     }
     
     aiString baseColorMap;
     material->GetTexture(AI_MATKEY_BASE_COLOR_TEXTURE, &baseColorMap);
-    Texture2DPtr baseColorTexture = TextureFromFile((mDirectory + baseColorMap.C_Str()).c_str());
+    RCTexture2DPtr baseColorTexture = TextureFromFile((mDirectory + baseColorMap.C_Str()).c_str());
     if (baseColorTexture)
     {
         mat->SetTexture("diffuseTexture", baseColorTexture);
@@ -593,7 +600,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     //加载metallic贴图
     aiString metallicMap;
     material->GetTexture(AI_MATKEY_METALLIC_TEXTURE, &metallicMap);
-    Texture2DPtr metallicTexture = TextureFromFile((mDirectory + metallicMap.C_Str()).c_str());
+    RCTexture2DPtr metallicTexture = TextureFromFile((mDirectory + metallicMap.C_Str()).c_str());
     if (metallicTexture)
     {
         mat->SetTexture("metallicTexture", metallicTexture);
@@ -602,7 +609,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     //加载roughness贴图
     aiString roughnessMap;
     material->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &roughnessMap);
-    Texture2DPtr roughnessTexture = TextureFromFile((mDirectory + roughnessMap.C_Str()).c_str());
+    RCTexture2DPtr roughnessTexture = TextureFromFile((mDirectory + roughnessMap.C_Str()).c_str());
     if (roughnessTexture)
     {
         mat->SetTexture("roughnessTexture", roughnessTexture);
@@ -617,7 +624,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     //加载自发光材质贴图
     aiString emissiveMap;
     material->GetTexture(aiTextureType_EMISSIVE, 0, &emissiveMap);
-    Texture2DPtr emissiveTexture = TextureFromFile((mDirectory + emissiveMap.C_Str()).c_str());
+    RCTexture2DPtr emissiveTexture = TextureFromFile((mDirectory + emissiveMap.C_Str()).c_str());
     if (emissiveTexture)
     {
         mat->SetTexture("emissiveTexture", emissiveTexture);
@@ -626,7 +633,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     // 加载AO贴图
     aiString aoMap;
     material->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 0, &aoMap);
-    Texture2DPtr ambientTexture = TextureFromFile((mDirectory + aoMap.C_Str()).c_str());
+    RCTexture2DPtr ambientTexture = TextureFromFile((mDirectory + aoMap.C_Str()).c_str());
     if (ambientTexture)
     {
         mat->SetTexture("ambientTexture", ambientTexture);
@@ -690,7 +697,7 @@ std::vector<std::shared_ptr<Material>> MeshAssimpImpoter::processMeshVertex(cons
         modelScale = 1.0f / scale;
     }
     
-    std::vector<Texture2DPtr> fileTextures;
+    std::vector<RCTexturePtr> fileTextures;
     
     for (int i = 0; i < scene->mNumTextures; i++)
     {
@@ -702,7 +709,7 @@ std::vector<std::shared_ptr<Material>> MeshAssimpImpoter::processMeshVertex(cons
             {
                 // mHeight = 0 means embedded textures inside
                 // here we use stb to save texture images
-                Texture2DPtr texturePtr = TextureFromMemory((unsigned char *)texture->pcData, texture->mWidth);
+                RCTexturePtr texturePtr = TextureFromMemory((unsigned char *)texture->pcData, texture->mWidth);
                 fileTextures.push_back(texturePtr);
             }
         }

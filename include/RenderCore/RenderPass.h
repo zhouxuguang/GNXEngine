@@ -9,7 +9,7 @@
 #define GNXENGINE_RENDERPASS_INCLUDE_HHFEGGH_
 
 #include "RenderDefine.h"
-#include "RenderTexture.h"
+#include "RCTexture.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -30,7 +30,7 @@ enum AttachmentStoreOp
 //渲染附件基类
 struct RenderPassAttachment
 {
-    RenderTexturePtr texture;
+    RCTexturePtr texture;
 };
 
 typedef std::shared_ptr<RenderPassAttachment> RenderPassAttachmentPtr;

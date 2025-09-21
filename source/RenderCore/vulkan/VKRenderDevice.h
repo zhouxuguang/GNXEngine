@@ -45,10 +45,6 @@ public:
     
     virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const;
     
-    virtual Texture2DPtr CreateTextureWithDescriptor(const TextureDescriptor& des) const;
-    
-    virtual TextureCubePtr CreateTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const;
-    
     virtual TextureSamplerPtr CreateSamplerWithDescriptor(const SamplerDescriptor& des) const;
     
     virtual UniformBufferPtr CreateUniformBufferWithSize(uint32_t bufSize) const;
@@ -63,13 +59,31 @@ public:
     
     virtual CommandBufferPtr CreateCommandBuffer();
     
-    virtual RenderTexturePtr CreateRenderTexture(const TextureDescriptor& des) const;
-    
     virtual RCTexture2DPtr CreateTexture2D(TextureFormat format,
                                         TextureUsage usage,
                                         uint32_t width,
                                         uint32_t height,
                                         uint32_t levels) const;
+    
+    virtual RCTexture3DPtr CreateTexture3D(TextureFormat format,
+                                        TextureUsage usage,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        uint32_t depth,
+                                        uint32_t levels) const;
+
+    virtual RCTextureCubePtr CreateTextureCube(TextureFormat format,
+                                        TextureUsage usage,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        uint32_t levels) const;
+
+    virtual RCTexture2DArrayPtr CreateTexture2DArray(TextureFormat format,
+                                        TextureUsage usage,
+                                        uint32_t width,
+                                        uint32_t height,
+                                        uint32_t levels,
+                                        uint32_t arraySize) const;
     
     void UpdateCurrentIndex()
     {

@@ -9,11 +9,9 @@
 #include "MTLVertexBuffer.h"
 #include "MTLIndexBuffer.h"
 #include "MTLUniformBuffer.h"
-#include "MTLTexture2D.h"
-#include "MTLTextureCube.h"
 #include "MTLTextureSampler.h"
-#include "MTLRenderTexture.h"
 #include "MTLGraphicsPipeline.h"
+#include "MTLTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -318,95 +316,7 @@ void MTLRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int siz
                             instanceCount: instanceCount baseVertex : 0 baseInstance : firstInstance];
 }
 
-/**
- 设置纹理和采样器
-
- r param texture 纹理句柄
- @aaaparam sampler 采样器句柄
- @param index 纹理通道索引
- */
-void MTLRenderEncoder::SetFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index)
-{
-    if (!texture)
-    {
-        [mRenderEncoder setFragmentTexture:nil atIndex:index];
-        return;
-    }
-    
-    if (!sampler)
-    {
-        [mRenderEncoder setFragmentSamplerState:nil atIndex:index];
-        return;
-    }
-
-    id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTexture2D>(texture)->getMTLTexture();
-    [mRenderEncoder setFragmentTexture:mtlTexture atIndex:index];
-    id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
-    [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:index];
-}
-
-/**
- 设置立方体纹理和采样器
-
- @param textureCube 纹理句柄
- @param sampler 采样器句柄
- @param index 纹理通道索引
- */
-void MTLRenderEncoder::SetFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index)
-{
-    if (!textureCube)
-    {
-        [mRenderEncoder setFragmentTexture:nil atIndex:index];
-        return;
-    }
-    
-    if (!sampler)
-    {
-        [mRenderEncoder setFragmentSamplerState:nil atIndex:index];
-        return;
-    }
-
-    id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTextureCube>(textureCube)->getMTLTexture();
-    [mRenderEncoder setFragmentTexture:mtlTexture atIndex:index];
-    id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
-    [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:index];
-}
-
-/**
- 设置渲染纹理和采样器
-
- @param renderTexture 纹理句柄
- @param sampler 采样器句柄
- @param index 纹理通道索引
- */
-void MTLRenderEncoder::SetFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index)
-{
-    if (!renderTexture)
-    {
-        [mRenderEncoder setFragmentTexture:nil atIndex:index];
-        return;
-    }
-    
-    if (!sampler)
-    {
-        [mRenderEncoder setFragmentSamplerState:nil atIndex:index];
-        return;
-    }
-
-    id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLRenderTexture>(renderTexture)->getMTLTexture();
-    [mRenderEncoder setFragmentTexture:mtlTexture atIndex:index];
-    id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
-    [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:index];
-}
-
-/**
- 设置片元纹理和采样器
-
- @param resourceName 对应shader中的名字
- @param texture 纹理句柄
- @param sampler 采样器句柄
- */
-void MTLRenderEncoder::SetFragmentTextureAndSampler(const std::string &resourceName, Texture2DPtr texture, TextureSamplerPtr sampler)
+void MTLRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
 {
     MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
     if (!shader)
@@ -437,88 +347,7 @@ void MTLRenderEncoder::SetFragmentTextureAndSampler(const std::string &resourceN
         return;
     }
 
-    id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTexture2D>(texture)->getMTLTexture();
-    [mRenderEncoder setFragmentTexture:mtlTexture atIndex:texIndex];
-    id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
-    [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];
-}
-
-/**
- 设置片元立方体纹理和采样器
-
- @param resourceName 对应shader中的名字
- @param textureCube 纹理句柄
- @param sampler 采样器句柄
- */
-void MTLRenderEncoder::SetFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler)
-{
-    MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
-    if (!shader)
-    {
-        return;
-    }
-    
-    NSUInteger texIndex = shader->GetFragmentResourceBindIndex(resourceName);
-    if (texIndex == InvalidBindingIndex)
-    {
-        return;
-    }
-    NSUInteger samIndex = shader->GetFragmentResourceBindIndex(resourceName + "Sam");
-    if (samIndex == InvalidBindingIndex)
-    {
-        return;
-    }
-    
-    if (!textureCube)
-    {
-        [mRenderEncoder setFragmentTexture:nil atIndex:texIndex];
-        return;
-    }
-    
-    if (!sampler)
-    {
-        [mRenderEncoder setFragmentSamplerState:nil atIndex:samIndex];
-        return;
-    }
-
-    id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTextureCube>(textureCube)->getMTLTexture();
-    [mRenderEncoder setFragmentTexture:mtlTexture atIndex:texIndex];
-    id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
-    [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];
-}
-
-void MTLRenderEncoder::SetFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler)
-{
-    MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
-    if (!shader)
-    {
-        return;
-    }
-    
-    NSUInteger texIndex = shader->GetFragmentResourceBindIndex(resourceName);
-    if (texIndex == InvalidBindingIndex)
-    {
-        return;
-    }
-    NSUInteger samIndex = shader->GetFragmentResourceBindIndex(resourceName + "Sam");
-    if (samIndex == InvalidBindingIndex)
-    {
-        return;
-    }
-    
-    if (!renderTexture)
-    {
-        [mRenderEncoder setFragmentTexture:nil atIndex:texIndex];
-        return;
-    }
-    
-    if (!sampler)
-    {
-        [mRenderEncoder setFragmentSamplerState:nil atIndex:samIndex];
-        return;
-    }
-
-    id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLRenderTexture>(renderTexture)->getMTLTexture();
+    id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTextureBase>(texture)->getMTLTexture();
     [mRenderEncoder setFragmentTexture:mtlTexture atIndex:texIndex];
     id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
     [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];

@@ -9,13 +9,11 @@
 #include "VKVertexBuffer.h"
 #include "VKIndexBuffer.h"
 #include "VKUniformBuffer.h"
-#include "VKTexture2D.h"
 #include "VKTextureSampler.h"
-#include "VKTextureCube.h"
-#include "VKRenderTexture.h"
 #include "VKGraphicsPipeline.h"
 #include "VulkanDescriptorUtil.h"
 #include "VulkanBufferUtil.h"
+#include "VKTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -577,151 +575,25 @@ void VKRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size
 	vkCmdDrawIndexed(mCommandBuffer, size, instanceCount, offset, 0, firstInstance);
 }
 
-void VKRenderEncoder::SetFragmentTextureAndSampler(Texture2DPtr texture, TextureSamplerPtr sampler, int index)
+void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
 {
     if (!texture || !sampler)
     {
         return;
     }
-    VKTexture2D *vkTexture2D = (VKTexture2D*)texture.get();
+    //VKTextureBase* vkTexture = (VKTextureBase*)texture.get();
+    VKTextureBasePtr vkTexture = std::dynamic_pointer_cast<VKTextureBase>(texture);
     VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
-    
-    //VkWriteDescriptorSet
-    VkWriteDescriptorSet writeDesSets[2];
-    
-    VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(0,
-                        vkTexture2D->getVKImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    VkDescriptorSet descriptorSet1 = mGraphicsPipieline->GetDescriptorSet(texOffset);
-    writeDesSets[0] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(descriptorSet1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
-    
-    vkUpdateDescriptorSets(mContext->device, 1, writeDesSets, 0, nullptr);
-    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, writeDesSets);
-    
-    VkDescriptorImageInfo samplerInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(), 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    uint32_t samOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_SAMPLER);
-    VkDescriptorSet descriptorSet2 = mGraphicsPipieline->GetDescriptorSet(samOffset);
-    writeDesSets[1] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(descriptorSet2, VK_DESCRIPTOR_TYPE_SAMPLER, index, &samplerInfo);
-    
-    vkUpdateDescriptorSets(mContext->device, 1, writeDesSets + 1, 0, nullptr);
-    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), samOffset, 1, writeDesSets + 1);
-}
 
-void VKRenderEncoder::SetFragmentTextureCubeAndSampler(TextureCubePtr textureCube, TextureSamplerPtr sampler, int index)
-{
-    if (!textureCube || !sampler)
-    {
-        return;
-    }
-    VKTextureCube *vkTextureCube = (VKTextureCube*)textureCube.get();
-    VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
-    
-    VkWriteDescriptorSet writeDesSets[2];
-    
-    VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(0, vkTextureCube->GetImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    VkDescriptorSet descriptorSet1 = mGraphicsPipieline->GetDescriptorSet(texOffset);
-    writeDesSets[0] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(descriptorSet1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
-    
-    vkUpdateDescriptorSets(mContext->device, 1, writeDesSets, 0, nullptr);
-    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, writeDesSets);
-    
-    VkDescriptorImageInfo samplerInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(), 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    uint32_t samOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_SAMPLER);
-    VkDescriptorSet descriptorSet2 = mGraphicsPipieline->GetDescriptorSet(samOffset);
-    writeDesSets[1] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(descriptorSet2, VK_DESCRIPTOR_TYPE_SAMPLER, index, &samplerInfo);
-    
-    vkUpdateDescriptorSets(mContext->device, 1, writeDesSets + 1, 0, nullptr);
-    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), samOffset, 1, writeDesSets + 1);
-}
+    VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
 
-void VKRenderEncoder::SetFragmentRenderTextureAndSampler(RenderTexturePtr renderTexture, TextureSamplerPtr sampler, int index)
-{
-    if (!renderTexture || !sampler)
-    {
-        return;
-    }
-    VKRenderTexture *vkTexture = (VKRenderTexture*)renderTexture.get();
-    VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
-    
-    VkWriteDescriptorSet writeDesSets[2];
-    
-    VkDescriptorImageInfo imageInfo = VulkanDescriptorUtil::DescriptorImageInfo(0, vkTexture->GetImageView()->GetHandle(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_SAMPLED_IMAGE);
-    VkDescriptorSet descriptorSet1 = mGraphicsPipieline->GetDescriptorSet(texOffset);
-    writeDesSets[0] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(descriptorSet1, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, index, &imageInfo);
-    
-    vkUpdateDescriptorSets(mContext->device, 1, writeDesSets, 0, nullptr);
-
-    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, writeDesSets);
-    
-    VkDescriptorImageInfo samplerInfo = VulkanDescriptorUtil::DescriptorImageInfo(vkSampler->GetVKSampler(), 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    uint32_t samOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Fragment, DESCRIPTOR_TYPE_SAMPLER);
-    VkDescriptorSet descriptorSet2 = mGraphicsPipieline->GetDescriptorSet(samOffset);
-    writeDesSets[1] = VulkanDescriptorUtil::GetImageWriteDescriptorSet(descriptorSet2, VK_DESCRIPTOR_TYPE_SAMPLER, index, &samplerInfo);
-    vkUpdateDescriptorSets(mContext->device, 1, writeDesSets + 1, 0, nullptr);
-
-    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), samOffset, 1, writeDesSets + 1);
-}
-
-void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceName, Texture2DPtr texture, TextureSamplerPtr sampler)
-{
-	if (!texture || !sampler)
-	{
-		return;
-	}
-	VKTexture2D* vkTexture2D = (VKTexture2D*)texture.get();
-	VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
-
-	VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
-
-	ShaderImageDesc imageDesc;
-    imageDesc.image = vkTexture2D->getVKImageView()->GetHandle();
+    ShaderImageDesc imageDesc;
+    imageDesc.image = vkTexture->GetImageView()->GetHandle();
     imageDesc.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     imageDesc.sampler = VK_NULL_HANDLE;
 
-	shader->BindTexture(mCommandBuffer, resourceName, imageDesc, mGraphicsPipieline->GetPipelineLayout());
+    shader->BindTexture(mCommandBuffer, resourceName, imageDesc, mGraphicsPipieline->GetPipelineLayout());
     shader->BindSampler(mCommandBuffer, resourceName + "Sam", vkSampler->GetVKSampler(), mGraphicsPipieline->GetPipelineLayout());
-}
-
-void VKRenderEncoder::SetFragmentTextureCubeAndSampler(const std::string& resourceName, TextureCubePtr textureCube, TextureSamplerPtr sampler)
-{
-	if (!textureCube || !sampler)
-	{
-		return;
-	}
-    VKTextureCube* vkTextureCube = (VKTextureCube*)textureCube.get();
-	VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
-
-	VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
-
-	ShaderImageDesc imageDesc;
-	imageDesc.image = vkTextureCube->GetImageView()->GetHandle();
-	imageDesc.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageDesc.sampler = VK_NULL_HANDLE;
-
-	shader->BindTexture(mCommandBuffer, resourceName, imageDesc, mGraphicsPipieline->GetPipelineLayout());
-	shader->BindSampler(mCommandBuffer, resourceName + "Sam", vkSampler->GetVKSampler(), mGraphicsPipieline->GetPipelineLayout());
-}
-
-void VKRenderEncoder::SetFragmentRenderTextureAndSampler(const std::string& resourceName, RenderTexturePtr renderTexture, TextureSamplerPtr sampler)
-{
-	if (!renderTexture || !sampler)
-	{
-		return;
-	}
-    VKRenderTexture* vkTextureRender = (VKRenderTexture*)renderTexture.get();
-	VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
-
-	VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
-
-	ShaderImageDesc imageDesc;
-	imageDesc.image = vkTextureRender->GetImageView()->GetHandle();
-	imageDesc.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageDesc.sampler = VK_NULL_HANDLE;
-
-	shader->BindTexture(mCommandBuffer, resourceName, imageDesc, mGraphicsPipieline->GetPipelineLayout());
-	shader->BindSampler(mCommandBuffer, resourceName + "Sam", vkSampler->GetVKSampler(), mGraphicsPipieline->GetPipelineLayout());
 }
 
 NAMESPACE_RENDERCORE_END

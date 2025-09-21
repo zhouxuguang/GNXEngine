@@ -11,6 +11,7 @@
 #include "MTLRenderDefine.h"
 #include "ComputeEncoder.h"
 #include "MTLComputePipeline.h"
+#include "MTLTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -32,13 +33,13 @@ public:
     
     virtual void SetBuffer(ComputeBufferPtr buffer, uint32_t index);
     
-    virtual void SetTexture(Texture2DPtr texture, uint32_t index);
+    virtual void SetTexture(RCTexturePtr texture, uint32_t index);
     
-    virtual void SetTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index);
+    virtual void SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint32_t index);
     
-    virtual void SetOutTexture(Texture2DPtr texture, uint32_t index);
+    virtual void SetOutTexture(RCTexturePtr texture, uint32_t index);
     
-    virtual void SetOutTexture(RenderTexturePtr texture, uint32_t mipLevel, uint32_t index);
+    virtual void SetOutTexture(RCTexturePtr texture, uint32_t mipLevel, uint32_t index);
     
     virtual void Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ);
     

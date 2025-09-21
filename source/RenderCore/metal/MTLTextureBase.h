@@ -54,11 +54,21 @@ public:
         return mTexture != nil;
     }
     
+    virtual uint32_t GetWidth() const;
+    
+    virtual uint32_t GetHeight() const;
+    
+    virtual uint32_t GetDepth() const;
+    
+    id<MTLTexture> getMTLTexture() {return mTexture;};
+    
 private:
     id<MTLTexture> mTexture;
     id<MTLCommandQueue> mCommandQueue;
     id<MTLDevice> mDevice;
 };
+
+using MTLTextureBasePtr = std::shared_ptr<MTLTextureBase>;
 
 #pragma mark MTLRCTexture2D
 
@@ -86,6 +96,21 @@ public:
     {
         return MTLTextureBase::IsValid();
     }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return MTLTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return MTLTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return MTLTextureBase::GetDepth();
+    }
 };
 
 using MTLRCTexture2DPtr = std::shared_ptr<MTLRCTexture2D>;
@@ -98,6 +123,33 @@ public:
     MTLRCTexture3D(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes);
     
     ~MTLRCTexture3D();
+    
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage);
+    
+    virtual bool IsValid() const
+    {
+        return MTLTextureBase::IsValid();
+    }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return MTLTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return MTLTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return MTLTextureBase::GetDepth();
+    }
 };
 
 using MTLRCTexture3DPtr = std::shared_ptr<MTLRCTexture3D>;
@@ -110,6 +162,33 @@ public:
     MTLRCTextureCube(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes);
     
     ~MTLRCTextureCube();
+    
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage);
+    
+    virtual bool IsValid() const
+    {
+        return MTLTextureBase::IsValid();
+    }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return MTLTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return MTLTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return MTLTextureBase::GetDepth();
+    }
 };
 
 using MTLRCTextureCubePtr = std::shared_ptr<MTLRCTextureCube>;
@@ -122,9 +201,45 @@ public:
     MTLRCTexture2DArray(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes);
     
     ~MTLRCTexture2DArray();
+    
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage);
+    
+    virtual bool IsValid() const
+    {
+        return MTLTextureBase::IsValid();
+    }
+    
+    virtual uint32_t GetWidth() const
+    {
+        return MTLTextureBase::GetWidth();
+    }
+    
+    virtual uint32_t GetHeight() const
+    {
+        return MTLTextureBase::GetHeight();
+    }
+    
+    virtual uint32_t GetDepth() const
+    {
+        return MTLTextureBase::GetDepth();
+    }
 };
 
 using MTLRCTexture2DArrayPtr = std::shared_ptr<MTLRCTexture2DArray>;
+
+//创建默认的深度纹理和模板纹理
+id<MTLTexture> createDepthStencilTexture(id<MTLDevice> device, uint32_t width, uint32_t height);
+
+//创建深度纹理
+id<MTLTexture> createDepthTexture(id<MTLDevice> device, uint32_t width, uint32_t height);
+
+//创建模板纹理
+id<MTLTexture> createStencilTexture(id<MTLDevice> device, uint32_t width, uint32_t height);
 
 NAMESPACE_RENDERCORE_END
 

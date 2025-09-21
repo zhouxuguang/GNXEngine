@@ -29,6 +29,12 @@ public:
      @return ture or false
      */
     virtual bool IsValid() const = 0;
+    
+    virtual uint32_t GetWidth() const = 0;
+    
+    virtual uint32_t GetHeight() const = 0;
+    
+    virtual uint32_t GetDepth() const = 0;
 };
 
 typedef std::shared_ptr<RCTexture> RCTexturePtr;
@@ -98,6 +104,23 @@ class RCTextureCube : public RCTexture
 public:
     RCTextureCube(){}
     virtual ~RCTextureCube(){}
+    
+    /**
+       更新纹理数据
+     
+     @param rect 更新纹理区域
+     @param level 纹理mipmap等级
+     @param slice 切片索引
+     @param pixelBytes 纹理数据
+     @param bytesPerRow 每行的字节数
+     @param bytesPerImage 每个切片的字节数
+     */
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage) = 0;
 };
 
 using RCTextureCubePtr = std::shared_ptr<RCTextureCube>;
@@ -111,6 +134,23 @@ class RCTexture2DArray : public RCTexture
 public:
     RCTexture2DArray(){}
     virtual ~RCTexture2DArray(){}
+    
+    /**
+       更新纹理数据
+     
+     @param rect 更新纹理区域
+     @param level 纹理mipmap等级
+     @param slice 切片索引
+     @param pixelBytes 纹理数据
+     @param bytesPerRow 每行的字节数
+     @param bytesPerImage 每个切片的字节数
+     */
+    virtual void ReplaceRegion(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow,
+                        uint32_t bytesPerImage) = 0;
 };
 
 using RCTexture2DArrayPtr = std::shared_ptr<RCTexture2DArray>;

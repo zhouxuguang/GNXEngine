@@ -24,7 +24,7 @@ public:
     static TextureDescriptor getTextureDescriptor(const VImage& image);
 };
 
-TextureCubePtr LoadEquirectangularMap(const std::string& fileName);
+RCTextureCubePtr LoadEquirectangularMap(const std::string& fileName);
 
 NS_RENDERSYSTEM_END
 

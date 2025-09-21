@@ -136,12 +136,12 @@ bool Material::GetValue(const std::string& name, float &value)
     return false;
 }
 
-void Material::SetTexture(const std::string& name, Texture2DPtr texture)
+void Material::SetTexture(const std::string& name, RCTexturePtr texture)
 {
     mTextureMapProps.emplace(name, texture);
 }
 
-Texture2DPtr Material::GetTexture(const std::string& name)
+RCTexturePtr Material::GetTexture(const std::string& name)
 {
     auto iter = mTextureMapProps.find(name);
     if (iter != mTextureMapProps.end())

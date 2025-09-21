@@ -12,12 +12,10 @@
 #include "IndexBuffer.h"
 #include "VertexBuffer.h"
 #include "UniformBuffer.h"
-#include "TextureCube.h"
 #include "GraphicsPipeline.h"
 #include "DeviceExtension.h"
 #include "CommandBuffer.h"
 #include "RenderPass.h"
-#include "RenderTexture.h"
 #include "ComputeBuffer.h"
 #include "RCTexture.h"
 
@@ -69,22 +67,6 @@ public:
     virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const = 0;
     
     /**
-     根据纹理描述创建纹理对象
-
-     @param des the description for texture to be created
-     @return shared pointer to texture object
-     */
-    virtual Texture2DPtr CreateTextureWithDescriptor(const TextureDescriptor& des) const = 0;
-    
-    /**
-     根据纹理描述创建立方体纹理对象
-
-     @param desArray the description for texture to be created
-     @return shared pointer to texturecube object
-     */
-    virtual TextureCubePtr CreateTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const = 0;
-    
-    /**
      根据采样描述创建纹理采样器
 
      @param des the description for sampler to be created.
@@ -120,11 +102,6 @@ public:
     virtual CommandBufferPtr CreateCommandBuffer() = 0;
     
     /**
-     创建renderTexture
-     */
-    virtual RenderTexturePtr CreateRenderTexture(const TextureDescriptor& des) const = 0;
-    
-    /**
      * @brief Create a Texture2D object
      * 
      * @param format 格式
@@ -139,6 +116,58 @@ public:
                                     uint32_t width,
                                     uint32_t height,
                                     uint32_t levels) const = 0;
+
+    /**
+     * @brief Create a Texture3D object
+     * 
+     * @param format 格式
+     * @param usage 用途
+     * @param width 宽
+     * @param height 高
+     * @param depth 深度
+     * @param levels mipmap层数
+     * @return RCTexture3DPtr 
+     */
+    virtual RCTexture3DPtr CreateTexture3D(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t depth,
+                                    uint32_t levels) const = 0;
+
+    /**
+     * @brief Create a TextureCube object
+     * 
+     * @param format 格式
+     * @param usage 用途
+     * @param width 宽
+     * @param height 高
+     * @param levels mipmap的层数
+     * @return RCTextureCubePtr 
+     */
+    virtual RCTextureCubePtr CreateTextureCube(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t levels) const = 0;
+
+    /**
+     * @brief Create a Texture2DArray object
+     * 
+     * @param format 格式
+     * @param usage 用途
+     * @param width 宽
+     * @param height 高
+     * @param levels mipmap的层数
+     * @param arraySize 数组长度
+     * @return RCTexture2DArrayPtr 
+     */
+    virtual RCTexture2DArrayPtr CreateTexture2DArray(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t levels,
+                                    uint32_t arraySize) const = 0;
 };
 
 typedef std::shared_ptr<RenderDevice> RenderDevicePtr;

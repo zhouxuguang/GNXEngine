@@ -13,9 +13,6 @@
 #include "VulkanCommandBuffer.h"
 #include "VKComputeBuffer.h"
 #include "VKComputePipeline.h"
-#include "VKTexture2D.h"
-#include "VKTextureCube.h"
-#include "VKRenderTexture.h"
 #include "VKUniformBuffer.h"
 #include "VKComputePipeline.h"
 #include "VKGraphicsPipeline.h"
@@ -139,41 +136,6 @@ void VKRenderDevice::Resize(uint32_t width, uint32_t height)
     
     // 创建相关同步对象
     CreateSyncObject();
-    
-    return;
-    
-    // for test
-    uint8_t data[4] = {4, 1, 2, 3};
-    CreateVertexBufferWithBytes(data, 4, StorageModeShared);
-    
-    TextureDescriptor des;
-    des.width = 1;
-    des.height = 1;
-    des.bytesPerRow = 4;
-    Texture2DPtr texture = CreateTextureWithDescriptor(des);
-    texture->SetTextureData(data);
-    
-    std::vector<TextureDescriptor> desArray;
-    desArray.push_back(des);
-    TextureCubePtr textureCube = CreateTextureCubeWithDescriptor(desArray);
-    textureCube->SetTextureData(kCubeFacePX, 4, data);
-    textureCube->SetTextureData(kCubeFaceNX, 4, data);
-    textureCube->SetTextureData(kCubeFacePY, 4, data);
-    textureCube->SetTextureData(kCubeFaceNY, 4, data);
-    textureCube->SetTextureData(kCubeFacePZ, 4, data);
-    textureCube->SetTextureData(kCubeFaceNZ, 4, data);
-    
-    IndexBufferPtr indexBuffer = CreateIndexBufferWithBytes(data, 4, IndexType_UInt);
-    
-    UniformBufferPtr uniformBuffer = CreateUniformBufferWithSize(4);
-    uniformBuffer->SetData(data, 0, 4);
-    
-    ComputeBufferPtr computeBuffer = CreateComputeBuffer(data, 4, StorageModePrivate);
-    
-    CommandBufferPtr commandBuffer = CreateCommandBuffer();
-    RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
-    renderEncoder->EndEncode();
-    commandBuffer->PresentFrameBuffer();
 }
 
 VertexBufferPtr VKRenderDevice::CreateVertexBufferWithLength(uint32_t size) const
@@ -199,16 +161,6 @@ ComputeBufferPtr VKRenderDevice::CreateComputeBuffer(const void* buffer, uint32_
 IndexBufferPtr VKRenderDevice::CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const
 {
     return std::make_shared<VKIndexBuffer>(mVulkanContext, indexType, buffer, size);
-}
-
-Texture2DPtr VKRenderDevice::CreateTextureWithDescriptor(const TextureDescriptor& des) const
-{
-    return std::make_shared<VKTexture2D>(mVulkanContext, des);
-}
-
-TextureCubePtr VKRenderDevice::CreateTextureCubeWithDescriptor(const std::vector<TextureDescriptor>& desArray) const
-{
-    return std::make_shared<VKTextureCube>(mVulkanContext, desArray);
 }
 
 TextureSamplerPtr VKRenderDevice::CreateSamplerWithDescriptor(const SamplerDescriptor& des) const
@@ -245,17 +197,20 @@ ComputePipelinePtr VKRenderDevice::CreateComputePipeline(const ShaderCode& shade
     return std::make_shared<VKComputePipeline>(mVulkanContext, shaderSource);
 }
 
-RenderTexturePtr VKRenderDevice::CreateRenderTexture(const TextureDescriptor& des) const
-{
-    return std::make_shared<VKRenderTexture>(mVulkanContext, des);
-}
-
 RCTexture2DPtr VKRenderDevice::CreateTexture2D(TextureFormat format,
                                     TextureUsage usage,
                                     uint32_t width,
                                     uint32_t height,
                                     uint32_t levels) const
 {
+    if (0 == width || 0 == height || 0 == levels)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    VkFormat vkformat = VulkanBufferUtil::ConvertTextureFormat(format);
+    
     VkImageCreateInfo imageCreateInfo = {};
     imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -264,15 +219,125 @@ RCTexture2DPtr VKRenderDevice::CreateTexture2D(TextureFormat format,
     imageCreateInfo.extent.depth = 1;
     imageCreateInfo.mipLevels = levels;
     imageCreateInfo.arrayLayers = 1;
-    imageCreateInfo.format = VulkanBufferUtil::ConvertTextureFormat(format);
+    imageCreateInfo.format = vkformat;
     imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageCreateInfo.usage = VulkanBufferUtil::ConvertTextureUsage(usage);
+    imageCreateInfo.usage = VulkanBufferUtil::ConvertTextureUsage(usage, vkformat);
     imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageCreateInfo.flags = 0;
     
     return std::make_shared<VKRCTexture2D>(mVulkanContext, imageCreateInfo);
+}
+
+RCTexture3DPtr VKRenderDevice::CreateTexture3D(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t depth,
+                                    uint32_t levels) const
+{
+    if (0 == width || 0 == height || 0 == depth || 0 == levels)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    VkFormat vkformat = VulkanBufferUtil::ConvertTextureFormat(format);
+    
+    VkImageCreateInfo imageCreateInfo = {};
+    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_3D;
+    imageCreateInfo.extent.width = width;
+    imageCreateInfo.extent.height = height;
+    imageCreateInfo.extent.depth = depth;
+    imageCreateInfo.mipLevels = levels;
+    imageCreateInfo.arrayLayers = 1;
+    imageCreateInfo.format = vkformat;
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageCreateInfo.usage = VulkanBufferUtil::ConvertTextureUsage(usage, vkformat);
+    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.flags = 0;
+    
+    return std::make_shared<VKRCTexture3D>(mVulkanContext, imageCreateInfo);
+}
+
+RCTextureCubePtr VKRenderDevice::CreateTextureCube(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t levels) const
+{
+    if (0 == width || 0 == height || 0 == levels)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    // 立方体纹理宽高需要一致
+    if (width != height)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    VkFormat vkformat = VulkanBufferUtil::ConvertTextureFormat(format);
+    
+    VkImageCreateInfo imageCreateInfo = {};
+    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.extent.width = width;
+    imageCreateInfo.extent.height = height;
+    imageCreateInfo.extent.depth = 1;
+    imageCreateInfo.mipLevels = levels;
+    // Cube faces count as array layers in Vulkan
+    imageCreateInfo.arrayLayers = 6;
+    imageCreateInfo.format = vkformat;
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageCreateInfo.usage = VulkanBufferUtil::ConvertTextureUsage(usage, vkformat);
+    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    // This flag is required for cube map images
+    imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    
+    return std::make_shared<VKRCTextureCube>(mVulkanContext, imageCreateInfo);
+}
+
+RCTexture2DArrayPtr VKRenderDevice::CreateTexture2DArray(TextureFormat format,
+                                    TextureUsage usage,
+                                    uint32_t width,
+                                    uint32_t height,
+                                    uint32_t levels,
+                                    uint32_t arraySize) const
+{
+    if (0 == width || 0 == height || 0 == levels)
+    {
+        assert(false);
+        return nullptr;
+    }
+    
+    VkFormat vkformat = VulkanBufferUtil::ConvertTextureFormat(format);
+    
+    VkImageCreateInfo imageCreateInfo = {};
+    imageCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.extent.width = width;
+    imageCreateInfo.extent.height = height;
+    imageCreateInfo.extent.depth = 1;
+    imageCreateInfo.mipLevels = levels;
+    imageCreateInfo.arrayLayers = arraySize;
+    imageCreateInfo.format = vkformat;
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageCreateInfo.usage = VulkanBufferUtil::ConvertTextureUsage(usage, vkformat);
+    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.flags = 0;
+    
+    return std::make_shared<VKRCTexture2DArray>(mVulkanContext, imageCreateInfo);
 }
 
 CommandBufferPtr VKRenderDevice::CreateCommandBuffer()

@@ -131,7 +131,7 @@ int getNumMipMapLevels2D(int w, int h)
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-TextureCubePtr LoadEquirectangularMap(const std::string& fileName)
+RCTextureCubePtr LoadEquirectangularMap(const std::string& fileName)
 {
     int w, h, comp;
     float* img = stbi_loadf(fileName.c_str(), &w, &h, &comp, 4);
@@ -141,53 +141,20 @@ TextureCubePtr LoadEquirectangularMap(const std::string& fileName)
     Bitmap out = isEquirectangular ? convertEquirectangularMapToVerticalCross(in) : in;
     stbi_image_free(img);
     Bitmap cubemap = convertVerticalCrossToCubeMapFaces(out);
-
-    const int numMipmaps = getNumMipMapLevels2D(cubemap.w_, cubemap.h_);
-
-//    glTextureParameteri(handle_, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-//    glTextureParameteri(handle_, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-//    glTextureParameteri(handle_, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-//    glTextureParameteri(handle_, GL_TEXTURE_BASE_LEVEL, 0);
-//    glTextureParameteri(handle_, GL_TEXTURE_MAX_LEVEL, numMipmaps-1);
-//    glTextureParameteri(handle_, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-//    glTextureParameteri(handle_, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-//    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-//    glTextureStorage2D(handle_, numMipmaps, GL_RGB32F, cubemap.w_, cubemap.h_);
-//    const uint8_t* data = cubemap.data_.data();
-//
-//    for (unsigned i = 0; i != 6; ++i)
-//    {
-//        glTextureSubImage3D(handle_, 0, 0, 0, i, cubemap.w_, cubemap.h_, 1, GL_RGB, GL_FLOAT, data);
-//        data += cubemap.w_ * cubemap.h_ * cubemap.comp_ * Bitmap::getBytesPerComponent(cubemap.fmt_);
-//    }
-//
-//    glGenerateTextureMipmap(handle_);
     
-    std::vector<TextureDescriptor> cubeDes;
-    TextureDescriptor des;
-    des.width = cubemap.w_;
-    des.height = cubemap.h_;
-    des.format = kTexFormatRGBA32Float;
-    des.bytesPerRow = cubemap.w_ * cubemap.comp_ * Bitmap::getBytesPerComponent(cubemap.fmt_);
-    des.mipmaped = true;
-    cubeDes.push_back(des);
-    cubeDes.push_back(des);
-    cubeDes.push_back(des);
-    cubeDes.push_back(des);
-    cubeDes.push_back(des);
-    cubeDes.push_back(des);
-    
-    TextureCubePtr cubeMapPtr = GetRenderDevice()->CreateTextureCubeWithDescriptor(cubeDes);
+    RCTextureCubePtr cubeMapPtr = GetRenderDevice()->CreateTextureCube(kTexFormatRGBA32Float,
+                                                TextureUsageShaderRead, cubemap.w_, cubemap.h_, 1);
     
     const uint8_t* data = cubemap.data_.data();
 
     for (int i = 0; i != 6; ++i)
     {
-        //glTextureSubImage3D(handle_, 0, 0, 0, i, cubemap.w_, cubemap.h_, 1, GL_RGB, GL_FLOAT, data);
         int imageSize = cubemap.w_ * cubemap.h_ * cubemap.comp_ * Bitmap::getBytesPerComponent(cubemap.fmt_);
         
         int face = (int)kCubeFacePX + i;
-        cubeMapPtr->SetTextureData((CubemapFace)face, imageSize, data);
+        Rect2D rect(0, 0, cubemap.w_, cubemap.h_);
+        cubeMapPtr->ReplaceRegion(rect, 0, face, data,
+                                  cubemap.w_ * cubemap.comp_ * Bitmap::getBytesPerComponent(cubemap.fmt_), 0);
         data += cubemap.w_ * cubemap.h_ * cubemap.comp_ * Bitmap::getBytesPerComponent(cubemap.fmt_);
     }
     

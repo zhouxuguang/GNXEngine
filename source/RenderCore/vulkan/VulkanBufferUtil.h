@@ -126,7 +126,7 @@ public:
     
     static VkFormat ConvertTextureFormat(TextureFormat texFormat);
     
-    static VkImageUsageFlagBits ConvertTextureUsage(TextureUsage textureUsage);
+    static VkImageUsageFlags ConvertTextureUsage(TextureUsage textureUsage, VkFormat format);
     
     // 获得格式对应的大小
     static uint32_t GetFormatSize(VkFormat format);
