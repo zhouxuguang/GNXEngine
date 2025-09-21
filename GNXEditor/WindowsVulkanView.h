@@ -45,10 +45,10 @@ private:
 	uint32_t mHeight = 0;
 
 	//test
-    RenderTexturePtr renderTexture = nullptr;
-    RenderTexturePtr depthStencilTexture = nullptr;
+    RCTexturePtr renderTexture = nullptr;
+	RCTexturePtr depthStencilTexture = nullptr;
     SceneManager* sceneManager = nullptr;
-    RenderTexturePtr computeTexture = nullptr;
+	RCTexturePtr computeTexture = nullptr;
     ComputePipelinePtr computePipeline = nullptr;
     
     uint64_t lastTime = 0;
