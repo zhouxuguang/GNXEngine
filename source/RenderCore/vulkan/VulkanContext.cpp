@@ -15,7 +15,7 @@ NAMESPACE_RENDERCORE_BEGIN
 
 USING_NS_BASELIB
 
-VKAPI_ATTR VkBool32 VKAPI_CALL debug_utils_messenger_callback(
+static VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
     VkDebugUtilsMessageTypeFlagsEXT message_type,
     const VkDebugUtilsMessengerCallbackDataEXT *callback_data,
@@ -73,7 +73,7 @@ static void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT&
 	createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
 	createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
 	createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-	createInfo.pfnUserCallback = debug_utils_messenger_callback;
+	createInfo.pfnUserCallback = DebugUtilsMessengerCallback;
 }
 
 bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
@@ -107,12 +107,12 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
     std::vector<VkExtensionProperties> available_instance_extensions(instance_extension_count);
     vkEnumerateInstanceExtensionProperties(nullptr, &instance_extension_count, available_instance_extensions.data());
     
-    bool debug_utils = false;
+    bool debugUtils = false;
     for (auto &available_extension : available_instance_extensions)
     {
         if (strcmp(available_extension.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0)
         {
-            debug_utils = true;
+            debugUtils = true;
             instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
         if (strcmp(available_extension.extensionName, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) == 0)
@@ -259,16 +259,11 @@ bool SelectPhysicalDevice(VulkanContext& context)
         assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
         
         bool supportsSwapchain = false;
-        context.debugMarkersSupported = false;
         for (uint32_t k = 0; k < extensionCount; ++k) 
         {
             if (!strcmp(context.extensionNames[k], VK_KHR_SWAPCHAIN_EXTENSION_NAME))
             {
                 supportsSwapchain = true;
-            }
-            if (!strcmp(context.extensionNames[k], VK_EXT_DEBUG_MARKER_EXTENSION_NAME))
-            {
-                context.debugMarkersSupported = true;
             }
         }
         if (!supportsSwapchain) continue;
@@ -296,17 +291,6 @@ bool CreateVirtualDevice(VulkanContext& context)
     }
 
     deviceExtensionNames.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-
-#ifdef ENABLE_VULKAN_DEBUG
-    if (context.debugMarkersSupported) 
-    {
-        deviceExtensionNames.push_back(VK_EXT_DEBUG_MARKER_EXTENSION_NAME);
-    }
-    if (context.debugReportCallbackExt)
-    {
-        deviceExtensionNames.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-    }
-#endif
     
     // 扩展动态状态
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeaturesEXT = {};
