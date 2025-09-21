@@ -48,10 +48,6 @@ struct VulkanContext
     std::vector<VkQueue> availableTransferQueues;    // 所有可用的传输队列 
 
     VkSurfaceKHR surfaceKhr = VK_NULL_HANDLE;     //surface
-    
-    bool debugMarkersSupported;     // 是否支持调试
-    VkDebugReportCallbackEXT debugReportCallbackExt;   // debugreport
-    
     VmaAllocator vmaAllocator;    //内存分配器
     VkSampleCountFlagBits numSamples = VK_SAMPLE_COUNT_1_BIT;
     
