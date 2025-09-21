@@ -18,6 +18,8 @@ class VKTextureBase : public RCTexture
 public:
     VKTextureBase(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo);
     virtual ~VKTextureBase();
+
+    void CreateImageViews(const VkImageCreateInfo& imageCreateInfo);
     
     /**
        更新纹理数据
@@ -112,6 +114,11 @@ public:
     {
         return VKTextureBase::GetDepth();
     }
+
+	virtual TextureType GetTextureType() const
+	{
+		return TextureType_2D;
+	}
 };
 
 using VKRCTexture2DPtr = std::shared_ptr<VKRCTexture2D>;
@@ -151,6 +158,11 @@ public:
     {
         return VKTextureBase::GetDepth();
     }
+
+	virtual TextureType GetTextureType() const
+	{
+		return TextureType_3D;
+	}
 };
 
 using VKRCTexture3DPtr = std::shared_ptr<VKRCTexture3D>;
@@ -190,6 +202,11 @@ public:
     {
         return VKTextureBase::GetDepth();
     }
+
+	virtual TextureType GetTextureType() const
+	{
+		return TextureType_CUBE;
+	}
 };
 
 using VKRCTextureCubePtr = std::shared_ptr<VKRCTextureCube>;
@@ -229,6 +246,11 @@ public:
     {
         return VKTextureBase::GetDepth();
     }
+
+	virtual TextureType GetTextureType() const
+	{
+		return TextureType_2D_ARRAY;
+	}
 };
 
 using VKRCTexture2DArrayPtr = std::shared_ptr<VKRCTexture2DArray>;

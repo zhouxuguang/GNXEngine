@@ -178,7 +178,12 @@ bool SelectPhysicalDevice(VulkanContext& context)
         return ret;
     }
 
-    for (uint32_t i = 0; i < gpuDevices.size(); ++i)
+    uint32_t start = 0;
+    if (gpuDevices.size() > 1)
+    {
+        start = 1;
+    }
+    for (uint32_t i = start; i < gpuDevices.size(); ++i)
     {
         VkPhysicalDevice physicalDevice = gpuDevices[i];
         vkGetPhysicalDeviceProperties(physicalDevice, &context.physicalDeviceProperties);
@@ -477,8 +482,7 @@ bool CreateVirtualDevice(VulkanContext& context)
         return false;
     }
 
-    context.vulkanExtension.enableHostImageCopy = (hostImageCopyFeatures.hostImageCopy == VK_TRUE && 
-        hostImageCopyProperties.identicalMemoryTypeRequirements);
+    context.vulkanExtension.enableHostImageCopy = (hostImageCopyFeatures.hostImageCopy == VK_TRUE);
     
     volkLoadDevice(context.device);
     

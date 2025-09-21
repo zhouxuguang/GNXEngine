@@ -11,6 +11,69 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
+{
+    //创建图像视图
+    VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    if (VulkanBufferUtil::IsDepthStencilFormat(mFormat))
+    {
+        imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+
+    VkImageView imageView = VK_NULL_HANDLE;
+    if (GetTextureType() == TextureType_2D)
+    {
+        imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat,
+            nullptr, imageAspectFlags, 1);
+    }
+    else if (GetTextureType() == TextureType_3D)
+    {
+        //
+    }
+
+    else if (GetTextureType() == TextureType_CUBE)
+    {
+        VkImageViewCreateInfo viewCreateInfo = {};
+        viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        // Cube map view type
+        viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+        viewCreateInfo.format = mFormat;
+        viewCreateInfo.subresourceRange = { imageAspectFlags, 0, 1, 0, 1 };
+        // 6 array layers (faces)
+        viewCreateInfo.subresourceRange.layerCount = 1;
+        // Set number of mip levels
+        viewCreateInfo.subresourceRange.levelCount = imageCreateInfo.mipLevels;
+        viewCreateInfo.image = mImage;
+        vkCreateImageView(mContext->device, &viewCreateInfo, nullptr, &imageView);
+
+		/*imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat,
+			nullptr, imageAspectFlags, 1);*/
+    }
+     
+    mVulkanImageViewPtr = std::make_shared<VulkanImageView>(mContext->device, imageView);
+    
+    // 针对rt，还需要创建特殊的view
+    if ((imageCreateInfo.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT ||
+        (imageCreateInfo.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+    {
+        uint32_t viewCount = 0;
+        if (GetTextureType() == TextureType_2D_ARRAY)
+        {
+            viewCount = imageCreateInfo.arrayLayers;
+        }
+        else if (GetTextureType() == TextureType_3D)
+        {
+            viewCount = mDepth;
+        }
+
+        if (viewCount > 1)
+        {
+            VkImageView imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat,
+            nullptr, imageAspectFlags, 1);
+        }
+    }
+}
+
 VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo) : mContext(context)
 {
     // 判断该格式是否支持HostImageCopy
@@ -50,38 +113,6 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
     mWidth = imageCreateInfoCopy.extent.width;
     mHeight = imageCreateInfoCopy.extent.height;
     mDepth = imageCreateInfoCopy.extent.depth;
-
-    //创建图像视图
-    VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-    if (VulkanBufferUtil::IsDepthStencilFormat(mFormat))
-    {
-        imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    }
-    
-    VkImageView imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat,
-            nullptr, imageAspectFlags, 1);
-    mVulkanImageViewPtr = std::make_shared<VulkanImageView>(mContext->device, imageView);
-    
-    // 针对rt，还需要创建特殊的view
-    if ((imageCreateInfoCopy.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT ||
-        (imageCreateInfoCopy.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
-    {
-        uint32_t viewCount = 0;
-        if (GetTextureType() == TextureType_2D_ARRAY)
-        {
-            viewCount = imageCreateInfoCopy.arrayLayers;
-        }
-        if (GetTextureType() == TextureType_3D)
-        {
-            viewCount = mDepth;
-        }
-
-        if (viewCount > 1)
-        {
-            VkImageView imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat,
-            nullptr, imageAspectFlags, 1);
-        }
-    }
 }
 
 VKTextureBase::~VKTextureBase()
