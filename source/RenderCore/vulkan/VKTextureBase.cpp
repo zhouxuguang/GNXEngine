@@ -6,6 +6,7 @@
 //
 
 #include "VKTextureBase.h"
+#include "TextureFormat.h"
 #include "VulkanBufferUtil.h"
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -51,8 +52,36 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
     mDepth = imageCreateInfoCopy.extent.depth;
 
     //创建图像视图
-    VkImageView imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat, nullptr, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    if (VulkanBufferUtil::IsDepthStencilFormat(mFormat))
+    {
+        imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+    
+    VkImageView imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat,
+            nullptr, imageAspectFlags, 1);
     mVulkanImageViewPtr = std::make_shared<VulkanImageView>(mContext->device, imageView);
+    
+    // 针对rt，还需要创建特殊的view
+    if ((imageCreateInfoCopy.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT ||
+        (imageCreateInfoCopy.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+    {
+        uint32_t viewCount = 0;
+        if (GetTextureType() == TextureType_2D_ARRAY)
+        {
+            viewCount = imageCreateInfoCopy.arrayLayers;
+        }
+        if (GetTextureType() == TextureType_3D)
+        {
+            viewCount = mDepth;
+        }
+
+        if (viewCount > 1)
+        {
+            VkImageView imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat,
+            nullptr, imageAspectFlags, 1);
+        }
+    }
 }
 
 VKTextureBase::~VKTextureBase()
@@ -107,26 +136,28 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
         hostImageLayoutTransitionInfo.subresourceRange = subresourceRange;
 
         // Get the function pointers required host image copies
-        PFN_vkCopyMemoryToImageEXT vkCopyMemoryToImageEXT = (PFN_vkCopyMemoryToImageEXT)vkGetDeviceProcAddr(mContext->device, "vkCopyMemoryToImageEXT");
-        PFN_vkTransitionImageLayoutEXT vkTransitionImageLayoutEXT = (PFN_vkTransitionImageLayoutEXT)vkGetDeviceProcAddr(mContext->device, "vkTransitionImageLayoutEXT");
+        PFN_vkCopyMemoryToImageEXT vkCopyMemoryToImageEXT = 
+                (PFN_vkCopyMemoryToImageEXT)vkGetDeviceProcAddr(mContext->device, "vkCopyMemoryToImageEXT");
+        PFN_vkTransitionImageLayoutEXT vkTransitionImageLayoutEXT = 
+                (PFN_vkTransitionImageLayoutEXT)vkGetDeviceProcAddr(mContext->device, "vkTransitionImageLayoutEXT");
 
         vkTransitionImageLayoutEXT(mContext->device, 1, &hostImageLayoutTransitionInfo);
 
         // Setup host to image copy
-        VkMemoryToImageCopyEXT memory_to_image_copy = {};
+        VkMemoryToImageCopyEXT memoryToImageCopy = {};
 
-        memory_to_image_copy.sType = VK_STRUCTURE_TYPE_MEMORY_TO_IMAGE_COPY_EXT;
-        memory_to_image_copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        memory_to_image_copy.imageSubresource.mipLevel = level;
-        memory_to_image_copy.imageSubresource.baseArrayLayer = slice;
-        memory_to_image_copy.imageSubresource.layerCount = 1;
-        memory_to_image_copy.imageOffset.x = rect.offsetX;
-        memory_to_image_copy.imageOffset.y = rect.offsetY;
-        memory_to_image_copy.imageOffset.z = 0;      // 3d纹理这里如何处理
-        memory_to_image_copy.imageExtent.width = rect.width;
-        memory_to_image_copy.imageExtent.height = rect.height;
-        memory_to_image_copy.imageExtent.depth = 1;
-        memory_to_image_copy.pHostPointer = pixelBytes;
+        memoryToImageCopy.sType = VK_STRUCTURE_TYPE_MEMORY_TO_IMAGE_COPY_EXT;
+        memoryToImageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        memoryToImageCopy.imageSubresource.mipLevel = level;
+        memoryToImageCopy.imageSubresource.baseArrayLayer = slice;
+        memoryToImageCopy.imageSubresource.layerCount = 1;
+        memoryToImageCopy.imageOffset.x = rect.offsetX;
+        memoryToImageCopy.imageOffset.y = rect.offsetY;
+        memoryToImageCopy.imageOffset.z = 0;      // 3d纹理这里如何处理
+        memoryToImageCopy.imageExtent.width = rect.width;
+        memoryToImageCopy.imageExtent.height = rect.height;
+        memoryToImageCopy.imageExtent.depth = 1;
+        memoryToImageCopy.pHostPointer = pixelBytes;
 
         // With the image in the correct layout and copy information for all mip levels setup, we can now issue the copy to our taget image from the host
         // The implementation will then convert this to an implementation specific optimal tiling layout
@@ -135,7 +166,7 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
         copyMemoryInfo.dstImage = mImage;
         copyMemoryInfo.dstImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         copyMemoryInfo.regionCount = 1;
-        copyMemoryInfo.pRegions = &memory_to_image_copy;
+        copyMemoryInfo.pRegions = &memoryToImageCopy;
 
         vkCopyMemoryToImageEXT(mContext->device, &copyMemoryInfo);
     }
