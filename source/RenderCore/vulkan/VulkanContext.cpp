@@ -387,6 +387,12 @@ bool CreateVirtualDevice(VulkanContext& context)
     {
         deviceExtensionNames.push_back(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
     }
+    
+    // 如果支持，添加 VK_KHR_portability_subset
+    if (context.vulkanExtension.enablePortabilitySubset)
+    {
+        deviceExtensionNames.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    }
 
 	VkPhysicalDeviceProperties2 deviceProperties = {};
 	deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;

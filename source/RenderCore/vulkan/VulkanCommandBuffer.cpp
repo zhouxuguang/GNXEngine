@@ -58,7 +58,7 @@ RenderEncoderPtr VulkanCommandBuffer::CreateDefaultRenderEncoder() const
     VkRenderingAttachmentInfoKHR color_attachment_info = {};
 	color_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
 	color_attachment_info.imageView = imageView;
-	color_attachment_info.imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL_KHR;
+	color_attachment_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	color_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	color_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	color_attachment_info.clearValue = clearColor;

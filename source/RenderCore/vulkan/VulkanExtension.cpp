@@ -15,6 +15,7 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
 	InitExtendedDynamicState(physicalDevice);
 
 	enabledDynamicRendering = ExtensionSupported(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    enablePortabilitySubset = ExtensionSupported(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
 }
 
 void VulkanExtension::InitExtendedDynamicState(VkPhysicalDevice physicalDevice)
