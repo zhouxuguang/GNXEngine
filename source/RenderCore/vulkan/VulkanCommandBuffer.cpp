@@ -165,20 +165,20 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
     {
         VKTextureBasePtr vkRenderTexture = std::dynamic_pointer_cast<VKTextureBase>(renderPass.depthAttachment->texture);
         
-        VkRenderingAttachmentInfoKHR depth_attachment_info = {};
-        depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-        depth_attachment_info.imageView = vkRenderTexture->GetImageView()->GetHandle();
-        depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        depth_attachment_info.loadOp = GetLoadOP(renderPass.depthAttachment->loadOp);
-        depth_attachment_info.storeOp = GetStoreOP(renderPass.depthAttachment->storeOp);
-        depth_attachment_info.clearValue.depthStencil.depth = renderPass.depthAttachment->clearDepth;
-        depth_attachment_info.clearValue.depthStencil.stencil = renderPass.stencilAttachment->clearStencil;
-        depthAttachments.push_back(depth_attachment_info);
+        VkRenderingAttachmentInfoKHR depthAttachmentInfo = {};
+        depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+        depthAttachmentInfo.imageView = vkRenderTexture->GetImageView()->GetHandle();
+        depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depthAttachmentInfo.loadOp = GetLoadOP(renderPass.depthAttachment->loadOp);
+        depthAttachmentInfo.storeOp = GetStoreOP(renderPass.depthAttachment->storeOp);
+        depthAttachmentInfo.clearValue.depthStencil.depth = renderPass.depthAttachment->clearDepth;
+        depthAttachmentInfo.clearValue.depthStencil.stencil = renderPass.stencilAttachment->clearStencil;
+        depthAttachments.push_back(depthAttachmentInfo);
         passFormat.depthFormat = vkRenderTexture->GetVKFormat();
         passImage.depthImage = vkRenderTexture->GetVKImage();
         passImageView.depthImage = vkRenderTexture->GetImageView()->GetHandle();
         
-        clearValues.push_back(depth_attachment_info.clearValue);
+        clearValues.push_back(depthAttachmentInfo.clearValue);
     }
    
     // 深度和模板缓冲绑定在一起的格式需要特殊处理
@@ -187,19 +187,19 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
     {
         VKTextureBasePtr vkRenderTexture = std::dynamic_pointer_cast<VKTextureBase>(renderPass.stencilAttachment->texture);
         
-        VkRenderingAttachmentInfoKHR stencil_attachment_info = {};
-        stencil_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-        stencil_attachment_info.imageView = vkRenderTexture->GetImageView()->GetHandle();
-        stencil_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-        stencil_attachment_info.loadOp = GetLoadOP(renderPass.stencilAttachment->loadOp);
-        stencil_attachment_info.storeOp = GetStoreOP(renderPass.stencilAttachment->storeOp);
-        stencil_attachment_info.clearValue.depthStencil.stencil = 0x0;
-        stencilAttachments.push_back(stencil_attachment_info);
+        VkRenderingAttachmentInfoKHR stencilAttachmentInfo = {};
+        stencilAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+        stencilAttachmentInfo.imageView = vkRenderTexture->GetImageView()->GetHandle();
+        stencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        stencilAttachmentInfo.loadOp = GetLoadOP(renderPass.stencilAttachment->loadOp);
+        stencilAttachmentInfo.storeOp = GetStoreOP(renderPass.stencilAttachment->storeOp);
+        stencilAttachmentInfo.clearValue.depthStencil.stencil = 0x0;
+        stencilAttachments.push_back(stencilAttachmentInfo);
         passFormat.stencilFormat = vkRenderTexture->GetVKFormat();
         passImage.stencilImage = vkRenderTexture->GetVKImage();
         passImageView.stencilImage = vkRenderTexture->GetImageView()->GetHandle();
         
-        clearValues.push_back(stencil_attachment_info.clearValue);
+        clearValues.push_back(stencilAttachmentInfo.clearValue);
     }
     
     VkRenderingInfoKHR renderingInfo = {};
