@@ -139,17 +139,15 @@ RenderTexturePtr TestImageGray()
     VImagePtr image = std::make_shared<VImage>();
     ImageDecoder::DecodeFile(strPath.c_str(), image.get());
     
-    TextureDescriptor inputDes = ImageTextureUtil::getTextureDescriptor(*image);
-    inputDes.format = kTexFormatRGBA32;
-    
-    Texture2DPtr inputTexture = GetRenderDevice()->CreateTextureWithDescriptor(inputDes);
-    inputTexture->SetTextureData(image->GetPixels());
-    
-    inputDes.usage = TextureUsage(TextureUsageShaderRead | TextureUsageShaderWrite);
-    inputDes.format = kTexFormatRGBA32;
-    //RenderTexturePtr outputTexture = getRenderDevice()->createRenderTexture(inputDes);
-    
-    Texture2DPtr outputTexture = GetRenderDevice()->CreateTextureWithDescriptor(inputDes);
+    RCTexture2DPtr inputTexture = GetRenderDevice()->CreateTexture2D(kTexFormatRGBA32,
+                                                                   TextureUsageShaderRead,
+                                                                   image->GetWidth(), image->GetHeight(), 1);
+    Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
+    inputTexture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
+
+    RCTexturePtr outputTexture = GetRenderDevice()->CreateTexture2D(kTexFormatRGBA32, 
+                                                                    TextureUsageRenderTarget,
+                                                                    image->GetWidth(), image->GetHeight(), 1);
     
     ComputePipelinePtr computePipeline = GetRenderDevice()->CreateComputePipeline(*computeShader);
     
@@ -163,8 +161,8 @@ RenderTexturePtr TestImageGray()
     uint32_t x, y ,z;
     computePipeline->GetThreadGroupSizes(x, y, z);
     
-    int groupX = (image->GetWidth() + x - 1) / x;
-    int groupY = (image->GetHeight() + y - 1) / y;
+    uint32_t groupX = (image->GetWidth() + x - 1) / x;
+    uint32_t groupY = (image->GetHeight() + y - 1) / y;
 
     computeEncoder->Dispatch(groupX, groupY, 1);
     

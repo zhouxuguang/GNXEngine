@@ -50,11 +50,11 @@ void MTLComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
     }
 }
 
-void MTLComputeEncoder::SetTexture(Texture2DPtr texture, uint32_t index)
+void MTLComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t index)
 {
     @autoreleasepool 
     {
-        MTLTexture2D* mtlTexture = (MTLTexture2D*)texture.get();
+        MTLTextureBase* mtlTexture = (MTLTextureBase*)texture.get();
         assert(mtlTexture);
         [mComputeEncoder setTexture:mtlTexture->getMTLTexture() atIndex:index];
     }
@@ -70,7 +70,7 @@ void MTLComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint
     }
 }
 
-void MTLComputeEncoder::SetOutTexture(Texture2DPtr texture, uint32_t index)
+void MTLComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t index)
 {
     MTLComputeEncoder::SetTexture(texture, index);
 }

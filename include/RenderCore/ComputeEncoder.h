@@ -33,11 +33,11 @@ public:
     
     virtual void SetBuffer(ComputeBufferPtr buffer, uint32_t index) = 0;
     
-    virtual void SetTexture(Texture2DPtr texture, uint32_t index) = 0;
+    virtual void SetTexture(RCTexturePtr texture, uint32_t index) = 0;
     
     virtual void SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint32_t index) = 0;
     
-    virtual void SetOutTexture(Texture2DPtr texture, uint32_t index) = 0;
+    virtual void SetOutTexture(RCTexturePtr texture, uint32_t index) = 0;
     
     virtual void SetOutTexture(RCTexturePtr texture, uint32_t mipLevel, uint32_t index) = 0;
     

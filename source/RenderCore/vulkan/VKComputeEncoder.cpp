@@ -70,16 +70,16 @@ void VKComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
     vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), bufSetOffset, 1, &writeDescriptorSet);
 }
 
-void VKComputeEncoder::SetTexture(Texture2DPtr texture, uint32_t index)
+void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t index)
 {
     if (!texture)
     {
         return;
     }
-    VKTexture2D *vkTexture2D = (VKTexture2D*)texture.get();
+    VKTextureBase *vkTexture2D = (VKTextureBase*)texture.get();
     
     VkDescriptorImageInfo imageInfo = {};
-    imageInfo.imageView = vkTexture2D->getVKImageView()->GetHandle();
+    imageInfo.imageView = vkTexture2D->GetImageView()->GetHandle();
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     imageInfo.sampler = nullptr;
     
@@ -113,16 +113,16 @@ void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint3
     vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), imageSetOffset, 1, &writeDescriptorSet);
 }
 
-void VKComputeEncoder::SetOutTexture(Texture2DPtr texture, uint32_t index)
+void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t index)
 {
     if (!texture)
     {
         return;
     }
-    VKTexture2D *vkRenderTex = (VKTexture2D*)texture.get();
+    VKTextureBase *vkRenderTex = (VKTextureBase*)texture.get();
     
     VkDescriptorImageInfo imageInfo = {};
-    imageInfo.imageView = vkRenderTex->getVKImageView()->GetHandle();
+    imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空

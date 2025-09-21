@@ -26,8 +26,6 @@ PostProcessing::PostProcessing(RenderDevicePtr renderDevice)
     
     ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
     ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
-    /*ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(*vertexShader, ShaderStage_Vertex);
-    ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(*fragmentShader, ShaderStage_Fragment);*/
 
     GraphicsShaderPtr graphicsShader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
 

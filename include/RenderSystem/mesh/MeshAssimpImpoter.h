@@ -71,7 +71,7 @@ private:
     void processIndice();
     
     // 处理材质相关
-    void ProcessMatTexture(MaterialPtr mat, aiMaterial *const material, const std::vector<Texture2DPtr>& fileTextures);
+    void ProcessMatTexture(MaterialPtr mat, aiMaterial *const material, const std::vector<RCTexturePtr>& fileTextures);
     
     // 加载动画片段
     std::vector<AnimationClipPtr> mAnimationClips;
