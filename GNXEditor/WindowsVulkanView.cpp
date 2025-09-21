@@ -197,19 +197,14 @@ void WindowsVulkanView::resize(int width, int height)
     mHeight = height;
 
     //test
-    TextureDescriptor textureDescriptor;
-    textureDescriptor.width = width;
-    textureDescriptor.height = height;
-    textureDescriptor.mipmaped = false;
-    textureDescriptor.format = kTexFormatRGBA16Float;
-    renderTexture = mRenderDevice->CreateRenderTexture(textureDescriptor);
-    computeTexture = mRenderDevice->CreateRenderTexture(textureDescriptor);
-    
-    textureDescriptor.width = width;
-    textureDescriptor.height = height;
-    textureDescriptor.mipmaped = false;
-    textureDescriptor.format = kTexFormatDepth32FloatStencil8;
-    depthStencilTexture = mRenderDevice->CreateRenderTexture(textureDescriptor);
+	renderTexture = mRenderDevice->CreateTexture2D(kTexFormatRGBA16Float,
+		TextureUsage::TextureUsageRenderTarget, width, height, 1);
+	computeTexture = mRenderDevice->CreateTexture2D(kTexFormatRGBA16Float,
+		TextureUsage::TextureUsageRenderTarget, width, height, 1);
+
+	depthStencilTexture = mRenderDevice->CreateTexture2D(kTexFormatDepth32FloatStencil8,
+		TextureUsage::TextureUsageRenderTarget,
+		width, height, 1);
     
     sceneManager = SceneManager::GetInstance();
     SkyBox* skybox = initSky(mRenderDevice);
