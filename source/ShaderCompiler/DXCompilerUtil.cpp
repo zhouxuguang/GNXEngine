@@ -147,8 +147,8 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
     //arguments.push_back(DXC_ARG_PACK_MATRIX_ROW_MAJOR); //-Zp
     //arguments.push_back(L"-enable-16bit-types");
     
-    arguments.push_back(L"-D");
-    arguments.push_back(L"TEXCOORD_FLIP");
+    // arguments.push_back(L"-D");
+    // arguments.push_back(L"TEXCOORD_FLIP");
 
     if (shaderStage == ShaderStage_Fragment)
     {
