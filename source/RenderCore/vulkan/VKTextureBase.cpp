@@ -28,7 +28,17 @@ void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
     }
     else if (GetTextureType() == TextureType_3D)
     {
-        //
+        VkImageViewCreateInfo viewCreateInfo = {};
+        viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		viewCreateInfo.image = mImage;
+		viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
+		viewCreateInfo.format = mFormat;
+		viewCreateInfo.subresourceRange.aspectMask = imageAspectFlags;
+		viewCreateInfo.subresourceRange.baseMipLevel = 0;
+		viewCreateInfo.subresourceRange.baseArrayLayer = 0;
+		viewCreateInfo.subresourceRange.layerCount = 1;
+		viewCreateInfo.subresourceRange.levelCount = imageCreateInfo.mipLevels;
+        vkCreateImageView(mContext->device, &viewCreateInfo, nullptr, &imageView);
     }
 
     else if (GetTextureType() == TextureType_CUBE)
@@ -45,9 +55,21 @@ void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
         viewCreateInfo.subresourceRange.levelCount = imageCreateInfo.mipLevels;
         viewCreateInfo.image = mImage;
         vkCreateImageView(mContext->device, &viewCreateInfo, nullptr, &imageView);
+    }
 
-		/*imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat,
-			nullptr, imageAspectFlags, 1);*/
+    else if (GetTextureType() == TextureType_2D_ARRAY)
+    {
+		VkImageViewCreateInfo viewCreateInfo = {};
+		viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		viewCreateInfo.image = mImage;
+		viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+		viewCreateInfo.format = mFormat;
+		viewCreateInfo.subresourceRange.aspectMask = imageAspectFlags;
+		viewCreateInfo.subresourceRange.baseMipLevel = 0;
+		viewCreateInfo.subresourceRange.baseArrayLayer = 0;
+		viewCreateInfo.subresourceRange.layerCount = imageCreateInfo.arrayLayers;
+		viewCreateInfo.subresourceRange.levelCount = imageCreateInfo.mipLevels;
+		vkCreateImageView(mContext->device, &viewCreateInfo, nullptr, &imageView);
     }
      
     mVulkanImageViewPtr = std::make_shared<VulkanImageView>(mContext->device, imageView);
@@ -203,6 +225,7 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
     }
     else
     {
+        // 异步加载逻辑还有问题
         VkBuffer stageBuffer = VK_NULL_HANDLE;
         VmaAllocation allocation = VK_NULL_HANDLE;
         VkDeviceSize size = mHeight * bytesPerRow;
