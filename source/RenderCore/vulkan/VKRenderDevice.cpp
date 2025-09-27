@@ -261,7 +261,7 @@ RCTexture3DPtr VKRenderDevice::CreateTexture3D(TextureFormat format,
     imageCreateInfo.usage = VulkanBufferUtil::ConvertTextureUsage(usage, vkformat);
     imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageCreateInfo.flags = 0;
+    imageCreateInfo.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;    // 3d纹理的每一层需要创建imageview时需要这个标志
     
     auto texture = std::make_shared<VKRCTexture3D>(mVulkanContext, imageCreateInfo);
 	texture->CreateImageViews(imageCreateInfo);
