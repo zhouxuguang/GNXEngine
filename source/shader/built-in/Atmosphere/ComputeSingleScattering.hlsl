@@ -24,7 +24,7 @@ VS_OUTPUT VS(uint vertexID : SV_VertexID)
 // 输出结构体定义
 struct PSOutput 
 {
-    float4 delta_rayleigh : SV_Target0;        // location = 0
+    float4 delta_rayleigh  : SV_Target0;        // location = 0
     float4 delta_mie       : SV_Target1;        // location = 1
     float4 scattering      : SV_Target2;        // location = 2
     float4 single_mie_scattering : SV_Target3;  // location = 3
@@ -72,8 +72,8 @@ void GS(triangle GeometryInput input[3], inout TriangleStream<GeometryOutput> ou
     outputStream.RestartStrip();
 }
 
-Texture2D transmittance_texture : register(t0);
-SamplerState transmittance_sampler : register(s0);
+Texture2D transmittance_texture;
+SamplerState transmittance_textureSam;
 
 [shader("pixel")]
 PSOutput PS(float4 position : SV_Position)
@@ -87,7 +87,7 @@ PSOutput PS(float4 position : SV_Position)
     ComputeSingleScatteringTexture(
         ATMOSPHERE,
         transmittance_texture,
-        transmittance_sampler,
+        transmittance_textureSam,
         frag_coord,
         delta_rayleigh,
         delta_mie
