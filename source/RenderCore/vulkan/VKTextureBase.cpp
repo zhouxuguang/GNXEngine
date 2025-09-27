@@ -26,6 +26,7 @@ void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
         imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat,
             nullptr, imageAspectFlags, 1);
     }
+
     else if (GetTextureType() == TextureType_3D)
     {
         VkImageViewCreateInfo viewCreateInfo = {};
@@ -78,20 +79,41 @@ void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
     if ((imageCreateInfo.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) == VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT ||
         (imageCreateInfo.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
     {
+        VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_3D;
+
         uint32_t viewCount = 0;
         if (GetTextureType() == TextureType_2D_ARRAY)
         {
             viewCount = imageCreateInfo.arrayLayers;
+            viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         }
         else if (GetTextureType() == TextureType_3D)
         {
             viewCount = mDepth;
+            viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;   // 这里创建view的时候当做2d array
         }
 
         if (viewCount > 1)
         {
-            VkImageView imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat,
-            nullptr, imageAspectFlags, 1);
+            for (uint32_t nLayer = 0; nLayer < viewCount; nLayer ++)
+            {
+				VkImageViewCreateInfo viewCreateInfo = {};
+				viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+				viewCreateInfo.image = mImage;
+				viewCreateInfo.viewType = viewType;
+				viewCreateInfo.format = mFormat;
+				viewCreateInfo.subresourceRange.aspectMask = imageAspectFlags;
+				viewCreateInfo.subresourceRange.baseMipLevel = 0;
+                viewCreateInfo.subresourceRange.levelCount = 1;
+				viewCreateInfo.subresourceRange.baseArrayLayer = nLayer;
+				viewCreateInfo.subresourceRange.layerCount = 1;
+
+
+                VkImageView imageView = VK_NULL_HANDLE;
+				vkCreateImageView(mContext->device, &viewCreateInfo, nullptr, &imageView);
+
+                mRenderTargetViews.push_back(std::make_shared<VulkanImageView>(mContext->device, imageView));
+            }
         }
     }
 }

@@ -134,6 +134,13 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         {
             continue;
         }
+
+        VkImageView imageView = vkRenderTexture->GetImageView()->GetHandle();
+        if (vkRenderTexture->GetTextureType() == TextureType_2D_ARRAY || vkRenderTexture->GetTextureType() == TextureType_3D || 
+            vkRenderTexture->GetTextureType() == TextureType_CUBE)
+        {
+            imageView = vkRenderTexture->GetRenderTargetImageView(iter->slice)->GetHandle();
+        }
         
         VkClearValue clearColor;
         clearColor.color.float32[0] = iter->clearColor.red;
@@ -144,7 +151,7 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         
         VkRenderingAttachmentInfoKHR colorAttachment = {};
         colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-        colorAttachment.imageView = vkRenderTexture->GetImageView()->GetHandle();
+        colorAttachment.imageView = imageView;
         colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         colorAttachment.loadOp = GetLoadOP(iter->loadOp);
         colorAttachment.storeOp = GetStoreOP(iter->storeOp);
@@ -156,7 +163,7 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         colorAttachments.push_back(colorAttachment);
         passFormat.colorFormats.push_back(vkRenderTexture->GetVKFormat());
         passImage.colorImages.push_back(vkRenderTexture->GetVKImage());
-        passImageView.colorImages.push_back(vkRenderTexture->GetImageView()->GetHandle());
+        passImageView.colorImages.push_back(imageView);
     }
     
     std::vector<VkRenderingAttachmentInfo> depthAttachments;
@@ -164,10 +171,17 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
     if (renderPass.depthAttachment)
     {
         VKTextureBasePtr vkRenderTexture = std::dynamic_pointer_cast<VKTextureBase>(renderPass.depthAttachment->texture);
+
+		VkImageView imageView = vkRenderTexture->GetImageView()->GetHandle();
+		if (vkRenderTexture->GetTextureType() == TextureType_2D_ARRAY || vkRenderTexture->GetTextureType() == TextureType_3D ||
+			vkRenderTexture->GetTextureType() == TextureType_CUBE)
+		{
+			imageView = vkRenderTexture->GetRenderTargetImageView(renderPass.depthAttachment->slice)->GetHandle();
+		}
         
         VkRenderingAttachmentInfoKHR depthAttachmentInfo = {};
         depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-        depthAttachmentInfo.imageView = vkRenderTexture->GetImageView()->GetHandle();
+        depthAttachmentInfo.imageView = imageView;
         depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         depthAttachmentInfo.loadOp = GetLoadOP(renderPass.depthAttachment->loadOp);
         depthAttachmentInfo.storeOp = GetStoreOP(renderPass.depthAttachment->storeOp);
@@ -176,7 +190,7 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         depthAttachments.push_back(depthAttachmentInfo);
         passFormat.depthFormat = vkRenderTexture->GetVKFormat();
         passImage.depthImage = vkRenderTexture->GetVKImage();
-        passImageView.depthImage = vkRenderTexture->GetImageView()->GetHandle();
+        passImageView.depthImage = imageView;
         
         clearValues.push_back(depthAttachmentInfo.clearValue);
     }
@@ -186,10 +200,17 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
     if (renderPass.stencilAttachment)
     {
         VKTextureBasePtr vkRenderTexture = std::dynamic_pointer_cast<VKTextureBase>(renderPass.stencilAttachment->texture);
+
+		VkImageView imageView = vkRenderTexture->GetImageView()->GetHandle();
+		if (vkRenderTexture->GetTextureType() == TextureType_2D_ARRAY || vkRenderTexture->GetTextureType() == TextureType_3D ||
+			vkRenderTexture->GetTextureType() == TextureType_CUBE)
+		{
+			imageView = vkRenderTexture->GetRenderTargetImageView(renderPass.depthAttachment->slice)->GetHandle();
+		}
         
         VkRenderingAttachmentInfoKHR stencilAttachmentInfo = {};
         stencilAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
-        stencilAttachmentInfo.imageView = vkRenderTexture->GetImageView()->GetHandle();
+        stencilAttachmentInfo.imageView = imageView;
         stencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         stencilAttachmentInfo.loadOp = GetLoadOP(renderPass.stencilAttachment->loadOp);
         stencilAttachmentInfo.storeOp = GetStoreOP(renderPass.stencilAttachment->storeOp);
@@ -197,7 +218,7 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         stencilAttachments.push_back(stencilAttachmentInfo);
         passFormat.stencilFormat = vkRenderTexture->GetVKFormat();
         passImage.stencilImage = vkRenderTexture->GetVKImage();
-        passImageView.stencilImage = vkRenderTexture->GetImageView()->GetHandle();
+        passImageView.stencilImage = imageView;
         
         clearValues.push_back(stencilAttachmentInfo.clearValue);
     }

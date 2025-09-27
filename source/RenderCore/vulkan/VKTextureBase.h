@@ -50,6 +50,11 @@ public:
     {
         return mVulkanImageViewPtr;
     }
+
+    VulkanImageViewPtr GetRenderTargetImageView(uint32_t targetSlice) const
+    {
+        return mRenderTargetViews[targetSlice];
+    }
     
     VkFormat GetVKFormat() const
     {
