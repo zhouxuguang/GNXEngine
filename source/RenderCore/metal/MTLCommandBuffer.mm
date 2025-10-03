@@ -144,13 +144,17 @@ RenderEncoderPtr MTLCommandBuffer::CreateRenderEncoder(const RenderPass& renderP
             
             passDescriptor.colorAttachments[i].texture = mtlRenderTexture->getMTLTexture();
             passDescriptor.colorAttachments[i].level = iter->level;
-            if (mtlRenderTexture->GetTextureType() == TextureType_3D)
+            
+            if (renderPass.layerCount > 1)
             {
-                passDescriptor.colorAttachments[i].depthPlane = iter->slice;   //3d texture
-            }
-            else
-            {
-                passDescriptor.colorAttachments[i].slice = iter->slice;
+                if (mtlRenderTexture->GetTextureType() == TextureType_3D)
+                {
+                    passDescriptor.colorAttachments[i].depthPlane = iter->slice;   //3d texture
+                }
+                else
+                {
+                    passDescriptor.colorAttachments[i].slice = iter->slice;
+                }
             }
             
             passDescriptor.colorAttachments[i].loadAction = GetLoadAction(iter->loadOp);
@@ -167,16 +171,20 @@ RenderEncoderPtr MTLCommandBuffer::CreateRenderEncoder(const RenderPass& renderP
         {
             MTLTextureBasePtr mtlRenderTexture = std::dynamic_pointer_cast<MTLTextureBase>(renderPass.depthAttachment->texture);
             
+            if (renderPass.layerCount > 1)
+            {
+                if (mtlRenderTexture->GetTextureType() == TextureType_3D)
+                {
+                    passDescriptor.depthAttachment.depthPlane = renderPass.depthAttachment->slice;   //3d texture
+                }
+                else
+                {
+                    passDescriptor.depthAttachment.slice = renderPass.depthAttachment->slice;
+                }
+            }
+            
             passDescriptor.depthAttachment.texture = mtlRenderTexture->getMTLTexture();
             passDescriptor.depthAttachment.level = renderPass.depthAttachment->level;
-            if (mtlRenderTexture->GetTextureType() == TextureType_3D)
-            {
-                passDescriptor.depthAttachment.depthPlane = renderPass.depthAttachment->slice;   //3d texture
-            }
-            else
-            {
-                passDescriptor.depthAttachment.slice = renderPass.depthAttachment->slice;
-            }
             
             passDescriptor.depthAttachment.loadAction = GetLoadAction(renderPass.depthAttachment->loadOp);
             passDescriptor.depthAttachment.storeAction = GetStoreAction(renderPass.depthAttachment->storeOp);
@@ -188,16 +196,20 @@ RenderEncoderPtr MTLCommandBuffer::CreateRenderEncoder(const RenderPass& renderP
         {
             MTLTextureBasePtr mtlRenderTexture = std::dynamic_pointer_cast<MTLTextureBase>(renderPass.stencilAttachment->texture);
             
+            if (renderPass.layerCount > 1)
+            {
+                if (mtlRenderTexture->GetTextureType() == TextureType_3D)
+                {
+                    passDescriptor.stencilAttachment.depthPlane = renderPass.stencilAttachment->slice;   //3d texture
+                }
+                else
+                {
+                    passDescriptor.stencilAttachment.slice = renderPass.stencilAttachment->slice;
+                }
+            }
+            
             passDescriptor.stencilAttachment.texture = mtlRenderTexture->getMTLTexture();
             passDescriptor.stencilAttachment.level = renderPass.stencilAttachment->level;
-            if (mtlRenderTexture->GetTextureType() == TextureType_3D)
-            {
-                passDescriptor.stencilAttachment.depthPlane = renderPass.stencilAttachment->slice;   //3d texture
-            }
-            else
-            {
-                passDescriptor.stencilAttachment.slice = renderPass.stencilAttachment->slice;
-            }
             
             passDescriptor.stencilAttachment.loadAction = GetLoadAction(renderPass.stencilAttachment->loadOp);
             passDescriptor.stencilAttachment.storeAction = GetStoreAction(renderPass.stencilAttachment->storeOp);
