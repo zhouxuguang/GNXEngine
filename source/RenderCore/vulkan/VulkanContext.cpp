@@ -319,6 +319,14 @@ bool CreateVirtualDevice(VulkanContext& context)
     VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
     physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     AppendToPNextChain(&physicalDeviceFeatures2, &extendedDynamicStateFeaturesEXT);
+    
+    VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
+    portabilityFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR;
+    if (context.vulkanExtension.enablePortabilitySubset)
+    {
+        AppendToPNextChain(&physicalDeviceFeatures2, &portabilityFeatures);
+    }
+    
     vkGetPhysicalDeviceFeatures2(context.physicalDevice, &physicalDeviceFeatures2);
 
 	if (!indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind) 
@@ -360,10 +368,10 @@ bool CreateVirtualDevice(VulkanContext& context)
             deviceCreateNextChain = &extendedDynamicState3FeaturesEXT;
         }
     }
-
-    //indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE;
-
-    //deviceExtensionNames.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    if (context.vulkanExtension.enablePortabilitySubset)
+    {
+        AppendToPNextChain(deviceCreateNextChain, &portabilityFeatures);
+    }
     
     // 打开 VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME    
     // push descriptor开启
@@ -431,6 +439,11 @@ bool CreateVirtualDevice(VulkanContext& context)
     }
 
     vkGetPhysicalDeviceProperties2(context.physicalDevice, &deviceProperties);
+    
+    if (context.vulkanExtension.enablePortabilitySubset)
+    {
+        AppendToPNextChain(&deviceProperties, &portabilityFeatures);
+    }
 
     // 队列优先级的属性
     std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos;
