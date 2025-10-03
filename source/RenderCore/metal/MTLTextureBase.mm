@@ -9,7 +9,8 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-MTLTextureBase::MTLTextureBase(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes)
+MTLTextureBase::MTLTextureBase(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes) :
+    RCTexture(TextureType_Unkown)
 {
     //command需要产生mipmap的纹理
     mCommandQueue = commandQueue;
@@ -68,7 +69,7 @@ uint32_t MTLTextureBase::GetDepth() const
 #pragma mark MTLRCTexture2D
 
 MTLRCTexture2D::MTLRCTexture2D(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes)
-    : MTLTextureBase(device, commandQueue, textureDes)
+    : MTLTextureBase(device, commandQueue, textureDes), RCTexture(TextureType_2D)
 {
 }
 
@@ -88,7 +89,7 @@ void MTLRCTexture2D::ReplaceRegion(const Rect2D& rect,
 #pragma mark MTLRCTexture3D
 
 MTLRCTexture3D::MTLRCTexture3D(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes)
-    : MTLTextureBase(device, commandQueue, textureDes)
+    : MTLTextureBase(device, commandQueue, textureDes), RCTexture(TextureType_3D)
 {
 }
 
@@ -110,7 +111,7 @@ void MTLRCTexture3D::ReplaceRegion(const Rect2D& rect,
 #pragma mark MTLRCTextureCube
 
 MTLRCTextureCube::MTLRCTextureCube(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes)
-    : MTLTextureBase(device, commandQueue, textureDes)
+    : MTLTextureBase(device, commandQueue, textureDes), RCTexture(TextureType_CUBE)
 {
 }
 
@@ -132,7 +133,7 @@ void MTLRCTextureCube::ReplaceRegion(const Rect2D& rect,
 #pragma mark MTLRCTexture2DArray
 
 MTLRCTexture2DArray::MTLRCTexture2DArray(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes)
-    : MTLTextureBase(device, commandQueue, textureDes)
+    : MTLTextureBase(device, commandQueue, textureDes), RCTexture(TextureType_2D_ARRAY)
 {
 }
 

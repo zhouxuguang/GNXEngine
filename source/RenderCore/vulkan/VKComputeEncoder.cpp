@@ -74,7 +74,7 @@ void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t index)
     {
         return;
     }
-    VKTextureBase *vkTexture2D = (VKTextureBase*)texture.get();
+    VKTextureBasePtr vkTexture2D = std::dynamic_pointer_cast<VKTextureBase>(texture);
     
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkTexture2D->GetImageView()->GetHandle();
@@ -96,7 +96,7 @@ void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint3
     {
         return;
     }
-    VKTextureBase *vkRenderTex = (VKTextureBase*)texture.get();
+    VKTextureBasePtr vkRenderTex = std::dynamic_pointer_cast<VKTextureBase>(texture);
     
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();
@@ -117,7 +117,7 @@ void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t index)
     {
         return;
     }
-    VKTextureBase *vkRenderTex = (VKTextureBase*)texture.get();
+    VKTextureBasePtr vkRenderTex = std::dynamic_pointer_cast<VKTextureBase>(texture);
     
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();
@@ -138,7 +138,7 @@ void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t mipLevel, ui
     {
         return;
     }
-    VKTextureBase *vkRenderTex = (VKTextureBase*)texture.get();
+    VKTextureBasePtr vkRenderTex = std::dynamic_pointer_cast<VKTextureBase>(texture);
     
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();

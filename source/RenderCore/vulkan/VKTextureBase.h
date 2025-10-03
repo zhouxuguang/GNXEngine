@@ -13,7 +13,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-class VKTextureBase : public RCTexture
+class VKTextureBase : virtual public RCTexture
 {
 public:
     VKTextureBase(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo);
@@ -102,28 +102,6 @@ public:
                         uint32_t level,
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow);
-    
-    virtual bool IsValid() const;
-    
-    virtual uint32_t GetWidth() const
-    {
-        return VKTextureBase::GetWidth();
-    }
-    
-    virtual uint32_t GetHeight() const
-    {
-        return VKTextureBase::GetHeight();
-    }
-    
-    virtual uint32_t GetDepth() const
-    {
-        return VKTextureBase::GetDepth();
-    }
-
-	virtual TextureType GetTextureType() const
-	{
-		return TextureType_2D;
-	}
 };
 
 using VKRCTexture2DPtr = std::shared_ptr<VKRCTexture2D>;
@@ -143,31 +121,6 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage);
-    
-    virtual bool IsValid() const
-    {
-        return VKTextureBase::IsValid();
-    }
-    
-    virtual uint32_t GetWidth() const
-    {
-        return VKTextureBase::GetWidth();
-    }
-    
-    virtual uint32_t GetHeight() const
-    {
-        return VKTextureBase::GetHeight();
-    }
-    
-    virtual uint32_t GetDepth() const
-    {
-        return VKTextureBase::GetDepth();
-    }
-
-	virtual TextureType GetTextureType() const
-	{
-		return TextureType_3D;
-	}
 };
 
 using VKRCTexture3DPtr = std::shared_ptr<VKRCTexture3D>;
@@ -187,31 +140,6 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage);
-    
-    virtual bool IsValid() const
-    {
-        return VKTextureBase::IsValid();
-    }
-    
-    virtual uint32_t GetWidth() const
-    {
-        return VKTextureBase::GetWidth();
-    }
-    
-    virtual uint32_t GetHeight() const
-    {
-        return VKTextureBase::GetHeight();
-    }
-    
-    virtual uint32_t GetDepth() const
-    {
-        return VKTextureBase::GetDepth();
-    }
-
-	virtual TextureType GetTextureType() const
-	{
-		return TextureType_CUBE;
-	}
 };
 
 using VKRCTextureCubePtr = std::shared_ptr<VKRCTextureCube>;
@@ -231,31 +159,6 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage);
-    
-    virtual bool IsValid() const
-    {
-        return VKTextureBase::IsValid();
-    }
-    
-    virtual uint32_t GetWidth() const
-    {
-        return VKTextureBase::GetWidth();
-    }
-    
-    virtual uint32_t GetHeight() const
-    {
-        return VKTextureBase::GetHeight();
-    }
-    
-    virtual uint32_t GetDepth() const
-    {
-        return VKTextureBase::GetDepth();
-    }
-
-	virtual TextureType GetTextureType() const
-	{
-		return TextureType_2D_ARRAY;
-	}
 };
 
 using VKRCTexture2DArrayPtr = std::shared_ptr<VKRCTexture2DArray>;
