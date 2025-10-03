@@ -18,6 +18,8 @@
     #define VK_USE_PLATFORM_METAL_EXT
 #else
 #endif
+
+#define VK_ENABLE_BETA_EXTENSIONS
 #define VK_NO_PROTOTYPES
 #include "volk.h"
 #include "vulkan/vulkan_beta.h"

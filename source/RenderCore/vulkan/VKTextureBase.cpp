@@ -108,7 +108,6 @@ void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
 				viewCreateInfo.subresourceRange.baseArrayLayer = nLayer;
 				viewCreateInfo.subresourceRange.layerCount = 1;
 
-
                 VkImageView imageView = VK_NULL_HANDLE;
 				vkCreateImageView(mContext->device, &viewCreateInfo, nullptr, &imageView);
 
