@@ -13,7 +13,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-class MTLTextureBase : public RCTexture
+class MTLTextureBase : virtual public RCTexture
 {
 public:
     MTLTextureBase(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes);
@@ -97,20 +97,20 @@ public:
         return MTLTextureBase::IsValid();
     }
     
-    virtual uint32_t GetWidth() const
-    {
-        return MTLTextureBase::GetWidth();
-    }
-    
-    virtual uint32_t GetHeight() const
-    {
-        return MTLTextureBase::GetHeight();
-    }
-    
-    virtual uint32_t GetDepth() const
-    {
-        return MTLTextureBase::GetDepth();
-    }
+//    virtual uint32_t GetWidth() const
+//    {
+//        return MTLTextureBase::GetWidth();
+//    }
+//    
+//    virtual uint32_t GetHeight() const
+//    {
+//        return MTLTextureBase::GetHeight();
+//    }
+//    
+//    virtual uint32_t GetDepth() const
+//    {
+//        return MTLTextureBase::GetDepth();
+//    }
 };
 
 using MTLRCTexture2DPtr = std::shared_ptr<MTLRCTexture2D>;
@@ -136,20 +136,20 @@ public:
         return MTLTextureBase::IsValid();
     }
     
-    virtual uint32_t GetWidth() const
-    {
-        return MTLTextureBase::GetWidth();
-    }
-    
-    virtual uint32_t GetHeight() const
-    {
-        return MTLTextureBase::GetHeight();
-    }
-    
-    virtual uint32_t GetDepth() const
-    {
-        return MTLTextureBase::GetDepth();
-    }
+//    virtual uint32_t GetWidth() const
+//    {
+//        return MTLTextureBase::GetWidth();
+//    }
+//    
+//    virtual uint32_t GetHeight() const
+//    {
+//        return MTLTextureBase::GetHeight();
+//    }
+//    
+//    virtual uint32_t GetDepth() const
+//    {
+//        return MTLTextureBase::GetDepth();
+//    }
 };
 
 using MTLRCTexture3DPtr = std::shared_ptr<MTLRCTexture3D>;
@@ -175,20 +175,20 @@ public:
         return MTLTextureBase::IsValid();
     }
     
-    virtual uint32_t GetWidth() const
-    {
-        return MTLTextureBase::GetWidth();
-    }
-    
-    virtual uint32_t GetHeight() const
-    {
-        return MTLTextureBase::GetHeight();
-    }
-    
-    virtual uint32_t GetDepth() const
-    {
-        return MTLTextureBase::GetDepth();
-    }
+//    virtual uint32_t GetWidth() const
+//    {
+//        return MTLTextureBase::GetWidth();
+//    }
+//    
+//    virtual uint32_t GetHeight() const
+//    {
+//        return MTLTextureBase::GetHeight();
+//    }
+//    
+//    virtual uint32_t GetDepth() const
+//    {
+//        return MTLTextureBase::GetDepth();
+//    }
 };
 
 using MTLRCTextureCubePtr = std::shared_ptr<MTLRCTextureCube>;
@@ -214,20 +214,20 @@ public:
         return MTLTextureBase::IsValid();
     }
     
-    virtual uint32_t GetWidth() const
-    {
-        return MTLTextureBase::GetWidth();
-    }
-    
-    virtual uint32_t GetHeight() const
-    {
-        return MTLTextureBase::GetHeight();
-    }
-    
-    virtual uint32_t GetDepth() const
-    {
-        return MTLTextureBase::GetDepth();
-    }
+//    virtual uint32_t GetWidth() const
+//    {
+//        return MTLTextureBase::GetWidth();
+//    }
+//    
+//    virtual uint32_t GetHeight() const
+//    {
+//        return MTLTextureBase::GetHeight();
+//    }
+//    
+//    virtual uint32_t GetDepth() const
+//    {
+//        return MTLTextureBase::GetDepth();
+//    }
 };
 
 using MTLRCTexture2DArrayPtr = std::shared_ptr<MTLRCTexture2DArray>;

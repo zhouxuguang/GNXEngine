@@ -20,7 +20,10 @@ NAMESPACE_RENDERCORE_BEGIN
 class RCTexture
 {
 public:
-    RCTexture(){}
+    RCTexture(TextureType textureType)
+    {
+        mTextureType = textureType;
+    }
     
     virtual ~RCTexture(){}
     
@@ -37,10 +40,13 @@ public:
     
     virtual uint32_t GetDepth() const = 0;
     
-    virtual TextureType GetTextureType() const
+    TextureType GetTextureType() const
     {
-        return TextureType_Unkown;
+        return mTextureType;
     }
+    
+private:
+    TextureType mTextureType = TextureType_Unkown;
 };
 
 typedef std::shared_ptr<RCTexture> RCTexturePtr;
@@ -49,10 +55,10 @@ typedef std::shared_ptr<RCTexture> RCTexturePtr;
  * @brief RHI 2D纹理
  * 
  */
-class RCTexture2D : public RCTexture
+class RCTexture2D : virtual public RCTexture
 {
 public:
-    RCTexture2D(){}
+    RCTexture2D() : RCTexture(TextureType_2D){}
     virtual ~RCTexture2D(){}
 
     /**
@@ -67,11 +73,6 @@ public:
                         uint32_t level, 
                         const uint8_t* pixelBytes, 
                         uint32_t bytesPerRow) = 0;
-    
-    virtual TextureType GetTextureType() const
-    {
-        return TextureType_2D;
-    }
 };
 
 typedef std::shared_ptr<RCTexture2D> RCTexture2DPtr;
@@ -80,10 +81,10 @@ typedef std::shared_ptr<RCTexture2D> RCTexture2DPtr;
  * @brief RHI 3D纹理
  * 
  */
-class RCTexture3D : public RCTexture
+class RCTexture3D : virtual public RCTexture
 {
 public:
-    RCTexture3D(){}
+    RCTexture3D() : RCTexture(TextureType_3D){}
     virtual ~RCTexture3D(){}
     
     /**
@@ -102,11 +103,6 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage) = 0;
-    
-    virtual TextureType GetTextureType() const
-    {
-        return TextureType_3D;
-    }
 };
 
 using RCTexture3DPtr = std::shared_ptr<RCTexture3D>;
@@ -115,10 +111,10 @@ using RCTexture3DPtr = std::shared_ptr<RCTexture3D>;
  * @brief RHI cube纹理
  * 
  */
-class RCTextureCube : public RCTexture
+class RCTextureCube : virtual public RCTexture
 {
 public:
-    RCTextureCube(){}
+    RCTextureCube() : RCTexture(TextureType_CUBE){}
     virtual ~RCTextureCube(){}
     
     /**
@@ -137,11 +133,6 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage) = 0;
-    
-    virtual TextureType GetTextureType() const
-    {
-        return TextureType_CUBE;
-    }
 };
 
 using RCTextureCubePtr = std::shared_ptr<RCTextureCube>;
@@ -150,10 +141,10 @@ using RCTextureCubePtr = std::shared_ptr<RCTextureCube>;
  * @brief RHI 2d array纹理
  *
  */
-class RCTexture2DArray : public RCTexture
+class RCTexture2DArray : virtual public RCTexture
 {
 public:
-    RCTexture2DArray(){}
+    RCTexture2DArray() : RCTexture(TextureType_2D_ARRAY){}
     virtual ~RCTexture2DArray(){}
     
     /**
@@ -172,11 +163,6 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage) = 0;
-    
-    virtual TextureType GetTextureType() const
-    {
-        return TextureType_2D_ARRAY;
-    }
 };
 
 using RCTexture2DArrayPtr = std::shared_ptr<RCTexture2DArray>;

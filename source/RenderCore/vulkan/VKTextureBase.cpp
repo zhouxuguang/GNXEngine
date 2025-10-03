@@ -118,7 +118,9 @@ void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
     }
 }
 
-VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo) : mContext(context)
+VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo) : 
+    RCTexture(TextureType_Unkown),
+    mContext(context)
 {
     // 判断该格式是否支持HostImageCopy
     VkFormatProperties3 formatProperties3 = {};
@@ -302,7 +304,7 @@ uint32_t VKTextureBase::GetDepth() const
 #pragma mark VKRCTexture2D
 
 VKRCTexture2D::VKRCTexture2D(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo)
-    : VKTextureBase(context, imageCreateInfo)
+    : VKTextureBase(context, imageCreateInfo), RCTexture(TextureType_2D)
 {
 }
 
@@ -318,15 +320,10 @@ void VKRCTexture2D::ReplaceRegion(const Rect2D& rect,
     VKTextureBase::ReplaceRegion(rect, level, 0, pixelBytes, bytesPerRow, 0);
 }
 
-bool VKRCTexture2D::IsValid() const
-{
-    return VKTextureBase::IsValid();
-}
-
 #pragma mark VKRCTexture3D
 
 VKRCTexture3D::VKRCTexture3D(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo)
-    : VKTextureBase(context, imageCreateInfo)
+    : VKTextureBase(context, imageCreateInfo), RCTexture(TextureType_3D)
 {
 }
 
@@ -347,7 +344,7 @@ void VKRCTexture3D::ReplaceRegion(const Rect2D& rect,
 #pragma mark VKRCTextureCube
 
 VKRCTextureCube::VKRCTextureCube(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo)
-    : VKTextureBase(context, imageCreateInfo)
+    : VKTextureBase(context, imageCreateInfo), RCTexture(TextureType_CUBE)
 {
 }
 
@@ -368,7 +365,7 @@ void VKRCTextureCube::ReplaceRegion(const Rect2D& rect,
 #pragma mark VKRCTexture2DArray
 
 VKRCTexture2DArray::VKRCTexture2DArray(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo)
-    : VKTextureBase(context, imageCreateInfo)
+    : VKTextureBase(context, imageCreateInfo), RCTexture(TextureType_2D_ARRAY)
 {
 }
 

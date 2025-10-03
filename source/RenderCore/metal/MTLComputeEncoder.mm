@@ -52,7 +52,7 @@ void MTLComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t index)
 {
     @autoreleasepool 
     {
-        MTLTextureBase* mtlTexture = (MTLTextureBase*)texture.get();
+        MTLTextureBasePtr mtlTexture = std::dynamic_pointer_cast<MTLTextureBase>(texture);
         assert(mtlTexture);
         [mComputeEncoder setTexture:mtlTexture->getMTLTexture() atIndex:index];
     }
