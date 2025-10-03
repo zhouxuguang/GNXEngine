@@ -35,17 +35,6 @@ void VKComputeEncoder::SetComputePipeline(ComputePipelinePtr computePipeline)
     vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipeline->GetPipeline());
 }
 
-#if 0
-// Provided by VK_KHR_push_descriptor
-void vkCmdPushDescriptorSetKHR(
-    VkCommandBuffer                             commandBuffer,
-    VkPipelineBindPoint                         pipelineBindPoint,
-    VkPipelineLayout                            layout,
-    uint32_t                                    set,
-    uint32_t                                    descriptorWriteCount,
-    const VkWriteDescriptorSet*                 pDescriptorWrites);
-#endif
-
 void VKComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
 {
     if (!buffer)

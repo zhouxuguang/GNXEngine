@@ -338,19 +338,22 @@ void MTLRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceN
     if (!texture)
     {
         [mRenderEncoder setFragmentTexture:nil atIndex:texIndex];
-        return;
+    }
+    else
+    {
+        id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTextureBase>(texture)->getMTLTexture();
+        [mRenderEncoder setFragmentTexture:mtlTexture atIndex:texIndex];
     }
     
     if (!sampler)
     {
         [mRenderEncoder setFragmentSamplerState:nil atIndex:samIndex];
-        return;
     }
-
-    id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTextureBase>(texture)->getMTLTexture();
-    [mRenderEncoder setFragmentTexture:mtlTexture atIndex:texIndex];
-    id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
-    [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];
+    else
+    {
+        id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
+        [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];
+    }
 }
 
 NAMESPACE_RENDERCORE_END

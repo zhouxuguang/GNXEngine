@@ -577,23 +577,25 @@ void VKRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size
 
 void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
 {
-    if (!texture || !sampler)
-    {
-        return;
-    }
-    //VKTextureBase* vkTexture = (VKTextureBase*)texture.get();
     VKTextureBasePtr vkTexture = std::dynamic_pointer_cast<VKTextureBase>(texture);
     VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
 
     VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+    
+    if (vkTexture)
+    {
+        ShaderImageDesc imageDesc;
+        imageDesc.image = vkTexture->GetImageView()->GetHandle();
+        imageDesc.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageDesc.sampler = VK_NULL_HANDLE;
 
-    ShaderImageDesc imageDesc;
-    imageDesc.image = vkTexture->GetImageView()->GetHandle();
-    imageDesc.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageDesc.sampler = VK_NULL_HANDLE;
+        shader->BindTexture(mCommandBuffer, resourceName, imageDesc, mGraphicsPipieline->GetPipelineLayout());
+    }
 
-    shader->BindTexture(mCommandBuffer, resourceName, imageDesc, mGraphicsPipieline->GetPipelineLayout());
-    shader->BindSampler(mCommandBuffer, resourceName + "Sam", vkSampler->GetVKSampler(), mGraphicsPipieline->GetPipelineLayout());
+    if (vkSampler)
+    {
+        shader->BindSampler(mCommandBuffer, resourceName + "Sam", vkSampler->GetVKSampler(), mGraphicsPipieline->GetPipelineLayout());
+    }
 }
 
 NAMESPACE_RENDERCORE_END

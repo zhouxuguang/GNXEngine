@@ -41,37 +41,6 @@ cbuffer ScatteringCB : register(b1)
     int scattering_order;
 };
 
-struct GeometryInput 
-{
-    float4 position : SV_Position;
-};
-
-struct GeometryOutput 
-{
-    float4 position : SV_Position;
-    uint layer : SV_RenderTargetArrayIndex; // 指定渲染目标数组索引
-};
-
-[maxvertexcount(3)] // 最大输出3个顶点
-void GS(triangle GeometryInput input[3], inout TriangleStream<GeometryOutput> outputStream) 
-{
-    GeometryOutput output;
-    
-    output.position = input[0].position;
-    output.layer = layer;
-    outputStream.Append(output);
-    
-    output.position = input[1].position;
-    output.layer = layer;
-    outputStream.Append(output);
-    
-    output.position = input[2].position;
-    output.layer = layer;
-    outputStream.Append(output);
-    
-    outputStream.RestartStrip();
-}
-
 Texture2D transmittance_texture;
 SamplerState transmittance_textureSam;
 

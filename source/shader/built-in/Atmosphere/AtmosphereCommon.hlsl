@@ -469,7 +469,7 @@ float4 GetScatteringTextureUvwzFromRMuMuSNu(AtmosphereParameters atmosphere,
 
 	/* 二元一次方程判别式,用于二元一次方程求根公式(求解射线(r,mu)与地表的交点) */
 	float	r_mu = r * mu;
-	float	discriminant	= r_mu*r_mu - r*r+atmosphere.bottom_radius*atmosphere.bottom_radius;
+	float	discriminant	= r_mu * r_mu - r * r + atmosphere.bottom_radius * atmosphere.bottom_radius;
 	float u_mu;
 	/* 若射线(r,mu)与地面有交点 */
 	if (ray_r_mu_intersects_ground)
@@ -519,7 +519,7 @@ void GetRMuMuSNuFromScatteringTextureUvwz(AtmosphereParameters atmosphere,
 {
 	float H = sqrt(atmosphere.top_radius * atmosphere.top_radius -
 			 		   atmosphere.bottom_radius * atmosphere.bottom_radius);
-	float rho = H * GetUnitRangeFromTextureCoord( uvwz.w, SCATTERING_TEXTURE_R_SIZE);
+	float rho = H * GetUnitRangeFromTextureCoord(uvwz.w, SCATTERING_TEXTURE_R_SIZE);
 	r = sqrt(rho * rho + atmosphere.bottom_radius * atmosphere.bottom_radius);
 	if (uvwz.z < 0.5)
 	{
@@ -579,7 +579,7 @@ void GetRMuMuSNuFromScatteringTextureFragCoord(
 	GetRMuMuSNuFromScatteringTextureUvwz(
 				atmosphere, uvwz, r, mu, mu_s, nu, ray_r_mu_intersects_ground);
 	/* 对于nu,根据给定的mu和mu_s对其做一些上下界约束[cos(x+y),cos(x-y)] */
-	nu = clamp(nu, mu * mu_s - sqrt( (1.0 - mu * mu) * (1.0 - mu_s * mu_s) ),
+	nu = clamp(nu, mu * mu_s - sqrt((1.0 - mu * mu) * (1.0 - mu_s * mu_s)),
 		    			mu * mu_s + sqrt( (1.0 - mu * mu) * (1.0 - mu_s * mu_s)));
 }
 
@@ -621,13 +621,13 @@ float3 GetScattering(AtmosphereParameters atmosphere,
 {
 	/* 根据给定的(r,mu,mu_s,nu)计算对应的4D纹理坐标uvwz */
 	float4 uvwz = GetScatteringTextureUvwzFromRMuMuSNu(
-						atmosphere, r, mu, mu_s, nu, ray_r_mu_intersects_ground );
+						atmosphere, r, mu, mu_s, nu, ray_r_mu_intersects_ground);
 	float	tex_coord_x	= uvwz.x * float(SCATTERING_TEXTURE_NU_SIZE - 1);
 	float	tex_x			= floor(tex_coord_x); /* 整数部分 */
 	float	lerp			= tex_coord_x - tex_x;  /* 小数部分 */
-	float3 uvw0 = float3((tex_x + uvwz.y) / float( SCATTERING_TEXTURE_NU_SIZE ),
+	float3 uvw0 = float3((tex_x + uvwz.y) / float(SCATTERING_TEXTURE_NU_SIZE),
 			  			uvwz.z, uvwz.w);
-	float3 uvw1 = float3((tex_x + 1.0 + uvwz.y) / float( SCATTERING_TEXTURE_NU_SIZE ),
+	float3 uvw1 = float3((tex_x + 1.0 + uvwz.y) / float(SCATTERING_TEXTURE_NU_SIZE),
 			  			uvwz.z, uvwz.w);
 	/* 根据lerp线性插值 */
 	return float3(scattering_texture.Sample(scattering_sampler, uvw0).rgb * (1.0 - lerp) +
@@ -779,7 +779,7 @@ float3 ComputeScatteringDensity(
 			 * 散射系数、方向omega和omega_i的相位函数之积 */
 			float	nu2			= dot(omega, omega_i);
 			float	rayleigh_density	= GetProfileDensity(
-						atmosphere.rayleigh_density, r - atmosphere.bottom_radius );
+						atmosphere.rayleigh_density, r - atmosphere.bottom_radius);
 			float mie_density = GetProfileDensity(
 						atmosphere.mie_density, r - atmosphere.bottom_radius);
 			rayleigh_mie += incident_radiance * (
