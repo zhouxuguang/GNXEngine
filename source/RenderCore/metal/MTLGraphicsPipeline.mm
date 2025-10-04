@@ -208,19 +208,17 @@ static MTLRenderPipelineDescriptor* convertToMTLRenderPiplineDescriptor(const Gr
         mtlPiplineDes.vertexDescriptor.layouts[indexs[i]].stepFunction = MTLVertexStepFunctionPerVertex;
     }
     
-    //mtlPiplineDes.colorAttachments[0].pixelFormat = MTLPixelFormatRGBA8Unorm;
-    mtlPiplineDes.colorAttachments[0].blendingEnabled = des.colorAttachmentDescriptor.blendingEnabled;
-    mtlPiplineDes.colorAttachments[0].sourceRGBBlendFactor = (MTLBlendFactor)des.colorAttachmentDescriptor.sourceRGBBlendFactor;
-    mtlPiplineDes.colorAttachments[0].destinationRGBBlendFactor = (MTLBlendFactor)des.colorAttachmentDescriptor.destinationRGBBlendFactor;
-    mtlPiplineDes.colorAttachments[0].rgbBlendOperation = (MTLBlendOperation)des.colorAttachmentDescriptor.rgbBlendOperation;
-    mtlPiplineDes.colorAttachments[0].sourceAlphaBlendFactor = (MTLBlendFactor)des.colorAttachmentDescriptor.sourceAlphaBlendFactor;
-    mtlPiplineDes.colorAttachments[0].destinationAlphaBlendFactor = (MTLBlendFactor)des.colorAttachmentDescriptor.destinationAplhaBlendFactor;
-    mtlPiplineDes.colorAttachments[0].alphaBlendOperation = (MTLBlendOperation)des.colorAttachmentDescriptor.aplhaBlendOperation;
-    mtlPiplineDes.colorAttachments[0].writeMask = (MTLColorWriteMask)des.colorAttachmentDescriptor.writeMask;
-    
-    //这里格式还需要再考察，得和实际使用的一样
-//    mtlPiplineDes.depthAttachmentPixelFormat = MTLPixelFormatDepth32Float;
-//    mtlPiplineDes.stencilAttachmentPixelFormat = MTLPixelFormatStencil8;
+    for (uint32_t i = 0; i < des.renderTargetCount; i ++)
+    {
+        mtlPiplineDes.colorAttachments[i].blendingEnabled = des.colorAttachmentDescriptors[i].blendingEnabled;
+        mtlPiplineDes.colorAttachments[i].sourceRGBBlendFactor = (MTLBlendFactor)des.colorAttachmentDescriptors[i].sourceRGBBlendFactor;
+        mtlPiplineDes.colorAttachments[i].destinationRGBBlendFactor = (MTLBlendFactor)des.colorAttachmentDescriptors[i].destinationRGBBlendFactor;
+        mtlPiplineDes.colorAttachments[i].rgbBlendOperation = (MTLBlendOperation)des.colorAttachmentDescriptors[i].rgbBlendOperation;
+        mtlPiplineDes.colorAttachments[i].sourceAlphaBlendFactor = (MTLBlendFactor)des.colorAttachmentDescriptors[i].sourceAlphaBlendFactor;
+        mtlPiplineDes.colorAttachments[i].destinationAlphaBlendFactor = (MTLBlendFactor)des.colorAttachmentDescriptors[i].destinationAplhaBlendFactor;
+        mtlPiplineDes.colorAttachments[i].alphaBlendOperation = (MTLBlendOperation)des.colorAttachmentDescriptors[i].aplhaBlendOperation;
+        mtlPiplineDes.colorAttachments[i].writeMask = (MTLColorWriteMask)des.colorAttachmentDescriptors[i].writeMask;
+    }
     
     return mtlPiplineDes;
 }

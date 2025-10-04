@@ -159,6 +159,11 @@ VKGraphicsPipeline::VKGraphicsPipeline(VulkanContextPtr context, const GraphicsP
     mContext = context;
     memset(&mPipeCreateInfo, 0, sizeof(mPipeCreateInfo));
     memset(mStageSetOffsets, 0, ShaderStage_Max * DESCRIPTOR_TYPE_MAX * sizeof(uint32_t));
+    
+    for (uint32_t i = 0; i < des.renderTargetCount; i ++)
+    {
+        mColorAttachmentDescs.push_back(des.colorAttachmentDescriptors[i]);
+    }
 }
 
 void VKGraphicsPipeline::AttachVertexShader(ShaderFunctionPtr shaderFunction)
@@ -289,9 +294,13 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     colorBlendInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlendInfo.logicOpEnable = VK_FALSE;
     colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
-    colorBlendInfo.attachmentCount = 1;
-    VkPipelineColorBlendAttachmentState colorBlendState = CreateColorBlendState(mGraphicsPipelineDes.colorAttachmentDescriptor);
-    colorBlendInfo.pAttachments = &colorBlendState;  //
+    colorBlendInfo.attachmentCount = (uint32_t)mColorAttachmentDescs.size();
+    std::vector<VkPipelineColorBlendAttachmentState> colorBlendStates;
+    for (size_t i = 0; i < mColorAttachmentDescs.size(); i ++)
+    {
+        colorBlendStates.push_back(CreateColorBlendState(mColorAttachmentDescs[i]));
+    }
+    colorBlendInfo.pAttachments = colorBlendStates.data();
     mPipeCreateInfo.pColorBlendState = &colorBlendInfo;
 
     //10、动态状态
