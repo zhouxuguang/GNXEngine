@@ -55,7 +55,7 @@ ShadowMapping::ShadowMapping(const RenderDevicePtr& renderDevice)
     vertextAttributesDescritptor.format = VertexFormatFloat3;
     graphicsPipelineDescriptor.vertexDescriptor.attributes.push_back(vertextAttributesDescritptor);
     
-    graphicsPipelineDescriptor.colorAttachmentDescriptor.writeMask = ColorWriteMaskNone;
+    //graphicsPipelineDescriptor.colorAttachmentDescriptor.writeMask = ColorWriteMaskNone;
     m_GraphicsPipeline = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);
     
 //    ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(vShadowMapShaderStr, ShaderStage_Vertex);

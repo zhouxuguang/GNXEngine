@@ -91,26 +91,6 @@ public:
                         uint32_t level,
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow);
-    
-    virtual bool IsValid() const
-    {
-        return MTLTextureBase::IsValid();
-    }
-    
-//    virtual uint32_t GetWidth() const
-//    {
-//        return MTLTextureBase::GetWidth();
-//    }
-//    
-//    virtual uint32_t GetHeight() const
-//    {
-//        return MTLTextureBase::GetHeight();
-//    }
-//    
-//    virtual uint32_t GetDepth() const
-//    {
-//        return MTLTextureBase::GetDepth();
-//    }
 };
 
 using MTLRCTexture2DPtr = std::shared_ptr<MTLRCTexture2D>;
@@ -130,26 +110,6 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage);
-    
-    virtual bool IsValid() const
-    {
-        return MTLTextureBase::IsValid();
-    }
-    
-//    virtual uint32_t GetWidth() const
-//    {
-//        return MTLTextureBase::GetWidth();
-//    }
-//    
-//    virtual uint32_t GetHeight() const
-//    {
-//        return MTLTextureBase::GetHeight();
-//    }
-//    
-//    virtual uint32_t GetDepth() const
-//    {
-//        return MTLTextureBase::GetDepth();
-//    }
 };
 
 using MTLRCTexture3DPtr = std::shared_ptr<MTLRCTexture3D>;
@@ -169,26 +129,6 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage);
-    
-    virtual bool IsValid() const
-    {
-        return MTLTextureBase::IsValid();
-    }
-    
-//    virtual uint32_t GetWidth() const
-//    {
-//        return MTLTextureBase::GetWidth();
-//    }
-//    
-//    virtual uint32_t GetHeight() const
-//    {
-//        return MTLTextureBase::GetHeight();
-//    }
-//    
-//    virtual uint32_t GetDepth() const
-//    {
-//        return MTLTextureBase::GetDepth();
-//    }
 };
 
 using MTLRCTextureCubePtr = std::shared_ptr<MTLRCTextureCube>;
@@ -208,26 +148,6 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage);
-    
-    virtual bool IsValid() const
-    {
-        return MTLTextureBase::IsValid();
-    }
-    
-//    virtual uint32_t GetWidth() const
-//    {
-//        return MTLTextureBase::GetWidth();
-//    }
-//    
-//    virtual uint32_t GetHeight() const
-//    {
-//        return MTLTextureBase::GetHeight();
-//    }
-//    
-//    virtual uint32_t GetDepth() const
-//    {
-//        return MTLTextureBase::GetDepth();
-//    }
 };
 
 using MTLRCTexture2DArrayPtr = std::shared_ptr<MTLRCTexture2DArray>;

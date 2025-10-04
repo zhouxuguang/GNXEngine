@@ -66,6 +66,11 @@ public:
         stencil == des.stencil;
     }
     
+    bool operator != (const DepthStencilDescriptor& des) const
+    {
+        return !(*this == des);
+    }
+    
     DepthStencilDescriptor& operator=(const DepthStencilDescriptor& des)
     {
         depthCompareFunction = des.depthCompareFunction;
@@ -125,7 +130,6 @@ public:
         
         for (const auto& iter1 : attributes)
         {
-            
             bool find = false;
             for (const auto& iter2 : des.attributes)
             {
@@ -154,6 +158,11 @@ public:
                 return false;
         }
         return true;
+    }
+    
+    bool operator != (const VertexDescriptor& des) const
+    {
+        return !(*this == des);
     }
 };
 
@@ -246,7 +255,7 @@ struct ColorAttachmentDescriptor
     BlendEquation aplhaBlendOperation = BlendEquationAdd;
     ColorWriteMask writeMask = ColorWriteMaskAll;
     
-    bool operator==(const ColorAttachmentDescriptor& des) const
+    bool operator == (const ColorAttachmentDescriptor& des) const
     {
         return blendingEnabled == des.blendingEnabled &&
         sourceRGBBlendFactor == des.sourceRGBBlendFactor &&
@@ -256,6 +265,11 @@ struct ColorAttachmentDescriptor
         destinationAplhaBlendFactor == des.destinationAplhaBlendFactor &&
         aplhaBlendOperation == des.aplhaBlendOperation &&
         writeMask == des.writeMask;
+    }
+    
+    bool operator != (const ColorAttachmentDescriptor& des) const
+    {
+        return !(*this == des);
     }
     
     static ColorAttachmentDescriptor getDisableDes()
@@ -279,20 +293,42 @@ struct ColorAttachmentDescriptor
     }
 };
 
+static const uint32_t MAX_COLOR_ATTACHMENT_COUNT = 16;
+
 /**
  渲染管线的描述
  */
 struct GraphicsPipelineDescriptor
 {
-    VertexDescriptor vertexDescriptor;                      //顶点buffer数据描述
-    ColorAttachmentDescriptor colorAttachmentDescriptor;        //颜色相关描述
-    DepthStencilDescriptor depthStencilDescriptor;             //深度模板测试状态
+    VertexDescriptor vertexDescriptor;                                                  //顶点buffer数据描述
+    uint32_t renderTargetCount = 1;
+    ColorAttachmentDescriptor colorAttachmentDescriptors[MAX_COLOR_ATTACHMENT_COUNT];   //颜色相关描述
+    DepthStencilDescriptor depthStencilDescriptor;                                      //深度模板测试状态
 public:
     bool operator == (const GraphicsPipelineDescriptor& des) const
     {
-        return vertexDescriptor == des.vertexDescriptor &&
-        colorAttachmentDescriptor == des.colorAttachmentDescriptor &&
-        depthStencilDescriptor == des.depthStencilDescriptor;
+        if (vertexDescriptor != des.vertexDescriptor)
+        {
+            return false;
+        }
+        if (depthStencilDescriptor != des.depthStencilDescriptor)
+        {
+            return false;
+        }
+        if (renderTargetCount != des.renderTargetCount)
+        {
+            return false;
+        }
+        
+        for (uint32_t i = 0; i < renderTargetCount; i ++)
+        {
+            if (colorAttachmentDescriptors[i] != des.colorAttachmentDescriptors[i])
+            {
+                return false;
+            }
+        }
+        
+        return true;
     }
 };
 

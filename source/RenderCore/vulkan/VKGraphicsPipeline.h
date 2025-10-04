@@ -31,7 +31,6 @@ struct RenderPassImage
 
 struct RenderPassImageView
 {
-    //bool isPresentStage = false;
     std::vector<VkImageView> colorImages;
     VkImageView depthImage = VK_NULL_HANDLE;
     VkImageView stencilImage = VK_NULL_HANDLE;
@@ -135,6 +134,7 @@ private:
     VKGraphicsShaderPtr mShader = nullptr;
     
     GraphicsPipelineDescriptor mGraphicsPipelineDes;
+    std::vector<ColorAttachmentDescriptor> mColorAttachmentDescs;
     
     bool mGenerated = false;
     
