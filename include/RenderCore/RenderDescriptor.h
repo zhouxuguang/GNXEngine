@@ -272,19 +272,19 @@ struct ColorAttachmentDescriptor
         return !(*this == des);
     }
     
-    static ColorAttachmentDescriptor getDisableDes()
+    static ColorAttachmentDescriptor GetDisableDes()
     {
         return ColorAttachmentDescriptor();
     }
     
-    static ColorAttachmentDescriptor getCommonBlendDes()
+    static ColorAttachmentDescriptor GetCommonBlendDes()
     {
         ColorAttachmentDescriptor colorDes;
         colorDes.blendingEnabled = true;
         return colorDes;
     }
     
-    static ColorAttachmentDescriptor getPreMultilyAlphaBlendDes()
+    static ColorAttachmentDescriptor GetPreMultilyAlphaBlendDes()
     {
         ColorAttachmentDescriptor colorDes;
         colorDes.blendingEnabled = true;
