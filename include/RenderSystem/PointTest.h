@@ -22,12 +22,27 @@ NS_RENDERSYSTEM_BEGIN
 class PointTest
 {
 public:
-
 	//判断点是否在球中
-    //static bool PointInSphere(const Vector3f& point, const Sphere& sphere);
+    template<typename T>
+    static bool PointInSphere(const Vector3<T>& point, const Sphere<T>& sphere)
+    {
+        return (point - sphere.mCenter).LengthSq() < sphere.mRadius * sphere.mRadius;
+    }
 
     //计算球离点最近的点
-    //static Vector3f ClosestPoint(const Sphere& sphere, const Vector3f& point);
+    template<typename T>
+    static Vector3<T> ClosestPoint(const Sphere<T>& sphere, const Vector3<T>& point)
+    {
+        // Find a normalized vector from the center of the sphere to the test point
+        Vector3<T> sphereToPoint = point - sphere.mCenter;
+        sphereToPoint.Normalize();
+
+        // 使用半径缩放向量
+        sphereToPoint = sphereToPoint * sphere.mRadius;
+
+        //加上球心偏移
+        return sphereToPoint + sphere.mCenter;
+    }
 
     //判断点是否在AABB中
     static bool PointInAABB(const Vector3f& point, const AABB& aabb);
