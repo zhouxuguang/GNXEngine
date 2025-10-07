@@ -2,23 +2,23 @@
 
 NS_RENDERSYSTEM_BEGIN
 
-bool PointTest::PointInSphere(const Vector3f& point, const Sphere& sphere)
-{
-	return (point - sphere.mCenter).LengthSq() < sphere.mRadius * sphere.mRadius;
-}
-
-Vector3f PointTest::ClosestPoint(const Sphere& sphere, const Vector3f& point)
-{
-	// Find a normalized vector from the center of the sphere to the test point 
-	Vector3f sphereToPoint = point - sphere.mCenter;
-	sphereToPoint.Normalize();
-
-	// 使用半径缩放向量
-	sphereToPoint = sphereToPoint * sphere.mRadius;
-
-	//加上球心偏移
-	return sphereToPoint + sphere.mCenter;
-}
+//bool PointTest::PointInSphere(const Vector3f& point, const Sphere& sphere)
+//{
+//	return (point - sphere.mCenter).LengthSq() < sphere.mRadius * sphere.mRadius;
+//}
+//
+//Vector3f PointTest::ClosestPoint(const Sphere& sphere, const Vector3f& point)
+//{
+//	// Find a normalized vector from the center of the sphere to the test point 
+//	Vector3f sphereToPoint = point - sphere.mCenter;
+//	sphereToPoint.Normalize();
+//
+//	// 使用半径缩放向量
+//	sphereToPoint = sphereToPoint * sphere.mRadius;
+//
+//	//加上球心偏移
+//	return sphereToPoint + sphere.mCenter;
+//}
 
 bool PointTest::PointInAABB(const Vector3f& point, const AABB& aabb)
 {

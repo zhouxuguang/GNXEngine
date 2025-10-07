@@ -23,7 +23,7 @@ Frustum<T>::~Frustum()
 }
 
 template<typename T>
-bool Frustum<T>::initFrustum(const Matrix4x4<T>& comboMatrix)
+bool Frustum<T>::InitFrustum(const Matrix4x4<T>& comboMatrix)
 {
 	mInitialized = true;
 	createPlane(comboMatrix);
@@ -181,7 +181,7 @@ bool Frustum<T>::IsBoxInFrustum(const AxisAlignedBox<T>& aabb) const
 }
 
 template<typename T>
-bool Frustum<T>::isOutOfFrustum(const OrientedBoundingBox<T>& obb) const
+bool Frustum<T>::IsOutOfFrustum(const OrientedBoundingBox<T>& obb) const
 {
 	/*if (mInitialized)
 	{
@@ -205,8 +205,23 @@ bool Frustum<T>::isOutOfFrustum(const OrientedBoundingBox<T>& obb) const
 	return  false;
 }
 
+template <typename T>
+bool Frustum<T>::IsSphereInFrustum(const Sphere<T> sphere) const
+{
+    for (int i = 0; i < 6; ++ i)
+    {
+        Plane<T> plane(mPlane[i]);
+        T dist = plane.GetPointDistance(sphere.GetCenter());
+        if (dist + sphere.GetRadius() < 0)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 /**
- * create clip plane
+ * 创建边界平面
  */
 template <typename T>
 void Frustum<T>::createPlane(const Matrix4x4<T>& comboMatrix)
