@@ -45,16 +45,16 @@ public:
     }
 
     //判断点是否在AABB中
-    static bool PointInAABB(const Vector3f& point, const AABB& aabb);
+    //static bool PointInAABB(const Vector3f& point, const AABB& aabb);
 
     //计算点离AABB最近的点
-    static Vector3f ClosestPoint(const AABB& aabb, const Vector3f& point);
+    //static Vector3f ClosestPoint(const AABB& aabb, const Vector3f& point);
 
     //判断点是否在OBB中
-    static bool PointInOBB(const Vector3f& point, const OBB& obb);
+    //static bool PointInOBB(const Vector3f& point, const OBB& obb);
 
 	//计算点离OBB最近的点
-	static Vector3f ClosestPoint(const OBB& obb, const Vector3f& point);
+	//static Vector3f ClosestPoint(const OBB& obb, const Vector3f& point);
 };
 
 

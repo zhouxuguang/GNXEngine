@@ -18,9 +18,6 @@ USING_NS_MATHUTIL
 
 NS_RENDERSYSTEM_BEGIN
 
-class AABB;
-class OBB;
-
 // Intersects a Ray with a triangle.
 bool IntersectRayTriangle(const Rayf& ray, const Vector3f& a, const Vector3f& b, const Vector3f& c);
 // t is to be non-Null and returns the first intersection point of the ray (ray.o + t * ray.dir)
@@ -45,7 +42,7 @@ bool IntersectSphereSphere(const Sphere<T>& s1, const Sphere<T>& s2);
 //bool IntersectSphereOBB(const Sphere& sphere, const OBB& obb);
 
 //判断AABB之间是否相交
-bool IntersectAABBAABB(const AABB& aabb1, const AABB& aabb2);
+//bool IntersectAABBAABB(const AABB& aabb1, const AABB& aabb2);
 
 NS_RENDERSYSTEM_END
 

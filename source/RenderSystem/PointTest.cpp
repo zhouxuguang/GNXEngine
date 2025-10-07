@@ -22,6 +22,8 @@ NS_RENDERSYSTEM_BEGIN
 //	return sphereToPoint + sphere.mCenter;
 //}
 
+#if 0
+
 bool PointTest::PointInAABB(const Vector3f& point, const AABB& aabb)
 {
 	const Vector3f& min = aabb.mMin;
@@ -60,7 +62,7 @@ bool PointTest::PointInOBB(const Vector3f& point, const OBB& obb)
 {
 	Vector3f dir = point - obb.mCenter;
 
-	/*for (int i = 0; i < 3; ++i) 
+	for (int i = 0; i < 3; ++i)
 	{
 		const float* orientation = &obb.orientation.asArray[i * 3];
 		vec3 axis(orientation[0], orientation[1], orientation[2]);
@@ -75,7 +77,7 @@ bool PointTest::PointInOBB(const Vector3f& point, const OBB& obb)
 		{
 			return false;
 		}
-	}*/
+	}
 
 	return true;
 }
@@ -84,6 +86,8 @@ Vector3f PointTest::ClosestPoint(const OBB& obb, const Vector3f& point)
 {
 	return Vector3f();
 }
+
+#endif
 
 NS_RENDERSYSTEM_END
 
