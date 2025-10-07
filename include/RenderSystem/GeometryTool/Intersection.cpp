@@ -68,7 +68,7 @@ bool IntersectRaySphere(const Ray<T>& ray, const Sphere<T>& inSphere)
 }
 
 template<typename T>
-bool IntersectRayAABB(const Ray<T>& ray, const AxisAlignedBox<T>& inAABB, T* outT0, T* outT1)
+bool IntersectRayAABBInner(const Ray<T>& ray, const AxisAlignedBox<T>& inAABB, T* outT0, T* outT1)
 {
     T tmin = -std::numeric_limits<T>::infinity();
     T tmax = std::numeric_limits<T>::infinity();
@@ -128,35 +128,38 @@ bool IntersectRayAABB(const Ray<T>& ray, const AxisAlignedBox<T>& inAABB)
 {
     T t0 = 0;
     T t1 = 0;
-    return IntersectRayAABB(ray, inAABB, &t0, &t1);
+    return IntersectRayAABBInner(ray, inAABB, &t0, &t1);
 }
 
 template<typename T>
 bool IntersectSphereSphere(const Sphere<T>& s1, const Sphere<T>& s2)
 {
-	float radiiSum = s1.GetRadius() + s2.GetRadius();
-	float sqDistance = (s1.GetCenter() - s2.GetCenter()).LengthSq();
+	T radiiSum = s1.GetRadius() + s2.GetRadius();
+	T sqDistance = (s1.GetCenter() - s2.GetCenter()).LengthSq();
 	return sqDistance < radiiSum * radiiSum;
 }
 
-//bool IntersectSphereAABB(const Sphere& sphere, const AABB& aabb)
-//{
-//	Vector3f closestPoint = PointTest::ClosestPoint(aabb, sphere.mCenter);
-//	float distSq = (sphere.mCenter - closestPoint).LengthSq();
-//	float radiusSq = sphere.mRadius * sphere.mRadius;
-//	return distSq < radiusSq;
-//}
+template<typename T>
+bool IntersectSphereAABB(const Sphere<T>& sphere, const AxisAlignedBox<T>& aabb)
+{
+	Vector3<T> closestPoint = PointTest::ClosestPoint(aabb, sphere.mCenter);
+    T distSq = (sphere.mCenter - closestPoint).LengthSq();
+    T radiusSq = sphere.mRadius * sphere.mRadius;
+	return distSq < radiusSq;
+}
 
-//bool IntersectSphereOBB(const Sphere& sphere, const OBB& obb)
-//{
-//	Vector3f closestPoint = PointTest::ClosestPoint(obb, sphere.mCenter);
-//	float distSq = (sphere.mCenter - closestPoint).LengthSq();
-//	float radiusSq = sphere.mRadius * sphere.mRadius;
-//	return distSq < radiusSq;
-//}
+template<typename T>
+bool IntersectSphereOBB(const Sphere<T>& sphere, const OrientedBoundingBox<T>& obb)
+{
+    Vector3<T> closestPoint = PointTest::ClosestPoint(obb, sphere.mCenter);
+    T distSq = (sphere.mCenter - closestPoint).LengthSq();
+    T radiusSq = sphere.mRadius * sphere.mRadius;
+	return distSq < radiusSq;
+}
 
-//bool IntersectAABBAABB(const AABB& aabb1, const AABB& aabb2)
-//{
+template<typename T>
+bool IntersectAABBAABB(const AxisAlignedBox<T>& aabb1, const AxisAlignedBox<T>& aabb2)
+{
 //	Vector3f aMin = aabb1.mMin;
 //    Vector3f aMax = aabb1.mMax;
 //    Vector3f bMin = aabb2.mMin;
@@ -165,9 +168,9 @@ bool IntersectSphereSphere(const Sphere<T>& s1, const Sphere<T>& s2)
 //	return	(aMin.x <= bMax.x && aMax.x >= bMin.x) &&
 //		(aMin.y <= bMax.y && aMax.y >= bMin.y) &&
 //		(aMin.z <= bMax.z && aMax.z >= bMin.z);
-//    
-//    return false;
-//}
+    
+    return false;
+}
 
 #if 0
 

@@ -13,6 +13,7 @@
 #include "Sphere.h"
 #include "Ray.h"
 #include "AABB.h"
+#include "OBB.h"
 
 USING_NS_MATHUTIL
 
@@ -24,25 +25,28 @@ bool IntersectRayTriangle(const Rayf& ray, const Vector3f& a, const Vector3f& b,
 bool IntersectRayTriangle(const Rayf& ray, const Vector3f& a, const Vector3f& b, const Vector3f& c, float* t);
 
 // 判断射线和球是否相交
-template<typename T>
+template <typename T>
 bool IntersectRaySphere(const Ray<T>& ray, const Sphere<T>& inSphere);
 
 // 判断射线和AABB是否相交
-template<typename T>
+template <typename T>
 bool IntersectRayAABB(const Ray<T>& ray, const AxisAlignedBox<T>& inAABB);
 
 // 判断两个球体是否相交
-template<typename T>
+template <typename T>
 bool IntersectSphereSphere(const Sphere<T>& s1, const Sphere<T>& s2);
 
 //判断球和AABB是否相交
-//bool IntersectSphereAABB(const Sphere& sphere, const AABB& aabb);
+template <typename T>
+bool IntersectSphereAABB(const Sphere<T>& sphere, const AxisAlignedBox<T>& aabb);
 
 //判断球和OBB是否相交
-//bool IntersectSphereOBB(const Sphere& sphere, const OBB& obb);
+template <typename T>
+bool IntersectSphereOBB(const Sphere<T>& sphere, const OrientedBoundingBox<T>& obb);
 
 //判断AABB之间是否相交
-//bool IntersectAABBAABB(const AABB& aabb1, const AABB& aabb2);
+template <typename T>
+bool IntersectAABBAABB(const AxisAlignedBox<T>& aabb1, const AxisAlignedBox<T>& aabb2);
 
 NS_RENDERSYSTEM_END
 
