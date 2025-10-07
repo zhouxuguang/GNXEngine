@@ -9,6 +9,7 @@
 #include "Ray.h"
 #include "Sphere.h"
 #include "PointTest.h"
+#include <limits>
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -47,35 +48,96 @@ bool IntersectRayTriangle(const Rayf& ray, const Vector3f& v0, const Vector3f& v
     return true;
 }
 
-//bool IntersectRaySphere(const Rayf& ray, const Sphere& inSphere)
-//{
-//    Vector3f dif = inSphere.GetCenter () - ray.GetOrigin ();
-//    float d = dif.DotProduct(ray.GetDirection ());
-//    float lSqr = dif.DotProduct(dif);
-//    float rSqr = inSphere.GetRadius() * inSphere.GetRadius();
-//
-//    if (d < 0.0F && lSqr > rSqr)
-//        return false;
-//
-//    float mSqr = lSqr - d * d;
-//
-//    if (mSqr > rSqr)
-//        return false;
-//    else
-//        return true;
-//}
-
-bool IntersectRayAABB(const Rayf& ray, const AABB& inAABB)
+template<typename T>
+bool IntersectRaySphere(const Ray<T>& ray, const Sphere<T>& inSphere)
 {
-    return false;
+    Vector3<T> dif = inSphere.GetCenter() - ray.GetOrigin();
+    T d = dif.DotProduct(ray.GetDirection());
+    T lSqr = dif.DotProduct(dif);
+    T rSqr = inSphere.GetRadius() * inSphere.GetRadius();
+
+    if (d < 0.0f && lSqr > rSqr)
+        return false;
+
+    T mSqr = lSqr - d * d;
+
+    if (mSqr > rSqr)
+        return false;
+    else
+        return true;
 }
 
-//bool IntersectSphereSphere(const Sphere& s1, const Sphere& s2)
-//{
-//	float radiiSum = s1.mRadius + s2.mRadius;
-//	float sqDistance = (s1.mCenter - s2.mCenter).LengthSq();
-//	return sqDistance < radiiSum * radiiSum;
-//}
+template<typename T>
+bool IntersectRayAABB(const Ray<T>& ray, const AxisAlignedBox<T>& inAABB, T* outT0, T* outT1)
+{
+    T tmin = -std::numeric_limits<T>::infinity();
+    T tmax = std::numeric_limits<T>::infinity();
+    
+    T t0, t1, f;
+    
+    Vector3<T> p = inAABB.center - ray.GetOrigin();
+    Vector3<T> extent = inAABB.length;
+    for (int i = 0; i < 3; i++)
+    {
+        // ray and plane are paralell so no valid intersection can be found
+        {
+            f = 1.0f / ray.GetDirection()[i];
+            t0 = (p[i] + extent[i]) * f;
+            t1 = (p[i] - extent[i]) * f;
+            // Ray leaves on Right, Top, Back Side
+            if (t0 < t1)
+            {
+                if (t0 > tmin)
+                    tmin = t0;
+                
+                if (t1 < tmax)
+                    tmax = t1;
+                
+                if (tmin > tmax)
+                    return false;
+                
+                if (tmax < 0.0F)
+                    return false;
+            }
+            // Ray leaves on Left, Bottom, Front Side
+            else
+            {
+                if (t1 > tmin)
+                    tmin = t1;
+                
+                if (t0 < tmax)
+                    tmax = t0;
+                
+                if (tmin > tmax)
+                    return false;
+                
+                if (tmax < 0.0F)
+                    return false;
+            }
+        }
+    }
+    
+    *outT0 = tmin;
+    *outT1 = tmax;
+    
+    return true;
+}
+
+template<typename T>
+bool IntersectRayAABB(const Ray<T>& ray, const AxisAlignedBox<T>& inAABB)
+{
+    T t0 = 0;
+    T t1 = 0;
+    return IntersectRayAABB(ray, inAABB, &t0, &t1);
+}
+
+template<typename T>
+bool IntersectSphereSphere(const Sphere<T>& s1, const Sphere<T>& s2)
+{
+	float radiiSum = s1.GetRadius() + s2.GetRadius();
+	float sqDistance = (s1.GetCenter() - s2.GetCenter()).LengthSq();
+	return sqDistance < radiiSum * radiiSum;
+}
 
 //bool IntersectSphereAABB(const Sphere& sphere, const AABB& aabb)
 //{
@@ -194,5 +256,14 @@ int TestOBBOBB(OBB& a, OBB& b)
 }
 
 #endif
+
+template bool IntersectRaySphere<float>(const Ray<float>& ray, const Sphere<float>& inSphere);
+template bool IntersectRaySphere<double>(const Ray<double>& ray, const Sphere<double>& inSphere);
+
+template bool IntersectRayAABB<float>(const Ray<float>& ray, const AxisAlignedBox<float>& inAABB);
+template bool IntersectRayAABB<double>(const Ray<double>& ray, const AxisAlignedBox<double>& inAABB);
+
+template bool IntersectSphereSphere<float>(const Sphere<float>& s1, const Sphere<float>& s2);
+template bool IntersectSphereSphere<double>(const Sphere<double>& s1, const Sphere<double>& s2);
 
 NS_RENDERSYSTEM_END

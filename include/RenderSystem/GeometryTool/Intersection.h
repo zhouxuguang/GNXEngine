@@ -1,5 +1,5 @@
 //
-//  Intersection.hpp
+//  Intersection.h
 //  GNXEngine
 //
 //  Created by zhouxuguang on 2022/11/6.
@@ -10,13 +10,14 @@
 
 #include "RSDefine.h"
 #include "MathUtil/Vector3.h"
+#include "Sphere.h"
 #include "Ray.h"
+#include "AABB.h"
 
 USING_NS_MATHUTIL
 
 NS_RENDERSYSTEM_BEGIN
 
-//class Sphere;
 class AABB;
 class OBB;
 
@@ -25,13 +26,17 @@ bool IntersectRayTriangle(const Rayf& ray, const Vector3f& a, const Vector3f& b,
 // t is to be non-Null and returns the first intersection point of the ray (ray.o + t * ray.dir)
 bool IntersectRayTriangle(const Rayf& ray, const Vector3f& a, const Vector3f& b, const Vector3f& c, float* t);
 
-// Intersects a ray with a volume.
-// Returns true if the ray stats inside the volume or in front of the volume
-//bool IntersectRaySphere(const Rayf& ray, const Sphere& inSphere);
-bool IntersectRayAABB(const Rayf& ray, const AABB& inAABB);
+// 判断射线和球是否相交
+template<typename T>
+bool IntersectRaySphere(const Ray<T>& ray, const Sphere<T>& inSphere);
+
+// 判断射线和AABB是否相交
+template<typename T>
+bool IntersectRayAABB(const Ray<T>& ray, const AxisAlignedBox<T>& inAABB);
 
 // 判断两个球体是否相交
-//bool IntersectSphereSphere(const Sphere& s1, const Sphere& s2);
+template<typename T>
+bool IntersectSphereSphere(const Sphere<T>& s1, const Sphere<T>& s2);
 
 //判断球和AABB是否相交
 //bool IntersectSphereAABB(const Sphere& sphere, const AABB& aabb);

@@ -2,11 +2,13 @@
 
 NS_RENDERSYSTEM_BEGIN
 
-//bool PointTest::PointInSphere(const Vector3f& point, const Sphere& sphere)
+//template <typename T>
+//bool PointTest::PointInSphere(const Vector3<T>& point, const Sphere& sphere)
 //{
 //	return (point - sphere.mCenter).LengthSq() < sphere.mRadius * sphere.mRadius;
 //}
 //
+//template <typename T>
 //Vector3f PointTest::ClosestPoint(const Sphere& sphere, const Vector3f& point)
 //{
 //	// Find a normalized vector from the center of the sphere to the test point 
