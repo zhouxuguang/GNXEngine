@@ -15,7 +15,7 @@ NS_RENDERSYSTEM_BEGIN
 
 bool IntersectRayTriangle(const Rayf& ray, const Vector3f& a, const Vector3f& b, const Vector3f& c)
 {
-    float t;
+    float t = 0.0;
     return IntersectRayTriangle(ray, a, b, c, &t);
 }
 
@@ -155,17 +155,19 @@ bool IntersectSphereSphere(const Sphere<T>& s1, const Sphere<T>& s2)
 //	return distSq < radiusSq;
 //}
 
-bool IntersectAABBAABB(const AABB& aabb1, const AABB& aabb2)
-{
-	Vector3f aMin = aabb1.mMin;
-    Vector3f aMax = aabb1.mMax;
-    Vector3f bMin = aabb2.mMin;
-    Vector3f bMax = aabb2.mMax;
-
-	return	(aMin.x <= bMax.x && aMax.x >= bMin.x) &&
-		(aMin.y <= bMax.y && aMax.y >= bMin.y) &&
-		(aMin.z <= bMax.z && aMax.z >= bMin.z);
-}
+//bool IntersectAABBAABB(const AABB& aabb1, const AABB& aabb2)
+//{
+//	Vector3f aMin = aabb1.mMin;
+//    Vector3f aMax = aabb1.mMax;
+//    Vector3f bMin = aabb2.mMin;
+//    Vector3f bMax = aabb2.mMax;
+//
+//	return	(aMin.x <= bMax.x && aMax.x >= bMin.x) &&
+//		(aMin.y <= bMax.y && aMax.y >= bMin.y) &&
+//		(aMin.z <= bMax.z && aMax.z >= bMin.z);
+//    
+//    return false;
+//}
 
 #if 0
 
