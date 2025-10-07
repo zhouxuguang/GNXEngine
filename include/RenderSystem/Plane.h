@@ -58,42 +58,42 @@ public:
     /**
     * dist to plane, > 0 normal direction
     */
-    T dist2Plane(const Vector3<T>& p) const;
+    T Dist2Plane(const Vector3<T>& p) const;
 
     /**
     * Gets the plane's normal.
     */
-    const Vector3<T>& getNormal() const { return mNormal; }
+    const Vector3<T>& GetNormal() const { return mNormal; }
 
     /**
     * Gets the plane's distance to the origin along its normal.
     */
-    T getDist() const { return mDist; }
+    T GetDist() const { return mDist; }
 
     /**
     * Return the side where the point is.
     */
-    PointSide getSide(const Vector3<T>& point) const;
+    PointSide GetSide(const Vector3<T>& point) const;
 
     /**
     * init plane from tree point.
     */
-    void initPlane(const Vector3<T>& p1, const Vector3<T>& p2, const Vector3<T>& p3);
+    void InitPlane(const Vector3<T>& p1, const Vector3<T>& p2, const Vector3<T>& p3);
 
     /**
     * init plane from normal and dist.
     */
-    void initPlane(const Vector3<T>& normal, T dist);
+    void InitPlane(const Vector3<T>& normal, T dist);
 
     /**
     * init plane from normal and a point on plane.
     */
-    void initPlane(const Vector3<T>& normal, const Vector3<T>& point);
+    void InitPlane(const Vector3<T>& normal, const Vector3<T>& point);
 
 	/**
 	* 根据平面上的四个系数创建平面方程
 	*/
-    void initPlane(const Vector4<T>& coff);
+    void InitPlane(const Vector4<T>& coff);
 
     /**
     * 获得点到平面的最近的带符号距离
@@ -101,7 +101,7 @@ public:
     * @param point The point.
     * @returns 点到平面的最近的带符号距离
     */
-    T getPointDistance(const Vector3<T>& point) const;
+    T GetPointDistance(const Vector3<T>& point) const;
 
     /**
      * @brief 将三维点投影到该平面上
@@ -109,7 +109,7 @@ public:
      * @param point 被投影的点
      * @returns 投影后的点
      */
-    Vector3<T> projectPointOntoPlane(const Vector3<T>& point) const;
+    Vector3<T> ProjectPointOntoPlane(const Vector3<T>& point) const;
 
 private:
     Vector3<T> mNormal;         // the normal line of the plane

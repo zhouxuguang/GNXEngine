@@ -12,6 +12,7 @@
 #include "MathUtil/Matrix4x4.h"
 #include "OBB.h"
 #include "AABB.h"
+#include "Sphere.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -27,7 +28,7 @@ public:
     /**
      * 从矩阵创建视锥体
      */
-    bool initFrustum(const Matrix4x4<T>& comboMatrix);
+    bool InitFrustum(const Matrix4x4<T>& comboMatrix);
 
     /**
      * 判断AABB和视锥体的关系，判断AABB是否在Frustum内
@@ -37,7 +38,12 @@ public:
     /**
      * 判断OBB和视锥体的关系
      */
-    bool isOutOfFrustum(const OrientedBoundingBox<T>& obb) const;
+    bool IsOutOfFrustum(const OrientedBoundingBox<T>& obb) const;
+    
+    /**
+     * 判断球和视锥体的关系
+     */
+    bool IsSphereInFrustum(const Sphere<T> sphere) const;
     
 private:
     /**

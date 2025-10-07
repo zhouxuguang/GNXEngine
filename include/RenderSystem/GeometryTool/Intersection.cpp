@@ -12,7 +12,7 @@
 
 NS_RENDERSYSTEM_BEGIN
 
-bool IntersectRayTriangle (const Rayf& ray, const Vector3f& a, const Vector3f& b, const Vector3f& c)
+bool IntersectRayTriangle(const Rayf& ray, const Vector3f& a, const Vector3f& b, const Vector3f& c)
 {
     float t;
     return IntersectRayTriangle(ray, a, b, c, &t);
@@ -47,51 +47,51 @@ bool IntersectRayTriangle(const Rayf& ray, const Vector3f& v0, const Vector3f& v
     return true;
 }
 
-bool IntersectRaySphere(const Rayf& ray, const Sphere& inSphere)
-{
-    Vector3f dif = inSphere.GetCenter () - ray.GetOrigin ();
-    float d = dif.DotProduct(ray.GetDirection ());
-    float lSqr = dif.DotProduct(dif);
-    float rSqr = inSphere.GetRadius() * inSphere.GetRadius();
-
-    if (d < 0.0F && lSqr > rSqr)
-        return false;
-
-    float mSqr = lSqr - d * d;
-
-    if (mSqr > rSqr)
-        return false;
-    else
-        return true;
-}
+//bool IntersectRaySphere(const Rayf& ray, const Sphere& inSphere)
+//{
+//    Vector3f dif = inSphere.GetCenter () - ray.GetOrigin ();
+//    float d = dif.DotProduct(ray.GetDirection ());
+//    float lSqr = dif.DotProduct(dif);
+//    float rSqr = inSphere.GetRadius() * inSphere.GetRadius();
+//
+//    if (d < 0.0F && lSqr > rSqr)
+//        return false;
+//
+//    float mSqr = lSqr - d * d;
+//
+//    if (mSqr > rSqr)
+//        return false;
+//    else
+//        return true;
+//}
 
 bool IntersectRayAABB(const Rayf& ray, const AABB& inAABB)
 {
     return false;
 }
 
-bool IntersectSphereSphere(const Sphere& s1, const Sphere& s2)
-{
-	float radiiSum = s1.mRadius + s2.mRadius;
-	float sqDistance = (s1.mCenter - s2.mCenter).LengthSq();
-	return sqDistance < radiiSum * radiiSum;
-}
+//bool IntersectSphereSphere(const Sphere& s1, const Sphere& s2)
+//{
+//	float radiiSum = s1.mRadius + s2.mRadius;
+//	float sqDistance = (s1.mCenter - s2.mCenter).LengthSq();
+//	return sqDistance < radiiSum * radiiSum;
+//}
 
-bool IntersectSphereAABB(const Sphere& sphere, const AABB& aabb)
-{
-	Vector3f closestPoint = PointTest::ClosestPoint(aabb, sphere.mCenter);
-	float distSq = (sphere.mCenter - closestPoint).LengthSq();
-	float radiusSq = sphere.mRadius * sphere.mRadius;
-	return distSq < radiusSq;
-}
+//bool IntersectSphereAABB(const Sphere& sphere, const AABB& aabb)
+//{
+//	Vector3f closestPoint = PointTest::ClosestPoint(aabb, sphere.mCenter);
+//	float distSq = (sphere.mCenter - closestPoint).LengthSq();
+//	float radiusSq = sphere.mRadius * sphere.mRadius;
+//	return distSq < radiusSq;
+//}
 
-bool IntersectSphereOBB(const Sphere& sphere, const OBB& obb)
-{
-	Vector3f closestPoint = PointTest::ClosestPoint(obb, sphere.mCenter);
-	float distSq = (sphere.mCenter - closestPoint).LengthSq();
-	float radiusSq = sphere.mRadius * sphere.mRadius;
-	return distSq < radiusSq;
-}
+//bool IntersectSphereOBB(const Sphere& sphere, const OBB& obb)
+//{
+//	Vector3f closestPoint = PointTest::ClosestPoint(obb, sphere.mCenter);
+//	float distSq = (sphere.mCenter - closestPoint).LengthSq();
+//	float radiusSq = sphere.mRadius * sphere.mRadius;
+//	return distSq < radiusSq;
+//}
 
 bool IntersectAABBAABB(const AABB& aabb1, const AABB& aabb2)
 {

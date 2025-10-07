@@ -24,10 +24,10 @@ class PointTest
 public:
 
 	//判断点是否在球中
-    static bool PointInSphere(const Vector3f& point, const Sphere& sphere);
+    //static bool PointInSphere(const Vector3f& point, const Sphere& sphere);
 
     //计算球离点最近的点
-    static Vector3f ClosestPoint(const Sphere& sphere, const Vector3f& point);
+    //static Vector3f ClosestPoint(const Sphere& sphere, const Vector3f& point);
 
     //判断点是否在AABB中
     static bool PointInAABB(const Vector3f& point, const AABB& aabb);

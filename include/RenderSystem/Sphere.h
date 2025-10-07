@@ -15,28 +15,44 @@ USING_NS_MATHUTIL
 
 NS_RENDERSYSTEM_BEGIN
 
+template <typename T>
 class Sphere
 {
 public:
-    Vector3f    mCenter;
-    float       mRadius;
+    Vector3<T>    mCenter;
+    T       mRadius;
     
 public:
     
-    Sphere () {}
-    Sphere (const Vector3f& p0, float r)                {Set (p0, r);}
+    Sphere() {}
+    Sphere(const Vector3<T>& p0, T r)
+    {
+        Set(p0, r);
+    }
     
-    void Set (const Vector3f& p0)                        {mCenter = p0;    mRadius = 0;}
-    void Set (const Vector3f& p0, float r)                {mCenter = p0;    mRadius = r;}
+    void Set(const Vector3<T>& p0)
+    {
+        mCenter = p0;
+        mRadius = 0;
+    }
     
-    Vector3f& GetCenter () {return mCenter;}
-    const Vector3f& GetCenter () const  {return mCenter;}
+    void Set(const Vector3<T>& p0, T r)
+    {
+        mCenter = p0;
+        mRadius = r;
+    }
     
-    float& GetRadius () {return mRadius;}
-    const float& GetRadius ()const {return mRadius;}
+    Vector3<T>& GetCenter() { return mCenter; }
+    const Vector3<T>& GetCenter() const { return mCenter; }
     
-    bool IsInside(const Sphere& inSphere)const;
+    T& GetRadius() { return mRadius; }
+    const T& GetRadius() const { return mRadius; }
+    
+    bool IsInside(const Sphere& inSphere) const;
 };
+
+typedef Sphere<float> Spheref;
+typedef Sphere<double> Sphered;
 
 NS_RENDERSYSTEM_END
 

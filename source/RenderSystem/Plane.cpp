@@ -17,37 +17,37 @@ Plane<T>::Plane() : mNormal(0, 0, 1), mDist(0)
 template<typename T>
 Plane<T>::Plane(const Vector3<T>& p1, const Vector3<T>& p2, const Vector3<T>& p3)
 {
-	initPlane(p1, p2, p3);
+    InitPlane(p1, p2, p3);
 }
 
 template<typename T>
 Plane<T>::Plane(const Vector3<T>& normal, T dist)
 {
-	initPlane(normal, dist);
+    InitPlane(normal, dist);
 }
 
 template<typename T>
 Plane<T>::Plane(const Vector3<T>& normal, const Vector3<T>& point)
 {
-	initPlane(normal, point);
+    InitPlane(normal, point);
 }
 
 template<typename T>
 Plane<T>::Plane(const Vector4<T>& coff)
 {
-	initPlane(coff);
+    InitPlane(coff);
 }
 
 template<typename T>
-T Plane<T>::dist2Plane(const Vector3<T>& p) const
+T Plane<T>::Dist2Plane(const Vector3<T>& p) const
 {
     return mNormal.DotProduct(p) - mDist;
 }
 
 template<typename T>
-PointSide Plane<T>::getSide(const Vector3<T>& point) const
+PointSide Plane<T>::GetSide(const Vector3<T>& point) const
 {
-    T dist = dist2Plane(point);
+    T dist = Dist2Plane(point);
     if (dist > 0)
         return PointSide::FRONT_PLANE;
     else if (dist < 0)
@@ -57,7 +57,7 @@ PointSide Plane<T>::getSide(const Vector3<T>& point) const
 }
 
 template<typename T>
-void Plane<T>::initPlane(const Vector3<T>& p1, const Vector3<T>& p2, const Vector3<T>& p3)
+void Plane<T>::InitPlane(const Vector3<T>& p1, const Vector3<T>& p2, const Vector3<T>& p3)
 {
 	Vector3<T> p21 = p2 - p1;
 	Vector3<T> p32 = p3 - p2;
@@ -67,7 +67,7 @@ void Plane<T>::initPlane(const Vector3<T>& p1, const Vector3<T>& p2, const Vecto
 }
 
 template<typename T>
-void Plane<T>::initPlane(const Vector3<T>& normal, T dist)
+void Plane<T>::InitPlane(const Vector3<T>& normal, T dist)
 {
 	T oneOverLength = T(1.0 / normal.Length());
 	mNormal = normal * oneOverLength;
@@ -75,14 +75,14 @@ void Plane<T>::initPlane(const Vector3<T>& normal, T dist)
 }
 
 template<typename T>
-void Plane<T>::initPlane(const Vector3<T>& normal, const Vector3<T>& point)
+void Plane<T>::InitPlane(const Vector3<T>& normal, const Vector3<T>& point)
 {
 	//-glm::dot(normal, point)  这里容易出错, 参考cesium native的平面类
-	initPlane(normal, -normal.DotProduct(point));
+    InitPlane(normal, -normal.DotProduct(point));
 }
 
 template<typename T>
-void Plane<T>::initPlane(const Vector4<T>& coff)
+void Plane<T>::InitPlane(const Vector4<T>& coff)
 {
 	mNormal = Vector3<T>(coff.x, coff.y, coff.z);
 	mNormal.Normalize();
@@ -90,18 +90,18 @@ void Plane<T>::initPlane(const Vector4<T>& coff)
 }
 
 template<typename T>
-T Plane<T>::getPointDistance(const Vector3<T>& point) const
+T Plane<T>::GetPointDistance(const Vector3<T>& point) const
 {
 	return this->mNormal.DotProduct(point) + this->mDist;
 }
 
 template<typename T>
-Vector3<T> Plane<T>::projectPointOntoPlane(const Vector3<T>& point) const
+Vector3<T> Plane<T>::ProjectPointOntoPlane(const Vector3<T>& point) const
 {
-  // projectedPoint = point - (normal.point + scale) * normal
-  const T pointDistance = this->getPointDistance(point);
-  const Vector3<T> scaledNormal = this->mNormal * pointDistance;
-  return point - scaledNormal;
+    // projectedPoint = point - (normal.point + scale) * normal
+    const T pointDistance = this->GetPointDistance(point);
+    const Vector3<T> scaledNormal = this->mNormal * pointDistance;
+    return point - scaledNormal;
 }
 
 template class Plane<float>;
