@@ -16,6 +16,18 @@
 
 NS_RENDERSYSTEM_BEGIN
 
+// Frustum平面定义
+enum
+{
+	kPlaneFrustumLeft = 0,
+	kPlaneFrustumRight,
+	kPlaneFrustumBottom,
+	kPlaneFrustumTop,
+	kPlaneFrustumNear,
+	kPlaneFrustumFar,
+	kPlaneFrustumNum,
+};
+
 // 相机视锥体
 template <typename T>
 class Frustum
@@ -51,7 +63,7 @@ private:
      */
     void createPlane(const Matrix4x4<T>& comboMatrix);
 
-    Vector4<T> mPlanes[6];             // 裁剪平面, left, right, top, bottom, near, far
+    Vector4<T> mPlanes[kPlaneFrustumNum];             // 裁剪平面, left, right, bottom, top，near, far
     Vector4<T> mFrustumCorners[8];
 };
 
