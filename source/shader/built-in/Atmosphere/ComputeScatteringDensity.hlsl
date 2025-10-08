@@ -38,11 +38,11 @@ struct PSOutput
     float4 scattering_density : SV_Target0; // 对应 location = 0
 };
 
-Texture2D transmittance_texture : register(t0);
-Texture3D single_rayleigh_scattering_texture : register(t1);
-Texture3D single_mie_scattering_texture : register(t2);
-Texture3D multiple_scattering_texture : register(t3);
-Texture2D irradiance_texture : register(t4);
+Texture2D transmittance_texture;
+Texture3D single_rayleigh_scattering_texture;
+Texture3D single_mie_scattering_texture;
+Texture3D multiple_scattering_texture;
+Texture2D irradiance_texture;
 
 static const SamplerState linear_sampler
 {
