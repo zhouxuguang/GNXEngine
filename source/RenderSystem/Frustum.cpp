@@ -6,7 +6,6 @@
 //
 
 #include "Frustum.h"
-#include "Camera.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -45,7 +44,7 @@ int FrustumAABBIntersect(const Plane<T>* planes, const Vector3<T>& mins, const V
 	int ret = INSIDE;
 	Vector3<T> vmin, vmax;
 
-	for (int i = 0; i < 6; ++i) 
+	for (int i = 0; i < kPlaneFrustumNum; ++i) 
 	{
 		// X axis 
 		if (planes[i].getNormal().x > 0)
@@ -111,7 +110,7 @@ static inline void GetFrustumCorners(const Matrix4x4<T> viewProj, Vector4<T>* po
 template<typename T>
 static inline bool IsBoxInFrustumIMPL(const Vector4<T>* frustumPlanes, const Vector4<T>* frustumCorners, const AxisAlignedBox<T>& box)
 {
-	for (int i = 0; i < 6; i++) 
+	for (int i = 0; i < kPlaneFrustumNum; i++) 
 	{
 		int r = 0;
 		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.minimum.y, box.minimum.z, 1.0)) < 0.0) ? 1 : 0;
@@ -203,7 +202,7 @@ bool Frustum<T>::IsOutOfFrustum(const OrientedBoundingBox<T>& obb) const
 template <typename T>
 bool Frustum<T>::IsSphereInFrustum(const Sphere<T> sphere) const
 {
-    for (int i = 0; i < 6; ++ i)
+    for (int i = 0; i < kPlaneFrustumNum; ++ i)
     {
         Plane<T> plane(mPlanes[i]);
         T dist = plane.GetPointDistance(sphere.GetCenter());
@@ -235,14 +234,14 @@ void Frustum<T>::createPlane(const Matrix4x4<T>& comboMatrix)
     //Fast Extraction of Viewing Frustum Planes from the WorldView-Projection Matrix
     
     // 提取平面方程的系数
-    mPlanes[0] = (comboMatrix[3] + comboMatrix[0]);   // left
-    mPlanes[1] = (comboMatrix[3] - comboMatrix[0]);   // right
-    mPlanes[2] = (comboMatrix[3] + comboMatrix[1]);   // bottom
-    mPlanes[3] = (comboMatrix[3] - comboMatrix[1]);   // top
-    mPlanes[4] = (comboMatrix[3] + comboMatrix[2]);   // near
-    mPlanes[5] = (comboMatrix[3] - comboMatrix[2]);   // far
+    mPlanes[kPlaneFrustumLeft]    = (comboMatrix[3] + comboMatrix[0]);   // left
+    mPlanes[kPlaneFrustumRight]   = (comboMatrix[3] - comboMatrix[0]);   // right
+    mPlanes[kPlaneFrustumBottom]  = (comboMatrix[3] + comboMatrix[1]);   // bottom
+    mPlanes[kPlaneFrustumTop]     = (comboMatrix[3] - comboMatrix[1]);   // top
+    mPlanes[kPlaneFrustumNear]    = (comboMatrix[3] + comboMatrix[2]);   // near
+    mPlanes[kPlaneFrustumFar]     = (comboMatrix[3] - comboMatrix[2]);   // far
     
-    for (int i = 0; i < 6; i ++)
+    for (int i = 0; i < kPlaneFrustumNum; i ++)
     {
         NormalizePlane(mPlanes[i]);
     }
