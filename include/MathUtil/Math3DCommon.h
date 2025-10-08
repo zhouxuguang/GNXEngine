@@ -56,7 +56,7 @@
 #endif
 
 #else
-	#define MATH3D_API __attribute__((dllimport))
+	#define MATH3D_API
 #endif
 
 //
