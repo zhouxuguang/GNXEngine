@@ -483,6 +483,7 @@ bool CreateVirtualDevice(VulkanContext& context)
     VkPhysicalDeviceFeatures enabledFeatures = {};
     enabledFeatures.textureCompressionETC2 = supportedFeatures.textureCompressionETC2;
     enabledFeatures.textureCompressionBC = supportedFeatures.textureCompressionBC;
+    enabledFeatures.independentBlend = supportedFeatures.independentBlend;    // 每个通道独立混合的参数
 
     deviceCreateInfo.pEnabledFeatures = &enabledFeatures;
     deviceCreateInfo.enabledExtensionCount = (uint32_t)deviceExtensionNames.size();
