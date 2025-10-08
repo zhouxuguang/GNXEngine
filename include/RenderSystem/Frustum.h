@@ -51,9 +51,8 @@ private:
      */
     void createPlane(const Matrix4x4<T>& comboMatrix);
 
-    Vector4<T> mPlane[6];             // 裁剪平面, left, right, top, bottom, near, far
+    Vector4<T> mPlanes[6];             // 裁剪平面, left, right, top, bottom, near, far
     Vector4<T> mFrustumCorners[8];
-    bool mInitialized = false;
 };
 
 typedef Frustum<float> Frustumf;

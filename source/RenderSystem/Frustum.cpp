@@ -25,7 +25,6 @@ Frustum<T>::~Frustum()
 template<typename T>
 bool Frustum<T>::InitFrustum(const Matrix4x4<T>& comboMatrix)
 {
-	mInitialized = true;
 	createPlane(comboMatrix);
 	return true;
 }
@@ -168,16 +167,12 @@ static inline bool IsBoxInFrustumIMPL(const Vector4<T>* frustumPlanes, const Vec
 template<typename T>
 bool Frustum<T>::IsBoxInFrustum(const AxisAlignedBox<T>& aabb) const
 {
-	if (mInitialized)
-	{
 #if 1
-		return IsBoxInFrustumIMPL(mPlane, mFrustumCorners, aabb);
+    return IsBoxInFrustumIMPL(mPlanes, mFrustumCorners, aabb);
 #else
-		int ret = FrustumAABBIntersect(mPlane, aabb.minimum, aabb.maximum);
-		return ret == OUTSIDE;
+    int ret = FrustumAABBIntersect(mPlane, aabb.minimum, aabb.maximum);
+    return ret == OUTSIDE;
 #endif
-	}
-	return false;
 }
 
 template<typename T>
@@ -210,7 +205,7 @@ bool Frustum<T>::IsSphereInFrustum(const Sphere<T> sphere) const
 {
     for (int i = 0; i < 6; ++ i)
     {
-        Plane<T> plane(mPlane[i]);
+        Plane<T> plane(mPlanes[i]);
         T dist = plane.GetPointDistance(sphere.GetCenter());
         if (dist + sphere.GetRadius() < 0)
         {
@@ -220,22 +215,37 @@ bool Frustum<T>::IsSphereInFrustum(const Sphere<T> sphere) const
     return true;
 }
 
+template <typename T>
+static void NormalizePlane(Vector4<T> &plane)
+{
+    T mag = 1.0 / sqrt(plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
+    plane.x = plane.x / mag;
+    plane.y = plane.y / mag;
+    plane.z = plane.z / mag;
+    plane.w = plane.w / mag;
+}
+
 /**
  * 创建边界平面
  */
 template <typename T>
 void Frustum<T>::createPlane(const Matrix4x4<T>& comboMatrix)
 {
-    // 参考这篇文章
+    // 参考这篇文章，本质上也是在ndc坐标下定义平面后，然后再逆变换到世界空间
     //Fast Extraction of Viewing Frustum Planes from the WorldView-Projection Matrix
     
     // 提取平面方程的系数
-    mPlane[0] = (comboMatrix[3] + comboMatrix[0]);//left
-    mPlane[1] = (comboMatrix[3] - comboMatrix[0]);//right
-    mPlane[2] = (comboMatrix[3] + comboMatrix[1]);//bottom
-    mPlane[3] = (comboMatrix[3] - comboMatrix[1]);//top
-    mPlane[4] = (comboMatrix[3] + comboMatrix[2]);//near
-    mPlane[5] = (comboMatrix[3] - comboMatrix[2]);//far
+    mPlanes[0] = (comboMatrix[3] + comboMatrix[0]);   // left
+    mPlanes[1] = (comboMatrix[3] - comboMatrix[0]);   // right
+    mPlanes[2] = (comboMatrix[3] + comboMatrix[1]);   // bottom
+    mPlanes[3] = (comboMatrix[3] - comboMatrix[1]);   // top
+    mPlanes[4] = (comboMatrix[3] + comboMatrix[2]);   // near
+    mPlanes[5] = (comboMatrix[3] - comboMatrix[2]);   // far
+    
+    for (int i = 0; i < 6; i ++)
+    {
+        NormalizePlane(mPlanes[i]);
+    }
 
 	GetFrustumCorners(comboMatrix, mFrustumCorners);
 }

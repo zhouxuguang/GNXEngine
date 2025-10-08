@@ -39,15 +39,11 @@ public:
 
     inline const Vector4<T>& operator [](size_t nIndex) const
     {
-        //const T* pValue = m_pValue[nIndex];
-        //return Vector4<T>(pValue[0], pValue[1], pValue[2], pValue[3]);
         return mVecArray[nIndex];
     }
 
     inline Vector4<T>& operator [](size_t nIndex)
     {
-		//T* pValue = m_pValue[nIndex];
-		//return Vector4<T>(pValue[0], pValue[1], pValue[2], pValue[3]);
         return mVecArray[nIndex];
     }
 

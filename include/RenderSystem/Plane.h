@@ -18,9 +18,9 @@ NS_RENDERSYSTEM_BEGIN
 
 enum PointSide
 {
-    IN_PLANE,
-    FRONT_PLANE,
-    BEHIND_PLANE,
+    IN_PLANE,        //在平面上
+    FRONT_PLANE,     //在法向量的正向一侧
+    BEHIND_PLANE,    //在法向量的反向一侧
 };
 
 /**
@@ -112,7 +112,7 @@ public:
     Vector3<T> ProjectPointOntoPlane(const Vector3<T>& point) const;
 
 private:
-    Vector3<T> mNormal;         // the normal line of the plane
+    Vector3<T> mNormal;         // 平面法线
     T mDist;             // original displacement of the normal
 };
 
