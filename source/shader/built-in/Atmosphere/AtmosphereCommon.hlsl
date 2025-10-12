@@ -36,7 +36,7 @@ float PhaseFunctionR(float Mu)
 /** Mie phase function */
 float PhaseFunctionM(float Mu, float MieG)
 {
-	return 1.5 * 1.0 / (4.0 * PI) * (1.0 - MieG * MieG) * pow( abs(1.0 + (MieG * MieG) - 2.0 * MieG * Mu), -3.0/2.0) * (1.0 + Mu * Mu) / 
+	return 1.5 * 1.0 / (4.0 * PI) * (1.0 - MieG * MieG) * pow(abs(1.0 + (MieG * MieG) - 2.0 * MieG * Mu), -3.0/2.0) * (1.0 + Mu * Mu) / 
 		(2.0 + MieG * MieG);
 }
 
@@ -64,7 +64,7 @@ float DistanceToTopAtmosphereBoundary(AtmosphereParameters atmosphere, float r, 
 float DistanceToBottomAtmosphereBoundary(AtmosphereParameters atmosphere, float r, float mu)
 {
 	float discriminant = r * r * (mu * mu-1.0) + atmosphere.bottom_radius * atmosphere.bottom_radius;
-	return(ClampDistance( -r * mu - SafeSqrt( discriminant ) ) ); /* 这里是方程解中"-"的那个根 */
+	return(ClampDistance(-r * mu - SafeSqrt(discriminant))); /* 这里是方程解中"-"的那个根 */
 }
 
 /**
@@ -92,9 +92,9 @@ bool RayIntersectsGround(AtmosphereParameters atmosphere, float r, float mu)
 float GetLayerDensity(DensityProfileLayer layer, float altitude)
 {
 	/* 密度计算'exp_term' * exp('exp_scale' * h) + 'linear_term' * h + 'constant_term' */
-	float density = layer.exp_term * exp( layer.exp_scale * altitude ) +
+	float density = layer.exp_term * exp(layer.exp_scale * altitude) +
 			 layer.linear_term * altitude + layer.constant_term;
-	return(clamp(density, float(0.0), float(1.0) ) );
+	return(clamp(density, float(0.0), float(1.0)));
 }
 
 /**
@@ -171,7 +171,7 @@ float3 ComputeTransmittanceToTopAtmosphereBoundary(AtmosphereParameters atmosphe
  **/
 float GetTextureCoordFromUnitRange(float x, int texture_size)
 {
-	return(0.5 / float( texture_size ) + x * (1.0 - 1.0 / float(texture_size)));
+	return(0.5 / float(texture_size) + x * (1.0 - 1.0 / float(texture_size)));
 }
 
 /**
