@@ -1,6 +1,6 @@
 
 
-add_executable(TestMeshImport TestMeshImport.cpp)
+add_executable(TestMeshImport TestMeshImport.cpp tlsf.c tlsf.h)
 
 target_link_libraries(TestMeshImport PRIVATE baselib imagecodec mathutil rendercore rendersystem shadercompiler spirv_reflect AssetProcess tbb)
 

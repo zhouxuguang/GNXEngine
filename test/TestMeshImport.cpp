@@ -8,8 +8,10 @@
 #include "AssetProcess/ASTCCompressor.h"
 #include "ImageCodec/ImageDecoder.h"
 #include <iostream>
+#include <new>
 
 #include "ktx.h"
+#include "tlsf.h"
 
 // little endian
 struct astc_header
@@ -87,8 +89,42 @@ void testKTX()
 	ktxTexture_Destroy(ktxTexture(textureKTX2));
 }
 
+class A
+{
+public:
+    int a = 0;
+    int b = 0;
+    A()
+    {
+        a = 15;
+        b = 10;
+    }
+};
+
+tlsf_t tlsf;
+
+void* operator new(size_t size)
+{
+    if (!tlsf) 
+    {
+        void * pBuffer = malloc(102400);
+        tlsf = tlsf_create_with_pool(pBuffer, 102400);
+    }
+    return tlsf_malloc(tlsf, size);
+}
+
+void operator delete(void* ptr)
+{
+    tlsf_free(tlsf, ptr);
+}
+
 int main(int argc, char* argv[])
 {
+    std::vector<int> vecaa;
+    void * pBuffer = malloc(102400);
+    tlsf = tlsf_create_with_pool(pBuffer, 102400);
+    A *ad = new A;
+    
 	fs::path currentPath = getMediaDir();
 
     testKTX();
