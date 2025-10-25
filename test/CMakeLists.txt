@@ -2,7 +2,7 @@
 
 add_executable(TestMeshImport TestMeshImport.cpp tlsf.c tlsf.h)
 
-target_link_libraries(TestMeshImport PRIVATE GNXEngine RenderSystem AssetProcess ImageCodec spirv_reflect tbb ktx)
+target_link_libraries(TestMeshImport PRIVATE GNXEngine)
 
 if(APPLE)
     target_link_libraries(TestMeshImport PRIVATE "-framework CoreGraphics" "-framework CoreVideo" "-framework QuartzCore" 

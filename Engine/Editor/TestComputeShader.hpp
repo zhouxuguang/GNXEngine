@@ -9,8 +9,8 @@
 #define TestComputeShader_hpp
 
 #include <stdio.h>
-#include "RenderCore/GraphicsPipeline.h"
-#include "RenderCore/ComputeEncoder.h"
+#include "Runtime/RenderCore/include/GraphicsPipeline.h"
+#include "Runtime/RenderCore/include/ComputeEncoder.h"
 
 USING_NS_RENDERCORE
 

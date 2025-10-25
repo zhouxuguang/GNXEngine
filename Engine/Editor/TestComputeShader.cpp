@@ -6,11 +6,11 @@
 //
 
 #include "TestComputeShader.hpp"
-#include "ShaderAssetLoader.h"
-#include "RenderCore/RenderDevice.h"
-#include "RenderEngine.h"
-#include "ImageCodec/ImageDecoder.h"
-#include "ImageTextureUtil.h"
+#include "Runtime/RenderSystem/include/ShaderAssetLoader.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/RenderSystem/include/RenderEngine.h"
+#include "Runtime/ImageCodec/include/ImageDecoder.h"
+#include "Runtime/RenderSystem/include/ImageTextureUtil.h"
 #include <assert.h>
 
 using namespace imagecodec;

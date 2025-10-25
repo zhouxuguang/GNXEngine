@@ -10,5 +10,5 @@ source_group(TREE ${GNXEngine_include_dir} PREFIX include FILES ${GNXEngine_Incl
 
 target_include_directories(GNXEngine PRIVATE ${GNXEngine_include_dir})
 
-target_link_libraries(GNXEngine PRIVATE BaseLib ImageCodec MathUtil RenderCore RenderSystem ShaderCompiler spirv_reflect tbb AssetProcess)
+target_link_libraries(GNXEngine PUBLIC BaseLib ImageCodec MathUtil RenderCore RenderSystem ShaderCompiler spirv_reflect tbb AssetProcess ktx)
 target_compile_definitions(GNXEngine PRIVATE GNXENGINE_EXPORTS)

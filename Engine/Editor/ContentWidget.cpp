@@ -3,8 +3,8 @@
 #include <QFileDialog>
 #include <QSettings>
 
-#include "ImageCodec/ImageDecoder.h"
-#include "AssetProcess/AssetImporter.h"
+#include "Runtime/ImageCodec/include/ImageDecoder.h"
+#include "Runtime/AssetProcess/include/AssetImporter.h"
 
 ContentWidget::ContentWidget(QDockWidget* parent, const QString& currentDir)
 	: QWidget(parent),

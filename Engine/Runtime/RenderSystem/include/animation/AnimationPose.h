@@ -1,9 +1,9 @@
 #ifndef RENDERSYSTEM_ANIMATION_POSE_DGHDFGVH_INCLUDE_H
 #define RENDERSYSTEM_ANIMATION_POSE_DGHDFGVH_INCLUDE_H
 
-#include "RSDefine.h"
+#include "../RSDefine.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
-#include "Transform.h"
+#include "../Transform.h"
 
 NS_RENDERSYSTEM_BEGIN
 

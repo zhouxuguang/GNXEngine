@@ -4,8 +4,8 @@
 #include <QFileSystemModel>
 #include <QListView>
 #include "View.h"
-#include "RenderEngine.h"
-#include "BaseLib/BaseLib.h"
+#include "Runtime/RenderSystem/include/RenderEngine.h"
+#include "Runtime/BaseLib/include/BaseLib.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)

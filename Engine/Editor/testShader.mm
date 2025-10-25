@@ -8,8 +8,8 @@
 #if 1
 
 #include "testShader.h"
-#include "RenderCore/RenderDevice.h"
-#include "ShaderCompiler/ShaderCompiler.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/ShaderCompiler/include/ShaderCompiler.h"
 #include "ResourceUtil.h"
 #include <Foundation/Foundation.h>
 

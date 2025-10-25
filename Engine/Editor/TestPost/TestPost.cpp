@@ -6,7 +6,7 @@
 //
 
 #include "TestPost.hpp"
-#include "RenderSystem/PostProcess/PostProcessing.h"
+#include "Runtime/RenderSystem/include/PostProcess/PostProcessing.h"
 
 static PostProcessing* postProcessing = nullptr;
 

@@ -8,7 +8,7 @@
 #ifndef GNX_ENGINE_SKELETON_INCLUDE_JSDGHFDDKF
 #define GNX_ENGINE_SKELETON_INCLUDE_JSDGHFDDKF
 
-#include "RSDefine.h"
+#include "../RSDefine.h"
 #include "AnimationPose.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 

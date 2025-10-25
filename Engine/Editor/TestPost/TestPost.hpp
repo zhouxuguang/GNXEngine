@@ -8,7 +8,7 @@
 #ifndef TestPost_hpp
 #define TestPost_hpp
 
-#include "RenderSystem/PostProcess/PostProcessing.h"
+#include "Runtime/RenderSystem/include/PostProcess/PostProcessing.h"
 
 using namespace RenderSystem;
 

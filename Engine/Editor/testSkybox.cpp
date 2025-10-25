@@ -6,9 +6,9 @@
 //
 
 #include "testSkybox.h"
-#include "RenderSystem/SkyBox.h"
-#include "RenderSystem/RenderEngine.h"
-#include "BaseLib/BaseLib.h"
+#include "Runtime/RenderSystem/include/SkyBox.h"
+#include "Runtime/RenderSystem/include/RenderEngine.h"
+#include "Runtime/BaseLib/include/BaseLib.h"
 
 RenderSystem::SkyBox* initSky(RenderDevicePtr renderDevice)
 {

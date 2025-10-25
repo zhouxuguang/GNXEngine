@@ -8,7 +8,7 @@
 #ifndef TestImageDecode_hpp
 #define TestImageDecode_hpp
 
-#include "ImageCodec/ImageDecoder.h"
+#include "Runtime/ImageCodec/include/ImageDecoder.h"
 
 using namespace imagecodec;
 

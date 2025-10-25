@@ -9,8 +9,8 @@
 #define testSkybox_hpp
 
 #include <stdio.h>
-#include "RenderCore/RenderDevice.h"
-#include "RenderSystem/SkyBox.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/RenderSystem/include/SkyBox.h"
 
 RenderSystem::SkyBox* initSky(RenderDevicePtr renderDevice);
 

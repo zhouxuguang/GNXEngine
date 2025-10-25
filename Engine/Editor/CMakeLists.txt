@@ -89,7 +89,7 @@ set_target_properties(GNXEditor PROPERTIES
 )
 
 #将引擎产生的中间文件放在构建目录的engine目录下
-add_subdirectory(../project/cmake engine)
+#add_subdirectory(../project/cmake engine)
 
 install(TARGETS GNXEditor
     BUNDLE DESTINATION .

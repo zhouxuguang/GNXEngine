@@ -19,6 +19,7 @@ out/
 # Gradle files
 .gradle/
 build/
+build1/
 
 # asset file
 Assets/

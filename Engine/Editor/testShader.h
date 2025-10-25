@@ -9,7 +9,7 @@
 #define testShader_hpp
 
 #include <stdio.h>
-#include "RenderCore/RenderDevice.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
 
 using namespace RenderCore;
 

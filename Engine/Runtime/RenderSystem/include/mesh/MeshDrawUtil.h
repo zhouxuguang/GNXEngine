@@ -10,7 +10,7 @@
 
 #include "Runtime/RenderSystem/include/RSDefine.h"
 #include "Runtime/RenderSystem/include/Material.h"
-#include "Component.h"
+#include "../Component.h"
 #include "Mesh.h"
 #include "../skinnedMesh/SkinnedMesh.h"
 
