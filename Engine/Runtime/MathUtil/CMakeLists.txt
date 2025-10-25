@@ -17,13 +17,13 @@ add_library(MathUtil STATIC ${SOURCE_FILES})
 source_group(TREE ${mathutil_dir} PREFIX source FILES ${MATHUTIL_SOURCES})
 source_group(TREE ${mathutil_include_dir} PREFIX include FILES ${MATHUTIL_INCLUDES})
 
-target_include_directories(MathUtil PUBLIC ${mathutil_include_dir})
+target_include_directories(MathUtil PRIVATE ${mathutil_include_dir})
 if(ANDROID)
-    target_include_directories(MathUtil PUBLIC ${ANDROID_NDK}/sources/android/cpufeatures)
+    target_include_directories(MathUtil PRIVATE ${ANDROID_NDK}/sources/android/cpufeatures)
 endif()
 
 target_compile_definitions(MathUtil PRIVATE MATH3D_EXPORTS)
-target_link_libraries(MathUtil PRIVATE baselib)
+target_link_libraries(MathUtil PRIVATE BaseLib)
 
 
 

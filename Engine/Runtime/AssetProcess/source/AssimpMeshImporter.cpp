@@ -1,6 +1,6 @@
 #include "AssimpMeshImporter.h"
 #include "MeshMessageUtil.h"
-#include "BaseLib/FileUtil.h"
+#include "Runtime/BaseLib/include/FileUtil.h"
 
 NS_ASSETPROCESS_BEGIN
 

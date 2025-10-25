@@ -2,7 +2,7 @@
 #define GNX_ENGINE_IMAGE_IMPORTER_JSDGJDFJ_INCLUDE
 
 #include "AssetProcessDefine.h"
-#include "ImageCodec/ImageDecoder.h"
+#include "Runtime/ImageCodec/include/ImageDecoder.h"
 
 
 //USING_NS_RENDERSYSTEM

@@ -1,8 +1,8 @@
 
 set(asset_process_dir ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(asset_process_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/include)
-file(GLOB_RECURSE MESH_PROCESS_SOURCES CONFIGURE_DEPENDS ${asset_process_dir}/*.cpp ${asset_process_dir}/*.c ${asset_process_dir}/*.h)
-file(GLOB_RECURSE MESH_PROCESS_INCLUDES CONFIGURE_DEPENDS ${asset_process_include_dir}/*.h)
+file(GLOB_RECURSE ASSET_PROCESS_SOURCES CONFIGURE_DEPENDS ${asset_process_dir}/*.cpp ${asset_process_dir}/*.c ${asset_process_dir}/*.h)
+file(GLOB_RECURSE ASSET_PROCESS_INCLUDES CONFIGURE_DEPENDS ${asset_process_include_dir}/*.h)
 
 # 设置 ISPC 目标架构
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
@@ -19,19 +19,19 @@ set(ISPC_SOURCES
 
 # 编译 ISPC 文件
 add_ispc_target(
-    ALL_ISPC_BUILD_OUTPUT
+    ALL_ISPC_BUILD_OUTPUT ISPC_HEADER_DIR
     SOURCES ${ISPC_SOURCES}
     TARGET ${ISPC_TARGET}
 )
 
-set(SOURCE_FILES ${MESH_PROCESS_SOURCES} ${MESH_PROCESS_INCLUDES})
+set(SOURCE_FILES ${ASSET_PROCESS_SOURCES} ${ASSET_PROCESS_INCLUDES})
 
 add_library(AssetProcess STATIC ${SOURCE_FILES} ${ALL_ISPC_BUILD_OUTPUT} ${ISPC_SOURCES})
 
-source_group(TREE ${asset_process_dir} PREFIX source FILES ${MESH_PROCESS_SOURCES})
-source_group(TREE ${asset_process_include_dir} PREFIX include FILES ${MESH_PROCESS_INCLUDES})
+source_group(TREE ${asset_process_dir} PREFIX source FILES ${ASSET_PROCESS_SOURCES})
+source_group(TREE ${asset_process_include_dir} PREFIX include FILES ${ASSET_PROCESS_INCLUDES})
 
-target_include_directories(AssetProcess PRIVATE ${asset_process_include_dir})
+target_include_directories(AssetProcess PRIVATE ${asset_process_include_dir} ${ISPC_HEADER_DIR})
 
-target_link_libraries(AssetProcess PRIVATE assimp rendersystem nanopb tbb ktx pvrtc imagecodec)
+target_link_libraries(AssetProcess PRIVATE assimp RenderSystem nanopb tbb ktx pvrtc ImageCodec)
 

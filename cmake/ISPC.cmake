@@ -12,7 +12,7 @@ if(NOT CMAKE_ISPC_COMPILER)
 endif()
 
 # 定义 ISPC 编译函数
-function(add_ispc_target ISPC_OUTPUT_FILES)
+function(add_ispc_target ISPC_OUTPUT_FILES ISPC_HEADER_DIR)
     set(options)
     set(oneValueArgs TARGET OUTPUT_DIR)
     set(multiValueArgs SOURCES HEADER_DEPENDENCIES)
@@ -86,4 +86,5 @@ function(add_ispc_target ISPC_OUTPUT_FILES)
     
     # 返回目标文件列表
     set(${ISPC_OUTPUT_FILES} ${ALL_ISPC_BUILD_OUTPUT_FILES} PARENT_SCOPE)
+    set(${ISPC_HEADER_DIR} ${ISPC_OUTPUT_DIR} PARENT_SCOPE)
 endfunction()

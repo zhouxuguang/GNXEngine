@@ -1,11 +1,11 @@
 #include "ImageImporter.h"
 #include "AssetImporter.h"
 #include "ktx.h"
-#include "ImageCodec/ImageUtil.h"
+#include "Runtime/ImageCodec/include/ImageUtil.h"
 #include "TextureProcess/stb_image_resize2.h"
 #include "DXTCompressor.h"
 #include "PVRCompressor.h"
-#include "BaseLib/AlignedMalloc.h"
+#include "Runtime/BaseLib/include/AlignedMalloc.h"
 
 NS_ASSETPROCESS_BEGIN
 

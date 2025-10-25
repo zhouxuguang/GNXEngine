@@ -123,7 +123,7 @@ if(APPLE)
     target_compile_options(ImageCodec PRIVATE "-fobjc-arc")
 endif()
 
-target_include_directories(ImageCodec PUBLIC ${imagecodec_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
+target_include_directories(ImageCodec PRIVATE ${imagecodec_include_dir})
 target_include_directories(ImageCodec PRIVATE ${imagecodec_dir}/libwebp ${imagecodec_dir}/libjpeg)
 # if(ANDROID)
 #     target_include_directories(ImageCodec PRIVATE ${ANDROID_NDK}/sources/android/cpufeatures)

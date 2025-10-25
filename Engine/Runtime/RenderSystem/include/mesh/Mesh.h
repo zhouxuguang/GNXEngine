@@ -8,7 +8,7 @@
 #ifndef GNX_ENGINE_MESH_HJFJSDJ_INCLUDE_H
 #define GNX_ENGINE_MESH_HJFJSDJ_INCLUDE_H
 
-#include "RSDefine.h"
+#include "../RSDefine.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 #include "Runtime/MathUtil/include/Vector2.h"
 #include "Runtime/MathUtil/include/Vector3.h"

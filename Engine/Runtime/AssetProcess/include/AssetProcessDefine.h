@@ -11,9 +11,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
-#include "MathUtil/Vector2.h"
-#include "MathUtil/Vector4.h"
-#include "BaseLib/BaseLib.h"
+#include "Runtime/MathUtil/include/Vector2.h"
+#include "Runtime/MathUtil/include/Vector4.h"
+#include "Runtime/BaseLib/include/BaseLib.h"
 
 #ifdef min
 	#undef min

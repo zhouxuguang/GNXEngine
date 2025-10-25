@@ -2,7 +2,7 @@
 #define GNX_ENGINE_ASSET_IMPORTER_INCLUDE_SGMDFGNJ
 
 #include "AssetProcessDefine.h"
-#include "BaseLib/BaseLib.h"
+#include "Runtime/BaseLib/include/BaseLib.h"
 
 NS_ASSETPROCESS_BEGIN
 

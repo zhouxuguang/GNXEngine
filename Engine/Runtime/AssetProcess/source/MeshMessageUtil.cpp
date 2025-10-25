@@ -3,7 +3,7 @@
 #include "pb_decode.h"
 #include "pb_encode.h"
 #include "MeshMessage.pb.h"
-#include "BaseLib/LogService.h"
+#include "Runtime/BaseLib/include/LogService.h"
 #include "PBUtils.h"
 
 NS_ASSETPROCESS_BEGIN

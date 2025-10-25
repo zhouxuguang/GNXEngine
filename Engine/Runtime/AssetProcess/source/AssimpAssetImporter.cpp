@@ -1,7 +1,7 @@
 #include "AssimpAssetImporter.h"
 #include "AssimpMeshImporter.h"
 #include "ImageImporter.h"
-#include "BaseLib/BaseLib.h"
+#include "Runtime/BaseLib/include/BaseLib.h"
 
 NS_ASSETPROCESS_BEGIN
 

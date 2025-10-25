@@ -7,7 +7,7 @@
 #include <assimp/postprocess.h>
 #include <assimp/material.h>
 #include <assimp/cimport.h>
-#include "RenderSystem/mesh/Mesh.h"
+#include "Runtime/RenderSystem/include/mesh/Mesh.h"
 
 USING_NS_RENDERSYSTEM
 

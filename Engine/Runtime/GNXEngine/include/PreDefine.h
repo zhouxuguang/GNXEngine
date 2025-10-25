@@ -11,7 +11,7 @@
 
 #define USING_NS_GNXENGINE                     using namespace GNXEngine;
 
-#include "BaseLib/BaseLib.h"
+#include "Runtime/BaseLib/include/BaseLib.h"
 
 //导出宏定义
 #if defined _WIN32 || defined __CYGWIN__ || _WIN64

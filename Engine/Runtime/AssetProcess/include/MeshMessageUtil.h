@@ -2,7 +2,7 @@
 #define GNX_ENGINE_MESHMESSAGE_UTIL_INCLUDE_SDGMJFKJ
 
 #include "AssetProcessDefine.h"
-#include "RenderSystem/mesh/Mesh.h"
+#include "Runtime/RenderSystem/include/mesh/Mesh.h"
 
 NS_ASSETPROCESS_BEGIN
 
