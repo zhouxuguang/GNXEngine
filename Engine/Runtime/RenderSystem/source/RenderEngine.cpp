@@ -59,7 +59,7 @@ std::string getBuiltInShaderDir()
 
 	fs::path path = __FILE__;
 	fs::path parentDir = path.parent_path();
-	path = (parentDir / fs::path("../shader/built-in/")).lexically_normal();
+	path = (parentDir / fs::path("../../../Shader/built-in/")).lexically_normal();
 	return path.string();
 
     //return path + R"(../shader/built-in/)";
@@ -71,7 +71,7 @@ std::string getMediaDir()
 {
     fs::path path = __FILE__;
     fs::path parentDir = path.parent_path();
-    path = (parentDir / fs::path("../../GNXEditor/media/")).lexically_normal();
+    path = (parentDir / fs::path("../../../Editor/media/")).lexically_normal();
     return path.string();
     /*path = path.substr(0, path.find_last_of(PATHSPLIT));
     std::string pathSplit = std::string(1, PATHSPLIT);
@@ -83,7 +83,7 @@ std::string getAssetsDir()
 {
 	fs::path path = __FILE__;
 	fs::path parentDir = path.parent_path();
-	path = (parentDir / fs::path("../../GNXEditor/Assets/")).lexically_normal();
+	path = (parentDir / fs::path("../../../Editor/Assets/")).lexically_normal();
 	return path.string();
 }
 
