@@ -15,6 +15,6 @@ add_library(shadercompiler STATIC ${SOURCE_FILES})
 source_group(TREE ${shadercompiler_dir} PREFIX source FILES ${SHADERCOMPILER_SOURCES})
 source_group(TREE ${shadercompiler_include_dir} PREFIX include FILES ${SHADERCOMPILER_INCLUDES})
 
-# ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/DirectXShaderCompiler/include
-target_include_directories(shadercompiler PRIVATE ${shadercompiler_include_dir})
+target_include_directories(shadercompiler PRIVATE ${shadercompiler_include_dir} 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/include)
 target_link_libraries(shadercompiler baselib rendercore spirv_reflect)

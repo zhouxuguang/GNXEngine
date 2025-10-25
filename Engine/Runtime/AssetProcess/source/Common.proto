@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+// 索引类型
+enum IndiceType 
+{
+    UnsignedShort = 0;
+    UnsignedInt = 1;
+};
+
+//图元类型
+enum PrimitiveType
+{
+    PrimitiveType_POINTS = 0;
+    PrimitiveType_LINES = 1;
+    PrimitiveType_LINE_STRIP = 2;
+    PrimitiveType_TRIANGLES = 3;
+    PrimitiveType_TRIANGLE_STRIP = 4;
+};
+
+// 顶点通道，也就是顶点属性
+enum VertexChannel
+{
+    VertexChannelPosition = 0;    // position (vector3)
+    VertexChannelNormal = 1;        // Normal (vector3)
+    VertexChannelColor = 2;        // Vertex color
+    VertexChannelTexCoord0 = 3;    // UV set 0 (vector2)
+    VertexChannelTexCoord1 = 4;   // UV set 1 (vector2)
+    VertexChannelTangent = 5;        // Tangent (vector4)
+    VertexChannelBoneIndex = 6;      // BoneIndex (vec4ui)
+    VertexChannelWeight = 7;          // Weight (vector4)
+    VertexChannelCount = 8;            // Keep this last!
+};
+
+// 顶点格式
+enum VertexDataFormat
+{
+    VertexDataFormatInvalid = 0;
+    
+    VertexDataFormatUChar = 1;
+    VertexDataFormatUChar2 = 2;
+    VertexDataFormatUChar3 = 3;
+    VertexDataFormatUChar4 = 4;
+    
+    VertexDataFormatChar = 5;
+    VertexDataFormatChar2 = 6;
+    VertexDataFormatChar3 = 7;
+    VertexDataFormatChar4 = 8;
+   
+    VertexDataFormatUShort = 9;
+    VertexDataFormatUShort2 = 10;
+    VertexDataFormatUShort3 = 11;
+    VertexDataFormatUShort4 = 12;
+    
+    VertexDataFormatShort = 13;
+    VertexDataFormatShort2 = 14;
+    VertexDataFormatShort3 = 15;
+    VertexDataFormatShort4 = 16;
+    
+    VertexDataFormatFloat = 28;
+    VertexDataFormatFloat2 = 29;
+    VertexDataFormatFloat3 = 30;
+    VertexDataFormatFloat4 = 31;
+    
+    VertexDataFormatInt = 32;
+    VertexDataFormatInt2 = 33;
+    VertexDataFormatInt3 = 34;
+    VertexDataFormatInt4 = 35;
+    
+    VertexDataFormatUInt = 36;
+    VertexDataFormatUInt2 = 37;
+    VertexDataFormatUInt3 = 38;
+    VertexDataFormatUInt4 = 39;
+    
+    VertexDataFormatHalfFloat = 40;
+    VertexDataFormatHalfFloat2 = 41;
+    VertexDataFormatHalfFloat3 = 42;
+    VertexDataFormatHalfFloat4 = 43;
+};
+
+//数据的压缩方式
+enum CompressType 
+{
+    NONE = 0;
+    ZLIB = 1;
+    LZ4 = 2;
+};
