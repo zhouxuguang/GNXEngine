@@ -9,8 +9,8 @@
 #define GNX_ENGINE_SHADER_ASSET_LOADER_INCLUDE_FKJBJBJ_H
 
 #include "RSDefine.h"
-#include "RenderCore/RenderDescriptor.h"
-#include "RenderCore/ShaderFunction.h"
+#include "Runtime/RenderCore/include/RenderDescriptor.h"
+#include "Runtime/RenderCore/include/ShaderFunction.h"
 #include "Runtime/ShaderCompiler/include/ShaderCompiler.h"
 
 NS_RENDERSYSTEM_BEGIN

@@ -7,9 +7,9 @@
 
 #include "SkyBox.h"
 #include "ImageTextureUtil.h"
-#include "ImageCodec/ImageDecoder.h"
-#include "MathUtil/Vector3.h"
-#include "MathUtil/Matrix4x4.h"
+#include "Runtime/ImageCodec/include/ImageDecoder.h"
+#include "Runtime/MathUtil/include/Vector3.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
 #include "ShaderAssetLoader.h"
 #include "RenderEngine.h"
 

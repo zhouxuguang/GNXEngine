@@ -9,7 +9,7 @@
 #define GNXENGINE_INCLUDE_SCENEMANGER_INCVSDJVKJND
 
 #include "RSDefine.h"
-#include "MathUtil/Vector3.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 #include "SceneNode.h"
 #include "Camera.h"
 #include "Light.h"

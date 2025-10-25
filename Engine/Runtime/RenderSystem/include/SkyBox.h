@@ -8,8 +8,8 @@
 #ifndef GNX_ENGINE_SKYBOX_INCLUDE_HNSNF
 #define GNX_ENGINE_SKYBOX_INCLUDE_HNSNF
 
-#include "RenderCore/RenderDevice.h"
-#include "ImageCodec/VImage.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/ImageCodec/include/VImage.h"
 #include "RSDefine.h"
 #include "SceneObject.h"
 

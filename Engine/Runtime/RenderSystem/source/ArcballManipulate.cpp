@@ -8,7 +8,7 @@
 #include <math.h>
 #include "ArcballManipulate.h"
 #include "InputSystem.h"
-#include "MathUtil/Math3DCommon.h"
+#include "Runtime/MathUtil/include/Math3DCommon.h"
 
 NS_RENDERSYSTEM_BEGIN
 

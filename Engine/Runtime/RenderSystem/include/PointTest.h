@@ -9,11 +9,11 @@
 #define GNXENGINE_RENDERSYSTEM_POINTTEST_INCLUDE_MNFDBHFGHF
 
 #include "RSDefine.h"
-#include "MathUtil/Matrix4x4.h"
-#include "MathUtil/Vector3.h"
-#include "RenderSystem/Sphere.h"
-#include "RenderSystem/AABB.h"
-#include "RenderSystem/OBB.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "Runtime/MathUtil/include/Vector3.h"
+#include "Sphere.h"
+#include "AABB.h"
+#include "OBB.h"
 
 USING_NS_MATHUTIL
 

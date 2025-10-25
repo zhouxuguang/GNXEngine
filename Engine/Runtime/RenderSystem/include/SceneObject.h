@@ -9,7 +9,7 @@
 #define GNXENGINE_SCENE_OBJECT_INCLUDE
 
 #include "RSDefine.h"
-#include "MathUtil/Vector3.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 
 NS_RENDERSYSTEM_BEGIN
 

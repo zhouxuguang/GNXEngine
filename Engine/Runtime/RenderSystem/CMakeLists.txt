@@ -30,15 +30,14 @@ endif()
 
 set(SOURCE_FILES ${RENDERSYSTEM_SOURCES} ${RENDERSYSTEM_INCLUDES})
 
-add_library(rendersystem STATIC ${SOURCE_FILES})
+add_library(RenderSystem STATIC ${SOURCE_FILES})
 
 source_group(TREE ${rendersystem_dir} PREFIX source FILES ${RENDERSYSTEM_SOURCES})
 source_group(TREE ${rendersystem_include_dir} PREFIX include FILES ${RENDERSYSTEM_INCLUDES})
 
-target_include_directories(rendersystem PUBLIC ${rendersystem_include_dir} 
-                                                ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
+target_include_directories(RenderSystem PRIVATE ${rendersystem_include_dir})
 
-target_include_directories(rendersystem PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/glm-0.9.9.8)
+target_include_directories(RenderSystem PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/glm-0.9.9.8)
                                            
 
 #这里后续还需要修改
@@ -48,17 +47,17 @@ target_include_directories(rendersystem PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../..
 #         /Users/zhouxuguang/work/mycode/GNXEngine/source/thirdparty/DirectXShaderCompiler/lib/mac)
 
 if(APPLE)
-target_link_libraries(rendersystem PRIVATE baselib rendercore shadercompiler 
+target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler 
     assimp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/DirectXShaderCompiler/lib/mac/libdxcompiler.dylib)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/mac/libdxcompiler.dylib)
 elseif(WIN32)
-target_link_libraries(rendersystem PRIVATE baselib rendercore shadercompiler 
+target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler 
     assimp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/DirectXShaderCompiler/lib/win/dxcompiler.lib)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/win/dxcompiler.lib)
 elseif(LINUX)
-target_link_libraries(rendersystem PRIVATE baselib rendercore shadercompiler 
+target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler 
     assimp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/DirectXShaderCompiler/lib/linux/libdxcompiler.so)
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/linux/libdxcompiler.so)
 endif() 
 
 #/Users/zhouxuguang/work/mycode/DirectXShaderCompiler/build/lib

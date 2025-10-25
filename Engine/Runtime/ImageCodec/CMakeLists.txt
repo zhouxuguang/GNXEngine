@@ -113,20 +113,20 @@ else()
     set(SOURCE_FILES ${IMAGECODEC_SOURCES} ${IMAGECODEC_INCLUDES} ${WEBP_SOURCES} ${JPEG_FILES})
 endif()
 
-add_library(imagecodec STATIC ${SOURCE_FILES})
+add_library(ImageCodec STATIC ${SOURCE_FILES})
 
 source_group(TREE ${imagecodec_dir} PREFIX source FILES ${IMAGECODEC_SOURCES} ${WEBP_SOURCES} ${JPEG_FILES} ${PNG_FILES})
 source_group(TREE ${imagecodec_include_dir} PREFIX include FILES ${IMAGECODEC_INCLUDES})
 
 if(APPLE)
-    target_link_libraries(imagecodec PRIVATE "-framework Accelerate")
-    target_compile_options(imagecodec PRIVATE "-fobjc-arc")
+    target_link_libraries(ImageCodec PRIVATE "-framework Accelerate")
+    target_compile_options(ImageCodec PRIVATE "-fobjc-arc")
 endif()
 
-target_include_directories(imagecodec PUBLIC ${imagecodec_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
-target_include_directories(imagecodec PRIVATE ${imagecodec_dir}/libwebp ${imagecodec_dir}/libjpeg)
+target_include_directories(ImageCodec PUBLIC ${imagecodec_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
+target_include_directories(ImageCodec PRIVATE ${imagecodec_dir}/libwebp ${imagecodec_dir}/libjpeg)
 # if(ANDROID)
-#     target_include_directories(imagecodec PRIVATE ${ANDROID_NDK}/sources/android/cpufeatures)
+#     target_include_directories(ImageCodec PRIVATE ${ANDROID_NDK}/sources/android/cpufeatures)
 # endif()
-target_link_libraries(imagecodec PRIVATE baselib mathutil)
+target_link_libraries(ImageCodec PRIVATE BaseLib MathUtil)
 

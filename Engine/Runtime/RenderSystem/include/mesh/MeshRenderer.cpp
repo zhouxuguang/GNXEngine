@@ -6,7 +6,7 @@
 //
 
 #include "MeshRenderer.h"
-#include "BaseLib/LogService.h"
+#include "Runtime/BaseLib/include/LogService.h"
 
 NS_RENDERSYSTEM_BEGIN
 

@@ -9,10 +9,9 @@
 #define GNX_ENGINE_SCENE_NODE_INCLUDE_H
 
 #include "RSDefine.h"
-//#include "RenderCore/VertexBuffer.h"
-#include "RenderCore/RenderDevice.h"
-#include "MathUtil/Vector3.h"
-#include "MathUtil/Quaternion.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/MathUtil/include/Vector3.h"
+#include "Runtime/MathUtil/include/Quaternion.h"
 #include "SceneObject.h"
 #include "Component.h"
 #include <type_traits>

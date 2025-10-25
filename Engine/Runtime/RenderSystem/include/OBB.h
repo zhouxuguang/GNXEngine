@@ -9,8 +9,8 @@
 #define GNXENGINE_RENDERSYSTEM_OBB_INCLUDE_MNFD
 
 #include "RSDefine.h"
-#include "MathUtil/Matrix4x4.h"
-#include "MathUtil/Vector3.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 #include "AABB.h"
 
 USING_NS_MATHUTIL

@@ -7,9 +7,9 @@
 
 #include "MeshAssimpImpoter.h"
 #include "Material.h"
-#include "ImageCodec/ImageDecoder.h"
-#include "RenderSystem/ImageTextureUtil.h"
-#include "MathUtil/Quaternion.h"
+#include "Runtime/ImageCodec/include/ImageDecoder.h"
+#include "ImageTextureUtil.h"
+#include "Runtime/MathUtil/include/Quaternion.h"
 #include "BuildSetting.h"
 
 NS_RENDERSYSTEM_BEGIN

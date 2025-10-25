@@ -8,9 +8,9 @@
 #ifndef GNX_ENGINE_IMAGE_TEXTURE_UTIL_INCLUDE_JKFNNN
 #define GNX_ENGINE_IMAGE_TEXTURE_UTIL_INCLUDE_JKFNNN
 
-#include "RenderCore/RenderDevice.h"
-#include "ImageCodec/VImage.h"
-#include "ImageCodec/ImageDecoder.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/ImageCodec/include/VImage.h"
+#include "Runtime/ImageCodec/include/ImageDecoder.h"
 #include "RSDefine.h"
 
 USING_NS_RENDERCORE

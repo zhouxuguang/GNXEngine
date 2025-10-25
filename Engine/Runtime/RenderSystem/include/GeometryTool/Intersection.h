@@ -9,7 +9,7 @@
 #define GNX_ENGINE_INTERSECTION_INCLUDE
 
 #include "RSDefine.h"
-#include "MathUtil/Vector3.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 #include "Sphere.h"
 #include "Ray.h"
 #include "AABB.h"

@@ -9,7 +9,7 @@
 #define GNX_ENGINE_LIGHT_INCLUDE_HPP_FFGVFDGVKF
 
 #include "RSDefine.h"
-#include "MathUtil/Vector3.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 #include "SceneObject.h"
 
 NS_RENDERSYSTEM_BEGIN

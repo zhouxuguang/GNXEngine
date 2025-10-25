@@ -8,8 +8,8 @@
 #ifndef GNXENGINE_MESH_DRAW_UTIL_INCLUDE_HHGFHDFGKJ
 #define GNXENGINE_MESH_DRAW_UTIL_INCLUDE_HHGFHDFGKJ
 
-#include "RenderSystem/RSDefine.h"
-#include "RenderSystem/Material.h"
+#include "Runtime/RenderSystem/include/RSDefine.h"
+#include "Runtime/RenderSystem/include/Material.h"
 #include "Component.h"
 #include "Mesh.h"
 #include "../skinnedMesh/SkinnedMesh.h"

@@ -8,7 +8,7 @@
 #ifndef FNXENGINE_MESH_IMPORTER_INCLUDE_H
 #define FNXENGINE_MESH_IMPORTER_INCLUDE_H
 
-#include "RenderSystem/RSDefine.h"
+#include "RSDefine.h"
 #include "Mesh.h"
 
 NS_RENDERSYSTEM_BEGIN

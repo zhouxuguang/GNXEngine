@@ -8,10 +8,10 @@
 #ifndef GNXENGINE_ANIMATION_FRAME_INCLUDE_GDFGDFHB_INCLUDE
 #define GNXENGINE_ANIMATION_FRAME_INCLUDE_GDFGDFHB_INCLUDE
 
-#include "RenderSystem/RSDefine.h"
-#include "MathUtil/Matrix4x4.h"
-#include "MathUtil/Quaternion.h"
-#include "MathUtil/Vector3.h"
+#include "Runtime/RenderSystem/include/RSDefine.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "Runtime/MathUtil/include/Quaternion.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 #include "Transform.h"
 
 NS_RENDERSYSTEM_BEGIN

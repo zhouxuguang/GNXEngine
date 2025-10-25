@@ -9,8 +9,8 @@
 #define SHADER_COMPILER_INCLUDE_SFH
 
 #include "ShaderCompilerDefine.h"
-#include "RenderCore/RenderDescriptor.h"
-#include "RenderCore/ShaderFunction.h"
+#include "Runtime/RenderCore/include/RenderDescriptor.h"
+#include "Runtime/RenderCore/include/ShaderFunction.h"
 
 NAMESPACE_SHADERCOMPILER_BEGIN
 

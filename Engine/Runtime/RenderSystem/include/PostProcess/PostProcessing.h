@@ -9,8 +9,8 @@
 #define GNX_ENGINE_POST_PROCEESING_INCLUDE_H
 
 #include "../RSDefine.h"
-#include "RenderCore/VertexBuffer.h"
-#include "RenderCore/RenderDevice.h"
+#include "Runtime/RenderCore/include/VertexBuffer.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
 
 NS_RENDERSYSTEM_BEGIN
 

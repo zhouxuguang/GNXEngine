@@ -9,7 +9,7 @@
 #ifndef RENDERENGINE_IMAGEENCODER_APPLE_HFHJDSFJD_INCLUDE_H
 #define RENDERENGINE_IMAGEENCODER_APPLE_HFHJDSFJD_INCLUDE_H
 
-#include "ImageCodec/VImage.h"
+#include "Runtime/ImageCodec/include/VImage.h"
 #include <ImageIO/ImageIO.h>
 #include <vector>
 

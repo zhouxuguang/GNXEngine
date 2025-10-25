@@ -9,9 +9,9 @@
 #define RENDERSYSTEM_SHADOWMAPPING_INCLUDE_H
 
 #include "Plane.h"
-#include "RenderCore/TextureSampler.h"
-#include "RenderCore/RenderDevice.h"
-#include "RenderCore/GraphicsPipeline.h"
+#include "Runtime/RenderCore/include/TextureSampler.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/RenderCore/include/GraphicsPipeline.h"
 
 
 NS_RENDERSYSTEM_BEGIN

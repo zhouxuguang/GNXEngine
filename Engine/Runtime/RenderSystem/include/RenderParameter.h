@@ -1,7 +1,7 @@
 #include "RSDefine.h"
-#include "RenderCore/VertexBuffer.h"
-#include "RenderCore/RenderDevice.h"
-#include "MathUtil/SimdMath.h"
+#include "Runtime/RenderCore/include/VertexBuffer.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/MathUtil/include/SimdMath.h"
 
 NS_RENDERSYSTEM_BEGIN
 

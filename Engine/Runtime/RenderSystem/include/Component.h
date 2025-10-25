@@ -10,8 +10,8 @@
 
 #include "Camera.h"
 #include "Light.h"
-#include "MathUtil/Vector3.h"
-#include "MathUtil/Quaternion.h"
+#include "Runtime/MathUtil/include/Vector3.h"
+#include "Runtime/MathUtil/include/Quaternion.h"
 #include "Transform.h"
 
 NS_RENDERSYSTEM_BEGIN

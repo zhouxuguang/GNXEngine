@@ -2,7 +2,7 @@
 #define ATMOSPHERE_CONSTANTS_H
 
 #include "RSDefine.h"
-#include "MathUtil/Vector3.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 
 USING_NS_MATHUTIL
 

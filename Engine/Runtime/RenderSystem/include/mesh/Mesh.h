@@ -8,13 +8,13 @@
 #ifndef GNX_ENGINE_MESH_HJFJSDJ_INCLUDE_H
 #define GNX_ENGINE_MESH_HJFJSDJ_INCLUDE_H
 
-#include "RenderSystem/RSDefine.h"
-#include "MathUtil/Matrix4x4.h"
-#include "MathUtil/Vector2.h"
-#include "MathUtil/Vector3.h"
-#include "MathUtil/Vector4.h"
-#include "MathUtil/SimdMath.h"
-#include "RenderCore/RenderDevice.h"
+#include "RSDefine.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "Runtime/MathUtil/include/Vector2.h"
+#include "Runtime/MathUtil/include/Vector3.h"
+#include "Runtime/MathUtil/include/Vector4.h"
+#include "Runtime/MathUtil/include/SimdMath.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
 #include "VertexData.h"
 
 

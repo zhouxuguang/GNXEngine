@@ -8,8 +8,8 @@
 #ifndef GNXENGINE_MESH_RENDERER_INCLUDE_JSDJ
 #define GNXENGINE_MESH_RENDERER_INCLUDE_JSDJ
 
-#include "RenderSystem/RSDefine.h"
-#include "RenderSystem/Material.h"
+#include "RSDefine.h"
+#include "Material.h"
 #include "Component.h"
 #include "Mesh.h"
 #include "MeshDrawUtil.h"

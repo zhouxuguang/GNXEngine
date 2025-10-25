@@ -7,7 +7,7 @@
 
 #include "VulkanContext.h"
 #include "VulkanDeviceUtil.h"
-#include "BaseLib/LogService.h"
+#include "Runtime/BaseLib/include/LogService.h"
 #include "VKUtil.h"
 #include <optional>
 

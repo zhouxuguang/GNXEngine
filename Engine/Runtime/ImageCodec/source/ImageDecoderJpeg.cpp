@@ -4,7 +4,7 @@
 
 #include "ImageDecoderJpeg.h"
 #include "ImageDecoderFactory.h"
-#include "BaseLib/AlignedMalloc.h"
+#include "Runtime/BaseLib/include/AlignedMalloc.h"
 
 #ifdef USE_JPEG_LIB
 extern "C"

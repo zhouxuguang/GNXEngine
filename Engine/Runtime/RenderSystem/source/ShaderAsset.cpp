@@ -6,8 +6,8 @@
 //
 
 #include "ShaderAsset.h"
-#include "ShaderCompiler/ShaderCompiler.h"
-#include "RenderCore/RenderDevice.h"
+#include "Runtime/ShaderCompiler/include/ShaderCompiler.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
 
 using namespace shader_compiler;
 

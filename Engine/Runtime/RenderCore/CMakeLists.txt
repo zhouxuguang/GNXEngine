@@ -45,17 +45,17 @@ file(GLOB_RECURSE RENDERCORE_INCLUDES CONFIGURE_DEPENDS ${rendercore_include_dir
 
 set(SOURCE_FILES ${RENDERCORE_SOURCES} ${RENDERCORE_INCLUDES})
 
-add_library(rendercore STATIC ${SOURCE_FILES})
+add_library(RenderCore STATIC ${SOURCE_FILES})
 
 source_group(TREE ${rendercore_dir} PREFIX source FILES ${RENDERCORE_SOURCES})
 source_group(TREE ${rendercore_include_dir} PREFIX include FILES ${RENDERCORE_INCLUDES})
 
-target_include_directories(rendercore PUBLIC ${rendercore_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
-target_link_libraries(rendercore PRIVATE mathutil spirv_reflect)
+target_include_directories(RenderCore PRIVATE ${rendercore_include_dir})
+target_link_libraries(RenderCore PRIVATE MathUtil spirv_reflect)
 
 if(APPLE)
-    target_compile_options(rendercore PRIVATE "-fobjc-arc")
-    #target_link_libraries(rendercore PRIVATE "-framework OpenGLES")
+    target_compile_options(RenderCore PRIVATE "-fobjc-arc")
+    #target_link_libraries(RenderCore PRIVATE "-framework OpenGLES")
 endif()
 
 

@@ -8,14 +8,13 @@
 #ifndef GNX_ENGINE_SKINNED_MESH_HJFJSDJ_INCLUDE_H
 #define GNX_ENGINE_SKINNED_MESH_HJFJSDJ_INCLUDE_H
 
-#include "RenderSystem/RSDefine.h"
-#include "MathUtil/Matrix4x4.h"
-#include "MathUtil/Vector2.h"
-#include "MathUtil/Vector3.h"
-#include "MathUtil/Vector4.h"
-//#include "MathUtil/SimdMath.h"
-#include "RenderCore/RenderDevice.h"
-#include "../mesh/VertexData.h"
+#include "RSDefine.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "Runtime/MathUtil/include/Vector2.h"
+#include "Runtime/MathUtil/include/Vector3.h"
+#include "Runtime/MathUtil/include/Vector4.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
+#include "mesh/VertexData.h"
 #include "animation/Skeleton.h"
 #include "animation/AnimationPose.h"
 

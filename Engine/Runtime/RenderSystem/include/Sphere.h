@@ -9,7 +9,7 @@
 #define GNX_ENGINE_SPHERE_INCLUDE
 
 #include "RSDefine.h"
-#include "MathUtil/Vector3.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 
 USING_NS_MATHUTIL
 

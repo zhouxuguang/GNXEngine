@@ -9,7 +9,7 @@
 #define GNX_ENGINE_FRUSTUM_INCLUDE_H
 
 #include "Plane.h"
-#include "MathUtil/Matrix4x4.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
 #include "OBB.h"
 #include "AABB.h"
 #include "Sphere.h"

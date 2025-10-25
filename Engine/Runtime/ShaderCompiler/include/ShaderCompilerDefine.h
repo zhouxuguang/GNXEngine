@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "RenderCore/RenderDefine.h"
+#include "Runtime/RenderCore/include/RenderDefine.h"
 
 using namespace RenderCore;
 

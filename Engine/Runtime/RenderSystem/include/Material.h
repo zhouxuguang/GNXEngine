@@ -9,10 +9,10 @@
 #define GNXENGINE_MATERIAL_SDDFJGJ_INCLUDE
 
 #include "RSDefine.h"
-#include "MathUtil/Vector3.h"
-#include "MathUtil/Vector4.h"
-#include "RenderCore/RCTexture.h"
-#include "RenderCore/GraphicsPipeline.h"
+#include "Runtime/MathUtil/include/Vector3.h"
+#include "Runtime/MathUtil/include/Vector4.h"
+#include "Runtime/RenderCore/include/RCTexture.h"
+#include "Runtime/RenderCore/include/GraphicsPipeline.h"
 #include "ShaderAsset.h"
 #include <unordered_map>
 #include <string>

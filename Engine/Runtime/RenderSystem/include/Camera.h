@@ -10,9 +10,9 @@
 
 
 #include "RSDefine.h"
-#include "MathUtil/Matrix4x4.h"
-#include "MathUtil/Vector3.h"
-#include "RenderCore/RenderDefine.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "Runtime/MathUtil/include/Vector3.h"
+#include "Runtime/RenderCore/include/RenderDefine.h"
 #include "SceneObject.h"
 #include "Ray.h"
 

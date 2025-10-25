@@ -10,7 +10,7 @@
 #define IMAGEDECODER_APPLE_INCLUDE_H
 
 #include "Define.h"
-#include "ImageCodec/VImage.h"
+#include "Runtime/ImageCodec/include/VImage.h"
 
 NAMESPACE_IMAGECODEC_BEGIN
 

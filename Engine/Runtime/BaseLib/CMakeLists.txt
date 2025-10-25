@@ -12,15 +12,15 @@ if(LINUX)
     pkg_check_modules(UUID REQUIRED uuid)
 endif(LINUX)
 
-add_library(baselib STATIC ${SOURCE_FILES})
+add_library(BaseLib STATIC ${SOURCE_FILES})
 
 source_group(TREE ${baselib_dir} PREFIX source FILES ${BASELIB_SOURCES})
 source_group(TREE ${baselib_include_dir} PREFIX include FILES ${BASELIB_INCLUDES})
 
-target_include_directories(baselib PRIVATE ${baselib_include_dir})
+target_include_directories(BaseLib PRIVATE ${baselib_include_dir})
 if(WIN32)
-    target_link_libraries(baselib PUBLIC zlib)
+    target_link_libraries(BaseLib PUBLIC zlib)
 elseif(LINUX)
-    target_link_libraries(baselib PRIVATE ${UUID_LIBRARIES})
+    target_link_libraries(BaseLib PRIVATE ${UUID_LIBRARIES})
 endif()
 

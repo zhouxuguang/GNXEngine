@@ -9,7 +9,7 @@
 #define RENDERSYSTEM_SYKBOX_NODE_INCLUDE
 
 #include "RSDefine.h"
-#include "MathUtil/Vector3.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 #include "SceneNode.h"
 #include "SkyBox.h"
 

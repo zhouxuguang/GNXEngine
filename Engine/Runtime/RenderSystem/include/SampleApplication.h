@@ -13,11 +13,11 @@
 #include "SceneManager.h"
 #include "SceneNode.h"
 #include "ArcballManipulate.h"
-#include "MathUtil/Vector3.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 #include "SkyBoxNode.h"
-#include "ImageCodec/ImageDecoder.h"
+#include "Runtime/ImageCodec/include/ImageDecoder.h"
 #include "RenderEngine.h"
-#include "BaseLib/DateTime.h"
+#include "Runtime/BaseLib/include/DateTime.h"
 
 NS_RENDERSYSTEM_BEGIN
 

@@ -8,7 +8,7 @@
 #ifndef GNX_ENGINE_MESH_FILTER_INCLUDESDFD_H
 #define GNX_ENGINE_MESH_FILTER_INCLUDESDFD_H
 
-#include "RenderSystem/RSDefine.h"
+#include "RSDefine.h"
 #include "Mesh.h"
 #include "Component.h"
 

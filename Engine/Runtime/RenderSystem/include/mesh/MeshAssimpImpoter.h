@@ -9,8 +9,8 @@
 #define FNXENGINE_ASSIMP_INCLUDE_MESH_IMPORTER_INCLUDE_H
 
 #include "MeshImporter.h"
-#include "RenderCore/RenderDefine.h"
-#include "MathUtil/Vector4.h"
+#include "Runtime/RenderCore/include/RenderDefine.h"
+#include "Runtime/MathUtil/include/Vector4.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>

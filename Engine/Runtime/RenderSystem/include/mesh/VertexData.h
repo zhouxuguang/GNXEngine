@@ -9,9 +9,9 @@
 #define GNX_ENGINE_RENDERSYSTEM_VERTEX_DATA_INCLD
 
 #include <stdio.h>
-#include "RenderSystem/RSDefine.h"
-#include "RenderCore/RenderDefine.h"
-#include "BaseLib/StrideIterator.h"
+#include "RSDefine.h"
+#include "Runtime/RenderCore/include/RenderDefine.h"
+#include "Runtime/BaseLib/include/StrideIterator.h"
 
 NS_RENDERSYSTEM_BEGIN
 

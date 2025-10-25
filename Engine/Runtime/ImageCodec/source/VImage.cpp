@@ -3,7 +3,7 @@
 //
 
 #include "VImage.h"
-#include "BaseLib/AlignedMalloc.h"
+#include "Runtime/BaseLib/include/AlignedMalloc.h"
 #include <stddef.h>
 
 NAMESPACE_IMAGECODEC_BEGIN

@@ -8,7 +8,7 @@
 #include "ShaderAssetLoader.h"
 #include "Runtime/ShaderCompiler/include/ShaderCompiler.h"
 #include "RenderEngine.h"
-#include "RenderCore/RenderDevice.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
 
 using namespace shader_compiler;
 

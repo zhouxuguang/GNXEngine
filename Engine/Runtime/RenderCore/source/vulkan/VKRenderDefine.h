@@ -28,8 +28,8 @@
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 0
 #include "vk_mem_alloc.h"
 #include "RenderDefine.h"
-#include "BaseLib/DebugBreaker.h"
-#include "BaseLib/BaseLib.h"
+#include "Runtime/BaseLib/include/DebugBreaker.h"
+#include "Runtime/BaseLib/include/BaseLib.h"
 
 #ifdef VK_USE_PLATFORM_WIN32_KHR
 #ifdef min

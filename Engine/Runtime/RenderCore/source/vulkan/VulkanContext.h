@@ -11,7 +11,7 @@
 #include "VKRenderDefine.h"
 #include "RenderDevice.h"
 #include "VulkanExtension.h"
-#include "BaseLib/ThreadLocal.h"
+#include "Runtime/BaseLib/include/ThreadLocal.h"
 #include "VKUtil.h"
 
 NAMESPACE_RENDERCORE_BEGIN

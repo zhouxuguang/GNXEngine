@@ -9,8 +9,8 @@
 #include "VKRenderDevice.h"
 #include "VKRenderEncoder.h"
 #include "VKComputeEncoder.h"
-#include "BaseLib/LogService.h"
-#include "BaseLib/DebugBreaker.h"
+#include "Runtime/BaseLib/include/LogService.h"
+#include "Runtime/BaseLib/include/DebugBreaker.h"
 #include "VKUtil.h"
 #include "VKTextureBase.h"
 

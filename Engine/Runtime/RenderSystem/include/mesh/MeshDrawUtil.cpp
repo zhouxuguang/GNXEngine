@@ -9,7 +9,7 @@
 
 //foe test
 #include "ImageTextureUtil.h"
-#include "RCTexture.h"
+#include "Runtime/RenderCore/include/RCTexture.h"
 #include "RenderEngine.h"
 
 RCTextureCubePtr envMap = nullptr;

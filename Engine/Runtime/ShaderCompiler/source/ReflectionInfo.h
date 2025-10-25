@@ -9,7 +9,7 @@
 #define GNX_ENGINE_RELECTION_INFO_INCLUDE_H
 
 #include "ShaderCompilerDefine.h"
-#include "RenderCore/RenderDescriptor.h"
+#include "Runtime/RenderCore/include/RenderDescriptor.h"
 #include "spirv_cross/spirv_glsl.hpp"
 #include "spirv_cross/spirv_msl.hpp"
 #include "ShaderCompiler.h"

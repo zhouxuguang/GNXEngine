@@ -7,7 +7,7 @@
 
 #include "VKComputePipeline.h"
 #include "VKShaderFunction.h"
-#include "BaseLib/DebugBreaker.h"
+#include "Runtime/BaseLib/include/DebugBreaker.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 

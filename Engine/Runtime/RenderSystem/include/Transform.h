@@ -9,9 +9,9 @@
 #define GNX_ENGINE_TRANSFORM_INCLUDE_HPP
 
 #include "RSDefine.h"
-#include "MathUtil/Vector3.h"
-#include "MathUtil/Quaternion.h"
-#include "MathUtil/Matrix4x4.h"
+#include "Runtime/MathUtil/include/Vector3.h"
+#include "Runtime/MathUtil/include/Quaternion.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
 
 //变换的类
 

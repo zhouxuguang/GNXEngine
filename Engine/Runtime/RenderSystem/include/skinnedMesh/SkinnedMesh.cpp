@@ -1,6 +1,6 @@
 #include "SkinnedMesh.h"
-#include "BaseLib/LogService.h"
-#include "MathUtil/Matrix4x4.h"
+#include "Runtime/BaseLib/include/LogService.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
 
 USING_NS_MATHUTIL
 

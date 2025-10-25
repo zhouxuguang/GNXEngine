@@ -11,9 +11,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
-#include "RenderCore/RenderDefine.h"
-#include "MathUtil/Math3DCommon.h"
-#include "BaseLib/BaseLib.h"
+#include "Runtime/RenderCore/include/RenderDefine.h"
+#include "Runtime/MathUtil/include/Math3DCommon.h"
+#include "Runtime/BaseLib/include/BaseLib.h"
 
 #ifdef min
     #undef min

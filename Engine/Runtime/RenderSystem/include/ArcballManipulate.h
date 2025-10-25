@@ -10,7 +10,7 @@
 
 #include "RSDefine.h"
 #include "Camera.h"
-#include "MathUtil/Quaternion.h"
+#include "Runtime/MathUtil/include/Quaternion.h"
 
 NS_RENDERSYSTEM_BEGIN
 

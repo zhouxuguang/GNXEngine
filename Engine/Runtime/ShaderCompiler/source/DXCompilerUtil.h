@@ -9,7 +9,7 @@
 #define GNX_ENGINE_DX_COMPILER_INCLUDESJGVH_H
 
 #include "ShaderCompilerDefine.h"
-#include "RenderCore/ShaderFunction.h"
+#include "Runtime/RenderCore/include/ShaderFunction.h"
 
 #ifdef _WIN32
     #include <Windows.h>

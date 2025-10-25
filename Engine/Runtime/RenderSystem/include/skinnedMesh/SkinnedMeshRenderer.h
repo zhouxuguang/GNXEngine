@@ -8,8 +8,8 @@
 #ifndef GNX_ENGINE_SKINNED_MESH_RENDERER_INCLUDE_HDFHJJJD
 #define GNX_ENGINE_SKINNED_MESH_RENDERER_INCLUDE_HDFHJJJD
 
-#include "RenderSystem/RSDefine.h"
-#include "RenderCore/RenderDevice.h"
+#include "RSDefine.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Component.h"
 #include "SkinnedMesh.h"
 #include "Material.h"

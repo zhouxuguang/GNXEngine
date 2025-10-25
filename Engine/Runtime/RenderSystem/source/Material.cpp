@@ -6,9 +6,9 @@
 //
 
 #include "Material.h"
-#include "RenderSystem/ShaderAssetLoader.h"
-#include "RenderSystem/RenderEngine.h"
-#include "RenderCore/RenderDevice.h"
+#include "ShaderAssetLoader.h"
+#include "RenderEngine.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
 
 NS_RENDERSYSTEM_BEGIN
 

@@ -10,7 +10,7 @@
 
 #include "RSDefine.h"
 #include "ShaderAssetLoader.h"
-#include "MathUtil/Vector3.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 #include <unordered_map>
 #include <string>
 

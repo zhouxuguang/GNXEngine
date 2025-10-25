@@ -9,8 +9,8 @@
 #define GNXENGINE_RENDERSYSTEM_PLANE_INCLUDE_MFFDF
 
 #include "RSDefine.h"
-#include "MathUtil/Vector3.h"
-#include "MathUtil/Vector4.h"
+#include "Runtime/MathUtil/include/Vector3.h"
+#include "Runtime/MathUtil/include/Vector4.h"
 
 USING_NS_MATHUTIL
 

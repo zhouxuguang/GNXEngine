@@ -9,8 +9,8 @@
 #define GNXENGINE_RENDERSYSTEM_AABB_INCLUDE_NMSDV
 
 #include "RSDefine.h"
-#include "MathUtil/Matrix4x4.h"
-#include "MathUtil/Vector3.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 
 USING_NS_MATHUTIL
 

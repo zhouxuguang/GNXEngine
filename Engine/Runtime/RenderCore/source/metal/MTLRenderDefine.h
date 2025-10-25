@@ -10,7 +10,7 @@
 
 #include "RenderDefine.h"
 #include "TextureFormat.h"
-#include "BaseLib/BaseLib.h"
+#include "Runtime/BaseLib/include/BaseLib.h"
 #import <Metal/Metal.h>
 #import <QuartzCore/CAMetalLayer.h>
 #import <CoreFoundation/CoreFoundation.h>
