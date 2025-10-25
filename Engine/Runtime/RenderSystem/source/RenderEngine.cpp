@@ -91,7 +91,7 @@ std::string GetProjectAssetDir()
 {
 	fs::path path = __FILE__;
 	fs::path parentDir = path.parent_path();
-	path = (parentDir / fs::path("../../data_asset/")).lexically_normal();
+	path = (parentDir / fs::path("../../../../data_asset/")).lexically_normal();
 	return path.string();
 }
 
