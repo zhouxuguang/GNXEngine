@@ -103,20 +103,20 @@ public:
 
 tlsf_t tlsf;
 
-void* operator new(size_t size)
-{
-    if (!tlsf) 
-    {
-        void * pBuffer = malloc(102400);
-        tlsf = tlsf_create_with_pool(pBuffer, 102400);
-    }
-    return tlsf_malloc(tlsf, size);
-}
-
-void operator delete(void* ptr)
-{
-    tlsf_free(tlsf, ptr);
-}
+//void* operator new(size_t size)
+//{
+//    if (!tlsf) 
+//    {
+//        void * pBuffer = malloc(102400);
+//        tlsf = tlsf_create_with_pool(pBuffer, 102400);
+//    }
+//    return tlsf_malloc(tlsf, size);
+//}
+//
+//void operator delete(void* ptr)
+//{
+//    tlsf_free(tlsf, ptr);
+//}
 
 int main(int argc, char* argv[])
 {
