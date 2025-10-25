@@ -7,6 +7,5 @@ set(TBB_INSTALL OFF CACHE BOOL "Enable installation" FORCE)
 
 add_subdirectory(tbb)
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_property(TARGET tbb PROPERTY FOLDER "thirdparty")
-#set_property(TARGET tbb PROPERTY FOLDER "thirdparty")
+set_property(TARGET tbb PROPERTY FOLDER "ThirdParty")
+#set_property(TARGET tbbmalloc PROPERTY FOLDER "ThirdParty")

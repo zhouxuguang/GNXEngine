@@ -11,12 +11,10 @@ if(APPLE)
     set_target_properties(TestMeshImport PROPERTIES LINK_FLAGS "-fobjc-arc")
 endif()
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(TARGET TestMeshImport PROPERTY FOLDER "test")
 
 add_executable(TestModel TestModel.cpp)
 
 target_link_libraries(TestModel GNXEngine spirv_reflect tbb ktx glfw)
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(TARGET TestModel PROPERTY FOLDER "test")

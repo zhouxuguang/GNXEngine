@@ -47,5 +47,4 @@ target_compile_definitions(ktx PUBLIC KTX_FEATURE_WRITE=1)
 
 target_include_directories(ktx SYSTEM PUBLIC ${KTX_INCLUDE_DIRS})
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_property(TARGET ktx PROPERTY FOLDER "thirdparty")
+set_property(TARGET ktx PROPERTY FOLDER "ThirdParty")

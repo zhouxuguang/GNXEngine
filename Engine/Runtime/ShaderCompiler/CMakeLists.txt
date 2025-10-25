@@ -18,3 +18,5 @@ source_group(TREE ${shadercompiler_include_dir} PREFIX include FILES ${SHADERCOM
 target_include_directories(ShaderCompiler PRIVATE ${shadercompiler_include_dir} 
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/include)
 target_link_libraries(ShaderCompiler BaseLib RenderCore spirv_reflect)
+
+set_property(TARGET ShaderCompiler PROPERTY FOLDER "Runtime")

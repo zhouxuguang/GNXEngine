@@ -12,3 +12,5 @@ target_include_directories(GNXEngine PRIVATE ${GNXEngine_include_dir})
 
 target_link_libraries(GNXEngine PUBLIC BaseLib ImageCodec MathUtil RenderCore RenderSystem ShaderCompiler spirv_reflect tbb AssetProcess ktx)
 target_compile_definitions(GNXEngine PRIVATE GNXENGINE_EXPORTS)
+
+set_property(TARGET GNXEngine PROPERTY FOLDER "Runtime")

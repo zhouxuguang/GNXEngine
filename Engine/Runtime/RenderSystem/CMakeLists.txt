@@ -60,6 +60,8 @@ target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/linux/libdxcompiler.so)
 endif() 
 
+set_property(TARGET RenderSystem PROPERTY FOLDER "Runtime")
+
 #/Users/zhouxuguang/work/mycode/DirectXShaderCompiler/build/lib
 # target_link_libraries(rendersystem PUBLIC baselib rendercore shadercompiler 
 #     ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/assimp-5.2.4/lib/Mac/libassimp.a

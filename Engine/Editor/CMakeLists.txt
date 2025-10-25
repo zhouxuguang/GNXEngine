@@ -88,8 +88,8 @@ set_target_properties(GNXEditor PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
-#将引擎产生的中间文件放在构建目录的engine目录下
-#add_subdirectory(../project/cmake engine)
+set_property(TARGET GNXEditor PROPERTY FOLDER "Editor")
+#set_property(TARGET GNXEditor_autogen PROPERTY FOLDER "Editor")
 
 install(TARGETS GNXEditor
     BUNDLE DESTINATION .

@@ -22,6 +22,5 @@ if(WIN32)
     add_library(zlib STATIC ${ZLIB_SRCS})
     target_include_directories(zlib SYSTEM PUBLIC ${ZLIB_DIR})
 
-    set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-    set_property(TARGET zlib PROPERTY FOLDER "thirdparty")
+    set_property(TARGET zlib PROPERTY FOLDER "ThirdParty")
 endif()

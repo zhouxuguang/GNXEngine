@@ -35,3 +35,4 @@ target_include_directories(AssetProcess PRIVATE ${asset_process_include_dir} ${I
 
 target_link_libraries(AssetProcess PRIVATE assimp RenderSystem nanopb tbb ktx pvrtc ImageCodec)
 
+set_property(TARGET AssetProcess PROPERTY FOLDER "Runtime")

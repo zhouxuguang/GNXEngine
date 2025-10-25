@@ -10,5 +10,4 @@ add_library(nanopb STATIC
 
 target_include_directories(nanopb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_property(TARGET nanopb PROPERTY FOLDER "thirdparty")
+set_property(TARGET nanopb PROPERTY FOLDER "ThirdParty")

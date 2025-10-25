@@ -157,12 +157,11 @@ endif()
 
 add_subdirectory(assimp-5.2.4)
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_property(TARGET assimp PROPERTY FOLDER "thirdparty")
-set_property(TARGET zlibstatic PROPERTY FOLDER "thirdparty")
-set_property(TARGET uninstall PROPERTY FOLDER "thirdparty")
+set_property(TARGET assimp PROPERTY FOLDER "ThirdParty")
+set_property(TARGET zlibstatic PROPERTY FOLDER "ThirdParty")
+set_property(TARGET uninstall PROPERTY FOLDER "ThirdParty")
 if(WIN32)
-  set_property(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTY FOLDER "thirdparty")
+  set_property(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTY FOLDER "ThirdParty")
 endif()
 
 # target_include_directories(assimp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/assimp-5.2.4/include)

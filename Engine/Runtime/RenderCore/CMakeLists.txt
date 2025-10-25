@@ -58,5 +58,4 @@ if(APPLE)
     #target_link_libraries(RenderCore PRIVATE "-framework OpenGLES")
 endif()
 
-
-
+set_property(TARGET RenderCore PROPERTY FOLDER "Runtime")

@@ -4,5 +4,4 @@ add_library(pvrtc STATIC ${PVRTC_SOURCES})
 
 target_include_directories(pvrtc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_property(TARGET pvrtc PROPERTY FOLDER "thirdparty")
+set_property(TARGET pvrtc PROPERTY FOLDER "ThirdParty")

@@ -25,5 +25,4 @@ endif()
 target_compile_definitions(MathUtil PRIVATE MATH3D_EXPORTS)
 target_link_libraries(MathUtil PRIVATE BaseLib)
 
-
-
+set_property(TARGET MathUtil PROPERTY FOLDER "Runtime")

@@ -1,5 +1,4 @@
 add_library(spirv_reflect OBJECT spirv_reflection.c spirv_reflection.h)
 target_include_directories(spirv_reflect PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_property(TARGET spirv_reflect PROPERTY FOLDER "thirdparty")
+set_property(TARGET spirv_reflect PROPERTY FOLDER "ThirdParty")

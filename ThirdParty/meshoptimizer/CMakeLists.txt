@@ -50,5 +50,4 @@ add_library(meshoptimizer STATIC ${SOURCES})
 
 target_include_directories(meshoptimizer INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>")
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set_property(TARGET meshoptimizer PROPERTY FOLDER "thirdparty")
+set_property(TARGET meshoptimizer PROPERTY FOLDER "ThirdParty")

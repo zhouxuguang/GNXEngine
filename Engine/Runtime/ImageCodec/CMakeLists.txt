@@ -130,3 +130,4 @@ target_include_directories(ImageCodec PRIVATE ${imagecodec_dir}/libwebp ${imagec
 # endif()
 target_link_libraries(ImageCodec PRIVATE BaseLib MathUtil)
 
+set_property(TARGET ImageCodec PROPERTY FOLDER "Runtime")
