@@ -17,7 +17,7 @@ add_library(baselib STATIC ${SOURCE_FILES})
 source_group(TREE ${baselib_dir} PREFIX source FILES ${BASELIB_SOURCES})
 source_group(TREE ${baselib_include_dir} PREFIX include FILES ${BASELIB_INCLUDES})
 
-target_include_directories(baselib PRIVATE ${baselib_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../../include)
+target_include_directories(baselib PRIVATE ${baselib_include_dir})
 if(WIN32)
     target_link_libraries(baselib PUBLIC zlib)
 elseif(LINUX)
