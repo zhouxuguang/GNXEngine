@@ -8,7 +8,6 @@
 #ifndef GNX_ENGINE_ATMOSPHERE_MODEL_JFHJSDGJ
 #define GNX_ENGINE_ATMOSPHERE_MODEL_JFHJSDGJ
 
-#include "RSDefine.h"
 #include "AtmosphereConstant.h"
 
 USING_NS_MATHUTIL

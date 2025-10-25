@@ -14,7 +14,6 @@
 
 #include "Math3DCommon.h"
 
-
 const float kPi = 3.14159265f;
 const float k2Pi = kPi * 2.0f;
 const float kPiOver2 = kPi / 2.0f;
@@ -23,12 +22,9 @@ const float k1Over2Pi = 1.0f / k2Pi;
 const float kPiOver180 = kPi / 180.0f;
 const float k180OverPi = 180.0f / kPi;
 
-
 extern float wrapPi(float theta);
 
-
 extern float safeAcos(float x);
-
 
 inline float	degToRad(float deg) { return deg * kPiOver180; }
 inline float	radToDeg(float rad) { return rad * k180OverPi; }
@@ -44,11 +40,10 @@ inline void sinCos(float *returnSin, float *returnCos, float theta) {
 inline float	fovToZoom(float fov) { return 1.0f / tan(fov * .5f); }
 inline float	zoomToFov(float zoom) { return 2.0f * atan(1.0f / zoom); }
 
-//Clamp����
 template <class T>
-inline const T Clamp (const T& value, const T& low, const T& high)
+inline const T Clamp(const T& value, const T& low, const T& high)
 {
-	return std::min (std::max(value,low), high);
+	return std::min(std::max(value, low), high);
 }
 
 template <class T>
@@ -63,10 +58,8 @@ inline const T Sign(const T& value)
 
 float GetClamp(float x,float fMin,float fMax);
 
-//�������Һ���
 inline MATH3D_API double FastSin(double x);
 
-//�������������
 inline int Rand_Int(void);
 
 inline float Rand_Float(void);
@@ -96,11 +89,11 @@ public:
     
     static bool IsNaN(Real f);
 
-	//���ټ��㺯��
-	static float FastInvSqrt (float fValue);
-	static double FastInvSqrt (double dValue);
-	static Real FastSin(Real fValue);//fValue�����ĵ�λ�Ƕ�
-	static Real FastCos(Real fValue);//fValue�����ĵ�λ�Ƕ�
+	//快速的数学运算
+	static float FastInvSqrt(float fValue);
+	static double FastInvSqrt(double dValue);
+	static Real FastSin(Real fValue);
+	static Real FastCos(Real fValue);
 };
 
 uint32_t convertRGBFloatToRGB9E5(float red, float green, float blue);
