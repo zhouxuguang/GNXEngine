@@ -373,7 +373,7 @@ FreeBlock *CoalRequestQ::getAll()
 inline void CoalRequestQ::blockWasProcessed()
 {
     bkndSync->binsModified();
-    int prev = inFlyBlocks.fetch_sub(1);
+    long prev = inFlyBlocks.fetch_sub(1);
     tbb::detail::suppress_unused_warning(prev);
     MALLOC_ASSERT(prev > 0, ASSERT_TEXT);
 }
@@ -791,7 +791,7 @@ FreeBlock *Backend::genericGetBlock(int num, size_t size, bool needAlignedBlock)
     FreeBlock *block = nullptr;
     const size_t totalReqSize = num*size;
     // no splitting after requesting new region, asks exact size
-    const int nativeBin = sizeToBin(totalReqSize);
+    const int nativeBin = (int)sizeToBin(totalReqSize);
 
     requestBootstrapMem();
     // If we found 2 or less locked bins, it's time to ask more memory from OS.
@@ -1154,7 +1154,7 @@ bool Backend::coalescAndPutList(FreeBlock *list, bool forceCoalescQDrop, bool re
                 addToTail = true; // preserving for exact fit
         }
         size_t currSz = toRet->sizeTmp;
-        int bin = sizeToBin(currSz);
+        int bin = (int)sizeToBin(currSz);
         bool toAligned = extMemPool->fixedPool ? toAlignedBin(toRet, currSz) : toRet->slabAligned;
         bool needAddToBin = true;
 
@@ -1274,7 +1274,7 @@ void Backend::startUseBlock(MemRegion *region, FreeBlock *fBlock, bool addToBin)
     lastBl->memRegion = region;
 
     if (addToBin) {
-        unsigned targetBin = sizeToBin(blockSz);
+        unsigned targetBin = (unsigned)sizeToBin(blockSz);
         // during adding advance regions, register bin for a largest block in region
         advRegBins.registerBin(targetBin);
         if (region->type == MEMREG_SLAB_BLOCKS) {

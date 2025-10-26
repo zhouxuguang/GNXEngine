@@ -197,9 +197,9 @@ protected:
             mask[i].fetch_and(~(1ULL << pos));
         }
     }
-    int getMinTrue(unsigned startIdx) const {
+    intptr_t getMinTrue(unsigned startIdx) const {
         unsigned idx = startIdx / WORD_LEN;
-        int pos;
+        intptr_t pos;
 
         if (startIdx % WORD_LEN) {
             // only interested in part of a word, clear bits before startIdx
@@ -224,7 +224,7 @@ class BitMaskMin : public BitMaskBasic<NUM> {
 public:
     void set(size_t idx, bool val) { BitMaskBasic<NUM>::set(idx, val); }
     int getMinTrue(unsigned startIdx) const {
-        return BitMaskBasic<NUM>::getMinTrue(startIdx);
+        return (int)BitMaskBasic<NUM>::getMinTrue(startIdx);
     }
 };
 
@@ -239,7 +239,7 @@ public:
     int getMaxTrue(unsigned startIdx) const {
         MALLOC_ASSERT(NUM >= startIdx + 1, ASSERT_TEXT);
 
-        int p = BitMaskBasic<NUM>::getMinTrue(NUM-startIdx-1);
+        int p = (int)BitMaskBasic<NUM>::getMinTrue(NUM-startIdx-1);
         return -1==p? -1 : (int)NUM - 1 - p;
     }
 };

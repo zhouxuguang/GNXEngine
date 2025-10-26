@@ -57,7 +57,7 @@ public:
     static int sizeToIdx(size_t size) {
         MALLOC_ASSERT(MinSize <= size && size < MaxSize, ASSERT_TEXT);
         MALLOC_ASSERT(size % CacheStep == 0, ASSERT_TEXT);
-        return (size - MinSize) / CacheStep;
+        return int((size - MinSize) / CacheStep);
     }
 };
 
@@ -100,7 +100,7 @@ public:
         int minorStepExp = sizeExp - StepFactorExp;
 
         size_t majorStepSize = 1ULL << sizeExp;
-        int minorIdx = (size - majorStepSize) >> minorStepExp;
+        int minorIdx = int((size - majorStepSize) >> minorStepExp);
         MALLOC_ASSERT(size == majorStepSize + ((size_t)minorIdx << minorStepExp),
             "Size is not aligned on the bin");
         return StepFactor * (sizeExp - MinSizeExp) + minorIdx;

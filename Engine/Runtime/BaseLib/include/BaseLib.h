@@ -10,6 +10,7 @@
 #define BASELIB_INCLUDE_H_HEADER_H
 
 #include "PreCompile.h"
+#include "AlignedMalloc.h"
 #include "FileUtil.h"
 #include "Thread.h"
 #include "ThreadUtil.h"

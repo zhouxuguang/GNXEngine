@@ -19,6 +19,8 @@ BASELIB_API void* AlignedMalloc(size_t size, size_t alignment);
 
 BASELIB_API void AlignedFree(void *ptr);
 
+BASELIB_API size_t GetAllocationSize(void* ptr);
+
 NS_BASELIB_END
 
 #endif /* BASELIB_ALIGNED_MALLOC_INCLUDE_H */

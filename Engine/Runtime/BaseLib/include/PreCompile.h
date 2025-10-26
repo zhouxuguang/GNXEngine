@@ -169,13 +169,10 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 
 //强制内联的定义
 #if defined _WIN32 ||_WIN64 || defined __CYGWIN__
-
 	#define FORCE_INLINE __forceinline
 #else
 	#define FORCE_INLINE __attribute__((always_inline) )
 #endif
-
-//#define new new(std::nothrow)
 
 //命名空间定义
 #ifdef __cplusplus
@@ -191,8 +188,10 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 // 探测系统位数
 #if INTPTR_MAX == INT64_MAX
 	#define BASE_IS_64_BIT_CPU 1
+    #define VOID_PTR_SIZE 8
 #else
 	#define BASE_IS_32_BIT_CPU 1
+    #define VOID_PTR_SIZE 8
 #endif
 
 // Enable futexes on:
