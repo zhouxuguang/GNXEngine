@@ -1,18 +1,18 @@
 #include <Windows.h>
-#include "RenderCore/RenderDevice.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
 
 #include "testSkybox.h"
 #include "TestPost/TestPost.hpp"
 #include "TestTransform.hpp"
-#include "RenderSystem/SceneManager.h"
-#include "RenderSystem/SceneNode.h"
-#include "RenderSystem/ArcballManipulate.h"
-#include "MathUtil/Vector3.h"
-#include "RenderSystem/SkyBoxNode.h"
-#include "ImageCodec/ImageDecoder.h"
-#include "RenderSystem/RenderEngine.h"
+#include "Runtime/RenderSystem/include/SceneManager.h"
+#include "Runtime/RenderSystem/include/SceneNode.h"
+#include "Runtime/RenderSystem/include/ArcballManipulate.h"
+#include "Runtime/MathUtil/include/Vector3.h"
+#include "Runtime/RenderSystem/include/SkyBoxNode.h"
+#include "Runtime/ImageCodec/include/ImageDecoder.h"
+#include "Runtime/RenderSystem/include/RenderEngine.h"
 #include "TestComputeShader.hpp"
-#include "BaseLib/DateTime.h"
+#include "Runtime/BaseLib/include/DateTime.h"
 
 class WindowsVulkanView
 {
