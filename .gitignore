@@ -19,6 +19,7 @@ out/
 # Gradle files
 .gradle/
 build/
+build1/
 
 # asset file
 Assets/
@@ -95,6 +96,8 @@ vcs.xml
 .externalNativeBuild
 .cxx
 local.properties
+
+.cache
 
 # lint
 lint/intermediates/

@@ -1,0 +1,10 @@
+
+add_subdirectory(assimp assimp)
+add_subdirectory(SPIRV-Reflect SPIRV-Reflect)
+add_subdirectory(tbb tbb)
+add_subdirectory(meshoptimizer meshoptimizer)
+add_subdirectory(nanopb nanopb)
+add_subdirectory(glfw glfw)
+add_subdirectory(ktx ktx)
+add_subdirectory(zlib zlib)
+add_subdirectory(pvrtc pvrtc)

@@ -1,0 +1,8 @@
+add_subdirectory(BaseLib)
+add_subdirectory(MathUtil)
+add_subdirectory(ImageCodec)
+add_subdirectory(RenderCore)
+add_subdirectory(RenderSystem)
+add_subdirectory(AssetProcess)
+add_subdirectory(ShaderCompiler)
+add_subdirectory(GNXEngine)

@@ -1,12 +1,12 @@
-#include "RenderSystem/RenderEngine.h"
-#include "AssetProcess/AssetImporter.h"
-#include "BaseLib/ThreadPool.h"
-#include "BaseLib/LogService.h"
-#include "BaseLib/TimeCost.h"
-#include "BaseLib/SHA256.h"
-#include "BaseLib/GuidGenerator.h"
-#include "AssetProcess/ASTCCompressor.h"
-#include "ImageCodec/ImageDecoder.h"
+#include "Runtime/RenderSystem/include/RenderEngine.h"
+#include "Runtime/AssetProcess/include/AssetImporter.h"
+#include "Runtime/BaseLib/include/ThreadPool.h"
+#include "Runtime/BaseLib/include/LogService.h"
+#include "Runtime/BaseLib/include/TimeCost.h"
+#include "Runtime/BaseLib/include/SHA256.h"
+#include "Runtime/BaseLib/include/GuidGenerator.h"
+#include "Runtime/AssetProcess/include/ASTCCompressor.h"
+#include "Runtime/ImageCodec/include/ImageDecoder.h"
 #include <iostream>
 #include <new>
 
@@ -103,20 +103,20 @@ public:
 
 tlsf_t tlsf;
 
-void* operator new(size_t size)
-{
-    if (!tlsf) 
-    {
-        void * pBuffer = malloc(102400);
-        tlsf = tlsf_create_with_pool(pBuffer, 102400);
-    }
-    return tlsf_malloc(tlsf, size);
-}
-
-void operator delete(void* ptr)
-{
-    tlsf_free(tlsf, ptr);
-}
+//void* operator new(size_t size)
+//{
+//    if (!tlsf) 
+//    {
+//        void * pBuffer = malloc(102400);
+//        tlsf = tlsf_create_with_pool(pBuffer, 102400);
+//    }
+//    return tlsf_malloc(tlsf, size);
+//}
+//
+//void operator delete(void* ptr)
+//{
+//    tlsf_free(tlsf, ptr);
+//}
 
 int main(int argc, char* argv[])
 {
