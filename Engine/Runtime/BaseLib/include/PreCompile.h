@@ -169,13 +169,10 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 
 //强制内联的定义
 #if defined _WIN32 ||_WIN64 || defined __CYGWIN__
-
 	#define FORCE_INLINE __forceinline
 #else
 	#define FORCE_INLINE __attribute__((always_inline) )
 #endif
-
-//#define new new(std::nothrow)
 
 //命名空间定义
 #ifdef __cplusplus

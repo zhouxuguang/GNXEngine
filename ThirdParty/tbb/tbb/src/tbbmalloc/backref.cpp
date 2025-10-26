@@ -40,7 +40,7 @@ struct BackRefBlock : public BlockI {
 
     BackRefBlock(const BackRefBlock *blockToUse, intptr_t num) :
         nextForUse(nullptr), bumpPtr((FreeObject*)((uintptr_t)blockToUse + slabSize - sizeof(void*))),
-        freeList(nullptr), nextRawMemBlock(nullptr), allocatedCount(0), myNum(num),
+        freeList(nullptr), nextRawMemBlock(nullptr), allocatedCount(0), myNum((uint32_t)num),
         addedToForUse(false) {
         memset(static_cast<void*>(&blockMutex), 0, sizeof(MallocMutex));
 
@@ -188,7 +188,7 @@ bool BackRefMain::requestNewSpace()
     }
     // It's possible that only part of newBl is used, due to lack of indices in main.
     // This is OK as such underutilization is possible only once for backreferneces table.
-    int blocksToUse = min(numOfUnusedIdxs, blockSpaceSize / BackRefBlock::bytes);
+    size_t blocksToUse = min(numOfUnusedIdxs, blockSpaceSize / BackRefBlock::bytes);
 
     // use the first block in the batch to maintain the list of "raw" memory
     // to be released at shutdown

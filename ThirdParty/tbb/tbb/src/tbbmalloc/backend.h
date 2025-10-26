@@ -320,13 +320,13 @@ private:
 
     /*---------------------------------- Utility ----------------------------------*/
     // TODO: move inside IndexedBins class
-    static int sizeToBin(size_t size) {
+    static size_t sizeToBin(size_t size) {
         if (size >= maxBinned_HugePage)
             return HUGE_BIN;
         else if (size < minBinnedSize)
             return NO_BIN;
 
-        int bin = (size - minBinnedSize)/freeBinsStep;
+        size_t bin = (size - minBinnedSize)/freeBinsStep;
 
         MALLOC_ASSERT(bin < HUGE_BIN, "Invalid size.");
         return bin;

@@ -13,6 +13,10 @@
 #include <malloc.h>
 #endif
 
+#if OS_MACOS
+#include <malloc/malloc.h>
+#endif
+
 NS_BASELIB_BEGIN
 
 void* AlignedMalloc(size_t size, size_t alignment)
@@ -48,6 +52,17 @@ void AlignedFree(void *ptr)
     _aligned_free(ptr);
 #else
     free(ptr);
+#endif
+}
+
+size_t GetAllocationSize(void* ptr)
+{
+#ifdef OS_WINDOWS
+    return = _aligned_msize(ptr, 16, 0); // TODO: incorrectly assumes alignment of 16
+#elif OS_MACOS
+    return malloc_size(ptr);
+#elif OS_LINUX
+    return = malloc_usable_size(ptr);
 #endif
 }
 

@@ -17,6 +17,7 @@
 #include "tbbmalloc_internal.h"
 #include <errno.h>
 #include <new>        /* for placement new */
+#include <stdint.h>
 #include <string.h>   /* for memset */
 
 #include "oneapi/tbb/version.h"
@@ -1001,7 +1002,7 @@ TLSData* MemoryPool::getTLS(bool create)
  */
 inline Bin* TLSData::getAllocationBin(size_t size)
 {
-    return bin + getIndex(size);
+    return bin + getIndex((uint32_t)size);
 }
 
 /* Return an empty uninitialized block in a non-blocking fashion. */
@@ -1172,7 +1173,7 @@ void MemoryPool::onThreadShutdown(TLSData *tlsData)
 void Bin::verifyTLSBin (size_t size) const
 {
 /* The debug version verifies the TLSBin as needed */
-    uint32_t objSize = getObjectSize(size);
+    uint32_t objSize = getObjectSize((uint32_t)size);
 
     if (activeBlk) {
         MALLOC_ASSERT( activeBlk->isOwnedByCurrentThread(), ASSERT_TEXT );
@@ -1578,8 +1579,8 @@ void Block::initEmptyBlock(TLSData *tls, size_t size)
 {
     // Having getIndex and getObjectSize called next to each other
     // allows better compiler optimization as they basically share the code.
-    unsigned int index = getIndex(size);
-    unsigned int objSz = getObjectSize(size);
+    unsigned int index = getIndex((uint32_t)size);
+    unsigned int objSz = getObjectSize((uint32_t)size);
 
     cleanBlockHeader();
     MALLOC_ASSERT(objSz <= USHRT_MAX, "objSz must not be less 2^16-1");
@@ -2307,7 +2308,7 @@ void *MemoryPool::getFromLLOCache(TLSData* tls, size_t size, size_t alignment)
             alignDown((uintptr_t)lmb+lmb->unalignedSize - size, alignment);
         // Has some room to shuffle object between cache lines?
         // Note that alignedRight and alignedArea are aligned at alignment.
-        unsigned ptrDelta = alignedRight - (uintptr_t)alignedArea;
+        unsigned ptrDelta = unsigned(alignedRight - (uintptr_t)alignedArea);
         if (ptrDelta && tls) { // !tls is cold path
             // for the hot path of alignment==estimatedCacheLineSize,
             // allow compilers to use shift for division
@@ -2598,13 +2599,13 @@ static void *internalPoolMalloc(MemoryPool* memPool, size_t size)
     /*
      * no suitable own blocks, try to get a partial block that some other thread has discarded.
      */
-    mallocBlock = memPool->extMemPool.orphanedBlocks.get(tls, size);
+    mallocBlock = memPool->extMemPool.orphanedBlocks.get(tls, (uint32_t)size);
     while (mallocBlock) {
         bin->pushTLSBin(mallocBlock);
         bin->setActiveBlock(mallocBlock); // TODO: move under the below condition?
         if( FreeObject *result = mallocBlock->allocate() )
             return result;
-        mallocBlock = memPool->extMemPool.orphanedBlocks.get(tls, size);
+        mallocBlock = memPool->extMemPool.orphanedBlocks.get(tls, (uint32_t)size);
     }
 
     /*

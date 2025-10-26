@@ -1,17 +1,16 @@
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 #include "Runtime/AssetProcess/include/AssetImporter.h"
-#include "Runtime/BaseLib/include/ThreadPool.h"
+#include "Runtime/AssetProcess/include/ASTCCompressor.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/BaseLib/include/TimeCost.h"
 #include "Runtime/BaseLib/include/SHA256.h"
 #include "Runtime/BaseLib/include/GuidGenerator.h"
-#include "Runtime/AssetProcess/include/ASTCCompressor.h"
 #include "Runtime/ImageCodec/include/ImageDecoder.h"
+#include "Runtime/Allocator/include/MallocTBB.h"
 #include <iostream>
 #include <new>
 
 #include "ktx.h"
-#include "tlsf.h"
 
 // little endian
 struct astc_header
@@ -101,28 +100,25 @@ public:
     }
 };
 
-tlsf_t tlsf;
+Allocator::MallocTBB* alloc = nullptr;
 
-//void* operator new(size_t size)
-//{
-//    if (!tlsf) 
-//    {
-//        void * pBuffer = malloc(102400);
-//        tlsf = tlsf_create_with_pool(pBuffer, 102400);
-//    }
-//    return tlsf_malloc(tlsf, size);
-//}
-//
-//void operator delete(void* ptr)
-//{
-//    tlsf_free(tlsf, ptr);
-//}
+void* operator new(size_t size)
+{
+    if (!alloc)
+    {
+        alloc = new Allocator::MallocTBB();
+    }
+    return alloc->Alloc(size, 16);
+}
+
+void operator delete(void* ptr)
+{
+    alloc->Free(ptr);
+}
 
 int main(int argc, char* argv[])
 {
     std::vector<int> vecaa;
-    void * pBuffer = malloc(102400);
-    tlsf = tlsf_create_with_pool(pBuffer, 102400);
     A *ad = new A;
     
 	fs::path currentPath = getMediaDir();
