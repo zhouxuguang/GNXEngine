@@ -6,8 +6,9 @@
 #include "Runtime/BaseLib/include/SHA256.h"
 #include "Runtime/BaseLib/include/GuidGenerator.h"
 #include "Runtime/ImageCodec/include/ImageDecoder.h"
-#include "Runtime/Allocator/include/MallocTBB.h"
-#include "Runtime/Allocator/include/MallocAnsi.h"
+#include "Runtime/Allocator/source/MallocTBB.h"
+#include "Runtime/Allocator/source/MallocAnsi.h"
+#include "Runtime/Allocator/source/MallocTLSF.h"
 #include <iostream>
 #include <new>
 
@@ -118,10 +119,54 @@ void operator delete(void* ptr)
     alloc->Free(ptr);
 }
 
+void TestAllocator()
+{
+	Allocator::MallocAnsi* alloc = new Allocator::MallocAnsi;
+	Allocator::MallocTBB* alloc1 = new Allocator::MallocTBB;
+	Allocator::MallocTLSF* alloc2 = new Allocator::MallocTLSF;
+	int count = 10000000;
+    int size = 1024 * 102;
+
+	baselib::TimeCost cost1;
+	cost1.Begin();
+	for (int i = 0; i < count; i++)
+	{
+		void* p = alloc->Alloc(size);
+		alloc->Free(p);
+	}
+	cost1.End();
+
+	uint64_t tt1 = cost1.GetCostTime();
+	LOG_INFO("ansi %lld", tt1);
+
+	baselib::TimeCost cost2;
+	cost2.Begin();
+	for (int i = 0; i < count; i++)
+	{
+		void* p = alloc1->Alloc(size);
+		alloc1->Free(p);
+	}
+	cost2.End();
+
+	uint64_t tt2 = cost2.GetCostTime();
+	LOG_INFO("tbb %lld", tt2);
+
+	baselib::TimeCost cost3;
+	cost3.Begin();
+	for (int i = 0; i < count; i++)
+	{
+		void* p = alloc2->Alloc(size);
+		alloc2->Free(p);
+	}
+	cost3.End();
+
+	uint64_t tt3 = cost3.GetCostTime();
+	LOG_INFO("tlsf %lld", tt3);
+}
+
 int main(int argc, char* argv[])
 {
-    std::vector<int> vecaa;
-    A *ad = new A;
+    TestAllocator();
     
 	fs::path currentPath = getMediaDir();
 

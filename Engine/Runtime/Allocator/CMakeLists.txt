@@ -12,7 +12,7 @@ add_library(Allocator STATIC ${SOURCE_FILES})
 source_group(TREE ${allocator_process_dir} PREFIX source FILES ${ALLOCATOR_PROCESS_SOURCES})
 source_group(TREE ${allocator_process_include_dir} PREFIX include FILES ${ALLOCATOR_PROCESS_INCLUDES})
 
-target_include_directories(Allocator PRIVATE ${allocator_process_include_dir})
+target_include_directories(Allocator PUBLIC ${allocator_process_include_dir})
 
 target_link_libraries(Allocator PRIVATE BaseLib tbb tbbmalloc)
 
