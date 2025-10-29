@@ -9,6 +9,7 @@
 #include "Runtime/Allocator/source/MallocTBB.h"
 #include "Runtime/Allocator/source/MallocAnsi.h"
 #include "Runtime/Allocator/source/MallocTLSF.h"
+#include "Runtime/Allocator/source/MallocMimalloc.h"
 #include <iostream>
 #include <new>
 
@@ -124,8 +125,9 @@ void TestAllocator()
 	Allocator::MallocAnsi* alloc = new Allocator::MallocAnsi;
 	Allocator::MallocTBB* alloc1 = new Allocator::MallocTBB;
 	Allocator::MallocTLSF* alloc2 = new Allocator::MallocTLSF;
+    Allocator::MallocMimalloc* alloc3 = new Allocator::MallocMimalloc;
 	int count = 10000000;
-    int size = 1024 * 1;
+    int size = 1024 * 100;
 
 	baselib::TimeCost cost1;
 	cost1.Begin();
@@ -162,6 +164,18 @@ void TestAllocator()
 
 	uint64_t tt3 = cost3.GetCostTime();
 	LOG_INFO("tlsf %lld", tt3);
+
+	baselib::TimeCost cost4;
+	cost4.Begin();
+	for (int i = 0; i < count; i++)
+	{
+		void* p = alloc3->Alloc(size);
+        alloc3->Free(p);
+	}
+	cost4.End();
+
+	uint64_t tt4 = cost4.GetCostTime();
+	LOG_INFO("mimalloc %lld", tt4);
 }
 
 int main(int argc, char* argv[])

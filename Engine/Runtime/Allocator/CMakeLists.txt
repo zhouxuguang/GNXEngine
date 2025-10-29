@@ -14,6 +14,6 @@ source_group(TREE ${allocator_process_include_dir} PREFIX include FILES ${ALLOCA
 
 target_include_directories(Allocator PUBLIC ${allocator_process_include_dir})
 
-target_link_libraries(Allocator PRIVATE BaseLib tbb tbbmalloc)
+target_link_libraries(Allocator PRIVATE BaseLib tbb tbbmalloc mimalloc)
 
 set_property(TARGET Allocator PROPERTY FOLDER "Runtime")
