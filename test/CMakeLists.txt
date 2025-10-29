@@ -2,7 +2,7 @@
 
 add_executable(TestMeshImport TestMeshImport.cpp)
 
-target_link_libraries(TestMeshImport PRIVATE GNXEngine Allocator)
+target_link_libraries(TestMeshImport PRIVATE GNXEngine)
 
 if(APPLE)
     target_link_libraries(TestMeshImport PRIVATE "-framework CoreGraphics" "-framework CoreVideo" "-framework QuartzCore" 

@@ -8,7 +8,7 @@
 #ifndef GNXENGINE_MALLOC_ANSI_INCLUDE_DSFJSDJK
 #define GNXENGINE_MALLOC_ANSI_INCLUDE_DSFJSDJK
 
-#include "AMalloc.h"
+#include "../include/AMalloc.h"
 
 NS_ALLOCATOR_BEGIN
 

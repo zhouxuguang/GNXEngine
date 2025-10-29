@@ -8,7 +8,7 @@
 #ifndef GNXENGINE_MALLOC_TLSF_INCLUDE_FFGNFGNHMGH
 #define GNXENGINE_MALLOC_TLSF_INCLUDE_FFGNFGNHMGH
 
-#include "AMalloc.h"
+#include "../include/AMalloc.h"
 #include "tlsf.h"
 
 NS_ALLOCATOR_BEGIN

@@ -8,7 +8,7 @@
 #ifndef GNXENGINE_MALLOC_TBB_INCLUDE_JSDVSDJKM
 #define GNXENGINE_MALLOC_TBB_INCLUDE_JSDVSDJKM
 
-#include "AMalloc.h"
+#include "../include/AMalloc.h"
 
 NS_ALLOCATOR_BEGIN
 
