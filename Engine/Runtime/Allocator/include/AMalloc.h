@@ -28,7 +28,7 @@ class Malloc : public UseSystemMallocForNew
 {
 public:	
 	virtual void* Alloc(size_t size) = 0;
-	virtual void* AlignedAlloc(size_t size, uint32_t alignment) = 0;
+	virtual void* AlignedAlloc(size_t size, size_t alignment) = 0;
 	virtual void Free(void* ptr) = 0;
 	virtual bool GetAllocationSize(void *ptr, size_t &sizeOut) = 0;
 	virtual void Trim(bool bTrimThreadCaches) = 0;

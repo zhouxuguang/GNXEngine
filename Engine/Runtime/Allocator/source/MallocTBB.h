@@ -17,7 +17,7 @@ class MallocTBB : public Malloc
 public:
     MallocTBB();
 	virtual void* Alloc(size_t size);
-	virtual void* AlignedAlloc(size_t size, uint32_t alignment);
+	virtual void* AlignedAlloc(size_t size, size_t alignment);
     virtual void Free(void* ptr);
     virtual bool GetAllocationSize(void *ptr, size_t &sizeOut);
     virtual void Trim(bool bTrimThreadCaches);

@@ -37,13 +37,13 @@ void* MallocAnsi::Alloc(size_t size)
     return newPtr;
 }
 
-void* MallocAnsi::AlignedAlloc(size_t size, uint32_t alignment)
+void* MallocAnsi::AlignedAlloc(size_t size, size_t alignment)
 {
 	void* newPtr = nullptr;
 #if OS_MACOS | OS_IOS
 	// macOS expects all allocations to be aligned to 16 bytes, but TBBs default alignment is 8,
 	// so on Mac we always have to use scalable_aligned_realloc
-	alignment = std::max((uint32_t)16, alignment);
+	alignment = std::max((size_t)16, alignment);
 #else
 #endif
 	newPtr = baselib::AlignedMalloc(size, alignment);

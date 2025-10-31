@@ -44,12 +44,12 @@ void* MallocTLSF::Alloc(size_t size)
     return newPtr;
 }
 
-void* MallocTLSF::AlignedAlloc(size_t size, uint32_t alignment)
+void* MallocTLSF::AlignedAlloc(size_t size, size_t alignment)
 {
 	void* newPtr = nullptr;
 #if OS_MACOS | OS_IOS
 	// macOS expects all allocations to be aligned to 16 bytes
-	alignment = std::max((uint32_t)16, alignment);
+	alignment = std::max((size_t)16, alignment);
 #else
 #endif
     newPtr = tlsf_memalign(mTLSF, alignment, size);
