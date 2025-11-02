@@ -12,33 +12,41 @@
 
 NAMESPACE_GNXENGINE_BEGIN
 
+// 窗口属性
+struct WindowProps
+{
+    std::string title;
+    uint32_t width;
+    uint32_t height;
+
+    WindowProps(const std::string& Title = "GNXEngine",
+                uint32_t Width = 800,
+                uint32_t Height = 600)
+        : title(Title), width(Width), height(Height)
+    {
+    }
+};
+
 //渲染窗口
 class GNXENGINE_API RenderWindow
 {
 public:
-
     RenderWindow() = default;
+    
+    virtual ~RenderWindow() = default;
+    
+    virtual void OnUpdate() = 0;
 
-    virtual void Resize(uint32_t widthPt, uint32_t heightPt) {}
+    virtual uint32_t GetWidth() const = 0;
+    virtual uint32_t GetHeight() const = 0;
 
-    virtual void SetVSyncEnabled(bool vsync)
-    {
-        (void)vsync;
-    }
+    //virtual void SetEventCallback(const EventCallbackFunc& callback) = 0;
+    virtual void SetVSync(bool enabled) = 0;
+    virtual bool IsVSync() const = 0;
 
-    virtual bool IsVSyncEnabled() const { return false; }
-
-    virtual void SetVSyncInterval(unsigned int interval)
-    {
-        (void)interval;
-    }
-
-    const uint32_t GetVSyncInterval() const { return mVSyncInterval; }
-
-protected:
-	bool mIsFullScreen;
-	bool mClosed;
-	uint32_t mVSyncInterval;
+    virtual void* GetNativeWindow() const = 0;
+    
+    static std::shared_ptr<RenderWindow> Create(const WindowProps& props = WindowProps());
 };
 
 NAMESPACE_GNXENGINE_END

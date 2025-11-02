@@ -1,0 +1,17 @@
+//
+//  DefaultRenderWindow.h
+//  GNXEngine
+//
+//  Created by zhouxuguang on 2025/11/2.
+//
+
+#ifndef GNX_ENGINE_DEFAULT_RENDER_WINDOW_INCLUDE_NFJS
+#define GNX_ENGINE_DEFAULT_RENDER_WINDOW_INCLUDE_NFJS
+
+#include "RenderWindow.h"
+
+NAMESPACE_GNXENGINE_BEGIN
+
+NAMESPACE_GNXENGINE_END
+
+#endif /* GNX_ENGINE_DEFAULT_RENDER_WINDOW_INCLUDE_NFJS */
