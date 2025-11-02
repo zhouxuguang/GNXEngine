@@ -1,8 +1,15 @@
 
 set(appframework_dir ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(appframework_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/include)
-file(GLOB_RECURSE APPFRAMEWORK_SOURCES CONFIGURE_DEPENDS ${appframework_dir}/*.mm ${appframework_dir}/*.cpp ${appframework_dir}/*.c ${appframework_dir}/*.h)
+file(GLOB_RECURSE APPFRAMEWORK_SOURCES CONFIGURE_DEPENDS ${appframework_dir}/*.cpp ${appframework_dir}/*.c)
 file(GLOB_RECURSE APPFRAMEWORK_INCLUDES CONFIGURE_DEPENDS ${appframework_include_dir}/*.h)
+
+if(APPLE)
+   list(APPEND APPFRAMEWORK_SOURCES ${appframework_dir}/MTLGLFWFramework.mm ${appframework_dir}/*.h)
+else(WIN32)
+    list(APPEND APPFRAMEWORK_SOURCES ${appframework_dir}/Win32GLFWFrameWork.h)
+endif(APPLE)
+
 
 set(SOURCE_FILES ${APPFRAMEWORK_SOURCES} ${APPFRAMEWORK_INCLUDES})
 

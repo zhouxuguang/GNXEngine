@@ -1,7 +1,4 @@
-#include "MTLGLFWFramework.h"
-
-#import <Metal/Metal.h>
-#import <QuartzCore/CAMetalLayer.h>
+#include "Win32GLFWFrameWork.h"
 
 static void quit(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
@@ -11,24 +8,16 @@ static void quit(GLFWwindow *window, int key, int scancode, int action, int mods
     }
 }
 
-MTLGLFWFramework::MTLGLFWFramework(uint32_t width, uint32_t height, const char* title)
+Win32GLFWFrameWork::Win32GLFWFrameWork(uint32_t width, uint32_t height, const char* title)
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
     mWindow = glfwCreateWindow(width, height, title, NULL, NULL);
+
+    HWND hWnd = glfwGetWin32Window(mWindow);
     
-    const id<MTLDevice> gpu = MTLCreateSystemDefaultDevice();
-    CAMetalLayer *mMetalLayer = [CAMetalLayer layer];
-    mMetalLayer.device = gpu;
-    mMetalLayer.opaque = YES;
-    mMetalLayer.contentsScale = 1.0;
-    mMetalLayer.framebufferOnly = YES;
-    
-    NSWindow *nswindow = glfwGetCocoaWindow(mWindow);
-    nswindow.contentView.layer = mMetalLayer;
-    nswindow.contentView.wantsLayer = YES;
-    
-    mRenderdevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, (__bridge void*)mMetalLayer);
+    mRenderdevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, hWnd);
     
     int fbWidth = 0;
     int fbHeight = 0;
@@ -38,12 +27,12 @@ MTLGLFWFramework::MTLGLFWFramework(uint32_t width, uint32_t height, const char* 
     glfwSetKeyCallback(mWindow, quit);
 }
 
-MTLGLFWFramework::~MTLGLFWFramework()
+Win32GLFWFrameWork::~Win32GLFWFrameWork()
 {
     //
 }
 
-void MTLGLFWFramework::exec()
+void Win32GLFWFrameWork::exec()
 {
     while (!glfwWindowShouldClose(mWindow))
     {
@@ -55,7 +44,7 @@ void MTLGLFWFramework::exec()
     glfwTerminate();
 }
 
-void MTLGLFWFramework::renderFrame()
+void Win32GLFWFrameWork::renderFrame()
 {
     CommandBufferPtr commandBuffer = mRenderdevice->CreateCommandBuffer();
     RenderEncoderPtr renderEncoder1 = commandBuffer->CreateDefaultRenderEncoder();
@@ -65,5 +54,5 @@ void MTLGLFWFramework::renderFrame()
 
 AppFrameWork* AppFrameWork::Create(uint32_t width, uint32_t height, const char* title)
 {
-    return new MTLGLFWFramework(width, height, title);
+    return new Win32GLFWFrameWork(width, height, title);
 }
