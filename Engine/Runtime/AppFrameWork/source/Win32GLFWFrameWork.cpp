@@ -13,7 +13,12 @@ Win32GLFWFrameWork::Win32GLFWFrameWork(uint32_t width, uint32_t height, const ch
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
-    mWindow = glfwCreateWindow(width, height, title, NULL, NULL);
+
+	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    float scaleX = 1.0, scaleY = 1.0;
+	//glfwGetMonitorContentScale(monitor, &scaleX, &scaleY);
+
+    mWindow = glfwCreateWindow(width * scaleX, height * scaleY, title, NULL, NULL);
 
     HWND hWnd = glfwGetWin32Window(mWindow);
     
