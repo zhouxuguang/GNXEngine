@@ -36,6 +36,7 @@
 #include <memory>
 #include <numeric>
 #include <filesystem>
+#include <sstream>
 
 namespace fs = std::filesystem;
 

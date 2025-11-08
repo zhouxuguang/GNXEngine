@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GNX_ENGINE__MOUSEEVENT_INCLUDE_SFSDGSKGHH
+#define GNX_ENGINE__MOUSEEVENT_INCLUDE_SFSDGSKGHH
 
 #include "Event.h"
 #include "Runtime/GNXEngine/include/KeyCodes.h"
@@ -22,8 +23,7 @@ public:
 		return ss.str();
 	}
 
-	EVENT_CLASS_TYPE(MouseMoved)
-		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
+	EVENT_CLASS_TYPE(MouseMoved) EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 private:
 	float mMouseX, mMouseY;
 };
@@ -45,8 +45,7 @@ public:
 		return ss.str();
 	}
 
-	EVENT_CLASS_TYPE(MouseScrolled)
-		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
+	EVENT_CLASS_TYPE(MouseScrolled) EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 private:
 	float mXOffset, mYOffset;
 };
@@ -100,3 +99,5 @@ public:
 };
 
 NAMESPACE_GNXENGINE_END
+
+#endif

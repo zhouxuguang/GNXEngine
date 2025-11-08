@@ -69,6 +69,17 @@ void DefaultRenderWindow::SetEventCallback(const EventCallbackFunc& callback)
     mData.eventCallback = callback;
 }
 
+void DefaultRenderWindow::Resize(uint32_t width, uint32_t height)
+{
+    int fbWidth = 0;
+    int fbHeight = 0;
+    glfwGetFramebufferSize(mWindow, &fbWidth, &fbHeight);
+    mData.width = fbWidth;
+    mData.height = fbHeight;
+    
+    mRenderDevice->Resize(fbWidth, fbHeight);
+}
+
 void DefaultRenderWindow::Shutdown()
 {
     glfwDestroyWindow(mWindow);
@@ -153,6 +164,16 @@ void DefaultRenderWindow::Init()
     glfwSetScrollCallback(mWindow, [](GLFWwindow* window, double xOffset, double yOffset)
     {
         WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+        
+        // 标准化滚轮的数值
+        if (yOffset < 0)
+        {
+            yOffset = -120;
+        }
+        else if (yOffset > 0)
+        {
+            yOffset = 120;
+        }
 
         MouseScrolledEvent event((float)xOffset, (float)yOffset);
         data.eventCallback(event);

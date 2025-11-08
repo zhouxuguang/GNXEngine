@@ -25,6 +25,11 @@ private:
     RenderWindowPtr mRenderWindow = nullptr;
     
     void OnEvent(Event& e);
+    
+    bool OnWindowClose(WindowCloseEvent& e);
+    bool OnWindowResize(WindowResizeEvent& e);
+    
+    bool mMinimized = false;
 };
 
 NAMESPACE_GNXENGINE_END

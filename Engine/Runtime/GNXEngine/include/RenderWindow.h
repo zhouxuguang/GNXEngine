@@ -10,6 +10,7 @@
 
 #include "PreDefine.h"
 #include "Events/Event.h"
+#include "Events/ApplicationEvent.h"
 
 NAMESPACE_GNXENGINE_BEGIN
 
@@ -50,6 +51,8 @@ public:
     virtual bool IsVSync() const = 0;
 
     virtual void* GetNativeWindow() const = 0;
+    
+    virtual void Resize(uint32_t width, uint32_t height) = 0;
     
     static std::shared_ptr<RenderWindow> Create(const WindowProps& props = WindowProps());
 };

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GNX_ENGINE_APPLICATION_EVENT_INCLUDE_SFJKSJJ
+#define GNX_ENGINE_APPLICATION_EVENT_INCLUDE_SFJKSJJ
 
 #include "Event.h"
 
@@ -7,23 +8,23 @@ NAMESPACE_GNXENGINE_BEGIN
 class WindowResizeEvent : public Event
 {
 public:
-	WindowResizeEvent(unsigned int width, unsigned int height)
-		: m_Width(width), m_Height(height) {}
+	WindowResizeEvent(uint32_t width, uint32_t height) : mWidth(width), mHeight(height) {}
 
-	unsigned int GetWidth() const { return m_Width; }
-	unsigned int GetHeight() const { return m_Height; }
+    uint32_t GetWidth() const { return mWidth; }
+    uint32_t GetHeight() const { return mHeight; }
 
 	std::string ToString() const override
 	{
 		std::stringstream ss;
-		ss << "WindowResizeEvent: " << m_Width << ", " << m_Height;
+		ss << "WindowResizeEvent: " << mWidth << ", " << mHeight;
 		return ss.str();
 	}
 
 	EVENT_CLASS_TYPE(WindowResize)
 	EVENT_CLASS_CATEGORY(EventCategoryApplication)
 private:
-	unsigned int m_Width, m_Height;
+    uint32_t mWidth;
+    uint32_t mHeight;
 };
 
 class WindowCloseEvent : public Event
@@ -35,31 +36,6 @@ public:
 	EVENT_CLASS_CATEGORY(EventCategoryApplication)
 };
 
-class AppTickEvent : public Event
-{
-public:
-	AppTickEvent() = default;
-
-	EVENT_CLASS_TYPE(AppTick)
-	EVENT_CLASS_CATEGORY(EventCategoryApplication)
-};
-
-class AppUpdateEvent : public Event
-{
-public:
-	AppUpdateEvent() = default;
-
-	EVENT_CLASS_TYPE(AppUpdate)
-	EVENT_CLASS_CATEGORY(EventCategoryApplication)
-};
-
-class AppRenderEvent : public Event
-{
-public:
-	AppRenderEvent() = default;
-
-	EVENT_CLASS_TYPE(AppRender)
-	EVENT_CLASS_CATEGORY(EventCategoryApplication)
-};
-
 NAMESPACE_GNXENGINE_END
+
+#endif

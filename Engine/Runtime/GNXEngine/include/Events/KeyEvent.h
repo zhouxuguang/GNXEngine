@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GNX_ENGINE__KEYEVENT_INCLUDE_SDHJHH
+#define GNX_ENGINE__KEYEVENT_INCLUDE_SDHJHH
 
 #include "Event.h"
 #include "Runtime/GNXEngine/include/KeyCodes.h"
@@ -76,3 +77,5 @@ public:
 };
 
 NAMESPACE_GNXENGINE_END
+
+#endif

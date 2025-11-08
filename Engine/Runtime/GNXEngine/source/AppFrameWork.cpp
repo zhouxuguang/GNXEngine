@@ -49,6 +49,29 @@ void AppFrameWork::RenderFrame()
 void AppFrameWork::OnEvent(Event& e)
 {
     LOG_INFO("%s", e.ToString().c_str());
+    
+    EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<WindowCloseEvent>(GNX_BIND_EVENT_FN(OnWindowClose));
+    dispatcher.Dispatch<WindowResizeEvent>(GNX_BIND_EVENT_FN(OnWindowResize));
+}
+
+bool AppFrameWork::OnWindowClose(WindowCloseEvent& e)
+{
+    LOG_INFO("%s", e.ToString().c_str());
+}
+
+bool AppFrameWork::OnWindowResize(WindowResizeEvent& e)
+{
+    if (e.GetWidth() == 0 || e.GetHeight() == 0)
+    {
+        mMinimized = true;
+        return false;
+    }
+
+    mMinimized = false;
+    mRenderWindow->Resize(e.GetWidth(), e.GetHeight());
+
+    return false;
 }
 
 NAMESPACE_GNXENGINE_END
