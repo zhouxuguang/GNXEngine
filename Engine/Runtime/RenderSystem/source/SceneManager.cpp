@@ -194,17 +194,19 @@ void SceneManager::Update(float deltaTime)
     
     //更新灯光
     Light * pointLight = getLight("mainLight");
-    
-    cbLighting lightInfo;
-    Vector3f lightColor = pointLight->getColor();
-    lightInfo.LightColor = mathutil::make_simd_float4(lightColor.x, lightColor.y, lightColor.z, 1.0);
-    lightInfo.Strength = mathutil::make_simd_float3(pointLight->getStrength());
-    Vector3f lightPos = pointLight->getPosition();
-    lightInfo.WorldSpaceLightPos = mathutil::make_simd_float4(lightPos.x, lightPos.y, lightPos.z, 1.0);
-    lightInfo.FalloffStart = pointLight->getFalloffStart();
-    lightInfo.FalloffEnd = pointLight->getFalloffEnd();
-    
-    mLightUBO->SetData(&lightInfo, 0, sizeof(cbLighting));
+    if (pointLight)
+    {
+        cbLighting lightInfo;
+        Vector3f lightColor = pointLight->getColor();
+        lightInfo.LightColor = mathutil::make_simd_float4(lightColor.x, lightColor.y, lightColor.z, 1.0);
+        lightInfo.Strength = mathutil::make_simd_float3(pointLight->getStrength());
+        Vector3f lightPos = pointLight->getPosition();
+        lightInfo.WorldSpaceLightPos = mathutil::make_simd_float4(lightPos.x, lightPos.y, lightPos.z, 1.0);
+        lightInfo.FalloffStart = pointLight->getFalloffStart();
+        lightInfo.FalloffEnd = pointLight->getFalloffEnd();
+        
+        mLightUBO->SetData(&lightInfo, 0, sizeof(cbLighting));
+    }
     
     for (const auto &iter : mRootSceneNode->GetAllNodes())
     {
