@@ -59,4 +59,9 @@ void DefaultRenderWindow::Shutdown()
     glfwTerminate();
 }
 
+bool DefaultRenderWindow::ShouldClose() const
+{
+    return glfwWindowShouldClose(mWindow);
+}
+
 NAMESPACE_GNXENGINE_END

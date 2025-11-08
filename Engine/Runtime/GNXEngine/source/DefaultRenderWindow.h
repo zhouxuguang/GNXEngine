@@ -35,15 +35,16 @@ struct WindowData
 
 class DefaultRenderWindow : public RenderWindow
 {
-
 public:
     DefaultRenderWindow(const WindowProps& props);
     ~DefaultRenderWindow();
 
     virtual void OnUpdate()
     {
-        //
+        glfwPollEvents();
     }
+
+    virtual bool ShouldClose() const;
 
     virtual uint32_t GetWidth() const
     {
