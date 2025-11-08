@@ -8,17 +8,17 @@ NAMESPACE_GNXENGINE_BEGIN
 void* GetPlatformWindow(GLFWwindow *window)
 {
     const id<MTLDevice> gpu = MTLCreateSystemDefaultDevice();
-    CAMetalLayer *mMetalLayer = [CAMetalLayer layer];
-    mMetalLayer.device = gpu;
-    mMetalLayer.opaque = YES;
-    mMetalLayer.contentsScale = 1.0;
-    mMetalLayer.framebufferOnly = YES;
+    CAMetalLayer *metalLayer = [CAMetalLayer layer];
+    metalLayer.device = gpu;
+    metalLayer.opaque = YES;
+    metalLayer.contentsScale = 1.0;
+    metalLayer.framebufferOnly = YES;
     
-    NSWindow *nswindow = glfwGetCocoaWindow(window);
-    nswindow.contentView.layer = mMetalLayer;
-    nswindow.contentView.wantsLayer = YES;
+    NSWindow *nsWindow = glfwGetCocoaWindow(window);
+    nsWindow.contentView.layer = metalLayer;
+    nsWindow.contentView.wantsLayer = YES;
 
-    return (__bridge void*)mMetalLayer;
+    return (__bridge void*)metalLayer;
 }
 
 NAMESPACE_GNXENGINE_END

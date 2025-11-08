@@ -13,7 +13,7 @@
 
 NAMESPACE_GNXENGINE_BEGIN
 
-// 输入系统，处理系统的键盘和鼠标消息
+// 输入系统，轮询系统的键盘和鼠标消息
 class Input
 {
 public:

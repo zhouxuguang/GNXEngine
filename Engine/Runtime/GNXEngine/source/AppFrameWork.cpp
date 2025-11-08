@@ -1,12 +1,19 @@
 #include "AppFrameWork.h"
+#include "Runtime/BaseLib/include/LogService.h"
 
 NAMESPACE_GNXENGINE_BEGIN
 
-#define GNX_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
+RenderWindowPtr gRenderWindow = nullptr;
+
+RenderWindowPtr GetRenderWindow()
+{
+    return gRenderWindow;
+}
 
 AppFrameWork::AppFrameWork(const WindowProps& props)
 {
     mRenderWindow = RenderWindow::Create(props);
+    gRenderWindow = mRenderWindow;
     mRenderWindow->SetEventCallback(GNX_BIND_EVENT_FN(OnEvent));
 }
 
@@ -41,7 +48,7 @@ void AppFrameWork::RenderFrame()
 
 void AppFrameWork::OnEvent(Event& e)
 {
-    //
+    LOG_INFO("%s", e.ToString().c_str());
 }
 
 NAMESPACE_GNXENGINE_END

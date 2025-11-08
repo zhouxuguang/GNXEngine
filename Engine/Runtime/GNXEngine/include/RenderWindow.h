@@ -56,6 +56,8 @@ public:
 
 typedef std::shared_ptr<RenderWindow> RenderWindowPtr;
 
+RenderWindowPtr GetRenderWindow();
+
 NAMESPACE_GNXENGINE_END
 
 #endif //GNX_ENGINE_RENDERWINDOW_INCLUDE_DGNJDFHGFHGDF_INCLUDE

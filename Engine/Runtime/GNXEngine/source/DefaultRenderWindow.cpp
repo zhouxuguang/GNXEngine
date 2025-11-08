@@ -27,7 +27,6 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
     mData.width = props.width;
     mData.height = props.height;
     mData.title = props.title;
-    //mData.width = props.width;
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
@@ -156,6 +155,14 @@ void DefaultRenderWindow::Init()
         WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
         MouseScrolledEvent event((float)xOffset, (float)yOffset);
+        data.eventCallback(event);
+    });
+    
+    glfwSetCursorPosCallback(mWindow, [](GLFWwindow* window, double xPos, double yPos)
+    {
+        WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+
+        MouseMovedEvent event((float)xPos, (float)yPos);
         data.eventCallback(event);
     });
 }

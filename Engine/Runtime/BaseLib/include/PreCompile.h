@@ -210,4 +210,7 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
      #define USE_FUTEX 1
 #endif
 
+// 绑定回调函数的方便的宏
+#define GNX_BIND_EVENT_FN(func) [this](auto&&... args) -> decltype(auto) { return this->func(std::forward<decltype(args)>(args)...); }
+
 #endif // end of file_
