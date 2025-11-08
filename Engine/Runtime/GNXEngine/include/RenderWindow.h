@@ -49,6 +49,8 @@ public:
     static std::shared_ptr<RenderWindow> Create(const WindowProps& props = WindowProps());
 };
 
+typedef std::shared_ptr<RenderWindow> RenderWindowPtr;
+
 NAMESPACE_GNXENGINE_END
 
 #endif //GNX_ENGINE_RENDERWINDOW_INCLUDE_DGNJDFHGFHGDF_INCLUDE

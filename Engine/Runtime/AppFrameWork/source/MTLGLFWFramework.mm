@@ -15,6 +15,7 @@ MTLGLFWFramework::MTLGLFWFramework(uint32_t width, uint32_t height, const char* 
 {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
     mWindow = glfwCreateWindow(width, height, title, NULL, NULL);
     
     const id<MTLDevice> gpu = MTLCreateSystemDefaultDevice();

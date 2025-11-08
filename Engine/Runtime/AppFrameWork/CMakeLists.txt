@@ -12,7 +12,7 @@ endif(APPLE)
 
 
 set(SOURCE_FILES ${APPFRAMEWORK_SOURCES} ${APPFRAMEWORK_INCLUDES})
-
+message("SOURCE_FILES: ${SOURCE_FILES}")
 add_executable(APPFrameWork ${SOURCE_FILES})
 
 source_group(TREE ${appframework_dir} PREFIX source FILES ${APPFRAMEWORK_SOURCES})

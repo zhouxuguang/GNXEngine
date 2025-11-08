@@ -55,7 +55,7 @@ target_link_libraries(RenderCore PRIVATE MathUtil spirv_reflect)
 
 if(APPLE)
     target_compile_options(RenderCore PRIVATE "-fobjc-arc")
-    #target_link_libraries(RenderCore PRIVATE "-framework OpenGLES")
+    target_link_libraries(RenderCore PUBLIC "-framework QuartzCore" "-framework Metal")
 endif()
 
 set_property(TARGET RenderCore PROPERTY FOLDER "Runtime")
