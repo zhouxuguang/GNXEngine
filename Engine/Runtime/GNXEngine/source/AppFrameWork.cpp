@@ -2,9 +2,12 @@
 
 NAMESPACE_GNXENGINE_BEGIN
 
+#define GNX_BIND_EVENT_FN(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
+
 AppFrameWork::AppFrameWork(const WindowProps& props)
 {
     mRenderWindow = RenderWindow::Create(props);
+    mRenderWindow->SetEventCallback(GNX_BIND_EVENT_FN(OnEvent));
 }
 
 void AppFrameWork::RunLoop()
@@ -34,6 +37,11 @@ void AppFrameWork::RenderFrame()
     RenderCore::RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
     renderEncoder->EndEncode();
     commandBuffer->PresentFrameBuffer();
+}
+
+void AppFrameWork::OnEvent(Event& e)
+{
+    //
 }
 
 NAMESPACE_GNXENGINE_END

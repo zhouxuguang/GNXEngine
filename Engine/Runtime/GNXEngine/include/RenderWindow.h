@@ -9,6 +9,7 @@
 #define GNX_ENGINE_RENDERWINDOW_INCLUDE_DGNJDFHGFHGDF_INCLUDE
 
 #include "PreDefine.h"
+#include "Events/Event.h"
 
 NAMESPACE_GNXENGINE_BEGIN
 
@@ -31,6 +32,8 @@ struct WindowProps
 class GNXENGINE_API RenderWindow
 {
 public:
+    using EventCallbackFunc = std::function<void(Event&)>;
+    
     RenderWindow() = default;
     
     virtual ~RenderWindow() = default;
@@ -42,7 +45,7 @@ public:
     virtual uint32_t GetWidth() const = 0;
     virtual uint32_t GetHeight() const = 0;
 
-    //virtual void SetEventCallback(const EventCallbackFunc& callback) = 0;
+    virtual void SetEventCallback(const EventCallbackFunc& callback) = 0;
     virtual void SetVSync(bool enabled) = 0;
     virtual bool IsVSync() const = 0;
 

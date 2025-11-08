@@ -1,44 +1,42 @@
 #pragma once
 
 #include "Event.h"
+#include "Runtime/GNXEngine/include/KeyCodes.h"
 
 NAMESPACE_GNXENGINE_BEGIN
-
 
 class MouseMovedEvent : public Event
 {
 public:
-	MouseMovedEvent(const float x, const float y)
-		: m_MouseX(x), m_MouseY(y) 
+	MouseMovedEvent(const float x, const float y) : mMouseX(x), mMouseY(y)
 	{
 	}
 
-	float GetX() const { return m_MouseX; }
-	float GetY() const { return m_MouseY; }
+	float GetX() const { return mMouseX; }
+	float GetY() const { return mMouseY; }
 
 	std::string ToString() const override
 	{
 		std::stringstream ss;
-		ss << "MouseMovedEvent: " << m_MouseX << ", " << m_MouseY;
+		ss << "MouseMovedEvent: " << mMouseX << ", " << mMouseY;
 		return ss.str();
 	}
 
 	EVENT_CLASS_TYPE(MouseMoved)
 		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 private:
-	float m_MouseX, m_MouseY;
+	float mMouseX, mMouseY;
 };
 
 class MouseScrolledEvent : public Event
 {
 public:
-	MouseScrolledEvent(const float xOffset, const float yOffset)
-		: m_XOffset(xOffset), m_YOffset(yOffset) 
+	MouseScrolledEvent(const float xOffset, const float yOffset) : mXOffset(xOffset), mYOffset(yOffset)
 	{
 	}
 
-	float GetXOffset() const { return m_XOffset; }
-	float GetYOffset() const { return m_YOffset; }
+	float GetXOffset() const { return mXOffset; }
+	float GetYOffset() const { return mYOffset; }
 
 	std::string ToString() const override
 	{
@@ -50,36 +48,34 @@ public:
 	EVENT_CLASS_TYPE(MouseScrolled)
 		EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput)
 private:
-	float m_XOffset, m_YOffset;
+	float mXOffset, mYOffset;
 };
 
 class MouseButtonEvent : public Event
 {
 public:
-	MouseCode GetMouseButton() const { return m_Button; }
+	MouseCode GetMouseButton() const { return mButton; }
 
 	EVENT_CLASS_CATEGORY(EventCategoryMouse | EventCategoryInput | EventCategoryMouseButton)
 protected:
-	MouseButtonEvent(const MouseCode button)
-		: m_Button(button) 
+	MouseButtonEvent(const MouseCode button) : mButton(button)
 	{
 	}
 
-	MouseCode m_Button;
+	MouseCode mButton;
 };
 
 class MouseButtonPressedEvent : public MouseButtonEvent
 {
 public:
-	MouseButtonPressedEvent(const MouseCode button)
-		: MouseButtonEvent(button) 
+	MouseButtonPressedEvent(const MouseCode button) : MouseButtonEvent(button)
 	{
 	}
 
 	std::string ToString() const override
 	{
 		std::stringstream ss;
-		ss << "MouseButtonPressedEvent: " << m_Button;
+		ss << "MouseButtonPressedEvent: " << mButton;
 		return ss.str();
 	}
 
@@ -89,15 +85,14 @@ public:
 class MouseButtonReleasedEvent : public MouseButtonEvent
 {
 public:
-	MouseButtonReleasedEvent(const MouseCode button)
-		: MouseButtonEvent(button) 
+	MouseButtonReleasedEvent(const MouseCode button) : MouseButtonEvent(button)
 	{
 	}
 
 	std::string ToString() const override
 	{
 		std::stringstream ss;
-		ss << "MouseButtonReleasedEvent: " << m_Button;
+		ss << "MouseButtonReleasedEvent: " << mButton;
 		return ss.str();
 	}
 

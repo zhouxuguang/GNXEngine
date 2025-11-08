@@ -30,7 +30,7 @@ struct WindowData
     uint32_t width;
     uint32_t height;
     bool VSync;
-    //EventCallbackFn EventCallback;
+    RenderWindow::EventCallbackFunc eventCallback = nullptr;
 };
 
 class DefaultRenderWindow : public RenderWindow
@@ -56,7 +56,8 @@ public:
         return mData.height;
     }
 
-    //virtual void SetEventCallback(const EventCallbackFunc& callback) = 0;
+    virtual void SetEventCallback(const EventCallbackFunc& callback);
+    
     virtual void SetVSync(bool enabled)
     {
         if (enabled)
@@ -81,6 +82,8 @@ public:
     }
 
     virtual void Shutdown();
+    
+    void Init();
 
 private:
     WindowData mData;

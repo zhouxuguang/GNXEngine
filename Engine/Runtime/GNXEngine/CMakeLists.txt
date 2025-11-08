@@ -19,7 +19,7 @@ target_link_libraries(GNXEngine PUBLIC BaseLib Allocator ImageCodec MathUtil Ren
 target_compile_definitions(GNXEngine PRIVATE GNXENGINE_EXPORTS)
 
 if(APPLE)
-    target_link_libraries(GNXEngine PRIVATE "-framework QuartzCore" "-framework Metal")
+    target_link_libraries(GNXEngine PRIVATE "-framework QuartzCore" "-framework Metal" "-framework GameController")
     target_compile_options(GNXEngine PRIVATE "-fobjc-arc")
     set_target_properties(GNXEngine PROPERTIES LINK_FLAGS "-fobjc-arc")
 endif()

@@ -23,6 +23,8 @@ public:
 
 private:
     RenderWindowPtr mRenderWindow = nullptr;
+    
+    void OnEvent(Event& e);
 };
 
 NAMESPACE_GNXENGINE_END
