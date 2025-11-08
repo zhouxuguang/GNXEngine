@@ -9,37 +9,57 @@
 #define GNX_ENGINE_RENDERWINDOW_INCLUDE_DGNJDFHGFHGDF_INCLUDE
 
 #include "PreDefine.h"
+#include "Events/Event.h"
+#include "Events/ApplicationEvent.h"
 
 NAMESPACE_GNXENGINE_BEGIN
+
+// 窗口属性
+struct WindowProps
+{
+    std::string title;
+    uint32_t width;
+    uint32_t height;
+
+    WindowProps(const std::string& Title = "GNXEngine",
+                uint32_t Width = 800,
+                uint32_t Height = 600)
+        : title(Title), width(Width), height(Height)
+    {
+    }
+};
 
 //渲染窗口
 class GNXENGINE_API RenderWindow
 {
 public:
-
+    using EventCallbackFunc = std::function<void(Event&)>;
+    
     RenderWindow() = default;
+    
+    virtual ~RenderWindow() = default;
+    
+    virtual void OnUpdate() = 0;
 
-    virtual void Resize(uint32_t widthPt, uint32_t heightPt) {}
+    virtual bool ShouldClose() const = 0;
 
-    virtual void SetVSyncEnabled(bool vsync)
-    {
-        (void)vsync;
-    }
+    virtual uint32_t GetWidth() const = 0;
+    virtual uint32_t GetHeight() const = 0;
 
-    virtual bool IsVSyncEnabled() const { return false; }
+    virtual void SetEventCallback(const EventCallbackFunc& callback) = 0;
+    virtual void SetVSync(bool enabled) = 0;
+    virtual bool IsVSync() const = 0;
 
-    virtual void SetVSyncInterval(unsigned int interval)
-    {
-        (void)interval;
-    }
-
-    const uint32_t GetVSyncInterval() const { return mVSyncInterval; }
-
-protected:
-	bool mIsFullScreen;
-	bool mClosed;
-	uint32_t mVSyncInterval;
+    virtual void* GetNativeWindow() const = 0;
+    
+    virtual void Resize(uint32_t width, uint32_t height) = 0;
+    
+    static std::shared_ptr<RenderWindow> Create(const WindowProps& props = WindowProps());
 };
+
+typedef std::shared_ptr<RenderWindow> RenderWindowPtr;
+
+RenderWindowPtr GetRenderWindow();
 
 NAMESPACE_GNXENGINE_END
 

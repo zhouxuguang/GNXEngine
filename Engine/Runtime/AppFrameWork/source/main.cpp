@@ -1,8 +1,8 @@
-#include "MTLGLFWFramework.h"
+#include "AppFrameWork.h"
 
 int main(void)
 {
-    MTLGLFWFramework app(640, 480, "GLFW Metal");
-    app.exec();
+    AppFrameWork *app = AppFrameWork::Create(640, 480, "GLFW");
+    app->exec();
     return 0;
 }
