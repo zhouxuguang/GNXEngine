@@ -58,6 +58,7 @@ void AppFrameWork::OnEvent(Event& e)
 bool AppFrameWork::OnWindowClose(WindowCloseEvent& e)
 {
     LOG_INFO("%s", e.ToString().c_str());
+    return true;
 }
 
 bool AppFrameWork::OnWindowResize(WindowResizeEvent& e)

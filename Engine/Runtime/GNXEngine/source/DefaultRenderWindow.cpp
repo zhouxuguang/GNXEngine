@@ -18,7 +18,7 @@ extern void* GetPlatformWindow(GLFWwindow *window);
 #if OS_WINDOWS
 void* GetPlatformWindow(GLFWwindow *window)
 {
-    return glfwGetWin32Window(mWindow);
+    return glfwGetWin32Window(window);
 }
 #endif
 
@@ -67,6 +67,20 @@ DefaultRenderWindow::~DefaultRenderWindow()
 void DefaultRenderWindow::SetEventCallback(const EventCallbackFunc& callback)
 {
     mData.eventCallback = callback;
+}
+
+inline void DefaultRenderWindow::SetVSync(bool enabled)
+{
+    if (enabled)
+    {
+        glfwSwapInterval(1);
+    }
+    else
+    {
+        glfwSwapInterval(0);
+    }
+
+    mData.VSync = enabled;
 }
 
 void DefaultRenderWindow::Resize(uint32_t width, uint32_t height)

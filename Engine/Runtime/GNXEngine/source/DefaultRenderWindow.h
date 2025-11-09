@@ -58,19 +58,7 @@ public:
 
     virtual void SetEventCallback(const EventCallbackFunc& callback);
     
-    virtual void SetVSync(bool enabled)
-    {
-        if (enabled)
-        {
-            glfwSwapInterval(1);
-        }
-		else
-        {
-            glfwSwapInterval(0);
-        }
-
-		mData.VSync = enabled;
-    }
+    virtual void SetVSync(bool enabled);
     virtual bool IsVSync() const
     {
         return mData.VSync;
