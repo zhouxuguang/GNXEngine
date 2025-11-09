@@ -183,7 +183,7 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
     
     CComPtr<IDxcResult> pResults = nullptr;
     result = m_pCompiler->Compile(&sourceBuffer, arguments.data(), (UINT32)arguments.size(), pIncludeHandler, IID_PPV_ARGS(&pResults));
-    free((void*)pw_ShaderFile);
+    delete []pw_ShaderFile;
     
     //
     // 如果有错误，就打印出来看看

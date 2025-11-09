@@ -36,6 +36,15 @@ public:
 	virtual const char* GetDescriptiveName() const = 0;
 };
 
+// 封装的内存分配类
+class Memory
+{
+public:
+    static void* Malloc(size_t size, size_t alignment = DEFAULT_ALIGNMENT);
+    static void Free(void* ptr);
+    static size_t GetAllocSize(void* ptr);
+};
+
 NS_ALLOCATOR_END
 
 #endif
