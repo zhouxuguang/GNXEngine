@@ -1,5 +1,6 @@
 #include "AMalloc.h"
 #include "MallocTBB.h"
+#include "MallocAnsi.h"
 
 NS_ALLOCATOR_BEGIN
 
@@ -27,7 +28,7 @@ static Malloc *gMalloc = nullptr;
 
 static void InitGMalloc()
 {
-    gMalloc = new MallocTBB();
+    gMalloc = new MallocAnsi();
 }
 
 void* Memory::Malloc(size_t size, size_t alignment)
