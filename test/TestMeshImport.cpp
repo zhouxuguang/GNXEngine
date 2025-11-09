@@ -105,21 +105,6 @@ public:
 
 Allocator::MallocAnsi* alloc = nullptr;
 
-void* operator new(size_t size)
-{
-    if (!alloc)
-    {
-        alloc = new Allocator::MallocAnsi();
-        new Allocator::MallocAnsi();
-    }
-    return alloc->Alloc(size);
-}
-
-void operator delete(void* ptr)
-{
-    alloc->Free(ptr);
-}
-
 void TestAllocator()
 {
 	Allocator::MallocAnsi* alloc = new Allocator::MallocAnsi;
