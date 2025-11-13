@@ -61,6 +61,15 @@ typedef std::shared_ptr<RenderWindow> RenderWindowPtr;
 
 RenderWindowPtr GetRenderWindow();
 
+struct WindowData
+{
+	std::string title;
+	uint32_t width;
+	uint32_t height;
+	bool VSync;
+	RenderWindow::EventCallbackFunc eventCallback = nullptr;
+};
+
 NAMESPACE_GNXENGINE_END
 
 #endif //GNX_ENGINE_RENDERWINDOW_INCLUDE_DGNJDFHGFHGDF_INCLUDE

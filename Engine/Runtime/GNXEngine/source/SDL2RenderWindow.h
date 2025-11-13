@@ -1,38 +1,27 @@
 //
-//  DefaultRenderWindow.h
+//  SDL2RenderWindow.h
 //  GNXEngine
 //
 //  Created by zhouxuguang on 2025/11/2.
 //
 
-#ifndef GNX_ENGINE_DEFAULT_RENDER_WINDOW_INCLUDE_NFJS
-#define GNX_ENGINE_DEFAULT_RENDER_WINDOW_INCLUDE_NFJS
+#ifndef GNX_ENGINE_SDL2_RENDER_WINDOW_INCLUDE_SGJDKF
+#define GNX_ENGINE_SDL2_RENDER_WINDOW_INCLUDE_SGJDKF
 
 #include "RenderWindow.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
-
-#define GLFW_INCLUDE_NONE
-#if OS_WINDOWS
-#define GLFW_EXPOSE_NATIVE_WIN32
-#include "GLFW/glfw3.h"
-#include "GLFW/glfw3native.h"
-#elif OS_MACOS
-#define GLFW_EXPOSE_NATIVE_COCOA
-#include "GLFW/glfw3.h"
-#include "GLFW/glfw3native.h"
-#endif
+#include "SDL.h"
 
 NAMESPACE_GNXENGINE_BEGIN
 
-class DefaultRenderWindow : public RenderWindow
+class SDL2RenderWindow : public RenderWindow
 {
 public:
-    DefaultRenderWindow(const WindowProps& props);
-    ~DefaultRenderWindow();
+    SDL2RenderWindow(const WindowProps& props);
+    ~SDL2RenderWindow();
 
     virtual void OnUpdate()
     {
-        glfwPollEvents();
     }
 
     virtual bool ShouldClose() const;
@@ -57,7 +46,7 @@ public:
 
     virtual void* GetNativeWindow() const
     {
-        return mWindow;
+        return NULL;
     }
     
     virtual void Resize(uint32_t width, uint32_t height);
@@ -68,10 +57,10 @@ public:
 
 private:
     WindowData mData;
-    GLFWwindow *mWindow = nullptr;
     RenderCore::RenderDevicePtr mRenderDevice = nullptr;
+    SDL_Window* mWindow = nullptr;
 };
 
 NAMESPACE_GNXENGINE_END
 
-#endif /* GNX_ENGINE_DEFAULT_RENDER_WINDOW_INCLUDE_NFJS */
+#endif /* GNX_ENGINE_SDL2_RENDER_WINDOW_INCLUDE_SGJDKF */
