@@ -20,9 +20,7 @@ public:
     SDL2RenderWindow(const WindowProps& props);
     ~SDL2RenderWindow();
 
-    virtual void OnUpdate()
-    {
-    }
+    virtual void OnUpdate();
 
     virtual bool ShouldClose() const;
 
@@ -46,7 +44,7 @@ public:
 
     virtual void* GetNativeWindow() const
     {
-        return NULL;
+        return mWindow;
     }
     
     virtual void Resize(uint32_t width, uint32_t height);

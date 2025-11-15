@@ -25,7 +25,7 @@ SDL2RenderWindow::SDL2RenderWindow(const WindowProps& props)
     HWND nativeWnd = wmInfo.info.win.window;
 	mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, nativeWnd);
 #elif OS_MACOS
-    void * nativeWnd = GetSDL2PlatformWindow(wmInfo);
+    void *nativeWnd = GetSDL2PlatformWindow(wmInfo);
 	mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nativeWnd);
 #endif
 
@@ -47,6 +47,18 @@ SDL2RenderWindow::SDL2RenderWindow(const WindowProps& props)
 SDL2RenderWindow::~SDL2RenderWindow()
 {
 
+}
+
+void SDL2RenderWindow::OnUpdate()
+{
+    SDL_Event event;
+    while (SDL_PollEvent(&event) != 0)
+    {
+        if (event.type == SDL_QUIT)
+        {
+            //quit = 1;
+        }
+    }
 }
 
 bool SDL2RenderWindow::ShouldClose() const
