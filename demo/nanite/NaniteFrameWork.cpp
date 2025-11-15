@@ -6,6 +6,7 @@
 //
 
 #include "NaniteFrameWork.h"
+#include "ClusterSelection.h"
 
 NaniteFrameWork::NaniteFrameWork(const GNXEngine::WindowProps& props) : GNXEngine::AppFrameWork(props)
 {
@@ -19,5 +20,5 @@ void NaniteFrameWork::Initlize()
 
 void NaniteFrameWork::RenderFrame()
 {
-    //
+    ExecuteClusterSelectionPass(RenderCore::GetRenderDevice());
 }
