@@ -39,6 +39,11 @@ public:
     virtual void UnmapBufferData(void* bufferData) const {}
     
     virtual bool IsValid() const { return false; }
+    
+    /**
+      设置名字
+     */
+    virtual void SetName(const char* name) {};
 };
 
 typedef std::shared_ptr<ComputeBuffer> ComputeBufferPtr;

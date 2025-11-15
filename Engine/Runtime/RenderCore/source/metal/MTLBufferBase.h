@@ -38,6 +38,14 @@ public:
     
     id<MTLBuffer> getMTLBuffer(){return mBuffer;};
     
+    void SetName(const char* name)
+    {
+        if (name)
+        {
+            mBuffer.label = [NSString stringWithUTF8String:name];
+        }
+    }
+    
 private:
     
     id<MTLBuffer> mBuffer;

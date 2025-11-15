@@ -39,6 +39,11 @@ public:
     virtual void UnmapBufferData(void* bufferData) const = 0;
     
     virtual bool IsValid() const = 0;
+    
+    /**
+      设置名字
+     */
+    virtual void SetName(const char* name) = 0;
 };
 
 

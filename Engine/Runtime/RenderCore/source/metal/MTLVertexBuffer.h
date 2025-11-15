@@ -52,6 +52,14 @@ public:
         return nullptr;
     }
     
+    virtual void SetName(const char* name)
+    {
+        if (mBuffer)
+        {
+            mBuffer->SetName(name);
+        }
+    }
+    
 private:
     MTLBufferBasePtr mBuffer = nullptr;
 };

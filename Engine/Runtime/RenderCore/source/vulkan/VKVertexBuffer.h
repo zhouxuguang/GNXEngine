@@ -31,6 +31,11 @@ public:
     virtual bool IsValid() const;
 
     VkBuffer GetGpuBuffer() const;
+    
+    /**
+      设置名字
+     */
+    virtual void SetName(const char* name);
 private:
     VulkanContextPtr mContext;
     VkBuffer mBuffer = VK_NULL_HANDLE;

@@ -205,6 +205,9 @@ VkAttachmentLoadOp GetLoadOP(AttachmentLoadOp loadOp);
 
 VkAttachmentStoreOp GetStoreOP(AttachmentStoreOp storeOp);
 
+// 设置对象的名称
+void SetObjectName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const char* pObjectName);
+
 NAMESPACE_RENDERCORE_END
 
 #endif // GNX_ENGINE_VKUTIL_INCLUDE_SDGKDFKHFGKHK

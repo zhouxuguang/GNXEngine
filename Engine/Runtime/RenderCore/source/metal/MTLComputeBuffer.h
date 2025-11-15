@@ -50,6 +50,11 @@ public:
         return MTLVertexBuffer::IsValid();
     }
     
+    virtual void SetName(const char* name)
+    {
+        MTLVertexBuffer::SetName(name);
+    };
+    
 };
 
 typedef std::shared_ptr<MTLComputeBuffer> MTLComputeBufferPtr;

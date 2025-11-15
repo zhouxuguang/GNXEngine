@@ -116,4 +116,9 @@ VkBuffer VKVertexBuffer::GetGpuBuffer() const
     return mBuffer;
 }
 
+void VKVertexBuffer::SetName(const char* name)
+{
+    SetObjectName(mContext->device, VK_OBJECT_TYPE_BUFFER, (uint64_t)mBuffer, name);
+}
+
 NAMESPACE_RENDERCORE_END
