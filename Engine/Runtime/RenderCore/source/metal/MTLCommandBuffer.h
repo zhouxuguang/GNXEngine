@@ -36,6 +36,12 @@ public:
     //等待命令缓冲区执行完成
     virtual void WaitUntilCompleted();
     
+    // 开始调试标记
+    virtual void BeginDebugGroup(const char* name, const float color[4]);
+    
+    // 结束调试标记
+    virtual void EndDebugGroup();
+    
 private:
     id<MTLCommandBuffer> mCommandBuffer;
     CAMetalLayer *mMetalLayer = nil;

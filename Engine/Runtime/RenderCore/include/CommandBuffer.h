@@ -34,11 +34,38 @@ public:
     
     //等待命令缓冲区执行完成
     virtual void WaitUntilCompleted() = 0;
+    
+    // 开始调试标记
+    virtual void BeginDebugGroup(const char* name, const float color[4]) = 0;
+    
+    // 结束调试标记
+    virtual void EndDebugGroup() = 0;
 };
 
 typedef std::shared_ptr<CommandBuffer> CommandBufferPtr;
 
+class ScopedDebugMarker
+{
+public:
+    ScopedDebugMarker(CommandBufferPtr commandBuffer, const char* name, const float color[4]) : mCommandBuffer(commandBuffer)
+    {
+        mCommandBuffer->BeginDebugGroup(name, color);
+    }
+    
+    ~ScopedDebugMarker() 
+    {
+        mCommandBuffer->EndDebugGroup();
+    }
+    
+private:
+    CommandBufferPtr mCommandBuffer = nullptr;
+};
 
 NAMESPACE_RENDERCORE_END
+
+#define DEBUGMAKRER_VAR_LINE(commandBuffer, name, color, line) _scopedDebugMarker_##line(commandBuffer, name, color)
+#define EventVar(commandBuffer, name, color, n) DEBUGMAKRER_VAR_LINE(commandBuffer, name, color, n)
+#define SCOPED_DEBUGMARKER_EVENT(commandBuffer, name, color) \
+    RenderCore::ScopedDebugMarker EventVar(commandBuffer, name, color, __LINE__)
 
 #endif /* GNX_ENGINE_COMMAND_BUFFER_INCLUDE_GPPP_H */

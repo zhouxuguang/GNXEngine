@@ -336,4 +336,24 @@ void VulkanCommandBuffer::WaitUntilCompleted()
     vkQueueWaitIdle(mCommandInfo->vulkanContext->graphicsQueue);
 }
 
+void VulkanCommandBuffer::BeginDebugGroup(const char* name, const float color[4])
+{
+    if (mCommandInfo->vulkanContext->vulkanExtension.enableDebugUtils)
+    {
+        VkDebugUtilsLabelEXT markerInfo = {};
+        markerInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+        markerInfo.pLabelName = name;
+        memcpy(markerInfo.color, color, sizeof(float) * 4);
+        vkCmdBeginDebugUtilsLabelEXT(mCommandBuffer, &markerInfo);
+    }
+}
+
+void VulkanCommandBuffer::EndDebugGroup()
+{
+    if (mCommandInfo->vulkanContext->vulkanExtension.enableDebugUtils)
+    {
+        vkCmdEndDebugUtilsLabelEXT(mCommandBuffer);
+    }
+}
+
 NAMESPACE_RENDERCORE_END

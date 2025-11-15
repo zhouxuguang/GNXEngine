@@ -264,4 +264,25 @@ void MTLCommandBuffer::WaitUntilCompleted()
     }
 }
 
+void MTLCommandBuffer::BeginDebugGroup(const char* name, const float color[4])
+{
+    @autoreleasepool
+    {
+        NSString *strName = @"";
+        if (name)
+        {
+            strName = [NSString stringWithUTF8String:name];
+        }
+        [mCommandBuffer pushDebugGroup:strName];
+    }
+}
+
+void MTLCommandBuffer::EndDebugGroup()
+{
+    @autoreleasepool
+    {
+        [mCommandBuffer popDebugGroup];
+    }
+}
+
 NAMESPACE_RENDERCORE_END
