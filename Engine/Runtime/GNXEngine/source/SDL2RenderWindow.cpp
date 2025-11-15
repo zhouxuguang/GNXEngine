@@ -56,14 +56,14 @@ void SDL2RenderWindow::OnUpdate()
     {
         if (event.type == SDL_QUIT)
         {
-            //quit = 1;
+            mShoudClose = true;
         }
     }
 }
 
 bool SDL2RenderWindow::ShouldClose() const
 {
-    return false;
+    return mShoudClose;
 }
 
 void SDL2RenderWindow::SetVSync(bool enabled)

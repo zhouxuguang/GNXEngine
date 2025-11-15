@@ -57,6 +57,7 @@ private:
     WindowData mData;
     RenderCore::RenderDevicePtr mRenderDevice = nullptr;
     SDL_Window* mWindow = nullptr;
+    bool mShoudClose = false;
 };
 
 NAMESPACE_GNXENGINE_END
