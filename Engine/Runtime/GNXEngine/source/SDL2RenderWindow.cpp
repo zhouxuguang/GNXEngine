@@ -8,6 +8,8 @@
 
 NAMESPACE_GNXENGINE_BEGIN
 
+extern void* GetSDL2PlatformWindow(const SDL_SysWMinfo& wmInfo);
+
 SDL2RenderWindow::SDL2RenderWindow(const WindowProps& props)
 {
     SDL_Init(SDL_INIT_VIDEO);
@@ -17,13 +19,14 @@ SDL2RenderWindow::SDL2RenderWindow(const WindowProps& props)
 	SDL_SysWMinfo wmInfo;
 	SDL_VERSION(&wmInfo.version);
 	SDL_GetWindowWMInfo(mWindow, &wmInfo);
-	HWND nativeWnd = wmInfo.info.win.window;
-
+	
 	// 在这里选择底层的渲染器类型，创建它
 #if OS_WINDOWS
+    HWND nativeWnd = wmInfo.info.win.window;
 	mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, nativeWnd);
 #elif OS_MACOS
-	//mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nativeWnd);
+    void * nativeWnd = GetSDL2PlatformWindow(wmInfo);
+	mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nativeWnd);
 #endif
 
 	mData.width = props.width;

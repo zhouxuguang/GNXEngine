@@ -4,7 +4,6 @@ set(SDL_THREADS ON)
 set(SDL_LOADSO ON)
 
 # 禁用所有其他功能
-set(SDL2_DISABLE_INSTALL OFF)
 set(SDL_AUDIO OFF)
 set(SDL_JOYSTICK OFF)
 set(SDL_HAPTIC OFF)
@@ -26,7 +25,6 @@ set(SDL_RENDER_D3D OFF)
 set(SDL_KMSDRM OFF)
 set(SDL_OFFSCREEN OFF)
 set(SDL_RPI OFF)
-set(SDL_COCOA OFF)  # 我们将根据平台单独启用一个后端
 set(SDL_DIRECTX OFF)
 set(SDL_WAYLAND OFF)
 set(SDL_X11 OFF)
@@ -47,8 +45,12 @@ set(SDL_DUMMYVIDEO OFF)
 
 set(SDL_TEST OFF)
 set(SDL_SHARED OFF)
+set(SDL2_DISABLE_INSTALL ON)
 
 add_subdirectory(SDL)
+
+target_include_directories(SDL2-static PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/SDL/include)
+target_include_directories(SDL2main PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/SDL/include)
 
 set_property(TARGET sdl_headers_copy PROPERTY FOLDER "ThirdParty/SDL2")
 set_property(TARGET SDL2main PROPERTY FOLDER "ThirdParty/SDL2")

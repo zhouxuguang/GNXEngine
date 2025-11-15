@@ -112,7 +112,7 @@ void TestAllocator()
 	Allocator::MallocTLSF* alloc2 = new Allocator::MallocTLSF;
     Allocator::MallocMimalloc* alloc3 = new Allocator::MallocMimalloc;
 	int count = 10000000;
-    int size = 1024 * 100;
+    int size = 1024 * 1 ;
 
 	baselib::TimeCost cost1;
 	cost1.Begin();
