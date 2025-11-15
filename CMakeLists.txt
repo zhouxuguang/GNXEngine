@@ -22,5 +22,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Engine)
 add_subdirectory(Engine/Runtime)
 add_subdirectory(Engine/Editor)
 add_subdirectory(ThirdParty)
-add_subdirectory(test) 
+add_subdirectory(test)
+add_subdirectory(demo)
 
