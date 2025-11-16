@@ -9,6 +9,7 @@
 #define NaniteFrameWork_hpp
 
 #include "Runtime/GNXEngine/include/AppFrameWork.h"
+#include "Runtime/RenderSystem/include/SceneManager.h"
 
 class NaniteFrameWork : public GNXEngine::AppFrameWork
 {
@@ -18,6 +19,11 @@ public:
     virtual void Initlize();
     
     virtual void RenderFrame();
+    
+private:
+    RenderCore::RenderDevicePtr mRenderDevice = nullptr;
+    RenderCore::ComputeBufferPtr mHierarchyBuffer = nullptr;
+    RenderCore::ComputeBufferPtr mClusterSelectionArgs1 = nullptr;
 };
 
 #endif /* NaniteFrameWork_hpp */
