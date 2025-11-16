@@ -18,7 +18,6 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
     enablePortabilitySubset = ExtensionSupported(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     enablePushDesDescriptor = ExtensionSupported(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     enableDescriptorUpdateTemplate = ExtensionSupported(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
-    enableDebugUtils = ExtensionSupported(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
     // host image copy关联的扩展
     enableFormatFeatureFlags2 = ExtensionSupported(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
