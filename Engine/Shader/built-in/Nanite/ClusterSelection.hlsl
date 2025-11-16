@@ -81,7 +81,23 @@ void CS()
 {
     //hierarchy node -> cluster :index
     //hierarchy node -> child node -> OutResult,
-    FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, 20, 0);
-    OutResult.Store3(0, asuint(hierarchyNodeSlice.BoxBoundsCenter));
-    //OutResult.Store3(0, uint3(hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumChildren, hierarchyNodeSlice.bLeaf ? 1u : 0u));
+    uint offset = 0u;
+    for (uint i = 0; i < 21; i ++) 
+    {
+        FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, 0);
+        OutResult.Store4(offset * 16, uint4(i, 0, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.bLeaf ? 1u : 2u)); 
+        offset ++; 
+
+        hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, 1);
+        OutResult.Store4(offset * 16, uint4(i, 1, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.bLeaf ? 1u : 2u)); 
+        offset ++; 
+
+        hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, 2);
+        OutResult.Store4(offset * 16, uint4(i, 2, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.bLeaf ? 1u : 2u)); 
+        offset ++; 
+
+        hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, 3);
+        OutResult.Store4(offset * 16, uint4(i, 3, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.bLeaf ? 1u : 2u)); 
+        offset ++; 
+    }
 }
