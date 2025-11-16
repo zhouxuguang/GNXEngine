@@ -13,6 +13,23 @@
 #include <vector>
 #include <string>
 
+#if _WIN32
+	#ifdef __GNUC__
+		#define RENDERCORE_API __attribute__((dllexport))
+	#else
+		#define RENDERCORE_API __declspec(dllexport)
+	#endif
+	#define RENDERCORE_API_HIDE
+#else
+	#if __GNUC__>=4
+		#define RENDERCORE_API __attribute__((visibility("default")))
+		#define RENDERCORE_API_HIDE __attribute__ ((visibility("hidden")))
+	#else
+		#define RENDERCORE_API_HIDE
+		#define RENDERCORE_API
+	#endif
+#endif
+
 // 命名空间宏定义
 #define NAMESPACE_RENDERCORE_BEGIN        namespace RenderCore {
 #define NAMESPACE_RENDERCORE_END            }

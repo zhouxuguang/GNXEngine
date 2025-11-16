@@ -14,7 +14,8 @@ source_group(TREE ${GNXEngine_include_dir} PREFIX include FILES ${GNXEngine_Incl
 
 target_include_directories(GNXEngine PUBLIC ${GNXEngine_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 
-target_link_libraries(GNXEngine PUBLIC BaseLib Allocator ImageCodec MathUtil RenderCore RenderSystem
+target_link_libraries(GNXEngine PRIVATE BaseLib RenderCore)
+target_link_libraries(GNXEngine PUBLIC Allocator ImageCodec MathUtil RenderSystem
     ShaderCompiler spirv_reflect tbb AssetProcess ktx glfw)
 target_compile_definitions(GNXEngine PRIVATE GNXENGINE_EXPORTS)
 
@@ -23,5 +24,11 @@ if(APPLE)
     target_compile_options(GNXEngine PRIVATE "-fobjc-arc")
     set_target_properties(GNXEngine PROPERTIES LINK_FLAGS "-fobjc-arc")
 endif()
+
+# if(UNIX)
+#     target_link_options(GNXEngine PRIVATE "LINKER:--exclude-libs,ALL")
+# elseif(WIN32)
+#     target_link_options(GNXEngine PRIVATE "/NODEFAULTLIB")
+# endif()
 
 set_property(TARGET GNXEngine PROPERTY FOLDER "Runtime")

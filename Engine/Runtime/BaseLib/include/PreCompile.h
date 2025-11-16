@@ -120,19 +120,11 @@ typedef std::vector<uint8_t> ByteVector;
 typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 
 //导出宏定义
-#if defined _WIN32 || defined __CYGWIN__ || _WIN64
-	#ifdef BASELIB_EXPORTS		
-		#ifdef __GNUC__
-			#define BASELIB_API __attribute__((dllexport))
-		#else
-			#define BASELIB_API __declspec(dllexport)
-		#endif
+#if OS_WINDOWS
+	#ifdef __GNUC__
+		#define BASELIB_API __attribute__((dllexport))
 	#else
-		#ifdef __GNUC__
-			#define BASELIB_API __attribute__((dllimport))
-		#else
-			#define BASELIB_API __declspec(dllimport)
-		#endif
+		#define BASELIB_API __declspec(dllexport)
 	#endif
 	#define BASELIB_API_HIDE
 #else
@@ -144,11 +136,6 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 		#define BASELIB_API_HIDE
 	#endif
 #endif
-
-//no export
-#undef BASELIB_API
-#define BASELIB_API
-
 
 #if defined _WIN32 ||_WIN64 || defined __CYGWIN__
 

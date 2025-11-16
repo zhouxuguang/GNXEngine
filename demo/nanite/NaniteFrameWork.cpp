@@ -32,7 +32,7 @@ void NaniteFrameWork::RenderFrame()
     uint64_t thisTime = baselib::GetTickNanoSeconds();
     float deltaTime = float(thisTime - lastTime) * 0.000000001f;
     lastTime = thisTime;
-    LOG_INFO("deltaTime = %f\n", deltaTime);
+    //LOG_INFO("deltaTime = %f\n", deltaTime);
     
     RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
     sceneManager->Update(deltaTime);

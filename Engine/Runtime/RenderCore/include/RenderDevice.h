@@ -175,11 +175,12 @@ typedef std::shared_ptr<RenderDevice> RenderDevicePtr;
 /**
  *    创建渲染设备
  *        @param[in] deviceType 渲染平台类型分：GLES/METAL/VULKAN
+ *        @param[in] handle 操作系统本地窗口
  *        @return 渲染设备实例
  */
-RenderDevicePtr CreateRenderDevice(RenderDeviceType deviceType, ViewHandle handle);
+RENDERCORE_API RenderDevicePtr CreateRenderDevice(RenderDeviceType deviceType, ViewHandle handle);
 
-RenderDevicePtr GetRenderDevice();
+RENDERCORE_API RenderDevicePtr GetRenderDevice();
 
 NAMESPACE_RENDERCORE_END
 
