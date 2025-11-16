@@ -14,7 +14,7 @@ static RenderCore::ComputePipelinePtr sPSO = nullptr;
 RenderCore::ComputeBufferPtr InitHierarchyBuffer(RenderCore::RenderDevicePtr renderDevice)
 {
     // 加载hierarchyBuffer的文件
-    std::string strDataFile = GetProjectAssetDir() + "Nanite/HierarchyBuffer.data";
+    std::string strDataFile = GetProjectAssetDir() + "Nanite/mitsuba.bvh";
     std::vector<uint8_t> hBufferData = baselib::FileUtil::ReadBinaryFile(strDataFile);
     RenderCore::ComputeBufferPtr hierarchyBuffer = renderDevice->CreateComputeBuffer(hBufferData.data(), (uint32_t)hBufferData.size(),
                                                                         RenderCore::StorageMode::StorageModePrivate);

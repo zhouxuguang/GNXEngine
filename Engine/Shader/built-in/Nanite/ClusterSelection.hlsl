@@ -85,11 +85,9 @@ void CS()
     for (uint i = 0; i < 21; i ++) 
     {
         FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, 0);
-        OutResult.Store4(offset * 16, uint4(i, 0, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.bLeaf ? 1u : 2u)); 
-        offset ++; 
         if (hierarchyNodeSlice.bLeaf) 
         {
-            OutResult.Store4(offset * 16, uint4(i, 0, hierarchyNodeSlice.NumChildren, hierarchyNodeSlice.bLoaded)); 
+            OutResult.Store4(offset * 16, uint4(i, 0, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.NumChildren)); 
             offset ++;  
 
             uint pageIndex = hierarchyNodeSlice.ChildStartReference >> 8;
@@ -97,13 +95,16 @@ void CS()
 			OutResult.Store4(offset * 16, uint4(i, 0, pageIndex, clusterIndex));
 			offset ++;
         }
+        else
+        {
+			OutResult.Store4(offset * 16, uint4(i, 0, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.ChildStartReference));
+			offset ++;
+		}
 
         hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, 1);
-        OutResult.Store4(offset * 16, uint4(i, 1, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.bLeaf ? 1u : 2u)); 
-        offset ++; 
         if (hierarchyNodeSlice.bLeaf) 
         {
-            OutResult.Store4(offset * 16, uint4(i, 1, hierarchyNodeSlice.NumChildren, hierarchyNodeSlice.bLoaded)); 
+            OutResult.Store4(offset * 16, uint4(i, 1, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.NumChildren)); 
             offset ++;
 
             uint pageIndex = hierarchyNodeSlice.ChildStartReference >> 8;
@@ -111,13 +112,16 @@ void CS()
 			OutResult.Store4(offset * 16, uint4(i, 1, pageIndex, clusterIndex));
 			offset ++;   
         }
+        else
+        {
+			OutResult.Store4(offset * 16, uint4(i, 1, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.ChildStartReference));
+			offset ++;
+		}
 
         hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, 2);
-        OutResult.Store4(offset * 16, uint4(i, 2, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.bLeaf ? 1u : 2u)); 
-        offset ++; 
         if (hierarchyNodeSlice.bLeaf) 
         {
-            OutResult.Store4(offset * 16, uint4(i, 2, hierarchyNodeSlice.NumChildren, hierarchyNodeSlice.bLoaded)); 
+            OutResult.Store4(offset * 16, uint4(i, 2, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.NumChildren)); 
             offset ++;
 
             uint pageIndex = hierarchyNodeSlice.ChildStartReference >> 8;
@@ -125,13 +129,16 @@ void CS()
 			OutResult.Store4(offset * 16, uint4(i, 2, pageIndex, clusterIndex));
 			offset ++;  
         }
+        else
+        {
+			OutResult.Store4(offset * 16, uint4(i, 2, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.ChildStartReference));
+			offset ++;
+		}
 
         hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, 3);
-        OutResult.Store4(offset * 16, uint4(i, 3, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.bLeaf ? 1u : 2u)); 
-        offset ++; 
         if (hierarchyNodeSlice.bLeaf) 
         {
-            OutResult.Store4(offset * 16, uint4(i, 3, hierarchyNodeSlice.NumChildren, hierarchyNodeSlice.bLoaded)); 
+            OutResult.Store4(offset * 16, uint4(i, 3, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.NumChildren)); 
             offset ++;
 
             uint pageIndex = hierarchyNodeSlice.ChildStartReference >> 8;
@@ -139,5 +146,10 @@ void CS()
 			OutResult.Store4(offset * 16, uint4(i, 3, pageIndex, clusterIndex));
 			offset ++;   
         }
+        else
+        {
+			OutResult.Store4(offset * 16, uint4(i, 3, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.ChildStartReference));
+			offset ++;
+		}
     }
 }
