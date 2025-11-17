@@ -15,6 +15,23 @@
 #include "Runtime/MathUtil/include/Math3DCommon.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
 
+#if _WIN32
+	#ifdef __GNUC__
+		#define RENDERSYSTEM_API __attribute__((dllexport))
+	#else
+		#define RENDERSYSTEM_API __declspec(dllexport)
+	#endif
+	#define RENDERSYSTEM_API_HIDE
+#else
+	#if __GNUC__>=4
+		#define RENDERSYSTEM_API __attribute__((visibility("default")))
+		#define RENDERSYSTEM_API_HIDE __attribute__ ((visibility("hidden")))
+	#else
+		#define RENDERSYSTEM_API_HIDE
+		#define RENDERSYSTEM_API
+	#endif
+#endif
+
 #ifdef min
     #undef min
 #endif

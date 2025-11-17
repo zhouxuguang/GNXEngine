@@ -14,9 +14,20 @@ source_group(TREE ${GNXEngine_include_dir} PREFIX include FILES ${GNXEngine_Incl
 
 target_include_directories(GNXEngine PUBLIC ${GNXEngine_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 
-target_link_libraries(GNXEngine PRIVATE BaseLib RenderCore)
-target_link_libraries(GNXEngine PUBLIC Allocator ImageCodec MathUtil RenderSystem
-    ShaderCompiler spirv_reflect tbb AssetProcess ktx glfw)
+target_link_libraries(GNXEngine PRIVATE 
+    AssetProcess 
+    Allocator
+    BaseLib
+    MathUtil 
+    ImageCodec 
+    RenderCore 
+    RenderSystem 
+    ShaderCompiler 
+    spirv_reflect 
+    tbb 
+    ktx 
+    glfw
+)
 target_compile_definitions(GNXEngine PRIVATE GNXENGINE_EXPORTS)
 
 if(APPLE)

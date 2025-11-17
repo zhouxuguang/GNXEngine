@@ -22,7 +22,7 @@ NS_RENDERSYSTEM_BEGIN
 class SkyBoxNode;
 
 // 场景管理器，先用这种简单的管理
-class SceneManager
+class RENDERSYSTEM_API SceneManager
 {
 public:
     static SceneManager* GetInstance();

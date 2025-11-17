@@ -29,19 +29,15 @@ struct ShaderAssetString
     CompiledShaderInfoPtr vertexShader;
     CompiledShaderInfoPtr fragmentShader;
     CompiledShaderInfoPtr computeShader;
-//    ShaderString gles31Shader;
-//    ShaderString gles32Shader;
-//    ShaderString metalShader;
-//    ShaderString vulkanShader;
     
     VertexDescriptor vertexDescriptor;                             // 顶点描述
     shader_compiler::UniformBuffersLayout vertexUniformBufferLayout;  //顶点ubo信息
     shader_compiler::UniformBuffersLayout fragmentUniformBufferLayout; //片元ubo信息
 };
 
-ShaderAssetString LoadShaderAsset(const std::string &shaderName);
+RENDERSYSTEM_API ShaderAssetString LoadShaderAsset(const std::string &shaderName);
 
-ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName);
+RENDERSYSTEM_API ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName);
 
 NS_RENDERSYSTEM_END
 

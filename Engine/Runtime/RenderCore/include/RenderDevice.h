@@ -21,7 +21,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-class RenderDevice
+class RENDERCORE_API RenderDevice
 {
 public:
     RenderDevice();

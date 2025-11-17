@@ -11,14 +11,15 @@
 #include <stdio.h>
 #include <string>
 #include "Runtime/BaseLib/include/BaseLib.h"
+#include "RSDefine.h"
 
-std::string getBuiltInShaderDir();
+RENDERSYSTEM_API std::string getBuiltInShaderDir();
 
-std::string getMediaDir();
+RENDERSYSTEM_API std::string getMediaDir();
 
-std::string getAssetsDir();
+RENDERSYSTEM_API std::string getAssetsDir();
 
-std::string GetProjectAssetDir();
+RENDERSYSTEM_API std::string GetProjectAssetDir();
 
 bool EnsurePathExists(const fs::path& path);
 
