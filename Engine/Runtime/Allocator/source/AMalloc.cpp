@@ -62,6 +62,8 @@ size_t Memory::GetAllocSize(void* ptr)
 
 NS_ALLOCATOR_END
 
+#if 0
+
 void* operator new(size_t size)
 {
     return Allocator::Memory::Malloc(size ? size : 1, __STDCPP_DEFAULT_NEW_ALIGNMENT__);
@@ -181,3 +183,5 @@ void operator delete[](void* ptr, size_t size, std::align_val_t alignment, const
 {
     Allocator::Memory::Free(ptr);
 }
+
+#endif
