@@ -7,7 +7,7 @@ file(GLOB_RECURSE ALLOCATOR_PROCESS_INCLUDES CONFIGURE_DEPENDS ${allocator_proce
 
 set(SOURCE_FILES ${ALLOCATOR_PROCESS_SOURCES} ${ALLOCATOR_PROCESS_INCLUDES})
 
-add_library(Allocator STATIC ${SOURCE_FILES})
+add_library(Allocator OBJECT ${SOURCE_FILES})
 
 source_group(TREE ${allocator_process_dir} PREFIX source FILES ${ALLOCATOR_PROCESS_SOURCES})
 source_group(TREE ${allocator_process_include_dir} PREFIX include FILES ${ALLOCATOR_PROCESS_INCLUDES})

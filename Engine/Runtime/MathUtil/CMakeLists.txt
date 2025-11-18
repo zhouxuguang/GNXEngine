@@ -12,7 +12,7 @@ else()
     set(SOURCE_FILES ${MATHUTIL_SOURCES} ${MATHUTIL_INCLUDES})
 endif()
 
-add_library(MathUtil STATIC ${SOURCE_FILES})
+add_library(MathUtil OBJECT ${SOURCE_FILES})
 
 source_group(TREE ${mathutil_dir} PREFIX source FILES ${MATHUTIL_SOURCES})
 source_group(TREE ${mathutil_include_dir} PREFIX include FILES ${MATHUTIL_INCLUDES})

@@ -113,7 +113,7 @@ else()
     set(SOURCE_FILES ${IMAGECODEC_SOURCES} ${IMAGECODEC_INCLUDES} ${WEBP_SOURCES} ${JPEG_FILES})
 endif()
 
-add_library(ImageCodec STATIC ${SOURCE_FILES})
+add_library(ImageCodec OBJECT ${SOURCE_FILES})
 
 source_group(TREE ${imagecodec_dir} PREFIX source FILES ${IMAGECODEC_SOURCES} ${WEBP_SOURCES} ${JPEG_FILES} ${PNG_FILES})
 source_group(TREE ${imagecodec_include_dir} PREFIX include FILES ${IMAGECODEC_INCLUDES})

@@ -12,7 +12,7 @@ if(LINUX)
     pkg_check_modules(UUID REQUIRED uuid)
 endif(LINUX)
 
-add_library(BaseLib STATIC ${SOURCE_FILES})
+add_library(BaseLib OBJECT ${SOURCE_FILES})
 
 source_group(TREE ${baselib_dir} PREFIX source FILES ${BASELIB_SOURCES})
 source_group(TREE ${baselib_include_dir} PREFIX include FILES ${BASELIB_INCLUDES})

@@ -30,7 +30,7 @@ endif()
 
 set(SOURCE_FILES ${RENDERSYSTEM_SOURCES} ${RENDERSYSTEM_INCLUDES})
 
-add_library(RenderSystem STATIC ${SOURCE_FILES})
+add_library(RenderSystem OBJECT ${SOURCE_FILES})
 
 source_group(TREE ${rendersystem_dir} PREFIX source FILES ${RENDERSYSTEM_SOURCES})
 source_group(TREE ${rendersystem_include_dir} PREFIX include FILES ${RENDERSYSTEM_INCLUDES})

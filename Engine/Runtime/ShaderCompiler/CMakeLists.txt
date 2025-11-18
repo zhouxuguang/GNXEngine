@@ -11,7 +11,7 @@ file(GLOB_RECURSE SHADERCOMPILER_INCLUDES CONFIGURE_DEPENDS ${shadercompiler_inc
 
 set(SOURCE_FILES ${SHADERCOMPILER_SOURCES} ${SHADERCOMPILER_INCLUDES})
 
-add_library(ShaderCompiler STATIC ${SOURCE_FILES})
+add_library(ShaderCompiler OBJECT ${SOURCE_FILES})
 source_group(TREE ${shadercompiler_dir} PREFIX source FILES ${SHADERCOMPILER_SOURCES})
 source_group(TREE ${shadercompiler_include_dir} PREFIX include FILES ${SHADERCOMPILER_INCLUDES})
 
