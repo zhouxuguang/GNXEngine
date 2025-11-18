@@ -24,6 +24,13 @@ private:
     RenderCore::RenderDevicePtr mRenderDevice = nullptr;
     RenderCore::ComputeBufferPtr mHierarchyBuffer = nullptr;
     RenderCore::ComputeBufferPtr mClusterSelectionArgs1 = nullptr;
+    RenderCore::ComputeBufferPtr mClusterPageData = nullptr;
+    RenderCore::RCTexture2DPtr mVisBuffer = nullptr;
+
+private:
+    RenderCore::ComputeBufferPtr InitNaniteMeshBuffer();
+
+    RenderCore::RCTexture2DPtr InitVisualizeBuffer();
 };
 
 #endif /* NaniteFrameWork_hpp */
