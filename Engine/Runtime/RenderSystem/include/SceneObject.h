@@ -13,7 +13,7 @@
 
 NS_RENDERSYSTEM_BEGIN
 
-class SceneObject
+class RENDERSYSTEM_API SceneObject
 {
 public:
     SceneObject();

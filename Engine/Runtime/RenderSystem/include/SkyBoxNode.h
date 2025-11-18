@@ -15,7 +15,7 @@
 
 NS_RENDERSYSTEM_BEGIN
 
-class SkyBoxNode : public SceneNode
+class RENDERSYSTEM_API SkyBoxNode : public SceneNode
 {
 public:
     void AttachSkyBoxObject(SkyBox *obj);

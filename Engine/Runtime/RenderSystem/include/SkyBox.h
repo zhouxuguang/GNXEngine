@@ -18,7 +18,7 @@ USING_NS_IMAGECODEC
 
 NS_RENDERSYSTEM_BEGIN
 
-class SkyBox : public SceneObject
+class RENDERSYSTEM_API SkyBox : public SceneObject
 {
 public:
     SkyBox();

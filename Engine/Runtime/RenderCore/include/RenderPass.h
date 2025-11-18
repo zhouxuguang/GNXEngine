@@ -87,7 +87,7 @@ struct RenderPassStencilAttachment : RenderPassAttachment
 typedef std::shared_ptr<RenderPassStencilAttachment> RenderPassStencilAttachmentPtr;
 
 //不同的attachmemt必须要一样大小
-class RenderPass
+class RENDERCORE_API RenderPass
 {
 public:
     RenderPass();

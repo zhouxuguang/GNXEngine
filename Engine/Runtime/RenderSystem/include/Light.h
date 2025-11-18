@@ -17,7 +17,7 @@ NS_RENDERSYSTEM_BEGIN
 using namespace mathutil;
 
 //光源基类
-class Light : public SceneObject
+class RENDERSYSTEM_API Light : public SceneObject
 {
 public:
     //光源类型

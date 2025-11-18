@@ -21,6 +21,6 @@ RENDERSYSTEM_API std::string getAssetsDir();
 
 RENDERSYSTEM_API std::string GetProjectAssetDir();
 
-bool EnsurePathExists(const fs::path& path);
+RENDERSYSTEM_API bool EnsurePathExists(const fs::path& path);
 
 #endif /* RenderEngine_hpp */

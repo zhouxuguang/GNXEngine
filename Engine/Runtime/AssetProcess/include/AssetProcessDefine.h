@@ -1,5 +1,5 @@
 //
-//  RSDefine.h
+//  AssetProcessDefine.h
 //  GNXEngine
 //
 //  Created by zhouxuguang on 2021/5/29.
@@ -14,6 +14,23 @@
 #include "Runtime/MathUtil/include/Vector2.h"
 #include "Runtime/MathUtil/include/Vector4.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
+
+#if _WIN32
+	#ifdef __GNUC__
+		#define ASSET_PROCESS_API __attribute__((dllexport))
+	#else
+		#define ASSET_PROCESS_API __declspec(dllexport)
+	#endif
+	#define ASSET_PROCESS_API_HIDE
+#else
+	#if __GNUC__>=4
+		#define ASSET_PROCESS_API __attribute__((visibility("default")))
+		#define ASSET_PROCESS_API_HIDE __attribute__ ((visibility("hidden")))
+	#else
+		#define ASSET_PROCESS_API_HIDE
+		#define ASSET_PROCESS_API
+	#endif
+#endif
 
 #ifdef min
 	#undef min

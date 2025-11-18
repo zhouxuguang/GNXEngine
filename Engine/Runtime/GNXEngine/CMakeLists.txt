@@ -30,6 +30,18 @@ target_link_libraries(GNXEngine PRIVATE
 )
 target_compile_definitions(GNXEngine PRIVATE GNXENGINE_EXPORTS)
 
+if(UNIX)
+    # Linux/macOS 使用 --whole-archive
+    # target_link_libraries(GNXEngine PRIVATE 
+    #     -Wl,--whole-archive
+    #     AssetProcess
+    #     -Wl,--no-whole-archive
+    # )
+elseif(MSVC)
+    # Windows 使用 /WHOLEARCHIVE
+    # target_link_options(GNXEngine PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:AssetProcess>")
+endif()
+
 if(APPLE)
     target_link_libraries(GNXEngine PRIVATE "-framework QuartzCore" "-framework Metal" "-framework GameController")
     target_compile_options(GNXEngine PRIVATE "-fobjc-arc")

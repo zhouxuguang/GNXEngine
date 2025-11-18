@@ -14,7 +14,7 @@
 
 NS_RENDERSYSTEM_BEGIN
 
-class PostProcessing
+class RENDERSYSTEM_API PostProcessing
 {
 public:
     PostProcessing(RenderDevicePtr renderDevice);

@@ -19,7 +19,7 @@ NS_RENDERSYSTEM_BEGIN
 
 USING_NS_MATHUTIL
 
-class Transform
+class RENDERSYSTEM_API Transform
 {
 public:
     Transform();

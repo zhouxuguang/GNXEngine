@@ -21,7 +21,7 @@ USING_NS_RENDERCORE
 
 NS_RENDERSYSTEM_BEGIN
 
-class Camera : public SceneObject
+class RENDERSYSTEM_API Camera : public SceneObject
 {
 public:
     Camera(RenderDeviceType renderType, const std::string& name);

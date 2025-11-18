@@ -8,7 +8,7 @@ NS_ASSETPROCESS_BEGIN
 
 //资产导入的总入口
 
-class AssetImporter
+class ASSET_PROCESS_API AssetImporter
 {
 public:
 	AssetImporter();

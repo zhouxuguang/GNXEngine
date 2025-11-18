@@ -21,7 +21,7 @@ NS_RENDERSYSTEM_BEGIN
 using namespace mathutil;
 
 //场景节点定义
-class SceneNode
+class RENDERSYSTEM_API SceneNode
 {
 public:
     SceneNode();
