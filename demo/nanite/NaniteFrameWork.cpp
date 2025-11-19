@@ -29,8 +29,9 @@ void NaniteFrameWork::Initlize()
 
     mClusterPageData = InitNaniteMeshBuffer();
     mVisBuffer = InitVisualizeBuffer();
+    mVisBuffer64 = InitVisBuffer64();
 
-    InitHWRasterizePass(mRenderDevice, mClusterPageData, mVisBuffer);
+    InitHWRasterizePass(mRenderDevice, mClusterPageData, mVisBuffer64);
     InitSwapChainPass(mRenderDevice);
 }
 
@@ -50,15 +51,21 @@ void NaniteFrameWork::RenderFrame()
     {
         return;
     }
+
+    //select lod => clusters
     ExecuteClusterSelectionPass(commandBuffer, mHierarchyBuffer, mClusterSelectionArgs1);
-    ExecuteHWRasterizePass(commandBuffer, nullptr, mVisBuffer);
+
+    //lod => hw + sw => args
+    ExecuteHWRasterizePass(commandBuffer, nullptr, mVisBuffer64);
+
+    // => visBuffer64 (R32G32_UINT)
+    //Execute Visualization Pass => visBuffer64 => visualize buffer(R32G32B32A32_FLOAT)
 
     //=> visualize buffer
     //swap chain
     
     RenderCore::RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
     ExecuteSwapChainPass(commandBuffer, renderEncoder);
-    //sceneManager->Render(renderEncoder);
     renderEncoder->EndEncode();
     commandBuffer->PresentFrameBuffer();
 }
@@ -81,4 +88,13 @@ RenderCore::RCTexture2DPtr NaniteFrameWork::InitVisualizeBuffer()
 
     //visBuffer->SetName("Nanite.VisualizeBuffer");
     return visBuffer;
+}
+
+RenderCore::RCTexture2DPtr NaniteFrameWork::InitVisBuffer64()
+{
+    RenderCore::RCTexture2DPtr visBuffer64 = mRenderDevice->CreateTexture2D(RenderCore::kTexFormatRGBA32Float,
+        RenderCore::TextureUsage(RenderCore::TextureUsageShaderRead | RenderCore::TextureUsageRenderTarget), 1400, 480, 1);
+
+    //visBuffer->SetName("Nanite.VisBuffer64");
+    return visBuffer64;
 }

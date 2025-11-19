@@ -26,11 +26,14 @@ private:
     RenderCore::ComputeBufferPtr mClusterSelectionArgs1 = nullptr;
     RenderCore::ComputeBufferPtr mClusterPageData = nullptr;
     RenderCore::RCTexture2DPtr mVisBuffer = nullptr;
+    RenderCore::RCTexture2DPtr mVisBuffer64 = nullptr;
 
 private:
     RenderCore::ComputeBufferPtr InitNaniteMeshBuffer();
 
     RenderCore::RCTexture2DPtr InitVisualizeBuffer();
+
+    RenderCore::RCTexture2DPtr InitVisBuffer64();
 };
 
 #endif /* NaniteFrameWork_hpp */
