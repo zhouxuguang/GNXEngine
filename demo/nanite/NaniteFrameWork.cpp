@@ -7,6 +7,7 @@
 
 #include "NaniteFrameWork.h"
 #include "ClusterSelection.h"
+#include "SwapChain.h"
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
 #include "Runtime/BaseLib/include/LogService.h"
@@ -27,6 +28,7 @@ void NaniteFrameWork::Initlize()
 
     mClusterPageData = InitNaniteMeshBuffer();
     mVisBuffer = InitVisualizeBuffer();
+    InitSwapChainPass(mRenderDevice);
 }
 
 void NaniteFrameWork::RenderFrame()
@@ -46,16 +48,20 @@ void NaniteFrameWork::RenderFrame()
         return;
     }
     ExecuteClusterSelectionPass(commandBuffer, mHierarchyBuffer, mClusterSelectionArgs1);
+
+    //=> visualize buffer
+    //swap chain
     
     RenderCore::RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
-    sceneManager->Render(renderEncoder);
+    ExecuteSwapChainPass(commandBuffer, renderEncoder);
+    //sceneManager->Render(renderEncoder);
     renderEncoder->EndEncode();
     commandBuffer->PresentFrameBuffer();
 }
 
 RenderCore::ComputeBufferPtr NaniteFrameWork::InitNaniteMeshBuffer()
 {
-	// 加载nanitemesh的文件
+	// 鍔犺浇nanitemesh
 	std::string strDataFile = GetProjectAssetDir() + "Nanite/mitsuba.nanitemesh";
 	std::vector<uint8_t> hBufferData = baselib::FileUtil::ReadBinaryFile(strDataFile);
 	RenderCore::ComputeBufferPtr naniteMeshBuffer = mRenderDevice->CreateComputeBuffer(hBufferData.data(), (uint32_t)hBufferData.size(),
