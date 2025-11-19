@@ -8,6 +8,7 @@
 #include "NaniteFrameWork.h"
 #include "ClusterSelection.h"
 #include "SwapChain.h"
+#include "HardwareRasterization.h"
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
 #include "Runtime/BaseLib/include/LogService.h"
@@ -28,6 +29,8 @@ void NaniteFrameWork::Initlize()
 
     mClusterPageData = InitNaniteMeshBuffer();
     mVisBuffer = InitVisualizeBuffer();
+
+    InitHWRasterizePass(mRenderDevice, mClusterPageData, mVisBuffer);
     InitSwapChainPass(mRenderDevice);
 }
 
@@ -48,6 +51,7 @@ void NaniteFrameWork::RenderFrame()
         return;
     }
     ExecuteClusterSelectionPass(commandBuffer, mHierarchyBuffer, mClusterSelectionArgs1);
+    ExecuteHWRasterizePass(commandBuffer, nullptr, mVisBuffer);
 
     //=> visualize buffer
     //swap chain

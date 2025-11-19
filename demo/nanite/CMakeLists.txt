@@ -5,7 +5,9 @@ NaniteFrameWork.h
 ClusterSelection.cpp
 ClusterSelection.h
 SwapChain.cpp 
-SwapChain.h)
+SwapChain.h
+HardwareRasterization.cpp
+HardwareRasterization.h)
 
 target_link_libraries(nanite GNXEngine)
 
