@@ -132,6 +132,7 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     
     std::string pathSplit = std::string(1, PATHSPLIT);
     mTextureCube = LoadEquirectangularMap(getMediaDir() + "IBL" + pathSplit + "piazza_bologni_1k.hdr");
+    mTextureCube->SetName("CubeMap");
     
     SamplerDescriptor samplerDescriptor;
     mTextureSampler = renderDevice->CreateSamplerWithDescriptor(samplerDescriptor);

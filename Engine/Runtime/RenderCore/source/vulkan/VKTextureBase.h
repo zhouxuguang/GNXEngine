@@ -45,6 +45,8 @@ public:
     virtual uint32_t GetHeight() const;
     
     virtual uint32_t GetDepth() const;
+
+    virtual void SetName(const char* name);
     
     VulkanImageViewPtr GetImageView() const
     {

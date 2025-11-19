@@ -300,6 +300,11 @@ uint32_t VKTextureBase::GetDepth() const
     return mDepth;
 }
 
+void VKTextureBase::SetName(const char* name)
+{
+    SetObjectName(mContext->device, VK_OBJECT_TYPE_IMAGE, (uint64_t)mImage, name);
+}
+
 #pragma mark VKRCTexture2D
 
 VKRCTexture2D::VKRCTexture2D(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo)
