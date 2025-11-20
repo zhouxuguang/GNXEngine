@@ -7,7 +7,9 @@ ClusterSelection.h
 SwapChain.cpp 
 SwapChain.h
 HardwareRasterization.cpp
-HardwareRasterization.h)
+HardwareRasterization.h
+Visualization.cpp
+Visualization.h)
 
 target_link_libraries(nanite GNXEngine)
 
