@@ -66,6 +66,17 @@ uint32_t MTLTextureBase::GetDepth() const
     return (uint32_t)mTexture.depth;
 }
 
+void MTLTextureBase::SetName(const char* name)
+{
+    @autoreleasepool
+    {
+        if (name)
+        {
+            mTexture.label = [NSString stringWithUTF8String:name];
+        }
+    }
+}
+
 #pragma mark MTLRCTexture2D
 
 MTLRCTexture2D::MTLRCTexture2D(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes)
