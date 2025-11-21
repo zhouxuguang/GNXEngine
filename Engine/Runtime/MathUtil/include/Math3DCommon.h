@@ -50,13 +50,13 @@
 #ifdef _WIN32
 
 #ifdef __GNUC__
-#define MATH3D_API __attribute__((dllexport))
+    #define MATH3D_API __attribute__((dllexport))
 #else
-#define MATH3D_API __declspec(dllexport)
+    #define MATH3D_API __declspec(dllexport)
 #endif
 
 #else
-	#define MATH3D_API
+	#define MATH3D_API __attribute__((visibility("default")))
 #endif
 
 //
