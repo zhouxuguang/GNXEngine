@@ -17,7 +17,7 @@ NS_BASELIB_BEGIN
 
 BASELIB_API size_t CompressBound(const void* pSrcData, size_t nLen, COMPRESS_TYPE eType)
 {
-	return BASELIB_API size_t();
+	return size_t();
 }
 
 BASELIB_API size_t UnCompressBound(const void* pSrcData, size_t nLen, COMPRESS_TYPE eType)
