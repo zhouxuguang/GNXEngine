@@ -26,6 +26,7 @@ void NaniteFrameWork::Initlize()
     mRenderDevice = RenderCore::GetRenderDevice();
     mHierarchyBuffer = InitHierarchyBuffer(mRenderDevice);
     mClusterSelectionArgs1 = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
+    mClusterSelectionArgs1->SetName("DebugBuffer");
     InitClusterSelectionPass(mRenderDevice);
 
     mClusterPageData = InitNaniteMeshBuffer();

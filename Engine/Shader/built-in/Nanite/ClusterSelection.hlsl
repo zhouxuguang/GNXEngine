@@ -80,76 +80,88 @@ FHierarchyNodeSlice GetHierarchyNodeSlice(ByteAddressBuffer InputBuffer, uint No
 void CS()
 {
     //hierarchy node -> cluster :index
-    //hierarchy node -> child node -> OutResult,
-    uint offset = 0u;
-    for (uint i = 0; i < 21; i ++) 
-    {
-        FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, 0);
-        if (hierarchyNodeSlice.bLeaf) 
-        {
-            OutResult.Store4(offset * 16, uint4(i, 0, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.NumChildren)); 
-            offset ++;  
-
-            uint pageIndex = hierarchyNodeSlice.ChildStartReference >> 8;
-			uint clusterIndex = hierarchyNodeSlice.ChildStartReference & 0xFF;
-			OutResult.Store4(offset * 16, uint4(i, 0, pageIndex, clusterIndex));
-			offset ++;
-        }
-        else
-        {
-			OutResult.Store4(offset * 16, uint4(i, 0, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.ChildStartReference));
-			offset ++;
-		}
-
-        hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, 1);
-        if (hierarchyNodeSlice.bLeaf) 
-        {
-            OutResult.Store4(offset * 16, uint4(i, 1, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.NumChildren)); 
-            offset ++;
-
-            uint pageIndex = hierarchyNodeSlice.ChildStartReference >> 8;
-			uint clusterIndex = hierarchyNodeSlice.ChildStartReference & 0xFF;
-			OutResult.Store4(offset * 16, uint4(i, 1, pageIndex, clusterIndex));
-			offset ++;   
-        }
-        else
-        {
-			OutResult.Store4(offset * 16, uint4(i, 1, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.ChildStartReference));
+    //hierarchy node -> child node -> OutResult
+    //0->1091 : 1092 uint => 52 uint bvh node => 4 child [13 uint]
+	uint currentArgOffset = 0u, currentArgCount = 1u;
+	uint nextArgOffset = 0u, nextArgCount = 0u;
+	uint offset = 0u;
+	uint currentNodeIndex = 0u;
+	bool isNextArgOffsetInited = false;
+	while (true)
+	{
+		FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 0u);
+		if (!hierarchyNodeSlice.bLeaf && hierarchyNodeSlice.ChildStartReference != 0u)
+		{
+			if (!isNextArgOffsetInited)
+			{
+				isNextArgOffsetInited = true;
+				nextArgOffset = offset;
+			}
+			OutResult.Store(offset * 4, hierarchyNodeSlice.ChildStartReference);
+			nextArgCount ++;
 			offset ++;
 		}
 
-        hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, 2);
-        if (hierarchyNodeSlice.bLeaf) 
-        {
-            OutResult.Store4(offset * 16, uint4(i, 2, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.NumChildren)); 
-            offset ++;
-
-            uint pageIndex = hierarchyNodeSlice.ChildStartReference >> 8;
-			uint clusterIndex = hierarchyNodeSlice.ChildStartReference & 0xFF;
-			OutResult.Store4(offset * 16, uint4(i, 2, pageIndex, clusterIndex));
-			offset ++;  
-        }
-        else
-        {
-			OutResult.Store4(offset * 16, uint4(i, 2, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.ChildStartReference));
+		hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 1u);
+		if (!hierarchyNodeSlice.bLeaf && hierarchyNodeSlice.ChildStartReference != 0u)
+		{
+			if (!isNextArgOffsetInited)
+			{
+				isNextArgOffsetInited = true;
+				nextArgOffset = offset;
+			}
+			OutResult.Store(offset * 4, hierarchyNodeSlice.ChildStartReference);
+			nextArgCount ++;
 			offset ++;
 		}
 
-        hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, 3);
-        if (hierarchyNodeSlice.bLeaf) 
-        {
-            OutResult.Store4(offset * 16, uint4(i, 3, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.NumChildren)); 
-            offset ++;
-
-            uint pageIndex = hierarchyNodeSlice.ChildStartReference >> 8;
-			uint clusterIndex = hierarchyNodeSlice.ChildStartReference & 0xFF;
-			OutResult.Store4(offset * 16, uint4(i, 3, pageIndex, clusterIndex));
-			offset ++;   
-        }
-        else
-        {
-			OutResult.Store4(offset * 16, uint4(i, 3, hierarchyNodeSlice.bLeaf ? 1u : 2u, hierarchyNodeSlice.ChildStartReference));
+		hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 2u);
+		if (!hierarchyNodeSlice.bLeaf && hierarchyNodeSlice.ChildStartReference != 0u)
+		{
+			if (!isNextArgOffsetInited)
+			{
+				isNextArgOffsetInited = true;
+				nextArgOffset = offset;
+			}
+			OutResult.Store(offset * 4, hierarchyNodeSlice.ChildStartReference);
+			nextArgCount ++;
 			offset ++;
 		}
-    }
+
+		hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 3u);
+		if (!hierarchyNodeSlice.bLeaf && hierarchyNodeSlice.ChildStartReference != 0u)
+		{
+			if (!isNextArgOffsetInited)
+			{
+				isNextArgOffsetInited = true;
+				nextArgOffset = offset;
+			}
+			OutResult.Store(offset * 4, hierarchyNodeSlice.ChildStartReference);
+			nextArgCount ++;
+			offset ++;
+		}
+
+		currentArgCount --;
+		if (currentArgCount == 0u)
+		{
+			if (nextArgCount == 0u)
+			{
+				break;
+			}
+			currentArgOffset = nextArgOffset;
+			currentArgCount = nextArgCount;
+			currentNodeIndex = OutResult.Load(currentArgOffset * 4);
+			nextArgOffset = nextArgCount;
+			nextArgCount = 0u;
+			isNextArgOffsetInited = false;
+		}else{
+			currentArgOffset ++;
+			currentNodeIndex = OutResult.Load(currentArgOffset * 4);
+		}
+	}
+
+	// OutResult.Store(offset * 4, nextArgOffset);
+	// offset ++;
+	// OutResult.Store(offset * 4, nextArgCount);
+	// offset ++;
 }
