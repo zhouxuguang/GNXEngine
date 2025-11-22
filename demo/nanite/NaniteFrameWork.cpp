@@ -16,7 +16,6 @@
 
 NaniteFrameWork::NaniteFrameWork(const GNXEngine::WindowProps& props) : GNXEngine::AppFrameWork(props)
 {
-    //
 }
 
 void NaniteFrameWork::Initlize()
@@ -42,6 +41,16 @@ void NaniteFrameWork::Initlize()
     InitHWRasterizePass(mRenderDevice, mClusterPageData, mVisBuffer64);
     InitVisualizationPass(mRenderDevice);
     InitSwapChainPass(mRenderDevice);
+}
+
+void NaniteFrameWork::Resize(uint32_t width, uint32_t height)
+{
+    AppFrameWork::Resize(width, height);
+    
+    RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
+    RenderSystem::CameraPtr cameraPtr = sceneManager->createCamera("MainCamera");
+    cameraPtr->LookAt(mathutil::Vector3f(350.0f, 350.0f, 350.0f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
+    cameraPtr->SetLens(60, float(width) / height, 0.1f, 1000.f);
 }
 
 void NaniteFrameWork::RenderFrame()
@@ -93,7 +102,7 @@ RenderCore::ComputeBufferPtr NaniteFrameWork::InitNaniteMeshBuffer()
 RenderCore::RCTexture2DPtr NaniteFrameWork::InitVisualizeBuffer()
 {
     RenderCore::RCTexture2DPtr visBuffer = mRenderDevice->CreateTexture2D(RenderCore::kTexFormatRGBA32Float,
-        RenderCore::TextureUsage(RenderCore::TextureUsageShaderRead | RenderCore::TextureUsageRenderTarget), 1399, 479, 1);
+        RenderCore::TextureUsage(RenderCore::TextureUsageShaderRead | RenderCore::TextureUsageRenderTarget), 1400, 180, 1);
 
     visBuffer->SetName("Nanite.VisualizeBuffer");
     return visBuffer;

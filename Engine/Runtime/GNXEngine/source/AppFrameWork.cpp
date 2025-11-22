@@ -29,12 +29,11 @@ void AppFrameWork::RunLoop()
 
 void AppFrameWork::Initlize()
 {
-    //
 }
 
 void AppFrameWork::Resize(uint32_t width, uint32_t height)
 {
-    //
+    mRenderWindow->Resize(width, height);
 }
 
 void AppFrameWork::RenderFrame()

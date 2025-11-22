@@ -6,7 +6,7 @@
 
 NAMESPACE_GNXENGINE_BEGIN
 
-// 应用程序框架类，子类继承，需要重写Initlize和RenderFrame方法
+// 应用程序框架类，子类继承，需要重写Initlize、Resize和RenderFrame方法
 class GNXENGINE_API AppFrameWork
 {
 public:

@@ -1,4 +1,6 @@
-ByteAddressBuffer ClusterPageData : register(t0);
+#include "../GNXEngineCommon.hlsl"
+
+ByteAddressBuffer ClusterPageData;
 
 struct PrimitiveAttributesPacked
 {
@@ -33,15 +35,20 @@ VSOut VS(
 	uint currentVertexIndexDataOffset = currentVertexIndexOffset  + VertexID * 4;
 	uint currentVertexIndex = ClusterPageData.Load(currentVertexIndexDataOffset);
 	float3 pos = asfloat(ClusterPageData.Load3(clusterBaseAddressOffset + 8 + currentVertexIndex * 12));
-	if (VertexID == 0)
+
+	float4 posW = float4(pos, 1.0);
+	posW = mul(posW, MATRIX_V);
+    posW = mul(posW, MATRIX_P);
+
+	//if (VertexID == 0)
 	{
-		Out.Position = float4(pos, 1.0);
+		Out.Position = posW;
 	}
-	else
-	{
-		Out.Position = float4(float(pageBaseAddressOffset), float(clusterCountOnPage), 
-			float(clusterIndexOffset), float(clusterIndexCount));
-	}
+	// else
+	// {
+	// 	Out.Position = float4(float(pageBaseAddressOffset), float(clusterCountOnPage), 
+	// 		float(clusterIndexOffset), float(clusterIndexCount));
+	// }
 	return Out;
 }
 

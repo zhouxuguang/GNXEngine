@@ -1,5 +1,6 @@
 #include "HardwareRasterization.h"
 #include "Runtime/RenderSystem/include/ShaderAssetLoader.h"
+#include "Runtime/RenderSystem/include/SceneManager.h"
 
 static RenderCore::GraphicsPipelinePtr sPSO = nullptr;
 
@@ -42,7 +43,11 @@ void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer,
     RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);
 
 	renderEncoder->SetGraphicsPipeline(sPSO);
-    renderEncoder->SetVertexBuffer(clusterPageData, 0, 0);
+    
+    RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
+    
+    renderEncoder->SetVertexUniformBuffer("cbPerCamera", sceneManager->GetRenderInfo().cameraUBO);
+    renderEncoder->SetVertexBuffer(clusterPageData, 0, 4);
     renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 384);
     renderEncoder->EndEncode();
 }
