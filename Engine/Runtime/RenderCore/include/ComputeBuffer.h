@@ -10,11 +10,12 @@
 
 #include "RenderDefine.h"
 #include "GraphicsPipeline.h"
+#include "VertexBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
 // 计算缓冲区
-class ComputeBuffer
+class ComputeBuffer : public VertexBuffer
 {
 public:
     ComputeBuffer(){}

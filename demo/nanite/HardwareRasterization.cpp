@@ -3,7 +3,9 @@
 
 static RenderCore::GraphicsPipelinePtr sPSO = nullptr;
 
-void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice, RenderCore::ComputeBufferPtr cluterPageData, RenderCore::RCTexture2DPtr visBuffer64)
+void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice, 
+                         RenderCore::ComputeBufferPtr clusterPageData,
+                         RenderCore::RCTexture2DPtr visBuffer64)
 {
 	RenderSystem::ShaderAssetString shaderAssetString = RenderSystem::LoadShaderAsset("Nanite/HWRasterize");
 
@@ -14,14 +16,18 @@ void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice, RenderCore::C
 
 	GraphicsPipelineDescriptor graphicsPipelineDescriptor;
 	graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
-	graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionLessThanOrEqual;
-	graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;
+    graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionAlways;
+	graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = false;
+	graphicsPipelineDescriptor.depthStencilDescriptor.stencil.stencilEnable = false;
 
 	sPSO = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);
 	sPSO->AttachGraphicsShader(shader);
 }
 
-void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer, RenderCore::RCTexture2DPtr visBuffer64, uint32_t width, uint32_t height)
+void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer, 
+                            RenderCore::RCTexture2DPtr visBuffer64,
+                            RenderCore::ComputeBufferPtr clusterPageData,
+                            uint32_t width, uint32_t height)
 {
 	float color[4] = { 0.0, 1.0, 0.0, 1.0 };
 	SCOPED_DEBUGMARKER_EVENT(commandBuffer, "HWRasterize", color);
@@ -36,6 +42,7 @@ void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer, RenderCo
     RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);
 
 	renderEncoder->SetGraphicsPipeline(sPSO);
-    
+    renderEncoder->SetVertexBuffer(clusterPageData, 0, 0);
+    renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 384);
     renderEncoder->EndEncode();
 }
