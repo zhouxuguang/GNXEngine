@@ -27,6 +27,9 @@ private:
     RenderCore::ComputeBufferPtr mClusterPageData = nullptr;
     RenderCore::RCTexture2DPtr mVisBuffer = nullptr;
     RenderCore::RCTexture2DPtr mVisBuffer64 = nullptr;
+    
+    RenderCore::ComputeBufferPtr mRasterBinMeta = nullptr;
+    RenderCore::ComputeBufferPtr mRasterBinData = nullptr;
 
 private:
     RenderCore::ComputeBufferPtr InitNaniteMeshBuffer();

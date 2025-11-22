@@ -19,6 +19,8 @@ void InitClusterSelectionPass(RenderCore::RenderDevicePtr renderDevice);
 //cluster selection pass
 void ExecuteClusterSelectionPass(RenderCore::CommandBufferPtr commandBuffer,
                                  RenderCore::ComputeBufferPtr hierarchyBuffer,
-                                 RenderCore::ComputeBufferPtr outResult);
+                                 RenderCore::ComputeBufferPtr outResult,
+                                 RenderCore::ComputeBufferPtr rasterBinMeta,
+                                 RenderCore::ComputeBufferPtr rasterBinData);
 
 #endif /* ClusterSelection_hpp */

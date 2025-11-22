@@ -27,6 +27,12 @@ void NaniteFrameWork::Initlize()
     mHierarchyBuffer = InitHierarchyBuffer(mRenderDevice);
     mClusterSelectionArgs1 = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
     mClusterSelectionArgs1->SetName("DebugBuffer");
+    
+    mRasterBinMeta = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
+    mRasterBinMeta->SetName("Nanite.RasterBinMeta");
+    mRasterBinData = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
+    mRasterBinData->SetName("Nanite.RasterBinDat");
+    
     InitClusterSelectionPass(mRenderDevice);
 
     mClusterPageData = InitNaniteMeshBuffer();
@@ -56,7 +62,7 @@ void NaniteFrameWork::RenderFrame()
     }
 
     //select lod => clusters
-    ExecuteClusterSelectionPass(commandBuffer, mHierarchyBuffer, mClusterSelectionArgs1);
+    ExecuteClusterSelectionPass(commandBuffer, mHierarchyBuffer, mClusterSelectionArgs1, mRasterBinMeta, mRasterBinData);
 
     //lod => hw + sw => args
     ExecuteHWRasterizePass(commandBuffer, mVisBuffer64, 1400, 480);

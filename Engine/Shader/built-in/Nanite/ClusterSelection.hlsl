@@ -1,5 +1,7 @@
-ByteAddressBuffer HierarchyBuffer:register(t0);
-RWByteAddressBuffer OutResult:register(u1);
+ByteAddressBuffer HierarchyBuffer : register(t0);
+RWByteAddressBuffer OutResult : register(u1);
+RWByteAddressBuffer OutRasterBinMeta : register(u2);
+RWByteAddressBuffer OutRasterBinData : register(u3);
 
 #define NANITE_MAX_BVH_NODE_FANOUT_BITS						2
 #define NANITE_MAX_BVH_NODE_FANOUT_MASK						((1 << NANITE_MAX_BVH_NODE_FANOUT_BITS)-1)
@@ -183,6 +185,14 @@ void CS()
 	offset ++;
 	OutResult.Store4(offset * 16, uint4(xxxx.x, xxxx.y, xxxx.w, hierarchyNodeSlice.NumChildren));
 	offset ++;
+
+	//offset, count
+	OutRasterBinMeta.Store(0, uint4(pageIndex, clusterOffset, hierarchyNodeSlice.NumChildren, 0u));
+	//cluster index
+	for (uint i = clusterOffset; i<hierarchyNodeSlice.NumChildren; i++)
+	{
+		OutRasterBinData.Store(0, uint4(pageIndex, clusterOffset, hierarchyNodeSlice.NumChildren, 0u));
+	}
 
 	// OutResult.Store(offset * 4, nextArgOffset);
 	// offset ++;
