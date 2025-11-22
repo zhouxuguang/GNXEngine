@@ -48,6 +48,6 @@ void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer,
     
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", sceneManager->GetRenderInfo().cameraUBO);
     renderEncoder->SetVertexBuffer(clusterPageData, 0, 4);
-    renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 384);
+    renderEncoder->DrawInstancePrimitves(PrimitiveMode_TRIANGLES, 0, 384, 0, 1);
     renderEncoder->EndEncode();
 }

@@ -10,13 +10,10 @@ struct PrimitiveAttributesPacked
 struct VSOut
 {
 	PrimitiveAttributesPacked PrimitivePacked;
-	float4 Position								: SV_Position;
+	float4 Position	: SV_Position;
 };
 
-VSOut VS(
-	uint VertexID		: SV_VertexID,
-	uint VisibleIndex	: SV_InstanceID
-	)
+VSOut VS(uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID)
 {
 	VSOut Out;
 	Out.Position = float4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -31,24 +28,20 @@ VSOut VS(
 	uint clusterIndexOffset = ClusterPageData.Load(clusterBaseAddressOffset);   // 1112
 	uint clusterIndexCount = ClusterPageData.Load(clusterBaseAddressOffset + 4); // 378
 
-	uint currentVertexIndexOffset = clusterBaseAddressOffset + clusterDataOffset;
-	uint currentVertexIndexDataOffset = currentVertexIndexOffset  + VertexID * 4;
+	uint currentVertexIndexOffset = clusterBaseAddressOffset + clusterIndexOffset;
+	uint currentVertexIndexDataOffset = currentVertexIndexOffset + vertexID * 4;
 	uint currentVertexIndex = ClusterPageData.Load(currentVertexIndexDataOffset);
 	float3 pos = asfloat(ClusterPageData.Load3(clusterBaseAddressOffset + 8 + currentVertexIndex * 12));
 
-	float4 posW = float4(pos, 1.0);
-	posW = mul(posW, MATRIX_V);
-    posW = mul(posW, MATRIX_P);
-
-	//if (VertexID == 0)
+	Out.Position = float4(0.0f, 0.0f, 0.0f, 1.0f);
+	if (vertexID < clusterIndexCount)
 	{
+		float4 posW = float4(pos, 1.0);
+		posW = mul(posW, MATRIX_V);
+		posW = mul(posW, MATRIX_P);
+
 		Out.Position = posW;
 	}
-	// else
-	// {
-	// 	Out.Position = float4(float(pageBaseAddressOffset), float(clusterCountOnPage), 
-	// 		float(clusterIndexOffset), float(clusterIndexCount));
-	// }
 	return Out;
 }
 
