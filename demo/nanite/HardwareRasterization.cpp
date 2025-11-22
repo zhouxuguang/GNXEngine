@@ -21,7 +21,7 @@ void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice, RenderCore::C
 	sPSO->AttachGraphicsShader(shader);
 }
 
-void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer, RenderCore::RenderEncoderPtr renderEncoder1, RenderCore::RCTexture2DPtr visBuffer64)
+void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer, RenderCore::RCTexture2DPtr visBuffer64, uint32_t width, uint32_t height)
 {
 	float color[4] = { 0.0, 1.0, 0.0, 1.0 };
 	SCOPED_DEBUGMARKER_EVENT(commandBuffer, "HWRasterize", color);
@@ -32,7 +32,7 @@ void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer, RenderCo
     colorAttachmentPtr->texture = visBuffer64;
     renderPass.colorAttachments.push_back(colorAttachmentPtr);
 
-    renderPass.renderRegion = Rect2D(0, 0, 1400, 480);
+    renderPass.renderRegion = Rect2D(0, 0, width, height);
     RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);
 
 	renderEncoder->SetGraphicsPipeline(sPSO);

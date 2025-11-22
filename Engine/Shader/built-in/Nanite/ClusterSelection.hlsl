@@ -160,6 +160,7 @@ void CS()
 		}
 	}
 
+	uint4 xxxx = 0u;
 	for (uint i = 0u; i < 21u; i ++)
 	{
 		for (uint j = 0u; j < 4u; j ++)
@@ -167,8 +168,21 @@ void CS()
 			FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, j);
 			OutResult.Store4(offset * 16, uint4(i, j, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages));
 			offset ++;
+
+			if (10 == hierarchyNodeSlice.NumPages)
+			{
+				xxxx = uint4(i, j, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages);
+			}
 		}
 	}
+
+	uint pageIndex = xxxx.z >> 8;
+	uint clusterOffset = xxxx.z & 0xFFu;
+	FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, xxxx.x, xxxx.y);
+	OutResult.Store4(offset * 16, uint4(xxxx.x, xxxx.y, pageIndex, clusterOffset));
+	offset ++;
+	OutResult.Store4(offset * 16, uint4(xxxx.x, xxxx.y, xxxx.w, hierarchyNodeSlice.NumChildren));
+	offset ++;
 
 	// OutResult.Store(offset * 4, nextArgOffset);
 	// offset ++;
