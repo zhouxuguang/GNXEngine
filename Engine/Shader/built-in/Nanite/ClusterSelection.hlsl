@@ -97,7 +97,7 @@ void CS()
 				isNextArgOffsetInited = true;
 				nextArgOffset = offset;
 			}
-			OutResult.Store(offset * 4, hierarchyNodeSlice.ChildStartReference);
+			OutResult.Store4(offset * 16, uint4(hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages, 0, 0));
 			nextArgCount ++;
 			offset ++;
 		}
@@ -110,7 +110,7 @@ void CS()
 				isNextArgOffsetInited = true;
 				nextArgOffset = offset;
 			}
-			OutResult.Store(offset * 4, hierarchyNodeSlice.ChildStartReference);
+			OutResult.Store4(offset * 16, uint4(hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages, 0, 0));
 			nextArgCount ++;
 			offset ++;
 		}
@@ -123,7 +123,7 @@ void CS()
 				isNextArgOffsetInited = true;
 				nextArgOffset = offset;
 			}
-			OutResult.Store(offset * 4, hierarchyNodeSlice.ChildStartReference);
+			OutResult.Store4(offset * 16, uint4(hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages, 0, 0));
 			nextArgCount ++;
 			offset ++;
 		}
@@ -136,7 +136,7 @@ void CS()
 				isNextArgOffsetInited = true;
 				nextArgOffset = offset;
 			}
-			OutResult.Store(offset * 4, hierarchyNodeSlice.ChildStartReference);
+			OutResult.Store4(offset * 16, uint4(hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages, 0, 0));
 			nextArgCount ++;
 			offset ++;
 		}
@@ -150,13 +150,23 @@ void CS()
 			}
 			currentArgOffset = nextArgOffset;
 			currentArgCount = nextArgCount;
-			currentNodeIndex = OutResult.Load(currentArgOffset * 4);
+			currentNodeIndex = OutResult.Load4(currentArgOffset * 16).x;
 			nextArgOffset = nextArgCount;
 			nextArgCount = 0u;
 			isNextArgOffsetInited = false;
 		}else{
 			currentArgOffset ++;
-			currentNodeIndex = OutResult.Load(currentArgOffset * 4);
+			currentNodeIndex = OutResult.Load(currentArgOffset * 16).x;
+		}
+	}
+
+	for (uint i = 0u; i < 21u; i ++)
+	{
+		for (uint j = 0u; j < 4u; j ++)
+		{
+			FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, j);
+			OutResult.Store4(offset * 16, uint4(i, j, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages));
+			offset ++;
 		}
 	}
 
