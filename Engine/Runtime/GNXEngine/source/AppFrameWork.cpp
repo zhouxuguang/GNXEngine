@@ -20,6 +20,7 @@ AppFrameWork::AppFrameWork(const WindowProps& props)
 void AppFrameWork::RunLoop()
 {
     Initlize();
+    Resize(mRenderWindow->GetWidth(), mRenderWindow->GetHeight());
     while (mRenderWindow && !mRenderWindow->ShouldClose())
     {
         mRenderWindow->OnUpdate();

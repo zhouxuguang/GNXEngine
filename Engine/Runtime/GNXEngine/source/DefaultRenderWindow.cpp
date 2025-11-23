@@ -56,7 +56,7 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
     //初始化相机
     RenderSystem::CameraPtr cameraPtr = sceneManager->createCamera("MainCamera");
     cameraPtr->LookAt(mathutil::Vector3f(0, 0, 5), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
-    cameraPtr->SetLens(60, float(fbWidth) / fbHeight, 0.1f, 100.f);
+    cameraPtr->SetLens(60, float(fbWidth) / fbHeight, 0.1f, 1000.f);
 }
 
 DefaultRenderWindow::~DefaultRenderWindow()

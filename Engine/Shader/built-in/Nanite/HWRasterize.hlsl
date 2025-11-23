@@ -41,10 +41,14 @@ VSOut VS(uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID)
 		posW = mul(posW, MATRIX_P);
 
 		Out.Position = posW;
+		Out.PrimitivePacked.PixelValue_ViewId_SwapVW_Mip_ArrayIndex_LevelOffset_ViewRect.x = (pageIndex + 1) << 8 | (clusterIndex + 1);
 	}
 	return Out;
 }
 
-void PS(VSOut In)
+uint2 PS(VSOut In) : SV_Target
 {
+	uint2 screenCoord = (uint2)In.Position.xy;
+	uint pixelValue = In.PrimitivePacked.PixelValue_ViewId_SwapVW_Mip_ArrayIndex_LevelOffset_ViewRect.x;
+	return uint2(0xFFFFFFFFu, pixelValue);
 }
