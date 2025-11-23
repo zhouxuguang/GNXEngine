@@ -38,7 +38,7 @@ void NaniteFrameWork::Initlize()
     mVisBuffer = InitVisualizeBuffer();
     mVisBuffer64 = InitVisBuffer64();
 
-    InitHWRasterizePass(mRenderDevice, mClusterPageData, mVisBuffer64);
+    InitHWRasterizePass(mRenderDevice);
     InitVisualizationPass(mRenderDevice);
     InitSwapChainPass(mRenderDevice);
 }

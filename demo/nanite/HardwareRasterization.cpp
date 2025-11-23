@@ -4,9 +4,7 @@
 
 static RenderCore::GraphicsPipelinePtr sPSO = nullptr;
 
-void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice, 
-                         RenderCore::ComputeBufferPtr clusterPageData,
-                         RenderCore::RCTexture2DPtr visBuffer64)
+void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice)
 {
 	RenderSystem::ShaderAssetString shaderAssetString = RenderSystem::LoadShaderAsset("Nanite/HWRasterize");
 
