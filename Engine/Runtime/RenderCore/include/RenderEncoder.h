@@ -15,6 +15,7 @@
 #include "IndexBuffer.h"
 #include "TextureSampler.h"
 #include "RCTexture.h"
+#include "ComputeBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -64,6 +65,14 @@ public:
      @param index index description
      */
     virtual void SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer) = 0;
+
+    /**
+     设置顶点UAV
+
+     @param buffer buffer description
+     @param index index description
+     */
+    virtual void SetVertexUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer) = 0;
 
     /**
      设置片元uniformbuffer

@@ -98,6 +98,16 @@ void MTLRenderEncoder::SetVertexUniformBuffer(UniformBufferPtr buffer, int index
     }
 }
 
+void SetVertexUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer)
+{
+    if (buffer == nullptr)
+    {
+        return;
+    }
+    id<MTLBuffer> mtlBuffer = std::dynamic_pointer_cast<MTLVertexBuffer>(buffer)->getMTLBuffer();
+    //[mRenderEncoder setVertexBuffer:mtlBuffer offset:offset atIndex:index];
+}
+
 /**
  设置uniformbuffer的索引
  

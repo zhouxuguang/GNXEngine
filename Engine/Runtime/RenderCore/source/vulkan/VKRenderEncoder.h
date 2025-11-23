@@ -41,6 +41,8 @@ public:
 
     virtual void SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
 
+    virtual void SetVertexUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer);
+
     virtual void SetFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
     
     virtual void DrawPrimitves(PrimitiveMode mode, int offset, int size);

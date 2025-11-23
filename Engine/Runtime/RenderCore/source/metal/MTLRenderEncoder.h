@@ -43,6 +43,8 @@ public:
      @param index index description
      */
     virtual void SetVertexUniformBuffer(UniformBufferPtr buffer, int index);
+
+    virtual void SetVertexUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer);
     
     /**
      设置uniformbuffer的索引

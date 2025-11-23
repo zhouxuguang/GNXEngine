@@ -14,6 +14,7 @@
 #include "VulkanDescriptorUtil.h"
 #include "VulkanBufferUtil.h"
 #include "VKTextureBase.h"
+#include "VKComputeBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -395,6 +396,24 @@ void VKRenderEncoder::SetVertexUniformBuffer(const std::string& resourceName, Un
     bufferDesc.range = VK_WHOLE_SIZE;
 
     shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
+}
+
+void VKRenderEncoder::SetVertexUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer)
+{
+	if (!buffer)
+	{
+		return;
+	}
+	VKComputeBuffer* vkUniformBuffer = (VKComputeBuffer*)buffer.get();
+
+	VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+
+	ShaderBufferDesc bufferDesc;
+	bufferDesc.buffer = vkUniformBuffer->GetBuffer();
+	bufferDesc.offset = 0;
+	bufferDesc.range = VK_WHOLE_SIZE;
+
+	shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
 }
 
 void VKRenderEncoder::SetFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)

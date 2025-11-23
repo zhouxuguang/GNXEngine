@@ -47,7 +47,7 @@ void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer,
     RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
     
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", sceneManager->GetRenderInfo().cameraUBO);
-    renderEncoder->SetVertexBuffer(clusterPageData, 0, 4);
+    renderEncoder->SetVertexUAVBuffer("ClusterPageData", clusterPageData);
     renderEncoder->DrawInstancePrimitves(PrimitiveMode_TRIANGLES, 0, 384, 0, 1);
     renderEncoder->EndEncode();
 }

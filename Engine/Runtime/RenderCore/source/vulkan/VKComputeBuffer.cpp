@@ -13,9 +13,9 @@ NAMESPACE_RENDERCORE_BEGIN
 VKComputeBuffer::VKComputeBuffer(VulkanContextPtr context, size_t len) : VKVertexBuffer(context, 0, StorageModePrivate), mContext(context)
 {
     VkMemoryPropertyFlags memType = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    
+    VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, StorageModePrivate, len,
-                                      VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, memType, mBuffer, mAllocation, nullptr);
+                                      bufferUsage, memType, mBuffer, mAllocation, nullptr);
 
     mStorageMode = StorageModePrivate;
     mBufferLength = (uint32_t)len;
