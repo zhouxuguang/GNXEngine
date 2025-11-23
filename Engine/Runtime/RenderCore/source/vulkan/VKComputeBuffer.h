@@ -10,10 +10,11 @@
 
 #include "VulkanContext.h"
 #include "ComputeBuffer.h"
+#include "VKVertexBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
-class VKComputeBuffer : public ComputeBuffer
+class VKComputeBuffer : public VKVertexBuffer, public ComputeBuffer
 {
 public:
     VKComputeBuffer(VulkanContextPtr context, size_t len);
