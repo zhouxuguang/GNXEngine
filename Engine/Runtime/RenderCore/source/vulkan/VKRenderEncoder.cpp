@@ -594,6 +594,28 @@ void VKRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size
 	vkCmdDrawIndexed(mCommandBuffer, size, instanceCount, offset, 0, firstInstance);
 }
 
+void VKRenderEncoder::DrawPrimitvesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
+{
+	VKComputeBuffer* computeBuffer = (VKComputeBuffer*)buffer.get();
+	if (!computeBuffer || computeBuffer->GetBuffer())
+	{
+		return;
+	}
+
+    vkCmdDrawIndexedIndirect(mCommandBuffer, computeBuffer->GetBuffer(), offset, drawCount, stride);
+}
+
+void VKRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
+{
+	VKComputeBuffer* computeBuffer = (VKComputeBuffer*)buffer.get();
+	if (!computeBuffer || computeBuffer->GetBuffer())
+	{
+		return;
+	}
+
+	vkCmdDrawIndexedIndirect(mCommandBuffer, computeBuffer->GetBuffer(), offset, drawCount, stride);
+}
+
 void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
 {
     VKTextureBasePtr vkTexture = std::dynamic_pointer_cast<VKTextureBase>(texture);

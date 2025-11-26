@@ -326,6 +326,18 @@ void MTLRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int siz
                             instanceCount: instanceCount baseVertex : 0 baseInstance : firstInstance];
 }
 
+void MTLRenderEncoder::DrawPrimitvesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset,
+        uint32_t drawCount, uint32_t stride)
+{
+    //
+}
+
+void MTLRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset,
+        uint32_t drawCount, uint32_t stride)
+{
+    //
+}
+
 void MTLRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
 {
     MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();

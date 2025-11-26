@@ -97,8 +97,8 @@ public:
      @param mode mode description
      @param offset offset description
      @param size size description
-     @param offset firstInstance 第一个实例的索引
-     @param offset instanceCount 实例的个数
+     @param firstInstance 第一个实例的索引
+     @param instanceCount 实例的个数
      */
     virtual void DrawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount) = 0;
     
@@ -117,13 +117,37 @@ public:
      
      @param mode mode description
      @param size size description
-     @param buffer buffer description
-     @param offset offset 索引的偏移
-     @param offset firstInstance 第一个实例的索引
-     @param offset instanceCount 实例的个数
+     @param buffer 所以你buffer
+     @param offset 索引的偏移
+     @param firstInstance 第一个实例的索引
+     @param instanceCount 实例的个数
      */
     virtual void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, 
         uint32_t firstInstance, uint32_t instanceCount) = 0;
+
+    /**
+    * 
+     间接绘制
+     @param mode 图元类型
+	 @param buffer 间接绘制的参数buffer
+	 @param offset 间接绘制的参数buffer的偏移
+	 @param drawCount 第一个实例的索引
+	 @param stride 实例的个数
+     */
+    virtual void DrawPrimitvesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset, 
+            uint32_t drawCount, uint32_t stride) = 0;
+
+    /**
+    *
+     间接绘制
+     @param mode 图元类型
+     @param buffer 间接绘制的参数buffer
+     @param offset 间接绘制的参数buffer的偏移
+     @param drawCount 第一个实例的索引
+     @param stride 实例的个数
+     */
+    virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset,
+		    uint32_t drawCount, uint32_t stride) = 0;
 
     /**
      * @brief 设置片源的纹理和采样器

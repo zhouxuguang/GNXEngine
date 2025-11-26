@@ -53,6 +53,12 @@ public:
 
     virtual void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
         uint32_t firstInstance, uint32_t instanceCount);
+
+    virtual void DrawPrimitvesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset,
+        uint32_t drawCount, uint32_t stride);
+
+    virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset,
+        uint32_t drawCount, uint32_t stride);
     
     virtual void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
     

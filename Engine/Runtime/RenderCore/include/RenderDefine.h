@@ -307,6 +307,26 @@ struct Rect2D
     int height;
 };
 
+
+//non indexed
+struct DrawIndirectCommand
+{
+	uint32_t    vertexCount;
+	uint32_t    instanceCount;
+	uint32_t    firstVertex;
+	uint32_t    firstInstance;
+};
+
+//indexed 
+struct DrawIndexedIndirectCommand 
+{
+	uint32_t    indexCount;
+	uint32_t    instanceCount;
+	uint32_t    firstIndex;
+	int32_t     vertexOffset;
+	uint32_t    firstInstance;
+};
+
 NAMESPACE_RENDERCORE_END
 
 #endif /* RENDERENGINE_TYPEDEFINE_INCLUDE_H */
