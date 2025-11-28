@@ -26,6 +26,7 @@ void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice)
 void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer, 
                             RenderCore::RCTexture2DPtr visBuffer64,
                             RenderCore::ComputeBufferPtr clusterPageData,
+                            RenderCore::ComputeBufferPtr drawArgs,
                             uint32_t width, uint32_t height)
 {
 	float color[4] = { 0.0, 1.0, 0.0, 1.0 };
@@ -46,6 +47,7 @@ void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer,
     
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", sceneManager->GetRenderInfo().cameraUBO);
     renderEncoder->SetVertexUAVBuffer("ClusterPageData", clusterPageData);
-    renderEncoder->DrawInstancePrimitves(PrimitiveMode_TRIANGLES, 0, 384, 0, 1);
+    
+    renderEncoder->DrawPrimitvesIndirect(PrimitiveMode_TRIANGLES, drawArgs, 0, 1, sizeof(DrawIndirectCommand));
     renderEncoder->EndEncode();
 }

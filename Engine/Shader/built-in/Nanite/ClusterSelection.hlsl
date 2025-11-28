@@ -194,6 +194,8 @@ void CS()
 		OutRasterBinData.Store(0, uint4(pageIndex, clusterOffset, hierarchyNodeSlice.NumChildren, 0u));
 	}
 
+	OutResult.Store4(0, uint4(384u, hierarchyNodeSlice.NumChildren, 0u, 0u));
+
 	// OutResult.Store(offset * 4, nextArgOffset);
 	// offset ++;
 	// OutResult.Store(offset * 4, nextArgCount);

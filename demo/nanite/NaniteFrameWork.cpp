@@ -80,7 +80,7 @@ void NaniteFrameWork::RenderFrame()
     ExecuteClusterSelectionPass(commandBuffer, mHierarchyBuffer, mClusterSelectionArgs1, mRasterBinMeta, mRasterBinData);
 
     //lod => hw + sw => args
-    ExecuteHWRasterizePass(commandBuffer, mVisBuffer64, mClusterPageData, 1400, 480);
+    ExecuteHWRasterizePass(commandBuffer, mVisBuffer64, mClusterPageData, mClusterSelectionArgs1, 1400, 480);
 
     // => visBuffer64 (R32G32_UINT)
     ExecuteVisualizationPass(commandBuffer, mVisBuffer64, mVisBuffer); //visBuffer64 => visualize buffer(R32G32B32A32_FLOAT)
