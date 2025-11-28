@@ -89,7 +89,7 @@ void NaniteFrameWork::RenderFrame()
     //swap chain
     
     RenderCore::RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
-    ExecuteSwapChainPass(commandBuffer, renderEncoder);
+    ExecuteSwapChainPass(commandBuffer, renderEncoder, mVisBuffer);
     renderEncoder->EndEncode();
     commandBuffer->PresentFrameBuffer();
 }

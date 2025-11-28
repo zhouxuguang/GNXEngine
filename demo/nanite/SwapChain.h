@@ -4,4 +4,6 @@
 
 void InitSwapChainPass(RenderCore::RenderDevicePtr renderDevice);
 
-void ExecuteSwapChainPass(RenderCore::CommandBufferPtr commandBuffer, RenderCore::RenderEncoderPtr renderEncoder);
+void ExecuteSwapChainPass(RenderCore::CommandBufferPtr commandBuffer,
+                          RenderCore::RenderEncoderPtr renderEncoder,
+                          RenderCore::RCTexture2DPtr visBuffer);

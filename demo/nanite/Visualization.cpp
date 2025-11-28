@@ -17,8 +17,16 @@ void ExecuteVisualizationPass(RenderCore::CommandBufferPtr commandBuffer, Render
 
 	RenderCore::ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
 	computeEncoder->SetComputePipeline(sPSO);
-	//computeEncoder->SetBuffer(nullptr);  //global constant buffer
-	computeEncoder->Dispatch(175, 60, 1);
+	computeEncoder->SetTexture(visBuffer64, 0);  //global constant buffer
+    computeEncoder->SetOutTexture(visualizationBuffer, 1);
+    
+    uint32_t x, y ,z;
+    sPSO->GetThreadGroupSizes(x, y, z);
+    
+    uint32_t groupX = (visBuffer64->GetWidth() + x - 1) / x;
+    uint32_t groupY = (visBuffer64->GetHeight() + y - 1) / y;
+    
+	computeEncoder->Dispatch(groupX, groupY, 1);
 
 	computeEncoder->EndEncode();
 }

@@ -21,7 +21,9 @@ void InitSwapChainPass(RenderCore::RenderDevicePtr renderDevice)
 	sPSO->AttachGraphicsShader(shader);
 }
 
-void ExecuteSwapChainPass(RenderCore::CommandBufferPtr commandBuffer, RenderCore::RenderEncoderPtr renderEncoder)
+void ExecuteSwapChainPass(RenderCore::CommandBufferPtr commandBuffer, 
+                          RenderCore::RenderEncoderPtr renderEncoder, 
+                          RCTexture2DPtr visBuffer)
 {
 	float color[4] = {0.0, 1.0, 0.0, 1.0};
 	SCOPED_DEBUGMARKER_EVENT(commandBuffer, "SwapChain", color);
