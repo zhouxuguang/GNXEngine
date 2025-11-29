@@ -2,6 +2,7 @@
 #include "Runtime/RenderSystem/include/ShaderAssetLoader.h"
 
 static RenderCore::GraphicsPipelinePtr sPSO = nullptr;
+static RenderCore::TextureSamplerPtr sSam = nullptr;
 
 void InitSwapChainPass(RenderCore::RenderDevicePtr renderDevice)
 {
@@ -19,14 +20,18 @@ void InitSwapChainPass(RenderCore::RenderDevicePtr renderDevice)
 
 	sPSO = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);
 	sPSO->AttachGraphicsShader(shader);
+    
+    RenderCore::SamplerDescriptor samplerDesc;
+    sSam = renderDevice->CreateSamplerWithDescriptor(samplerDesc);
 }
 
 void ExecuteSwapChainPass(RenderCore::CommandBufferPtr commandBuffer, 
-                          RenderCore::RenderEncoderPtr renderEncoder, 
+                          RenderCore::RenderEncoderPtr renderEncoder,
                           RCTexture2DPtr visBuffer)
 {
 	float color[4] = {0.0, 1.0, 0.0, 1.0};
 	SCOPED_DEBUGMARKER_EVENT(commandBuffer, "SwapChain", color);
 	renderEncoder->SetGraphicsPipeline(sPSO);
+    renderEncoder->SetFragmentTextureAndSampler("texImage", visBuffer, sSam);
 	renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
 }

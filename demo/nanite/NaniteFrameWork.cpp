@@ -108,7 +108,7 @@ RenderCore::ComputeBufferPtr NaniteFrameWork::InitNaniteMeshBuffer()
 RenderCore::RCTexture2DPtr NaniteFrameWork::InitVisualizeBuffer()
 {
     RenderCore::RCTexture2DPtr visBuffer = mRenderDevice->CreateTexture2D(RenderCore::kTexFormatRGBA32Float,
-        RenderCore::TextureUsage(RenderCore::TextureUsageShaderRead | RenderCore::TextureUsageRenderTarget), 1400, 180, 1);
+        RenderCore::TextureUsage(RenderCore::TextureUsageShaderRead | RenderCore::TextureUsageRenderTarget), 1400, 480, 1);
 
     visBuffer->SetName("Nanite.VisualizeBuffer");
     return visBuffer;

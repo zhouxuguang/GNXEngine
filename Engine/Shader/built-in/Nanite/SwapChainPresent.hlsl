@@ -36,7 +36,6 @@ SamplerState texImageSam;
 
 float4 PS(v2f pin) : SV_Target
 {
-    //float4 texColor = texImage.Sample(texImageSam, pin.texcoord);
-    float4 texColor = float4(1.0, 0.0, 0.0, 1.0);
+    float4 texColor = texImage.Sample(texImageSam, pin.texcoord);
     return texColor;
 }
