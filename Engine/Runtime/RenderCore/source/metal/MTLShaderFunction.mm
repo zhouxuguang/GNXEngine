@@ -116,17 +116,6 @@ MTLGraphicsShader::MTLGraphicsShader(id<MTLDevice> device, const ShaderCode& ver
     mFragmentFunction = CreateShaderFunction(device, fragmentShader, ShaderStage_Fragment);
 }
 
-#if OS_MACOS
-    #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
-        #define SUPPORTED_NEW_REFLECT 1
-    #endif
-#elif OS_IOS
-    #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_16_0
-        #define SUPPORTED_NEW_REFLECT 1
-    #endif
-#endif
-
-
 void MTLGraphicsShader::GenerateRefectionInfo(MTLRenderPipelineReflection* reflectionObj)
 {
     if (!reflectionObj)

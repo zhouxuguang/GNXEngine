@@ -12,6 +12,7 @@
 #include "GraphicsPipeline.h"
 #include "ComputeBuffer.h"
 #include "RCTexture.h"
+#include "UniformBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -28,6 +29,8 @@ public:
     }
     
     virtual void SetComputePipeline(ComputePipelinePtr computePipeline) = 0;
+    
+    virtual void SetUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer) = 0;
     
     virtual void SetBuffer(ComputeBufferPtr buffer, uint32_t index) = 0;
     

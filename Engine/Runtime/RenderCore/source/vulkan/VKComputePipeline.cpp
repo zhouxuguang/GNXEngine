@@ -8,6 +8,7 @@
 #include "VKComputePipeline.h"
 #include "VKShaderFunction.h"
 #include "Runtime/BaseLib/include/DebugBreaker.h"
+#include "Runtime/BaseLib/include/LogService.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -75,7 +76,7 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
         mStageSetOffsets[desSetLayouts[i].descriptorType] = i;
         if (vkCreateDescriptorSetLayout(mContext->device, &desSetLayouts[i].create_info, nullptr, desLayouts.data() + i) != VK_SUCCESS)
         {
-            printf("failed to create compute descriptor set layout!\n");
+            LOG_INFO("failed to create compute descriptor set layout!\n");
             baselib::DebugBreak();
         }
     }
@@ -89,7 +90,7 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
 
     if (vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
     {
-        printf("failed to create compute pipeline layout!");
+        LOG_INFO("failed to create compute pipeline layout!");
         baselib::DebugBreak();
     }
     
@@ -101,7 +102,7 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
 
     if (vkCreateComputePipelines(mContext->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline) != VK_SUCCESS)
     {
-        printf("failed to create compute pipeline!\n");
+        LOG_INFO("failed to create compute pipeline!\n");
         baselib::DebugBreak();
     }
 }

@@ -35,6 +35,11 @@ void VKComputeEncoder::SetComputePipeline(ComputePipelinePtr computePipeline)
     vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipeline->GetPipeline());
 }
 
+void VKComputeEncoder::SetUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+{
+    
+}
+
 void VKComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
 {
     if (!buffer)

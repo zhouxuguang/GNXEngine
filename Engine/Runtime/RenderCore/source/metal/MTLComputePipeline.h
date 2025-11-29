@@ -18,39 +18,34 @@ NAMESPACE_RENDERCORE_BEGIN
 class MTLComputePipeline : public ComputePipeline
 {
 public:
-    MTLComputePipeline(id<MTLDevice> device, ShaderFunctionPtr kernelFunction) : ComputePipeline(kernelFunction)
+    MTLComputePipeline(id<MTLDevice> device, ShaderFunctionPtr kernelFunction);
+    
+    ~MTLComputePipeline()
     {
-        @autoreleasepool 
-        {
-            //assert(kernelFunction);
-            NSError* error = nil;
-            MTLShaderFunctionPtr shaderPtr = std::dynamic_pointer_cast<MTLShaderFunction>(kernelFunction);
-            mComputePSO = [device newComputePipelineStateWithFunction: shaderPtr->GetShaderFunction() error:&error];
-        }
     }
     
     //获得计算着色器的线程组的大小
-    virtual void GetThreadGroupSizes(uint32_t &x, uint32_t &y, uint32_t &z)
-    {
-        @autoreleasepool
-        {
-            // Calculate the maximum threads per threadgroup based on the thread execution width.
-            NSUInteger w = mComputePSO.threadExecutionWidth;
-            NSUInteger h = mComputePSO.maxTotalThreadsPerThreadgroup / w;
-            
-            x = (uint32_t)w;
-            y = (uint32_t)h;
-            z = 1;
-        }
-    }
+    virtual void GetThreadGroupSizes(uint32_t &x, uint32_t &y, uint32_t &z);
     
     id<MTLComputePipelineState> GetMTLComputePipelineState() const
     {
         return mComputePSO;
     }
     
+    NSUInteger GetResourceIndex(const std::string& resourceName) const
+    {
+        auto iter = mResourceMap.find(resourceName);
+        if (iter != mResourceMap.end())
+        {
+            return iter->second;
+        }
+        
+        return 0xffffffffffffffff;
+    }
+    
 private:
     id<MTLComputePipelineState> mComputePSO;
+    std::unordered_map<std::string, NSUInteger> mResourceMap;
 };
 
 NAMESPACE_RENDERCORE_END

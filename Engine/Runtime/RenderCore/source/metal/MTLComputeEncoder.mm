@@ -8,6 +8,7 @@
 #include "MTLComputeEncoder.h"
 #include "MTLComputePipeline.h"
 #include "MTLComputeBuffer.h"
+#include "MTLUniformBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -28,6 +29,7 @@ void MTLComputeEncoder::SetComputePipeline(ComputePipelinePtr computePipeline)
     @autoreleasepool
     {
         MTLComputePipeline *mtlComputePipeline = (MTLComputePipeline*)computePipeline.get();
+        mMtlComputePipeline = mtlComputePipeline;
         assert(mtlComputePipeline);
         [mComputeEncoder setComputePipelineState:mtlComputePipeline->GetMTLComputePipelineState()];
         uint32_t x, y, z;
@@ -35,6 +37,38 @@ void MTLComputeEncoder::SetComputePipeline(ComputePipelinePtr computePipeline)
         mThreadPerGroups.width = x;
         mThreadPerGroups.height = y;
         mThreadPerGroups.depth = z;
+    }
+}
+
+void MTLComputeEncoder::SetUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+{
+    @autoreleasepool
+    {
+        if (!mMtlComputePipeline)
+        {
+            assert(false);
+            return;
+        }
+        
+        NSUInteger realIndex = mMtlComputePipeline->GetResourceIndex(resourceName);
+        if (realIndex == InvalidBindingIndex)
+        {
+            assert(false);
+            return;
+        }
+        
+        MTLUniformBuffer *mtlUniformBuffer = (MTLUniformBuffer*)buffer.get();
+        assert(mtlUniformBuffer);
+        if (mtlUniformBuffer->isBuffer())
+        {
+            [mComputeEncoder setBuffer:mtlUniformBuffer->getMTLBuffer() offset:0 atIndex:realIndex];
+        }
+        else
+        {
+            const std::vector<uint8_t>& data = mtlUniformBuffer->getBufferData();
+            [mComputeEncoder setBytes:data.data() length:data.size() atIndex:realIndex];
+        }
+        
     }
 }
 

@@ -24,6 +24,8 @@ public:
     
     virtual void SetComputePipeline(ComputePipelinePtr computePipeline);
     
+    virtual void SetUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+    
     virtual void SetBuffer(ComputeBufferPtr buffer, uint32_t index);
     
     virtual void SetTexture(RCTexturePtr texture, uint32_t index);
