@@ -21,6 +21,6 @@ void ExecuteClusterSelectionPass(RenderCore::CommandBufferPtr commandBuffer,
                                  RenderCore::ComputeBufferPtr hierarchyBuffer,
                                  RenderCore::ComputeBufferPtr outResult,
                                  RenderCore::ComputeBufferPtr rasterBinMeta,
-                                 RenderCore::ComputeBufferPtr rasterBinData);
+                                 RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches);
 
 #endif /* ClusterSelection_hpp */

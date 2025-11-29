@@ -34,7 +34,7 @@ void ExecuteClusterSelectionPass(RenderCore::CommandBufferPtr commandBuffer,
                                  RenderCore::ComputeBufferPtr hierarchyBuffer,
                                  RenderCore::ComputeBufferPtr outResult,
                                  RenderCore::ComputeBufferPtr rasterBinMeta,
-                                 RenderCore::ComputeBufferPtr rasterBinData)
+                                 RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches)
 {
     float color[4] = {1.0, 0.0, 0.0, 1.0};
     SCOPED_DEBUGMARKER_EVENT(commandBuffer, "Cluster Selection", color);
@@ -44,7 +44,7 @@ void ExecuteClusterSelectionPass(RenderCore::CommandBufferPtr commandBuffer,
     computeEncoder->SetBuffer(hierarchyBuffer, 0);
     computeEncoder->SetBuffer(outResult, 1);
     computeEncoder->SetBuffer(rasterBinMeta, 2);
-    computeEncoder->SetBuffer(rasterBinData, 3);
+    computeEncoder->SetBuffer(mainAndPostNodeAndClusterBatches, 3);
 
     computeEncoder->Dispatch(1, 1, 1);
 

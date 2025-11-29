@@ -1,6 +1,7 @@
 #include "../GNXEngineCommon.hlsl"
 
 ByteAddressBuffer ClusterPageData;
+ByteAddressBuffer MainAndPostNodeAndClusterBatches;
 
 struct PrimitiveAttributesPacked
 {
@@ -13,12 +14,14 @@ struct VSOut
 	float4 Position	: SV_Position;
 };
 
-VSOut VS(uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID)
+VSOut VS(uint vertexID : SV_VertexID, uint VisibleIndex : SV_InstanceID)
 {
 	VSOut Out;
-	Out.Position = float4(0.0f, 0.0f, 0.0f, 1.0f);
-	uint pageIndex = 0u;
-	uint clusterIndex = 0u;
+
+    uint2 packedCluster = MainAndPostNodeAndClusterBatches.Load2(VisibleIndex * 8u);
+	uint pageIndex = packedCluster.x;
+	uint clusterIndex = packedCluster.y;
+
 	uint pageCount = ClusterPageData.Load(0);
 	uint pageBaseAddressOffset = ClusterPageData.Load(4 + pageIndex * 4);    // page的基地址
 	uint clusterCountOnPage = ClusterPageData.Load(pageBaseAddressOffset);   // page中cluster的个数
