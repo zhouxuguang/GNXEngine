@@ -40,14 +40,8 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
 #elif OS_MACOS
     mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nativeWnd);
 #endif
-
-    int fbWidth = 0;
-    int fbHeight = 0;
-    glfwGetFramebufferSize(mWindow, &fbWidth, &fbHeight);
-    mData.width = fbWidth;
-    mData.height = fbHeight;
     
-    mRenderDevice->Resize(fbWidth, fbHeight);
+    mRenderDevice->Resize(mData.width, mData.height);
     SetVSync(false);
     Init();
 
@@ -56,7 +50,7 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
     //初始化相机
     RenderSystem::CameraPtr cameraPtr = sceneManager->createCamera("MainCamera");
     cameraPtr->LookAt(mathutil::Vector3f(0, 0, 5), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
-    cameraPtr->SetLens(60, float(fbWidth) / fbHeight, 0.1f, 1000.f);
+    cameraPtr->SetLens(60, float(mData.width) / mData.height, 0.1f, 1000.f);
 }
 
 DefaultRenderWindow::~DefaultRenderWindow()
@@ -85,13 +79,10 @@ inline void DefaultRenderWindow::SetVSync(bool enabled)
 
 void DefaultRenderWindow::Resize(uint32_t width, uint32_t height)
 {
-    int fbWidth = 0;
-    int fbHeight = 0;
-    glfwGetFramebufferSize(mWindow, &fbWidth, &fbHeight);
-    mData.width = fbWidth;
-    mData.height = fbHeight;
+    mData.width = width;
+    mData.height = height;
     
-    mRenderDevice->Resize(fbWidth, fbHeight);
+    mRenderDevice->Resize(width, height);
 }
 
 void DefaultRenderWindow::Shutdown()
