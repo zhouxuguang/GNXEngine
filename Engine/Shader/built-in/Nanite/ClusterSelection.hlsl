@@ -3,6 +3,11 @@ RWByteAddressBuffer OutResult : register(u1);
 RWByteAddressBuffer OutRasterBinMeta : register(u2);
 RWByteAddressBuffer OutMainAndPostNodeAndClusterBatches : register(u3);
 
+cbuffer GlobalData
+{
+	uint4 Misc0;
+}
+
 #define NANITE_MAX_BVH_NODE_FANOUT_BITS						2
 #define NANITE_MAX_BVH_NODE_FANOUT_MASK						((1 << NANITE_MAX_BVH_NODE_FANOUT_BITS)-1)
 #define NANITE_MAX_BVH_NODE_FANOUT							(1 << NANITE_MAX_BVH_NODE_FANOUT_BITS)
@@ -173,7 +178,7 @@ void CS()
 			OutResult.Store4(offset * 16, uint4(i, j, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages));
 			offset ++;
 
-			if (0 == hierarchyNodeSlice.NumPages)
+			if (Misc0.x == hierarchyNodeSlice.NumPages)
 			{
 				xxxx = uint4(i, j, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages);
 				totalClusterCount += hierarchyNodeSlice.NumChildren;
