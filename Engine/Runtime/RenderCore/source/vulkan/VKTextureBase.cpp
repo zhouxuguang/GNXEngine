@@ -141,14 +141,18 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
     
     // 修改相应的标记
     VkImageCreateInfo imageCreateInfoCopy = imageCreateInfo;
+    if (VulkanBufferUtil::IsDepthStencilFormat(imageCreateInfo.format))
+    {
+    }
     
+    // 新的layout有VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL，就必须有VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT标记
     if (mSupportHostImageCopy)
     {
-        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT;
+        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
     else
     {
-        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     }
     
     //创建图像

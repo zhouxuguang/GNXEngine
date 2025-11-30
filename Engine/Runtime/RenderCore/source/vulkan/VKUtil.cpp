@@ -179,7 +179,7 @@ void SetObjectName(VkDevice device, VkObjectType objectType, uint64_t objectHand
     // set the name
     VkDebugUtilsObjectNameInfoEXT nameInfo = {};
     nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
+    nameInfo.objectType = objectType;
     nameInfo.objectHandle = objectHandle; // this cast may vary by platform/compiler
     nameInfo.pObjectName = pObjectName;
     vkSetDebugUtilsObjectNameEXT(device, &nameInfo);

@@ -186,7 +186,6 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         depthAttachmentInfo.loadOp = GetLoadOP(renderPass.depthAttachment->loadOp);
         depthAttachmentInfo.storeOp = GetStoreOP(renderPass.depthAttachment->storeOp);
         depthAttachmentInfo.clearValue.depthStencil.depth = renderPass.depthAttachment->clearDepth;
-        depthAttachmentInfo.clearValue.depthStencil.stencil = renderPass.stencilAttachment->clearStencil;
         depthAttachments.push_back(depthAttachmentInfo);
         passFormat.depthFormat = vkRenderTexture->GetVKFormat();
         passImage.depthImage = vkRenderTexture->GetVKImage();
@@ -214,7 +213,7 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         stencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         stencilAttachmentInfo.loadOp = GetLoadOP(renderPass.stencilAttachment->loadOp);
         stencilAttachmentInfo.storeOp = GetStoreOP(renderPass.stencilAttachment->storeOp);
-        stencilAttachmentInfo.clearValue.depthStencil.stencil = 0x0;
+        stencilAttachmentInfo.clearValue.depthStencil.stencil = renderPass.stencilAttachment->clearStencil;;
         stencilAttachments.push_back(stencilAttachmentInfo);
         passFormat.stencilFormat = vkRenderTexture->GetVKFormat();
         passImage.stencilImage = vkRenderTexture->GetVKImage();

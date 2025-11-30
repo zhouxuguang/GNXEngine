@@ -39,7 +39,7 @@ VKComputeBuffer::VKComputeBuffer(VulkanContextPtr context, const void* buffer, s
         VkBuffer stageBuffer = VK_NULL_HANDLE;
         VmaAllocation allocation = VK_NULL_HANDLE;
         VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, StorageModeShared, size,
-                                          bufferUsage, memType, stageBuffer, allocation, nullptr);
+                        bufferUsage | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, memType, stageBuffer, allocation, nullptr);
         
         void *data = nullptr;
         vmaMapMemory(context->vmaAllocator, allocation, &data);
