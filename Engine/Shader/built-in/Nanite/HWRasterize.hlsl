@@ -14,6 +14,12 @@ struct VSOut
 	float4 Position	: SV_Position;
 };
 
+cbuffer GlobalData
+{
+	float4x4 MATRIX_Model;
+	uint4 Misc0;
+}
+
 VSOut VS(uint vertexID : SV_VertexID, uint VisibleIndex : SV_InstanceID)
 {
 	VSOut Out;
@@ -40,6 +46,7 @@ VSOut VS(uint vertexID : SV_VertexID, uint VisibleIndex : SV_InstanceID)
 	if (vertexID < clusterIndexCount)
 	{
 		float4 posW = float4(pos, 1.0);
+		posW = mul(posW, MATRIX_Model);
 		posW = mul(posW, MATRIX_V);
 		posW = mul(posW, MATRIX_P);
 

@@ -5,6 +5,7 @@ RWByteAddressBuffer OutMainAndPostNodeAndClusterBatches : register(u3);
 
 cbuffer GlobalData
 {
+	float4x4 MATRIX_M;
 	uint4 Misc0;
 }
 

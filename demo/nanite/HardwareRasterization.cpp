@@ -28,6 +28,7 @@ void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer,
                             RenderCore::ComputeBufferPtr clusterPageData,
                             RenderCore::ComputeBufferPtr drawArgs,
                             RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
+                            RenderCore::UniformBufferPtr globalData,
                             uint32_t width, uint32_t height)
 {
 	float color[4] = { 0.0, 1.0, 0.0, 1.0 };
@@ -47,6 +48,7 @@ void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer,
     RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
     
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", sceneManager->GetRenderInfo().cameraUBO);
+    renderEncoder->SetVertexUniformBuffer("GlobalData", globalData);
     renderEncoder->SetVertexUAVBuffer("ClusterPageData", clusterPageData);
     renderEncoder->SetVertexUAVBuffer("MainAndPostNodeAndClusterBatches", mainAndPostNodeAndClusterBatches);
     

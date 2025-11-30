@@ -9,4 +9,5 @@ void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer,
                             RenderCore::ComputeBufferPtr clusterPageData,
                             RenderCore::ComputeBufferPtr drawArgs,
                             RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
+                            RenderCore::UniformBufferPtr globalData,
                             uint32_t width, uint32_t height);

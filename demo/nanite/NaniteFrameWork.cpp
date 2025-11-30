@@ -15,6 +15,12 @@
 #include "Runtime/BaseLib/include/BaseLib.h"
 #include "Runtime/BaseLib/include/LogService.h"
 
+struct GlobaleData
+{
+    mathutil::Matrix4x4f modelMatrix;
+    uint32_t misc0[4];
+};
+
 NaniteFrameWork::NaniteFrameWork(const GNXEngine::WindowProps& props) : GNXEngine::AppFrameWork(props)
 {
 }
@@ -34,10 +40,12 @@ void NaniteFrameWork::Initlize()
     mRasterBinData->SetName("Nanite.RasterBinData");
     mMainAndPostNodeAndClusterBatches = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
     mMainAndPostNodeAndClusterBatches->SetName("Nanite.MainAndPostNodeAndClusterBatches");
-    mGlobalBuffer = mRenderDevice->CreateUniformBufferWithSize(16);
+    mGlobalBuffer = mRenderDevice->CreateUniformBufferWithSize(sizeof(GlobaleData));
     
-    uint32_t misc0[] = {10, 0, 0, 0};
-    mGlobalBuffer->SetData(misc0, 0, 16);
+    GlobaleData globalData;
+    globalData.modelMatrix = mathutil::Matrix4x4f::CreateRotation(0, 1, 0, -90) * mathutil::Matrix4x4f::CreateRotation(1, 0, 0, 180);
+    globalData.misc0[0] = 10;
+    mGlobalBuffer->SetData(&globalData, 0, sizeof(GlobaleData));
     //mGlobalBuffer->SetName("Nanite.GlobalBuffer");
     
     InitRasterClearPass(mRenderDevice);
@@ -64,7 +72,7 @@ void NaniteFrameWork::Resize(uint32_t width, uint32_t height)
         cameraPtr = sceneManager->createCamera("MainCamera");
     }
 
-    cameraPtr->LookAt(mathutil::Vector3f(330.0f, 330.0f, -350.0f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
+    cameraPtr->LookAt(mathutil::Vector3f(330.0f, 330.0f, -330.0f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
     cameraPtr->SetLens(60, float(width) / height, 0.1f, 1000.f);
 }
 
@@ -92,7 +100,8 @@ void NaniteFrameWork::RenderFrame()
                                 mRasterBinMeta, mMainAndPostNodeAndClusterBatches, mGlobalBuffer);
 
     //lod => hw + sw => args
-    ExecuteHWRasterizePass(commandBuffer, mVisBuffer64, mClusterPageData, mClusterSelectionArgs1, mMainAndPostNodeAndClusterBatches, 1400, 480);
+    ExecuteHWRasterizePass(commandBuffer, mVisBuffer64, mClusterPageData, mClusterSelectionArgs1,
+                           mMainAndPostNodeAndClusterBatches, mGlobalBuffer, 1400, 480);
 
     // => visBuffer64 (R32G32_UINT)
     ExecuteVisualizationPass(commandBuffer, mVisBuffer64, mVisBuffer); //visBuffer64 => visualize buffer(R32G32B32A32_FLOAT)
@@ -164,6 +173,8 @@ bool NaniteFrameWork::OnKeyUp(GNXEngine::KeyReleasedEvent& e)
         sCurrentMipLevelIndex = 0;
     }
     
-    uint32_t misc0[] = {mipLevels[sCurrentMipLevelIndex], 0, 0, 0};
-    mGlobalBuffer->SetData(misc0, 0, 16);
+    GlobaleData globalData;
+    globalData.modelMatrix = mathutil::Matrix4x4f::CreateRotation(0, 1, 0, -90) * mathutil::Matrix4x4f::CreateRotation(1, 0, 0, 180);
+    globalData.misc0[0] = mipLevels[sCurrentMipLevelIndex];
+    mGlobalBuffer->SetData(&globalData, 0, sizeof(GlobaleData));
 }
