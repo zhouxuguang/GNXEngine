@@ -139,20 +139,24 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
         mSupportHostImageCopy = false;
     }
     
-    // 修改相应的标记
+    // 修改相应的标记, 如果是深度模板缓冲，去掉存储缓冲区的标志
+    VkImageUsageFlags extraImageUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
     VkImageCreateInfo imageCreateInfoCopy = imageCreateInfo;
     if (VulkanBufferUtil::IsDepthStencilFormat(imageCreateInfo.format))
     {
+        // pCreateInfo->format VK_FORMAT_D32_SFLOAT_S8_UINT with tiling VK_IMAGE_TILING_OPTIMAL doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT.
+        extraImageUsageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        imageCreateInfoCopy.usage &= ~VK_IMAGE_USAGE_STORAGE_BIT;
     }
     
     // 新的layout有VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL，就必须有VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT标记
     if (mSupportHostImageCopy)
     {
-        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | extraImageUsageFlags;
     }
     else
     {
-        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | extraImageUsageFlags;
     }
     
     //创建图像
