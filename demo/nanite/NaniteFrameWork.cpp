@@ -35,7 +35,7 @@ void NaniteFrameWork::Initlize()
     mMainAndPostNodeAndClusterBatches->SetName("Nanite.MainAndPostNodeAndClusterBatches");
     mGlobalBuffer = mRenderDevice->CreateUniformBufferWithSize(16);
     
-    uint32_t misc0[] = {0, 0, 0, 0};
+    uint32_t misc0[] = {10, 0, 0, 0};
     mGlobalBuffer->SetData(misc0, 0, 16);
     //mGlobalBuffer->SetName("Nanite.GlobalBuffer");
     
@@ -95,11 +95,18 @@ void NaniteFrameWork::RenderFrame()
 
     //=> visualize buffer
     //swap chain
-    
     RenderCore::RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
     ExecuteSwapChainPass(commandBuffer, renderEncoder, mVisBuffer);
     renderEncoder->EndEncode();
     commandBuffer->PresentFrameBuffer();
+}
+
+void NaniteFrameWork::OnEvent(GNXEngine::Event& e)
+{
+    GNXEngine::AppFrameWork::OnEvent(e);
+    
+    GNXEngine::EventDispatcher dispatcher(e);
+    dispatcher.Dispatch<GNXEngine::KeyReleasedEvent>(GNX_BIND_EVENT_FN(OnKeyUp));
 }
 
 RenderCore::ComputeBufferPtr NaniteFrameWork::InitNaniteMeshBuffer()
@@ -129,4 +136,30 @@ RenderCore::RCTexture2DPtr NaniteFrameWork::InitVisBuffer64()
 
     visBuffer64->SetName("Nanite.VisBuffer64");
     return visBuffer64;
+}
+
+bool NaniteFrameWork::OnKeyUp(GNXEngine::KeyReleasedEvent& e)
+{
+    static int sCurrentMipLevelIndex = 9;
+    //0, 1, 2, 3, 4, 5, 6, 7, 8, 10
+    static uint32_t mipLevels[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 10};
+    if (e.GetKeyCode() == GNXEngine::Up)
+    {
+        sCurrentMipLevelIndex ++;
+    }
+    else if (e.GetKeyCode() == GNXEngine::Down)
+    {
+        sCurrentMipLevelIndex --;
+    }
+    if (sCurrentMipLevelIndex < 0) 
+    {
+        sCurrentMipLevelIndex = 9;
+    }
+    else if (sCurrentMipLevelIndex > 9) 
+    {
+        sCurrentMipLevelIndex = 0;
+    }
+    
+    uint32_t misc0[] = {mipLevels[sCurrentMipLevelIndex], 0, 0, 0};
+    mGlobalBuffer->SetData(misc0, 0, 16);
 }

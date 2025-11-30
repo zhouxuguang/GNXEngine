@@ -14,7 +14,7 @@ AppFrameWork::AppFrameWork(const WindowProps& props)
 {
     mRenderWindow = RenderWindow::Create(props);
     gRenderWindow = mRenderWindow;
-    mRenderWindow->SetEventCallback(GNX_BIND_EVENT_FN(OnEvent));
+    mRenderWindow->SetEventCallback(GNX_BIND_EVENT_FN(OnEventImpl));
 }
 
 void AppFrameWork::RunLoop()
@@ -53,6 +53,11 @@ void AppFrameWork::OnEvent(Event& e)
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<WindowCloseEvent>(GNX_BIND_EVENT_FN(OnWindowClose));
     dispatcher.Dispatch<WindowResizeEvent>(GNX_BIND_EVENT_FN(OnWindowResize));
+}
+
+void AppFrameWork::OnEventImpl(Event& e)
+{
+    OnEvent(e);
 }
 
 bool AppFrameWork::OnWindowClose(WindowCloseEvent& e)

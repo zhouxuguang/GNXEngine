@@ -21,11 +21,13 @@ public:
     virtual void Resize(uint32_t width, uint32_t height);
     
     virtual void RenderFrame();
+    
+    virtual void OnEvent(Event& e);
 
 private:
     RenderWindowPtr mRenderWindow = nullptr;
     
-    void OnEvent(Event& e);
+    void OnEventImpl(Event& e);
     
     bool OnWindowClose(WindowCloseEvent& e);
     bool OnWindowResize(WindowResizeEvent& e);

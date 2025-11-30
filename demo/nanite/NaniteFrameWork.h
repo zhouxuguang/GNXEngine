@@ -10,6 +10,7 @@
 
 #include "Runtime/GNXEngine/include/AppFrameWork.h"
 #include "Runtime/RenderSystem/include/SceneManager.h"
+#include "Runtime/GNXEngine/include/Events/KeyEvent.h"
 
 class NaniteFrameWork : public GNXEngine::AppFrameWork
 {
@@ -21,6 +22,8 @@ public:
     virtual void Resize(uint32_t width, uint32_t height);
     
     virtual void RenderFrame();
+    
+    virtual void OnEvent(GNXEngine::Event& e);
     
 private:
     RenderCore::RenderDevicePtr mRenderDevice = nullptr;
@@ -41,6 +44,8 @@ private:
     RenderCore::RCTexture2DPtr InitVisualizeBuffer();
 
     RenderCore::RCTexture2DPtr InitVisBuffer64();
+    
+    bool OnKeyUp(GNXEngine::KeyReleasedEvent& e);
 };
 
 #endif /* NaniteFrameWork_hpp */
