@@ -177,4 +177,6 @@ bool NaniteFrameWork::OnKeyUp(GNXEngine::KeyReleasedEvent& e)
     globalData.modelMatrix = mathutil::Matrix4x4f::CreateRotation(0, 1, 0, -90) * mathutil::Matrix4x4f::CreateRotation(1, 0, 0, 180);
     globalData.misc0[0] = mipLevels[sCurrentMipLevelIndex];
     mGlobalBuffer->SetData(&globalData, 0, sizeof(GlobaleData));
+
+    return true;
 }

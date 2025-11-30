@@ -597,20 +597,30 @@ void VKRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size
 void VKRenderEncoder::DrawPrimitvesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
 {
 	VKComputeBuffer* computeBuffer = (VKComputeBuffer*)buffer.get();
-	if (!computeBuffer || computeBuffer->GetBuffer())
+	if (!computeBuffer || !computeBuffer->GetBuffer())
 	{
 		return;
 	}
 
-    vkCmdDrawIndexedIndirect(mCommandBuffer, computeBuffer->GetBuffer(), offset, drawCount, stride);
+	if (mContext->vulkanExtension.enabledExtendedDynamicState)
+	{
+		vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+	}
+
+    vkCmdDrawIndirect(mCommandBuffer, computeBuffer->GetBuffer(), offset, drawCount, stride);
 }
 
 void VKRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
 {
 	VKComputeBuffer* computeBuffer = (VKComputeBuffer*)buffer.get();
-	if (!computeBuffer || computeBuffer->GetBuffer())
+	if (!computeBuffer || !computeBuffer->GetBuffer())
 	{
 		return;
+	}
+
+	if (mContext->vulkanExtension.enabledExtendedDynamicState)
+	{
+		vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
 	}
 
 	vkCmdDrawIndexedIndirect(mCommandBuffer, computeBuffer->GetBuffer(), offset, drawCount, stride);

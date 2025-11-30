@@ -9,6 +9,7 @@
 #include "spirv_reflection.h"
 #include "VulkanBufferUtil.h"
 #include "VulkanDescriptorUtil.h"
+#include "Runtime/BaseLib/include/LogService.h"
 #include <set>
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -372,7 +373,7 @@ void VKGraphicsShader::BindTexture(VkCommandBuffer commandBuffer, const std::str
 	auto bindData = mReflectionDatas.find(resourceName);
 	if (bindData == mReflectionDatas.end())
 	{
-		printf("Fail to find shader resource %s", resourceName.c_str());
+		LOG_INFO("Fail to find shader resource %s", resourceName.c_str());
 		return;
 	}
 	VkDescriptorImageInfo imageInfo = {};
@@ -404,7 +405,7 @@ void VKGraphicsShader::BindSampler(VkCommandBuffer commandBuffer, const std::str
 	auto bindData = mReflectionDatas.find(resourceName);
 	if (bindData == mReflectionDatas.end())
 	{
-		printf("Fail to find shader resource %s", resourceName.c_str());
+        LOG_INFO("Fail to find shader resource %s", resourceName.c_str());
 		return;
 	}
 	VkDescriptorImageInfo imageInfo = {};

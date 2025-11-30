@@ -115,7 +115,11 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
 
 VKComputePipeline::~VKComputePipeline()
 {
-    //
+    if (mPipeline)
+    {
+        vkDestroyPipeline(mContext->device, mPipeline, nullptr);
+        mPipeline = VK_NULL_HANDLE;
+    }
 }
 
 void VKComputePipeline::GetThreadGroupSizes(uint32_t &x, uint32_t &y, uint32_t &z)
@@ -164,6 +168,17 @@ void VKComputePipeline::CollectResource(SpvReflectShaderModule shaderModule)
             }
         }
     }
+}
+
+uint32_t VKComputePipeline::GetResourceBindIndex(const std::string& resourceName) const
+{
+	auto bindData = mReflectionDatas.find(resourceName);
+	if (bindData == mReflectionDatas.end())
+	{
+		LOG_INFO("Fail to find shader resource %s", resourceName.c_str());
+        return -1;
+	}
+    return bindData->second.binding;
 }
 
 NAMESPACE_RENDERCORE_END

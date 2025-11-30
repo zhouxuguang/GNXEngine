@@ -11,6 +11,7 @@
 #include "VKComputePipeline.h"
 #include "VulkanDescriptorUtil.h"
 #include "VKTextureBase.h"
+#include "VKUniformBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -41,9 +42,30 @@ void VKComputeEncoder::SetUniformBuffer(const std::string& resourceName, Uniform
     {
         assert(false);
     }
-    
+
+    uint32_t bindIndex = mVKPipeline->GetResourceBindIndex(resourceName);
+    if (-1 == bindIndex)
+    {
+        assert(false);
+        return;
+    }
     
     // bind资源
+    std::shared_ptr<VKUniformBuffer> vkBuffer = std::dynamic_pointer_cast<VKUniformBuffer>(buffer);
+
+	VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = vkBuffer->GetBuffer();
+    bufferInfo.offset = 0;
+    bufferInfo.range = VK_WHOLE_SIZE;
+
+	// 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
+	VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(VK_NULL_HANDLE,
+        VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, bindIndex, &bufferInfo);
+	writeDescriptorSet.dstSet = 0;   //这句也是可以的
+
+	uint32_t bufSetOffset = mVKPipeline->GetSetOffset(DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+
+	vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), bufSetOffset, 1, &writeDescriptorSet);
 }
 
 void VKComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)

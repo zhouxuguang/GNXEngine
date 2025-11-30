@@ -45,6 +45,8 @@ public:
     }
     
     void CollectResource(SpvReflectShaderModule shaderModule);
+
+    uint32_t GetResourceBindIndex(const std::string& resourceName) const;
     
 private:
     VulkanContextPtr mContext = nullptr;
