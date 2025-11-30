@@ -105,6 +105,12 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
         LOG_INFO("failed to create compute pipeline!\n");
         baselib::DebugBreak();
     }
+    
+    SpvReflectShaderModule computeShaderModule = {};
+    SpvReflectResult result = spvReflectCreateShaderModule(shaderSource.size(), shaderSource.data(), &computeShaderModule);
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+    CollectResource(computeShaderModule);
+    spvReflectDestroyShaderModule(&computeShaderModule);
 }
 
 VKComputePipeline::~VKComputePipeline()
@@ -117,6 +123,47 @@ void VKComputePipeline::GetThreadGroupSizes(uint32_t &x, uint32_t &y, uint32_t &
     x = mWorkGroupSize.x;
     y = mWorkGroupSize.y;
     z = mWorkGroupSize.z;
+}
+
+void VKComputePipeline::CollectResource(SpvReflectShaderModule shaderModule)
+{
+    uint32_t count = 0;
+    SpvReflectResult result = spvReflectEnumerateDescriptorSets(&shaderModule, &count, NULL);
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+    std::vector<SpvReflectDescriptorSet*> sets(count);
+    result = spvReflectEnumerateDescriptorSets(&shaderModule, &count, sets.data());
+    assert(result == SPV_REFLECT_RESULT_SUCCESS);
+
+    std::vector<DescriptorSetLayoutData> setLayouts(sets.size(), DescriptorSetLayoutData{});
+    
+    for (size_t iSet = 0; iSet < sets.size(); ++iSet)
+    {
+        // 当前的set
+        const SpvReflectDescriptorSet& reflDesSet = *(sets[iSet]);
+        
+        for (uint32_t iBinding = 0; iBinding < reflDesSet.binding_count; ++iBinding)
+        {
+            const SpvReflectDescriptorBinding& reflBinding = *(reflDesSet.bindings[iBinding]);
+
+            if (mReflectionDatas.find(reflBinding.name) == mReflectionDatas.end())
+            {
+                std::string resourceName = reflBinding.name;
+                uint32_t set = reflBinding.set;
+                uint32_t binding = reflBinding.binding;
+                uint32_t descriptorCount = 1;
+                for (uint32_t iDim = 0; iDim < reflBinding.array.dims_count; ++iDim)
+                {
+                    descriptorCount *= reflBinding.array.dims[iDim];
+                }
+                VkDescriptorType descriptorType = static_cast<VkDescriptorType>(reflBinding.descriptor_type);
+                VkShaderStageFlags shaderStageFlag = VK_SHADER_STAGE_ALL;
+
+                BindMetaData metaData{set, binding, descriptorCount, descriptorType, shaderStageFlag};
+                mReflectionDatas[resourceName] = metaData;
+            }
+        }
+    }
 }
 
 NAMESPACE_RENDERCORE_END

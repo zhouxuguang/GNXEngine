@@ -50,6 +50,15 @@ struct WorkGroupSize
     uint32_t z;
 };
 
+struct BindMetaData 
+{
+    uint32_t             set;
+    uint32_t             binding;
+    uint32_t             descriptorCount;
+    VkDescriptorType     descriptorType;
+    VkShaderStageFlags   shaderStageFlag;
+};
+
 class VKShaderFunction : public ShaderFunction, public std::enable_shared_from_this<VKShaderFunction>
 {
 public:
@@ -124,15 +133,6 @@ struct ShaderImageDesc
 class VKGraphicsShader : public GraphicsShader
 {
 public:
-    struct BindMetaData 
-    {
-        uint32_t             set;
-        uint32_t             binding;
-        uint32_t             descriptorCount;
-        VkDescriptorType     descriptorType;
-        VkShaderStageFlags   shaderStageFlag;
-    };
-
     using OneFrameDescriptorSets = std::vector<VkDescriptorSet>;   //每一帧的数据
 
 public:

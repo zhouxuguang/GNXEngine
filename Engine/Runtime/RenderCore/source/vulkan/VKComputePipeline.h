@@ -44,6 +44,8 @@ public:
         return mStageSetOffsets[descriptorType];
     }
     
+    void CollectResource(SpvReflectShaderModule shaderModule);
+    
 private:
     VulkanContextPtr mContext = nullptr;
     VkPipeline mPipeline = VK_NULL_HANDLE;
@@ -52,6 +54,7 @@ private:
     WorkGroupSize mWorkGroupSize;
     
     uint32_t mStageSetOffsets[DESCRIPTOR_TYPE_MAX];   //每一种资源所在的set的索引
+    std::unordered_map<std::string, BindMetaData> mReflectionDatas;
 };
 
 NAMESPACE_RENDERCORE_END

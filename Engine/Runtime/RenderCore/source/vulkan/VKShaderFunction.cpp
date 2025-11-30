@@ -299,12 +299,15 @@ VKGraphicsShader::VKGraphicsShader(VulkanContextPtr context, const ShaderCode& v
     {
         mVertexEntryName = std::string(vertexShaderModule.entry_point_name);
     }
+
+    spvReflectDestroyShaderModule(&vertexShaderModule);
     
 	mFragShader = CreateShaderModule(mContext->device, fragmentShader);
 	if (fragShaderModule.entry_point_name)
 	{
 		mFragmentEntryName = std::string(fragShaderModule.entry_point_name);
 	}
+    spvReflectDestroyShaderModule(&fragShaderModule);
 
     GenerateVulkanDescriptorSetLayout();
     GenerateDescriptorSets();

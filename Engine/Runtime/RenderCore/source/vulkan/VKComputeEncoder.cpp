@@ -37,7 +37,13 @@ void VKComputeEncoder::SetComputePipeline(ComputePipelinePtr computePipeline)
 
 void VKComputeEncoder::SetUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
 {
+    if (!mVKPipeline)
+    {
+        assert(false);
+    }
     
+    
+    // bind资源
 }
 
 void VKComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
