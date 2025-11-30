@@ -360,8 +360,13 @@ void MTLRenderEncoder::DrawPrimitvesIndirect(PrimitiveMode mode, ComputeBufferPt
     {
         return;
     }
-    
-    [mRenderEncoder drawPrimitives:ConvertPrimitiveType(mode) indirectBuffer:mtlBuffer indirectBufferOffset:offset];
+
+    uint32_t currentOffset = offset;
+    for (uint32_t i = 0; i < drawCount; i++)
+    {
+        [mRenderEncoder drawPrimitives:ConvertPrimitiveType(mode) indirectBuffer:mtlBuffer indirectBufferOffset:currentOffset];
+        currentOffset += stride;
+    }
 }
 
 void MTLRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset,
