@@ -2,6 +2,8 @@ add_executable(nanite
 main.cpp 
 NaniteFrameWork.cpp
 NaniteFrameWork.h
+RasterClear.cpp
+RasterClear.h
 ClusterSelection.cpp
 ClusterSelection.h
 SwapChain.cpp 

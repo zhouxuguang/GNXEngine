@@ -6,6 +6,7 @@
 //
 
 #include "NaniteFrameWork.h"
+#include "RasterClear.h"
 #include "ClusterSelection.h"
 #include "SwapChain.h"
 #include "HardwareRasterization.h"
@@ -39,6 +40,7 @@ void NaniteFrameWork::Initlize()
     mGlobalBuffer->SetData(misc0, 0, 16);
     //mGlobalBuffer->SetName("Nanite.GlobalBuffer");
     
+    InitRasterClearPass(mRenderDevice);
     InitClusterSelectionPass(mRenderDevice);
 
     mClusterPageData = InitNaniteMeshBuffer();
@@ -82,6 +84,8 @@ void NaniteFrameWork::RenderFrame()
     {
         return;
     }
+    
+    ExecuteRasterClearPass(commandBuffer, mVisBuffer64);
 
     //select lod => clusters
     ExecuteClusterSelectionPass(commandBuffer, mHierarchyBuffer, mClusterSelectionArgs1,
