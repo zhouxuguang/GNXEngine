@@ -64,7 +64,7 @@ void NaniteFrameWork::Resize(uint32_t width, uint32_t height)
         cameraPtr = sceneManager->createCamera("MainCamera");
     }
 
-    cameraPtr->LookAt(mathutil::Vector3f(350.0f, 350.0f, 350.0f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
+    cameraPtr->LookAt(mathutil::Vector3f(330.0f, 330.0f, -350.0f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
     cameraPtr->SetLens(60, float(width) / height, 0.1f, 1000.f);
 }
 

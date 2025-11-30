@@ -30,11 +30,14 @@ void CS(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 GID : SV_GroupID)
     float3 result = float3(0.0f, 0.0f, 0.0f);
 
     uint2 pixelValue = VisBuffer64[threadID];
-    uint packedData = pixelValue.y;
-    uint pageIndex = (packedData >> 8) - 0;
-    uint clusterIndex = (packedData & 0xFF) - 0;
-    result = IntToColor(clusterIndex);
-    result = result * 0.8 + 0.2;
+    uint packedData = pixelValue.x;
+    if (packedData != 0)
+    {
+        uint pageIndex = (packedData >> 8) - 1;
+        uint clusterIndex = (packedData & 0xFF) - 1;
+        result = IntToColor(clusterIndex);
+        result = result * 0.8 + 0.2;
+    }
 
     VisualizationBuffer[dispatchThreadID.xy] = float4(result, 1.0f);
 }

@@ -53,5 +53,11 @@ uint2 PS(VSOut In) : SV_Target
 {
 	uint2 screenCoord = (uint2)In.Position.xy;
 	uint pixelValue = In.PrimitivePacked.PixelValue_ViewId_SwapVW_Mip_ArrayIndex_LevelOffset_ViewRect.x;
-	return uint2(0xFFFFFFFFu, pixelValue);
+
+	float z = In.Position.z; //depth => ue revert z,0.1->1000, => 0~1
+	uint uintz = asuint(z); //a>b=> uinta > uintb
+	//uint64_t psOut = (uint64_t)uintz << 32 | pixelValue;
+	//InterlockedMin(VisBuffer64[screenCoord], psOut);
+
+	return uint2(pixelValue, uintz);
 }
