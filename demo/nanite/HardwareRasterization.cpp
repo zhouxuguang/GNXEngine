@@ -3,6 +3,7 @@
 #include "Runtime/RenderSystem/include/SceneManager.h"
 
 static RenderCore::GraphicsPipelinePtr sPSO = nullptr;
+static RenderCore::RCTexture2DPtr depthTexture = nullptr;
 
 void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice)
 {
@@ -15,12 +16,16 @@ void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice)
 
 	GraphicsPipelineDescriptor graphicsPipelineDescriptor;
 	graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
-    graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionAlways;
-	graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = false;
+    graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionLess;
+	graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;
 	graphicsPipelineDescriptor.depthStencilDescriptor.stencil.stencilEnable = false;
 
 	sPSO = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);
 	sPSO->AttachGraphicsShader(shader);
+    
+    depthTexture = renderDevice->CreateTexture2D(RenderCore::kTexFormatDepth32FloatStencil8,
+                                                 RenderCore::TextureUsage(RenderCore::TextureUsageShaderRead |
+                                                RenderCore::TextureUsageRenderTarget), 1400, 480, 1);
 }
 
 void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer, 
@@ -39,6 +44,11 @@ void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer,
     colorAttachmentPtr->clearColor = MakeClearColor(0.0, 0.0, 0.0, 1.0);
     colorAttachmentPtr->texture = visBuffer64;
     renderPass.colorAttachments.push_back(colorAttachmentPtr);
+    
+    RenderPassDepthAttachmentPtr depthAttachmentPtr = std::make_shared<RenderPassDepthAttachment>();
+    depthAttachmentPtr->clearDepth = 1.0f;
+    depthAttachmentPtr->texture = depthTexture;
+    renderPass.depthAttachment = depthAttachmentPtr;
 
     renderPass.renderRegion = Rect2D(0, 0, width, height);
     RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);

@@ -16,6 +16,16 @@ MTLTextureBase::MTLTextureBase(id<MTLDevice> device, id<MTLCommandQueue> command
     mCommandQueue = commandQueue;
     mDevice = device;
     
+    /*
+     All feature sets support the MTLPixelFormatDepth32Float_Stencil8 pixel format. Only some devices that support the OSX_GPUFamily1_v1 feature set
+     also support the MTLPixelFormatDepth24Unorm_Stencil8 pixel format. Query the depth24Stencil8PixelFormatSupported property of a MTLDevice object
+     to determine whether the pixel format is supported or not.
+     
+     bool issupportd = mDevice.depth24Stencil8PixelFormatSupported;
+     issupportd : false mac mini 2018
+     
+     https://developer.apple.com/library/archive/documentation/Miscellaneous/Conceptual/MetalProgrammingGuide/WhatsNewiniOS9andOSX1011/WhatsNewiniOS9andOSX1011.html
+     */
     if (textureDes)
     {
         mTexture = [device newTextureWithDescriptor:textureDes];
