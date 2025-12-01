@@ -14,7 +14,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-class VKComputeBuffer : public VKVertexBuffer, public ComputeBuffer
+class VKComputeBuffer : public ComputeBuffer
 {
 public:
     VKComputeBuffer(VulkanContextPtr context, size_t len);
