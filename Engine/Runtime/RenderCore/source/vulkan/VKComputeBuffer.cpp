@@ -13,7 +13,7 @@ NAMESPACE_RENDERCORE_BEGIN
 VKComputeBuffer::VKComputeBuffer(VulkanContextPtr context, size_t len) : mContext(context)
 {
     VkMemoryPropertyFlags memType = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, StorageModePrivate, len,
                                       bufferUsage, memType, mBuffer, mAllocation, nullptr);
 
@@ -24,11 +24,11 @@ VKComputeBuffer::VKComputeBuffer(VulkanContextPtr context, size_t len) : mContex
 VKComputeBuffer::VKComputeBuffer(VulkanContextPtr context, const void* buffer, size_t size, StorageMode mode) : mContext(context)
 {
     VkMemoryPropertyFlags memType = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
     if (mode == StorageModeShared)
     {
         memType = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-        bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        bufferUsage != VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     }
 
     VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, mode, size,

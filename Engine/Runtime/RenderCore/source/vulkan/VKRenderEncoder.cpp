@@ -56,8 +56,8 @@ void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInf
     for (auto &iter : mPassImage.colorImages)
     {
         VulkanBufferUtil::InsertImageMemoryBarrier(
-                                                   mCommandBuffer,
-                                                   iter,
+            mCommandBuffer,
+            iter,
             0,
             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             VK_IMAGE_LAYOUT_UNDEFINED,
@@ -70,8 +70,8 @@ void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInf
     if (mPassImage.depthImage)
     {
         VulkanBufferUtil::InsertImageMemoryBarrier(
-                                                   mCommandBuffer,
-                                                   mPassImage.depthImage,
+            mCommandBuffer,
+            mPassImage.depthImage,
             0,
             VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             VK_IMAGE_LAYOUT_UNDEFINED,
@@ -84,8 +84,8 @@ void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInf
     if (mPassImage.stencilImage)
     {
         VulkanBufferUtil::InsertImageMemoryBarrier(
-                                                   mCommandBuffer,
-                                                   mPassImage.stencilImage,
+            mCommandBuffer,
+            mPassImage.stencilImage,
             0,
             VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
             VK_IMAGE_LAYOUT_UNDEFINED,
@@ -112,12 +112,12 @@ void VKRenderEncoder::EndDynamicRenderPass()
     for (auto &iter : mPassImage.colorImages)
     {
         VulkanBufferUtil::InsertImageMemoryBarrier(
-                                             mCommandBuffer,
-                                                   iter,
+            mCommandBuffer,
+            iter,
             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             0,
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                   imageLayout,
+            imageLayout,
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
             VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });

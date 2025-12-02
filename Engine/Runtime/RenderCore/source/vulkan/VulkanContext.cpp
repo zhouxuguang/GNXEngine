@@ -237,7 +237,7 @@ bool SelectPhysicalDevice(VulkanContext& context)
         VkResult result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
         if (VK_SUCCESS != result)
         {
-            printf("vkEnumerateDeviceExtensionProperties count error\n");
+            LOG_INFO("vkEnumerateDeviceExtensionProperties count error\n");
             return ret;
         }
        
@@ -245,14 +245,14 @@ bool SelectPhysicalDevice(VulkanContext& context)
         result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, extensions.data());
         if (VK_SUCCESS != result)
         {
-            printf("vkEnumerateDeviceExtensionProperties count error 1\n");
+            LOG_INFO("vkEnumerateDeviceExtensionProperties count error 1\n");
             return ret;
         }
         
         for (const auto &iter : extensions)
         {
             context.extensionNames.push_back(iter.extensionName);
-            printf("%s\n", iter.extensionName);
+            LOG_INFO("%s\n", iter.extensionName);
         }
         
         const VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -598,10 +598,10 @@ static void GetVulkanFunctions(VkDevice device, VmaVulkanFunctions &vulkanFuncti
     vulkanFunctions.vkCmdCopyBuffer = (PFN_vkCmdCopyBuffer)vkCmdCopyBuffer;
 
     vulkanFunctions.vkGetBufferMemoryRequirements2KHR = (PFN_vkGetBufferMemoryRequirements2KHR)vkGetDeviceProcAddr(device, "vkGetBufferMemoryRequirements2KHR");
-    vulkanFunctions.vkGetImageMemoryRequirements2KHR = (PFN_vkGetImageMemoryRequirements2KHR)vkGetDeviceProcAddr(device, "vkGetImageMemoryRequirements2KHR");;
-    vulkanFunctions.vkBindBufferMemory2KHR = (PFN_vkBindBufferMemory2KHR)vkGetDeviceProcAddr(device, "vkBindBufferMemory2KHR");;
-    vulkanFunctions.vkBindImageMemory2KHR = (PFN_vkBindImageMemory2KHR)vkGetDeviceProcAddr(device, "vkBindImageMemory2KHR");;
-    vulkanFunctions.vkGetPhysicalDeviceMemoryProperties2KHR = (PFN_vkGetPhysicalDeviceMemoryProperties2KHR)vkGetDeviceProcAddr(device, "vkGetPhysicalDeviceMemoryProperties2KHR");;
+    vulkanFunctions.vkGetImageMemoryRequirements2KHR = (PFN_vkGetImageMemoryRequirements2KHR)vkGetDeviceProcAddr(device, "vkGetImageMemoryRequirements2KHR");
+    vulkanFunctions.vkBindBufferMemory2KHR = (PFN_vkBindBufferMemory2KHR)vkGetDeviceProcAddr(device, "vkBindBufferMemory2KHR");
+    vulkanFunctions.vkBindImageMemory2KHR = (PFN_vkBindImageMemory2KHR)vkGetDeviceProcAddr(device, "vkBindImageMemory2KHR");
+    vulkanFunctions.vkGetPhysicalDeviceMemoryProperties2KHR = (PFN_vkGetPhysicalDeviceMemoryProperties2KHR)vkGetDeviceProcAddr(device, "vkGetPhysicalDeviceMemoryProperties2KHR");
 }
 
 void CreateVMA(VulkanContext& context)
@@ -676,7 +676,7 @@ void CreateGraphicsDescriptorPool(VulkanContext& context)
 	VkResult res = vkCreateDescriptorPool(context.device, &poolInfo, nullptr, &context.graphicsDescriptorPool);
 	if (res != VK_SUCCESS)
 	{
-		printf("vkCreateDescriptorPool failed!!!!\n");
+        LOG_INFO("vkCreateDescriptorPool failed!!!!\n");
 	}
 }
 
@@ -700,7 +700,7 @@ void CreateComputeDescriptorPool(VulkanContext& context)
     VkResult res = vkCreateDescriptorPool(context.device, &poolInfo, nullptr, &context.computeDescriptorPool);
     if (res != VK_SUCCESS)
     {
-        printf("vkCreateDescriptorPool failed!!!!\n");
+        LOG_INFO("vkCreateDescriptorPool failed!!!!\n");
     }
 }
 
