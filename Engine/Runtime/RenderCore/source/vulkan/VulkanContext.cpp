@@ -170,119 +170,111 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
 
 bool SelectPhysicalDevice(VulkanContext& context)
 {
-    bool ret = false;
     std::vector<VkPhysicalDevice> gpuDevices;
     VulkanDeviceUtil::GetPhysicalDevices(context.instance, gpuDevices);
     if (gpuDevices.empty())
     {
-        return ret;
+        LOG_INFO("GPU Count : 0");
+        return false;
     }
 
-    uint32_t start = 0;
-    if (gpuDevices.size() > 1)
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkPhysicalDeviceProperties2 physicalDeviceProperties2 = {};
+    VkPhysicalDeviceIDProperties physicalDeviceIDProperties = {};
+    VkPhysicalDeviceDriverProperties physicalDeviceDriverProperties = {};
+    ChoosePhysicalDevice(gpuDevices, 0, 0, nullptr, nullptr, (VkDriverId)0, 
+        &physicalDevice, &physicalDeviceProperties2, &physicalDeviceIDProperties, &physicalDeviceDriverProperties);
+
+	vkGetPhysicalDeviceProperties(physicalDevice, &context.physicalDeviceProperties);
+	context.numSamples = VulkanDeviceUtil::GetMaxUsableSampleCount(context.physicalDeviceProperties);
+
+	//判断device是否有支持graphics的comand queues.
+	uint32_t queueFamiliesCount;
+	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamiliesCount, nullptr);
+	if (queueFamiliesCount == 0)
+	{
+		LOG_INFO("queueFamiliesCount : 0");
+		return false;
+	}
+	context.queueFamiliesProperties.resize(queueFamiliesCount);
+	vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamiliesCount, context.queueFamiliesProperties.data());
+	context.graphicsQueueFamilyIndex = 0xffffffff;
+
+	for (uint32_t j = 0; j < queueFamiliesCount; ++j)
+	{
+		const VkQueueFamilyProperties& props = context.queueFamiliesProperties[j];
+		if (props.queueCount == 0)
+		{
+			continue;
+		}
+		if (props.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			context.graphicsQueueFamilyIndex = j;
+			context.queueCount = props.queueCount;
+		}
+
+		if (props.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+		{
+			// 图形队列族
+			//graphicsQueueFamilyIndex = j;
+		}
+		else if (props.queueFlags & VK_QUEUE_COMPUTE_BIT)
+		{
+			// 具有单独的计算队列族
+			//computeQueueFamilyIndex = j;
+		}
+		else if (props.queueFlags & VK_QUEUE_TRANSFER_BIT)
+		{
+			// 具有单独的传输队列族
+			context.transferQueueFamilyIndex = j;
+			context.transferQueueFamilyIndex = 1;
+		}
+	}
+
+	//判断device是否支持 VK_KHR_swapchain extension
+	uint32_t extensionCount;
+	VkResult result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+	if (VK_SUCCESS != result)
+	{
+		LOG_INFO("vkEnumerateDeviceExtensionProperties count error\n");
+		return false;
+	}
+
+	std::vector<VkExtensionProperties> extensions(extensionCount);
+	result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, extensions.data());
+	if (VK_SUCCESS != result)
+	{
+		LOG_INFO("vkEnumerateDeviceExtensionProperties count error 1\n");
+		return false;
+	}
+
+	for (const auto& iter : extensions)
+	{
+		context.extensionNames.push_back(iter.extensionName);
+		LOG_INFO("%s\n", iter.extensionName);
+	}
+
+	bool supportsSwapchain = false;
+	for (uint32_t k = 0; k < extensionCount; ++k)
+	{
+		if (!strcmp(context.extensionNames[k], VK_KHR_SWAPCHAIN_EXTENSION_NAME))
+		{
+			supportsSwapchain = true;
+		}
+	}
+    if (!supportsSwapchain)
     {
-        start = 1;
+        LOG_INFO("Device does not supported swapchain!!!");
     }
-    for (uint32_t i = start; i < gpuDevices.size(); ++i)
-    {
-        VkPhysicalDevice physicalDevice = gpuDevices[i];
-        vkGetPhysicalDeviceProperties(physicalDevice, &context.physicalDeviceProperties);
-        context.numSamples = VulkanDeviceUtil::GetMaxUsableSampleCount(context.physicalDeviceProperties);
 
-        //判断device是否有支持graphics的comand queues.
-        uint32_t queueFamiliesCount;
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamiliesCount, nullptr);
-        if (queueFamiliesCount == 0) 
-        {
-            continue;
-        }
-        context.queueFamiliesProperties.resize(queueFamiliesCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamiliesCount, context.queueFamiliesProperties.data());
-        context.graphicsQueueFamilyIndex = 0xffffffff;
+	context.vulkanExtension.mDeviceExtensions.swap(extensions);
 
-        for (uint32_t j = 0; j < queueFamiliesCount; ++j)
-        {
-            const VkQueueFamilyProperties& props = context.queueFamiliesProperties[j];
-            if (props.queueCount == 0) 
-            {
-                continue;
-            }
-            if (props.queueFlags & VK_QUEUE_GRAPHICS_BIT) 
-            {
-                context.graphicsQueueFamilyIndex = j;
-                context.queueCount = props.queueCount;
-            }
+	//最终找打我们需要的physical device
+	context.physicalDevice = physicalDevice;
+	vkGetPhysicalDeviceFeatures(physicalDevice, &context.physicalDeviceFeatures);
+	vkGetPhysicalDeviceMemoryProperties(physicalDevice, &context.memoryProperties);
 
-			if (props.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-			{
-				// 图形队列族
-                //graphicsQueueFamilyIndex = j;
-			}
-			else if (props.queueFlags & VK_QUEUE_COMPUTE_BIT)
-			{
-				// 具有单独的计算队列族
-                //computeQueueFamilyIndex = j;
-			}
-			else if (props.queueFlags & VK_QUEUE_TRANSFER_BIT)
-			{
-				// 具有单独的传输队列族
-                context.transferQueueFamilyIndex = j;
-                context.transferQueueFamilyIndex = 1;
-			}
-        }
-        if (context.graphicsQueueFamilyIndex == 0xffffffff) continue;
-
-        //判断device是否支持 VK_KHR_swapchain extension
-        uint32_t extensionCount;
-        VkResult result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
-        if (VK_SUCCESS != result)
-        {
-            LOG_INFO("vkEnumerateDeviceExtensionProperties count error\n");
-            return ret;
-        }
-       
-        std::vector<VkExtensionProperties> extensions(extensionCount);
-        result = vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, extensions.data());
-        if (VK_SUCCESS != result)
-        {
-            LOG_INFO("vkEnumerateDeviceExtensionProperties count error 1\n");
-            return ret;
-        }
-        
-        for (const auto &iter : extensions)
-        {
-            context.extensionNames.push_back(iter.extensionName);
-            LOG_INFO("%s\n", iter.extensionName);
-        }
-        
-        const VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT;
-        
-        VkFormatProperties formatProperties;
-        // Get device properties for the requested texture format
-        vkGetPhysicalDeviceFormatProperties(physicalDevice, format, &formatProperties);
-        // Check if requested image format supports image storage operations required for storing pixel from the compute shader
-        assert(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT);
-        
-        bool supportsSwapchain = false;
-        for (uint32_t k = 0; k < extensionCount; ++k) 
-        {
-            if (!strcmp(context.extensionNames[k], VK_KHR_SWAPCHAIN_EXTENSION_NAME))
-            {
-                supportsSwapchain = true;
-            }
-        }
-        if (!supportsSwapchain) continue;
-        
-        context.vulkanExtension.mDeviceExtensions.swap(extensions);
-
-        //最终找打我们需要的physical device
-        context.physicalDevice = physicalDevice;
-        vkGetPhysicalDeviceFeatures(physicalDevice, &context.physicalDeviceFeatures);
-        vkGetPhysicalDeviceMemoryProperties(physicalDevice, &context.memoryProperties);
-        ret = true;
-        break;
-    }
-    return ret;
+    return true;
 }
 
 bool CreateVirtualDevice(VulkanContext& context)
@@ -719,7 +711,7 @@ VkDescriptorSet AllocDescriptorSet(VkDevice device, VkDescriptorPool descriptorP
     return descriptorSet;
 }
 
-void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties2 pGetPhysicalDeviceProperties2,
+void ChoosePhysicalDevice(
 	const std::vector<VkPhysicalDevice>& physicalDevices,
 	uint32_t preferredVendorID,
 	uint32_t preferredDeviceID,
@@ -751,7 +743,7 @@ void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties2 pGetPhysicalDeviceP
 		physicalDeviceDriverPropertiesOut->sType =
 			VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
 
-		pGetPhysicalDeviceProperties2(physicalDevice, physicalDeviceProperties2Out);
+		vkGetPhysicalDeviceProperties2(physicalDevice, physicalDeviceProperties2Out);
 
 		if (deviceProps->apiVersion < VK_MAKE_API_VERSION(0, 1, 1, 0))
 		{
@@ -830,10 +822,9 @@ void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties2 pGetPhysicalDeviceP
 		physicalDeviceIDPropertiesOut->pNext = physicalDeviceDriverPropertiesOut;
 
 		*physicalDeviceDriverPropertiesOut = {};
-		physicalDeviceDriverPropertiesOut->sType =
-			VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
+		physicalDeviceDriverPropertiesOut->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DRIVER_PROPERTIES;
 
-		pGetPhysicalDeviceProperties2(physicalDevice, physicalDeviceProperties2Out);
+        vkGetPhysicalDeviceProperties2(physicalDevice, physicalDeviceProperties2Out);
 
 		if (deviceProps->apiVersion < VK_MAKE_API_VERSION(0, 1, 1, 0))
 		{
@@ -873,7 +864,7 @@ void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties2 pGetPhysicalDeviceP
 
 	// Fallback to the first device.
 	*physicalDeviceOut = physicalDevices[0];
-	pGetPhysicalDeviceProperties2(*physicalDeviceOut, physicalDeviceProperties2Out);
+	vkGetPhysicalDeviceProperties2(*physicalDeviceOut, physicalDeviceProperties2Out);
 }
 
 NAMESPACE_RENDERCORE_END

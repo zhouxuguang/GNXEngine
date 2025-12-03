@@ -95,7 +95,7 @@ void CreateComputeDescriptorPool(VulkanContext& context);
 // 创建描述符集
 VkDescriptorSet AllocDescriptorSet(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descLayout);
 
-void ChoosePhysicalDevice(PFN_vkGetPhysicalDeviceProperties2 pGetPhysicalDeviceProperties2,
+void ChoosePhysicalDevice(
 	const std::vector<VkPhysicalDevice>& physicalDevices,
 	uint32_t preferredVendorID,
 	uint32_t preferredDeviceID,

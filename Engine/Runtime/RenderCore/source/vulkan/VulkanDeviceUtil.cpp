@@ -30,11 +30,11 @@ void VulkanDeviceUtil::GetPhysicalDevices(VkInstance pInstance, std::vector<VkPh
         return;
     }
 
-    uint32_t gpu_count = 0;
-    VK_CHECK(vkEnumeratePhysicalDevices(pInstance, &gpu_count, NULL));
+    uint32_t gpuCount = 0;
+    VK_CHECK(vkEnumeratePhysicalDevices(pInstance, &gpuCount, NULL));
     
-    gpuDevices.resize(gpu_count);
-    VK_CHECK(vkEnumeratePhysicalDevices(pInstance, &gpu_count, gpuDevices.data()));
+    gpuDevices.resize(gpuCount);
+    VK_CHECK(vkEnumeratePhysicalDevices(pInstance, &gpuCount, gpuDevices.data()));
 }
 
 bool VulkanDeviceUtil::MapMemoryTypeToIndex(VkPhysicalDevice gpuDevice,
