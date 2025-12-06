@@ -78,7 +78,7 @@ void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInf
             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            VkImageSubresourceRange{ VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 });
+            VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.depthFormat), 0, 1, 0, 1 });
     }
     
     if (mPassImage.stencilImage)
@@ -92,7 +92,7 @@ void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInf
             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            VkImageSubresourceRange{ VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 });
+            VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.stencilFormat), 0, 1, 0, 1 });
     }
     
     vkCmdBeginRenderingKHR(mCommandBuffer, &renderInfo);

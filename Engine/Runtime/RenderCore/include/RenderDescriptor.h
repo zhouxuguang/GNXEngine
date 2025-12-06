@@ -21,7 +21,7 @@ NAMESPACE_RENDERCORE_BEGIN
 struct StencilDescriptor
 {
     bool stencilEnable = false;
-    CompareFunction stencilCompareFunction = CompareFunctionAlways;
+    CompareFunction stencilCompareFunction = CompareFunctionNever;
     StencilOperation stencilFailureOperation = StencilOperationKeep;       //模板测试失败的操作
     StencilOperation depthFailureOperation = StencilOperationKeep;         //模板测试通过但是没有通过深度测试的操作
     StencilOperation depthStencilPassOperation = StencilOperationKeep;     //模板测试和深度测试都通过时的操作

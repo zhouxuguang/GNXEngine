@@ -130,6 +130,8 @@ public:
     
     // 获得格式对应的大小
     static uint32_t GetFormatSize(VkFormat format);
+
+    static VkImageAspectFlags GetImageAspectFlags(VkFormat format);
 };
 
 NAMESPACE_RENDERCORE_END
