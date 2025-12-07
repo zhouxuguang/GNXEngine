@@ -59,6 +59,22 @@ public:
     virtual void SetFragmentUniformBuffer(UniformBufferPtr buffer, int index) = 0;
 
     /**
+     设置片元UAV
+
+     @param resourceName 名字
+     @param buffer buffer handle
+     */
+    virtual void SetFragmentUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer) = 0;
+
+    /**
+     设置片元存储图像
+
+     @param buffer buffer description
+     @param index index description
+     */
+    virtual void SetFragmentStorageTexture(const std::string& resourceName, RCTexturePtr texture) = 0;
+
+    /**
      设置顶点uniformbuffer
 
      @param buffer buffer description

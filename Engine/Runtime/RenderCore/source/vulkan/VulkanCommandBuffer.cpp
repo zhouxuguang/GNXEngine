@@ -110,9 +110,6 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
 {
     std::vector<VkRenderingAttachmentInfo> colorAttachments;
     
-    uint32_t width = 0;
-    uint32_t height = 0;
-    
     RenderPassFormat passFormat;
     RenderPassImage passImage;
     RenderPassImageView passImageView;
@@ -156,9 +153,6 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         colorAttachment.loadOp = GetLoadOP(iter->loadOp);
         colorAttachment.storeOp = GetStoreOP(iter->storeOp);
         colorAttachment.clearValue = clearColor;
-        
-        width = vkRenderTexture->GetWidth();
-        height = vkRenderTexture->GetHeight();
         
         colorAttachments.push_back(colorAttachment);
         passFormat.colorFormats.push_back(vkRenderTexture->GetVKFormat());
@@ -229,8 +223,11 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
     renderingInfo.pColorAttachments = colorAttachments.data();
     renderingInfo.pDepthAttachment = depthAttachments.data();
     renderingInfo.pStencilAttachment = stencilAttachments.data();
-    renderingInfo.renderArea.extent.width = width;
-    renderingInfo.renderArea.extent.height = height;
+
+    renderingInfo.renderArea.offset.x = renderPass.renderRegion.offsetX;
+    renderingInfo.renderArea.offset.y = renderPass.renderRegion.offsetY;
+    renderingInfo.renderArea.extent.width = renderPass.renderRegion.width;
+    renderingInfo.renderArea.extent.height = renderPass.renderRegion.height;
     
     passImage.isPresentStage = false;
     

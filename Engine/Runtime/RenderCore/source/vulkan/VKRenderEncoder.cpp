@@ -380,6 +380,42 @@ void VKRenderEncoder::SetFragmentUniformBuffer(UniformBufferPtr buffer, int inde
     ////vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, &writeDescriptorSet);
 }
 
+void VKRenderEncoder::SetFragmentUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer)
+{
+	if (!buffer)
+	{
+		return;
+	}
+	VKComputeBuffer* vkUniformBuffer = (VKComputeBuffer*)buffer.get();
+
+	VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+
+	ShaderBufferDesc bufferDesc;
+	bufferDesc.buffer = vkUniformBuffer->GetBuffer();
+	bufferDesc.offset = 0;
+	bufferDesc.range = VK_WHOLE_SIZE;
+
+	shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
+}
+
+void VKRenderEncoder::SetFragmentStorageTexture(const std::string& resourceName, RCTexturePtr texture)
+{
+	VKTextureBasePtr vkTexture = std::dynamic_pointer_cast<VKTextureBase>(texture);
+    if (!vkTexture)
+    {
+        return;
+    }
+
+	VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+
+	ShaderImageDesc imageDesc;
+	imageDesc.image = vkTexture->GetImageView()->GetHandle();
+	imageDesc.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	imageDesc.sampler = VK_NULL_HANDLE;
+
+	shader->BindTexture(mCommandBuffer, resourceName, imageDesc, mGraphicsPipieline->GetPipelineLayout());
+}
+
 void VKRenderEncoder::SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
 {
 	if (!buffer)
