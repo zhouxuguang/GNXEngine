@@ -27,6 +27,10 @@ Camera::Camera(RenderDeviceType renderType, const std::string& name)
             
         case VULKAN:
             mAdjust = mathutil::Matrix4x4f::IDENTITY;
+            // https://matthewwellings.com/blog/the-new-vulkan-coordinate-system/
+            // https://www.vincentparizet.com/blog/posts/vulkan_perspective_matrix/
+			mAdjust[2][2] = 0.5;
+			mAdjust[2][3] = 0.5;
             break;
             
         default:
