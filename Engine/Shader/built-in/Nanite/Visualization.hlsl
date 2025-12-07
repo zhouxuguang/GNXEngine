@@ -23,10 +23,15 @@ float3 IntToColor(uint Index)
 	return Color * (1.0f / 255.0f);
 }
 
-[numthreads(8, 8, 8)]
+[numthreads(8, 8, 1)]
 void CS(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 GID : SV_GroupID)
 {
     uint2 threadID = dispatchThreadID.xy;
+	if (any(threadID >= uint2(1400u, 480u)))
+	{
+        return;
+    }
+
     float3 result = float3(0.0f, 0.0f, 0.0f);
 
     uint2 pixelValue = VisBuffer64[threadID];
