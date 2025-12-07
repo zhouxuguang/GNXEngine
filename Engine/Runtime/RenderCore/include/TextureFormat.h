@@ -214,6 +214,8 @@ enum
     kTexFormatRGBA16Float = 80,
     kTexFormatRGBA32Float = 81,
 
+    kTexFormatR32Float = 100,
+
     kTexFormatRG32Uint = 101,
     kTexFormatRG32Sint = 102,
     kTexFormatRG32Float = 103,

@@ -126,6 +126,9 @@ inline MTLPixelFormat ConvertTextureFormatToMetal(uint32_t textureFormat)
             
         case kTexFormatDXT1_SRGB:
             return MTLPixelFormatBC1_RGBA_sRGB;
+
+        case kTexFormatR32Float:
+            return MTLPixelFormatR32Float;
             
         case kTexFormatRG32Uint:
             return MTLPixelFormatRG32Uint;

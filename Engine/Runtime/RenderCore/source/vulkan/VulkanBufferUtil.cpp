@@ -601,6 +601,10 @@ VkFormat VulkanBufferUtil::ConvertTextureFormat(TextureFormat texFormat)
             format = VK_FORMAT_BC1_RGB_SRGB_BLOCK;
             break;
 
+        case kTexFormatR32Float:
+            format = VK_FORMAT_R32_SFLOAT;
+            break;
+
         case kTexFormatRG32Uint:
             format = VK_FORMAT_R32G32_UINT;
             break;
