@@ -157,6 +157,36 @@ void MTLRenderEncoder::SetFragmentUniformBuffer(UniformBufferPtr buffer, int ind
     }
 }
 
+void MTLRenderEncoder::SetFragmentUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer)
+{
+    return;
+}
+
+void MTLRenderEncoder::SetFragmentStorageTexture(const std::string& resourceName, RCTexturePtr texture)
+{
+    MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
+    if (!shader)
+    {
+        return;
+    }
+    
+    NSUInteger texIndex = shader->GetFragmentResourceBindIndex(resourceName);
+    if (texIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    
+    if (!texture)
+    {
+        [mRenderEncoder setFragmentTexture:nil atIndex:texIndex];
+    }
+    else
+    {
+        id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTextureBase>(texture)->getMTLTexture();
+        [mRenderEncoder setFragmentTexture:mtlTexture atIndex:texIndex];
+    }
+}
+
 void MTLRenderEncoder::SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
 {
     if (!buffer)

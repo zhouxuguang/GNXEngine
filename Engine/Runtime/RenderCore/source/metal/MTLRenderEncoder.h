@@ -54,6 +54,10 @@ public:
      */
     virtual void SetFragmentUniformBuffer(UniformBufferPtr buffer, int index);
     
+    virtual void SetFragmentUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer);
+    
+    virtual void SetFragmentStorageTexture(const std::string& resourceName, RCTexturePtr texture);
+    
     /**
      设置顶点uniformbuffer
 
