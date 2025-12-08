@@ -44,6 +44,19 @@ uint BitFieldExtractU32(uint Data, uint Size, uint Offset)
 	return (Data >> Offset) & ((1u << Size) - 1u);
 }
 
+void StoreCluster(inout uint clusterOffset, FHierarchyNodeSlice hierarchyNodeSlice)
+{
+	uint clusterCount = hierarchyNodeSlice.NumChildren;
+	uint pageIndex = hierarchyNodeSlice.ChildStartReference >> 8;
+	uint localClusterOffset = hierarchyNodeSlice.ChildStartReference & 0xFFu;
+	uint localClusterPageIndexEnd = localClusterOffset + clusterCount;
+	for (uint localClusterPageIndex = localClusterOffset; localClusterPageIndex < localClusterPageIndexEnd; localClusterPageIndex ++)
+	{
+		OutMainAndPostNodeAndClusterBatches.Store2(clusterOffset * 8u, uint2(pageIndex, localClusterPageIndex));
+		clusterOffset ++;
+	}
+}
+
 FHierarchyNodeSlice UnpackHierarchyNodeSlice(uint4 RawData0, uint4 RawData1, uint4 RawData2, uint RawData3)
 {
 	const uint4 Misc0 = RawData1;
@@ -84,84 +97,81 @@ FHierarchyNodeSlice GetHierarchyNodeSlice(ByteAddressBuffer InputBuffer, uint No
 	return UnpackHierarchyNodeSlice(RawData0, RawData1, RawData2, RawData3);
 }
 
+bool ShouldVisitChild(FHierarchyNodeSlice hierarchyNodeSlice)
+{
+	float4 boundingSphere = hierarchyNodeSlice.LODBounds;
+	//QEM : Quadric Error Metric
+	
+	return true;
+}
+
+struct NextClusterSelectionArgs
+{
+	uint mNextArgOffset;
+	uint mNextArgCount;
+	bool mIsNextArgOffsetInited;
+};
+
+void VisitBVHNode(FHierarchyNodeSlice hierarchyNodeSlice,
+	inout NextClusterSelectionArgs nextClusterSelectionArgs,
+	inout uint offset)
+{
+	bool bShouldVisitChild = ShouldVisitChild(hierarchyNodeSlice);
+	if (!hierarchyNodeSlice.bLeaf && hierarchyNodeSlice.ChildStartReference != 0u)
+	{
+		if (!nextClusterSelectionArgs.mIsNextArgOffsetInited)
+		{
+			nextClusterSelectionArgs.mIsNextArgOffsetInited = true;
+			nextClusterSelectionArgs.mNextArgOffset = offset;
+		}
+		OutResult.Store4(offset * 16, uint4(hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages, 0u, 0u));
+		nextClusterSelectionArgs.mNextArgCount ++;
+		offset ++;
+	}
+}
+
 [numthreads(1, 1, 1)]//1 -> wave : 32 
 void CS()
 {
     //hierarchy node -> cluster :index
     //hierarchy node -> child node -> OutResult
     //0->1091 : 1092 uint => 52 uint bvh node => 4 child [13 uint]
+	NextClusterSelectionArgs nextClusterSelectionArgs;
+	nextClusterSelectionArgs.mIsNextArgOffsetInited = false;
+	nextClusterSelectionArgs.mNextArgOffset = 0u;
+	nextClusterSelectionArgs.mNextArgCount = 0u;
+
 	uint currentArgOffset = 0u, currentArgCount = 1u;
-	uint nextArgOffset = 0u, nextArgCount = 0u;
 	uint offset = 0u;
 	uint currentNodeIndex = 0u;
-	bool isNextArgOffsetInited = false;
 	while (true)
 	{
 		FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 0u);
-		if (!hierarchyNodeSlice.bLeaf && hierarchyNodeSlice.ChildStartReference != 0u)
-		{
-			if (!isNextArgOffsetInited)
-			{
-				isNextArgOffsetInited = true;
-				nextArgOffset = offset;
-			}
-			OutResult.Store4(offset * 16, uint4(hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages, 0, 0));
-			nextArgCount ++;
-			offset ++;
-		}
+		VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset);
 
 		hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 1u);
-		if (!hierarchyNodeSlice.bLeaf && hierarchyNodeSlice.ChildStartReference != 0u)
-		{
-			if (!isNextArgOffsetInited)
-			{
-				isNextArgOffsetInited = true;
-				nextArgOffset = offset;
-			}
-			OutResult.Store4(offset * 16, uint4(hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages, 0, 0));
-			nextArgCount ++;
-			offset ++;
-		}
+		VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset);
 
 		hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 2u);
-		if (!hierarchyNodeSlice.bLeaf && hierarchyNodeSlice.ChildStartReference != 0u)
-		{
-			if (!isNextArgOffsetInited)
-			{
-				isNextArgOffsetInited = true;
-				nextArgOffset = offset;
-			}
-			OutResult.Store4(offset * 16, uint4(hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages, 0, 0));
-			nextArgCount ++;
-			offset ++;
-		}
+		VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset);
 
 		hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 3u);
-		if (!hierarchyNodeSlice.bLeaf && hierarchyNodeSlice.ChildStartReference != 0u)
-		{
-			if (!isNextArgOffsetInited)
-			{
-				isNextArgOffsetInited = true;
-				nextArgOffset = offset;
-			}
-			OutResult.Store4(offset * 16, uint4(hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages, 0, 0));
-			nextArgCount ++;
-			offset ++;
-		}
+		VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset);
 
 		currentArgCount --;
 		if (currentArgCount == 0u)
 		{
-			if (nextArgCount == 0u)
+			if (nextClusterSelectionArgs.mNextArgCount == 0u)
 			{
 				break;
 			}
-			currentArgOffset = nextArgOffset;
-			currentArgCount = nextArgCount;
+			currentArgOffset = nextClusterSelectionArgs.mNextArgOffset;
+			currentArgCount = nextClusterSelectionArgs.mNextArgCount;
 			currentNodeIndex = OutResult.Load4(currentArgOffset * 16).x;
-			nextArgOffset = nextArgCount;
-			nextArgCount = 0u;
-			isNextArgOffsetInited = false;
+
+			nextClusterSelectionArgs.mNextArgOffset = nextClusterSelectionArgs.mNextArgCount;
+			nextClusterSelectionArgs.mNextArgCount = 0u;
+			nextClusterSelectionArgs.mIsNextArgOffsetInited = false;
 		}else{
 			currentArgOffset ++;
 			currentNodeIndex = OutResult.Load(currentArgOffset * 16).x;
@@ -184,15 +194,7 @@ void CS()
 				xxxx = uint4(i, j, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages);
 				totalClusterCount += hierarchyNodeSlice.NumChildren;
 
-				uint pageIndex = hierarchyNodeSlice.ChildStartReference >> 8;
-				uint localClusterOffset = hierarchyNodeSlice.ChildStartReference & 0xFFu;
-				uint localClusterPageIndexEnd = localClusterOffset + hierarchyNodeSlice.NumChildren;
-				for (uint localClusterPageIndex = localClusterOffset; localClusterPageIndex < localClusterPageIndexEnd; 
-					localClusterPageIndex ++)
-				{
-					OutMainAndPostNodeAndClusterBatches.Store2(clusterOffset * 8u, uint2(pageIndex, localClusterPageIndex));
-					clusterOffset ++;
-				}
+				StoreCluster(clusterOffset, hierarchyNodeSlice);
 			}
 		}
 	}
