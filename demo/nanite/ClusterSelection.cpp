@@ -44,7 +44,7 @@ void ExecuteClusterSelectionPass(RenderCore::CommandBufferPtr commandBuffer,
     computeEncoder->SetComputePipeline(sPSO);
     computeEncoder->SetBuffer(hierarchyBuffer, 0);
     computeEncoder->SetBuffer(outResult, 1);
-    computeEncoder->SetBuffer(rasterBinMeta, 2);
+    //computeEncoder->SetBuffer(rasterBinMeta, 2);
     computeEncoder->SetBuffer(mainAndPostNodeAndClusterBatches, 3);
     computeEncoder->SetUniformBuffer("GlobalData", globalBuffer);
 

@@ -112,9 +112,9 @@ struct NextClusterSelectionArgs
 	bool mIsNextArgOffsetInited;
 };
 
-void VisitBVHNode(FHierarchyNodeSlice hierarchyNodeSlice,
+uint VisitBVHNode(FHierarchyNodeSlice hierarchyNodeSlice,
 	inout NextClusterSelectionArgs nextClusterSelectionArgs,
-	inout uint offset)
+	inout uint nodeOffset, inout uint clusterOffset)
 {
 	bool bShouldVisitChild = ShouldVisitChild(hierarchyNodeSlice);
 	if (!hierarchyNodeSlice.bLeaf && hierarchyNodeSlice.ChildStartReference != 0u)
@@ -122,12 +122,23 @@ void VisitBVHNode(FHierarchyNodeSlice hierarchyNodeSlice,
 		if (!nextClusterSelectionArgs.mIsNextArgOffsetInited)
 		{
 			nextClusterSelectionArgs.mIsNextArgOffsetInited = true;
-			nextClusterSelectionArgs.mNextArgOffset = offset;
+			nextClusterSelectionArgs.mNextArgOffset = nodeOffset;
 		}
-		OutResult.Store4(offset * 16, uint4(hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages, 0u, 0u));
+		OutResult.Store4(nodeOffset * 16, uint4(hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages, 0u, 0u));
 		nextClusterSelectionArgs.mNextArgCount ++;
-		offset ++;
+		nodeOffset ++;
 	}
+
+	else
+	{
+		if (Misc0.x == hierarchyNodeSlice.NumPages)
+		{
+			StoreCluster(clusterOffset, hierarchyNodeSlice);
+			return hierarchyNodeSlice.NumChildren;
+		}
+	}
+
+	return 0u;
 }
 
 [numthreads(1, 1, 1)]//1 -> wave : 32 
@@ -141,22 +152,25 @@ void CS()
 	nextClusterSelectionArgs.mNextArgOffset = 0u;
 	nextClusterSelectionArgs.mNextArgCount = 0u;
 
+	uint clusterOffset = 0u;
+	uint totalClusterCount = 0u;
+
 	uint currentArgOffset = 0u, currentArgCount = 1u;
 	uint offset = 0u;
 	uint currentNodeIndex = 0u;
 	while (true)
 	{
 		FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 0u);
-		VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset);
+		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset, clusterOffset);
 
 		hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 1u);
-		VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset);
+		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset, clusterOffset);
 
 		hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 2u);
-		VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset);
+		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset, clusterOffset);
 
 		hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 3u);
-		VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset);
+		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset, clusterOffset);
 
 		currentArgCount --;
 		if (currentArgCount == 0u)
@@ -172,43 +186,13 @@ void CS()
 			nextClusterSelectionArgs.mNextArgOffset = nextClusterSelectionArgs.mNextArgCount;
 			nextClusterSelectionArgs.mNextArgCount = 0u;
 			nextClusterSelectionArgs.mIsNextArgOffsetInited = false;
-		}else{
+		}
+		else
+		{
 			currentArgOffset ++;
 			currentNodeIndex = OutResult.Load(currentArgOffset * 16).x;
 		}
 	}
-
-	uint totalClusterCount = 0u;
-	uint clusterOffset = 0u;
-	uint4 xxxx = 0u;
-	for (uint i = 0u; i < 21u; i ++)
-	{
-		for (uint j = 0u; j < 4u; j ++)
-		{
-			FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, i, j);
-			OutResult.Store4(offset * 16, uint4(i, j, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages));
-			offset ++;
-
-			if (Misc0.x == hierarchyNodeSlice.NumPages)
-			{
-				xxxx = uint4(i, j, hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages);
-				totalClusterCount += hierarchyNodeSlice.NumChildren;
-
-				StoreCluster(clusterOffset, hierarchyNodeSlice);
-			}
-		}
-	}
-
-	uint pageIndex = xxxx.z >> 8;
-	uint clusterOffset1 = xxxx.z & 0xFFu;
-	FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, xxxx.x, xxxx.y);
-	OutResult.Store4(offset * 16, uint4(xxxx.x, xxxx.y, pageIndex, clusterOffset1));
-	offset ++;
-	OutResult.Store4(offset * 16, uint4(xxxx.x, xxxx.y, xxxx.w, hierarchyNodeSlice.NumChildren));
-	offset ++;
-
-	//offset, count
-	OutRasterBinMeta.Store(0, uint4(pageIndex, clusterOffset1, hierarchyNodeSlice.NumChildren, 0u));
 
 	OutResult.Store4(0, uint4(384u, totalClusterCount, 0u, 0u));
 }
