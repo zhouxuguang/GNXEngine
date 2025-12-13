@@ -46,6 +46,9 @@ public:
     //获得相机的世界坐标位置
     virtual Vector3f GetPosition() const;
     
+    //获得视线方向，单位化的
+    virtual Vector3f GetViewDirection() const;
+    
     //获得视图矩阵
     virtual Matrix4x4f GetViewMatrix() const;
     

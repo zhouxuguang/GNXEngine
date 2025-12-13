@@ -104,6 +104,12 @@ Vector3f Camera::GetPosition() const
     return mPosition;
 }
 
+Vector3f Camera::GetViewDirection() const
+{
+    Vector3f viewDirection = mLook - mPosition;
+    return viewDirection.Normalize();
+}
+
 Matrix4x4f Camera::GetViewMatrix() const
 {
     return mView;
