@@ -4,8 +4,8 @@ NaniteFrameWork.cpp
 NaniteFrameWork.h
 RasterClear.cpp
 RasterClear.h
-ClusterSelection.cpp
-ClusterSelection.h
+NodeAndClusterCull.cpp
+NodeAndClusterCull.h
 SwapChain.cpp 
 SwapChain.h
 HardwareRasterization.cpp

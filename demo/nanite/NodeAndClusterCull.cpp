@@ -5,7 +5,7 @@
 //  Created by zhouxuguang on 2025/11/15.
 //
 
-#include "ClusterSelection.h"
+#include "NodeAndClusterCull.h"
 #include "Runtime/RenderSystem/include/SceneManager.h"
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 
@@ -23,14 +23,15 @@ RenderCore::ComputeBufferPtr InitHierarchyBuffer(RenderCore::RenderDevicePtr ren
 }
 
 //init cluster selection
-void InitClusterSelectionPass(RenderCore::RenderDevicePtr renderDevice)
+void InitNodeAndClusterCullPass(RenderCore::RenderDevicePtr renderDevice)
 {
-    RenderSystem::ShaderAssetString shaderAssetString = RenderSystem::LoadShaderAsset("Nanite/ClusterSelection");
+    RenderSystem::ShaderAssetString shaderAssetString = RenderSystem::LoadShaderAsset("Nanite/NodeAndClusterCull");
     sPSO = renderDevice->CreateComputePipeline(*shaderAssetString.computeShader->shaderSource);
 }
 
 //cluster selection pass
-void ExecuteClusterSelectionPass(RenderCore::CommandBufferPtr commandBuffer,
+void ExecuteNodeAndClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
+                                   uint32_t level,
                                  RenderCore::ComputeBufferPtr hierarchyBuffer,
                                  RenderCore::ComputeBufferPtr outResult,
                                  RenderCore::ComputeBufferPtr rasterBinMeta,
@@ -38,7 +39,10 @@ void ExecuteClusterSelectionPass(RenderCore::CommandBufferPtr commandBuffer,
                                  RenderCore::UniformBufferPtr globalBuffer)
 {
     float color[4] = {1.0, 0.0, 0.0, 1.0};
-    SCOPED_DEBUGMARKER_EVENT(commandBuffer, "Cluster Selection", color);
+    
+    char buffer[256] = {0};
+    snprintf(buffer, 256, "NodeAndClusterCull_%d", level);
+    SCOPED_DEBUGMARKER_EVENT(commandBuffer, buffer, color);
     
     ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
     computeEncoder->SetComputePipeline(sPSO);

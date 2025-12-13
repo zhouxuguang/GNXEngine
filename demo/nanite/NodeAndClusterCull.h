@@ -1,12 +1,12 @@
 //
-//  ClusterSelection.h
+//  NodeAndClusterCull.h
 //  nanite
 //
 //  Created by zhouxuguang on 2025/11/15.
 //
 
-#ifndef ClusterSelection_hpp
-#define ClusterSelection_hpp
+#ifndef NANITE_NODEAND_CLUSTER_CULL_INCLUDE_JDJKMDSK
+#define NANITE_NODEAND_CLUSTER_CULL_INCLUDE_JDJKMDSK
 
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
@@ -14,14 +14,15 @@
 RenderCore::ComputeBufferPtr InitHierarchyBuffer(RenderCore::RenderDevicePtr renderDevice);
 
 //init cluster selection
-void InitClusterSelectionPass(RenderCore::RenderDevicePtr renderDevice);
+void InitNodeAndClusterCullPass(RenderCore::RenderDevicePtr renderDevice);
 
 //cluster selection pass
-void ExecuteClusterSelectionPass(RenderCore::CommandBufferPtr commandBuffer,
+void ExecuteNodeAndClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
+                                   uint32_t level,
                                  RenderCore::ComputeBufferPtr hierarchyBuffer,
                                  RenderCore::ComputeBufferPtr outResult,
                                  RenderCore::ComputeBufferPtr rasterBinMeta,
                                  RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
                                  RenderCore::UniformBufferPtr globalBuffer);
 
-#endif /* ClusterSelection_hpp */
+#endif /* NANITE_NODEAND_CLUSTER_CULL_INCLUDE_JDJKMDSK */
