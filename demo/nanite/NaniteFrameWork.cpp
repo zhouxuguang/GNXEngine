@@ -19,6 +19,7 @@ struct GlobaleData
 {
     mathutil::Matrix4x4f modelMatrix;
     uint32_t misc0[4];
+    float Nanite_ViewOrigin[4];
 };
 
 NaniteFrameWork::NaniteFrameWork(const GNXEngine::WindowProps& props) : GNXEngine::AppFrameWork(props)

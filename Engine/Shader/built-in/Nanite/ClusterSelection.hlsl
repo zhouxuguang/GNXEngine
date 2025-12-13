@@ -1,3 +1,5 @@
+#include "../GNXEngineCommon.hlsl"
+
 ByteAddressBuffer HierarchyBuffer : register(t0);
 RWByteAddressBuffer OutResult : register(u1);
 RWByteAddressBuffer OutRasterBinMeta : register(u2);
@@ -5,8 +7,9 @@ RWByteAddressBuffer OutMainAndPostNodeAndClusterBatches : register(u3);
 
 cbuffer GlobalData
 {
-	float4x4 MATRIX_M;
+	float4x4 MATRIX_Model;
 	uint4 Misc0;
+	float4 Nanite_ViewOrigin;
 }
 
 #define NANITE_MAX_BVH_NODE_FANOUT_BITS						2
@@ -97,12 +100,35 @@ FHierarchyNodeSlice GetHierarchyNodeSlice(ByteAddressBuffer InputBuffer, uint No
 	return UnpackHierarchyNodeSlice(RawData0, RawData1, RawData2, RawData3);
 }
 
+float2 GetProjectionScales(float4 sphere)
+{
+	if (MATRIX_P[3][3] >= 1.0f)
+	{
+		//not ortho
+		return float2(1.0f, 1.0f);
+	}
+	//translated world
+	//min z(0.1) * 0.1,max(0.9) z * 100.0
+	
+	return float2(0.0f, 0.0f);
+}
+
 bool ShouldVisitChild(FHierarchyNodeSlice hierarchyNodeSlice)
 {
-	float4 boundingSphere = hierarchyNodeSlice.LODBounds;
+	float3 boundingSphere = hierarchyNodeSlice.LODBounds.xyz;
+	float4 boundingSpherePositionWS = mul(float4(boundingSphere, 1.0f), MATRIX_Model);
+	boundingSpherePositionWS = float4(boundingSpherePositionWS.xyz - Nanite_ViewOrigin.xyz, 1.0f);
+
 	//QEM : Quadric Error Metric
-	
-	return true;
+	float2 projectionScales = GetProjectionScales(float4(boundingSpherePositionWS.xyz, hierarchyNodeSlice.LODBounds.w));
+	float lodScale = Nanite_ViewOrigin.w;
+	float threshold = lodScale * hierarchyNodeSlice.MaxParentLODError;
+	if (projectionScales.x <= threshold)
+	{
+		// projectionScales.y>minLODError
+		return true;
+	}
+	return false;
 }
 
 struct NextClusterSelectionArgs

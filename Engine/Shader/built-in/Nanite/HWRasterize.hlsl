@@ -18,6 +18,7 @@ cbuffer GlobalData
 {
 	float4x4 MATRIX_Model;
 	uint4 Misc0;
+	float4 Nanite_ViewOrigin;
 }
 
 VSOut VS(uint vertexID : SV_VertexID, uint VisibleIndex : SV_InstanceID)
