@@ -38,6 +38,7 @@ private:
     RenderCore::ComputeBufferPtr mMainAndPostNodeAndClusterBatches = nullptr;
     RenderCore::UniformBufferPtr mGlobalBuffer = nullptr;
     RenderCore::ComputeBufferPtr mWorkArgs[2];
+    RenderCore::ComputeBufferPtr mQueueState = nullptr;
 
 private:
     RenderCore::ComputeBufferPtr InitNaniteMeshBuffer();

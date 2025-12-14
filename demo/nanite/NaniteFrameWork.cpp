@@ -49,6 +49,9 @@ void NaniteFrameWork::Initlize()
     mWorkArgs[1] = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
     mWorkArgs[1]->SetName("mWorkArgs1");
     
+    mQueueState = mRenderDevice->CreateComputeBuffer(8);
+    mQueueState->SetName("QueueState");
+    
     InitRasterClearPass(mRenderDevice);
     InitNodeAndClusterCullPass(mRenderDevice);
 
@@ -78,7 +81,7 @@ void NaniteFrameWork::Resize(uint32_t width, uint32_t height)
 
     GlobaleData globalData;
     globalData.modelMatrix = mathutil::Matrix4x4f::CreateRotation(0, 1, 0, -90) * mathutil::Matrix4x4f::CreateRotation(1, 0, 0, 180);
-    globalData.misc0[0] = 10;
+    globalData.misc0[0] = 0;
 
     mathutil::Matrix4x4f projectionMatrix = cameraPtr->GetProjectionMatrix();
 
@@ -118,7 +121,7 @@ void NaniteFrameWork::RenderFrame()
         return;
     }
     
-    ExecuteRasterClearPass(commandBuffer, mVisBuffer64);
+    ExecuteRasterClearPass(commandBuffer, mQueueState, mVisBuffer64);
     
     uint32_t* pData = (uint32_t*)mWorkArgs[0]->MapBufferData();
     pData[0] = 0;
@@ -131,7 +134,7 @@ void NaniteFrameWork::RenderFrame()
     {
         //select lod => clusters
         ExecuteNodeAndClusterCullPass(commandBuffer, i, mHierarchyBuffer, mWorkArgs[inputArgIndex],
-                                mWorkArgs[outArgIndex], mMainAndPostNodeAndClusterBatches, mGlobalBuffer);
+                                mWorkArgs[outArgIndex], mQueueState, mMainAndPostNodeAndClusterBatches, mGlobalBuffer);
         inputArgIndex = (inputArgIndex + 1) % 2;
         outArgIndex = (outArgIndex + 1) % 2;
     }

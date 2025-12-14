@@ -22,6 +22,7 @@ void ExecuteNodeAndClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
                                  RenderCore::ComputeBufferPtr hierarchyBuffer,
                                  RenderCore::ComputeBufferPtr inWorkArgs,
                                  RenderCore::ComputeBufferPtr outResult,
+                                 RenderCore::ComputeBufferPtr queueState,
                                  RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
                                  RenderCore::UniformBufferPtr globalBuffer);
 

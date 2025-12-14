@@ -4,4 +4,6 @@
 
 void InitRasterClearPass(RenderCore::RenderDevicePtr renderDevice);
 
-void ExecuteRasterClearPass(RenderCore::CommandBufferPtr commandBuffer, RenderCore::RCTexture2DPtr visBuffer64);
+void ExecuteRasterClearPass(RenderCore::CommandBufferPtr commandBuffer,
+                            RenderCore::ComputeBufferPtr queueState,
+                            RenderCore::RCTexture2DPtr visBuffer64);

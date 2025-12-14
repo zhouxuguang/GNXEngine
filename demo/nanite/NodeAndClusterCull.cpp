@@ -35,6 +35,7 @@ void ExecuteNodeAndClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
                                  RenderCore::ComputeBufferPtr hierarchyBuffer,
                                  RenderCore::ComputeBufferPtr inWorkArgs,
                                  RenderCore::ComputeBufferPtr outResult,
+                                 RenderCore::ComputeBufferPtr queueState,
                                  RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
                                  RenderCore::UniformBufferPtr globalBuffer)
 {
@@ -49,6 +50,7 @@ void ExecuteNodeAndClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
     computeEncoder->SetBuffer(hierarchyBuffer, 0);
     computeEncoder->SetBuffer(inWorkArgs, 1);
     computeEncoder->SetBuffer(outResult, 2);
+    computeEncoder->SetBuffer(queueState, 3);
     computeEncoder->SetBuffer(mainAndPostNodeAndClusterBatches, 4);
     computeEncoder->SetUniformBuffer("GlobalData", globalBuffer);
 

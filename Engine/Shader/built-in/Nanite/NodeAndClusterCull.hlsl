@@ -1,9 +1,15 @@
 #include "../GNXEngineCommon.hlsl"
 
+struct FQueueState
+{
+	uint mTotalClusterCount;
+	uint mClusterWriteOffset;
+};
+
 ByteAddressBuffer HierarchyBuffer : register(t0);
 ByteAddressBuffer CurrentIndirectArgs : register(t1);
 RWByteAddressBuffer OutResult : register(u2);
-RWByteAddressBuffer OutRasterBinMeta : register(u3);
+RWStructuredBuffer<FQueueState> QueueState : register(u3);
 RWByteAddressBuffer OutMainAndPostNodeAndClusterBatches : register(u4);
 
 cbuffer GlobalData
@@ -181,7 +187,7 @@ void CS()
 	nextClusterSelectionArgs.mNextArgOffset = 0u;
 	nextClusterSelectionArgs.mNextArgCount = 0u;
 
-	uint clusterOffset = 0u;
+	uint clusterOffset = QueueState[0].mClusterWriteOffset;
 	uint totalClusterCount = 0u;
 
 	uint currentStartIndexDataOffset = CurrentIndirectArgs.Load(0);
@@ -206,7 +212,9 @@ void CS()
 		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, currentWorkIndirectNodeOffset, clusterOffset);
 	}
 
-	//OutResult.Store4(0, uint4(384u, totalClusterCount, 0u, 0u));
+	QueueState[0].mTotalClusterCount = clusterOffset;
+	QueueState[0].mClusterWriteOffset = clusterOffset;
+
 	OutResult.Store4(0, uint4(currentStartIndexDataOffset + currentArgCount,
 		currentWorkIndirectNodeOffset - currentStartIndexDataOffset - currentArgCount, 0u, 0u));
 }
