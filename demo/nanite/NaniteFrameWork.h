@@ -37,6 +37,7 @@ private:
     RenderCore::ComputeBufferPtr mRasterBinData = nullptr;
     RenderCore::ComputeBufferPtr mMainAndPostNodeAndClusterBatches = nullptr;
     RenderCore::UniformBufferPtr mGlobalBuffer = nullptr;
+    RenderCore::ComputeBufferPtr mWorkArgs[2];
 
 private:
     RenderCore::ComputeBufferPtr InitNaniteMeshBuffer();

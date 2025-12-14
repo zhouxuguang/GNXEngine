@@ -33,8 +33,8 @@ void InitNodeAndClusterCullPass(RenderCore::RenderDevicePtr renderDevice)
 void ExecuteNodeAndClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
                                    uint32_t level,
                                  RenderCore::ComputeBufferPtr hierarchyBuffer,
+                                 RenderCore::ComputeBufferPtr inWorkArgs,
                                  RenderCore::ComputeBufferPtr outResult,
-                                 RenderCore::ComputeBufferPtr rasterBinMeta,
                                  RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
                                  RenderCore::UniformBufferPtr globalBuffer)
 {
@@ -47,9 +47,9 @@ void ExecuteNodeAndClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
     ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
     computeEncoder->SetComputePipeline(sPSO);
     computeEncoder->SetBuffer(hierarchyBuffer, 0);
-    computeEncoder->SetBuffer(outResult, 1);
-    //computeEncoder->SetBuffer(rasterBinMeta, 2);
-    computeEncoder->SetBuffer(mainAndPostNodeAndClusterBatches, 3);
+    computeEncoder->SetBuffer(inWorkArgs, 1);
+    computeEncoder->SetBuffer(outResult, 2);
+    computeEncoder->SetBuffer(mainAndPostNodeAndClusterBatches, 4);
     computeEncoder->SetUniformBuffer("GlobalData", globalBuffer);
 
     computeEncoder->Dispatch(1, 1, 1);

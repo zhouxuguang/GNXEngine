@@ -1,9 +1,10 @@
 #include "../GNXEngineCommon.hlsl"
 
 ByteAddressBuffer HierarchyBuffer : register(t0);
-RWByteAddressBuffer OutResult : register(u1);
-RWByteAddressBuffer OutRasterBinMeta : register(u2);
-RWByteAddressBuffer OutMainAndPostNodeAndClusterBatches : register(u3);
+ByteAddressBuffer CurrentIndirectArgs : register(t1);
+RWByteAddressBuffer OutResult : register(u2);
+RWByteAddressBuffer OutRasterBinMeta : register(u3);
+RWByteAddressBuffer OutMainAndPostNodeAndClusterBatches : register(u4);
 
 cbuffer GlobalData
 {
@@ -126,7 +127,7 @@ bool ShouldVisitChild(FHierarchyNodeSlice hierarchyNodeSlice)
 	float threshold = lodScale * hierarchyNodeSlice.MaxParentLODError;
 	if (projectionScales.x <= threshold)
 	{
-		// projectionScales.y>minLODError
+		// projectionScales.y > minLODError
 		return true;
 	}
 	return false;
@@ -151,7 +152,8 @@ uint VisitBVHNode(FHierarchyNodeSlice hierarchyNodeSlice,
 			nextClusterSelectionArgs.mIsNextArgOffsetInited = true;
 			nextClusterSelectionArgs.mNextArgOffset = nodeOffset;
 		}
-		OutResult.Store4(nodeOffset * 16, uint4(hierarchyNodeSlice.ChildStartReference, hierarchyNodeSlice.NumPages, 0u, 0u));
+
+		OutMainAndPostNodeAndClusterBatches.Store(nodeOffset * 4 + 1024 * 8, hierarchyNodeSlice.ChildStartReference);
 		nextClusterSelectionArgs.mNextArgCount ++;
 		nodeOffset ++;
 	}
@@ -182,44 +184,29 @@ void CS()
 	uint clusterOffset = 0u;
 	uint totalClusterCount = 0u;
 
-	uint currentArgOffset = 0u, currentArgCount = 1u;
-	uint offset = 0u;
-	uint currentNodeIndex = 0u;
-	while (true)
+	uint currentStartIndexDataOffset = CurrentIndirectArgs.Load(0);
+	uint currentArgCount = CurrentIndirectArgs.Load(4);
+
+	uint currentWorkIndirectNodeOffset = currentStartIndexDataOffset + currentArgCount;
+
+	for (uint i = 0; i < currentArgCount; i ++)
 	{
+		uint currentNodeIndex = OutMainAndPostNodeAndClusterBatches.Load(2048 * 4 + (currentStartIndexDataOffset + i) * 4);
+
 		FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 0u);
-		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset, clusterOffset);
+		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, currentWorkIndirectNodeOffset, clusterOffset);
 
 		hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 1u);
-		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset, clusterOffset);
+		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, currentWorkIndirectNodeOffset, clusterOffset);
 
 		hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 2u);
-		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset, clusterOffset);
+		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, currentWorkIndirectNodeOffset, clusterOffset);
 
 		hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 3u);
-		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, offset, clusterOffset);
-
-		currentArgCount --;
-		if (currentArgCount == 0u)
-		{
-			if (nextClusterSelectionArgs.mNextArgCount == 0u)
-			{
-				break;
-			}
-			currentArgOffset = nextClusterSelectionArgs.mNextArgOffset;
-			currentArgCount = nextClusterSelectionArgs.mNextArgCount;
-			currentNodeIndex = OutResult.Load4(currentArgOffset * 16).x;
-
-			nextClusterSelectionArgs.mNextArgOffset = nextClusterSelectionArgs.mNextArgCount;
-			nextClusterSelectionArgs.mNextArgCount = 0u;
-			nextClusterSelectionArgs.mIsNextArgOffsetInited = false;
-		}
-		else
-		{
-			currentArgOffset ++;
-			currentNodeIndex = OutResult.Load(currentArgOffset * 16).x;
-		}
+		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, currentWorkIndirectNodeOffset, clusterOffset);
 	}
 
-	OutResult.Store4(0, uint4(384u, totalClusterCount, 0u, 0u));
+	//OutResult.Store4(0, uint4(384u, totalClusterCount, 0u, 0u));
+	OutResult.Store4(0, uint4(currentStartIndexDataOffset + currentArgCount,
+		currentWorkIndirectNodeOffset - currentStartIndexDataOffset - currentArgCount, 0u, 0u));
 }

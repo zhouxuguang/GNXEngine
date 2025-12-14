@@ -20,8 +20,8 @@ void InitNodeAndClusterCullPass(RenderCore::RenderDevicePtr renderDevice);
 void ExecuteNodeAndClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
                                    uint32_t level,
                                  RenderCore::ComputeBufferPtr hierarchyBuffer,
+                                 RenderCore::ComputeBufferPtr inWorkArgs,
                                  RenderCore::ComputeBufferPtr outResult,
-                                 RenderCore::ComputeBufferPtr rasterBinMeta,
                                  RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
                                  RenderCore::UniformBufferPtr globalBuffer);
 

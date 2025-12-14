@@ -44,6 +44,11 @@ void NaniteFrameWork::Initlize()
     mMainAndPostNodeAndClusterBatches->SetName("Nanite.MainAndPostNodeAndClusterBatches");
     mGlobalBuffer = mRenderDevice->CreateUniformBufferWithSize(sizeof(GlobaleData));
     
+    mWorkArgs[0] = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024, RenderCore::StorageModeShared);
+    mWorkArgs[0]->SetName("mWorkArgs0");
+    mWorkArgs[1] = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
+    mWorkArgs[1]->SetName("mWorkArgs1");
+    
     InitRasterClearPass(mRenderDevice);
     InitNodeAndClusterCullPass(mRenderDevice);
 
@@ -114,10 +119,24 @@ void NaniteFrameWork::RenderFrame()
     }
     
     ExecuteRasterClearPass(commandBuffer, mVisBuffer64);
-
-    //select lod => clusters
-    ExecuteNodeAndClusterCullPass(commandBuffer, 0, mHierarchyBuffer, mClusterSelectionArgs1,
-                                mRasterBinMeta, mMainAndPostNodeAndClusterBatches, mGlobalBuffer);
+    
+    uint32_t* pData = (uint32_t*)mWorkArgs[0]->MapBufferData();
+    pData[0] = 0;
+    pData[1] = 1;
+    mWorkArgs[0]->UnmapBufferData(pData);
+    
+    int inputArgIndex = 0;
+    int outArgIndex = 1;
+    for (int i = 0; i < 4; i++) 
+    {
+        //select lod => clusters
+        ExecuteNodeAndClusterCullPass(commandBuffer, i, mHierarchyBuffer, mWorkArgs[inputArgIndex],
+                                mWorkArgs[outArgIndex], mMainAndPostNodeAndClusterBatches, mGlobalBuffer);
+        inputArgIndex = (inputArgIndex + 1) % 2;
+        outArgIndex = (outArgIndex + 1) % 2;
+    }
+    
+#if 0
 
     //lod => hw + sw => args
     ExecuteHWRasterizePass(commandBuffer, mVisBuffer64, mClusterPageData, mClusterSelectionArgs1,
@@ -125,6 +144,8 @@ void NaniteFrameWork::RenderFrame()
 
     // => visBuffer64 (R32G32_UINT)
     ExecuteVisualizationPass(commandBuffer, mVisBuffer64, mVisBuffer); //visBuffer64 => visualize buffer(R32G32B32A32_FLOAT)
+    
+#endif
 
     //=> visualize buffer
     //swap chain
