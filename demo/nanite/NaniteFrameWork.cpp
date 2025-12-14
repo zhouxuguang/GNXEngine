@@ -15,14 +15,6 @@
 #include "Runtime/BaseLib/include/BaseLib.h"
 #include "Runtime/BaseLib/include/LogService.h"
 
-struct GlobaleData
-{
-    mathutil::Matrix4x4f modelMatrix;
-    uint32_t misc0[4];
-    float Nanite_ViewOrigin[4];
-    float Nanite_ViewForward[4];
-};
-
 static int sCurrentMipLevelIndex = 0;
 //0, 1, 2, 3, 4, 5, 6, 7, 8, 10
 static uint32_t mipLevels[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 10};
@@ -83,9 +75,8 @@ void NaniteFrameWork::Resize(uint32_t width, uint32_t height)
     cameraPtr->LookAt(mathutil::Vector3f(330.0f, 330.0f, -330.0f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
     cameraPtr->SetLens(60, float(width) / height, 0.1f, 1000.f);
 
-    GlobaleData globalData;
-    globalData.modelMatrix = mathutil::Matrix4x4f::CreateRotation(0, 1, 0, -90) * mathutil::Matrix4x4f::CreateRotation(1, 0, 0, 180);
-    globalData.misc0[0] = mipLevels[sCurrentMipLevelIndex];
+    mGlobalData.modelMatrix = mathutil::Matrix4x4f::CreateRotation(0, 1, 0, -90) * mathutil::Matrix4x4f::CreateRotation(1, 0, 0, 180);
+    mGlobalData.misc0[0] = mipLevels[sCurrentMipLevelIndex];
 
     mathutil::Matrix4x4f projectionMatrix = cameraPtr->GetProjectionMatrix();
 
@@ -93,18 +84,18 @@ void NaniteFrameWork::Resize(uint32_t width, uint32_t height)
     float lodScaleHW = (0.5f * projectionMatrix[1][1] * float(height)) / 32.0f; // ue5 CVAR
 
     mathutil::Vector3f camPos = cameraPtr->GetPosition();
-    globalData.Nanite_ViewOrigin[0] = camPos.x;
-    globalData.Nanite_ViewOrigin[1] = camPos.y;
-    globalData.Nanite_ViewOrigin[2] = camPos.z;
-    globalData.Nanite_ViewOrigin[3] = lodScale;
+    mGlobalData.Nanite_ViewOrigin[0] = camPos.x;
+    mGlobalData.Nanite_ViewOrigin[1] = camPos.y;
+    mGlobalData.Nanite_ViewOrigin[2] = camPos.z;
+    mGlobalData.Nanite_ViewOrigin[3] = lodScale;
     
     mathutil::Vector3f viewDirection = cameraPtr->GetViewDirection();
-    globalData.Nanite_ViewForward[0] = viewDirection.x;
-    globalData.Nanite_ViewForward[1] = viewDirection.y;
-    globalData.Nanite_ViewForward[2] = viewDirection.z;
-    globalData.Nanite_ViewForward[3] = lodScaleHW;
+    mGlobalData.Nanite_ViewForward[0] = viewDirection.x;
+    mGlobalData.Nanite_ViewForward[1] = viewDirection.y;
+    mGlobalData.Nanite_ViewForward[2] = viewDirection.z;
+    mGlobalData.Nanite_ViewForward[3] = lodScaleHW;
 
-    mGlobalBuffer->SetData(&globalData, 0, sizeof(GlobaleData));
+    mGlobalBuffer->SetData(&mGlobalData, 0, sizeof(GlobaleData));
     //mGlobalBuffer->SetName("Nanite.GlobalBuffer");
 }
 
@@ -213,10 +204,8 @@ bool NaniteFrameWork::OnKeyUp(GNXEngine::KeyReleasedEvent& e)
         sCurrentMipLevelIndex = 0;
     }
     
-    GlobaleData globalData;
-    globalData.modelMatrix = mathutil::Matrix4x4f::CreateRotation(0, 1, 0, -90) * mathutil::Matrix4x4f::CreateRotation(1, 0, 0, 180);
-    globalData.misc0[0] = mipLevels[sCurrentMipLevelIndex];
-    mGlobalBuffer->SetData(&globalData, 0, sizeof(GlobaleData));
+    mGlobalData.misc0[0] = mipLevels[sCurrentMipLevelIndex];
+    mGlobalBuffer->SetData(&mGlobalData, 0, sizeof(GlobaleData));
 
     return true;
 }

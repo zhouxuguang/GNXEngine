@@ -11,6 +11,15 @@
 #include "Runtime/GNXEngine/include/AppFrameWork.h"
 #include "Runtime/RenderSystem/include/SceneManager.h"
 #include "Runtime/GNXEngine/include/Events/KeyEvent.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
+
+struct GlobaleData
+{
+	mathutil::Matrix4x4f modelMatrix;
+	uint32_t misc0[4];
+	float Nanite_ViewOrigin[4];
+	float Nanite_ViewForward[4];
+};
 
 class NaniteFrameWork : public GNXEngine::AppFrameWork
 {
@@ -39,6 +48,8 @@ private:
     RenderCore::UniformBufferPtr mGlobalBuffer = nullptr;
     RenderCore::ComputeBufferPtr mWorkArgs[2];
     RenderCore::ComputeBufferPtr mQueueState = nullptr;
+
+    GlobaleData mGlobalData;
 
 private:
     RenderCore::ComputeBufferPtr InitNaniteMeshBuffer();
