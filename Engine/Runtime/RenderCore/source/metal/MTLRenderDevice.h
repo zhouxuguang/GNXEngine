@@ -46,7 +46,7 @@ public:
     virtual VertexBufferPtr CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const;
     
     //创建计算buffer
-    virtual ComputeBufferPtr CreateComputeBuffer(uint32_t size) const;
+    virtual ComputeBufferPtr CreateComputeBuffer(uint32_t size, StorageMode mode) const;
     
     virtual ComputeBufferPtr CreateComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const;
     

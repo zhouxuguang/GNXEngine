@@ -10,14 +10,20 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-VKComputeBuffer::VKComputeBuffer(VulkanContextPtr context, size_t len) : mContext(context)
+VKComputeBuffer::VKComputeBuffer(VulkanContextPtr context, size_t len, StorageMode mode) : mContext(context)
 {
     VkMemoryPropertyFlags memType = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, StorageModePrivate, len,
-                                      bufferUsage, memType, mBuffer, mAllocation, nullptr);
+    VkBufferUsageFlags bufferUsage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    if (mode == StorageModeShared)
+    {
+        memType = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+        bufferUsage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    }
 
-    mStorageMode = StorageModePrivate;
+    VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, mode, len,
+                                      bufferUsage, memType, mBuffer, mAllocation, nullptr);
+    
+    mStorageMode = mode;
     mBufferLength = (uint32_t)len;
 }
 
@@ -28,7 +34,7 @@ VKComputeBuffer::VKComputeBuffer(VulkanContextPtr context, const void* buffer, s
     if (mode == StorageModeShared)
     {
         memType = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
-        bufferUsage != VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        bufferUsage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     }
 
     VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, mode, size,

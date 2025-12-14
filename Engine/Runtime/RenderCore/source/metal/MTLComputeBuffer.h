@@ -30,22 +30,22 @@ public:
     
     ~MTLComputeBuffer(){}
     
-    virtual uint32_t getBufferLength() const 
+    virtual uint32_t GetBufferLength() const
     {
         return MTLVertexBuffer::GetBufferLength();
     }
     
-    virtual void* mapBufferData() const 
+    virtual void* MapBufferData() const
     {
         return MTLVertexBuffer::MapBufferData();
     }
     
-    virtual void unmapBufferData(void* bufferData) const 
+    virtual void UnmapBufferData(void* bufferData) const
     {
         return MTLVertexBuffer::UnmapBufferData(bufferData);
     }
     
-    virtual bool isValid() const 
+    virtual bool IsValid() const 
     {
         return MTLVertexBuffer::IsValid();
     }

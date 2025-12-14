@@ -52,7 +52,7 @@ public:
      */
     virtual VertexBufferPtr CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const = 0;
     
-    virtual ComputeBufferPtr CreateComputeBuffer(uint32_t size) const = 0;
+    virtual ComputeBufferPtr CreateComputeBuffer(uint32_t size, StorageMode mode = StorageModePrivate) const = 0;
     
     virtual ComputeBufferPtr CreateComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const = 0;
     

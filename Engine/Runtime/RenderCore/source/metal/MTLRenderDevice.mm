@@ -79,9 +79,9 @@ VertexBufferPtr MTLRenderDevice::CreateVertexBufferWithBytes(const void* buffer,
     return vertexBuffer;
 }
 
-ComputeBufferPtr MTLRenderDevice::CreateComputeBuffer(uint32_t size) const
+ComputeBufferPtr MTLRenderDevice::CreateComputeBuffer(uint32_t size, StorageMode mode) const
 {
-    auto vertexBuffer = std::make_shared<MTLComputeBuffer>(mMetalLayer.device, size, StorageModeShared);
+    auto vertexBuffer = std::make_shared<MTLComputeBuffer>(mMetalLayer.device, size, mode);
     return vertexBuffer;
 }
 

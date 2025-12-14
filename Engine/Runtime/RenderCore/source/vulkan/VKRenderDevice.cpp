@@ -148,9 +148,9 @@ VertexBufferPtr VKRenderDevice::CreateVertexBufferWithBytes(const void* buffer, 
     return std::make_shared<VKVertexBuffer>(mVulkanContext, buffer, size, mode);
 }
 
-ComputeBufferPtr VKRenderDevice::CreateComputeBuffer(uint32_t size) const
+ComputeBufferPtr VKRenderDevice::CreateComputeBuffer(uint32_t size, StorageMode mode) const
 {
-    return std::make_shared<VKComputeBuffer>(mVulkanContext, size);
+    return std::make_shared<VKComputeBuffer>(mVulkanContext, size, mode);
 }
 
 ComputeBufferPtr VKRenderDevice::CreateComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const
