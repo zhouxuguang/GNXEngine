@@ -23,6 +23,10 @@ struct GlobaleData
     float Nanite_ViewForward[4];
 };
 
+static int sCurrentMipLevelIndex = 0;
+//0, 1, 2, 3, 4, 5, 6, 7, 8, 10
+static uint32_t mipLevels[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 10};
+
 NaniteFrameWork::NaniteFrameWork(const GNXEngine::WindowProps& props) : GNXEngine::AppFrameWork(props)
 {
 }
@@ -81,11 +85,11 @@ void NaniteFrameWork::Resize(uint32_t width, uint32_t height)
 
     GlobaleData globalData;
     globalData.modelMatrix = mathutil::Matrix4x4f::CreateRotation(0, 1, 0, -90) * mathutil::Matrix4x4f::CreateRotation(1, 0, 0, 180);
-    globalData.misc0[0] = 0;
+    globalData.misc0[0] = mipLevels[sCurrentMipLevelIndex];
 
     mathutil::Matrix4x4f projectionMatrix = cameraPtr->GetProjectionMatrix();
 
-    float lodScale = (0.5f * projectionMatrix[1][1] * float(width)) / 1.0f ;
+    float lodScale = (0.5f * projectionMatrix[1][1] * float(width)) / 1.0f;
     float lodScaleHW = (0.5f * projectionMatrix[1][1] * float(height)) / 32.0f; // ue5 CVAR
 
     mathutil::Vector3f camPos = cameraPtr->GetPosition();
@@ -125,24 +129,32 @@ void NaniteFrameWork::RenderFrame()
     
     uint32_t* pData = (uint32_t*)mWorkArgs[0]->MapBufferData();
     pData[0] = 0;
-    pData[1] = 1;
+    pData[1] = 0;
+    pData[2] = 0;
+    pData[3] = 0;
+    pData[5] = 0;
+    pData[6] = 1;
     mWorkArgs[0]->UnmapBufferData(pData);
+    
+    RenderCore::ComputeBufferPtr lastNodeAndClusterCullOutPut = nullptr;
     
     int inputArgIndex = 0;
     int outArgIndex = 1;
-    for (int i = 0; i < 4; i++) 
+    for (int i = 0; i < 4; i++)
     {
         //select lod => clusters
         ExecuteNodeAndClusterCullPass(commandBuffer, i, mHierarchyBuffer, mWorkArgs[inputArgIndex],
                                 mWorkArgs[outArgIndex], mQueueState, mMainAndPostNodeAndClusterBatches, mGlobalBuffer);
+        
+        lastNodeAndClusterCullOutPut = mWorkArgs[outArgIndex];
         inputArgIndex = (inputArgIndex + 1) % 2;
         outArgIndex = (outArgIndex + 1) % 2;
     }
     
-#if 0
+#if 1
 
     //lod => hw + sw => args
-    ExecuteHWRasterizePass(commandBuffer, mVisBuffer64, mClusterPageData, mClusterSelectionArgs1,
+    ExecuteHWRasterizePass(commandBuffer, mVisBuffer64, mClusterPageData, lastNodeAndClusterCullOutPut,
                            mMainAndPostNodeAndClusterBatches, mGlobalBuffer, 1400, 480);
 
     // => visBuffer64 (R32G32_UINT)
@@ -197,9 +209,6 @@ RenderCore::RCTexture2DPtr NaniteFrameWork::InitVisBuffer64()
 
 bool NaniteFrameWork::OnKeyUp(GNXEngine::KeyReleasedEvent& e)
 {
-    static int sCurrentMipLevelIndex = 9;
-    //0, 1, 2, 3, 4, 5, 6, 7, 8, 10
-    static uint32_t mipLevels[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 10};
     if (e.GetKeyCode() == GNXEngine::Up)
     {
         sCurrentMipLevelIndex ++;

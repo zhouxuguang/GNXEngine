@@ -179,6 +179,7 @@ uint VisitBVHNode(FHierarchyNodeSlice hierarchyNodeSlice,
 [numthreads(1, 1, 1)]//1 -> wave : 32 
 void CS()
 {
+	uint totalClusterCount = 0u;
     //hierarchy node -> cluster :index
     //hierarchy node -> child node -> OutResult
     //0->1091 : 1092 uint => 52 uint bvh node => 4 child [13 uint]
@@ -187,13 +188,15 @@ void CS()
 	nextClusterSelectionArgs.mNextArgOffset = 0u;
 	nextClusterSelectionArgs.mNextArgCount = 0u;
 
-	uint clusterOffset = QueueState[0].mClusterWriteOffset;
-	uint totalClusterCount = 0u;
-
-	uint currentStartIndexDataOffset = CurrentIndirectArgs.Load(0);
-	uint currentArgCount = CurrentIndirectArgs.Load(4);
-
+	uint dataOffset = 20u;
+	uint currentArgOffset = 0u;
+	uint currentStartIndexDataOffset = CurrentIndirectArgs.Load(dataOffset);
+	uint currentArgCount = CurrentIndirectArgs.Load(dataOffset + 4);
+	//cluster => uint2(pageIndex,clusterIndex) => 8byte
+	
+	//OutMainAndPostNodeAndClusterBatches:c0,c1 ... cn,1024 => node, 0,1,10,18,20
 	uint currentWorkIndirectNodeOffset = currentStartIndexDataOffset + currentArgCount;
+	uint clusterOffset = QueueState[0].mClusterWriteOffset;
 
 	for (uint i = 0; i < currentArgCount; i ++)
 	{
@@ -215,6 +218,7 @@ void CS()
 	QueueState[0].mTotalClusterCount = clusterOffset;
 	QueueState[0].mClusterWriteOffset = clusterOffset;
 
-	OutResult.Store4(0, uint4(currentStartIndexDataOffset + currentArgCount,
+	OutResult.Store4(0, uint4(384u, clusterOffset, 0u, 0u));
+	OutResult.Store4(dataOffset, uint4(currentStartIndexDataOffset + currentArgCount,
 		currentWorkIndirectNodeOffset - currentStartIndexDataOffset - currentArgCount, 0u, 0u));
 }
