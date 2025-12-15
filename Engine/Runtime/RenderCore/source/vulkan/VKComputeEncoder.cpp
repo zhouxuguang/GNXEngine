@@ -80,6 +80,11 @@ void VKComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.range = VK_WHOLE_SIZE;
     bufferInfo.buffer = vkComputeBuffer->GetBuffer();
+
+    if (index == 2)
+    {
+        mBuffer = bufferInfo.buffer;
+    }
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
     VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(VK_NULL_HANDLE,
@@ -258,6 +263,38 @@ void VKComputeEncoder::EndEncode()
             VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });   
     }
     mSetImages.clear();
+
+	/*typedef struct VkBufferMemoryBarrier2 {
+		VkStructureType          sType;
+		const void* pNext;
+		VkPipelineStageFlags2    srcStageMask;
+		VkAccessFlags2           srcAccessMask;
+		VkPipelineStageFlags2    dstStageMask;
+		VkAccessFlags2           dstAccessMask;
+		uint32_t                 srcQueueFamilyIndex;
+		uint32_t                 dstQueueFamilyIndex;
+		VkBuffer                 buffer;
+		VkDeviceSize             offset;
+		VkDeviceSize             size;
+	} VkBufferMemoryBarrier2;*/
+
+    if (mBuffer != VK_NULL_HANDLE)
+    {
+        VkBufferMemoryBarrier2 bufferMemoryBarrier2 = {};
+        bufferMemoryBarrier2.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR;
+        bufferMemoryBarrier2.buffer = mBuffer;
+        bufferMemoryBarrier2.size = VK_WHOLE_SIZE;
+        bufferMemoryBarrier2.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR;
+        bufferMemoryBarrier2.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR;
+        bufferMemoryBarrier2.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT_KHR;
+        bufferMemoryBarrier2.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT_KHR;
+        VkDependencyInfo DependencyInfo = {};
+		DependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+		DependencyInfo.bufferMemoryBarrierCount = 1;
+		DependencyInfo.pBufferMemoryBarriers = &bufferMemoryBarrier2;
+
+        vkCmdPipelineBarrier2KHR(mCommandBuffer, &DependencyInfo);
+    }
 }
 
 NAMESPACE_RENDERCORE_END

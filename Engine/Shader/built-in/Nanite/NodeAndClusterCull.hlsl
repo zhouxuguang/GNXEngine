@@ -159,7 +159,7 @@ uint VisitBVHNode(FHierarchyNodeSlice hierarchyNodeSlice,
 			nextClusterSelectionArgs.mNextArgOffset = nodeOffset;
 		}
 
-		OutMainAndPostNodeAndClusterBatches.Store(nodeOffset * 4 + 1024 * 8, hierarchyNodeSlice.ChildStartReference);
+		OutMainAndPostNodeAndClusterBatches.Store(nodeOffset * 4 + 8192, hierarchyNodeSlice.ChildStartReference);
 		nextClusterSelectionArgs.mNextArgCount ++;
 		nodeOffset ++;
 	}
@@ -200,7 +200,7 @@ void CS()
 
 	for (uint i = 0; i < currentArgCount; i ++)
 	{
-		uint currentNodeIndex = OutMainAndPostNodeAndClusterBatches.Load(2048 * 4 + (currentStartIndexDataOffset + i) * 4);
+		uint currentNodeIndex = OutMainAndPostNodeAndClusterBatches.Load(8192 + (currentStartIndexDataOffset + i) * 4);
 
 		FHierarchyNodeSlice hierarchyNodeSlice = GetHierarchyNodeSlice(HierarchyBuffer, currentNodeIndex, 0u);
 		totalClusterCount += VisitBVHNode(hierarchyNodeSlice, nextClusterSelectionArgs, currentWorkIndirectNodeOffset, clusterOffset);
@@ -220,5 +220,5 @@ void CS()
 
 	OutResult.Store4(0, uint4(384u, clusterOffset, 0u, 0u));
 	OutResult.Store4(dataOffset, uint4(currentStartIndexDataOffset + currentArgCount,
-		currentWorkIndirectNodeOffset - currentStartIndexDataOffset - currentArgCount, 0u, 0u));
+		nextClusterSelectionArgs.mNextArgCount, 0u, 0u));
 }

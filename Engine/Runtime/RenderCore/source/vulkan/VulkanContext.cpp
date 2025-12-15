@@ -400,6 +400,7 @@ bool CreateVirtualDevice(VulkanContext& context)
     deviceExtensionNames.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     deviceExtensionNames.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
     deviceExtensionNames.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    deviceExtensionNames.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
 
     VkPhysicalDeviceHostImageCopyFeaturesEXT hostImageCopyFeatures = {};
     hostImageCopyFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES_EXT;
