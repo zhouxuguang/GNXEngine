@@ -1,5 +1,5 @@
 //
-//  Header.h
+//  Input.h
 //  GNXEngine
 //
 //  Created by zhouxuguang on 2025/11/2.
@@ -14,7 +14,7 @@
 NAMESPACE_GNXENGINE_BEGIN
 
 // 输入系统，轮询系统的键盘和鼠标消息
-class Input
+class GNXENGINE_API Input
 {
 public:
     static bool IsKeyPressed(KeyCode key);

@@ -15,6 +15,7 @@
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
 #include "Runtime/BaseLib/include/LogService.h"
+#include "Runtime/GNXEngine/include/Input.h"
 
 static int sCurrentMipLevelIndex = 0;
 //0, 1, 2, 3, 4, 5, 6, 7, 8, 10
@@ -114,6 +115,34 @@ void NaniteFrameWork::RenderFrame()
     
     RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
     sceneManager->Update(deltaTime);
+
+    {
+		// WS按键前后移动
+		int moveState = 0;
+		if (GNXEngine::Input::IsKeyPressed(GNXEngine::W))
+		{
+			moveState = 1;
+		}
+		else if (GNXEngine::Input::IsKeyPressed(GNXEngine::S))
+		{
+			moveState = 2;
+		}
+
+		float moveSpeed = 100.0f;
+        RenderSystem::CameraPtr cameraPtr = sceneManager->getCamera("MainCamera");
+        mathutil::Vector3f camPossition = cameraPtr->GetPosition();
+
+		if (moveState == 1)
+		{
+            camPossition += cameraPtr->GetViewDirection() * moveSpeed * deltaTime;
+            cameraPtr->SetPosition(camPossition);
+		}
+		else if (moveState == 2)
+		{
+			camPossition -= cameraPtr->GetViewDirection() * moveSpeed * deltaTime;
+			cameraPtr->SetPosition(camPossition);
+		}
+    }
     
     RenderCore::CommandBufferPtr commandBuffer = mRenderDevice->CreateCommandBuffer();
     if (!commandBuffer)
