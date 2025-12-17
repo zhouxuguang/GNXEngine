@@ -1,5 +1,7 @@
 add_executable(nanite 
-main.cpp 
+main.cpp
+ClusterCull.cpp
+ClusterCull.h
 NaniteFrameWork.cpp
 NaniteFrameWork.h
 RasterClear.cpp

@@ -6,6 +6,7 @@
 //
 
 #include "NaniteFrameWork.h"
+#include "ClusterCull.h"
 #include "RasterClear.h"
 #include "NodeAndClusterCull.h"
 #include "SwapChain.h"
@@ -47,9 +48,13 @@ void NaniteFrameWork::Initlize()
     
     mQueueState = mRenderDevice->CreateComputeBuffer(8);
     mQueueState->SetName("QueueState");
+
+    mVisibleClustersSWHW = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
+    mVisibleClustersSWHW->SetName("Nanite.VisibleClustersSWHW");
     
     InitRasterClearPass(mRenderDevice);
     InitNodeAndClusterCullPass(mRenderDevice);
+    InitClusterCullPass(mRenderDevice);
 
     mClusterPageData = InitNaniteMeshBuffer();
     mVisBuffer = InitVisualizeBuffer();
@@ -133,9 +138,16 @@ void NaniteFrameWork::RenderFrame()
         outArgIndex = (outArgIndex + 1) % 2;
     }
 
+    // mMainAndPostNodeAndClusterBatches
+    // lastNodeAndClusterCullOutPut 
+    // mQueueState
+    // mVisibleClustersSWHW
+    ExecuteClusterCullPass(commandBuffer, mMainAndPostNodeAndClusterBatches, lastNodeAndClusterCullOutPut, 
+        mQueueState, mVisibleClustersSWHW, mGlobalBuffer);
+
     //lod => hw + sw => args
     ExecuteHWRasterizePass(commandBuffer, mVisBuffer64, mClusterPageData, lastNodeAndClusterCullOutPut,
-                           mMainAndPostNodeAndClusterBatches, mGlobalBuffer, 1400, 480);
+        mVisibleClustersSWHW, mGlobalBuffer, 1400, 480);
 
     // => visBuffer64 (R32G32_UINT)
     ExecuteVisualizationPass(commandBuffer, mVisBuffer64, mVisBuffer); //visBuffer64 => visualize buffer(R32G32B32A32_FLOAT)

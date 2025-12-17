@@ -48,6 +48,7 @@ private:
     RenderCore::UniformBufferPtr mGlobalBuffer = nullptr;
     RenderCore::ComputeBufferPtr mWorkArgs[2];
     RenderCore::ComputeBufferPtr mQueueState = nullptr;
+    RenderCore::ComputeBufferPtr mVisibleClustersSWHW = nullptr;
 
     GlobaleData mGlobalData;
 
