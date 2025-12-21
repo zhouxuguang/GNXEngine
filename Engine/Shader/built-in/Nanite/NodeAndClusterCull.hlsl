@@ -30,6 +30,8 @@ cbuffer GlobalData
 #define NANITE_MAX_GROUP_PARTS_BITS							5
 #define NANITE_MAX_RESOURCE_PAGES_BITS						16 // 2GB of 32kb root pages or 4GB of 64kb streaming pages
 
+#define USE_MANUAL_LOD_LEVEL 0u
+
 struct FHierarchyNodeSlice
 {
 	float4	LODBounds;
@@ -117,6 +119,34 @@ float2 GetProjectionScales(float4 sphere)
 	}
 	//translated world
 	//min z(0.1) * 0.1,max(0.9) z * 100.0
+
+	float3 center = sphere.xyz;
+	float radius = sphere.w;
+	
+	float distanceToSphereCenterSq = dot(center, center);
+	float distanceToSphereCenter = sqrt(distanceToSphereCenterSq);
+	
+	float zVS = dot(Nanite_ViewForward.xyz, center);//center
+	
+	float xVSSq = distanceToSphereCenterSq - zVS * zVS;
+	float xVS = sqrt(max(0.0f, xVSSq));
+
+	float distanceToTangentPointSq = distanceToSphereCenterSq - radius * radius;
+	float distanceToTangentPoint = sqrt(max(0.0f, distanceToTangentPointSq));
+
+	float sinTheta = radius / distanceToSphereCenter;
+	float cosTheta = distanceToTangentPoint / distanceToSphereCenter;
+
+	float a = (-sinTheta * xVS + cosTheta * zVS) / distanceToSphereCenter;
+	float b = (sinTheta * xVS + cosTheta * zVS) / distanceToSphereCenter;
+
+	float minZ = max(0.1f, zVS - radius);
+	float maxZ = max(0.1f, zVS + radius);
+	
+	if (zVS + radius > 0.1f)
+	{
+		return float2(minZ * a, maxZ * b);
+	}
 	
 	return float2(0.0f, 0.0f);
 }
@@ -151,7 +181,12 @@ uint VisitBVHNode(FHierarchyNodeSlice hierarchyNodeSlice,
 	inout uint nodeOffset, inout uint clusterOffset)
 {
 	bool bShouldVisitChild = ShouldVisitChild(hierarchyNodeSlice);
-	if (!hierarchyNodeSlice.bLeaf && hierarchyNodeSlice.ChildStartReference != 0u)
+	if (USE_MANUAL_LOD_LEVEL == 1u)
+	{
+		bShouldVisitChild = true;
+	}
+
+	if (bShouldVisitChild && !hierarchyNodeSlice.bLeaf && hierarchyNodeSlice.ChildStartReference != 0u)
 	{
 		if (!nextClusterSelectionArgs.mIsNextArgOffsetInited)
 		{
@@ -166,10 +201,21 @@ uint VisitBVHNode(FHierarchyNodeSlice hierarchyNodeSlice,
 
 	else
 	{
-		if (Misc0.x == hierarchyNodeSlice.NumPages)
+		if (bShouldVisitChild)
 		{
-			StoreCluster(clusterOffset, hierarchyNodeSlice);
-			return hierarchyNodeSlice.NumChildren;
+			if (USE_MANUAL_LOD_LEVEL == 1u)
+			{
+				if (Misc0.x == hierarchyNodeSlice.NumPages)
+				{
+					StoreCluster(clusterOffset, hierarchyNodeSlice);
+					return hierarchyNodeSlice.NumChildren;
+				}
+			}
+			else
+			{
+				StoreCluster(clusterOffset, hierarchyNodeSlice);
+				return hierarchyNodeSlice.NumChildren;
+			}
 		}
 	}
 
