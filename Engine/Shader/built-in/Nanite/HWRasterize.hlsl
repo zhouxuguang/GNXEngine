@@ -22,6 +22,36 @@ cbuffer GlobalData
 	float4 Nanite_ViewForward;//=>FNaniteView.ViewForward
 }
 
+struct ClusterInfo
+{
+	uint BaseAddress;
+	uint IndexDataOffset;
+	uint IndexCount;
+	float4 LODBounds;//bounding sphere
+	float LODError;//
+	float EdgeLength;//
+};
+
+ClusterInfo GetClusterinfo(uint inPageIndex, uint inClusterIndex)
+{
+	uint pageBaseAddressOffset = ClusterPageData.Load(4u+inPageIndex*4u);
+	uint clusterCountOnPage = ClusterPageData.Load(pageBaseAddressOffset);//4u
+	uint clusterDataOffset = ClusterPageData.Load(pageBaseAddressOffset+4u+4u*inClusterIndex);
+	uint clusterBaseAddressOffset = pageBaseAddressOffset+4u+clusterCountOnPage*4u+clusterDataOffset;
+	uint clusterIndexDataOffset = ClusterPageData.Load(clusterBaseAddressOffset);
+	uint clusterIndexCount=ClusterPageData.Load(clusterBaseAddressOffset+4u);
+	uint4 clusterLODBounds=ClusterPageData.Load4(clusterBaseAddressOffset+8u);
+	uint clusterLODErrorAndEdgeLength=ClusterPageData.Load(clusterBaseAddressOffset+24u);
+	ClusterInfo clusterInfo;
+	clusterInfo.BaseAddress=clusterBaseAddressOffset;
+	clusterInfo.IndexDataOffset=clusterIndexDataOffset;
+	clusterInfo.IndexCount=clusterIndexCount;
+	clusterInfo.LODBounds=asfloat(clusterLODBounds);
+	clusterInfo.LODError=f16tof32(clusterLODErrorAndEdgeLength);
+	clusterInfo.EdgeLength=f16tof32(clusterLODErrorAndEdgeLength>>16);
+	return clusterInfo;
+}
+
 VSOut VS(uint vertexID : SV_VertexID, uint VisibleIndex : SV_InstanceID)
 {
 	VSOut Out;
@@ -30,24 +60,31 @@ VSOut VS(uint vertexID : SV_VertexID, uint VisibleIndex : SV_InstanceID)
 	uint pageIndex = packedCluster.x;
 	uint clusterIndex = packedCluster.y;
 
-	uint pageCount = ClusterPageData.Load(0);
-	uint pageBaseAddressOffset = ClusterPageData.Load(4 + pageIndex * 4);    // page的基地址
-	uint clusterCountOnPage = ClusterPageData.Load(pageBaseAddressOffset);   // page中cluster的个数
-	uint clusterDataOffset = ClusterPageData.Load(pageBaseAddressOffset + 4 + clusterIndex * 4);   // cluster数据的局部偏移
-	uint clusterBaseAddressOffset = pageBaseAddressOffset + 4 + clusterCountOnPage * 4 + clusterDataOffset;  // cluster数据的基地址
+	// uint pageCount = ClusterPageData.Load(0);
+	// uint pageBaseAddressOffset = ClusterPageData.Load(4 + pageIndex * 4);    // page的基地址
+	// uint clusterCountOnPage = ClusterPageData.Load(pageBaseAddressOffset);   // page中cluster的个数
+	// uint clusterDataOffset = ClusterPageData.Load(pageBaseAddressOffset + 4 + clusterIndex * 4);   // cluster数据的局部偏移
+	// uint clusterBaseAddressOffset = pageBaseAddressOffset + 4 + clusterCountOnPage * 4 + clusterDataOffset;  // cluster数据的基地址
 
-	uint clusterIndexOffset = ClusterPageData.Load(clusterBaseAddressOffset);   // 1112
-	uint clusterIndexCount = ClusterPageData.Load(clusterBaseAddressOffset + 4); // 378
+	// uint clusterIndexOffset = ClusterPageData.Load(clusterBaseAddressOffset);   // 1112
+	// uint clusterIndexCount = ClusterPageData.Load(clusterBaseAddressOffset + 4); // 378
 
-	uint currentVertexIndexOffset = clusterBaseAddressOffset + clusterIndexOffset;
-	uint currentVertexIndexDataOffset = currentVertexIndexOffset + vertexID * 4;
+	// uint currentVertexIndexOffset = clusterBaseAddressOffset + clusterIndexOffset;
+	// uint currentVertexIndexDataOffset = currentVertexIndexOffset + vertexID * 4;
+	// uint currentVertexIndex = ClusterPageData.Load(currentVertexIndexDataOffset);
+	// float3 pos = asfloat(ClusterPageData.Load3(clusterBaseAddressOffset + 8 + currentVertexIndex * 12));
+
+	ClusterInfo clusterInfo=GetClusterinfo(pageIndex, clusterIndex);
+
+	uint currentVertexIndexOffset = clusterInfo.BaseAddress+clusterInfo.IndexDataOffset;
+	uint currentVertexIndexDataOffset = currentVertexIndexOffset + vertexID * 4u;
 	uint currentVertexIndex = ClusterPageData.Load(currentVertexIndexDataOffset);
-	float3 pos = asfloat(ClusterPageData.Load3(clusterBaseAddressOffset + 8 + currentVertexIndex * 12));
+	float3 positionMS = asfloat(ClusterPageData.Load3(clusterInfo.BaseAddress + 28u + currentVertexIndex * 12u));
 
 	Out.Position = float4(0.0f, 0.0f, 0.0f, 1.0f);
-	if (vertexID < clusterIndexCount)
+	if (vertexID < clusterInfo.IndexCount)
 	{
-		float4 posW = float4(pos, 1.0);
+		float4 posW = float4(positionMS, 1.0);
 		posW = mul(posW, MATRIX_Model);
 		posW = mul(posW, MATRIX_V);
 		posW = mul(posW, MATRIX_P);
