@@ -5,7 +5,7 @@
 //  Created by zhouxuguang on 2025/11/15.
 //
 
-#include "NodeAndClusterCull.h"
+#include "ClusterCull.h"
 #include "Runtime/RenderSystem/include/SceneManager.h"
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 
@@ -22,7 +22,7 @@ void InitClusterCullPass(RenderCore::RenderDevicePtr renderDevice)
 void ExecuteClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
                                  RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
                                  RenderCore::ComputeBufferPtr workArgs,
-                                 RenderCore::ComputeBufferPtr queueState,
+                                 RenderCore::ComputeBufferPtr clusterPageData,
                                  RenderCore::ComputeBufferPtr outVisibleClustersSWHW,
                                  RenderCore::UniformBufferPtr globalBuffer)
 {
@@ -32,10 +32,13 @@ void ExecuteClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
     ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
     computeEncoder->SetComputePipeline(sPSO);
     computeEncoder->SetBuffer(mainAndPostNodeAndClusterBatches, 0);
-    computeEncoder->SetBuffer(workArgs, 1);
-    //computeEncoder->SetBuffer(queueState, 2);
-    computeEncoder->SetBuffer(outVisibleClustersSWHW, 2);
-    //computeEncoder->SetUniformBuffer("GlobalData", globalBuffer);
+    computeEncoder->SetBuffer(clusterPageData, 1);
+    computeEncoder->SetBuffer(workArgs, 2);
+    computeEncoder->SetBuffer(outVisibleClustersSWHW, 3);
+
+    computeEncoder->SetUniformBuffer("GlobalData", globalBuffer);
+    RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
+    computeEncoder->SetUniformBuffer("cbPerCamera", sceneManager->GetRenderInfo().cameraUBO);
 
     computeEncoder->Dispatch(1, 1, 1);
 

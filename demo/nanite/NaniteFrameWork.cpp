@@ -142,6 +142,18 @@ void NaniteFrameWork::RenderFrame()
 			camPossition -= cameraPtr->GetViewDirection() * moveSpeed * deltaTime;
 			cameraPtr->SetPosition(camPossition);
 		}
+
+		mathutil::Vector3f camPos = cameraPtr->GetPosition();
+		mGlobalData.Nanite_ViewOrigin[0] = camPos.x;
+		mGlobalData.Nanite_ViewOrigin[1] = camPos.y;
+		mGlobalData.Nanite_ViewOrigin[2] = camPos.z;
+
+		mathutil::Vector3f viewDirection = cameraPtr->GetViewDirection();
+		mGlobalData.Nanite_ViewForward[0] = viewDirection.x;
+		mGlobalData.Nanite_ViewForward[1] = viewDirection.y;
+		mGlobalData.Nanite_ViewForward[2] = viewDirection.z;
+
+		mGlobalBuffer->SetData(&mGlobalData, 0, sizeof(GlobaleData));
     }
     
     RenderCore::CommandBufferPtr commandBuffer = mRenderDevice->CreateCommandBuffer();
@@ -172,7 +184,7 @@ void NaniteFrameWork::RenderFrame()
     // mQueueState
     // mVisibleClustersSWHW
     ExecuteClusterCullPass(commandBuffer, mMainAndPostNodeAndClusterBatches, lastNodeAndClusterCullOutPut, 
-        mQueueState, mVisibleClustersSWHW, mGlobalBuffer);
+        mClusterPageData, mVisibleClustersSWHW, mGlobalBuffer);
 
     //lod => hw + sw => args
     ExecuteHWRasterizePass(commandBuffer, mVisBuffer64, mClusterPageData, lastNodeAndClusterCullOutPut,

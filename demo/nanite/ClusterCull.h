@@ -18,7 +18,7 @@ void InitClusterCullPass(RenderCore::RenderDevicePtr renderDevice);
 void ExecuteClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
 	RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
 	RenderCore::ComputeBufferPtr workArgs,
-	RenderCore::ComputeBufferPtr queueState,
+	RenderCore::ComputeBufferPtr clusterPageData,
 	RenderCore::ComputeBufferPtr outVisibleClustersSWHW,
 	RenderCore::UniformBufferPtr globalBuffer);
 
