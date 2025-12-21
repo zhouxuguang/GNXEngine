@@ -10,7 +10,7 @@
 
 NAMESPACE_IMAGECODEC_BEGIN
 
-class ImageDecoder
+class IMAGECODEC_API ImageDecoder
 {
 public:
 

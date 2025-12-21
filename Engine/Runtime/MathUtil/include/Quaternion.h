@@ -88,9 +88,6 @@ public:
     
     //根据观察方向和向上方向确定旋转四元数
     static Quaternion LookRotation(const Vector3<T>& direcion, const Vector3<T>& up);
-    
-    //
-    static const Quaternion IDENTITY;
 };
 
 typedef Quaternion<float> Quaternionf;

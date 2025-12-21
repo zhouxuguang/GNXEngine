@@ -18,7 +18,7 @@ USING_NS_MATHUTIL
 NS_RENDERSYSTEM_BEGIN
 
 template <typename T>
-class OrientedBoundingBox
+class RENDERSYSTEM_API OrientedBoundingBox
 {
 public:
     /**

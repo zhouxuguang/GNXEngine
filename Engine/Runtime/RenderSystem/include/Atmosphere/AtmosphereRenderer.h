@@ -12,7 +12,7 @@
 
 NS_RENDERSYSTEM_BEGIN
 
-AtmosphereModel *CreateAtmoModel();
+RENDERSYSTEM_API AtmosphereModel *CreateAtmoModel();
 
 NS_RENDERSYSTEM_END
 

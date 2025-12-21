@@ -14,7 +14,7 @@
 
 NAMESPACE_IMAGECODEC_BEGIN
 
-class ImageEncoder
+class IMAGECODEC_API ImageEncoder
 {
 public:
     /**

@@ -14,6 +14,12 @@
 
 #define USING_NS_IMAGECODEC                     using namespace imagecodec;
 
+#ifdef _WIN32
+	#define IMAGECODEC_API __declspec(dllexport)
+#else
+	#define IMAGECODEC_API __attribute__((visibility("default")))
+#endif
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>

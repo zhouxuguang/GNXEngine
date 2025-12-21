@@ -51,8 +51,18 @@
 
 #ifdef __GNUC__
     #define MATH3D_API __attribute__((dllexport))
+#ifdef MATH3D_EXPORTS
+    #define MATH3D_EXTERN
+#else
+    #define MATH3D_EXTERN extern
+#endif
 #else
     #define MATH3D_API __declspec(dllexport)
+#ifdef MATH3D_EXPORTS
+    #define MATH3D_EXTERN
+#else
+    #define MATH3D_EXTERN extern
+#endif
 #endif
 
 #else

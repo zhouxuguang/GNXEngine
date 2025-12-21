@@ -20,7 +20,7 @@ NS_RENDERSYSTEM_BEGIN
  * @brief 轴对齐包围盒
  */
 template <typename T>
-class AxisAlignedBox 
+class RENDERSYSTEM_API AxisAlignedBox
 {
 public:
     /**

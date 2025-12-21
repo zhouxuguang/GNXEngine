@@ -14,7 +14,7 @@
 
 NAMESPACE_IMAGECODEC_BEGIN
 
-class ColorConverter
+class IMAGECODEC_API ColorConverter
 {
 public:
     //rgba32 -> rgb565

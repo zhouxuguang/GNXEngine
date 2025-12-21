@@ -20,7 +20,7 @@ NS_RENDERSYSTEM_BEGIN
  * 射线类
  **/
 template <typename T>
-class Ray
+class RENDERSYSTEM_API Ray
 {
 public:
     /**

@@ -20,7 +20,7 @@ using namespace mathutil;
 
 class SceneNode;
 
-class Component
+class RENDERSYSTEM_API Component
 {
 public:
     Component();

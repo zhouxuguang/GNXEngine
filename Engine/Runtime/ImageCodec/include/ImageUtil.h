@@ -14,7 +14,7 @@
 NAMESPACE_IMAGECODEC_BEGIN
 
 // 图像处理的工具类
-class ImageUtil
+class IMAGECODEC_API ImageUtil
 {
 public:
 	ImageUtil();

@@ -165,11 +165,11 @@ public:
     static Vector3 Lerp(const Vector3& s, const Vector3& e, float t);
 
     //常量向量定义
-	static const Vector3 ZERO;
-	static const Vector3 UNIT_SCALE;
-    static const Vector3 UNIT_X;
-    static const Vector3 UNIT_Y;
-    static const Vector3 UNIT_Z;
+	/*static inline constexpr Vector3 ZERO = Vector3(0, 0, 0);
+	static inline constexpr Vector3 UNIT_SCALE = Vector3(0, 0, 0);
+    static inline constexpr Vector3 UNIT_X = Vector3(0, 0, 0);
+    static inline constexpr Vector3 UNIT_Y = Vector3(0, 0, 0);
+    static inline constexpr Vector3 UNIT_Z = Vector3(0, 0, 0);*/
 };
 
 template <typename T>

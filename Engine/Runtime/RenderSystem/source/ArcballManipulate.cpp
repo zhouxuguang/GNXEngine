@@ -68,7 +68,7 @@ void ArcballManipulate::Update()
     //计算出旋转矩阵
     Matrix4x4f rotateX = Matrix4x4f::CreateRotationX(rotation.x * 57.29577951308232);
     Matrix4x4f rotateY = Matrix4x4f::CreateRotationY(rotation.y * 57.29577951308232);
-    rotation = Vector3f::ZERO;
+    rotation = Vector3f(0, 0, 0);
     Matrix4x4f rotateMatrix = rotateX * rotateY;
     
     // 距离向量

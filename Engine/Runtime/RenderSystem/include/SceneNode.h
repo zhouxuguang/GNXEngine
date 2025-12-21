@@ -29,19 +29,19 @@ public:
     virtual ~SceneNode();
     
     virtual SceneNode * createChildSceneNode(const std::string &name,
-                                             const Vector3f &translate = Vector3f::ZERO,
-                                             const Quaternionf &rotate = Quaternionf::IDENTITY);
+                                             const Vector3f &translate = Vector3f(0, 0, 0),
+                                             const Quaternionf &rotate = Quaternionf(1, 0, 0, 0));
     
     virtual SceneNode * createRendererNode(const std::string &name,
                                            const std::string& filePath,
-                                    const Vector3f &translate = Vector3f::ZERO,
-                                    const Quaternionf &rotate = Quaternionf::IDENTITY,
-                                           const Vector3f &scale = Vector3f::UNIT_SCALE);
+                                    const Vector3f &translate = Vector3f(0, 0, 0),
+                                    const Quaternionf &rotate = Quaternionf(1, 0, 0, 0),
+                                           const Vector3f &scale = Vector3f(1, 1, 1));
     
     void AddSceneNode(SceneNode *pNode,
-               const Vector3f &translate = Vector3f::ZERO,
-               const Quaternionf &rotate = Quaternionf::IDENTITY,
-                      const Vector3f &scale = Vector3f::UNIT_SCALE);
+               const Vector3f &translate = Vector3f(0, 0, 0),
+               const Quaternionf &rotate = Quaternionf(1, 0, 0, 0),
+                      const Vector3f &scale = Vector3f(1, 1, 1));
     
     virtual void attachObject(SceneObject *obj);
     

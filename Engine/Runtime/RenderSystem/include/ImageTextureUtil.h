@@ -18,7 +18,7 @@ USING_NS_IMAGECODEC
 
 NS_RENDERSYSTEM_BEGIN
 
-class ImageTextureUtil
+class RENDERSYSTEM_API ImageTextureUtil
 {
 public:
     static TextureDescriptor getTextureDescriptor(const VImage& image);

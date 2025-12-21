@@ -27,7 +27,7 @@ enum PointSide
     平面定义
  **/
 template<typename T>
-class Plane
+class RENDERSYSTEM_API Plane
 {
 public:
     /**

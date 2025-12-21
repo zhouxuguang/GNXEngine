@@ -23,7 +23,7 @@ NS_RENDERSYSTEM_BEGIN
 using namespace mathutil;
 
 //Mesh，一个mesh中可能有多个submesh
-class Mesh
+class RENDERSYSTEM_API Mesh
 {
 public:
     Mesh();

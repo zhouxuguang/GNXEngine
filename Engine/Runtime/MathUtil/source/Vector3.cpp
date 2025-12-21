@@ -3,20 +3,20 @@
 NS_MATHUTIL_BEGIN
 
 
-template <typename T>
-const Vector3<T> Vector3<T>::ZERO( 0, 0, 0 );
-
-template <typename T>
-const Vector3<T> Vector3<T>::UNIT_SCALE(1, 1, 1);
-
-template <typename T>
-const Vector3<T> Vector3<T>::UNIT_X(1, 0, 0);
-
-template <typename T>
-const Vector3<T> Vector3<T>::UNIT_Y(0, 1, 0);
-
-template <typename T>
-const Vector3<T> Vector3<T>::UNIT_Z(0, 0, 1);
+//template <typename T>
+//const Vector3<T> Vector3<T>::ZERO( 0, 0, 0 );
+//
+//template <typename T>
+//const Vector3<T> Vector3<T>::UNIT_SCALE(1, 1, 1);
+//
+//template <typename T>
+//const Vector3<T> Vector3<T>::UNIT_X(1, 0, 0);
+//
+//template <typename T>
+//const Vector3<T> Vector3<T>::UNIT_Y(0, 1, 0);
+//
+//template <typename T>
+//const Vector3<T> Vector3<T>::UNIT_Z(0, 0, 1);
 
 template <typename T>
 const T Vector3<T>::Length() const
@@ -85,7 +85,7 @@ Vector3<T> Vector3<T>::Refraction(const Vector3& vecLight,const Vector3& vecNorm
 	T k = 1.0 - eta*eta *(1.0-vecNormal.DotProduct(vecLight)*vecNormal.DotProduct(vecLight));
 	if ( k < 0)
 	{
-		return Vector3::ZERO;
+		return Vector3<T>(0, 0, 0);
 	}
 
 	else

@@ -12,8 +12,8 @@ NS_MATHUTIL_BEGIN
 
 #define QUAT_EPSILON 0.000001f
 
-template <typename T>
-const Quaternion<T> Quaternion<T>::IDENTITY(1, 0, 0, 0);
+//template <typename T>
+//const Quaternion<T> Quaternion<T>::IDENTITY(1, 0, 0, 0);
 
 template <typename T>
 Quaternion<T>::Quaternion()

@@ -30,7 +30,7 @@ enum
 
 // 相机视锥体
 template <typename T>
-class Frustum
+class RENDERSYSTEM_API Frustum
 {
 public:
     Frustum();

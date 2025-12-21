@@ -17,7 +17,7 @@
 NS_RENDERSYSTEM_BEGIN
 
 //主要负责静态模型的渲染工作
-class MeshRenderer : public Component
+class RENDERSYSTEM_API MeshRenderer : public Component
 {
 public:
     MeshRenderer();

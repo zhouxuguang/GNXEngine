@@ -80,7 +80,7 @@ struct MipDataSizeAndOffset
     图像数据的类，支持普通纹理和压缩纹理
     通过imageDecoder解析出来的图像数据，左上角的纹理坐标是(0,0)，左下角是(0,1)
  **/
-class VImage
+class IMAGECODEC_API VImage
 {
 public:
     VImage();

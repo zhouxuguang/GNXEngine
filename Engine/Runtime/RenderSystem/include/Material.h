@@ -19,7 +19,7 @@
 
 NS_RENDERSYSTEM_BEGIN
 
-class Material
+class RENDERSYSTEM_API Material
 {
 public:
     Material();
