@@ -67,8 +67,8 @@ namespace fs = std::filesystem;
 
 #include "SysConstant.h"
 
-typedef std::basic_string<uint16_t> utf16String;
-typedef std::basic_string<uint32_t> utf32String;
+typedef std::basic_string<char16_t> utf16String;
+typedef std::basic_string<char32_t> utf32String;
 
 #if defined _WIN32 || defined WINCE
 	#define OS_WINDOWS 1
@@ -196,6 +196,13 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 	#define USE_FUTEX 1
 #elif OS_MACOS
      #define USE_FUTEX 1
+#endif
+
+// Type detection for wchar_t.
+#if OS_WINDOWS
+    #define WCHAR_T_IS_UTF16
+#else
+    #define WCHAR_T_IS_UTF32
 #endif
 
 // 绑定回调函数的方便的宏
