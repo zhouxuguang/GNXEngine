@@ -53,6 +53,9 @@ void ExecuteNodeAndClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
     computeEncoder->SetBuffer(queueState, 3);
     computeEncoder->SetBuffer(mainAndPostNodeAndClusterBatches, 4);
     computeEncoder->SetUniformBuffer("GlobalData", globalBuffer);
+    
+    RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
+    computeEncoder->SetUniformBuffer("cbPerCamera", sceneManager->GetRenderInfo().cameraUBO);
 
     computeEncoder->Dispatch(1, 1, 1);
 
