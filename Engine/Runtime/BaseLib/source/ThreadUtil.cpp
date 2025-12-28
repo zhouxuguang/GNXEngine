@@ -50,7 +50,7 @@ static void SetThreadName(DWORD dwThreadID, const char* threadName)
     }
 }
 
-static char* GetThreadName(void)
+static const char* GetThreadName(void)
 {
     //char* pszName = NULL;
     //__asm
