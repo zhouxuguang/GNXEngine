@@ -9,92 +9,92 @@ NAMESPACE_GNXENGINE_BEGIN
 class FrameGraph;
 class ResourceEdgeBase;
 
-class ResourceNode : public DependencyGraph::Node 
+class ResourceNode : public DependencyGraph::Node
 {
 public:
-    ResourceNode(FrameGraph& fg, FrameGraphHandle h, FrameGraphHandle parent) noexcept;
-    ~ResourceNode() noexcept override;
+	ResourceNode(FrameGraph& fg, FrameGraphHandle h, FrameGraphHandle parent) noexcept;
+	~ResourceNode() noexcept override;
 
-    ResourceNode(ResourceNode const&) = delete;
-    ResourceNode& operator=(ResourceNode const&) = delete;
+	ResourceNode(ResourceNode const&) = delete;
+	ResourceNode& operator=(ResourceNode const&) = delete;
 
-    void addOutgoingEdge(ResourceEdgeBase* edge) noexcept;
-    void setIncomingEdge(ResourceEdgeBase* edge) noexcept;
+	void addOutgoingEdge(ResourceEdgeBase* edge) noexcept;
+	void setIncomingEdge(ResourceEdgeBase* edge) noexcept;
 
-    // constants
-    const FrameGraphHandle resourceHandle;
-
-
-    // is a PassNode writing to this ResourceNode
-    bool hasWriterPass() const noexcept 
-    {
-        return mWriterPass != nullptr;
-    }
-
-    // is any non culled Node (of any type) writing to this ResourceNode
-    bool hasActiveWriters() const noexcept;
-
-    // is the specified PassNode writing to this resource, if so return the corresponding edge.
-    ResourceEdgeBase* getWriterEdgeForPass(PassNode const* node) const noexcept;
-    bool hasWriteFrom(PassNode const* node) const noexcept;
+	// constants
+	const FrameGraphHandle resourceHandle;
 
 
-    // is at least one PassNode reading from this ResourceNode
-    bool hasReaders() const noexcept 
-    {
-        return !mReaderPasses.empty();
-    }
+	// is a PassNode writing to this ResourceNode
+	bool hasWriterPass() const noexcept
+	{
+		return mWriterPass != nullptr;
+	}
 
-    // is any non culled Node (of any type) reading from this ResourceNode
-    bool hasActiveReaders() const noexcept;
+	// is any non culled Node (of any type) writing to this ResourceNode
+	bool hasActiveWriters() const noexcept;
 
-    // is the specified PassNode reading this resource, if so return the corresponding edge.
-    ResourceEdgeBase* getReaderEdgeForPass(PassNode const* node) const noexcept;
+	// is the specified PassNode writing to this resource, if so return the corresponding edge.
+	ResourceEdgeBase* getWriterEdgeForPass(PassNode const* node) const noexcept;
+	bool hasWriteFrom(PassNode const* node) const noexcept;
 
 
-    void resolveResourceUsage(DependencyGraph& graph) noexcept;
+	// is at least one PassNode reading from this ResourceNode
+	bool hasReaders() const noexcept
+	{
+		return !mReaderPasses.empty();
+	}
 
-    // return the parent's handle
-    FrameGraphHandle getParentHandle() noexcept 
-    {
-        return mParentHandle;
-    }
+	// is any non culled Node (of any type) reading from this ResourceNode
+	bool hasActiveReaders() const noexcept;
 
-    // return the parent's node
-    ResourceNode* getParentNode() noexcept;
+	// is the specified PassNode reading this resource, if so return the corresponding edge.
+	ResourceEdgeBase* getReaderEdgeForPass(PassNode const* node) const noexcept;
 
-    // return the oldest ancestor node
-    static ResourceNode* getAncestorNode(ResourceNode* node) noexcept;
 
-    // this is the parent resource we're reading from, as a propagating effect of
-    // us being read from.
-    void setParentReadDependency(ResourceNode* parent) noexcept;
+	void resolveResourceUsage(DependencyGraph& graph) noexcept;
 
-    // this is the parent resource we're writing to, as a propagating effect of
-    // us being writen to.
-    void setParentWriteDependency(ResourceNode* parent) noexcept;
+	// return the parent's handle
+	FrameGraphHandle getParentHandle() noexcept
+	{
+		return mParentHandle;
+	}
 
-    void setForwardResourceDependency(ResourceNode* source) noexcept;
+	// return the parent's node
+	ResourceNode* getParentNode() noexcept;
 
-    // virtuals from DependencyGraph::Node
-    char const* getName() const noexcept override;
+	// return the oldest ancestor node
+	static ResourceNode* getAncestorNode(ResourceNode* node) noexcept;
 
-    static FrameGraphHandle getHandle(ResourceNode const* node) noexcept {
-        return node ? node->resourceHandle : FrameGraphHandle{};
-    }
+	// this is the parent resource we're reading from, as a propagating effect of
+	// us being read from.
+	void setParentReadDependency(ResourceNode* parent) noexcept;
+
+	// this is the parent resource we're writing to, as a propagating effect of
+	// us being writen to.
+	void setParentWriteDependency(ResourceNode* parent) noexcept;
+
+	void setForwardResourceDependency(ResourceNode* source) noexcept;
+
+	// virtuals from DependencyGraph::Node
+	char const* getName() const noexcept override;
+
+	static FrameGraphHandle getHandle(ResourceNode const* node) noexcept {
+		return node ? node->resourceHandle : FrameGraphHandle{};
+	}
 
 private:
-    FrameGraph& mFrameGraph;
-    std::vector<ResourceEdgeBase *> mReaderPasses;
-    ResourceEdgeBase* mWriterPass = nullptr;
-    FrameGraphHandle mParentHandle;
-    DependencyGraph::Edge* mParentReadEdge = nullptr;
-    DependencyGraph::Edge* mParentWriteEdge = nullptr;
-    DependencyGraph::Edge* mForwardedEdge = nullptr;
+	FrameGraph& mFrameGraph;
+	std::vector<ResourceEdgeBase*> mReaderPasses;
+	ResourceEdgeBase* mWriterPass = nullptr;
+	FrameGraphHandle mParentHandle;
+	DependencyGraph::Edge* mParentReadEdge = nullptr;
+	DependencyGraph::Edge* mParentWriteEdge = nullptr;
+	DependencyGraph::Edge* mForwardedEdge = nullptr;
 
-    // virtuals from DependencyGraph::Node
-    std::string graphvizify() const noexcept override;
-    std::string graphvizifyEdgeColor() const noexcept override;
+	// virtuals from DependencyGraph::Node
+	std::string graphvizify() const noexcept override;
+	std::string graphvizifyEdgeColor() const noexcept override;
 };
 
 NAMESPACE_GNXENGINE_END

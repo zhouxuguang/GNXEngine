@@ -4,10 +4,10 @@
 NAMESPACE_GNXENGINE_BEGIN
 
 PassNode::PassNode(FrameGraph& fg) noexcept
-        : Node(fg.getGraph()),
-          mFrameGraph(fg)//,
-//          devirtualize(fg.getArena()),
-//          destroy(fg.getArena()) 
+    : Node(fg.getGraph()),
+    mFrameGraph(fg)//,
+    //          devirtualize(fg.getArena()),
+    //          destroy(fg.getArena()) 
 {
 }
 
@@ -20,10 +20,10 @@ std::string PassNode::graphvizifyEdgeColor() const noexcept
     return "red";
 }
 
-void PassNode::registerResource(FrameGraphHandle const resourceHandle) noexcept 
+void PassNode::registerResource(FrameGraphHandle const resourceHandle) noexcept
 {
-//    VirtualResource* resource = mFrameGraph.getResource(resourceHandle);
-//    resource->neededByPass(this);
+    //    VirtualResource* resource = mFrameGraph.getResource(resourceHandle);
+    //    resource->neededByPass(this);
     mDeclaredHandles.insert(resourceHandle.index);
 }
 
@@ -32,7 +32,7 @@ void PassNode::registerResource(FrameGraphHandle const resourceHandle) noexcept
 // ------------------------------------------------------------------------------------------------
 
 RenderPassNode::RenderPassNode(FrameGraph& fg, const char* name, FrameGraphPassBase* base) noexcept
-        : PassNode(fg), mName(name), mPassBase(base, fg.getArena()) {
+    : PassNode(fg), mName(name), mPassBase(base, fg.getArena()) {
 }
 RenderPassNode::RenderPassNode(RenderPassNode&& rhs) noexcept = default;
 RenderPassNode::~RenderPassNode() noexcept = default;
@@ -56,7 +56,7 @@ void RenderPassNode::execute(FrameGraphResources const& resources, DriverApi& dr
 }
 
 uint32_t RenderPassNode::declareRenderTarget(FrameGraph& fg, FrameGraph::Builder&,
-        utils::StaticString name, FrameGraphRenderPass::Descriptor const& descriptor) {
+    utils::StaticString name, FrameGraphRenderPass::Descriptor const& descriptor) {
 
     RenderPassData data;
     data.name = name;
@@ -70,23 +70,23 @@ uint32_t RenderPassNode::declareRenderTarget(FrameGraph& fg, FrameGraph::Builder
 
     for (size_t i = 0; i < RenderPassData::ATTACHMENT_COUNT; i++) {
         FrameGraphId<FrameGraphTexture> const& handle =
-                data.descriptor.attachments[i];
+            data.descriptor.attachments[i];
         if (handle) {
             data.attachmentInfo[i] = handle;
 
             // TODO: this is not very efficient
             auto incomingPos = std::find_if(incomingEdges.begin(), incomingEdges.end(),
-                    [&dependencyGraph, handle]
-                            (DependencyGraph::Edge const* edge) {
-                        ResourceNode const* node = static_cast<ResourceNode const*>(
-                                dependencyGraph.getNode(edge->from));
-                        return node->resourceHandle == handle;
-                    });
+                [&dependencyGraph, handle]
+                (DependencyGraph::Edge const* edge) {
+                    ResourceNode const* node = static_cast<ResourceNode const*>(
+                        dependencyGraph.getNode(edge->from));
+                    return node->resourceHandle == handle;
+                });
 
             if (incomingPos != incomingEdges.end()) {
                 data.incoming[i] = const_cast<ResourceNode*>(
-                        static_cast<ResourceNode const*>(
-                                dependencyGraph.getNode((*incomingPos)->from)));
+                    static_cast<ResourceNode const*>(
+                        dependencyGraph.getNode((*incomingPos)->from)));
             }
 
             // this could be either outgoing or incoming (if there are no outgoing)
@@ -117,9 +117,9 @@ void RenderPassNode::resolve() noexcept {
          */
 
         ImportedRenderTarget* pImportedRenderTarget = nullptr;
-        rt.backend.params.flags.discardStart    = TargetBufferFlags::NONE;
-        rt.backend.params.flags.discardEnd      = TargetBufferFlags::NONE;
-        rt.backend.params.readOnlyDepthStencil  = 0;
+        rt.backend.params.flags.discardStart = TargetBufferFlags::NONE;
+        rt.backend.params.flags.discardEnd = TargetBufferFlags::NONE;
+        rt.backend.params.readOnlyDepthStencil = 0;
 
         constexpr size_t DEPTH_INDEX = MRT::MAX_SUPPORTED_RENDER_TARGET_COUNT + 0;
         constexpr size_t STENCIL_INDEX = MRT::MAX_SUPPORTED_RENDER_TARGET_COUNT + 1;
@@ -141,7 +141,8 @@ void RenderPassNode::resolve() noexcept {
                 if (!rt.outgoing[i] || !rt.outgoing[i]->hasWriterPass()) {
                     if (i == DEPTH_INDEX) {
                         rt.backend.params.readOnlyDepthStencil |= RenderPassParams::READONLY_DEPTH;
-                    } else if (i == STENCIL_INDEX) {
+                    }
+                    else if (i == STENCIL_INDEX) {
                         rt.backend.params.readOnlyDepthStencil |= RenderPassParams::READONLY_STENCIL;
                     }
                 }
@@ -153,7 +154,7 @@ void RenderPassNode::resolve() noexcept {
                 Resource<FrameGraphTexture>* pTextureResource = static_cast<Resource<FrameGraphTexture>*>(pResource);
 
                 pImportedRenderTarget = pImportedRenderTarget ?
-                        pImportedRenderTarget : pResource->asImportedRenderTarget();
+                    pImportedRenderTarget : pResource->asImportedRenderTarget();
 
                 // update attachment sample count if not specified and usage permits it
                 if (!rt.descriptor.samples &&
@@ -172,7 +173,7 @@ void RenderPassNode::resolve() noexcept {
         }
         // additionally, clear implies discardStart
         rt.backend.params.flags.discardStart |= (
-                rt.descriptor.clearFlags & rt.targetBufferFlags);
+            rt.descriptor.clearFlags & rt.targetBufferFlags);
 
         assert_invariant(minWidth == maxWidth);
         assert_invariant(minHeight == maxHeight);
@@ -201,12 +202,12 @@ void RenderPassNode::resolve() noexcept {
             rt.imported = true;
 
             // override the values we just calculated with the actual values from the imported target
-            rt.targetBufferFlags     = pImportedRenderTarget->importedDesc.attachments;
-            rt.descriptor.viewport   = pImportedRenderTarget->importedDesc.viewport;
+            rt.targetBufferFlags = pImportedRenderTarget->importedDesc.attachments;
+            rt.descriptor.viewport = pImportedRenderTarget->importedDesc.viewport;
             rt.descriptor.clearColor = pImportedRenderTarget->importedDesc.clearColor;
             rt.descriptor.clearFlags = pImportedRenderTarget->importedDesc.clearFlags;
-            rt.descriptor.samples    = pImportedRenderTarget->importedDesc.samples;
-            rt.backend.target        = pImportedRenderTarget->target;
+            rt.descriptor.samples = pImportedRenderTarget->importedDesc.samples;
+            rt.backend.target = pImportedRenderTarget->target;
 
             // We could end-up here more than once, for instance if the rendertarget is used
             // by multiple passes (this would imply a read-back, btw). In this case, we don't want
@@ -215,7 +216,7 @@ void RenderPassNode::resolve() noexcept {
 
             // but don't discard attachments the imported target tells us to keep
             rt.backend.params.flags.discardStart &= ~pImportedRenderTarget->importedDesc.keepOverrideStart;
-            rt.backend.params.flags.discardEnd   &= ~pImportedRenderTarget->importedDesc.keepOverrideEnd;
+            rt.backend.params.flags.discardEnd &= ~pImportedRenderTarget->importedDesc.keepOverrideEnd;
         }
 
         rt.backend.params.viewport = rt.descriptor.viewport;
@@ -225,7 +226,7 @@ void RenderPassNode::resolve() noexcept {
 }
 
 void RenderPassNode::RenderPassData::devirtualize(FrameGraph& fg,
-        TextureCacheInterface& textureCache) noexcept {
+    TextureCacheInterface& textureCache) noexcept {
     assert_invariant(any(targetBufferFlags));
     if (UTILS_LIKELY(!imported)) {
 
@@ -233,7 +234,7 @@ void RenderPassNode::RenderPassData::devirtualize(FrameGraph& fg,
         for (size_t i = 0; i < MRT::MAX_SUPPORTED_RENDER_TARGET_COUNT; i++) {
             if (attachmentInfo[i]) {
                 auto const* pResource = static_cast<Resource<FrameGraphTexture> const*>(
-                        fg.getResource(attachmentInfo[i]));
+                    fg.getResource(attachmentInfo[i]));
                 colorInfo[i].handle = pResource->resource.handle;
                 colorInfo[i].level = pResource->subResourceDescriptor.level;
                 colorInfo[i].layer = pResource->subResourceDescriptor.layer;
@@ -244,7 +245,7 @@ void RenderPassNode::RenderPassData::devirtualize(FrameGraph& fg,
         for (size_t i = 0; i < 2; i++) {
             if (attachmentInfo[MRT::MAX_SUPPORTED_RENDER_TARGET_COUNT + i]) {
                 auto const* pResource = static_cast<Resource<FrameGraphTexture> const*>(
-                        fg.getResource(attachmentInfo[MRT::MAX_SUPPORTED_RENDER_TARGET_COUNT + i]));
+                    fg.getResource(attachmentInfo[MRT::MAX_SUPPORTED_RENDER_TARGET_COUNT + i]));
                 info[i].handle = pResource->resource.handle;
                 info[i].level = pResource->subResourceDescriptor.level;
                 info[i].layer = pResource->subResourceDescriptor.layer;
@@ -252,22 +253,24 @@ void RenderPassNode::RenderPassData::devirtualize(FrameGraph& fg,
         }
 
         backend.target = textureCache.createRenderTarget(
-                name, targetBufferFlags,
-                backend.params.viewport.width,
-                backend.params.viewport.height,
-                descriptor.samples, descriptor.layerCount,
-                colorInfo, info[0], info[1]);
+            name, targetBufferFlags,
+            backend.params.viewport.width,
+            backend.params.viewport.height,
+            descriptor.samples, descriptor.layerCount,
+            colorInfo, info[0], info[1]);
     }
 }
 
-void RenderPassNode::RenderPassData::destroy(
-        TextureCacheInterface& textureCache) const noexcept {
-    if (UTILS_LIKELY(!imported)) {
+void RenderPassNode::RenderPassData::destroy(TextureCacheInterface& textureCache) const noexcept 
+{
+    if (UTILS_LIKELY(!imported)) 
+    {
         textureCache.destroyRenderTarget(backend.target);
     }
 }
 
-RenderPassNode::RenderPassData const* RenderPassNode::getRenderPassData(uint32_t const id) const noexcept {
+RenderPassNode::RenderPassData const* RenderPassNode::getRenderPassData(uint32_t const id) const noexcept 
+{
     return id < mRenderTargetData.size() ? &mRenderTargetData[id] : nullptr;
 }
 
@@ -286,7 +289,8 @@ utils::CString RenderPassNode::graphvizify() const noexcept {
     s.append(", id: ");
     s.append(utils::to_string(id));
 
-    for (auto const& rt :mRenderTargetData) {
+    for (auto const& rt : mRenderTargetData) 
+    {
         s.append("\\nS:");
         s.append(utils::to_string(rt.backend.params.flags.discardStart));
         s.append(", E:");
@@ -319,12 +323,12 @@ PresentPassNode::PresentPassNode(PresentPassNode&& rhs) noexcept = default;
 
 PresentPassNode::~PresentPassNode() noexcept = default;
 
-char const* PresentPassNode::getName() const noexcept 
+char const* PresentPassNode::getName() const noexcept
 {
     return "Present";
 }
 
-std::string PresentPassNode::graphvizify() const noexcept 
+std::string PresentPassNode::graphvizify() const noexcept
 {
 #ifndef NDEBUG
     std::string s;
@@ -342,7 +346,7 @@ void PresentPassNode::execute(/*FrameGraphResources const&, DriverApi&*/) noexce
 {
 }
 
-void PresentPassNode::resolve() noexcept 
+void PresentPassNode::resolve() noexcept
 {
 }
 

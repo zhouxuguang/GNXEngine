@@ -8,7 +8,7 @@ NAMESPACE_GNXENGINE_BEGIN
 /**
  * 一个简单的依赖图支持剔除掉无用的节点
  */
-class DependencyGraph 
+class DependencyGraph
 {
 public:
     DependencyGraph() noexcept;
@@ -23,7 +23,7 @@ public:
     /**
      * A link between two nodes.
      */
-    struct Edge 
+    struct Edge
     {
         // An Edge can't be modified after it's created (e.g. by copying into it)
         const NodeID from;
@@ -49,7 +49,7 @@ public:
     /**
      * A generic node
      */
-    class Node 
+    class Node
     {
     public:
         /**
@@ -167,9 +167,7 @@ private:
     EdgeContainer mEdges;
 };
 
-inline DependencyGraph::Edge::Edge(DependencyGraph& graph,
-        Node* from, Node* to)
-        : from(from->getId()), to(to->getId()) 
+inline DependencyGraph::Edge::Edge(DependencyGraph& graph, Node* from, Node* to) : from(from->getId()), to(to->getId())
 {
     assert(graph.mNodes[this->from] == from);
     assert(graph.mNodes[this->to] == to);
@@ -177,15 +175,6 @@ inline DependencyGraph::Edge::Edge(DependencyGraph& graph,
 }
 
 using FrameGraphResource = int32_t;
-
-/*
- * ResourceEdgeBase only exists to enforce type safety
- */
-class ResourceEdgeBase : public DependencyGraph::Edge 
-{
-public:
-    using Edge::Edge;
-};
 
 NAMESPACE_GNXENGINE_END
 
