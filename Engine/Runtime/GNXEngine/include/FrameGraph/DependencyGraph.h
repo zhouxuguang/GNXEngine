@@ -176,6 +176,8 @@ inline DependencyGraph::Edge::Edge(DependencyGraph& graph,
     graph.link(this);
 }
 
+using FrameGraphResource = int32_t;
+
 NAMESPACE_GNXENGINE_END
 
 #endif

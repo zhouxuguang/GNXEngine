@@ -1,0 +1,5 @@
+#include "FrameGraph/FrameGraph.h"
+
+NAMESPACE_GNXENGINE_BEGIN
+
+NAMESPACE_GNXENGINE_END
