@@ -36,6 +36,7 @@
 #include <memory>
 #include <numeric>
 #include <filesystem>
+#include <limits>
 #include <sstream>
 
 namespace fs = std::filesystem;
@@ -210,5 +211,13 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 
 // 默认分配内存对齐的字节数
 #define DEFAULT_ALIGNMENT (2 * sizeof(void *))
+
+#ifdef min
+#undef min
+#endif // min
+
+#ifdef max
+#undef max
+#endif // max
 
 #endif // end of file_
