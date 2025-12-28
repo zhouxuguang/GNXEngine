@@ -178,6 +178,15 @@ inline DependencyGraph::Edge::Edge(DependencyGraph& graph,
 
 using FrameGraphResource = int32_t;
 
+/*
+ * ResourceEdgeBase only exists to enforce type safety
+ */
+class ResourceEdgeBase : public DependencyGraph::Edge 
+{
+public:
+    using Edge::Edge;
+};
+
 NAMESPACE_GNXENGINE_END
 
 #endif
