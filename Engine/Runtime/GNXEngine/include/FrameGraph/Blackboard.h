@@ -63,8 +63,9 @@ template <typename T> inline T* FrameGraphBlackboard::try_get()
 
 template <typename T> inline bool FrameGraphBlackboard::has() const 
 {
-	if constexpr (__cplusplus >= 202002L)
-		return m_storage.contains(typeid(T));
-	else
-		return m_storage.find(typeid(T)) != m_storage.cend();
+#if __cplusplus >= 202002L
+    return m_storage.contains(typeid(T));
+#else
+    return m_storage.find(typeid(T)) != m_storage.cend();
+#endif
 }
