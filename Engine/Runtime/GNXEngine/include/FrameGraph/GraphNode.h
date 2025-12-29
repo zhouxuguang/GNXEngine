@@ -5,7 +5,10 @@
 
 class FrameGraph;
 
-class GraphNode {
+using FrameGraphResource = int32_t;
+
+class GraphNode 
+{
   friend class FrameGraph;
 
 public:

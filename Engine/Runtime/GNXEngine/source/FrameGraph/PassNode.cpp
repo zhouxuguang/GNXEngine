@@ -1,4 +1,4 @@
-#include "FrameGraph/PassNode.hpp"
+#include "FrameGraph/PassNode.h"
 #include <algorithm>
 #include <cassert>
 

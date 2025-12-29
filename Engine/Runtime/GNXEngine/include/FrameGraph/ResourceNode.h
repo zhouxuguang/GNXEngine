@@ -1,10 +1,11 @@
 #pragma once
 
-#include "GraphNode.hpp"
+#include "GraphNode.h"
 
 class PassNode;
 
-class ResourceNode final : public GraphNode {
+class ResourceNode final : public GraphNode 
+{
   friend class FrameGraph;
 
 public:
