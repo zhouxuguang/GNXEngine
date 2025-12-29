@@ -37,8 +37,7 @@ public:
         [[nodiscard]] FrameGraphResource create(const std::string_view name,
             const typename T::Desc&);
         /** Declares read operation. */
-        FrameGraphResource read(FrameGraphResource id,
-            uint32_t flags = kFlagsIgnored);
+        FrameGraphResource read(FrameGraphResource id, uint32_t flags = kFlagsIgnored);
         /**
          * Declares write operation.
          * @remark Writing to imported resource counts as side-effect.
@@ -53,8 +52,7 @@ public:
         }
 
     private:
-        Builder(FrameGraph& fg, PassNode& node)
-            : m_frameGraph{ fg }, m_passNode{ node } 
+        Builder(FrameGraph& fg, PassNode& node) : m_frameGraph{ fg }, m_passNode{ node } 
         {
         }
 
@@ -83,8 +81,7 @@ public:
         static_assert(sizeof(Execute) < 1024, "Execute captures too much");
 
         auto* pass = new FrameGraphPass<Data, Execute>(std::forward<Execute>(exec));
-        auto& passNode =
-            _createPassNode(name, std::unique_ptr<FrameGraphPass<Data, Execute>>(pass));
+        auto& passNode = _createPassNode(name, std::unique_ptr<FrameGraphPass<Data, Execute>>(pass));
         Builder builder{ *this, passNode };
         std::invoke(setup, builder, pass->data);
         return pass->data;
@@ -165,8 +162,7 @@ public:
     ~FrameGraphPassResources() = default;
 
     FrameGraphPassResources& operator=(const FrameGraphPassResources&) = delete;
-    FrameGraphPassResources&
-        operator=(FrameGraphPassResources&&) noexcept = delete;
+    FrameGraphPassResources& operator=(FrameGraphPassResources&&) noexcept = delete;
 
     /**
      * @note Causes runtime-error with:
@@ -195,8 +191,7 @@ private:
 template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
 inline FrameGraphResource FrameGraph::import(const std::string_view name, const typename T::Desc& desc, T&& resource) 
 {
-    return _create<T>(ResourceEntry::Type::Imported, name, desc,
-        std::forward<T>(resource));
+    return _create<T>(ResourceEntry::Type::Imported, name, desc, std::forward<T>(resource));
 }
 
 template <typename Writer>
@@ -247,8 +242,7 @@ FrameGraph::Builder::create(const std::string_view name, const typename T::Desc&
 template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
 inline T& FrameGraphPassResources::get(FrameGraphResource id)
 {
-    assert(m_passNode.reads(id) || m_passNode.creates(id) ||
-        m_passNode.writes(id));
+    assert(m_passNode.reads(id) || m_passNode.creates(id) || m_passNode.writes(id));
     return m_frameGraph._getResourceEntry(id).get<T>();
 }
 
@@ -256,7 +250,6 @@ template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
 inline const typename T::Desc&
 FrameGraphPassResources::getDescriptor(FrameGraphResource id) const
 {
-    assert(m_passNode.reads(id) || m_passNode.creates(id) ||
-        m_passNode.writes(id));
+    assert(m_passNode.reads(id) || m_passNode.creates(id) || m_passNode.writes(id));
     return m_frameGraph.getDescriptor<T>(id);
 }

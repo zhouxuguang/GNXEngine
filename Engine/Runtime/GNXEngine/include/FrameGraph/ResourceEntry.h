@@ -103,8 +103,8 @@ private:
 	uint32_t m_version; // Incremented on each (unique) write declaration.
 	std::unique_ptr<Concept> m_concept;
 
-	PassNode* m_producer{ nullptr };
-	PassNode* m_last{ nullptr };
+	PassNode* m_producer = nullptr;
+	PassNode* m_last = nullptr;
 };
 
 inline void ResourceEntry::create(void* allocator) 
@@ -135,8 +135,7 @@ inline const typename T::Desc& ResourceEntry::getDescriptor() const
 //
 
 template <typename T>
-inline ResourceEntry::ResourceEntry(const Type type, uint32_t id,
-	const typename T::Desc& desc, T&& obj)
+inline ResourceEntry::ResourceEntry(const Type type, uint32_t id, const typename T::Desc& desc, T&& obj)
 	: m_type{ type }, m_id{ id }, m_version{ kInitialVersion },
 	m_concept{ std::make_unique<Model<T>>(desc, std::forward<T>(obj)) } 
 {

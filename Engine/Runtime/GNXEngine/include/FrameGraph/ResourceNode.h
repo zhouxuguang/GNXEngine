@@ -4,6 +4,7 @@
 
 class PassNode;
 
+// 资源节点，包括纹理和buffer
 class ResourceNode final : public GraphNode
 {
 	friend class FrameGraph;
@@ -29,6 +30,6 @@ private:
 	const uint32_t m_resourceId;
 	const uint32_t m_version;
 
-	PassNode* m_producer{ nullptr };
-	PassNode* m_last{ nullptr };
+	PassNode* m_producer = nullptr;
+	PassNode* m_last = nullptr;
 };

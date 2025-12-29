@@ -7,6 +7,7 @@ class FrameGraph;
 
 using FrameGraphResource = int32_t;
 
+// frameGraph的节点，主要包括pass和资源
 class GraphNode
 {
 	friend class FrameGraph;
@@ -25,8 +26,7 @@ public:
 	[[nodiscard]] auto getRefCount() const { return m_refCount; }
 
 protected:
-	GraphNode(const std::string_view name, uint32_t id)
-		: m_name{ name }, m_id{ id } 
+	GraphNode(const std::string_view name, uint32_t id) : m_name{ name }, m_id{ id } 
 	{
 	}
 
@@ -34,5 +34,5 @@ private:
 	std::string m_name;
 	// Unique id, matches an array index in FrameGraph.
 	const uint32_t m_id;
-	int32_t m_refCount{ 0 };
+	int32_t m_refCount = 0;
 };

@@ -35,6 +35,7 @@ struct FrameGraphPass final : FrameGraphPassConcept
 	Data data{};
 };
 
+// pass的节点，包括计算和图形pass
 class PassNode final : public GraphNode
 {
 	friend class FrameGraph;
@@ -50,7 +51,6 @@ public:
 	{
 		FrameGraphResource id;
 		uint32_t flags;
-
 #if __cplusplus >= 202002L
 		bool operator==(const AccessDeclaration&) const = default;
 #endif
@@ -61,7 +61,8 @@ public:
 	[[nodiscard]] bool writes(FrameGraphResource id) const;
 
 	[[nodiscard]] auto hasSideEffect() const { return m_hasSideEffect; }
-	[[nodiscard]] auto canExecute() const {
+	[[nodiscard]] auto canExecute() const 
+	{
 		return getRefCount() > 0 || hasSideEffect();
 	}
 
@@ -77,8 +78,7 @@ private:
 		std::unique_ptr<FrameGraphPassConcept>&&);
 
 	FrameGraphResource _read(FrameGraphResource id, uint32_t flags);
-	[[nodiscard]] FrameGraphResource _write(FrameGraphResource id,
-		uint32_t flags);
+	[[nodiscard]] FrameGraphResource _write(FrameGraphResource id, uint32_t flags);
 
 private:
 	std::unique_ptr<FrameGraphPassConcept> m_exec;
@@ -87,7 +87,7 @@ private:
 	std::vector<AccessDeclaration> m_reads;
 	std::vector<AccessDeclaration> m_writes;
 
-	bool m_hasSideEffect{ false };
+	bool m_hasSideEffect = false;
 };
 
 #if __cplusplus < 202002L
