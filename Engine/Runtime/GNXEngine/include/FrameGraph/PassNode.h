@@ -6,90 +6,93 @@
 
 class FrameGraphPassResources;
 
-struct FrameGraphPassConcept 
+struct FrameGraphPassConcept
 {
-  FrameGraphPassConcept() = default;
-  FrameGraphPassConcept(const FrameGraphPassConcept &) = delete;
-  FrameGraphPassConcept(FrameGraphPassConcept &&) noexcept = delete;
-  virtual ~FrameGraphPassConcept() = default;
+	FrameGraphPassConcept() = default;
+	FrameGraphPassConcept(const FrameGraphPassConcept&) = delete;
+	FrameGraphPassConcept(FrameGraphPassConcept&&) noexcept = delete;
+	virtual ~FrameGraphPassConcept() = default;
 
-  FrameGraphPassConcept &operator=(const FrameGraphPassConcept &) = delete;
-  FrameGraphPassConcept &operator=(FrameGraphPassConcept &&) noexcept = delete;
+	FrameGraphPassConcept& operator=(const FrameGraphPassConcept&) = delete;
+	FrameGraphPassConcept& operator=(FrameGraphPassConcept&&) noexcept = delete;
 
-  virtual void operator()(FrameGraphPassResources &, void *) = 0;
+	virtual void operator()(FrameGraphPassResources&, void*) = 0;
 };
 
 template <typename Data, typename Execute>
-struct FrameGraphPass final : FrameGraphPassConcept 
+struct FrameGraphPass final : FrameGraphPassConcept
 {
-  explicit FrameGraphPass(Execute &&exec)
-      : execFunction{std::forward<Execute>(exec)} {}
+	explicit FrameGraphPass(Execute&& exec) : execFunction{ std::forward<Execute>(exec) } 
+	{
+	}
 
-  void operator()(FrameGraphPassResources &resources, void *context) override {
-    execFunction(data, resources, context);
-  }
+	void operator()(FrameGraphPassResources& resources, void* context) override 
+	{
+		execFunction(data, resources, context);
+	}
 
-  Execute execFunction;
-  Data data{};
+	Execute execFunction;
+	Data data{};
 };
 
-class PassNode final : public GraphNode 
+class PassNode final : public GraphNode
 {
-  friend class FrameGraph;
+	friend class FrameGraph;
 
 public:
-  PassNode(const PassNode &) = delete;
-  PassNode(PassNode &&) noexcept = default;
+	PassNode(const PassNode&) = delete;
+	PassNode(PassNode&&) noexcept = default;
 
-  PassNode &operator=(const PassNode &) = delete;
-  PassNode &operator=(PassNode &&) noexcept = delete;
+	PassNode& operator=(const PassNode&) = delete;
+	PassNode& operator=(PassNode&&) noexcept = delete;
 
-  struct AccessDeclaration {
-    FrameGraphResource id;
-    uint32_t flags;
+	struct AccessDeclaration 
+	{
+		FrameGraphResource id;
+		uint32_t flags;
 
 #if __cplusplus >= 202002L
-    bool operator==(const AccessDeclaration &) const = default;
+		bool operator==(const AccessDeclaration&) const = default;
 #endif
-  };
+	};
 
-  [[nodiscard]] bool creates(FrameGraphResource id) const;
-  [[nodiscard]] bool reads(FrameGraphResource id) const;
-  [[nodiscard]] bool writes(FrameGraphResource id) const;
+	[[nodiscard]] bool creates(FrameGraphResource id) const;
+	[[nodiscard]] bool reads(FrameGraphResource id) const;
+	[[nodiscard]] bool writes(FrameGraphResource id) const;
 
-  [[nodiscard]] auto hasSideEffect() const { return m_hasSideEffect; }
-  [[nodiscard]] auto canExecute() const {
-    return getRefCount() > 0 || hasSideEffect();
-  }
+	[[nodiscard]] auto hasSideEffect() const { return m_hasSideEffect; }
+	[[nodiscard]] auto canExecute() const {
+		return getRefCount() > 0 || hasSideEffect();
+	}
 
-  struct Create {};
-  [[nodiscard]] decltype(auto) each(const Create) const { return m_creates; }
-  struct Read {};
-  [[nodiscard]] decltype(auto) each(const Read) const { return m_reads; }
-  struct Write {};
-  [[nodiscard]] decltype(auto) each(const Write) const { return m_writes; }
-
-private:
-  PassNode(const std::string_view name, uint32_t nodeId,
-           std::unique_ptr<FrameGraphPassConcept> &&);
-
-  FrameGraphResource _read(FrameGraphResource id, uint32_t flags);
-  [[nodiscard]] FrameGraphResource _write(FrameGraphResource id,
-                                          uint32_t flags);
+	struct Create {};
+	[[nodiscard]] decltype(auto) each(const Create) const { return m_creates; }
+	struct Read {};
+	[[nodiscard]] decltype(auto) each(const Read) const { return m_reads; }
+	struct Write {};
+	[[nodiscard]] decltype(auto) each(const Write) const { return m_writes; }
 
 private:
-  std::unique_ptr<FrameGraphPassConcept> m_exec;
+	PassNode(const std::string_view name, uint32_t nodeId,
+		std::unique_ptr<FrameGraphPassConcept>&&);
 
-  std::vector<FrameGraphResource> m_creates;
-  std::vector<AccessDeclaration> m_reads;
-  std::vector<AccessDeclaration> m_writes;
+	FrameGraphResource _read(FrameGraphResource id, uint32_t flags);
+	[[nodiscard]] FrameGraphResource _write(FrameGraphResource id,
+		uint32_t flags);
 
-  bool m_hasSideEffect{false};
+private:
+	std::unique_ptr<FrameGraphPassConcept> m_exec;
+
+	std::vector<FrameGraphResource> m_creates;
+	std::vector<AccessDeclaration> m_reads;
+	std::vector<AccessDeclaration> m_writes;
+
+	bool m_hasSideEffect{ false };
 };
 
 #if __cplusplus < 202002L
-inline bool operator==(const PassNode::AccessDeclaration &lhs,
-                       const PassNode::AccessDeclaration &rhs) {
-  return lhs.id == rhs.id && lhs.flags == rhs.flags;
+inline bool operator==(const PassNode::AccessDeclaration& lhs, const PassNode::AccessDeclaration& rhs) 
+{
+	return lhs.id == rhs.id && lhs.flags == rhs.flags;
 }
 #endif
