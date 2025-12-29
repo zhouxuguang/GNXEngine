@@ -1,5 +1,0 @@
-#include "FrameGraph/Resource.h"
-
-NAMESPACE_GNXENGINE_BEGIN
-
-NAMESPACE_GNXENGINE_END
