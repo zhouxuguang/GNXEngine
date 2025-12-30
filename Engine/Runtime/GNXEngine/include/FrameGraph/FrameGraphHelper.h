@@ -1,26 +1,18 @@
 #pragma once
 
-#if 0
-
-#include "fg/FrameGraphResource.hpp"
+#include "GraphNode.h"
+#include "Runtime/RenderCore/include/ComputeBuffer.h"
+#include "Runtime/RenderCore/include/RCTexture.h"
 #include <string_view>
 
 class FrameGraph;
 class FrameGraphPassResources;
 
-class Texture;
+[[nodiscard]] FrameGraphResource importTexture(FrameGraph& fg, const std::string_view name, RenderCore::RCTexturePtr texture);
 
-[[nodiscard]] FrameGraphResource
-importTexture(FrameGraph &, const std::string_view name, Texture *);
-[[nodiscard]] Texture &getTexture(FrameGraphPassResources &,
-                                  FrameGraphResource id);
+[[nodiscard]] RenderCore::RCTexturePtr getTexture(FrameGraphPassResources& resources, FrameGraphResource id);
 
-class Buffer;
+[[nodiscard]] FrameGraphResource importBuffer(FrameGraph& fg, const std::string_view name, RenderCore::ComputeBufferPtr buffer);
 
-[[nodiscard]] FrameGraphResource
-importBuffer(FrameGraph &, const std::string_view name, Buffer *);
+[[nodiscard]] RenderCore::ComputeBufferPtr getBuffer(FrameGraphPassResources& resources, FrameGraphResource id);
 
-[[nodiscard]] Buffer &getBuffer(FrameGraphPassResources &,
-                                FrameGraphResource id);
-
-#endif

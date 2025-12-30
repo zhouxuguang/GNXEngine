@@ -5,7 +5,7 @@
 // https://www.bfilipek.com/2016/02/notes-on-c-sfinae.html
 
 #if __cplusplus >= 202002L
-#  include <concepts>
+#include <concepts>
 
 template <typename T>
 concept Virtualizable = requires(T t) 
@@ -17,8 +17,8 @@ concept Virtualizable = requires(T t)
     { t.destroy(typename T::Desc{}, (void*)nullptr) } -> std::same_as<void>;
 };
 
-#  define _VIRTUALIZABLE_CONCEPT(T) Virtualizable T
-#  define _VIRTUALIZABLE_CONCEPT_IMPL(T) _VIRTUALIZABLE_CONCEPT(T)
+#define _VIRTUALIZABLE_CONCEPT(T) Virtualizable T
+#define _VIRTUALIZABLE_CONCEPT_IMPL(T) _VIRTUALIZABLE_CONCEPT(T)
 
 template <typename T>
 concept has_preRead = requires(T t) 
@@ -46,7 +46,7 @@ template <typename T, typename = void> struct has_Desc : std::false_type {};
 template <typename T>
 struct has_Desc<T, std::void_t<typename T::Desc>> : std::true_type {};
 
-#  define DETECT_FUNCTION(function, ...)                                       \
+#define DETECT_FUNCTION(function, ...)                                         \
     template <typename T> struct has_##function {                              \
       template <typename U> static constexpr std::false_type test(...) {       \
         return {};                                                             \
@@ -69,14 +69,14 @@ std::conjunction_v<std::is_default_constructible<T>,
 	std::is_move_constructible<T>, has_Desc<T>, has_create<T>,
 	has_destroy<T>>;
 
-#  define _VIRTUALIZABLE_CONCEPT_IMPL(T)                                       \
+#define _VIRTUALIZABLE_CONCEPT_IMPL(T)                                       \
     typename T, std::enable_if_t<is_resource<T>, bool>
-#  define _VIRTUALIZABLE_CONCEPT(T) _VIRTUALIZABLE_CONCEPT_IMPL(T) = true
+#define _VIRTUALIZABLE_CONCEPT(T) _VIRTUALIZABLE_CONCEPT_IMPL(T) = true
 
 DETECT_FUNCTION(preRead, typename T::Desc{}, 0u, (void*)nullptr)
 DETECT_FUNCTION(preWrite, typename T::Desc{}, 0u, (void*)nullptr)
 
-#  undef DETECT_FUNCTION
+#undef DETECT_FUNCTION
 
 template <typename T, typename = void> struct has_toString : std::false_type {};
 template <typename T>

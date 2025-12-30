@@ -95,8 +95,7 @@ public:
 
     template <_VIRTUALIZABLE_CONCEPT(T)>
     /** Imports the given resource T into FrameGraph. */
-    [[nodiscard]] FrameGraphResource import(const std::string_view name,
-        const typename T::Desc&, T&&);
+    [[nodiscard]] FrameGraphResource import(const std::string_view name, const typename T::Desc&, T&&);
 
     /** @return True if the given resource is valid for read/write operation. */
     [[nodiscard]] bool isValid(FrameGraphResource id) const;

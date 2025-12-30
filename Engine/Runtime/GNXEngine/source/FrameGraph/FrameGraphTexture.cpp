@@ -4,7 +4,7 @@
 
 static std::string toString(RenderCore::Rect2D extent, uint32_t depth) 
 {
-	return depth > 0 ? std::format("{}x{}x{}", extent.width, extent.height, depth)
+	return depth > 1 ? std::format("{}x{}x{}", extent.width, extent.height, depth)
 		: std::format("{}x{}", extent.width, extent.height);
 }
 

@@ -2,34 +2,43 @@
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/FrameGraphTexture.h"
 #include "FrameGraph/FrameGraphBuffer.h"
+#include <assert.h>
 
-#if 0
+FrameGraphResource importTexture(FrameGraph& fg, const std::string_view name, RenderCore::RCTexturePtr texture)
+{
+	assert(texture);
 
-FrameGraphResource importTexture(FrameGraph &fg, const std::string_view name,
-                                 Texture *texture) {
-  assert(texture && *texture);
-  return fg.import<FrameGraphTexture>(
-    name,
-    {
-      .extent = texture->getExtent(),
-      .numMipLevels = texture->getNumMipLevels(),
-      .layers = texture->getNumLayers(),
-      .format = texture->getPixelFormat(),
-    },
-    {texture});
-}
-Texture &getTexture(FrameGraphPassResources &resources, FrameGraphResource id) {
-  return *resources.get<FrameGraphTexture>(id).texture;
-}
+    FrameGraphTexture::Desc desc = {};
+    desc.depth = texture->GetDepth();
+    desc.numMipLevels = 1; // todo 增加mipmap level
+    // FORMAT
+    desc.extent.offsetX = 0;
+    desc.extent.offsetY = 0;
+    desc.extent.width = texture->GetWidth();
+    desc.extent.height = texture->GetHeight();
 
-FrameGraphResource importBuffer(FrameGraph &fg, const std::string_view name,
-                                Buffer *buffer) {
-  assert(buffer && *buffer);
-  return fg.import<FrameGraphBuffer>(name, {.size = buffer->getSize()},
-                                     {buffer});
-}
-Buffer &getBuffer(FrameGraphPassResources &resources, FrameGraphResource id) {
-  return *resources.get<FrameGraphBuffer>(id).buffer;
+    FrameGraphTexture fgTexture;
+    fgTexture.texture = texture;
+    return fg.import<FrameGraphTexture>(name, desc, std::move(fgTexture));
 }
 
-#endif
+RenderCore::RCTexturePtr getTexture(FrameGraphPassResources& resources, FrameGraphResource id)
+{
+    return nullptr;
+	//return *resources.get<FrameGraphTexture>(id).texture;
+}
+
+FrameGraphResource importBuffer(FrameGraph& fg, const std::string_view name, RenderCore::ComputeBufferPtr buffer)
+{
+	assert(buffer);
+    return 0;
+	// return fg.import<FrameGraphBuffer>(name, { .size = buffer->getSize() },
+	// 	{ buffer });
+}
+
+RenderCore::ComputeBufferPtr getBuffer(FrameGraphPassResources& resources, FrameGraphResource id)
+{
+    return nullptr;
+	//return *resources.get<FrameGraphBuffer>(id).buffer;
+}
+
