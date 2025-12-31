@@ -19,26 +19,28 @@ FrameGraphResource importTexture(FrameGraph& fg, const std::string_view name, Re
 
     FrameGraphTexture fgTexture;
     fgTexture.texture = texture;
-    return fg.import<FrameGraphTexture>(name, desc, std::move(fgTexture));
+    return fg.Import<FrameGraphTexture>(name, desc, std::move(fgTexture));
 }
 
 RenderCore::RCTexturePtr getTexture(FrameGraphPassResources& resources, FrameGraphResource id)
 {
-    return nullptr;
-	//return *resources.get<FrameGraphTexture>(id).texture;
+	return resources.Get<FrameGraphTexture>(id).texture;
 }
 
 FrameGraphResource importBuffer(FrameGraph& fg, const std::string_view name, RenderCore::ComputeBufferPtr buffer)
 {
 	assert(buffer);
-    return 0;
-	// return fg.import<FrameGraphBuffer>(name, { .size = buffer->getSize() },
-	// 	{ buffer });
+    
+    FrameGraphBuffer::Desc desc = {};
+    desc.size = buffer->GetBufferLength();
+    
+    FrameGraphBuffer fgBuffer;
+    fgBuffer.buffer = buffer;
+    return fg.Import<FrameGraphBuffer>(name, desc, std::move(fgBuffer));
 }
 
 RenderCore::ComputeBufferPtr getBuffer(FrameGraphPassResources& resources, FrameGraphResource id)
 {
-    return nullptr;
-	//return *resources.get<FrameGraphBuffer>(id).buffer;
+	return resources.Get<FrameGraphBuffer>(id).buffer;
 }
 

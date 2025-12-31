@@ -95,7 +95,7 @@ public:
 
     template <_VIRTUALIZABLE_CONCEPT(T)>
     /** Imports the given resource T into FrameGraph. */
-    [[nodiscard]] FrameGraphResource import(const std::string_view name, const typename T::Desc&, T&&);
+    [[nodiscard]] FrameGraphResource Import(const std::string_view name, const typename T::Desc&, T&&);
 
     /** @return True if the given resource is valid for read/write operation. */
     [[nodiscard]] bool isValid(FrameGraphResource id) const;
@@ -169,10 +169,10 @@ public:
      * - Incorrect resource type T
      */
     template <_VIRTUALIZABLE_CONCEPT(T)>
-    [[nodiscard]] T& get(FrameGraphResource id);
+    [[nodiscard]] T& Get(FrameGraphResource id);
     
     template <_VIRTUALIZABLE_CONCEPT(T)>
-    [[nodiscard]] const typename T::Desc& getDescriptor(FrameGraphResource id) const;
+    [[nodiscard]] const typename T::Desc& GetDescriptor(FrameGraphResource id) const;
 
 private:
     FrameGraphPassResources(FrameGraph& fg, const PassNode& node) : m_frameGraph{ fg }, m_passNode{ node } 
@@ -188,7 +188,7 @@ private:
 // 实现部分
 
 template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
-inline FrameGraphResource FrameGraph::import(const std::string_view name, const typename T::Desc& desc, T&& resource) 
+inline FrameGraphResource FrameGraph::Import(const std::string_view name, const typename T::Desc& desc, T&& resource) 
 {
     return _create<T>(ResourceEntry::Type::Imported, name, desc, std::forward<T>(resource));
 }
@@ -239,7 +239,7 @@ FrameGraph::Builder::create(const std::string_view name, const typename T::Desc&
 //
 
 template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
-inline T& FrameGraphPassResources::get(FrameGraphResource id)
+inline T& FrameGraphPassResources::Get(FrameGraphResource id)
 {
     assert(m_passNode.reads(id) || m_passNode.creates(id) || m_passNode.writes(id));
     return m_frameGraph._getResourceEntry(id).get<T>();
@@ -247,7 +247,7 @@ inline T& FrameGraphPassResources::get(FrameGraphResource id)
 
 template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
 inline const typename T::Desc&
-FrameGraphPassResources::getDescriptor(FrameGraphResource id) const
+FrameGraphPassResources::GetDescriptor(FrameGraphResource id) const
 {
     assert(m_passNode.reads(id) || m_passNode.creates(id) || m_passNode.writes(id));
     return m_frameGraph.getDescriptor<T>(id);

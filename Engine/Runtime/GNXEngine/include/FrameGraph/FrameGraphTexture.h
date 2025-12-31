@@ -5,10 +5,6 @@
 class FrameGraphTexture
 {
 public:
-    FrameGraphTexture() = default;
-    FrameGraphTexture(FrameGraphTexture&&) = default;
-    FrameGraphTexture& operator=(FrameGraphTexture&&) = default;
-
 	struct Desc 
 	{
 		RenderCore::Rect2D extent;
@@ -22,10 +18,10 @@ public:
 		//RenderCore::SamplerWrapMode filter = TexelFilter::Linear;
 	};
 
-	void create(const Desc&, void* allocator);
-	void destroy(const Desc&, void* allocator);
+	void create(const Desc& desc, void* allocator);
+	void destroy(const Desc& desc, void* allocator);
 
-	static std::string toString(const Desc&);
+	static std::string toString(const Desc& desc);
 
 	RenderCore::RCTexturePtr texture = nullptr;
 };
