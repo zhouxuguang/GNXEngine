@@ -1,7 +1,7 @@
 #include "FrameGraph/GraphvizWriter.h"
 #include <sstream>
 #if __cplusplus >= 202002L
-#  include <format>
+    #include <format>
 #endif
 #include <cassert>
 
@@ -9,10 +9,8 @@
 
 namespace graphviz 
 {
-
 	namespace 
 	{
-
 		[[nodiscard]] auto toString(const Color color) 
 		{
 #define CASE(Value)                                                            \
@@ -207,15 +205,18 @@ namespace graphviz
 			os << vertex.key << "[label=<" << vertex.label << ">"
 				<< R"( style="rounded,filled", fillcolor=)" << toString(vertex.fillcolor)
 				<< "]\n";
-			if (!vertex.cluster.empty()) {
+			if (!vertex.cluster.empty()) 
+            {
 				os << "subgraph cluster_" << vertex.key << " { " << vertex.key << " ";
-				for (const auto& str : vertex.cluster) {
+				for (const auto& str : vertex.cluster) 
+                {
 					os << str << " ";
 				}
 				os << "}\n";
 			}
 			return os;
 		}
+    
 		std::ostream& operator<<(std::ostream& os, const Graph::Edge& edge)
 		{
 			if (!edge.vertices.empty()) 

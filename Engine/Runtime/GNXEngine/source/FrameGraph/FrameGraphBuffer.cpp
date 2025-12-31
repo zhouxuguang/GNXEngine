@@ -1,6 +1,5 @@
 #include "FrameGraph/FrameGraphBuffer.h"
 //#include "TransientResources.h"
-#include <format>
 
 void FrameGraphBuffer::create(const Desc& desc, void* allocator) 
 {
@@ -14,5 +13,8 @@ void FrameGraphBuffer::destroy(const Desc& desc, void* allocator)
 
 std::string FrameGraphBuffer::toString(const Desc& desc) 
 {
-	return std::format("size: {} bytes", desc.size);
+    char szBuf[1024] = {0};
+    snprintf(szBuf, 1024, "size: %d bytes", desc.size);
+    
+    return std::string(szBuf);
 }

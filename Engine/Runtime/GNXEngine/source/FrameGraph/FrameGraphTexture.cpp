@@ -1,11 +1,19 @@
 #include "FrameGraph/FrameGraphTexture.h"
 //#include "TransientResources.h"
-#include <format>
 
 static std::string toString(RenderCore::Rect2D extent, uint32_t depth) 
 {
-	return depth > 1 ? std::format("{}x{}x{}", extent.width, extent.height, depth)
-		: std::format("{}x{}", extent.width, extent.height);
+    char szBuf[128] = {0};
+    if (depth > 1)
+    {
+        snprintf(szBuf, 128, "%dx%dx%d", extent.width, extent.height, depth);
+    }
+    else
+    {
+        snprintf(szBuf, 128, "%dx%d", extent.width, extent.height);
+    }
+    
+    return std::string(szBuf);
 }
 
 void FrameGraphTexture::create(const Desc& desc, void* allocator) 
@@ -20,5 +28,8 @@ void FrameGraphTexture::destroy(const Desc& desc, void* allocator)
 
 std::string FrameGraphTexture::toString(const Desc& desc) 
 {
-	return std::format("{} [{}]", ::toString(desc.extent, desc.depth), std::to_string(desc.format));
+    char szBuf[1024] = {0};
+    snprintf(szBuf, 1024, "%s [%s]", ::toString(desc.extent, desc.depth).c_str(), std::to_string(desc.format).c_str());
+    
+    return std::string(szBuf);
 }
