@@ -61,17 +61,16 @@ public:
         PassNode& m_passNode;
     };
 
-    void reserve(uint32_t numPasses, uint32_t numResources);
+    void Reserve(uint32_t numPasses, uint32_t numResources);
 
     struct NoData {};
     /**
-     * @param setup Callback (lambda, may capture by reference), invoked
-     * immediately, declare operations here.
-     * @param exec Execution of this lambda is deferred until execute() phase
-     * (must capture by value due to this).
+     * @param setup  pass配置的回调，在这里进行回调
+     * @param exec 在Execute函数中执行的回调
+     *
      */
     template <typename Data = NoData, typename Setup, typename Execute>
-    const Data& addCallbackPass(const std::string_view name, Setup&& setup, Execute&& exec)
+    const Data& AddPass(const std::string_view name, Setup&& setup, Execute&& exec)
     {
         static_assert(std::is_invocable_v<Setup, Builder&, Data&>, "Invalid setup callback");
         static_assert(std::is_invocable_v<Execute, const Data&, FrameGraphPassResources&, void*>, "Invalid exec callback");
@@ -85,7 +84,7 @@ public:
     }
 
     template <_VIRTUALIZABLE_CONCEPT(T)>
-    [[nodiscard]] const typename T::Desc& getDescriptor(FrameGraphResource id) const
+    [[nodiscard]] const typename T::Desc& GetDescriptor(FrameGraphResource id) const
     {
         return _getResourceEntry(id).getDescriptor<T>();
     }
@@ -95,15 +94,16 @@ public:
     [[nodiscard]] FrameGraphResource Import(const std::string_view name, const typename T::Desc&, T&&);
 
     /** @return True if the given resource is valid for read/write operation. */
-    [[nodiscard]] bool isValid(FrameGraphResource id) const;
+    [[nodiscard]] bool IsValid(FrameGraphResource id) const;
 
-    /** Culls unreferenced resources and passes. */
-    void compile();
-    /** Invokes execution callbacks. */
-    void execute(void* context = nullptr, void* allocator = nullptr);
+    /** 剔除无用的资源和Pass*/
+    void Compile();
+    
+    /** 执行Pass的回调 */
+    void Execute(void* context = nullptr, void* allocator = nullptr);
 
     template <typename Writer>
-    std::ostream& debugOutput(std::ostream&, Writer&&) const;
+    std::ostream& DebugOutput(std::ostream&, Writer&&) const;
 
 private:
     [[nodiscard]] PassNode& _createPassNode(const std::string_view name, std::unique_ptr<FrameGraphPassConcept>&&);
@@ -191,7 +191,7 @@ inline FrameGraphResource FrameGraph::Import(const std::string_view name, const 
 }
 
 template <typename Writer>
-inline std::ostream& FrameGraph::debugOutput(std::ostream& os, Writer&& writer) const
+inline std::ostream& FrameGraph::DebugOutput(std::ostream& os, Writer&& writer) const
 {
     for (const auto& node : m_passNodes)
     {
@@ -247,5 +247,5 @@ inline const typename T::Desc&
 FrameGraphPassResources::GetDescriptor(FrameGraphResource id) const
 {
     assert(m_passNode.reads(id) || m_passNode.creates(id) || m_passNode.writes(id));
-    return m_frameGraph.getDescriptor<T>(id);
+    return m_frameGraph.GetDescriptor<T>(id);
 }

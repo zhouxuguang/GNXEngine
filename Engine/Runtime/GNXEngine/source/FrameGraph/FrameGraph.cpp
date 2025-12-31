@@ -7,20 +7,20 @@
 // FrameGraph class:
 //
 
-void FrameGraph::reserve(uint32_t numPasses, uint32_t numResources)
+void FrameGraph::Reserve(uint32_t numPasses, uint32_t numResources)
 {
 	m_passNodes.reserve(numPasses);
 	m_resourceNodes.reserve(numResources);
 	m_resourceRegistry.reserve(numResources);
 }
 
-bool FrameGraph::isValid(FrameGraphResource id) const
+bool FrameGraph::IsValid(FrameGraphResource id) const
 {
 	const auto& node = _getResourceNode(id);
 	return node.getVersion() == _getResourceEntry(node).getVersion();
 }
 
-void FrameGraph::compile()
+void FrameGraph::Compile()
 {
 	for (auto& pass : m_passNodes)
 	{
@@ -77,7 +77,7 @@ void FrameGraph::compile()
 	}
 }
 
-void FrameGraph::execute(void* context, void* allocator)
+void FrameGraph::Execute(void* context, void* allocator)
 {
 	for (const auto& pass : m_passNodes)
 	{
@@ -156,7 +156,7 @@ const ResourceEntry& FrameGraph::_getResourceEntry(const ResourceNode& node) con
 
 std::ostream& operator<<(std::ostream& os, const FrameGraph& fg)
 {
-	return fg.debugOutput(os, graphviz::Writer{});
+	return fg.DebugOutput(os, graphviz::Writer{});
 }
 
 //
@@ -165,13 +165,13 @@ std::ostream& operator<<(std::ostream& os, const FrameGraph& fg)
 
 FrameGraphResource FrameGraph::Builder::read(FrameGraphResource id, uint32_t flags)
 {
-	assert(m_frameGraph.isValid(id));
+	assert(m_frameGraph.IsValid(id));
 	return m_passNode._read(id, flags);
 }
 
 FrameGraphResource FrameGraph::Builder::write(FrameGraphResource id, uint32_t flags)
 {
-	assert(m_frameGraph.isValid(id));
+	assert(m_frameGraph.IsValid(id));
 	if (m_frameGraph._getResourceEntry(id).isImported()) setSideEffect();
 
 	if (m_passNode.creates(id))
