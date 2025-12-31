@@ -73,11 +73,8 @@ public:
     template <typename Data = NoData, typename Setup, typename Execute>
     const Data& addCallbackPass(const std::string_view name, Setup&& setup, Execute&& exec)
     {
-        static_assert(std::is_invocable_v<Setup, Builder&, Data&>,
-            "Invalid setup callback");
-        static_assert(std::is_invocable_v<Execute, const Data&,
-            FrameGraphPassResources&, void*>,
-            "Invalid exec callback");
+        static_assert(std::is_invocable_v<Setup, Builder&, Data&>, "Invalid setup callback");
+        static_assert(std::is_invocable_v<Execute, const Data&, FrameGraphPassResources&, void*>, "Invalid exec callback");
         static_assert(sizeof(Execute) < 1024, "Execute captures too much");
 
         auto* pass = new FrameGraphPass<Data, Execute>(std::forward<Execute>(exec));

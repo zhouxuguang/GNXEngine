@@ -166,6 +166,8 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
     mWidth = imageCreateInfoCopy.extent.width;
     mHeight = imageCreateInfoCopy.extent.height;
     mDepth = imageCreateInfoCopy.extent.depth;
+    mMipLevels = imageCreateInfoCopy.mipLevels;
+    mLayerCount = imageCreateInfoCopy.arrayLayers;
 }
 
 VKTextureBase::~VKTextureBase()
@@ -306,6 +308,16 @@ uint32_t VKTextureBase::GetHeight() const
 uint32_t VKTextureBase::GetDepth() const
 {
     return mDepth;
+}
+
+uint32_t VKTextureBase::GetMipLevels() const
+{
+    return mMipLevels;
+}
+
+uint32_t VKTextureBase::GetLayerCount() const
+{
+    return mLayerCount;
 }
 
 void VKTextureBase::SetName(const char* name)

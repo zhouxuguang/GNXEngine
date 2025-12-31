@@ -228,6 +228,7 @@ RCTexture2DPtr VKRenderDevice::CreateTexture2D(TextureFormat format,
     imageCreateInfo.flags = 0;
     
     auto texture = std::make_shared<VKRCTexture2D>(mVulkanContext, imageCreateInfo);
+    texture->SetFormat(format);
     texture->CreateImageViews(imageCreateInfo);
     return texture;
 }
@@ -264,6 +265,7 @@ RCTexture3DPtr VKRenderDevice::CreateTexture3D(TextureFormat format,
     imageCreateInfo.flags = VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;    // 3d纹理的每一层需要创建imageview时需要这个标志
     
     auto texture = std::make_shared<VKRCTexture3D>(mVulkanContext, imageCreateInfo);
+    texture->SetFormat(format);
 	texture->CreateImageViews(imageCreateInfo);
 	return texture;
 }
@@ -308,6 +310,7 @@ RCTextureCubePtr VKRenderDevice::CreateTextureCube(TextureFormat format,
     imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     
     auto texture = std::make_shared<VKRCTextureCube>(mVulkanContext, imageCreateInfo);
+    texture->SetFormat(format);
 	texture->CreateImageViews(imageCreateInfo);
 	return texture;
 }
@@ -345,6 +348,7 @@ RCTexture2DArrayPtr VKRenderDevice::CreateTexture2DArray(TextureFormat format,
     
     auto texture = std::make_shared<VKRCTexture2DArray>(mVulkanContext, imageCreateInfo);
 	texture->CreateImageViews(imageCreateInfo);
+    texture->SetFormat(format);
 	return texture;
 }
 

@@ -10,8 +10,10 @@ FrameGraphResource importTexture(FrameGraph& fg, const std::string_view name, Re
 
     FrameGraphTexture::Desc desc = {};
     desc.depth = texture->GetDepth();
-    desc.numMipLevels = 1; // todo 增加mipmap level
-    // FORMAT
+    desc.numMipLevels = texture->GetMipLevels();
+    desc.layers = texture->GetLayerCount();
+    desc.format = texture->GetTextureFormat();
+
     desc.extent.offsetX = 0;
     desc.extent.offsetY = 0;
     desc.extent.width = texture->GetWidth();

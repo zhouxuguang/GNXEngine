@@ -45,6 +45,10 @@ public:
     virtual uint32_t GetHeight() const;
     
     virtual uint32_t GetDepth() const;
+    
+    virtual uint32_t GetMipLevels() const;
+    
+    virtual uint32_t GetLayerCount() const;
 
     virtual void SetName(const char* name);
     
@@ -76,6 +80,8 @@ private:
     uint32_t mWidth = 0;
     uint32_t mHeight = 0;
     uint32_t mDepth = 0;
+    uint32_t mMipLevels = 1;
+    uint32_t mLayerCount = 1;
     VulkanImageViewPtr mVulkanImageViewPtr = nullptr;
     std::vector<VulkanImageViewPtr> mRenderTargetViews;
     bool mSupportHostImageCopy = false;
