@@ -76,8 +76,7 @@ public:
 	[[nodiscard]] decltype(auto) each(const Write) const { return m_writes; }
 
 private:
-	PassNode(const std::string_view name, uint32_t nodeId,
-		std::unique_ptr<FrameGraphPassConcept>&&);
+	PassNode(const std::string_view name, uint32_t nodeId, std::unique_ptr<FrameGraphPassConcept>&&);
 
 	FrameGraphResource _read(FrameGraphResource id, uint32_t flags);
 	[[nodiscard]] FrameGraphResource _write(FrameGraphResource id, uint32_t flags);

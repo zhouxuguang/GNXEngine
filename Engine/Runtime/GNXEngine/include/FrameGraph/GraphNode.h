@@ -29,7 +29,7 @@ public:
 	[[nodiscard]] auto getRefCount() const { return m_refCount; }
 
 protected:
-	GraphNode(const std::string_view name, uint32_t id) : m_name{ name }, m_id{ id } 
+	GraphNode(const std::string_view name, uint32_t id) : m_name(name), m_id(id)
 	{
 	}
 

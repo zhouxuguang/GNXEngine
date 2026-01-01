@@ -53,14 +53,12 @@ template <typename T> const T* FrameGraphBlackboard::try_get() const
 
 template <typename T> inline T& FrameGraphBlackboard::get() 
 {
-	return const_cast<T&>(
-		const_cast<const FrameGraphBlackboard*>(this)->get<T>());
+	return const_cast<T&>(const_cast<const FrameGraphBlackboard*>(this)->get<T>());
 }
 
 template <typename T> inline T* FrameGraphBlackboard::try_get() 
 {
-	return const_cast<T*>(
-		const_cast<const FrameGraphBlackboard*>(this)->try_get<T>());
+	return const_cast<T*>(const_cast<const FrameGraphBlackboard*>(this)->try_get<T>());
 }
 
 template <typename T> inline bool FrameGraphBlackboard::has() const 

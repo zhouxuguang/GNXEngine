@@ -19,7 +19,8 @@ namespace graphviz
   case Color::Value:                                                           \
     return #Value
 
-			switch (color) {
+			switch (color) 
+            {
 				CASE(aliceblue);
 				CASE(antiquewhite);
 				CASE(aqua);
@@ -173,12 +174,15 @@ namespace graphviz
 
 #undef CASE
 		}
-		[[nodiscard]] auto toString(const RankDir rankDir) {
+
+		[[nodiscard]] auto toString(const RankDir rankDir)
+        {
 #define CASE(Value)                                                            \
   case RankDir::Value:                                                         \
     return #Value
 
-			switch (rankDir) {
+			switch (rankDir) 
+            {
 				CASE(TB);
 				CASE(BT);
 				CASE(LR);
@@ -186,7 +190,6 @@ namespace graphviz
 			}
 			assert(false);
 			return "";
-
 #undef CASE
 		}
 

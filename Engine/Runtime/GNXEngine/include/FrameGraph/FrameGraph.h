@@ -54,7 +54,7 @@ public:
         }
 
     private:
-        Builder(FrameGraph& fg, PassNode& node) : m_frameGraph{ fg }, m_passNode{ node } 
+        Builder(FrameGraph& fg, PassNode& node) : m_frameGraph(fg), m_passNode(node)
         {
         }
 
@@ -176,7 +176,7 @@ public:
     [[nodiscard]] const typename T::Desc& GetDescriptor(FrameGraphResource id) const;
 
 private:
-    FrameGraphPassResources(FrameGraph& fg, const PassNode& node) : m_frameGraph{ fg }, m_passNode{ node } 
+    FrameGraphPassResources(FrameGraph& fg, const PassNode& node) : m_frameGraph(fg), m_passNode(node)
     {
     }
 

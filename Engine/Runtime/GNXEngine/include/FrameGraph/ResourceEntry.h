@@ -6,7 +6,7 @@
 
 NAMESPACE_GNXENGINE_BEGIN
 
-// Wrapper around a virtual resource.
+// 虚拟资源的包装类
 class ResourceEntry final 
 {
 	friend class FrameGraph;
@@ -65,7 +65,8 @@ private:
 
 		virtual std::string toString() const = 0;
 	};
-	template <typename T> struct Model final : Concept 
+    
+	template <typename T> struct Model final : Concept
 	{
 		Model(const typename T::Desc&, T&&);
 
@@ -79,7 +80,9 @@ private:
 #else
 			if constexpr (has_preRead<T>::value)
 #endif
-				resource.preRead(descriptor, flags, context);
+            {
+                resource.preRead(descriptor, flags, context);
+            }
 		}
 		void preWrite(uint32_t flags, void* context) override 
 		{
@@ -88,7 +91,9 @@ private:
 #else
 			if constexpr (has_preWrite<T>::value)
 #endif
-				resource.preWrite(descriptor, flags, context);
+            {
+                resource.preWrite(descriptor, flags, context);
+            }
 		}
 
 		std::string toString() const override;
@@ -138,8 +143,8 @@ inline const typename T::Desc& ResourceEntry::getDescriptor() const
 
 template <typename T>
 inline ResourceEntry::ResourceEntry(const Type type, uint32_t id, const typename T::Desc& desc, T&& obj)
-	: m_type{ type }, m_id{ id }, m_version{ kInitialVersion },
-	m_concept{ std::make_unique<Model<T>>(desc, std::forward<T>(obj)) } 
+	: m_type(type), m_id(id), m_version(kInitialVersion),
+	m_concept(std::make_unique<Model<T>>(desc, std::forward<T>(obj)))
 {
 }
 
@@ -156,7 +161,7 @@ template <typename T> inline auto* ResourceEntry::_getModel() const
 
 template <typename T>
 inline ResourceEntry::Model<T>::Model(const typename T::Desc& desc, T&& obj)
-	: descriptor{ desc }, resource{ std::move(obj) } 
+	: descriptor(desc), resource(std::move(obj))
 {
 }
 

@@ -163,8 +163,9 @@ namespace graphviz
 	};
 	enum class RankDir : uint8_t { TB, BT, LR, RL };
 
-	struct Graph {
-		struct Style 
+	struct Graph 
+    {
+		struct Style
 		{
 			RankDir rankDir{ RankDir::TB };
 			struct Font 
@@ -228,8 +229,7 @@ namespace graphviz
 		Graph graph{};
 
 		void operator()(const PassNode&, const std::vector<ResourceNode>&);
-		void operator()(const ResourceNode&, const ResourceEntry&,
-			const std::vector<PassNode>&);
+		void operator()(const ResourceNode&, const ResourceEntry&, const std::vector<PassNode>&);
 
 		void flush(std::ostream&) const;
 	};
