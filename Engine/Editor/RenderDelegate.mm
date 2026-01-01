@@ -195,17 +195,45 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
         renderEncoder->EndEncode();
     });
     
+    // 图像灰度化的计算管线
+    struct ComputePassData
+    {
+        GNXEngine::FrameGraphResource inputColor;
+        GNXEngine::FrameGraphResource outputColor;
+    };
+    const ComputePassData &computePassData = frameGraph.AddPass<ComputePassData>("GrayCompute",
+    [=](GNXEngine::FrameGraph::Builder &builder, ComputePassData &data)
+    {
+        GNXEngine::FrameGraphTexture::Desc colorDesc;
+        colorDesc.extent.width = mViewSize.width;
+        colorDesc.extent.height = mViewSize.height;
+        colorDesc.format = kTexFormatRGBA16Float;
+        data.outputColor = builder.create<GNXEngine::FrameGraphTexture>("grayColor", colorDesc);
+        data.outputColor = builder.write(data.outputColor);
+
+        data.inputColor = builder.read(basePassData.colorTarget);
+    },
+    [=](const ComputePassData &data, GNXEngine::FrameGraphPassResources &resources, void *)
+    {
+        GNXEngine::FrameGraphTexture &colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.inputColor);
+        GNXEngine::FrameGraphTexture &grayTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.outputColor);
+        
+        ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
+        testImageGrayDraw(computeEncoder, computePipeline, colorTexture.texture, grayTexture.texture);
+        computeEncoder->EndEncode();
+    });
+    
     frameGraph.AddPass("PresentPass", 
     [=](GNXEngine::FrameGraph::Builder &builder, GNXEngine::FrameGraph::NoData &data)
     {
-        builder.read(basePassData.colorTarget);
+        builder.read(computePassData.outputColor);
         
         // present的pass必须设置这个标记，要不然不会执行
         builder.setSideEffect();
     },
     [=](const GNXEngine::FrameGraph::NoData &data, GNXEngine::FrameGraphPassResources &resources, void *)
     {
-        GNXEngine::FrameGraphTexture &colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(basePassData.colorTarget);
+        GNXEngine::FrameGraphTexture &colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(computePassData.outputColor);
         
         RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
         testPost(renderEncoder, colorTexture.texture);
@@ -213,7 +241,7 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
         commandBuffer->PresentFrameBuffer();
     });
     
-    std::ofstream{"/Users/zhouxuguang/work/opensource/fg.dot"} << frameGraph;
+    std::ofstream{"/Users/zhouxuguang/work/opensource/fg.txt"} << frameGraph;
     
     frameGraph.Compile();
     frameGraph.Execute(nullptr, mTransientResources);
