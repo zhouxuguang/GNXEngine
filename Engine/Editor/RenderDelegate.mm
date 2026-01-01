@@ -27,6 +27,7 @@
 #include "Runtime/BaseLib/include/DateTime.h"
 #include "Runtime/GNXEngine/include/FrameGraph/FrameGraph.h"
 #include "Runtime/GNXEngine/include/FrameGraph/TransientResources.h"
+#include "Runtime/GNXEngine/include/FrameGraph/FrameGraphBlackboard.h"
 
 
 static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
@@ -201,7 +202,9 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
         GNXEngine::FrameGraphResource inputColor;
         GNXEngine::FrameGraphResource outputColor;
     };
-    const ComputePassData &computePassData = frameGraph.AddPass<ComputePassData>("GrayCompute",
+    
+    GNXEngine::FrameGraphBlackboard fgBlackboard;
+    fgBlackboard.Add<ComputePassData>() = frameGraph.AddPass<ComputePassData>("GrayCompute",
     [=](GNXEngine::FrameGraph::Builder &builder, ComputePassData &data)
     {
         GNXEngine::FrameGraphTexture::Desc colorDesc;
@@ -223,7 +226,9 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
         computeEncoder->EndEncode();
     });
     
-    frameGraph.AddPass("PresentPass", 
+    
+    const ComputePassData& computePassData = fgBlackboard.Get<ComputePassData>();
+    frameGraph.AddPass("PresentPass",
     [=](GNXEngine::FrameGraph::Builder &builder, GNXEngine::FrameGraph::NoData &data)
     {
         builder.read(computePassData.outputColor);
