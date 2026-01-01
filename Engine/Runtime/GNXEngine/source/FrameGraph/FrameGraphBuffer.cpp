@@ -1,14 +1,14 @@
 #include "FrameGraph/FrameGraphBuffer.h"
-//#include "TransientResources.h"
+#include "FrameGraph/TransientResources.h"
 
 void FrameGraphBuffer::create(const Desc& desc, void* allocator) 
 {
-	//buffer = static_cast<TransientResources*>(allocator)->acquireBuffer(desc);
+	buffer = static_cast<TransientResources*>(allocator)->acquireBuffer(desc);
 }
 
 void FrameGraphBuffer::destroy(const Desc& desc, void* allocator) 
 {
-	//static_cast<TransientResources*>(allocator)->releaseBuffer(desc, std::move(buffer));
+	static_cast<TransientResources*>(allocator)->releaseBuffer(desc, buffer);
 }
 
 std::string FrameGraphBuffer::toString(const Desc& desc) 
