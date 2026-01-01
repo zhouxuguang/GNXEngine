@@ -76,9 +76,9 @@ public:
         static_assert(std::is_invocable_v<Execute, const Data&, FrameGraphPassResources&, void*>, "Invalid exec callback");
         static_assert(sizeof(Execute) < 1024, "Execute captures too much");
 
-        auto* pass = new FrameGraphPass<Data, Execute>(std::forward<Execute>(exec));
+        auto* pass = new(std::nothrow) FrameGraphPass<Data, Execute>(std::forward<Execute>(exec));
         auto& passNode = _createPassNode(name, std::unique_ptr<FrameGraphPass<Data, Execute>>(pass));
-        Builder builder{ *this, passNode };
+        Builder builder{*this, passNode};
         std::invoke(setup, builder, pass->data);
         return pass->data;
     }
