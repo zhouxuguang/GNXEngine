@@ -24,6 +24,8 @@
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 #include "TestComputeShader.hpp"
 #include "Runtime/BaseLib/include/DateTime.h"
+#include "Runtime/GNXEngine/include/FrameGraph/FrameGraph.h"
+#include "Runtime/GNXEngine/include/FrameGraph/TransientResources.h"
 
 
 static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
@@ -61,11 +63,15 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     ComputePipelinePtr computePipeline;
     
     uint64_t lastTime;
+    
+    TransientResources* mTransientResources;
 }
 
 - (void)initRenderWithHandle:(nonnull CALayer *)layer andType:(RenderType)renderType
 {
     mRenderdevice = CreateRenderDevice(convertToRenderDeviceType(renderType), (__bridge void*)layer);
+    
+    mTransientResources = new TransientResources(mRenderdevice);
 }
 
 - (void)resizeRender:(NSUInteger)width andHeight:(NSUInteger)height
@@ -136,6 +142,79 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     sceneManager->Update(deltaTime);
     
     CommandBufferPtr commandBuffer = mRenderdevice->CreateCommandBuffer();
+    
+    struct PassData 
+    {
+        FrameGraphResource colorTarget;
+        FrameGraphResource depthStencilTarget;
+    };
+    
+    FrameGraph frameGraph;
+    const PassData& basePassData = frameGraph.AddPass<PassData>("BasePass",
+                       [=](FrameGraph::Builder &builder, PassData &data)
+    {
+        FrameGraphTexture::Desc colorDesc;
+        colorDesc.extent.width = mViewSize.width;
+        colorDesc.extent.height = mViewSize.height;
+        colorDesc.format = kTexFormatRGBA16Float;
+        data.colorTarget = builder.create<FrameGraphTexture>("ColorTarget0", colorDesc);
+        data.colorTarget = builder.write(data.colorTarget);
+        
+        FrameGraphTexture::Desc depthStencilDesc;
+        depthStencilDesc.extent.width = mViewSize.width;
+        depthStencilDesc.extent.height = mViewSize.height;
+        depthStencilDesc.format = kTexFormatDepth32FloatStencil8;
+        data.depthStencilTarget = builder.create<FrameGraphTexture>("depthStencilTarget", depthStencilDesc);
+        data.depthStencilTarget = builder.write(data.depthStencilTarget);
+    },
+                       [=](const PassData &data, FrameGraphPassResources &resources, void *) 
+    {
+        FrameGraphTexture &colorTexture = resources.Get<FrameGraphTexture>(data.colorTarget);
+        FrameGraphTexture &depthStencilTexture = resources.Get<FrameGraphTexture>(data.depthStencilTarget);
+        
+        RenderPass renderPass;
+        RenderPassColorAttachmentPtr colorAttachmentPtr = std::make_shared<RenderPassColorAttachment>();
+        colorAttachmentPtr->clearColor = MakeClearColor(0.0, 0.0, 0.0, 1.0);
+        colorAttachmentPtr->texture = colorTexture.texture;
+        renderPass.colorAttachments.push_back(colorAttachmentPtr);
+        
+        renderPass.depthAttachment = std::make_shared<RenderPassDepthAttachment>();
+        renderPass.depthAttachment->texture = depthStencilTexture.texture;
+        renderPass.depthAttachment->clearDepth = 1.0;
+        
+        renderPass.stencilAttachment = std::make_shared<RenderPassStencilAttachment>();
+        renderPass.stencilAttachment->texture = depthStencilTexture.texture;
+        renderPass.stencilAttachment->clearStencil = 0x00;
+
+        renderPass.renderRegion = Rect2D(0, 0, mViewSize.width, mViewSize.height);
+        RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);
+        
+        sceneManager->Render(renderEncoder);
+        
+        renderEncoder->EndEncode();
+    });
+    
+    frameGraph.AddPass("PresentPass", [=](FrameGraph::Builder &builder, FrameGraph::NoData &data)
+    {
+        builder.read(basePassData.colorTarget);
+        
+        // present的pass必须设置这个标记，要不然不会执行
+        builder.setSideEffect();
+    },
+                       [=](const FrameGraph::NoData &data, FrameGraphPassResources &resources, void *)
+    {
+        FrameGraphTexture &colorTexture = resources.Get<FrameGraphTexture>(basePassData.colorTarget);
+        
+        RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
+        testPost(renderEncoder, colorTexture.texture);
+        renderEncoder->EndEncode();
+        commandBuffer->PresentFrameBuffer();
+    });
+    
+    frameGraph.Compile();
+    frameGraph.Execute(nullptr, mTransientResources);
+    
+    return;
     
     RenderPass renderPass;
     RenderPassColorAttachmentPtr colorAttachmentPtr = std::make_shared<RenderPassColorAttachment>();

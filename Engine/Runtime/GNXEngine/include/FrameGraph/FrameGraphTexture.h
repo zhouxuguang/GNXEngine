@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Runtime/RenderCore/include/RCTexture.h"
+#include "PreDefine.h"
 
-class FrameGraphTexture
+class GNXENGINE_API FrameGraphTexture
 {
 public:
 	struct Desc 

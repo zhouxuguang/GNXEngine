@@ -2,13 +2,14 @@
 
 #include <string>
 #include <cstdint>
+#include "PreDefine.h"
 
 class FrameGraph;
 
 using FrameGraphResource = int32_t;
 
 // frameGraph的节点，主要包括pass和资源
-class GraphNode
+class GNXENGINE_API GraphNode
 {
 	friend class FrameGraph;
 

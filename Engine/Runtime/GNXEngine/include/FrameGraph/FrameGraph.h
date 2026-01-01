@@ -4,7 +4,7 @@
 #include "ResourceNode.h"
 #include "ResourceEntry.h"
 
-class FrameGraph
+class GNXENGINE_API FrameGraph
 {
     friend class FrameGraphPassResources;
 
@@ -34,8 +34,8 @@ public:
 
         template <_VIRTUALIZABLE_CONCEPT(T)>
         /** Declares the creation of a resource. */
-        [[nodiscard]] FrameGraphResource create(const std::string_view name,
-            const typename T::Desc&);
+        [[nodiscard]] FrameGraphResource create(const std::string_view name, const typename T::Desc&);
+        
         /** Declares read operation. */
         FrameGraphResource read(FrameGraphResource id, uint32_t flags = kFlagsIgnored);
         /**
@@ -65,8 +65,10 @@ public:
 
     struct NoData {};
     /**
-     * @param setup  pass配置的回调，在这里进行回调
-     * @param exec 在Execute函数中执行的回调
+     * @param setup  pass配置的回调，在当前函数进行回调，回调的声明如下：
+     *              (FrameGraph::Builder &builder, PassData &data)
+     * @param exec 在Execute函数中执行的回调，回调的声明如下：
+     *              (const PassData &data, FrameGraphPassResources &resources, void *)
      *
      */
     template <typename Data = NoData, typename Setup, typename Execute>

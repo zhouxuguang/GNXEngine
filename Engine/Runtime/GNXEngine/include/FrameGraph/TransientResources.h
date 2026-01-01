@@ -2,13 +2,14 @@
 
 #include "FrameGraphTexture.h"
 #include "FrameGraphBuffer.h"
+#include "PreDefine.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include <memory>
 #include <vector>
 #include <unordered_map>
 
 // 瞬间时间资源管理，配合帧图一起使用
-class TransientResources
+class GNXENGINE_API TransientResources
 {
 public:
 	TransientResources() = delete;

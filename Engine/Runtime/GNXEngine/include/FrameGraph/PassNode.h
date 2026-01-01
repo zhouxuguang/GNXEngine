@@ -36,7 +36,7 @@ struct FrameGraphPass final : FrameGraphPassConcept
 };
 
 // pass的节点，包括计算和图形pass
-class PassNode final : public GraphNode
+class GNXENGINE_API PassNode final : public GraphNode
 {
 	friend class FrameGraph;
 

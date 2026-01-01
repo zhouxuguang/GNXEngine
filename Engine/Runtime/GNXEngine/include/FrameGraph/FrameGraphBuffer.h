@@ -1,8 +1,9 @@
 #pragma once
 
 #include "Runtime/RenderCore/include/ComputeBuffer.h"
+#include "PreDefine.h"
 
-class FrameGraphBuffer
+class GNXENGINE_API FrameGraphBuffer
 {
 public:
 	struct Desc
