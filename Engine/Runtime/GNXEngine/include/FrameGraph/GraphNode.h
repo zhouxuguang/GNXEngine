@@ -4,6 +4,8 @@
 #include <cstdint>
 #include "PreDefine.h"
 
+NAMESPACE_GNXENGINE_BEGIN
+
 class FrameGraph;
 
 using FrameGraphResource = int32_t;
@@ -37,3 +39,5 @@ private:
 	const uint32_t m_id;
 	int32_t m_refCount = 0;
 };
+
+NAMESPACE_GNXENGINE_END

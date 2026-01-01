@@ -7,6 +7,8 @@
 
 // https://www.graphviz.org/pdf/dotguide.pdf
 
+NAMESPACE_GNXENGINE_BEGIN
+
 namespace graphviz 
 {
 	namespace 
@@ -362,3 +364,5 @@ namespace graphviz
 	void Writer::flush(std::ostream& os) const { os << graph << "\n"; }
 
 } // namespace graphviz
+
+NAMESPACE_GNXENGINE_END

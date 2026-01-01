@@ -6,18 +6,18 @@
 namespace std
 {
 
-template<> struct hash<FrameGraphTexture::Desc>
+template<> struct hash<GNXEngine::FrameGraphTexture::Desc>
 {
-	std::size_t operator()(const FrameGraphTexture::Desc &desc) const noexcept 
+    std::size_t operator()(const GNXEngine::FrameGraphTexture::Desc &desc) const noexcept 
 	{
         std::size_t hash = baselib::HashFunction(&desc, sizeof(desc));
 		return hash;
 	}
 };
 
-template<> struct hash<FrameGraphBuffer::Desc>
+template<> struct hash<GNXEngine::FrameGraphBuffer::Desc>
 {
-	std::size_t operator()(const FrameGraphBuffer::Desc &desc) const noexcept
+    std::size_t operator()(const GNXEngine::FrameGraphBuffer::Desc &desc) const noexcept
 	{
         std::size_t hash = baselib::HashFunction(&desc, sizeof(desc));
         return hash;
@@ -25,6 +25,8 @@ template<> struct hash<FrameGraphBuffer::Desc>
 };
 
 } // namespace std
+
+NAMESPACE_GNXENGINE_BEGIN
 
 namespace 
 {
@@ -88,10 +90,10 @@ TransientResources::~TransientResources()
     }
 }
 
-void TransientResources::update(float dt) 
+void TransientResources::Update(float deltaTime)
 {
-    HeartBeat(m_textures, m_texturePools, dt);
-    HeartBeat(m_buffers, m_bufferPools, dt);
+    HeartBeat(m_textures, m_texturePools, deltaTime);
+    HeartBeat(m_buffers, m_bufferPools, deltaTime);
 }
 
 RenderCore::RCTexturePtr TransientResources::acquireTexture(const FrameGraphTexture::Desc &desc)
@@ -156,3 +158,5 @@ void TransientResources::releaseBuffer(const FrameGraphBuffer::Desc &desc, Rende
     const auto h = std::hash<FrameGraphBuffer::Desc>{}(desc);
     m_bufferPools[h].push_back({buffer, 0.0f});
 }
+
+NAMESPACE_GNXENGINE_END

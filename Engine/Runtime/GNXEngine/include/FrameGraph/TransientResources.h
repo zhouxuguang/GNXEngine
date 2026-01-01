@@ -8,6 +8,8 @@
 #include <vector>
 #include <unordered_map>
 
+NAMESPACE_GNXENGINE_BEGIN
+
 // 瞬间时间资源管理，配合帧图一起使用
 class GNXENGINE_API TransientResources
 {
@@ -21,7 +23,7 @@ public:
 	TransientResources &operator=(const TransientResources &) = delete;
 	TransientResources &operator=(TransientResources &&) noexcept = delete;
 
-	void update(float dt);
+	void Update(float delta);
 
 	[[nodiscard]] RenderCore::RCTexturePtr acquireTexture(const FrameGraphTexture::Desc &);
 	void releaseTexture(const FrameGraphTexture::Desc &, RenderCore::RCTexturePtr);
@@ -46,3 +48,5 @@ private:
 	std::unordered_map<std::size_t, ResourcePool<RenderCore::RCTexturePtr>> m_texturePools;
 	std::unordered_map<std::size_t, ResourcePool<RenderCore::ComputeBufferPtr>> m_bufferPools;
 };
+
+NAMESPACE_GNXENGINE_END

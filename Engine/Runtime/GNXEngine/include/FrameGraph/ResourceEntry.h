@@ -4,6 +4,8 @@
 #include <memory>
 #include <cassert>
 
+NAMESPACE_GNXENGINE_BEGIN
+
 // Wrapper around a virtual resource.
 class ResourceEntry final 
 {
@@ -182,3 +184,5 @@ inline std::string ResourceEntry::Model<T>::toString() const
 	else
 		return "";
 }
+
+NAMESPACE_GNXENGINE_END

@@ -3,6 +3,8 @@
 #include "Runtime/RenderCore/include/RCTexture.h"
 #include "PreDefine.h"
 
+NAMESPACE_GNXENGINE_BEGIN
+
 class GNXENGINE_API FrameGraphTexture
 {
 public:
@@ -26,3 +28,5 @@ public:
 
 	RenderCore::RCTexturePtr texture = nullptr;
 };
+
+NAMESPACE_GNXENGINE_END

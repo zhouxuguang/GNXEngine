@@ -1,6 +1,8 @@
 #include "FrameGraph/FrameGraphTexture.h"
 #include "FrameGraph/TransientResources.h"
 
+NAMESPACE_GNXENGINE_BEGIN
+
 static std::string toString(RenderCore::Rect2D extent, uint32_t depth) 
 {
     char szBuf[128] = {0};
@@ -29,7 +31,9 @@ void FrameGraphTexture::destroy(const Desc& desc, void* allocator)
 std::string FrameGraphTexture::toString(const Desc& desc) 
 {
     char szBuf[1024] = {0};
-    snprintf(szBuf, 1024, "%s [%s]", ::toString(desc.extent, desc.depth).c_str(), std::to_string(desc.format).c_str());
+    snprintf(szBuf, 1024, "%s [%s]", GNXEngine::toString(desc.extent, desc.depth).c_str(), std::to_string(desc.format).c_str());
     
     return std::string(szBuf);
 }
+
+NAMESPACE_GNXENGINE_END

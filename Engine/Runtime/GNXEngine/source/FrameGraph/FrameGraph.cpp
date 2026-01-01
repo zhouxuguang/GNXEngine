@@ -3,6 +3,8 @@
 #include "GraphvizWriter.h"
 #include <stack>
 
+NAMESPACE_GNXENGINE_BEGIN
+
 //
 // FrameGraph class:
 //
@@ -110,9 +112,7 @@ void FrameGraph::Execute(void* context, void* allocator)
 // (private):
 //
 
-PassNode&
-FrameGraph::_createPassNode(const std::string_view name,
-	std::unique_ptr<FrameGraphPassConcept>&& base)
+PassNode& FrameGraph::_createPassNode(const std::string_view name, std::unique_ptr<FrameGraphPassConcept>&& base)
 {
 	const auto id = static_cast<uint32_t>(m_passNodes.size());
 	return m_passNodes.emplace_back(PassNode{ name, id, std::move(base) });
@@ -189,3 +189,5 @@ FrameGraphResource FrameGraph::Builder::write(FrameGraphResource id, uint32_t fl
 		return m_passNode._write(m_frameGraph._clone(id), flags);
 	}
 }
+
+NAMESPACE_GNXENGINE_END

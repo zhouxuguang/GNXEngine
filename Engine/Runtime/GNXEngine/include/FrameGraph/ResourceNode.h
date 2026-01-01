@@ -2,6 +2,8 @@
 
 #include "GraphNode.h"
 
+NAMESPACE_GNXENGINE_BEGIN
+
 class PassNode;
 
 // 资源节点，包括纹理和buffer
@@ -33,3 +35,5 @@ private:
 	PassNode* m_producer = nullptr;
 	PassNode* m_last = nullptr;
 };
+
+NAMESPACE_GNXENGINE_END

@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cassert>
 
+NAMESPACE_GNXENGINE_BEGIN
+
 namespace
 {
 
@@ -73,3 +75,5 @@ FrameGraphResource PassNode::_write(FrameGraphResource id, uint32_t flags)
 		? id
 		: m_writes.emplace_back(AccessDeclaration{ id, flags }).id;
 }
+
+NAMESPACE_GNXENGINE_END

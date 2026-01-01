@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <cassert>
 
+NAMESPACE_GNXENGINE_BEGIN
+
 class FrameGraphBlackboard
 {
 public:
@@ -69,3 +71,5 @@ template <typename T> inline bool FrameGraphBlackboard::has() const
     return m_storage.find(typeid(T)) != m_storage.cend();
 #endif
 }
+
+NAMESPACE_GNXENGINE_END

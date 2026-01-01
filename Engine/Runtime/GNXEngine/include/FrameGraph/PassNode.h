@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+NAMESPACE_GNXENGINE_BEGIN
+
 class FrameGraphPassResources;
 
 struct FrameGraphPassConcept
@@ -96,3 +98,5 @@ inline bool operator==(const PassNode::AccessDeclaration& lhs, const PassNode::A
 	return lhs.id == rhs.id && lhs.flags == rhs.flags;
 }
 #endif
+
+NAMESPACE_GNXENGINE_END

@@ -5,7 +5,9 @@
 #include "FrameGraph/ResourceEntry.h"
 #include <vector>
 
-namespace graphviz 
+NAMESPACE_GNXENGINE_BEGIN
+
+namespace graphviz
 {
 
 	// https://graphviz.org/doc/info/colors.html
@@ -233,3 +235,5 @@ namespace graphviz
 	};
 
 } // namespace graphviz
+
+NAMESPACE_GNXENGINE_END

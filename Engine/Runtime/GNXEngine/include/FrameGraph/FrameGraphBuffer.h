@@ -3,6 +3,8 @@
 #include "Runtime/RenderCore/include/ComputeBuffer.h"
 #include "PreDefine.h"
 
+NAMESPACE_GNXENGINE_BEGIN
+
 class GNXENGINE_API FrameGraphBuffer
 {
 public:
@@ -18,3 +20,5 @@ public:
 
 	RenderCore::ComputeBufferPtr buffer = nullptr;
 };
+
+NAMESPACE_GNXENGINE_END

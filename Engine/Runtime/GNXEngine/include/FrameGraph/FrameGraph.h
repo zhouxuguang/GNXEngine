@@ -4,6 +4,8 @@
 #include "ResourceNode.h"
 #include "ResourceEntry.h"
 
+NAMESPACE_GNXENGINE_BEGIN
+
 class GNXENGINE_API FrameGraph
 {
     friend class FrameGraphPassResources;
@@ -251,3 +253,5 @@ FrameGraphPassResources::GetDescriptor(FrameGraphResource id) const
     assert(m_passNode.reads(id) || m_passNode.creates(id) || m_passNode.writes(id));
     return m_frameGraph.GetDescriptor<T>(id);
 }
+
+NAMESPACE_GNXENGINE_END

@@ -4,6 +4,8 @@
 #include "FrameGraph/FrameGraphBuffer.h"
 #include <assert.h>
 
+NAMESPACE_GNXENGINE_BEGIN
+
 FrameGraphResource importTexture(FrameGraph& fg, const std::string_view name, RenderCore::RCTexturePtr texture)
 {
 	assert(texture);
@@ -45,4 +47,6 @@ RenderCore::ComputeBufferPtr getBuffer(FrameGraphPassResources& resources, Frame
 {
 	return resources.Get<FrameGraphBuffer>(id).buffer;
 }
+
+NAMESPACE_GNXENGINE_END
 
