@@ -8,6 +8,7 @@
 #import "RenderDelegate.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 
+#include <fstream>
 
 //#include "testShader.h"
 //#include "TestImageDecode.h"
@@ -211,6 +212,8 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
         renderEncoder->EndEncode();
         commandBuffer->PresentFrameBuffer();
     });
+    
+    std::ofstream{"/Users/zhouxuguang/work/opensource/fg.dot"} << frameGraph;
     
     frameGraph.Compile();
     frameGraph.Execute(nullptr, mTransientResources);

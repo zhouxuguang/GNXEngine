@@ -115,14 +115,13 @@ void FrameGraph::Execute(void* context, void* allocator)
 PassNode& FrameGraph::_createPassNode(const std::string_view name, std::unique_ptr<FrameGraphPassConcept>&& base)
 {
 	const auto id = static_cast<uint32_t>(m_passNodes.size());
-	return m_passNodes.emplace_back(PassNode{ name, id, std::move(base) });
+	return m_passNodes.emplace_back(PassNode{name, id, std::move(base)});
 }
 
 ResourceNode& FrameGraph::_createResourceNode(const std::string_view name, uint32_t resourceId, uint32_t version)
 {
 	const auto id = static_cast<uint32_t>(m_resourceNodes.size());
-	return m_resourceNodes.emplace_back(
-		ResourceNode{ name, id, resourceId, version });
+	return m_resourceNodes.emplace_back(ResourceNode{name, id, resourceId, version});
 }
 
 FrameGraphResource FrameGraph::_clone(FrameGraphResource id)
@@ -152,9 +151,9 @@ const ResourceEntry& FrameGraph::_getResourceEntry(const ResourceNode& node) con
 	return m_resourceRegistry[node.m_resourceId];
 }
 
-// ---
-
-std::ostream& operator<<(std::ostream& os, const FrameGraph& fg)
+// 导出图表文件，本质是文本文件，方便检查，可视化，在线可视化工具如下：
+// https://dreampuf.github.io/GraphvizOnline
+GNXENGINE_API std::ostream& operator<<(std::ostream& os, const FrameGraph& fg)
 {
 	return fg.DebugOutput(os, graphviz::Writer{});
 }
