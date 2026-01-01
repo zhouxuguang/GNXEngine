@@ -1,8 +1,8 @@
 #pragma once
 
-#include "PassNode.h"
-#include "ResourceNode.h"
-#include "ResourceEntry.h"
+#include "FrameGraph/PassNode.h"
+#include "FrameGraph/ResourceNode.h"
+#include "FrameGraph/ResourceEntry.h"
 #include <vector>
 
 namespace graphviz 

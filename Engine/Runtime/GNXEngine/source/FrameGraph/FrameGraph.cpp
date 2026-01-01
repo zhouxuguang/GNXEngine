@@ -1,6 +1,6 @@
 #include "FrameGraph/FrameGraph.h"
-#include "FrameGraph/GraphvizWriter.h"
 #include "FrameGraph/Blackboard.h"
+#include "GraphvizWriter.h"
 #include <stack>
 
 //

@@ -1,4 +1,4 @@
-#include "FrameGraph/GraphvizWriter.h"
+#include "GraphvizWriter.h"
 #include <sstream>
 #if __cplusplus >= 202002L
     #include <format>
