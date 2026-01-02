@@ -62,7 +62,7 @@ public:
 	[[nodiscard]] bool reads(FrameGraphResource id) const;
 	[[nodiscard]] bool writes(FrameGraphResource id) const;
 
-	[[nodiscard]] auto hasSideEffect() const { return m_hasSideEffect; }
+    [[nodiscard]] auto hasSideEffect() const { return mHasSideEffect; }
 	[[nodiscard]] auto canExecute() const 
 	{
 		return getRefCount() > 0 || hasSideEffect();
@@ -88,7 +88,8 @@ private:
 	std::vector<AccessDeclaration> m_reads;
 	std::vector<AccessDeclaration> m_writes;
 
-	bool m_hasSideEffect = false;
+	bool mHasSideEffect = false;
+    bool mEnableAsyncCompute = false;
 };
 
 #if __cplusplus < 202002L

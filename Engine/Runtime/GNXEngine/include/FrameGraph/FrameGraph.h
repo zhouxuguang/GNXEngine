@@ -49,7 +49,13 @@ public:
         /** Ensures that this pass is not culled during the compilation phase. */
         Builder& setSideEffect() 
         {
-            m_passNode.m_hasSideEffect = true;
+            m_passNode.mHasSideEffect = true;
+            return *this;
+        }
+        
+        Builder& EnableAsyncCompute(bool enableAsyncCompute)
+        {
+            m_passNode.mEnableAsyncCompute = enableAsyncCompute;
             return *this;
         }
 
