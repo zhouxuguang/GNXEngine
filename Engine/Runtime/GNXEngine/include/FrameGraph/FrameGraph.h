@@ -36,15 +36,15 @@ public:
 
         template <_VIRTUALIZABLE_CONCEPT(T)>
         /** Declares the creation of a resource. */
-        [[nodiscard]] FrameGraphResource create(const std::string_view name, const typename T::Desc&);
+        [[nodiscard]] FrameGraphResource Create(const std::string_view name, const typename T::Desc&);
         
         /** Declares read operation. */
-        FrameGraphResource read(FrameGraphResource id, uint32_t flags = kFlagsIgnored);
+        FrameGraphResource Read(FrameGraphResource id, uint32_t flags = kFlagsIgnored);
         /**
          * Declares write operation.
          * @remark Writing to imported resource counts as side-effect.
          */
-        [[nodiscard]] FrameGraphResource write(FrameGraphResource id, uint32_t flags = kFlagsIgnored);
+        [[nodiscard]] FrameGraphResource Write(FrameGraphResource id, uint32_t flags = kFlagsIgnored);
 
         /** Ensures that this pass is not culled during the compilation phase. */
         Builder& setSideEffect() 
@@ -235,7 +235,7 @@ FrameGraph::_create(const ResourceEntry::Type type, const std::string_view name,
 
 template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
 inline FrameGraphResource
-FrameGraph::Builder::create(const std::string_view name, const typename T::Desc& desc)
+FrameGraph::Builder::Create(const std::string_view name, const typename T::Desc& desc)
 {
     const auto id = m_frameGraph._create<T>(ResourceEntry::Type::Transient, name, desc, T{});
     return m_passNode.m_creates.emplace_back(id);

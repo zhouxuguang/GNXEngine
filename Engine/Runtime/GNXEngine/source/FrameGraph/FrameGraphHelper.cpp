@@ -6,7 +6,7 @@
 
 NAMESPACE_GNXENGINE_BEGIN
 
-FrameGraphResource importTexture(FrameGraph& fg, const std::string_view name, RenderCore::RCTexturePtr texture)
+FrameGraphResource ImportTexture(FrameGraph& fg, const std::string_view name, RenderCore::RCTexturePtr texture)
 {
 	assert(texture);
 
@@ -26,12 +26,12 @@ FrameGraphResource importTexture(FrameGraph& fg, const std::string_view name, Re
     return fg.Import<FrameGraphTexture>(name, desc, std::move(fgTexture));
 }
 
-RenderCore::RCTexturePtr getTexture(FrameGraphPassResources& resources, FrameGraphResource id)
+RenderCore::RCTexturePtr GetTexture(FrameGraphPassResources& resources, FrameGraphResource id)
 {
 	return resources.Get<FrameGraphTexture>(id).texture;
 }
 
-FrameGraphResource importBuffer(FrameGraph& fg, const std::string_view name, RenderCore::ComputeBufferPtr buffer)
+FrameGraphResource ImportBuffer(FrameGraph& fg, const std::string_view name, RenderCore::ComputeBufferPtr buffer)
 {
 	assert(buffer);
     
@@ -43,7 +43,7 @@ FrameGraphResource importBuffer(FrameGraph& fg, const std::string_view name, Ren
     return fg.Import<FrameGraphBuffer>(name, desc, std::move(fgBuffer));
 }
 
-RenderCore::ComputeBufferPtr getBuffer(FrameGraphPassResources& resources, FrameGraphResource id)
+RenderCore::ComputeBufferPtr GetBuffer(FrameGraphPassResources& resources, FrameGraphResource id)
 {
 	return resources.Get<FrameGraphBuffer>(id).buffer;
 }

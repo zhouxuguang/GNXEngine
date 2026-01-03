@@ -162,13 +162,13 @@ GNXENGINE_API std::ostream& operator<<(std::ostream& os, const FrameGraph& fg)
 // FrameGraph::Builder 实现部分
 //
 
-FrameGraphResource FrameGraph::Builder::read(FrameGraphResource id, uint32_t flags)
+FrameGraphResource FrameGraph::Builder::Read(FrameGraphResource id, uint32_t flags)
 {
 	assert(m_frameGraph.IsValid(id));
 	return m_passNode._read(id, flags);
 }
 
-FrameGraphResource FrameGraph::Builder::write(FrameGraphResource id, uint32_t flags)
+FrameGraphResource FrameGraph::Builder::Write(FrameGraphResource id, uint32_t flags)
 {
 	assert(m_frameGraph.IsValid(id));
 	if (m_frameGraph._getResourceEntry(id).isImported()) setSideEffect();

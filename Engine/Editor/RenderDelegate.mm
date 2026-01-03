@@ -159,15 +159,15 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
         colorDesc.extent.width = mViewSize.width;
         colorDesc.extent.height = mViewSize.height;
         colorDesc.format = kTexFormatRGBA16Float;
-        data.colorTarget = builder.create<GNXEngine::FrameGraphTexture>("ColorTarget0", colorDesc);
-        data.colorTarget = builder.write(data.colorTarget);
+        data.colorTarget = builder.Create<GNXEngine::FrameGraphTexture>("ColorTarget0", colorDesc);
+        data.colorTarget = builder.Write(data.colorTarget);
         
         GNXEngine::FrameGraphTexture::Desc depthStencilDesc;
         depthStencilDesc.extent.width = mViewSize.width;
         depthStencilDesc.extent.height = mViewSize.height;
         depthStencilDesc.format = kTexFormatDepth32FloatStencil8;
-        data.depthStencilTarget = builder.create<GNXEngine::FrameGraphTexture>("depthStencilTarget", depthStencilDesc);
-        data.depthStencilTarget = builder.write(data.depthStencilTarget);
+        data.depthStencilTarget = builder.Create<GNXEngine::FrameGraphTexture>("depthStencilTarget", depthStencilDesc);
+        data.depthStencilTarget = builder.Write(data.depthStencilTarget);
     },
     [=](const PassData &data, GNXEngine::FrameGraphPassResources &resources, void *)
     {
@@ -211,10 +211,10 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
         colorDesc.extent.width = mViewSize.width;
         colorDesc.extent.height = mViewSize.height;
         colorDesc.format = kTexFormatRGBA16Float;
-        data.outputColor = builder.create<GNXEngine::FrameGraphTexture>("grayColor", colorDesc);
-        data.outputColor = builder.write(data.outputColor);
+        data.outputColor = builder.Create<GNXEngine::FrameGraphTexture>("grayColor", colorDesc);
+        data.outputColor = builder.Write(data.outputColor);
 
-        data.inputColor = builder.read(basePassData.colorTarget);
+        data.inputColor = builder.Read(basePassData.colorTarget);
     },
     [=](const ComputePassData &data, GNXEngine::FrameGraphPassResources &resources, void *)
     {
@@ -231,7 +231,7 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     frameGraph.AddPass("PresentPass",
     [=](GNXEngine::FrameGraph::Builder &builder, GNXEngine::FrameGraph::NoData &data)
     {
-        builder.read(computePassData.outputColor);
+        builder.Read(computePassData.outputColor);
         
         // present的pass必须设置这个标记，要不然不会执行
         builder.setSideEffect();
