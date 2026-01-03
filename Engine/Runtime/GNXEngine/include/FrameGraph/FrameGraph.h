@@ -22,7 +22,7 @@ public:
 
     static constexpr auto kFlagsIgnored = ~0;
 
-    class Builder final
+    class GNXENGINE_API Builder final
     {
         friend class FrameGraph;
 
