@@ -59,6 +59,10 @@ public:
     virtual uint32_t GetHeight() const;
     
     virtual uint32_t GetDepth() const;
+    
+    virtual uint32_t GetMipLevels() const;
+    
+    virtual uint32_t GetLayerCount() const;
 
     virtual void SetName(const char* name);
     

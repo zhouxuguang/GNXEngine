@@ -1,0 +1,52 @@
+#include "FrameGraph/FrameGraphHelper.h"
+#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/FrameGraphTexture.h"
+#include "FrameGraph/FrameGraphBuffer.h"
+#include <assert.h>
+
+NAMESPACE_GNXENGINE_BEGIN
+
+FrameGraphResource ImportTexture(FrameGraph& fg, const std::string_view name, RenderCore::RCTexturePtr texture)
+{
+	assert(texture);
+
+    FrameGraphTexture::Desc desc = {};
+    desc.depth = texture->GetDepth();
+    desc.numMipLevels = texture->GetMipLevels();
+    desc.layers = texture->GetLayerCount();
+    desc.format = texture->GetTextureFormat();
+
+    desc.extent.offsetX = 0;
+    desc.extent.offsetY = 0;
+    desc.extent.width = texture->GetWidth();
+    desc.extent.height = texture->GetHeight();
+
+    FrameGraphTexture fgTexture;
+    fgTexture.texture = texture;
+    return fg.Import<FrameGraphTexture>(name, desc, std::move(fgTexture));
+}
+
+RenderCore::RCTexturePtr GetTexture(FrameGraphPassResources& resources, FrameGraphResource id)
+{
+	return resources.Get<FrameGraphTexture>(id).texture;
+}
+
+FrameGraphResource ImportBuffer(FrameGraph& fg, const std::string_view name, RenderCore::ComputeBufferPtr buffer)
+{
+	assert(buffer);
+    
+    FrameGraphBuffer::Desc desc = {};
+    desc.size = buffer->GetBufferLength();
+    
+    FrameGraphBuffer fgBuffer;
+    fgBuffer.buffer = buffer;
+    return fg.Import<FrameGraphBuffer>(name, desc, std::move(fgBuffer));
+}
+
+RenderCore::ComputeBufferPtr GetBuffer(FrameGraphPassResources& resources, FrameGraphResource id)
+{
+	return resources.Get<FrameGraphBuffer>(id).buffer;
+}
+
+NAMESPACE_GNXENGINE_END
+

@@ -39,6 +39,10 @@ public:
     virtual uint32_t GetHeight() const = 0;
     
     virtual uint32_t GetDepth() const = 0;
+    
+    virtual uint32_t GetMipLevels() const = 0;
+    
+    virtual uint32_t GetLayerCount() const = 0;
 
     virtual void SetName(const char* name) = 0;
     
@@ -47,8 +51,24 @@ public:
         return mTextureType;
     }
     
+    TextureFormat GetTextureFormat() const
+    {
+        return mFormat;
+    }
+    
+    void SetFormat(TextureFormat format)
+    {
+        if (!mInited)
+        {
+            mFormat = format;
+            mInited = true;
+        }
+    }
+    
 private:
     TextureType mTextureType = TextureType_Unkown;
+    TextureFormat mFormat = kTexFormatInvalid;
+    bool mInited = false;
 };
 
 typedef std::shared_ptr<RCTexture> RCTexturePtr;

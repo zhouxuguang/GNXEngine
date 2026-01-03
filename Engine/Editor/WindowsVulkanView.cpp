@@ -1,5 +1,7 @@
 #include "WindowsVulkanView.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/GNXEngine/include/FrameGraph/FrameGraph.h"
+#include "Runtime/GNXEngine/include/FrameGraph/FrameGraphBlackboard.h"
 
 
 
@@ -187,6 +189,8 @@ bool WindowsVulkanView::createRenderDevice()
 
 	}
 
+	mTransientResources = new GNXEngine::TransientResources(mRenderDevice);
+
     return true;
 }
 
@@ -244,7 +248,7 @@ void WindowsVulkanView::resize(int width, int height)
     
     //TestADD();
     //computeTexture = TestImageGray();
-    //computePipeline = initTestimageGray();
+    computePipeline = initTestimageGray();
     
     lastTime = GetTickNanoSeconds();
 }
@@ -262,6 +266,116 @@ void WindowsVulkanView::Render()
     {
         return;
     }
+
+	struct PassData
+	{
+		GNXEngine::FrameGraphResource colorTarget;
+		GNXEngine::FrameGraphResource depthStencilTarget;
+	};
+
+	GNXEngine::FrameGraph frameGraph;
+	const PassData& basePassData = frameGraph.AddPass<PassData>("BasePass",
+		[=](GNXEngine::FrameGraph::Builder& builder, PassData& data)
+		{
+			GNXEngine::FrameGraphTexture::Desc colorDesc;
+			colorDesc.extent.width = mWidth;
+			colorDesc.extent.height = mHeight;
+			colorDesc.format = kTexFormatRGBA16Float;
+			data.colorTarget = builder.Create<GNXEngine::FrameGraphTexture>("ColorTarget0", colorDesc);
+			data.colorTarget = builder.Write(data.colorTarget);
+
+			GNXEngine::FrameGraphTexture::Desc depthStencilDesc;
+			depthStencilDesc.extent.width = mWidth;
+			depthStencilDesc.extent.height = mHeight;
+			depthStencilDesc.format = kTexFormatDepth32FloatStencil8;
+			data.depthStencilTarget = builder.Create<GNXEngine::FrameGraphTexture>("depthStencilTarget", depthStencilDesc);
+			data.depthStencilTarget = builder.Write(data.depthStencilTarget);
+		},
+		[=](const PassData& data, GNXEngine::FrameGraphPassResources& resources, void*)
+		{
+			GNXEngine::FrameGraphTexture& colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.colorTarget);
+			GNXEngine::FrameGraphTexture& depthStencilTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.depthStencilTarget);
+
+			RenderPass renderPass;
+			RenderPassColorAttachmentPtr colorAttachmentPtr = std::make_shared<RenderPassColorAttachment>();
+			colorAttachmentPtr->clearColor = MakeClearColor(0.0, 0.0, 0.0, 1.0);
+			colorAttachmentPtr->texture = colorTexture.texture;
+			renderPass.colorAttachments.push_back(colorAttachmentPtr);
+
+			renderPass.depthAttachment = std::make_shared<RenderPassDepthAttachment>();
+			renderPass.depthAttachment->texture = depthStencilTexture.texture;
+			renderPass.depthAttachment->clearDepth = 1.0;
+
+			renderPass.stencilAttachment = std::make_shared<RenderPassStencilAttachment>();
+			renderPass.stencilAttachment->texture = depthStencilTexture.texture;
+			renderPass.stencilAttachment->clearStencil = 0x00;
+
+			renderPass.renderRegion = Rect2D(0, 0, mWidth, mHeight);
+			RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);
+
+			sceneManager->Render(renderEncoder);
+
+			renderEncoder->EndEncode();
+		});
+
+	// 图像灰度化的计算管线
+	struct ComputePassData
+	{
+		GNXEngine::FrameGraphResource inputColor;
+		GNXEngine::FrameGraphResource outputColor;
+	};
+
+	GNXEngine::FrameGraphBlackboard fgBlackboard;
+	fgBlackboard.Add<ComputePassData>() = frameGraph.AddPass<ComputePassData>("GrayCompute",
+		[=](GNXEngine::FrameGraph::Builder& builder, ComputePassData& data)
+		{
+			GNXEngine::FrameGraphTexture::Desc colorDesc;
+			colorDesc.extent.width = mWidth;
+			colorDesc.extent.height = mHeight;
+			colorDesc.format = kTexFormatRGBA16Float;
+			data.outputColor = builder.Create<GNXEngine::FrameGraphTexture>("grayColor", colorDesc);
+			data.outputColor = builder.Write(data.outputColor);
+
+			data.inputColor = builder.Read(basePassData.colorTarget);
+		},
+		[=](const ComputePassData& data, GNXEngine::FrameGraphPassResources& resources, void*)
+		{
+			GNXEngine::FrameGraphTexture& colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.inputColor);
+			GNXEngine::FrameGraphTexture& grayTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.outputColor);
+
+			ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
+			testImageGrayDraw(computeEncoder, computePipeline, colorTexture.texture, grayTexture.texture);
+			computeEncoder->EndEncode();
+		});
+
+
+	const ComputePassData& computePassData = fgBlackboard.Get<ComputePassData>();
+	frameGraph.AddPass("PresentPass",
+		[=](GNXEngine::FrameGraph::Builder& builder, GNXEngine::FrameGraph::NoData& data)
+		{
+			builder.Read(computePassData.outputColor);
+
+			// present的pass必须设置这个标记，要不然不会执行
+			builder.setSideEffect();
+		},
+		[=](const GNXEngine::FrameGraph::NoData& data, GNXEngine::FrameGraphPassResources& resources, void*)
+		{
+			GNXEngine::FrameGraphTexture& colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(computePassData.outputColor);
+
+			RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
+			testPost(renderEncoder, colorTexture.texture);
+			renderEncoder->EndEncode();
+			commandBuffer->PresentFrameBuffer();
+		});
+
+	//std::ofstream{ "/Users/zhouxuguang/work/opensource/fg.txt" } << frameGraph;
+
+	frameGraph.Compile();
+	frameGraph.Execute(nullptr, mTransientResources);
+
+	mTransientResources->Update(deltaTime);
+
+	return;
 
 	RenderPass renderPass;
 	RenderPassColorAttachmentPtr colorAttachmentPtr = std::make_shared<RenderPassColorAttachment>();

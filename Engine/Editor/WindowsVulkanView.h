@@ -13,6 +13,7 @@
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 #include "TestComputeShader.hpp"
 #include "Runtime/BaseLib/include/DateTime.h"
+#include "Runtime/GNXEngine/include/FrameGraph/TransientResources.h"
 
 class WindowsVulkanView
 {
@@ -52,6 +53,8 @@ private:
     ComputePipelinePtr computePipeline = nullptr;
     
     uint64_t lastTime = 0;
+
+	GNXEngine::TransientResources* mTransientResources;
 
 };
 

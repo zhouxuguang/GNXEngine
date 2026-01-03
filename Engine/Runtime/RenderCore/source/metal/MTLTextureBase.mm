@@ -76,6 +76,16 @@ uint32_t MTLTextureBase::GetDepth() const
     return (uint32_t)mTexture.depth;
 }
 
+uint32_t MTLTextureBase::GetMipLevels() const
+{
+    return (uint32_t)mTexture.mipmapLevelCount;
+}
+
+uint32_t MTLTextureBase::GetLayerCount() const
+{
+    return (uint32_t)mTexture.arrayLength;
+}
+
 void MTLTextureBase::SetName(const char* name)
 {
     @autoreleasepool

@@ -90,21 +90,13 @@ void TestADD()
 
 ComputePipelinePtr initTestimageGray()
 {
-#if 1
     ShaderAssetString shaderAssetString = LoadShaderAsset("TestImageGray");
     
     ShaderCodePtr computeShader = shaderAssetString.computeShader->shaderSource;
     
-    FILE* fp1 = fopen("/Users/zhouxuguang/work/TestImageGray.metal", "wb");
-    fwrite(computeShader->data(), 1, computeShader->size(), fp1);
-    fclose(fp1);
-    
     ComputePipelinePtr computePipeline = GetRenderDevice()->CreateComputePipeline(*computeShader);
     
     return computePipeline;
-#elif
-    return nullptr;
-#endif
 }
 
 void testImageGrayDraw(ComputeEncoderPtr computeEncoder, ComputePipelinePtr computePipeline,

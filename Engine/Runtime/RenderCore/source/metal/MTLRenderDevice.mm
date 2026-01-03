@@ -167,7 +167,7 @@ RCTexture2DPtr MTLRenderDevice::CreateTexture2D(TextureFormat format,
                                     uint32_t levels) const
 {
     MTLPixelFormat mtlFormat = ConvertTextureFormatToMetal(format);
-    if (format == MTLPixelFormatInvalid)
+    if (mtlFormat == MTLPixelFormatInvalid)
     {
         assert(false);
         return nullptr;
@@ -200,8 +200,11 @@ RCTexture2DPtr MTLRenderDevice::CreateTexture2D(TextureFormat format,
             //textureDes.storageMode = MTLStorageModeMemoryless;
         }
     }
+    
+    MTLRCTexture2DPtr texture = std::make_shared<MTLRCTexture2D>(mMetalLayer.device, mCommandQueue, textureDes);
+    texture->SetFormat(format);
 
-    return std::make_shared<MTLRCTexture2D>(mMetalLayer.device, mCommandQueue, textureDes);
+    return texture;
 }
 
 RCTexture3DPtr MTLRenderDevice::CreateTexture3D(TextureFormat format,
@@ -212,7 +215,7 @@ RCTexture3DPtr MTLRenderDevice::CreateTexture3D(TextureFormat format,
                                     uint32_t levels) const
 {
     MTLPixelFormat mtlFormat = ConvertTextureFormatToMetal(format);
-    if (format == MTLPixelFormatInvalid)
+    if (mtlFormat == MTLPixelFormatInvalid)
     {
         assert(false);
         return nullptr;
@@ -252,8 +255,11 @@ RCTexture3DPtr MTLRenderDevice::CreateTexture3D(TextureFormat format,
             //textureDes.storageMode = MTLStorageModeMemoryless;
         }
     }
+    
+    MTLRCTexture3DPtr texture = std::make_shared<MTLRCTexture3D>(mMetalLayer.device, mCommandQueue, textureDes);
+    texture->SetFormat(format);
 
-    return std::make_shared<MTLRCTexture3D>(mMetalLayer.device, mCommandQueue, textureDes);
+    return texture;
 }
 
 RCTextureCubePtr MTLRenderDevice::CreateTextureCube(TextureFormat format,
@@ -263,7 +269,7 @@ RCTextureCubePtr MTLRenderDevice::CreateTextureCube(TextureFormat format,
                                     uint32_t levels) const
 {
     MTLPixelFormat mtlFormat = ConvertTextureFormatToMetal(format);
-    if (format == MTLPixelFormatInvalid)
+    if (mtlFormat == MTLPixelFormatInvalid)
     {
         assert(false);
         return nullptr;
@@ -302,8 +308,11 @@ RCTextureCubePtr MTLRenderDevice::CreateTextureCube(TextureFormat format,
             //textureDes.storageMode = MTLStorageModeMemoryless;
         }
     }
+    
+    MTLRCTextureCubePtr texture = std::make_shared<MTLRCTextureCube>(mMetalLayer.device, mCommandQueue, textureDes);
+    texture->SetFormat(format);
 
-    return std::make_shared<MTLRCTextureCube>(mMetalLayer.device, mCommandQueue, textureDes);
+    return texture;
 }
 
 RCTexture2DArrayPtr MTLRenderDevice::CreateTexture2DArray(TextureFormat format,
@@ -314,7 +323,7 @@ RCTexture2DArrayPtr MTLRenderDevice::CreateTexture2DArray(TextureFormat format,
                                     uint32_t arraySize) const
 {
     MTLPixelFormat mtlFormat = ConvertTextureFormatToMetal(format);
-    if (format == MTLPixelFormatInvalid)
+    if (mtlFormat == MTLPixelFormatInvalid)
     {
         assert(false);
         return nullptr;
@@ -356,8 +365,11 @@ RCTexture2DArrayPtr MTLRenderDevice::CreateTexture2DArray(TextureFormat format,
             //textureDes.storageMode = MTLStorageModeMemoryless;
         }
     }
+    
+    MTLRCTexture2DArrayPtr texture = std::make_shared<MTLRCTexture2DArray>(mMetalLayer.device, mCommandQueue, textureDes);
+    texture->SetFormat(format);
 
-    return std::make_shared<MTLRCTexture2DArray>(mMetalLayer.device, mCommandQueue, textureDes);
+    return texture;
 }
 
 NAMESPACE_RENDERCORE_END
