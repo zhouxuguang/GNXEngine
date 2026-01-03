@@ -8,6 +8,9 @@
 
 NAMESPACE_GNXENGINE_BEGIN
 
+/**
+ 用于在不同模块之间传递数据
+ */
 class FrameGraphBlackboard
 {
 public:
