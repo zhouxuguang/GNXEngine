@@ -36,16 +36,18 @@ struct VulkanContext
     VkCommandPool GetCommandPool();
     VkCommandPool GetTransferCommandPool();
     
-    uint32_t graphicsQueueFamilyIndex;
-    uint32_t computeQueueFamilyIndex;
-    uint32_t queueCount;
-    VkQueue graphicsQueue = VK_NULL_HANDLE;
-
     std::vector<VkQueueFamilyProperties> queueFamiliesProperties;
+
+    uint32_t graphicsQueueFamilyIndex;
+    uint32_t graphicsQueueCount;
+    VkQueue graphicsQueue = VK_NULL_HANDLE;
 
     uint32_t transferQueueFamilyIndex = 0;
     baselib::MutexLock transferQueuesLock;
     std::vector<VkQueue> availableTransferQueues;    // 所有可用的传输队列 
+
+	uint32_t computeQueueFamilyIndex;
+	std::vector<VkQueue> availableComputeQueues;    // 所有可用的计算队列 
 
     VkSurfaceKHR surfaceKhr = VK_NULL_HANDLE;     //surface
     VmaAllocator vmaAllocator;    //内存分配器

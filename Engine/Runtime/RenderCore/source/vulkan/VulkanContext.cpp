@@ -210,24 +210,27 @@ bool SelectPhysicalDevice(VulkanContext& context)
 		if (props.queueFlags & VK_QUEUE_GRAPHICS_BIT)
 		{
 			context.graphicsQueueFamilyIndex = j;
-			context.queueCount = props.queueCount;
+
+            // 其它两种队列簇先和图形一样的，这是最后的保底
+			context.computeQueueFamilyIndex = context.graphicsQueueFamilyIndex;
+			context.transferQueueFamilyIndex = context.graphicsQueueFamilyIndex;
+			context.graphicsQueueCount = props.queueCount;
 		}
 
-		if (props.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        // 有计算，无图形
+		if ((props.queueFlags & VK_QUEUE_COMPUTE_BIT) && !(props.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            && !(props.queueFlags & VK_QUEUE_VIDEO_DECODE_BIT_KHR) && !(props.queueFlags & VK_QUEUE_VIDEO_ENCODE_BIT_KHR) && !(props.queueFlags & VK_QUEUE_OPTICAL_FLOW_BIT_NV))
 		{
-			// 图形队列族
-			//graphicsQueueFamilyIndex = j;
+			// 计算队列族
+            context.computeQueueFamilyIndex = j;
 		}
-		else if (props.queueFlags & VK_QUEUE_COMPUTE_BIT)
-		{
-			// 具有单独的计算队列族
-			//computeQueueFamilyIndex = j;
-		}
-		else if (props.queueFlags & VK_QUEUE_TRANSFER_BIT)
+
+        // 有传输，无图形，无计算,
+		else if ((props.queueFlags & VK_QUEUE_TRANSFER_BIT) && !(props.queueFlags & VK_QUEUE_GRAPHICS_BIT) && !(props.queueFlags & VK_QUEUE_COMPUTE_BIT)
+            && !(props.queueFlags & VK_QUEUE_VIDEO_DECODE_BIT_KHR) && !(props.queueFlags & VK_QUEUE_VIDEO_ENCODE_BIT_KHR) && !(props.queueFlags & VK_QUEUE_OPTICAL_FLOW_BIT_NV))
 		{
 			// 具有单独的传输队列族
-			context.transferQueueFamilyIndex = j;
-			context.transferQueueFamilyIndex = 1;
+            context.transferQueueFamilyIndex = j;
 		}
 	}
 
@@ -446,11 +449,11 @@ bool CreateVirtualDevice(VulkanContext& context)
     deviceQueueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     deviceQueueCreateInfo.queueFamilyIndex = context.graphicsQueueFamilyIndex;
     std::vector<float> queuePriority;
-    for (int i = 0; i < context.queueCount; ++i)
+    for (int i = 0; i < context.graphicsQueueCount; ++i)
     {
         queuePriority.push_back(1.0f);
     }
-    deviceQueueCreateInfo.queueCount = context.queueCount;
+    deviceQueueCreateInfo.queueCount = context.graphicsQueueCount;
     deviceQueueCreateInfo.pQueuePriorities = queuePriority.data();
     deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
 
@@ -465,6 +468,18 @@ bool CreateVirtualDevice(VulkanContext& context)
 	deviceQueueCreateInfo.queueCount = transferQueueCount;
 	deviceQueueCreateInfo.pQueuePriorities = transQueuePriority.data();
     deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+
+	// 计算队列
+	uint32_t computeQueueCount = context.queueFamiliesProperties[context.computeQueueFamilyIndex].queueCount;
+	deviceQueueCreateInfo.queueFamilyIndex = context.computeQueueFamilyIndex;
+	std::vector<float> computeQueuePriority;
+	for (int i = 0; i < computeQueueCount; ++i)
+	{
+        computeQueuePriority.push_back(0.99f);
+	}
+	deviceQueueCreateInfo.queueCount = computeQueueCount;
+	deviceQueueCreateInfo.pQueuePriorities = computeQueuePriority.data();
+	deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
 
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.pNext = &context.features_11;
@@ -503,6 +518,13 @@ bool CreateVirtualDevice(VulkanContext& context)
     {
         vkGetDeviceQueue(context.device, context.transferQueueFamilyIndex, i, context.availableTransferQueues.data() + i);
     }
+
+	// 获得计算队列
+	context.availableComputeQueues.resize(computeQueueCount);
+	for (uint32_t i = 0; i < computeQueueCount; i++)
+	{
+		vkGetDeviceQueue(context.device, context.computeQueueFamilyIndex, i, context.availableComputeQueues.data() + i);
+	}
 
     return true;
 }
@@ -605,10 +627,9 @@ void CreateVMA(VulkanContext& context)
     vmaAllocatorCreateInfo.physicalDevice = context.physicalDevice;
     vmaAllocatorCreateInfo.instance = context.instance;
     vmaAllocatorCreateInfo.flags = VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT | VMA_ALLOCATOR_CREATE_KHR_BIND_MEMORY2_BIT;
-    vmaAllocatorCreateInfo.flags = 0;
     vmaAllocatorCreateInfo.pAllocationCallbacks = nullptr;
     vmaAllocatorCreateInfo.pDeviceMemoryCallbacks = nullptr;
-    //vmaAllocatorCreateInfo.preferredLargeHeapBlockSize = 128 * 1024 * 1024;
+    vmaAllocatorCreateInfo.preferredLargeHeapBlockSize = 128 * 1024 * 1024;
     vmaAllocatorCreateInfo.pHeapSizeLimit = nullptr;
     vmaAllocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_0;
     VmaVulkanFunctions vmaVulkanFunctions;
