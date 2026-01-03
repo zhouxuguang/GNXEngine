@@ -18,7 +18,7 @@ public:
     FrameGraph& operator=(const FrameGraph&) = delete;
     FrameGraph& operator=(FrameGraph&&) noexcept = delete;
 
-    friend std::ostream& operator<<(std::ostream&, const FrameGraph&);
+    friend GNXENGINE_API std::ostream& operator<<(std::ostream& os, const FrameGraph& fg);
 
     static constexpr auto kFlagsIgnored = ~0;
 
