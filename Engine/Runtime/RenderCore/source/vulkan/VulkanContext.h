@@ -16,7 +16,10 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-struct VulkanContext 
+// 前向声明
+class VulkanGarbageCollector;
+
+struct VulkanContext
 {
     VkInstance instance = VK_NULL_HANDLE;
     uint32_t apiVersion = 0;
@@ -69,6 +72,7 @@ struct VulkanContext
 
     VulkanFencePool fencePool;
     UpLoadThreadPool upLoadPool;
+    std::shared_ptr<VulkanGarbageCollector> garbageCollector;  // 资源垃圾收集器
 };
 
 using VulkanContextPtr = std::shared_ptr<VulkanContext>;
@@ -93,6 +97,21 @@ void CreateGraphicsDescriptorPool(VulkanContext& context);
 
 // 创建计算描述符的pool
 void CreateComputeDescriptorPool(VulkanContext& context);
+
+// 创建垃圾收集器
+void CreateGarbageCollector(VulkanContext& context);
+
+// 清理垃圾收集器中的资源
+void CleanupGarbageCollector(VulkanContext& context);
+
+// 安全销毁资源（使用垃圾收集器或直接销毁）
+// 注意：只有 GPU 实际使用的资源需要延迟释放
+void SafeDestroyBuffer(VulkanContext& context, VkBuffer buffer, VmaAllocation allocation);
+void SafeDestroyImage(VulkanContext& context, VkImage image, VmaAllocation allocation);
+void SafeDestroyImageView(VulkanContext& context, VkImageView imageView);
+void SafeDestroySampler(VulkanContext& context, VkSampler sampler);
+void SafeDestroyFramebuffer(VulkanContext& context, VkFramebuffer framebuffer);
+void SafeDestroyPipeline(VulkanContext& context, VkPipeline pipeline);
 
 // 创建描述符集
 VkDescriptorSet AllocDescriptorSet(VkDevice device, VkDescriptorPool descriptorPool, VkDescriptorSetLayout descLayout);

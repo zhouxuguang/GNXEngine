@@ -13,6 +13,7 @@
 #include "VulkanContext.h"
 #include "VulkanSwapChain.h"
 #include "VKDepthStencilBuffer.h"
+#include "VulkanGarbageCollector.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -85,11 +86,7 @@ public:
                                         uint32_t levels,
                                         uint32_t arraySize) const;
     
-    void UpdateCurrentIndex()
-    {
-        // 更新当前帧的索引
-        mCurrentFrame = (mCurrentFrame + 1) % mSwapChain->GetSwapChainImageCount();
-    }
+    void UpdateCurrentIndex();
     
 private:
     VulkanContextPtr mVulkanContext = nullptr;

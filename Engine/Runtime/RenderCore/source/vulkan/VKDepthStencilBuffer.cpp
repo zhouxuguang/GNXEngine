@@ -31,18 +31,17 @@ void VKDepthStencilBuffer::Release()
 {
     if (mDepthStencilImage)
     {
-        vkDestroyImage(mContext->device, mDepthStencilImage, nullptr);
-    }
-    
-    if (mAllocation)
-    {
-        vmaFreeMemory(mContext->vmaAllocator, mAllocation);
+        // 使用垃圾收集器延迟销毁
+        SafeDestroyImage(*mContext, mDepthStencilImage, mAllocation);
+        mDepthStencilImage = VK_NULL_HANDLE;
         mAllocation = VK_NULL_HANDLE;
     }
     
     if (mDepthStencilImageView)
     {
-        vkDestroyImageView(mContext->device, mDepthStencilImageView, nullptr);
+        // 使用垃圾收集器延迟销毁
+        SafeDestroyImageView(*mContext, mDepthStencilImageView);
+        mDepthStencilImageView = VK_NULL_HANDLE;
     }
 }
 

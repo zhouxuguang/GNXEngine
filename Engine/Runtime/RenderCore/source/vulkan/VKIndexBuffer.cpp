@@ -47,7 +47,8 @@ VKIndexBuffer::~VKIndexBuffer()
 
     if (mBuffer != VK_NULL_HANDLE)
     {
-        vmaDestroyBuffer(mContext->vmaAllocator, mBuffer, mAllocation);
+        // 使用垃圾收集器延迟销毁
+        SafeDestroyBuffer(*mContext, mBuffer, mAllocation);
         mBuffer = VK_NULL_HANDLE;
     }
 }

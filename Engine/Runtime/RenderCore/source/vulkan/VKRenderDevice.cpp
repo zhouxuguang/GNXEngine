@@ -6,6 +6,7 @@
 //
 
 #include "VKRenderDevice.h"
+#include "VulkanGarbageCollector.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "VKTextureSampler.h"
 #include "VKVertexBuffer.h"
@@ -14,7 +15,6 @@
 #include "VKComputeBuffer.h"
 #include "VKComputePipeline.h"
 #include "VKUniformBuffer.h"
-#include "VKComputePipeline.h"
 #include "VKGraphicsPipeline.h"
 #include "VKShaderFunction.h"
 #include "VKTextureBase.h"
@@ -88,6 +88,9 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     }
     
     CreateVMA(*mVulkanContext);
+    
+    // 创建垃圾收集器
+    CreateGarbageCollector(*mVulkanContext);
     
     mVulkanContext->GetCommandPool();
     mVulkanContext->upLoadPool.Start();
@@ -473,6 +476,19 @@ void VKRenderDevice::ReleaseCommandBuffers()
     }
     mCommandBuffers.clear();
     mCommandBuffers.shrink_to_fit();
+}
+
+void VKRenderDevice::UpdateCurrentIndex()
+{
+	// 更新当前帧的索引
+	mCurrentFrame = (mCurrentFrame + 1) % mSwapChain->GetSwapChainImageCount();
+
+	// 清理垃圾收集器中的资源
+	if (mVulkanContext->garbageCollector)
+	{
+		mVulkanContext->garbageCollector->AdvanceFrame();
+		mVulkanContext->garbageCollector->Cleanup();
+	}
 }
 
 NAMESPACE_RENDERCORE_END

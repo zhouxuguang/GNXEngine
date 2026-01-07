@@ -179,7 +179,8 @@ VKTextureBase::~VKTextureBase()
 
     if (mImage != VK_NULL_HANDLE)
     {
-        vmaDestroyImage(mContext->vmaAllocator, mImage, mAllocation);
+        // 使用垃圾收集器延迟销毁
+        SafeDestroyImage(*mContext, mImage, mAllocation);
         mImage = VK_NULL_HANDLE;
     }
 

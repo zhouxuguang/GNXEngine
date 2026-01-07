@@ -6,6 +6,7 @@
 //
 
 #include "VulkanContext.h"
+#include "VulkanGarbageCollector.h"
 #include "VulkanDeviceUtil.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "VKUtil.h"
@@ -716,6 +717,115 @@ void CreateComputeDescriptorPool(VulkanContext& context)
     if (res != VK_SUCCESS)
     {
         LOG_INFO("vkCreateDescriptorPool failed!!!!\n");
+    }
+}
+
+void CreateGarbageCollector(VulkanContext& context)
+{
+    // 创建垃圾收集器
+    context.garbageCollector = std::make_shared<VulkanGarbageCollector>(
+        std::shared_ptr<VulkanContext>(&context, [](VulkanContext*){}));
+}
+
+void CleanupGarbageCollector(VulkanContext& context)
+{
+    if (context.garbageCollector)
+    {
+        // 推进帧并清理
+        context.garbageCollector->AdvanceFrame();
+        context.garbageCollector->Cleanup();
+    }
+}
+
+void SafeDestroyBuffer(VulkanContext& context, VkBuffer buffer, VmaAllocation allocation)
+{
+    if (context.garbageCollector)
+    {
+        // 使用垃圾收集器延迟销毁
+        context.garbageCollector->QueueBufferDestruction(buffer, allocation);
+    }
+    else
+    {
+        // 直接销毁
+        if (buffer != VK_NULL_HANDLE)
+        {
+            vmaDestroyBuffer(context.vmaAllocator, buffer, allocation);
+        }
+    }
+}
+
+void SafeDestroyImage(VulkanContext& context, VkImage image, VmaAllocation allocation)
+{
+    if (context.garbageCollector)
+    {
+        context.garbageCollector->QueueImageDestruction(image, allocation);
+    }
+    else
+    {
+        if (image != VK_NULL_HANDLE)
+        {
+            vmaDestroyImage(context.vmaAllocator, image, allocation);
+        }
+    }
+}
+
+void SafeDestroyImageView(VulkanContext& context, VkImageView imageView)
+{
+    if (context.garbageCollector)
+    {
+        context.garbageCollector->QueueImageViewDestruction(imageView);
+    }
+    else
+    {
+        if (imageView != VK_NULL_HANDLE)
+        {
+            vkDestroyImageView(context.device, imageView, nullptr);
+        }
+    }
+}
+
+void SafeDestroySampler(VulkanContext& context, VkSampler sampler)
+{
+    if (context.garbageCollector)
+    {
+        context.garbageCollector->QueueSamplerDestruction(sampler);
+    }
+    else
+    {
+        if (sampler != VK_NULL_HANDLE)
+        {
+            vkDestroySampler(context.device, sampler, nullptr);
+        }
+    }
+}
+
+void SafeDestroyFramebuffer(VulkanContext& context, VkFramebuffer framebuffer)
+{
+    if (context.garbageCollector)
+    {
+        context.garbageCollector->QueueFramebufferDestruction(framebuffer);
+    }
+    else
+    {
+        if (framebuffer != VK_NULL_HANDLE)
+        {
+            vkDestroyFramebuffer(context.device, framebuffer, nullptr);
+        }
+    }
+}
+
+void SafeDestroyPipeline(VulkanContext& context, VkPipeline pipeline)
+{
+    if (context.garbageCollector)
+    {
+        context.garbageCollector->QueuePipelineDestruction(pipeline);
+    }
+    else
+    {
+        if (pipeline != VK_NULL_HANDLE)
+        {
+            vkDestroyPipeline(context.device, pipeline, nullptr);
+        }
     }
 }
 
