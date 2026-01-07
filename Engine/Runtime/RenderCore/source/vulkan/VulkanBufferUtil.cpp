@@ -6,6 +6,7 @@
 //
 
 #include "VulkanBufferUtil.h"
+#include "VKUtil.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -29,20 +30,27 @@ VkCommandBuffer VulkanBufferUtil::BeginSingleTimeCommand(VkDevice device, VkComm
     return commandBuffer;
 }
 
-void VulkanBufferUtil::EndSingleTimeCommand(VkDevice device, VkQueue queue,
+void VulkanBufferUtil::EndSingleTimeCommand(VulkanContext& context, VkQueue queue,
                                   VkCommandPool cmdPool, VkCommandBuffer commandBuffer)
 {
     vkEndCommandBuffer(commandBuffer);
-    
+
+    // 从 FencePool 获取 Fence
+    VulkanFencePtr fence = context.fencePool.createFence(context.device);
+
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    
-    vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(queue);
-    
-    vkFreeCommandBuffers(device, cmdPool, 1, &commandBuffer);
+
+    vkQueueSubmit(queue, 1, &submitInfo, fence->getHandle());
+
+    // 等待 Fence 信号
+    fence->wait(context.device, UINT64_MAX);
+
+    // 释放 Fence 和命令缓冲区
+    context.fencePool.releaseFence(context.device, fence);
+    vkFreeCommandBuffers(context.device, cmdPool, 1, &commandBuffer);
 }
 
 bool VulkanBufferUtil::IsDepthStencilFormat(VkFormat format)
@@ -215,19 +223,19 @@ void VulkanBufferUtil::CopyBufferToImage(VkDevice device, VkCommandBuffer comman
                            );
 }
 
-void VulkanBufferUtil::CopyBuffer(VkDevice device, VkQueue queue, VkCommandPool cmdPool,
+void VulkanBufferUtil::CopyBuffer(VulkanContext& context, VkQueue queue, VkCommandPool cmdPool,
                               VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
-    VkCommandBuffer commandBuffer = BeginSingleTimeCommand(device, cmdPool);
-    
+    VkCommandBuffer commandBuffer = BeginSingleTimeCommand(context.device, cmdPool);
+
     //拷贝缓冲区
     VkBufferCopy copyRegion = {};
     copyRegion.srcOffset = 0;
     copyRegion.dstOffset = 0;
     copyRegion.size = size;
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-    
-    EndSingleTimeCommand(device, queue, cmdPool, commandBuffer);
+
+    EndSingleTimeCommand(context, queue, cmdPool, commandBuffer);
 }
 
 VkImageView VulkanBufferUtil::CreateImageView(VkDevice device, VkImage image,

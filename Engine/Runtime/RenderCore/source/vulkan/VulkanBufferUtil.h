@@ -13,13 +13,21 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+struct VulkanContext;
+
+NAMESPACE_RENDERCORE_END
+
+#include "VulkanContext.h"
+
+NAMESPACE_RENDERCORE_BEGIN
+
 // buffer和图像操作的工具函数
 class VulkanBufferUtil
 {
 public:
     static VkCommandBuffer BeginSingleTimeCommand(VkDevice device, VkCommandPool cmdPool);
-    
-    static void EndSingleTimeCommand(VkDevice device, VkQueue queue, VkCommandPool cmdPool, VkCommandBuffer commandBuffer);
+
+    static void EndSingleTimeCommand(VulkanContext& context, VkQueue queue, VkCommandPool cmdPool, VkCommandBuffer commandBuffer);
 
     static bool IsDepthStencilFormat(VkFormat format);
     
@@ -78,7 +86,7 @@ public:
                            VkBuffer buffer, VkImage image, int32_t offsetX, int32_t offsetY, uint32_t width, uint32_t height, uint32_t mipLevel);
 
     //buffer之间的拷贝
-    static void CopyBuffer(VkDevice device, VkQueue queue, VkCommandPool cmdPool,
+    static void CopyBuffer(VulkanContext& context, VkQueue queue, VkCommandPool cmdPool,
                     VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
     //创建图像视图

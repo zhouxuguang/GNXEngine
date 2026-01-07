@@ -323,13 +323,21 @@ void VulkanCommandBuffer::PresentFrameBuffer()
 //等待命令缓冲区执行完成
 void VulkanCommandBuffer::WaitUntilCompleted()
 {
+    // 从 FencePool 获取 Fence
+    VulkanFencePtr fence = mCommandInfo->vulkanContext->fencePool.createFence(mCommandInfo->vulkanContext->device);
+
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &mCommandBuffer;
-    
-    vkQueueSubmit(mCommandInfo->vulkanContext->graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(mCommandInfo->vulkanContext->graphicsQueue);
+
+    vkQueueSubmit(mCommandInfo->vulkanContext->graphicsQueue, 1, &submitInfo, fence->getHandle());
+
+    // 等待 Fence 信号
+    fence->wait(mCommandInfo->vulkanContext->device, UINT64_MAX);
+
+    // 释放 Fence
+    mCommandInfo->vulkanContext->fencePool.releaseFence(mCommandInfo->vulkanContext->device, fence);
 }
 
 void VulkanCommandBuffer::BeginDebugGroup(const char* name, const float color[4])

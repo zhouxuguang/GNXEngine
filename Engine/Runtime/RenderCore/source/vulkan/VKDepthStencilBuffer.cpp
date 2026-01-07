@@ -62,7 +62,7 @@ void VKDepthStencilBuffer::CreateDepthStencilBuffer(VulkanContextPtr context, ui
     VkCommandBuffer cmdBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, mContext->GetCommandPool());
     VulkanBufferUtil::TransitionImageLayout(mContext->device, cmdBuffer, mDepthStencilImage,
                                             mFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    VulkanBufferUtil::EndSingleTimeCommand(mContext->device, mContext->graphicsQueue, mContext->GetCommandPool(), cmdBuffer);
+    VulkanBufferUtil::EndSingleTimeCommand(*mContext, mContext->graphicsQueue, mContext->GetCommandPool(), cmdBuffer);
 }
 
 VkFormat VKDepthStencilBuffer::GetFormat() const
