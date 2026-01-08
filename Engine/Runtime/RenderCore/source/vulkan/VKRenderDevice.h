@@ -60,6 +60,8 @@ public:
     
     virtual CommandBufferPtr CreateCommandBuffer();
     
+    virtual CommandBufferPtr CreateComputeCommandBuffer();
+    
     virtual RCTexture2DPtr CreateTexture2D(TextureFormat format,
                                         TextureUsage usage,
                                         uint32_t width,
@@ -94,6 +96,7 @@ private:
     
     
     std::vector<VkCommandBuffer> mCommandBuffers;         //用于渲染的commandbuffer
+    std::vector<VkCommandBuffer> mComputeCommandBuffers; //用于计算的commandbuffer
     std::vector<VkSemaphore> mImageAvailableSemaphores;   //图像可用的信号
     std::vector<VkSemaphore> mRenderFinishedSemaphores;   //渲染完成的信号
     std::vector<VkFence> mFlightFences;
@@ -107,6 +110,8 @@ private:
     void DestroySyncObject();
     
     void CreateCommandBufers(VkDevice device, size_t nImageCount, VkCommandPool commandPool);
+    
+    void CreateComputeCommandBuffers(VkDevice device, size_t nImageCount, VkCommandPool commandPool);
     
     void ReleaseCommandBuffers();
 };

@@ -246,24 +246,35 @@ void VulkanCommandBuffer::PresentFrameBuffer()
     //结束commandbuffer
     VkResult res = vkEndCommandBuffer(mCommandBuffer);
     
-    //提交渲染命令到队列
-    VkSemaphore waitSemaphores[] = {mCommandInfo->imageAvailableSemaphore};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    // 准备等待的信号量
+    std::vector<VkSemaphore> waitSemaphores;
+    std::vector<VkPipelineStageFlags> waitStages;
     
+    // 始终等待图像可用的信号量
+    waitSemaphores.push_back(mCommandInfo->imageAvailableSemaphore);
+    waitStages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    
+	// 如果有异步计算工作，等待计算完成
+	if (mCommandInfo->vulkanContext->asyncComputeSemaphore != VK_NULL_HANDLE)
+	{
+		waitSemaphores.push_back(mCommandInfo->vulkanContext->asyncComputeSemaphore);
+		waitStages.push_back(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+	}
+    
+    // 信号图形完成
     VkSemaphore signalSemaphores[] = {mCommandInfo->renderFinishSemaphore};
     
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.pNext = nullptr;
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
+    submitInfo.pWaitSemaphores = waitSemaphores.data();
+    submitInfo.pWaitDstStageMask = waitStages.data();
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &mCommandBuffer;
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    //vkResetFences(mCommandInfo->vulkanContext->device, 1, &mCommandInfo->flightFence);
     res = vkQueueSubmit(mCommandInfo->vulkanContext->graphicsQueue, 1, &submitInfo, mCommandInfo->flightFence);
     
     if (res != VK_SUCCESS)
@@ -338,6 +349,71 @@ void VulkanCommandBuffer::WaitUntilCompleted()
 
     // 释放 Fence
     mCommandInfo->vulkanContext->fencePool.releaseFence(mCommandInfo->vulkanContext->device, fence);
+}
+
+//提交命令缓冲区（用于计算命令缓冲区）
+void VulkanCommandBuffer::Submit()
+{
+    //结束commandbuffer
+    VkResult res = vkEndCommandBuffer(mCommandBuffer);
+    if (res != VK_SUCCESS)
+    {
+        LOG_INFO("VulkanCommandBuffer::Submit vkEndCommandBuffer failed with error: %d", res);
+        return;
+    }
+    
+    // 根据命令缓冲区类型选择队列
+    VkQueue submitQueue = mCommandInfo->isComputeCommandBuffer ? 
+                        mCommandInfo->vulkanContext->availableComputeQueues[0] : 
+                        mCommandInfo->vulkanContext->graphicsQueue;
+    
+    // 准备同步信息
+    std::vector<VkSemaphore> waitSemaphores;
+    std::vector<VkPipelineStageFlags> waitStages;
+    std::vector<VkSemaphore> signalSemaphores;
+    
+    if (mCommandInfo->isComputeCommandBuffer)
+    {
+        // 计算命令缓冲区：不等待任何东西，直接发出计算完成信号
+        // 图形命令缓冲区会在PresentFrameBuffer中等待这个信号
+        if (mCommandInfo->vulkanContext->asyncComputeSemaphore != VK_NULL_HANDLE)
+        {
+            signalSemaphores.push_back(mCommandInfo->vulkanContext->asyncComputeSemaphore);
+        }
+    }
+    else
+    {
+        // 图形命令缓冲区（在PresentFrameBuffer中使用）
+        // 等待计算队列完成（如果有计算工作且信号量存在）
+        if (mCommandInfo->vulkanContext->asyncComputeSemaphore != VK_NULL_HANDLE)
+        {
+            waitSemaphores.push_back(mCommandInfo->vulkanContext->asyncComputeSemaphore);
+            waitStages.push_back(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+        }
+        
+        // 信号图形完成
+        signalSemaphores.push_back(mCommandInfo->renderFinishSemaphore);
+    }
+    
+    // 创建提交信息
+    VkSubmitInfo submitInfo = {};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.pNext = nullptr;
+    submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
+    submitInfo.pWaitSemaphores = waitSemaphores.data();
+    submitInfo.pWaitDstStageMask = waitStages.data();
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &mCommandBuffer;
+    submitInfo.signalSemaphoreCount = static_cast<uint32_t>(signalSemaphores.size());
+    submitInfo.pSignalSemaphores = signalSemaphores.data();
+    
+	// 提交到队列
+	VkFence submitFence = mCommandInfo->isComputeCommandBuffer ? VK_NULL_HANDLE : mCommandInfo->flightFence;
+	res = vkQueueSubmit(submitQueue, 1, &submitInfo, submitFence);
+	if (res != VK_SUCCESS)
+	{
+		LOG_INFO("VulkanCommandBuffer::Submit vkQueueSubmit failed with error: %d", res);
+	}
 }
 
 void VulkanCommandBuffer::BeginDebugGroup(const char* name, const float color[4])

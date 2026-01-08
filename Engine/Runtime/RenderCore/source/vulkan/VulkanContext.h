@@ -35,9 +35,11 @@ struct VulkanContext
     
     baselib::ThreadLocal commandPoolTls;
     baselib::ThreadLocal transferCommandPoolTls;
-    
+    baselib::ThreadLocal computeCommandPoolTls;
+
     VkCommandPool GetCommandPool();
     VkCommandPool GetTransferCommandPool();
+    VkCommandPool GetComputeCommandPool();
     
     std::vector<VkQueueFamilyProperties> queueFamiliesProperties;
 
@@ -73,6 +75,9 @@ struct VulkanContext
     VulkanFencePool fencePool;
     UpLoadThreadPool upLoadPool;
     std::shared_ptr<VulkanGarbageCollector> garbageCollector;  // 资源垃圾收集器
+
+    // 异步计算同步信号量
+    VkSemaphore asyncComputeSemaphore = VK_NULL_HANDLE;  // 图形和计算队列间的同步信号量
 };
 
 using VulkanContextPtr = std::shared_ptr<VulkanContext>;

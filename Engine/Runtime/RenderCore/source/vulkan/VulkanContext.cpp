@@ -527,6 +527,16 @@ bool CreateVirtualDevice(VulkanContext& context)
 		vkGetDeviceQueue(context.device, context.computeQueueFamilyIndex, i, context.availableComputeQueues.data() + i);
 	}
 
+	// 创建异步计算同步信号量（图形队列和计算队列之间的同步）
+	VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	VkResult semaphoreResult = vkCreateSemaphore(context.device, &semaphoreCreateInfo, nullptr, &context.asyncComputeSemaphore);
+	if (semaphoreResult != VK_SUCCESS)
+	{
+		LOG_INFO("Failed to create async compute semaphore");
+		// 继续执行，异步计算将回退到图形队列
+	}
+
     return true;
 }
 
@@ -585,7 +595,37 @@ VkCommandPool VulkanContext::GetTransferCommandPool()
             LOG_INFO("vkCreateCommandPool error");
 		}
 
-        transferCommandPoolTls.set(commandPool);
+		transferCommandPoolTls.set(commandPool);
+		return commandPool;
+	}
+}
+
+VkCommandPool VulkanContext::GetComputeCommandPool()
+{
+	void* pCommandPool = nullptr;
+	if ((pCommandPool = computeCommandPoolTls.get()))
+	{
+		return (VkCommandPool)pCommandPool;
+	}
+
+	else
+	{
+		// 创建命令缓冲区池
+		VkCommandPoolCreateInfo createInfo = {};
+		createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+		createInfo.queueFamilyIndex = computeQueueFamilyIndex;
+		createInfo.pNext = nullptr;
+
+		VkCommandPool commandPool = VK_NULL_HANDLE;
+
+		VkResult result = vkCreateCommandPool(device, &createInfo, NULL, &commandPool);
+		if (result != VK_SUCCESS)
+		{
+			LOG_INFO("vkCreateCommandPool error");
+		}
+
+		computeCommandPoolTls.set(commandPool);
 		return commandPool;
 	}
 }

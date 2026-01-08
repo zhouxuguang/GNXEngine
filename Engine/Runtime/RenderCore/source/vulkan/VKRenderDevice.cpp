@@ -113,6 +113,54 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
 
 VKRenderDevice::~VKRenderDevice()
 {
+    if (!mVulkanContext)
+    {
+        return;
+    }
+    
+    // 等待设备空闲
+    vkDeviceWaitIdle(mVulkanContext->device);
+    
+    // 销毁异步计算信号量
+    if (mVulkanContext->asyncComputeSemaphore != VK_NULL_HANDLE)
+    {
+        vkDestroySemaphore(mVulkanContext->device, mVulkanContext->asyncComputeSemaphore, nullptr);
+        mVulkanContext->asyncComputeSemaphore = VK_NULL_HANDLE;
+    }
+    
+    // 销毁描述符池
+    if (mVulkanContext->graphicsDescriptorPool != VK_NULL_HANDLE)
+    {
+        vkDestroyDescriptorPool(mVulkanContext->device, mVulkanContext->graphicsDescriptorPool, nullptr);
+        mVulkanContext->graphicsDescriptorPool = VK_NULL_HANDLE;
+    }
+    
+    if (mVulkanContext->computeDescriptorPool != VK_NULL_HANDLE)
+    {
+        vkDestroyDescriptorPool(mVulkanContext->device, mVulkanContext->computeDescriptorPool, nullptr);
+        mVulkanContext->computeDescriptorPool = VK_NULL_HANDLE;
+    }
+    
+    // 销毁 VMA 分配器
+    if (mVulkanContext->vmaAllocator)
+    {
+        vmaDestroyAllocator(mVulkanContext->vmaAllocator);
+        mVulkanContext->vmaAllocator = nullptr;
+    }
+    
+    // 销毁设备
+    if (mVulkanContext->device != VK_NULL_HANDLE)
+    {
+        vkDestroyDevice(mVulkanContext->device, nullptr);
+        mVulkanContext->device = VK_NULL_HANDLE;
+    }
+    
+    // 销毁实例
+    if (mVulkanContext->instance != VK_NULL_HANDLE)
+    {
+        vkDestroyInstance(mVulkanContext->instance, nullptr);
+        mVulkanContext->instance = VK_NULL_HANDLE;
+    }
 }
 
 void VKRenderDevice::Resize(uint32_t width, uint32_t height)
@@ -134,6 +182,10 @@ void VKRenderDevice::Resize(uint32_t width, uint32_t height)
     if (mCommandBuffers.empty())
     {
         CreateCommandBufers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetCommandPool());
+    }
+    if (mComputeCommandBuffers.empty())
+    {
+        CreateComputeCommandBuffers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetComputeCommandPool());
     }
     mCurrentFrame = 0;
     
@@ -468,6 +520,47 @@ void VKRenderDevice::CreateCommandBufers(VkDevice device, size_t nImageCount, Vk
     vkAllocateCommandBuffers(device, &cmdBufferCreateInfo, mCommandBuffers.data());
 }
 
+
+void VKRenderDevice::CreateComputeCommandBuffers(VkDevice device, size_t nImageCount, VkCommandPool commandPool)
+{
+    mComputeCommandBuffers.resize(nImageCount);
+    VkCommandBufferAllocateInfo cmdBufferCreateInfo;
+    cmdBufferCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cmdBufferCreateInfo.pNext = nullptr;
+    cmdBufferCreateInfo.commandPool = commandPool;
+    cmdBufferCreateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cmdBufferCreateInfo.commandBufferCount = (uint32_t)nImageCount;
+    vkAllocateCommandBuffers(device, &cmdBufferCreateInfo, mComputeCommandBuffers.data());
+}
+
+
+
+CommandBufferPtr VKRenderDevice::CreateComputeCommandBuffer()
+{
+    if (!mSwapChain)
+    {
+        return nullptr;
+    }
+    if (mComputeCommandBuffers.empty())
+    {
+        CreateComputeCommandBuffers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetComputeCommandPool());
+    }
+    VkCommandBuffer commandBuffer = mComputeCommandBuffers[mCurrentFrame];
+    CommandBufferInfoPtr commandBufferInfo = std::make_shared<CommandBufferInfo>();
+    commandBufferInfo->flightFence = mFlightFences[mCurrentFrame];
+    commandBufferInfo->imageAvailableSemaphore = mImageAvailableSemaphores[mCurrentFrame];
+    commandBufferInfo->currentFrameIndex = mCurrentFrame;
+    commandBufferInfo->nextFrameIndex = mNextFrameIndex;
+    commandBufferInfo->renderDevice = this;
+    commandBufferInfo->renderFinishSemaphore = mRenderFinishedSemaphores[mCurrentFrame];
+    commandBufferInfo->swapChain = mSwapChain;
+    commandBufferInfo->vulkanContext = mVulkanContext;
+    commandBufferInfo->depthStencilBuffer = mSwapChain->GetDSBuffer();
+    commandBufferInfo->isComputeCommandBuffer = true;  // 标记为计算命令缓冲区
+    
+    return std::make_shared<VulkanCommandBuffer>(commandBuffer, commandBufferInfo);
+}
+
 void VKRenderDevice::ReleaseCommandBuffers()
 {
     if (!mCommandBuffers.empty())
@@ -476,6 +569,13 @@ void VKRenderDevice::ReleaseCommandBuffers()
     }
     mCommandBuffers.clear();
     mCommandBuffers.shrink_to_fit();
+    
+    if (!mComputeCommandBuffers.empty())
+    {
+        vkFreeCommandBuffers(mVulkanContext->device, mVulkanContext->GetComputeCommandPool(), (uint32_t)mComputeCommandBuffers.size(), mComputeCommandBuffers.data());
+    }
+    mComputeCommandBuffers.clear();
+    mComputeCommandBuffers.shrink_to_fit();
 }
 
 void VKRenderDevice::UpdateCurrentIndex()
