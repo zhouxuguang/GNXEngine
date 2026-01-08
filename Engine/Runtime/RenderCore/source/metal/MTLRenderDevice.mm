@@ -160,6 +160,12 @@ CommandBufferPtr MTLRenderDevice::CreateCommandBuffer()
     return std::make_shared<MTLCommandBuffer>(mCommandQueue, mMetalLayer, mDepthTexture, mStencilTexture, mDepthStencilTexture);
 }
 
+CommandBufferPtr MTLRenderDevice::CreateComputeCommandBuffer()
+{
+    // For Metal, compute command buffer is same as graphics command buffer
+    return std::make_shared<MTLCommandBuffer>(mCommandQueue, mMetalLayer, mDepthTexture, mStencilTexture, mDepthStencilTexture);
+}
+
 RCTexture2DPtr MTLRenderDevice::CreateTexture2D(TextureFormat format,
                                     TextureUsage usage,
                                     uint32_t width,

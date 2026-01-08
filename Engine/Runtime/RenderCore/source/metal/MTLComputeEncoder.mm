@@ -12,14 +12,34 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-MTLComputeEncoder::MTLComputeEncoder(id<MTLCommandBuffer> commandBuffer) : ComputeEncoder()
+MTLComputeEncoder::MTLComputeEncoder(id<MTLCommandBuffer> commandBuffer, bool enableConcurrent)
+    : ComputeEncoder(), mEnableConcurrent(enableConcurrent)
 {
     @autoreleasepool
     {
         assert(commandBuffer != nil);
-        
-        // Start a compute pass.
-        mComputeEncoder = [commandBuffer computeCommandEncoder];
+
+        // Start a compute pass with optional concurrent dispatch type
+        if (mEnableConcurrent)
+        {
+            // 检查是否支持并发调度类型（iOS 10+, macOS 10.13+）
+            if (@available(iOS 10.0, macOS 10.13, *))
+            {
+                // 使用并发调度类型，允许计算和图形命令并发执行
+                mComputeEncoder = [commandBuffer computeCommandEncoderWithDispatchType:MTLDispatchTypeConcurrent];
+            }
+            else
+            {
+                // 不支持并发，回退到默认方式
+                mComputeEncoder = [commandBuffer computeCommandEncoder];
+            }
+        }
+        else
+        {
+            // 默认方式（串行执行）
+            mComputeEncoder = [commandBuffer computeCommandEncoder];
+        }
+
         assert(mComputeEncoder != nil);
     }
 }

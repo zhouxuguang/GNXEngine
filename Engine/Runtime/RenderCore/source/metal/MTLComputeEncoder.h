@@ -18,11 +18,12 @@ NAMESPACE_RENDERCORE_BEGIN
 class MTLComputeEncoder : public ComputeEncoder
 {
 public:
-    MTLComputeEncoder(id<MTLCommandBuffer> commandBuffer);
+    // 构造函数：支持并发计算类型
+    MTLComputeEncoder(id<MTLCommandBuffer> commandBuffer, bool enableConcurrent = false);
     
     ~MTLComputeEncoder()
     {
-        @autoreleasepool 
+        @autoreleasepool
         {
             mComputeEncoder = nil;
             mCommandBuffer = nil;
@@ -52,6 +53,7 @@ private:
     id<MTLCommandBuffer> mCommandBuffer = nil;
     MTLSize mThreadPerGroups;
     MTLComputePipeline *mMtlComputePipeline = nullptr;
+    bool mEnableConcurrent = false;  // 是否启用并发计算
 };
 
 typedef std::shared_ptr<MTLComputeEncoder> MTLComputeEncoderPtr;

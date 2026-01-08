@@ -142,8 +142,14 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     printf("deltaTime = %f\n", deltaTime);
     lastTime = thisTime;
     sceneManager->Update(deltaTime);
-    
+
+    // 使用单个命令缓冲区，这样可以利用 MTLDispatchTypeConcurrent 实现计算和图形的并发执行
     CommandBufferPtr commandBuffer = mRenderdevice->CreateCommandBuffer();
+
+    if (!commandBuffer)
+    {
+        return;
+    }
     
     struct PassData 
     {
@@ -207,6 +213,7 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     fgBlackboard.Add<ComputePassData>() = frameGraph.AddPass<ComputePassData>("GrayCompute",
     [=](GNXEngine::FrameGraph::Builder &builder, ComputePassData &data)
     {
+        builder.EnableAsyncCompute(true);
         GNXEngine::FrameGraphTexture::Desc colorDesc;
         colorDesc.extent.width = mViewSize.width;
         colorDesc.extent.height = mViewSize.height;
@@ -220,26 +227,27 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     {
         GNXEngine::FrameGraphTexture &colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.inputColor);
         GNXEngine::FrameGraphTexture &grayTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.outputColor);
-        
+
+        // 使用并发计算编码器（MTLDispatchTypeConcurrent）
+        // 这样计算命令和图形命令可以在 GPU 上并发执行
         ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
         testImageGrayDraw(computeEncoder, computePipeline, colorTexture.texture, grayTexture.texture);
         computeEncoder->EndEncode();
     });
-    
     
     const ComputePassData& computePassData = fgBlackboard.Get<ComputePassData>();
     frameGraph.AddPass("PresentPass",
     [=](GNXEngine::FrameGraph::Builder &builder, GNXEngine::FrameGraph::NoData &data)
     {
         builder.Read(computePassData.outputColor);
-        
+
         // present的pass必须设置这个标记，要不然不会执行
         builder.setSideEffect();
     },
     [=](const GNXEngine::FrameGraph::NoData &data, GNXEngine::FrameGraphPassResources &resources, void *)
     {
         GNXEngine::FrameGraphTexture &colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(computePassData.outputColor);
-        
+
         RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
         testPost(renderEncoder, colorTexture.texture);
         renderEncoder->EndEncode();
@@ -252,38 +260,6 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     frameGraph.Execute(nullptr, mTransientResources);
     
     mTransientResources->Update(deltaTime);
-    
-    return;
-    
-    RenderPass renderPass;
-    RenderPassColorAttachmentPtr colorAttachmentPtr = std::make_shared<RenderPassColorAttachment>();
-    colorAttachmentPtr->clearColor = MakeClearColor(0.0, 0.0, 0.0, 1.0);
-    colorAttachmentPtr->texture = renderTexture;
-    renderPass.colorAttachments.push_back(colorAttachmentPtr);
-    
-    renderPass.depthAttachment = std::make_shared<RenderPassDepthAttachment>();
-    renderPass.depthAttachment->texture = depthStencilTexture;
-    renderPass.depthAttachment->clearDepth = 1.0;
-    
-    renderPass.stencilAttachment = std::make_shared<RenderPassStencilAttachment>();
-    renderPass.stencilAttachment->texture = depthStencilTexture;
-    renderPass.stencilAttachment->clearStencil = 0x00;
-
-    renderPass.renderRegion = Rect2D(0, 0, mViewSize.width, mViewSize.height);
-    RenderEncoderPtr renderEncoder1 = commandBuffer->CreateRenderEncoder(renderPass);
-    
-    sceneManager->Render(renderEncoder1);
-    
-    renderEncoder1->EndEncode();
-    
-    ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
-    testImageGrayDraw(computeEncoder, computePipeline, renderTexture, computeTexture);
-    computeEncoder->EndEncode();
-    
-    RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
-    testPost(renderEncoder, computeTexture);
-    renderEncoder->EndEncode();
-    commandBuffer->PresentFrameBuffer();
 }
 
 @end

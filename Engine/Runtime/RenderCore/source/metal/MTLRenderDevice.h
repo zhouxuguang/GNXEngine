@@ -95,6 +95,8 @@ public:
     
     virtual CommandBufferPtr CreateCommandBuffer();
     
+    virtual CommandBufferPtr CreateComputeCommandBuffer();
+    
     virtual RCTexture2DPtr CreateTexture2D(TextureFormat format,
                                         TextureUsage usage,
                                         uint32_t width,

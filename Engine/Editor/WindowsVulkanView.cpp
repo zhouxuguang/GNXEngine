@@ -266,6 +266,12 @@ void WindowsVulkanView::Render()
     {
         return;
     }
+    
+    CommandBufferPtr computeCommandBuffer = mRenderDevice->CreateComputeCommandBuffer();
+    if (!computeCommandBuffer)
+    {
+        return;
+    }
 
 	struct PassData
 	{
@@ -335,6 +341,7 @@ void WindowsVulkanView::Render()
 			colorDesc.format = kTexFormatRGBA16Float;
 			data.outputColor = builder.Create<GNXEngine::FrameGraphTexture>("grayColor", colorDesc);
 			data.outputColor = builder.Write(data.outputColor);
+			builder.EnableAsyncCompute(true);
 
 			data.inputColor = builder.Read(basePassData.colorTarget);
 		},
@@ -343,9 +350,12 @@ void WindowsVulkanView::Render()
 			GNXEngine::FrameGraphTexture& colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.inputColor);
 			GNXEngine::FrameGraphTexture& grayTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.outputColor);
 
-			ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
+			ComputeEncoderPtr computeEncoder = computeCommandBuffer->CreateComputeEncoder();
 			testImageGrayDraw(computeEncoder, computePipeline, colorTexture.texture, grayTexture.texture);
 			computeEncoder->EndEncode();
+
+			// 提交计算命令缓冲区到计算队列
+			computeCommandBuffer->Submit();
 		});
 
 

@@ -264,6 +264,14 @@ void MTLCommandBuffer::WaitUntilCompleted()
     }
 }
 
+void MTLCommandBuffer::Submit()
+{
+    @autoreleasepool
+    {
+        [mCommandBuffer commit];
+    }
+}
+
 void MTLCommandBuffer::BeginDebugGroup(const char* name, const float color[4])
 {
     @autoreleasepool

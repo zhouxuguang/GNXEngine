@@ -36,6 +36,9 @@ public:
     //等待命令缓冲区执行完成
     virtual void WaitUntilCompleted();
     
+    //提交命令缓冲区（用于计算命令缓冲区）
+    virtual void Submit();
+    
     // 开始调试标记
     virtual void BeginDebugGroup(const char* name, const float color[4]);
     
