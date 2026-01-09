@@ -31,6 +31,14 @@ public:
     
     virtual bool IsValid() const;
     
+    // RHI 抽象接口实现
+    virtual ResourceState GetState() const override;
+    virtual void SetState(const ResourceState& state) override;
+    virtual void PreReadBarrier(void* commandBuffer, ResourceAccess access,
+                             ResourcePipelineStage stage) override;
+    virtual void PreWriteBarrier(void* commandBuffer, ResourceAccess access,
+                             ResourcePipelineStage stage) override;
+    
     VkBuffer GetBuffer() const
     {
         return mBuffer;
@@ -43,6 +51,11 @@ private:
     uint32_t mBufferLength = 0;
 
     VmaAllocation mAllocation = VK_NULL_HANDLE;
+    ResourceState mResourceState;
+    
+    // 转换辅助函数
+    static uint32_t GetVulkanAccessMask(ResourceAccess access);
+    static uint32_t GetVulkanPipelineStageMask(ResourcePipelineStage stage);
 };
 
 NAMESPACE_RENDERCORE_END

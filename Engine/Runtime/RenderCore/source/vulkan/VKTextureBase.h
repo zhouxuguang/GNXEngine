@@ -52,6 +52,14 @@ public:
 
     virtual void SetName(const char* name);
     
+    // RHI 抽象接口实现
+    virtual ResourceState GetState() const override;
+    virtual void SetState(const ResourceState& state) override;
+    virtual void PreReadBarrier(void* commandBuffer, ResourceAccess access,
+                             ResourcePipelineStage stage, ResourceLayout layout) override;
+    virtual void PreWriteBarrier(void* commandBuffer, ResourceAccess access,
+                             ResourcePipelineStage stage, ResourceLayout layout) override;
+    
     VulkanImageViewPtr GetImageView() const
     {
         return mVulkanImageViewPtr;
@@ -72,6 +80,21 @@ public:
         return mImage;
     }
     
+    VkImage GetImage() const
+    {
+        return mImage;
+    }
+    
+    VkImageLayout GetCurrentLayout() const
+    {
+        return mCurrentLayout;
+    }
+    
+    void SetCurrentLayout(VkImageLayout layout)
+    {
+        mCurrentLayout = layout;
+    }
+    
 private:
     VkImage mImage = VK_NULL_HANDLE;
     VmaAllocation mAllocation = VK_NULL_HANDLE;
@@ -85,6 +108,13 @@ private:
     VulkanImageViewPtr mVulkanImageViewPtr = nullptr;
     std::vector<VulkanImageViewPtr> mRenderTargetViews;
     bool mSupportHostImageCopy = false;
+    VkImageLayout mCurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    ResourceState mResourceState;
+    
+    // 转换辅助函数
+    static uint32_t GetVulkanAccessMask(ResourceAccess access);
+    static uint32_t GetVulkanPipelineStageMask(ResourcePipelineStage stage);
+    static VkImageLayout GetVulkanImageLayout(ResourceLayout layout);
 };
 
 using VKTextureBasePtr = std::shared_ptr<VKTextureBase>;

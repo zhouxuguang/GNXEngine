@@ -132,6 +132,17 @@ public:
             VkPipelineStageFlags dstStageMask,
             VkImageSubresourceRange subresourceRange);
     
+    //插入缓冲区屏障
+    static void InsertBufferMemoryBarrier(
+            VkCommandBuffer cmdbuffer,
+            VkBuffer buffer,
+            VkDeviceSize offset,
+            VkDeviceSize size,
+            VkAccessFlags srcAccessMask,
+            VkAccessFlags dstAccessMask,
+            VkPipelineStageFlags srcStageMask,
+            VkPipelineStageFlags dstStageMask);
+    
     static VkFormat ConvertTextureFormat(TextureFormat texFormat);
     
     static VkImageUsageFlags ConvertTextureUsage(TextureUsage textureUsage, VkFormat format);

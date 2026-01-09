@@ -14,6 +14,97 @@
 NAMESPACE_RENDERCORE_BEGIN
 
 /**
+ * @brief 资源访问类型（RHI 抽象）
+ */
+enum class ResourceAccess : uint32_t
+{
+    None = 0,
+    
+    // 缓冲区访问
+    VertexBuffer = 1 << 0,
+    IndexBuffer = 1 << 1,
+    UniformBuffer = 1 << 2,
+    StorageBufferRead = 1 << 3,
+    StorageBufferWrite = 1 << 4,
+    IndirectBuffer = 1 << 5,
+    TransferSrc = 1 << 6,
+    TransferDst = 1 << 7,
+    
+    // 纹理访问
+    ShaderResource = 1 << 8,
+    ColorAttachment = 1 << 9,
+    DepthStencilAttachment = 1 << 10,
+    DepthStencilReadOnly = 1 << 11,
+    
+    // 计算着色器
+    ComputeShaderResource = 1 << 12,
+    
+    All = 0xFFFFFFFF
+};
+
+inline ResourceAccess operator|(ResourceAccess a, ResourceAccess b)
+{
+    return static_cast<ResourceAccess>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+
+inline ResourceAccess operator&(ResourceAccess a, ResourceAccess b)
+{
+    return static_cast<ResourceAccess>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+}
+
+/**
+ * @brief 资源管线阶段（RHI 抽象）
+ */
+enum class ResourcePipelineStage : uint32_t
+{
+    TopOfPipe = 0,
+    DrawIndirect = 1,
+    VertexInput = 2,
+    VertexShader = 3,
+    TessellationControlShader = 4,
+    TessellationEvaluationShader = 5,
+    GeometryShader = 6,
+    FragmentShader = 7,
+    EarlyFragmentTests = 8,
+    LateFragmentTests = 9,
+    ColorAttachmentOutput = 10,
+    ComputeShader = 11,
+    Transfer = 12,
+    BottomOfPipe = 13,
+    Host = 14,
+    AllGraphics = 15,
+    AllCommands = 16
+};
+
+/**
+ * @brief 资源布局（RHI 抽象）
+ */
+enum class ResourceLayout : uint32_t
+{
+    Undefined = 0,
+    General = 1,
+    ColorAttachmentOptimal = 2,
+    DepthStencilAttachmentOptimal = 3,
+    DepthStencilReadOnlyOptimal = 4,
+    ShaderReadOnlyOptimal = 5,
+    TransferSrcOptimal = 6,
+    TransferDstOptimal = 7,
+    Preinitialized = 8,
+    PresentSrc = 9
+};
+
+/**
+ * @brief 资源状态（RHI 抽象）
+ */
+struct ResourceState
+{
+    ResourceAccess access = ResourceAccess::None;
+    ResourcePipelineStage stage = ResourcePipelineStage::TopOfPipe;
+    ResourceLayout layout = ResourceLayout::Undefined;
+    bool initialized = false;
+};
+
+/**
  * @brief RHI纹理的基类
  * 
  */
@@ -45,6 +136,36 @@ public:
     virtual uint32_t GetLayerCount() const = 0;
 
     virtual void SetName(const char* name) = 0;
+    
+    /**
+     * @brief 获取纹理的当前状态
+     */
+    virtual ResourceState GetState() const = 0;
+    
+    /**
+     * @brief 设置纹理的当前状态
+     */
+    virtual void SetState(const ResourceState& state) = 0;
+    
+    /**
+     * @brief 在读取前插入资源屏障
+     * @param commandBuffer 命令缓冲区（平台特定的句柄）
+     * @param access 访问类型
+     * @param stage 管线阶段
+     * @param layout 布局
+     */
+    virtual void PreReadBarrier(void* commandBuffer, ResourceAccess access, 
+                             ResourcePipelineStage stage, ResourceLayout layout) = 0;
+    
+    /**
+     * @brief 在写入前插入资源屏障
+     * @param commandBuffer 命令缓冲区（平台特定的句柄）
+     * @param access 访问类型
+     * @param stage 管线阶段
+     * @param layout 布局
+     */
+    virtual void PreWriteBarrier(void* commandBuffer, ResourceAccess access,
+                             ResourcePipelineStage stage, ResourceLayout layout) = 0;
     
     TextureType GetTextureType() const
     {

@@ -536,6 +536,40 @@ void VulkanBufferUtil::InsertImageMemoryBarrier(
             1, &imageMemoryBarrier);
 }
 
+void VulkanBufferUtil::InsertBufferMemoryBarrier(
+        VkCommandBuffer cmdbuffer,
+        VkBuffer buffer,
+        VkDeviceSize offset,
+        VkDeviceSize size,
+        VkAccessFlags srcAccessMask,
+        VkAccessFlags dstAccessMask,
+        VkPipelineStageFlags srcStageMask,
+        VkPipelineStageFlags dstStageMask)
+{
+    if (!cmdbuffer || !buffer)
+    {
+        return;
+    }
+    VkBufferMemoryBarrier bufferBarrier {};
+    bufferBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    bufferBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    bufferBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    bufferBarrier.srcAccessMask = srcAccessMask;
+    bufferBarrier.dstAccessMask = dstAccessMask;
+    bufferBarrier.buffer = buffer;
+    bufferBarrier.offset = offset;
+    bufferBarrier.size = size;
+
+    vkCmdPipelineBarrier(
+            cmdbuffer,
+            srcStageMask,
+            dstStageMask,
+            0,
+            0, nullptr,
+            1, &bufferBarrier,
+            0, nullptr);
+}
+
 VkFormat VulkanBufferUtil::ConvertTextureFormat(TextureFormat texFormat)
 {
     VkFormat format = VK_FORMAT_UNDEFINED;

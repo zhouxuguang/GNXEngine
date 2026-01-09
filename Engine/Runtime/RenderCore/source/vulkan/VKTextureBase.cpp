@@ -326,6 +326,247 @@ void VKTextureBase::SetName(const char* name)
     SetObjectName(mContext->device, VK_OBJECT_TYPE_IMAGE, (uint64_t)mImage, name);
 }
 
+// RHI 抽象接口实现
+
+ResourceState VKTextureBase::GetState() const
+{
+    return mResourceState;
+}
+
+void VKTextureBase::SetState(const ResourceState& state)
+{
+    mResourceState = state;
+    mCurrentLayout = GetVulkanImageLayout(state.layout);
+}
+
+void VKTextureBase::PreReadBarrier(void* commandBuffer, ResourceAccess access,
+                                   ResourcePipelineStage stage, ResourceLayout layout)
+{
+    if (!commandBuffer || !mImage)
+    {
+        return;
+    }
+    
+    VkCommandBuffer cmdBuffer = static_cast<VkCommandBuffer>(commandBuffer);
+    
+    // 计算旧的访问掩码和阶段
+    uint32_t srcAccessMask = GetVulkanAccessMask(mResourceState.access);
+    uint32_t srcStageMask = GetVulkanPipelineStageMask(mResourceState.stage);
+    VkImageLayout oldLayout = GetVulkanImageLayout(mResourceState.layout);
+    
+    // 计算新的访问掩码和阶段
+    uint32_t dstAccessMask = GetVulkanAccessMask(access);
+    uint32_t dstStageMask = GetVulkanPipelineStageMask(stage);
+    VkImageLayout newLayout = GetVulkanImageLayout(layout);
+    
+    // 创建图像子资源范围
+    VkImageSubresourceRange subresourceRange = {};
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    if (VulkanBufferUtil::IsDepthStencilFormat(mFormat))
+    {
+        subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = mMipLevels;
+    subresourceRange.baseArrayLayer = 0;
+    subresourceRange.layerCount = mLayerCount;
+    
+    // 插入屏障
+    VulkanBufferUtil::InsertImageMemoryBarrier(
+        cmdBuffer,
+        mImage,
+        srcAccessMask,
+        dstAccessMask,
+        oldLayout,
+        newLayout,
+        srcStageMask,
+        dstStageMask,
+        subresourceRange
+    );
+    
+    // 更新状态
+    mCurrentLayout = newLayout;
+}
+
+void VKTextureBase::PreWriteBarrier(void* commandBuffer, ResourceAccess access,
+                                   ResourcePipelineStage stage, ResourceLayout layout)
+{
+    if (!commandBuffer || !mImage)
+    {
+        return;
+    }
+    
+    VkCommandBuffer cmdBuffer = static_cast<VkCommandBuffer>(commandBuffer);
+    
+    // 计算旧的访问掩码和阶段
+    uint32_t srcAccessMask = GetVulkanAccessMask(mResourceState.access);
+    uint32_t srcStageMask = GetVulkanPipelineStageMask(mResourceState.stage);
+    VkImageLayout oldLayout = GetVulkanImageLayout(mResourceState.layout);
+    
+    // 计算新的访问掩码和阶段
+    uint32_t dstAccessMask = GetVulkanAccessMask(access);
+    uint32_t dstStageMask = GetVulkanPipelineStageMask(stage);
+    VkImageLayout newLayout = GetVulkanImageLayout(layout);
+    
+    // 创建图像子资源范围
+    VkImageSubresourceRange subresourceRange = {};
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    if (VulkanBufferUtil::IsDepthStencilFormat(mFormat))
+    {
+        subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = mMipLevels;
+    subresourceRange.baseArrayLayer = 0;
+    subresourceRange.layerCount = mLayerCount;
+    
+    // 插入屏障
+    VulkanBufferUtil::InsertImageMemoryBarrier(
+        cmdBuffer,
+        mImage,
+        srcAccessMask,
+        dstAccessMask,
+        oldLayout,
+        newLayout,
+        srcStageMask,
+        dstStageMask,
+        subresourceRange
+    );
+    
+    // 更新状态
+    mCurrentLayout = newLayout;
+}
+
+// 转换辅助函数
+
+uint32_t VKTextureBase::GetVulkanAccessMask(ResourceAccess access)
+{
+    uint32_t mask = 0;
+    
+    if ((access & ResourceAccess::VertexBuffer) != ResourceAccess::None)
+    {
+        mask |= (1 << 2); // VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT
+    }
+    if ((access & ResourceAccess::IndexBuffer) != ResourceAccess::None)
+    {
+        mask |= (1 << 3); // VK_ACCESS_INDEX_READ_BIT
+    }
+    if ((access & ResourceAccess::UniformBuffer) != ResourceAccess::None)
+    {
+        mask |= (1 << 4); // VK_ACCESS_UNIFORM_READ_BIT
+    }
+    if ((access & ResourceAccess::StorageBufferRead) != ResourceAccess::None)
+    {
+        mask |= (1 << 12); // VK_ACCESS_SHADER_READ_BIT
+    }
+    if ((access & ResourceAccess::StorageBufferWrite) != ResourceAccess::None)
+    {
+        mask |= (1 << 14); // VK_ACCESS_SHADER_WRITE_BIT
+    }
+    if ((access & ResourceAccess::ShaderResource) != ResourceAccess::None)
+    {
+        mask |= (1 << 12); // VK_ACCESS_SHADER_READ_BIT
+    }
+    if ((access & ResourceAccess::ColorAttachment) != ResourceAccess::None)
+    {
+        mask |= (1 << 7); // VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT
+    }
+    if ((access & ResourceAccess::DepthStencilAttachment) != ResourceAccess::None)
+    {
+        mask |= (1 << 11); // VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
+    }
+    if ((access & ResourceAccess::DepthStencilReadOnly) != ResourceAccess::None)
+    {
+        mask |= (1 << 10); // VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT
+    }
+    if ((access & ResourceAccess::ComputeShaderResource) != ResourceAccess::None)
+    {
+        mask |= (1 << 12); // VK_ACCESS_SHADER_READ_BIT
+    }
+    if ((access & ResourceAccess::TransferSrc) != ResourceAccess::None)
+    {
+        mask |= (1 << 6); // VK_ACCESS_TRANSFER_READ_BIT
+    }
+    if ((access & ResourceAccess::TransferDst) != ResourceAccess::None)
+    {
+        mask |= (1 << 8); // VK_ACCESS_TRANSFER_WRITE_BIT
+    }
+    
+    return mask;
+}
+
+uint32_t VKTextureBase::GetVulkanPipelineStageMask(ResourcePipelineStage stage)
+{
+    switch (stage)
+    {
+        case ResourcePipelineStage::TopOfPipe:
+            return 0x00000001; // VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT
+        case ResourcePipelineStage::DrawIndirect:
+            return 0x00000002; // VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT
+        case ResourcePipelineStage::VertexInput:
+            return 0x00000004; // VK_PIPELINE_STAGE_VERTEX_INPUT_BIT
+        case ResourcePipelineStage::VertexShader:
+            return 0x00000008; // VK_PIPELINE_STAGE_VERTEX_SHADER_BIT
+        case ResourcePipelineStage::TessellationControlShader:
+            return 0x00000010; // VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT
+        case ResourcePipelineStage::TessellationEvaluationShader:
+            return 0x00000020; // VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT
+        case ResourcePipelineStage::GeometryShader:
+            return 0x00000040; // VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT
+        case ResourcePipelineStage::FragmentShader:
+            return 0x00000080; // VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+        case ResourcePipelineStage::EarlyFragmentTests:
+            return 0x00000100; // VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT
+        case ResourcePipelineStage::LateFragmentTests:
+            return 0x00000200; // VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT
+        case ResourcePipelineStage::ColorAttachmentOutput:
+            return 0x00000400; // VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+        case ResourcePipelineStage::ComputeShader:
+            return 0x00000800; // VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+        case ResourcePipelineStage::Transfer:
+            return 0x00001000; // VK_PIPELINE_STAGE_TRANSFER_BIT
+        case ResourcePipelineStage::BottomOfPipe:
+            return 0x00002000; // VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+        case ResourcePipelineStage::Host:
+            return 0x00004000; // VK_PIPELINE_STAGE_HOST_BIT
+        case ResourcePipelineStage::AllGraphics:
+            return 0x000007FF; // VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT
+        case ResourcePipelineStage::AllCommands:
+            return 0x7FFFFFFF; // VK_PIPELINE_STAGE_ALL_COMMANDS_BIT
+        default:
+            return 0x00002000; // VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+    }
+}
+
+VkImageLayout VKTextureBase::GetVulkanImageLayout(ResourceLayout layout)
+{
+    switch (layout)
+    {
+        case ResourceLayout::Undefined:
+            return VK_IMAGE_LAYOUT_UNDEFINED;
+        case ResourceLayout::General:
+            return VK_IMAGE_LAYOUT_GENERAL;
+        case ResourceLayout::ColorAttachmentOptimal:
+            return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        case ResourceLayout::DepthStencilAttachmentOptimal:
+            return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        case ResourceLayout::DepthStencilReadOnlyOptimal:
+            return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        case ResourceLayout::ShaderReadOnlyOptimal:
+            return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        case ResourceLayout::TransferSrcOptimal:
+            return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        case ResourceLayout::TransferDstOptimal:
+            return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        case ResourceLayout::Preinitialized:
+            return VK_IMAGE_LAYOUT_PREINITIALIZED;
+        case ResourceLayout::PresentSrc:
+            return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        default:
+            return VK_IMAGE_LAYOUT_GENERAL;
+    }
+}
+
 #pragma mark VKRCTexture2D
 
 VKRCTexture2D::VKRCTexture2D(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo)

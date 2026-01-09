@@ -11,6 +11,7 @@
 #include "RenderDefine.h"
 #include "GraphicsPipeline.h"
 #include "VertexBuffer.h"
+#include "RCTexture.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -45,6 +46,34 @@ public:
       设置名字
      */
     virtual void SetName(const char* name) {};
+    
+    /**
+     * @brief 获取缓冲区的当前状态
+     */
+    virtual ResourceState GetState() const = 0;
+    
+    /**
+     * @brief 设置缓冲区的当前状态
+     */
+    virtual void SetState(const ResourceState& state) = 0;
+    
+    /**
+     * @brief 在读取前插入资源屏障
+     * @param commandBuffer 命令缓冲区（平台特定的句柄）
+     * @param access 访问类型
+     * @param stage 管线阶段
+     */
+    virtual void PreReadBarrier(void* commandBuffer, ResourceAccess access,
+                             ResourcePipelineStage stage) = 0;
+    
+    /**
+     * @brief 在写入前插入资源屏障
+     * @param commandBuffer 命令缓冲区（平台特定的句柄）
+     * @param access 访问类型
+     * @param stage 管线阶段
+     */
+    virtual void PreWriteBarrier(void* commandBuffer, ResourceAccess access,
+                             ResourcePipelineStage stage) = 0;
 };
 
 typedef std::shared_ptr<ComputeBuffer> ComputeBufferPtr;
