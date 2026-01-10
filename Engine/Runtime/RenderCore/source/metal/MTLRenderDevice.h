@@ -94,9 +94,7 @@ public:
      */
     virtual ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderSource) const;
     
-    virtual CommandBufferPtr CreateCommandBuffer();
-    
-    virtual CommandBufferPtr CreateComputeCommandBuffer();
+    CommandBufferPtr CreateCommandBuffer();
     
     virtual RCTexture2DPtr CreateTexture2D(TextureFormat format,
                                         TextureUsage usage,
@@ -127,6 +125,9 @@ public:
     // RHI队列接口实现
     virtual CommandQueuePtr GetCommandQueue(QueueType type, uint32_t index = 0) const override;
     virtual uint32_t GetCommandQueueCount(QueueType type) const override;
+
+    // 友元声明，允许MTLCommandQueue访问私有成员
+    friend class MTLCommandQueue;
 
 private:
     CAMetalLayer *mMetalLayer;

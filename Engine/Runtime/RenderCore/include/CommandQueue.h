@@ -9,6 +9,7 @@
 #define GNX_ENGINE_COMMAND_QUEUE_INCLUDE_H
 
 #include "RenderDefine.h"
+#include "CommandBuffer.h"
 #include <memory>
 #include <string>
 
@@ -82,6 +83,18 @@ public:
      * @brief 获取队列的描述信息
      */
     virtual std::string GetDescription() const = 0;
+
+    /**
+     * @brief 创建命令缓冲区
+     * 
+     * 创建适合该队列类型的命令缓冲区。
+     * 对于图形队列，创建用于渲染的命令缓冲区。
+     * 对于计算队列，创建用于计算调用的命令缓冲区。
+     * 对于传输队列，创建用于资源传输的命令缓冲区。
+     * 
+     * @return 命令缓冲区指针，失败返回nullptr
+     */
+    virtual CommandBufferPtr CreateCommandBuffer() = 0;
 };
 
 typedef std::shared_ptr<CommandQueue> CommandQueuePtr;

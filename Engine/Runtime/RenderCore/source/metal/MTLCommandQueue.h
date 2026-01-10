@@ -14,6 +14,9 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+// 前向声明
+class MTLRenderDevice;
+
 /**
  * @brief Metal命令队列实现
  *
@@ -26,12 +29,14 @@ public:
     /**
      * @brief 构造函数
      *
+     * @param renderDevice 所属的渲染设备
      * @param queue Metal命令队列
      * @param type 逻辑队列类型（用于区分用途）
      * @param priority 队列优先级
      * @param queueIndex 在同类队列中的索引
      */
-    MTLCommandQueue(id<MTLCommandQueue> queue,
+    MTLCommandQueue(MTLRenderDevice* renderDevice,
+             id<MTLCommandQueue> queue,
              QueueType type,
              QueuePriority priority,
              uint32_t queueIndex);
@@ -59,11 +64,22 @@ public:
     virtual std::string GetDescription() const override;
 
     /**
+     * @brief 创建命令缓冲区
+     */
+    virtual CommandBufferPtr CreateCommandBuffer() override;
+
+    /**
      * @brief 获取Metal命令队列
      */
     id<MTLCommandQueue> GetMTLCommandQueue() const { return mCommandQueue; }
 
+    /**
+     * @brief 获取渲染设备
+     */
+    MTLRenderDevice* GetRenderDevice() const { return mRenderDevice; }
+
 private:
+    MTLRenderDevice* mRenderDevice = nullptr;
     id<MTLCommandQueue> mCommandQueue = nil;
     QueueType mType;
     QueuePriority mPriority;

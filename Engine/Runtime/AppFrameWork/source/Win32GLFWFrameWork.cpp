@@ -47,7 +47,9 @@ void Win32GLFWFrameWork::exec()
 
 void Win32GLFWFrameWork::renderFrame()
 {
-    CommandBufferPtr commandBuffer = mRenderdevice->CreateCommandBuffer();
+    // 从Graphics队列创建命令缓冲区
+    CommandQueuePtr graphicsQueue = mRenderdevice->GetCommandQueue(QueueType::Graphics, 0);
+    CommandBufferPtr commandBuffer = graphicsQueue->CreateCommandBuffer();
     RenderEncoderPtr renderEncoder1 = commandBuffer->CreateDefaultRenderEncoder();
     renderEncoder1->EndEncode();
     commandBuffer->PresentFrameBuffer();

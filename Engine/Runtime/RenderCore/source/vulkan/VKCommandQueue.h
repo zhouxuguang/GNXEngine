@@ -14,6 +14,9 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+// 前向声明
+class VKRenderDevice;
+
 /**
  * @brief Vulkan命令队列实现
  *
@@ -25,13 +28,15 @@ public:
     /**
      * @brief 构造函数
      *
+     * @param renderDevice 所属的渲染设备
      * @param queue Vulkan队列句柄
      * @param type 队列类型
      * @param priority 队列优先级
      * @param queueIndex 在同类队列中的索引
      * @param queueFamilyIndex 队列族索引
      */
-    VKCommandQueue(VkQueue queue,
+    VKCommandQueue(VKRenderDevice* renderDevice,
+            VkQueue queue,
             QueueType type,
             QueuePriority priority,
             uint32_t queueIndex,
@@ -60,6 +65,11 @@ public:
     virtual std::string GetDescription() const override;
 
     /**
+     * @brief 创建命令缓冲区
+     */
+    virtual CommandBufferPtr CreateCommandBuffer() override;
+
+    /**
      * @brief 获取Vulkan队列句柄
      */
     VkQueue GetVkQueue() const { return mQueue; }
@@ -69,7 +79,13 @@ public:
      */
     uint32_t GetQueueFamilyIndex() const { return mQueueFamilyIndex; }
 
+    /**
+     * @brief 获取渲染设备
+     */
+    VKRenderDevice* GetRenderDevice() const { return mRenderDevice; }
+
 private:
+    VKRenderDevice* mRenderDevice = nullptr;
     VkQueue mQueue = VK_NULL_HANDLE;
     QueueType mType;
     QueuePriority mPriority;

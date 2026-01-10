@@ -261,13 +261,17 @@ void WindowsVulkanView::Render()
 	lastTime = thisTime;
 	sceneManager->Update(deltaTime);
 
-	CommandBufferPtr commandBuffer = mRenderDevice->CreateCommandBuffer();
+	// 从Graphics队列创建命令缓冲区
+	CommandQueuePtr graphicsQueue = mRenderDevice->GetCommandQueue(QueueType::Graphics, 0);
+	CommandBufferPtr commandBuffer = graphicsQueue->CreateCommandBuffer();
     if (!commandBuffer)
     {
         return;
     }
     
-    CommandBufferPtr computeCommandBuffer = mRenderDevice->CreateComputeCommandBuffer();
+    // 从Compute队列创建计算命令缓冲区
+    CommandQueuePtr computeQueue = mRenderDevice->GetCommandQueue(QueueType::Compute, 0);
+    CommandBufferPtr computeCommandBuffer = computeQueue->CreateCommandBuffer();
     if (!computeCommandBuffer)
     {
         return;

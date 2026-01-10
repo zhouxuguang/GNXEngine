@@ -59,9 +59,7 @@ public:
     
     virtual ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderString) const;
     
-    virtual CommandBufferPtr CreateCommandBuffer();
-    
-    virtual CommandBufferPtr CreateComputeCommandBuffer();
+    CommandBufferPtr CreateCommandBuffer();
     
     virtual RCTexture2DPtr CreateTexture2D(TextureFormat format,
                                         TextureUsage usage,
@@ -91,6 +89,7 @@ public:
 
     // RHI队列接口实现
     virtual CommandQueuePtr GetCommandQueue(QueueType type, uint32_t index = 0) const override;
+
     virtual uint32_t GetCommandQueueCount(QueueType type) const override;
 
     void UpdateCurrentIndex();
@@ -122,6 +121,9 @@ private:
 
     // 初始化队列管理
     void InitializeCommandQueues();
+
+    // 友元声明，允许VKCommandQueue访问私有成员
+    friend class VKCommandQueue;
 
 private:
     // 队列管理

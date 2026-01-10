@@ -47,7 +47,9 @@ void TestADD()
     
     ComputePipelinePtr computePipeline = GetRenderDevice()->CreateComputePipeline(*computeShader);
     
-    CommandBufferPtr command = GetRenderDevice()->CreateCommandBuffer();
+    // 从Compute队列创建命令缓冲区
+    CommandQueuePtr computeQueue = GetRenderDevice()->GetCommandQueue(QueueType::Compute, 0);
+    CommandBufferPtr command = computeQueue->CreateCommandBuffer();
     
     ComputeEncoderPtr computeEncoder = command->CreateComputeEncoder();
     computeEncoder->SetComputePipeline(computePipeline);

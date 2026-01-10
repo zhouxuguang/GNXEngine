@@ -156,7 +156,9 @@ void NaniteFrameWork::RenderFrame()
 		mGlobalBuffer->SetData(&mGlobalData, 0, sizeof(GlobaleData));
     }
     
-    RenderCore::CommandBufferPtr commandBuffer = mRenderDevice->CreateCommandBuffer();
+    // 从Graphics队列创建命令缓冲区
+    RenderCore::CommandQueuePtr graphicsQueue = mRenderDevice->GetCommandQueue(RenderCore::QueueType::Graphics, 0);
+    RenderCore::CommandBufferPtr commandBuffer = graphicsQueue->CreateCommandBuffer();
     if (!commandBuffer)
     {
         return;

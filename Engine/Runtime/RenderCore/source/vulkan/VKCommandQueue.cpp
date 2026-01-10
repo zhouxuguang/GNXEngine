@@ -6,16 +6,20 @@
 //
 
 #include "VKCommandQueue.h"
+#include "VKRenderDevice.h"
+#include "VulkanCommandBuffer.h"
 #include <sstream>
 
 NAMESPACE_RENDERCORE_BEGIN
 
-VKCommandQueue::VKCommandQueue(VkQueue queue,
+VKCommandQueue::VKCommandQueue(VKRenderDevice* renderDevice,
+                 VkQueue queue,
                  QueueType type,
                  QueuePriority priority,
                  uint32_t queueIndex,
                  uint32_t queueFamilyIndex)
-    : mQueue(queue)
+    : mRenderDevice(renderDevice)
+    , mQueue(queue)
     , mType(type)
     , mPriority(priority)
     , mQueueIndex(queueIndex)
@@ -41,6 +45,16 @@ std::string VKCommandQueue::GetDescription() const
 
     oss << ", handle=" << reinterpret_cast<uintptr_t>(mQueue) << "]";
     return oss.str();
+}
+
+CommandBufferPtr VKCommandQueue::CreateCommandBuffer()
+{
+    if (!mRenderDevice)
+    {
+        return nullptr;
+    }
+
+    return mRenderDevice->CreateCommandBuffer();
 }
 
 NAMESPACE_RENDERCORE_END

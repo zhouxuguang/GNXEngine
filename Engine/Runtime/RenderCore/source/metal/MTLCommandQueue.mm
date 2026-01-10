@@ -7,15 +7,19 @@
 
 #import <Metal/Metal.h>
 #include "MTLCommandQueue.h"
+#include "MTLRenderDevice.h"
+#include "MTLCommandBuffer.h"
 #include <sstream>
 
 NAMESPACE_RENDERCORE_BEGIN
 
-MTLCommandQueue::MTLCommandQueue(id<MTLCommandQueue> queue,
+MTLCommandQueue::MTLCommandQueue(MTLRenderDevice* renderDevice,
+                   id<MTLCommandQueue> queue,
                    QueueType type,
                    QueuePriority priority,
                    uint32_t queueIndex)
-    : mCommandQueue(queue)
+    : mRenderDevice(renderDevice)
+    , mCommandQueue(queue)
     , mType(type)
     , mPriority(priority)
     , mQueueIndex(queueIndex)
@@ -48,5 +52,18 @@ std::string MTLCommandQueue::GetDescription() const
     oss << ", handle=" << reinterpret_cast<uintptr_t>(mCommandQueue) << "]";
     return oss.str();
 }
+
+CommandBufferPtr MTLCommandQueue::CreateCommandBuffer()
+{
+    if (!mRenderDevice)
+    {
+        return nullptr;
+    }
+
+    // Metal中所有队列都使用相同的CommandBuffer创建逻辑
+    return mRenderDevice->CreateCommandBuffer();
+}
+
+
 
 NAMESPACE_RENDERCORE_END

@@ -144,7 +144,9 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     sceneManager->Update(deltaTime);
 
     // 使用单个命令缓冲区，这样可以利用 MTLDispatchTypeConcurrent 实现计算和图形的并发执行
-    CommandBufferPtr commandBuffer = mRenderdevice->CreateCommandBuffer();
+    // 从Graphics队列创建命令缓冲区
+    CommandQueuePtr graphicsQueue = mRenderdevice->GetCommandQueue(QueueType::Graphics, 0);
+    CommandBufferPtr commandBuffer = graphicsQueue->CreateCommandBuffer();
 
     if (!commandBuffer)
     {

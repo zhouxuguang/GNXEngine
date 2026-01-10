@@ -30,6 +30,7 @@ MTLRenderDevice::MTLRenderDevice(CAMetalLayer *metalLayer)
     // 初始化队列管理（Metal的CommandQueue支持所有类型命令）
     // 创建图形队列（默认队列，用于渲染）
     MTLCommandQueuePtr graphicsQueue = std::make_shared<MTLCommandQueue>(
+        this,
         mMetalCommandQueue,
         QueueType::Graphics,
         QueuePriority::Normal,
@@ -39,6 +40,7 @@ MTLRenderDevice::MTLRenderDevice(CAMetalLayer *metalLayer)
 
     // 创建计算队列（复用同一个CommandQueue，但在逻辑上区分）
     MTLCommandQueuePtr computeQueue = std::make_shared<MTLCommandQueue>(
+        this,
         mMetalCommandQueue,
         QueueType::Compute,
         QueuePriority::Normal,
@@ -48,6 +50,7 @@ MTLRenderDevice::MTLRenderDevice(CAMetalLayer *metalLayer)
 
     // 创建传输队列（复用同一个CommandQueue，但在逻辑上区分）
     MTLCommandQueuePtr transferQueue = std::make_shared<MTLCommandQueue>(
+        this,
         mMetalCommandQueue,
         QueueType::Transfer,
         QueuePriority::Normal,
@@ -186,12 +189,6 @@ ComputePipelinePtr MTLRenderDevice::CreateComputePipeline(const ShaderCode& shad
 
 CommandBufferPtr MTLRenderDevice::CreateCommandBuffer()
 {
-    return std::make_shared<MTLCommandBuffer>(mMetalCommandQueue, mMetalLayer, mDepthTexture, mStencilTexture, mDepthStencilTexture);
-}
-
-CommandBufferPtr MTLRenderDevice::CreateComputeCommandBuffer()
-{
-    // For Metal, compute command buffer is same as graphics command buffer
     return std::make_shared<MTLCommandBuffer>(mMetalCommandQueue, mMetalLayer, mDepthTexture, mStencilTexture, mDepthStencilTexture);
 }
 

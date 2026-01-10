@@ -537,40 +537,13 @@ void VKRenderDevice::CreateComputeCommandBuffers(VkDevice device, size_t nImageC
     vkAllocateCommandBuffers(device, &cmdBufferCreateInfo, mComputeCommandBuffers.data());
 }
 
-
-
-CommandBufferPtr VKRenderDevice::CreateComputeCommandBuffer()
-{
-    if (!mSwapChain)
-    {
-        return nullptr;
-    }
-    if (mComputeCommandBuffers.empty())
-    {
-        CreateComputeCommandBuffers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetComputeCommandPool());
-    }
-    VkCommandBuffer commandBuffer = mComputeCommandBuffers[mCurrentFrame];
-    CommandBufferInfoPtr commandBufferInfo = std::make_shared<CommandBufferInfo>();
-    commandBufferInfo->flightFence = mFlightFences[mCurrentFrame];
-    commandBufferInfo->imageAvailableSemaphore = mImageAvailableSemaphores[mCurrentFrame];
-    commandBufferInfo->currentFrameIndex = mCurrentFrame;
-    commandBufferInfo->nextFrameIndex = mNextFrameIndex;
-    commandBufferInfo->renderDevice = this;
-    commandBufferInfo->renderFinishSemaphore = mRenderFinishedSemaphores[mCurrentFrame];
-    commandBufferInfo->swapChain = mSwapChain;
-    commandBufferInfo->vulkanContext = mVulkanContext;
-    commandBufferInfo->depthStencilBuffer = mSwapChain->GetDSBuffer();
-    commandBufferInfo->isComputeCommandBuffer = true;  // 标记为计算命令缓冲区
-    
-    return std::make_shared<VulkanCommandBuffer>(commandBuffer, commandBufferInfo);
-}
-
 void VKRenderDevice::InitializeCommandQueues()
 {
     // 创建图形队列（Vulkan通常只有一个主图形队列）
     if (mVulkanContext->graphicsQueue != VK_NULL_HANDLE)
     {
         VKCommandQueuePtr queue = std::make_shared<VKCommandQueue>(
+            this,
             mVulkanContext->graphicsQueue,
             QueueType::Graphics,
             QueuePriority::Normal,
@@ -585,6 +558,7 @@ void VKRenderDevice::InitializeCommandQueues()
     for (uint32_t i = 0; i < mVulkanContext->availableComputeQueues.size(); ++i)
     {
         VKCommandQueuePtr queue = std::make_shared<VKCommandQueue>(
+            this,
             mVulkanContext->availableComputeQueues[i],
             QueueType::Compute,
             QueuePriority::Normal,
@@ -599,6 +573,7 @@ void VKRenderDevice::InitializeCommandQueues()
     for (uint32_t i = 0; i < mVulkanContext->availableTransferQueues.size(); ++i)
     {
         VKCommandQueuePtr queue = std::make_shared<VKCommandQueue>(
+            this,
             mVulkanContext->availableTransferQueues[i],
             QueueType::Transfer,
             QueuePriority::Normal,

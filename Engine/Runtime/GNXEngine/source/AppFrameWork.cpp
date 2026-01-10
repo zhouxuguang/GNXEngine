@@ -40,7 +40,9 @@ void AppFrameWork::Resize(uint32_t width, uint32_t height)
 void AppFrameWork::RenderFrame()
 {
     RenderCore::RenderDevicePtr renderDevice = RenderCore::GetRenderDevice();
-    RenderCore::CommandBufferPtr commandBuffer = renderDevice->CreateCommandBuffer();
+    // 从Graphics队列创建命令缓冲区
+    RenderCore::CommandQueuePtr graphicsQueue = renderDevice->GetCommandQueue(RenderCore::QueueType::Graphics, 0);
+    RenderCore::CommandBufferPtr commandBuffer = graphicsQueue->CreateCommandBuffer();
     RenderCore::RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
     renderEncoder->EndEncode();
     commandBuffer->PresentFrameBuffer();

@@ -81,7 +81,9 @@ static rendercore::RenderDeviceType convertToRenderDeviceType(RenderType renderT
 
 - (void)drawFrame
 {
-    CommandBufferPtr commandBuffer = mRenderdevice->createCommandBuffer();
+    // 从Graphics队列创建命令缓冲区
+    CommandQueuePtr graphicsQueue = mRenderdevice->GetCommandQueue(QueueType::Graphics, 0);
+    CommandBufferPtr commandBuffer = graphicsQueue->CreateCommandBuffer();
     
     RenderPass renderPass;
     RenderPassColorAttachmentPtr colorAttachmentPtr = std::make_shared<RenderPassColorAttachment>();

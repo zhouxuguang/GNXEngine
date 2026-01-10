@@ -100,13 +100,6 @@ public:
      */
     virtual ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderString) const = 0;
     
-    virtual CommandBufferPtr CreateCommandBuffer() = 0;
-    
-    /**
-     创建计算命令缓冲区
-     */
-    virtual CommandBufferPtr CreateComputeCommandBuffer() = 0;
-    
     /**
      * @brief Create a Texture2D object
      * 
