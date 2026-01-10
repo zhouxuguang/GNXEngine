@@ -16,15 +16,44 @@
 #include "MTLCommandBuffer.h"
 #include "MTLComputeBuffer.h"
 #include "MTLTextureBase.h"
+#include "MTLCommandQueue.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
 MTLRenderDevice::MTLRenderDevice(CAMetalLayer *metalLayer)
 {
     mMetalLayer = metalLayer;
-    mCommandQueue = [mMetalLayer.device newCommandQueue];
-    
+    mMetalCommandQueue = [mMetalLayer.device newCommandQueue];
+
     mMTLDeviceExtension = std::make_shared<MTLDeviceExtension>();
+
+    // 初始化队列管理（Metal的CommandQueue支持所有类型命令）
+    // 创建图形队列（默认队列，用于渲染）
+    MTLCommandQueuePtr graphicsQueue = std::make_shared<MTLCommandQueue>(
+        mMetalCommandQueue,
+        QueueType::Graphics,
+        QueuePriority::Normal,
+        0
+    );
+    mGraphicsQueues.push_back(graphicsQueue);
+
+    // 创建计算队列（复用同一个CommandQueue，但在逻辑上区分）
+    MTLCommandQueuePtr computeQueue = std::make_shared<MTLCommandQueue>(
+        mMetalCommandQueue,
+        QueueType::Compute,
+        QueuePriority::Normal,
+        0
+    );
+    mComputeQueues.push_back(computeQueue);
+
+    // 创建传输队列（复用同一个CommandQueue，但在逻辑上区分）
+    MTLCommandQueuePtr transferQueue = std::make_shared<MTLCommandQueue>(
+        mMetalCommandQueue,
+        QueueType::Transfer,
+        QueuePriority::Normal,
+        0
+    );
+    mTransferQueues.push_back(transferQueue);
 }
 
 MTLRenderDevice::~MTLRenderDevice()
@@ -75,7 +104,7 @@ VertexBufferPtr MTLRenderDevice::CreateVertexBufferWithLength(uint32_t size) con
  */
 VertexBufferPtr MTLRenderDevice::CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const
 {
-    auto vertexBuffer = std::make_shared<MTLVertexBuffer>(mMetalLayer.device, mCommandQueue, buffer, size, mode);
+    auto vertexBuffer = std::make_shared<MTLVertexBuffer>(mMetalLayer.device, mMetalCommandQueue, buffer, size, mode);
     return vertexBuffer;
 }
 
@@ -87,7 +116,7 @@ ComputeBufferPtr MTLRenderDevice::CreateComputeBuffer(uint32_t size, StorageMode
 
 ComputeBufferPtr MTLRenderDevice::CreateComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const
 {
-    auto vertexBuffer = std::make_shared<MTLComputeBuffer>(mMetalLayer.device, mCommandQueue, buffer, size, mode);
+    auto vertexBuffer = std::make_shared<MTLComputeBuffer>(mMetalLayer.device, mMetalCommandQueue, buffer, size, mode);
     return vertexBuffer;
 }
 
@@ -101,7 +130,7 @@ ComputeBufferPtr MTLRenderDevice::CreateComputeBuffer(const void* buffer, uint32
  */
 IndexBufferPtr MTLRenderDevice::CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const
 {
-    auto indexBuffer = std::make_shared<MTLIndexBuffer>(mMetalLayer.device, mCommandQueue, indexType, buffer, size);
+    auto indexBuffer = std::make_shared<MTLIndexBuffer>(mMetalLayer.device, mMetalCommandQueue, indexType, buffer, size);
     return indexBuffer;
 }
 
@@ -157,13 +186,13 @@ ComputePipelinePtr MTLRenderDevice::CreateComputePipeline(const ShaderCode& shad
 
 CommandBufferPtr MTLRenderDevice::CreateCommandBuffer()
 {
-    return std::make_shared<MTLCommandBuffer>(mCommandQueue, mMetalLayer, mDepthTexture, mStencilTexture, mDepthStencilTexture);
+    return std::make_shared<MTLCommandBuffer>(mMetalCommandQueue, mMetalLayer, mDepthTexture, mStencilTexture, mDepthStencilTexture);
 }
 
 CommandBufferPtr MTLRenderDevice::CreateComputeCommandBuffer()
 {
     // For Metal, compute command buffer is same as graphics command buffer
-    return std::make_shared<MTLCommandBuffer>(mCommandQueue, mMetalLayer, mDepthTexture, mStencilTexture, mDepthStencilTexture);
+    return std::make_shared<MTLCommandBuffer>(mMetalCommandQueue, mMetalLayer, mDepthTexture, mStencilTexture, mDepthStencilTexture);
 }
 
 RCTexture2DPtr MTLRenderDevice::CreateTexture2D(TextureFormat format,
@@ -207,7 +236,7 @@ RCTexture2DPtr MTLRenderDevice::CreateTexture2D(TextureFormat format,
         }
     }
     
-    MTLRCTexture2DPtr texture = std::make_shared<MTLRCTexture2D>(mMetalLayer.device, mCommandQueue, textureDes);
+    MTLRCTexture2DPtr texture = std::make_shared<MTLRCTexture2D>(mMetalLayer.device, mMetalCommandQueue, textureDes);
     texture->SetFormat(format);
 
     return texture;
@@ -262,7 +291,7 @@ RCTexture3DPtr MTLRenderDevice::CreateTexture3D(TextureFormat format,
         }
     }
     
-    MTLRCTexture3DPtr texture = std::make_shared<MTLRCTexture3D>(mMetalLayer.device, mCommandQueue, textureDes);
+    MTLRCTexture3DPtr texture = std::make_shared<MTLRCTexture3D>(mMetalLayer.device, mMetalCommandQueue, textureDes);
     texture->SetFormat(format);
 
     return texture;
@@ -315,7 +344,7 @@ RCTextureCubePtr MTLRenderDevice::CreateTextureCube(TextureFormat format,
         }
     }
     
-    MTLRCTextureCubePtr texture = std::make_shared<MTLRCTextureCube>(mMetalLayer.device, mCommandQueue, textureDes);
+    MTLRCTextureCubePtr texture = std::make_shared<MTLRCTextureCube>(mMetalLayer.device, mMetalCommandQueue, textureDes);
     texture->SetFormat(format);
 
     return texture;
@@ -372,10 +401,57 @@ RCTexture2DArrayPtr MTLRenderDevice::CreateTexture2DArray(TextureFormat format,
         }
     }
     
-    MTLRCTexture2DArrayPtr texture = std::make_shared<MTLRCTexture2DArray>(mMetalLayer.device, mCommandQueue, textureDes);
+    MTLRCTexture2DArrayPtr texture = std::make_shared<MTLRCTexture2DArray>(mMetalLayer.device, mMetalCommandQueue, textureDes);
     texture->SetFormat(format);
 
     return texture;
+}
+
+CommandQueuePtr MTLRenderDevice::GetCommandQueue(QueueType type, uint32_t index) const
+{
+    switch (type)
+    {
+        case QueueType::Graphics:
+            if (index < mGraphicsQueues.size())
+            {
+                return mGraphicsQueues[index];
+            }
+            break;
+
+        case QueueType::Compute:
+            if (index < mComputeQueues.size())
+            {
+                return mComputeQueues[index];
+            }
+            break;
+
+        case QueueType::Transfer:
+            if (index < mTransferQueues.size())
+            {
+                return mTransferQueues[index];
+            }
+            break;
+
+        default:
+            return nullptr;
+    }
+
+    return nullptr;
+}
+
+uint32_t MTLRenderDevice::GetCommandQueueCount(QueueType type) const
+{
+    switch (type)
+    {
+        case QueueType::Graphics:
+            return (uint32_t)mGraphicsQueues.size();
+        case QueueType::Compute:
+            return (uint32_t)mComputeQueues.size();
+        case QueueType::Transfer:
+            return (uint32_t)mTransferQueues.size();
+        default:
+            return 0;
+    }
 }
 
 NAMESPACE_RENDERCORE_END

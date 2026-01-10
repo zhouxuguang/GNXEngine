@@ -11,6 +11,7 @@
 #include "MTLRenderDefine.h"
 #include "RenderDevice.h"
 #include "MTLDeviceExtension.h"
+#include "MTLCommandQueue.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -122,16 +123,25 @@ public:
                                         uint32_t height,
                                         uint32_t levels,
                                         uint32_t arraySize) const;
-    
+
+    // RHI队列接口实现
+    virtual CommandQueuePtr GetCommandQueue(QueueType type, uint32_t index = 0) const override;
+    virtual uint32_t GetCommandQueueCount(QueueType type) const override;
+
 private:
     CAMetalLayer *mMetalLayer;
-    id<MTLCommandQueue> mCommandQueue;
-    
+    id<MTLCommandQueue> mMetalCommandQueue;
+
     id<MTLTexture> mDepthTexture;
     id<MTLTexture> mStencilTexture;
     id<MTLTexture> mDepthStencilTexture;
-    
+
     MTLDeviceExtensionPtr mMTLDeviceExtension = nullptr;
+
+    // 队列管理（Metal的CommandQueue支持所有类型命令，这里做逻辑区分）
+    std::vector<MTLCommandQueuePtr> mGraphicsQueues;  // 图形队列列表
+    std::vector<MTLCommandQueuePtr> mComputeQueues;   // 计算队列列表
+    std::vector<MTLCommandQueuePtr> mTransferQueues; // 传输队列列表
 };
 
 typedef std::shared_ptr<MTLRenderDevice> MTLRenderDevicePtr;

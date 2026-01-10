@@ -19,6 +19,7 @@
 #include "VKShaderFunction.h"
 #include "VKTextureBase.h"
 #include "VulkanBufferUtil.h"
+#include "VKCommandQueue.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -104,7 +105,10 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     
     CreateGraphicsDescriptorPool(*mVulkanContext);
     CreateComputeDescriptorPool(*mVulkanContext);
-    
+
+    // 初始化队列管理
+    InitializeCommandQueues();
+
     // 测试以下函数指针是否为空
     void * p = (void*)vkCmdBeginRenderingKHR;
     void *p2 = (void*)vkCmdPushDescriptorSetKHR;
@@ -559,6 +563,101 @@ CommandBufferPtr VKRenderDevice::CreateComputeCommandBuffer()
     commandBufferInfo->isComputeCommandBuffer = true;  // 标记为计算命令缓冲区
     
     return std::make_shared<VulkanCommandBuffer>(commandBuffer, commandBufferInfo);
+}
+
+void VKRenderDevice::InitializeCommandQueues()
+{
+    // 创建图形队列（Vulkan通常只有一个主图形队列）
+    if (mVulkanContext->graphicsQueue != VK_NULL_HANDLE)
+    {
+        VKCommandQueuePtr queue = std::make_shared<VKCommandQueue>(
+            mVulkanContext->graphicsQueue,
+            QueueType::Graphics,
+            QueuePriority::Normal,
+            0,
+            mVulkanContext->graphicsQueueFamilyIndex
+        );
+        mGraphicsQueues.push_back(queue);
+        LOG_INFO("Created Graphics Queue: %s", queue->GetDescription().c_str());
+    }
+
+    // 创建计算队列
+    for (uint32_t i = 0; i < mVulkanContext->availableComputeQueues.size(); ++i)
+    {
+        VKCommandQueuePtr queue = std::make_shared<VKCommandQueue>(
+            mVulkanContext->availableComputeQueues[i],
+            QueueType::Compute,
+            QueuePriority::Normal,
+            i,
+            mVulkanContext->computeQueueFamilyIndex
+        );
+        mComputeQueues.push_back(queue);
+        LOG_INFO("Created Compute Queue: %s", queue->GetDescription().c_str());
+    }
+
+    // 创建传输队列
+    for (uint32_t i = 0; i < mVulkanContext->availableTransferQueues.size(); ++i)
+    {
+        VKCommandQueuePtr queue = std::make_shared<VKCommandQueue>(
+            mVulkanContext->availableTransferQueues[i],
+            QueueType::Transfer,
+            QueuePriority::Normal,
+            i,
+            mVulkanContext->transferQueueFamilyIndex
+        );
+        mTransferQueues.push_back(queue);
+        LOG_INFO("Created Transfer Queue: %s", queue->GetDescription().c_str());
+    }
+}
+
+CommandQueuePtr VKRenderDevice::GetCommandQueue(QueueType type, uint32_t index) const
+{
+    switch (type)
+    {
+        case QueueType::Graphics:
+            if (index < mGraphicsQueues.size())
+            {
+                return mGraphicsQueues[index];
+            }
+            break;
+            
+        case QueueType::Compute:
+            if (index < mComputeQueues.size())
+            {
+                return mComputeQueues[index];
+            }
+            break;
+            
+        case QueueType::Transfer:
+            if (index < mTransferQueues.size())
+            {
+                return mTransferQueues[index];
+            }
+            break;
+            
+        default:
+            LOG_INFO("GetQueue: Invalid queue type");
+            return nullptr;
+    }
+
+    LOG_INFO("GetCommandQueue: Queue index %u out of range for type %s",
+             index, GetQueueTypeName(type));
+    return nullptr;
+}
+
+uint32_t VKRenderDevice::GetCommandQueueCount(QueueType type) const
+{
+    switch (type)
+    {
+        case QueueType::Graphics:
+            return (uint32_t)mGraphicsQueues.size();
+        case QueueType::Compute:
+            return (uint32_t)mComputeQueues.size();
+        case QueueType::Transfer:
+            return (uint32_t)mTransferQueues.size();
+        default:
+            return 0;
+    }
 }
 
 void VKRenderDevice::ReleaseCommandBuffers()

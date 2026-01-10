@@ -18,6 +18,7 @@
 #include "RenderPass.h"
 #include "ComputeBuffer.h"
 #include "RCTexture.h"
+#include "CommandQueue.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -173,6 +174,23 @@ public:
                                     uint32_t height,
                                     uint32_t levels,
                                     uint32_t arraySize) const = 0;
+
+    /**
+     * @brief 根据队列类型获取队列
+     *
+     * @param type 队列类型（Graphics/Compute/Transfer）
+     * @param index 队列索引（如果该类型有多个队列）
+     * @return 返回对应类型的队列指针，失败返回nullptr
+     */
+    virtual CommandQueuePtr GetCommandQueue(QueueType type, uint32_t index = 0) const = 0;
+
+    /**
+     * @brief 获取指定类型的队列数量
+     *
+     * @param type 队列类型
+     * @return 返回该类型队列的数量
+     */
+    virtual uint32_t GetCommandQueueCount(QueueType type) const = 0;
 };
 
 typedef std::shared_ptr<RenderDevice> RenderDevicePtr;

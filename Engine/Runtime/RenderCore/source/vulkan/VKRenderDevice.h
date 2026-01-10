@@ -14,6 +14,7 @@
 #include "VulkanSwapChain.h"
 #include "VKDepthStencilBuffer.h"
 #include "VulkanGarbageCollector.h"
+#include "VKCommandQueue.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -87,7 +88,11 @@ public:
                                         uint32_t height,
                                         uint32_t levels,
                                         uint32_t arraySize) const;
-    
+
+    // RHI队列接口实现
+    virtual CommandQueuePtr GetCommandQueue(QueueType type, uint32_t index = 0) const override;
+    virtual uint32_t GetCommandQueueCount(QueueType type) const override;
+
     void UpdateCurrentIndex();
     
 private:
@@ -114,6 +119,15 @@ private:
     void CreateComputeCommandBuffers(VkDevice device, size_t nImageCount, VkCommandPool commandPool);
     
     void ReleaseCommandBuffers();
+
+    // 初始化队列管理
+    void InitializeCommandQueues();
+
+private:
+    // 队列管理
+    std::vector<VKCommandQueuePtr> mGraphicsQueues;  // 图形队列列表
+    std::vector<VKCommandQueuePtr> mComputeQueues;   // 计算队列列表
+    std::vector<VKCommandQueuePtr> mTransferQueues; // 传输队列列表
 };
 
 using VKRenderDevicePtr = std::shared_ptr<VKRenderDevice>;
