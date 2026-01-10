@@ -47,7 +47,7 @@ public:
         [[nodiscard]] FrameGraphResource Write(FrameGraphResource id, uint32_t flags = kFlagsIgnored);
 
         /** Ensures that this pass is not culled during the compilation phase. */
-        Builder& setSideEffect() 
+        Builder& SetSideEffect() 
         {
             m_passNode.mHasSideEffect = true;
             return *this;
@@ -157,6 +157,9 @@ private:
     std::vector<ResourceEntry> m_resourceRegistry;
 };
 
+/**
+ render pass的资源包装类
+ */
 class FrameGraphPassResources
 {
     friend class FrameGraph;
@@ -180,6 +183,12 @@ public:
     
     template <_VIRTUALIZABLE_CONCEPT(T)>
     [[nodiscard]] const typename T::Desc& GetDescriptor(FrameGraphResource id) const;
+    
+    // 获得当前pass的名字
+    [[nodiscard]] std::string GetPassName() const
+    {
+        return m_passNode.getName();
+    }
 
 private:
     FrameGraphPassResources(FrameGraph& fg, const PassNode& node) : m_frameGraph(fg), m_passNode(node)
@@ -195,9 +204,12 @@ private:
 // 实现部分
 
 template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
-inline FrameGraphResource FrameGraph::Import(const std::string_view name, const typename T::Desc& desc, T&& resource) 
+inline FrameGraphResource FrameGraph::Import(const std::string_view name, const typename T::Desc& desc, T&& resource)
 {
-    return _create<T>(ResourceEntry::Type::Imported, name, desc, std::forward<T>(resource));
+    // 创建 Desc 的副本并设置名称
+    typename T::Desc namedDesc = desc;
+    namedDesc.name = std::string(name);
+    return _create<T>(ResourceEntry::Type::Imported, name, namedDesc, std::forward<T>(resource));
 }
 
 template <typename Writer>
@@ -237,7 +249,10 @@ template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
 inline FrameGraphResource
 FrameGraph::Builder::Create(const std::string_view name, const typename T::Desc& desc)
 {
-    const auto id = m_frameGraph._create<T>(ResourceEntry::Type::Transient, name, desc, T{});
+    // 创建 Desc 的副本并设置名称
+    typename T::Desc namedDesc = desc;
+    namedDesc.name = std::string(name);
+    const auto id = m_frameGraph._create<T>(ResourceEntry::Type::Transient, name, namedDesc, T{});
     return m_passNode.m_creates.emplace_back(id);
 }
 

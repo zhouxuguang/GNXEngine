@@ -366,7 +366,7 @@ void WindowsVulkanView::Render()
 			builder.Read(computePassData.outputColor);
 
 			// present的pass必须设置这个标记，要不然不会执行
-			builder.setSideEffect();
+			builder.SetSideEffect();
 		},
 		[=](const GNXEngine::FrameGraph::NoData& data, GNXEngine::FrameGraphPassResources& resources, void*)
 		{

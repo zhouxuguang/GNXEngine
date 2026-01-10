@@ -193,6 +193,9 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
         renderPass.stencilAttachment = std::make_shared<RenderPassStencilAttachment>();
         renderPass.stencilAttachment->texture = depthStencilTexture.texture;
         renderPass.stencilAttachment->clearStencil = 0x00;
+        
+        float color[4] = {1.0, 0.0, 0.0, 1.0};
+        SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), color);
 
         renderPass.renderRegion = Rect2D(0, 0, mViewSize.width, mViewSize.height);
         RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);
@@ -227,6 +230,9 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     {
         GNXEngine::FrameGraphTexture &colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.inputColor);
         GNXEngine::FrameGraphTexture &grayTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.outputColor);
+        
+        float color[4] = {1.0, 0.0, 0.0, 1.0};
+        SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), color);
 
         // 使用并发计算编码器（MTLDispatchTypeConcurrent）
         // 这样计算命令和图形命令可以在 GPU 上并发执行
@@ -242,11 +248,14 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
         builder.Read(computePassData.outputColor);
 
         // present的pass必须设置这个标记，要不然不会执行
-        builder.setSideEffect();
+        builder.SetSideEffect();
     },
     [=](const GNXEngine::FrameGraph::NoData &data, GNXEngine::FrameGraphPassResources &resources, void *)
     {
         GNXEngine::FrameGraphTexture &colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(computePassData.outputColor);
+        
+        float color[4] = {1.0, 0.0, 0.0, 1.0};
+        SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), color);
 
         RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
         testPost(renderEncoder, colorTexture.texture);

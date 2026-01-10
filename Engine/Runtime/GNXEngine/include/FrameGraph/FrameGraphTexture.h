@@ -8,8 +8,9 @@ NAMESPACE_GNXENGINE_BEGIN
 class GNXENGINE_API FrameGraphTexture
 {
 public:
-	struct Desc 
+	struct Desc
 	{
+		std::string name;
 		RenderCore::Rect2D extent;
 		uint32_t depth = 1;
 		uint32_t numMipLevels = 1;

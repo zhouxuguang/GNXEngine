@@ -30,6 +30,9 @@ public:
 
 	[[nodiscard]] RenderCore::ComputeBufferPtr acquireBuffer(const FrameGraphBuffer::Desc &);
 	void releaseBuffer(const FrameGraphBuffer::Desc &, RenderCore::ComputeBufferPtr);
+
+	void SetDebugName(RenderCore::RCTexturePtr texture, const std::string& name);
+	void SetDebugName(RenderCore::ComputeBufferPtr buffer, const std::string& name);
     
     template<typename T> struct ResourceEntry
     {
@@ -42,11 +45,14 @@ private:
 
 	std::vector<RenderCore::RCTexturePtr> m_textures;
 	std::vector<RenderCore::ComputeBufferPtr> m_buffers;
-    
+
     template<typename T> using ResourcePool = std::vector<ResourceEntry<T>>;
 
 	std::unordered_map<std::size_t, ResourcePool<RenderCore::RCTexturePtr>> m_texturePools;
 	std::unordered_map<std::size_t, ResourcePool<RenderCore::ComputeBufferPtr>> m_bufferPools;
+
+	// 资源名称缓存，避免重复设置相同的名称
+	std::unordered_map<void*, std::string> m_resourceNameCache;
 };
 
 NAMESPACE_GNXENGINE_END

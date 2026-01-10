@@ -171,7 +171,10 @@ FrameGraphResource FrameGraph::Builder::Read(FrameGraphResource id, uint32_t fla
 FrameGraphResource FrameGraph::Builder::Write(FrameGraphResource id, uint32_t flags)
 {
 	assert(m_frameGraph.IsValid(id));
-	if (m_frameGraph._getResourceEntry(id).isImported()) setSideEffect();
+    if (m_frameGraph._getResourceEntry(id).isImported()) 
+    {
+        SetSideEffect();
+    }
 
 	if (m_passNode.creates(id))
 	{

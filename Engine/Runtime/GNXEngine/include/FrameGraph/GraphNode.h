@@ -25,7 +25,7 @@ public:
 	GraphNode& operator=(GraphNode&&) noexcept = delete;
 
 	[[nodiscard]] auto getId() const { return m_id; }
-	[[nodiscard]] std::string_view getName() const { return m_name; }
+	[[nodiscard]] const std::string& getName() const { return m_name; }
 	[[nodiscard]] auto getRefCount() const { return m_refCount; }
 
 protected:
