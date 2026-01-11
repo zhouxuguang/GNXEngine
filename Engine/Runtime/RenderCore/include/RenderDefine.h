@@ -41,7 +41,6 @@ typedef void* ViewHandle;
 
 typedef enum RenderDeviceType
 {
-    GLES,
     METAL,
     VULKAN,
 } RenderDeviceType;

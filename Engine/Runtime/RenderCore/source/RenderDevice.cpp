@@ -15,9 +15,6 @@
 #include <TargetConditionals.h>
 #endif
 
-#if TARGET_OS_IPHONE || __ANDROID__
-#include "gles/GLRenderDevice.h"
-#endif
 #include "metal/MTLRenderDeviceWrapper.h"
 #include "vulkan/VKRenderDevice.h"
 
@@ -91,14 +88,7 @@ static RenderDevicePtr renderDevicePtr = nullptr;
 
 RenderDevicePtr CreateRenderDevice(RenderDeviceType deviceType, ViewHandle viewHandle)
 {
-    
-    if (GLES == deviceType)
-    {
-        #if TARGET_OS_IPHONE || __ANDROID__
-        //renderDevicePtr = std::make_shared<GLRenderDevice>(viewHandle);
-        #endif
-    }
-    else if (METAL == deviceType)
+    if (METAL == deviceType)
     {
 #ifdef __APPLE__
         renderDevicePtr = createMetalRenderDevice(viewHandle);

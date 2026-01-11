@@ -15,9 +15,9 @@
 
 NS_MATHUTIL_BEGIN
 
-MATH3D_API inline Vector3f RandomUnitVector3();
+MATH3D_API Vector3f RandomUnitVector3();
 
-MATH3D_API inline Vector2f RandomUnitVector2();
+MATH3D_API Vector2f RandomUnitVector2();
 
 NS_MATHUTIL_END
 

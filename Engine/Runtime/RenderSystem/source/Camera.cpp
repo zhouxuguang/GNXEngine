@@ -15,10 +15,6 @@ Camera::Camera(RenderDeviceType renderType, const std::string& name)
     mName = name;
     switch (mRenderDeviceType)
     {
-        case GLES:
-            mAdjust = mathutil::Matrix4x4f::IDENTITY;
-            break;
-            
         case METAL:
             mAdjust = mathutil::Matrix4x4f::IDENTITY;
             mAdjust[2][2] = 0.5;

@@ -18,10 +18,7 @@ if(APPLE)
                                                         ${rendercore_dir}/*.c 
                                                         ${rendercore_dir}/*.h
                                                         ${rendercore_dir}/metal/*.mm
-                                                        ${rendercore_dir}/metal/*.h
-                                                        ${rendercore_dir}/gles/*.cpp
-                                                        ${rendercore_dir}/gles/*.h
-                                                        ${rendercore_dir}/gles/*.c) 
+                                                        ${rendercore_dir}/metal/*.h) 
     endif()
     
 elseif(ANDROID) #android平台

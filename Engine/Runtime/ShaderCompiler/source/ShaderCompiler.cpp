@@ -205,11 +205,6 @@ CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage s
         return compileShader;
     }
     
-    else if (renderType == RenderDeviceType::GLES)
-    {
-        //return compileToMSL(shaderCode, shaderStage);
-    }
-    
     return nullptr;
 }
 

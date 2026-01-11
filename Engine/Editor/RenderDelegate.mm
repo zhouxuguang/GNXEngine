@@ -34,9 +34,6 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
 {
     switch (renderType)
     {
-        case RenderTypeGLES:
-            return RenderDeviceType::GLES;
-            
         case RenderTypeMetal:
             return RenderDeviceType::METAL;
             
@@ -47,7 +44,7 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
             break;
     }
     
-    return RenderDeviceType::GLES;
+    return RenderDeviceType::VULKAN;
 }
 
 @implementation GNXRenderDelegate
