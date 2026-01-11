@@ -156,10 +156,11 @@ public:
     
     static Vector3 CrossProduct(const Vector3 &a, const Vector3 &b);
 
-	//根据入射光线和法线计算反射向量，必须要注意的是，入射光线和法线必须是单位向量
-	static Vector3 Reflection(const Vector3& vecLight, const Vector3& vecNormal);
+	//根据入射光线和法线计算反射向量，必须要注意的是，入射光线和法线必须是单位向量，incident指向着色点
+	static Vector3 Reflection(const Vector3& incident, const Vector3& normal);
 
-	static Vector3 Refraction(const Vector3& vecLight, const Vector3& vecNormal, T eta);
+    //根据入射光线和法线计算折射向量，必须要注意的是，入射光线和法线必须是单位向量，incident指向着色点
+	static Vector3 Refraction(const Vector3& incident, const Vector3& normal, T eta);
     
     // 插值函数
     static Vector3 Lerp(const Vector3& s, const Vector3& e, float t);
