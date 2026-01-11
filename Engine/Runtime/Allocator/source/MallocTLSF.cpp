@@ -14,6 +14,8 @@ MallocTLSF::MallocTLSF()
 {
     void* ptr = malloc(1024 * 1024 * 2);
     mTLSF = tlsf_create_with_pool(ptr, 1024 * 1024 * 2);
+    // 保存初始pool指针以便析构时释放
+    mPools.push_back(ptr);
 }
 
 MallocTLSF::~MallocTLSF()
@@ -23,6 +25,12 @@ MallocTLSF::~MallocTLSF()
         tlsf_destroy(mTLSF);
         mTLSF = nullptr;
 	}
+    // 释放所有分配的pool
+    for (void* pool : mPools)
+    {
+        free(pool);
+    }
+    mPools.clear();
 }
 
 void* MallocTLSF::Alloc(size_t size)
@@ -39,6 +47,8 @@ void* MallocTLSF::Alloc(size_t size)
     {
 		void* add_pool = malloc(104857600);   //100MB
 		tlsf_add_pool(mTLSF, add_pool, 104857600);
+        // 追踪这个pool以便析构时释放
+        mPools.push_back(add_pool);
         newPtr = tlsf_memalign(mTLSF, alignment, size);
 	}
     return newPtr;

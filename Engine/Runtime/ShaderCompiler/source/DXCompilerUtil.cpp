@@ -46,11 +46,14 @@ int SpirvReflectExample(const void* spirv_code, size_t spirv_nbytes)
     (SpvReflectInterfaceVariable**)malloc(var_count * sizeof(SpvReflectInterfaceVariable*));
     result = spvReflectEnumerateInputVariables(&module, &var_count, input_vars);
     assert(result == SPV_REFLECT_RESULT_SUCCESS);
-    
+
     //spvReflectEnumerateDescriptorSets(, , )
 
     // Output variables, descriptor bindings, descriptor sets, and push constants
     // can be enumerated and extracted using a similar mechanism.
+
+    // 释放分配的内存
+    free(input_vars);
 
     // Destroy the reflection data when no longer required.
     spvReflectDestroyShaderModule(&module);
@@ -108,7 +111,7 @@ const wchar_t *GetWC(const char *c)
 {
     const size_t cSize = strlen(c)+1;
     wchar_t* wc = new wchar_t[cSize];
-    memset(wc, 0, cSize);
+    memset(wc, 0, cSize * sizeof(wchar_t));
     mbstowcs (wc, c, cSize);
 
     return wc;

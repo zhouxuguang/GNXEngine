@@ -28,6 +28,7 @@ public:
 
 private:
     tlsf_t mTLSF = NULL;
+    std::vector<void*> mPools;  // 追踪所有分配的pool以便析构时释放
 };
 
 NS_ALLOCATOR_END

@@ -11,6 +11,8 @@ int main(int argc, char* argv[])
 {
     //std::wstring str = ;
     fs::path path = fs::u8path("D:\\BaiduNetdiskDownload\\xx86OpenGLVulkan图形学光线追踪相关（电子版）");
+    
+    std::string r1 = path.string();
 
     std::u16string s1;
     baselib::StringConverter::NarrowToUTF16(r1, s1);
