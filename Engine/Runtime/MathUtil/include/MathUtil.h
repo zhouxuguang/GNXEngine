@@ -58,13 +58,13 @@ inline const T Sign(const T& value)
 
 float GetClamp(float x,float fMin,float fMax);
 
-inline MATH3D_API double FastSin(double x);
+MATH3D_API double FastSin(double x);
 
-inline int Rand_Int(void);
+int Rand_Int(void);
 
-inline float Rand_Float(void);
+float Rand_Float(void);
 
-inline void Rand_Seed(const unsigned int seed);
+void Rand_Seed(const unsigned int seed);
 
 class MATH3D_API MathUtil
 {

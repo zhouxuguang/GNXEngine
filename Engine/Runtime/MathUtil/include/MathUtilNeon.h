@@ -195,14 +195,14 @@ inline void MathUtilNeon::transformVec4(const float* m, float x, float y, float 
                  "vld1.32    {d1[1]},        [%4]    \n\t"    // V[w]
                  "vld1.32    {d18 - d21},    [%5]!   \n\t"    // M[m0-m7]
                  "vld1.32    {d22 - d25},    [%5]    \n\t"    // M[m8-m15]
-                 
+
                  "vmul.f32 q13,  q9, d0[0]           \n\t"    // DST->V = M[m0-m3] * V[x]
                  "vmla.f32 q13, q10, d0[1]           \n\t"    // DST->V += M[m4-m7] * V[y]
                  "vmla.f32 q13, q11, d1[0]           \n\t"    // DST->V += M[m8-m11] * V[z]
                  "vmla.f32 q13, q12, d1[1]           \n\t"    // DST->V += M[m12-m15] * V[w]
-                 
+
                  "vst1.32 {d26}, [%0]!               \n\t"    // DST->V[x, y]
-                 "vst1.32 {d27[0]}, [%0]             \n\t"    // DST->V[z]
+                 "vst1.32 {d27}, [%0]                \n\t"    // DST->V[z, w]
                  :
                  : "r"(dst), "r"(&x), "r"(&y), "r"(&z), "r"(&w), "r"(m)
                  : "q0", "q9", "q10","q11", "q12", "q13", "memory"

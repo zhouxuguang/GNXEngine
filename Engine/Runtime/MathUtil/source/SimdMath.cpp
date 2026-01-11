@@ -50,7 +50,7 @@ simd_float4 make_simd_float4(float __x, float __y, float __z, float __w)
     vector.x = __x;
     vector.y = __y;
     vector.z = __z;
-    vector.z = __w;
+    vector.w = __w;
     return vector;
 }
 
@@ -60,7 +60,7 @@ simd_float4 make_simd_float4(const Vector4f& vec)
     vector.x = vec.x;
     vector.y = vec.y;
     vector.z = vec.z;
-    vector.z = vec.w;
+    vector.w = vec.w;
     return vector;
 }
 

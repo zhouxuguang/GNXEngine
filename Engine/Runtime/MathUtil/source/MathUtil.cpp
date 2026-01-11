@@ -41,17 +41,17 @@ double FastSin(double x)
 	return x - 3796201.0/pow(2.0,24.0)*x*x*x + 0.00833220803*x*x*x*x*x - 0.000195168955*x*x*x*x*x*x*x;
 }
 
-inline int Rand_Int(void)
+int Rand_Int(void)
 {
 	return rand();
 }
 
-inline float Rand_Float(void)
+float Rand_Float(void)
 {
 	return ((float)rand()/(float)RAND_MAX);
 }
 
-inline void Rand_Seed(const unsigned int seed)
+void Rand_Seed(const unsigned int seed)
 {
 	srand(seed);
 }
@@ -99,11 +99,11 @@ Real MathUtil::ASin(Real fValue)
 		if ( fValue < (Real)1.0 )
 			return (Real)asin((double)fValue);
 		else
-			return (Real)0.0;
+			return (Real)(M_PI / 2.0);  // fValue >= 1 时返回 π/2
 	}
 	else
 	{
-		return M_PI;
+		return (Real)(-M_PI / 2.0);  // fValue <= -1 时返回 -π/2
 	}
 }
 

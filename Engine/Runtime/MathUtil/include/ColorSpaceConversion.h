@@ -12,13 +12,13 @@
 
 NS_MATHUTIL_BEGIN
 
-inline MATH3D_API float GammaToLinearSpace(float value);
+MATH3D_API float GammaToLinearSpace(float value);
 
-inline MATH3D_API float LinearToGammaSpace(float value);
+MATH3D_API float LinearToGammaSpace(float value);
 
-inline MATH3D_API float GammaToLinearSpaceXenon(float val);
+MATH3D_API float GammaToLinearSpaceXenon(float val);
 
-inline MATH3D_API float LinearToGammaSpaceXenon(float val);
+MATH3D_API float LinearToGammaSpaceXenon(float val);
 
 NS_MATHUTIL_END
 
