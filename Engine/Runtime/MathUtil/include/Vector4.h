@@ -14,7 +14,7 @@ public:
     
 	Vector4(const T *pfMatrix);
 
-	Vector4(T a1,T a2,T a3,T a4);
+	Vector4(T a1, T a2, T a3, T a4);
 
 	explicit Vector4(const Vector3<T>& rhs);
 
@@ -33,13 +33,13 @@ public:
 	inline const T& operator [](size_t nIndex) const
 	{
 		assert(nIndex < 4);
-		return *(&x+nIndex);
+		return *(&x + nIndex);
 	}
 
 	inline T& operator [](size_t nIndex)
 	{
 		assert(nIndex < 4);
-		return *(&x+nIndex);
+		return *(&x + nIndex);
 	}
 
 	inline T* GetPtr()
@@ -90,11 +90,11 @@ public:
 			rhs.w * w);
 	}
 
-	inline Vector4 operator / ( const Real fScalar ) const
+	inline Vector4 operator / ( const T fScalar ) const
 	{
 		assert( fScalar != 0.0 );
 
-		Real fInv = 1.0f / fScalar;
+		T fInv = 1.0 / fScalar;
 
 		return Vector4(
 			x * fInv,
@@ -127,7 +127,7 @@ public:
 		return Vector3<T>(x, y, z);
 	}
 
-	static T DotProduct(const Vector4 &a, const Vector4 &b);
+    T DotProduct(const Vector4 &a) const;
 
 public:
 	T x, y, z, w;

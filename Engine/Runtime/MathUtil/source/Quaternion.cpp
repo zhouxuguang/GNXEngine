@@ -164,7 +164,7 @@ void Quaternion<T>::FromAngleAxis(const T fAngle, const Vector3<T>& vecAxis)
     T fAng = fAngle * DEGTORAD;
     
     Vector3<T> axis = vecAxis;
-    if (fabs(vectorMag(vecAxis) - 1.0) >= QUAT_EPSILON)   //不是单位向量，需要做单位化
+    if (fabs(vecAxis.Length() - 1.0) >= QUAT_EPSILON)   //不是单位向量，需要做单位化
     {
         axis.Normalize();
     }
@@ -482,8 +482,8 @@ template <typename T>
 Quaternion<T> Quaternion<T>::LookRotation(const Vector3<T>& direcion, const Vector3<T>& up)
 {
     // Find orthonormal basis vectors
-    Vector3<T> f = direcion.Normalize();
-    Vector3<T> u = up.Normalize();
+    Vector3<T> f = direcion;
+    Vector3<T> u = up;
     Vector3<T> r = Vector3<T>::CrossProduct(u, f);
     u = Vector3<T>::CrossProduct(f, r);
 

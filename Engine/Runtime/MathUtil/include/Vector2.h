@@ -13,13 +13,11 @@ public:
 
     Vector2(const T fX, const T fY );
 
-    inline explicit Vector2( const T scaler );
+    inline explicit Vector2(const T scaler);
 
-    inline explicit Vector2( const T afCoordinate[2] );
+    inline explicit Vector2(const T afCoordinate[2]);
 
-    //explicit Vector2( const int afCoordinate[2] );
-
-    inline explicit Vector2( T* const r );
+    inline explicit Vector2(T* const r);
 
 	~Vector2(void);
 
@@ -247,17 +245,17 @@ public:
 
     T Length() const;
 
-    T SquaredLength() const;
+    T LengthSquared() const;
 
     T Distance(const Vector2& rhs) const;
 
-    T SquaredDistance(const Vector2& rhs) const;
+    T DistanceSquared(const Vector2& rhs) const;
 
     T DotProduct(const Vector2& vec) const;
 
     T Normalise();
 
-    T CrossProduct( const Vector2& rkVector ) const;
+    T CrossProduct(const Vector2& rkVector) const;
 
     /** Calculates a reflection vector to the plane with the given normal .
     @remarks NB assumes 'this' is pointing AWAY FROM the plane, invert if it is not.

@@ -113,14 +113,14 @@ static inline bool IsBoxInFrustumIMPL(const Vector4<T>* frustumPlanes, const Vec
 	for (int i = 0; i < kPlaneFrustumNum; i++)
 	{
 		int r = 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.minimum.y, box.minimum.z, 1.0)) < 0.0) ?1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.minimum.y, box.minimum.z, 1.0)) < 0.0) ?1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.maximum.y, box.minimum.z, 1.0)) < 0.0) ?1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.maximum.y, box.minimum.z, 1.0)) < 0.0) ?1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.minimum.y, box.maximum.z, 1.0)) < 0.0) ?1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.minimum.y, box.maximum.z, 1.0)) < 0.0) ?1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.maximum.y, box.maximum.z, 1.0)) < 0.0) ?1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.maximum.y, box.maximum.z, 1.0)) < 0.0) ?1 : 0;
+		r += (frustumPlanes[i].DotProduct(Vector4<T>(box.minimum.x, box.minimum.y, box.minimum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (frustumPlanes[i].DotProduct(Vector4<T>(box.maximum.x, box.minimum.y, box.minimum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (frustumPlanes[i].DotProduct(Vector4<T>(box.minimum.x, box.maximum.y, box.minimum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (frustumPlanes[i].DotProduct(Vector4<T>(box.maximum.x, box.maximum.y, box.minimum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (frustumPlanes[i].DotProduct(Vector4<T>(box.minimum.x, box.minimum.y, box.maximum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (frustumPlanes[i].DotProduct(Vector4<T>(box.maximum.x, box.minimum.y, box.maximum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (frustumPlanes[i].DotProduct(Vector4<T>(box.minimum.x, box.maximum.y, box.maximum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (frustumPlanes[i].DotProduct(Vector4<T>(box.maximum.x, box.maximum.y, box.maximum.z, 1.0)) < 0.0) ? 1 : 0;
 		if (r == 8)
 		{
 			return false;

@@ -7,20 +7,20 @@ NS_MATHUTIL_BEGIN
 template <typename T>
 Vector4<T>::Vector4()
 {
-    x = 0.0f;
-    y = 0.0f;
-    z = 0.0f;
-    w = 0.0f;
+    x = 0.0;
+    y = 0.0;
+    z = 0.0;
+    w = 0.0;
 }
 
 template <typename T>
 Vector4<T>::Vector4(const T *pfMatrix)
 {
-	memcpy(&x,pfMatrix,sizeof(T)*4);
+	memcpy(&x, pfMatrix, sizeof(T) * 4);
 }
 
 template <typename T>
-Vector4<T>::Vector4(T a1,T a2,T a3,T a4)
+Vector4<T>::Vector4(T a1, T a2, T a3, T a4)
 {
 	x = a1;
 	y = a2;
@@ -29,7 +29,7 @@ Vector4<T>::Vector4(T a1,T a2,T a3,T a4)
 }
 
 template <typename T>
-Vector4<T>::Vector4(const Vector3<T>& rhs) : x(rhs.x), y(rhs.y), z(rhs.z), w(1.0f)
+Vector4<T>::Vector4(const Vector3<T>& rhs) : x(rhs.x), y(rhs.y), z(rhs.z), w(1.0)
 {
 
 }
@@ -100,14 +100,14 @@ Vector4<T>& Vector4<T>::operator=(const Vector3<T>& rhs)
 	x = rhs.x;
 	y = rhs.y;
 	z = rhs.z;
-	w = 1.0f;
+	w = 1.0;
 	return *this;
 }
 
 template <typename T>
-T Vector4<T>::DotProduct(const Vector4 &a, const Vector4 &b)
+T Vector4<T>::DotProduct(const Vector4 &a) const
 {
-    return a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w;
+    return a.x * x + a.y * y + a.z * z + a.w * w;
 }
 
 template class Vector4<float>;

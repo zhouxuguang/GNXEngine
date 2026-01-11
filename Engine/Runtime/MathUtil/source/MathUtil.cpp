@@ -56,7 +56,6 @@ inline void Rand_Seed(const unsigned int seed)
 	srand(seed);
 }
 
-//��ʼ�����Һ����ұ�
 double SinTable[361] = {0};
 double CosTable[361] = {0};
 bool g_bTableInit = false;
@@ -98,7 +97,7 @@ Real MathUtil::ASin(Real fValue)
 	if ( -(Real)1.0 < fValue )
 	{
 		if ( fValue < (Real)1.0 )
-			return (Real)acos((double)fValue);
+			return (Real)asin((double)fValue);
 		else
 			return (Real)0.0;
 	}
@@ -156,7 +155,6 @@ Real MathUtil::FastSin(Real fValue)
 
 	fValue = fmod(fValue,360);
 
-	//����ת��Ϊ����
 	if (fValue < 0)
 	{
 		fValue += 360.0;
@@ -165,7 +163,6 @@ Real MathUtil::FastSin(Real fValue)
 	int nValueInt = (int)fValue;
 	double thetaFrac = fValue - nValueInt;
 
-	//���Բ�ֵ
 	return SinTable[nValueInt] + thetaFrac*(SinTable[nValueInt+1] - SinTable[nValueInt]);
 	
 }
@@ -179,7 +176,6 @@ Real MathUtil::FastCos(Real fValue)
 
 	fValue = fmod(fValue,360);
 
-	//����ת��Ϊ����
 	if (fValue < 0)
 	{
 		fValue += 360.0;
@@ -188,7 +184,6 @@ Real MathUtil::FastCos(Real fValue)
 	int nValueInt = (int)fValue;
 	double thetaFrac = fValue - nValueInt;
 
-	//���Բ�ֵ
 	return CosTable[nValueInt] + thetaFrac*(CosTable[nValueInt+1] - CosTable[nValueInt]);
 }
 

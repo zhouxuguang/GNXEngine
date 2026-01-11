@@ -10,33 +10,31 @@ Vector2<T>::Vector2()
 }
 
 template <typename T>
-Vector2<T>::Vector2(const T fX, const T fY) : x( fX ), y( fY )
+Vector2<T>::Vector2(const T fX, const T fY) : x(fX), y(fY)
 {
 
 }
 
 template <typename T>
-Vector2<T>::Vector2(const T scaler) : x( scaler), y( scaler )
+Vector2<T>::Vector2(const T scaler) : x(scaler), y(scaler)
 {
 
 }
 
 template <typename T>
-Vector2<T>::Vector2(const T afCoordinate[2]) : x( afCoordinate[0] ), y( afCoordinate[1] )
+Vector2<T>::Vector2(const T afCoordinate[2]) : x(afCoordinate[0]), y(afCoordinate[1])
 {
 
 }
 
 template <typename T>
-Vector2<T>::Vector2(T* const r) : x( r[0] ), y( r[1] )
+Vector2<T>::Vector2(T* const r) : x(r[0]), y(r[1])
 {
-
 }
 
 template <typename T>
 Vector2<T>::~Vector2(void)
 {
-
 }
 
 template <typename T>
@@ -53,7 +51,7 @@ T Vector2<T>::Length() const
 }
 
 template <typename T>
-T Vector2<T>::SquaredLength() const
+T Vector2<T>::LengthSquared() const
 {
 	return x * x + y * y;
 }
@@ -65,9 +63,9 @@ T Vector2<T>::Distance(const Vector2& rhs) const
 }
 
 template <typename T>
-T Vector2<T>::SquaredDistance(const Vector2& rhs) const
+T Vector2<T>::DistanceSquared(const Vector2& rhs) const
 {
-	return (*this - rhs).SquaredLength();
+	return (*this - rhs).LengthSquared();
 }
 
 template <typename T>
@@ -79,10 +77,10 @@ T Vector2<T>::DotProduct(const Vector2& vec) const
 template <typename T>
 T Vector2<T>::Normalise()
 {
-	T fLength = sqrt( x * x + y * y);
-	if ( fLength > T(0))
+	T fLength = sqrt(x * x + y * y);
+	if (fLength > T(0))
 	{
-		T fInvLength = 1.0f / fLength;
+		T fInvLength = 1.0 / fLength;
 		x *= fInvLength;
 		y *= fInvLength;
 	}
@@ -99,7 +97,7 @@ T Vector2<T>::CrossProduct(const Vector2& rkVector) const
 template <typename T>
 Vector2<T> Vector2<T>::Reflect(const Vector2& normal) const
 {
-	return Vector2( *this - ( 2 * this->DotProduct(normal) * normal ) );
+	return Vector2(*this - ( 2 * this->DotProduct(normal) * normal ) );
 }
 
 template class Vector2<float>;

@@ -12,32 +12,12 @@
 #include "Runtime/BaseLib/include/Random.h"
 #include "Vector3.h"
 #include "Vector2.h"
-#include <math.h>
 
 NS_MATHUTIL_BEGIN
 
-inline Vector3f RandomUnitVector3()
-{
-    float z = baselib::GetRandom_Minus1_1();
-    float a = baselib::GetRandom_0_1() * 2.0F * M_PI;
+MATH3D_API inline Vector3f RandomUnitVector3();
 
-    float r = sqrtf(1.0f - z*z);
-
-    float x = r * cos(a);
-    float y = r * sin(a);
-
-    return Vector3f(x, y, z);
-}
-
-inline Vector2f RandomUnitVector2()
-{
-    float a = baselib::GetRandom_0_1() * 2.0F * M_PI;
-
-    float x = cos(a);
-    float y = sin(a);
-
-    return Vector2f(x, y);
-}
+MATH3D_API inline Vector2f RandomUnitVector2();
 
 NS_MATHUTIL_END
 
