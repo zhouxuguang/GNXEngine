@@ -18,28 +18,44 @@ class BASELIB_API StringConverter
 public:
     
     /**
-     *  utf8->utf16
-     *  @param utf8     utf8
+     *  narrow->wide
+     *  @param narrow     narrow
+     *  @param outWide  wide
+     *  @return 成功返回1
+     */
+    static bool NarrowToWide(const std::string& narrow, std::wstring& outWide);
+    
+    /**
+     *  wide->narrow
+     *  @param wide     wide
+     *  @param outNarrow  narrow
+     *  @return 成功返回1
+     */
+    static bool WideToNarrow(const std::wstring& wide, std::string& outNarrow);
+    
+    /**
+     *  narrow->utf16
+     *  @param narrow     narrow
      *  @param outUtf16 utf16
      *  @return 成功返回1
      */
-    static bool UTF8ToUTF16(const std::string& utf8, utf16String& outUtf16);
+    static bool NarrowToUTF16(const std::string& narrow, utf16String& outUtf16);
     
     /**
-     *  ut8->utf32
+     *  narrow->utf32
      *  @param utf8     utf8
      *  @param outUtf32 utf32
      *  @return 成功返回1
      */
-    static bool UTF8ToUTF32(const std::string& utf8, utf32String& outUtf32);
+    static bool NarrowToUTF32(const std::string& narrow, utf32String& outUtf32);
     
     /**
-     *  utf16->utf8
+     *  utf16->narrow
      *  @param utf16   utf16
-     *  @param outUtf8 utf8
+     *  @param outNarrow narrow
      *  @return 成功返回1
      */
-    static bool UTF16ToUTF8(const utf16String& utf16, std::string& outUtf8);
+    static bool UTF16ToNarrow(const utf16String& utf16, std::string& outNarrow);
     
     /**
      *  utf16->utf32
@@ -52,10 +68,10 @@ public:
     /**
      *  utf32->utf8
      *  @param utf32   utf32
-     *  @param outUtf8 utf8
+     *  @param outNarrow narrow
      *  @return 成功返回1
      */
-    static bool UTF32ToUTF8(const utf32String& utf32, std::string& outUtf8);
+    static bool UTF32ToNarrow(const utf32String& utf32, std::string& outNarrow);
     
     /**
      *  utf32->utf16

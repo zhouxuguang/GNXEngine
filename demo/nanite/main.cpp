@@ -11,17 +11,18 @@ int main(int argc, char* argv[])
 {
     //std::wstring str = ;
     fs::path path = fs::u8path("D:\\BaiduNetdiskDownload\\xx86OpenGLVulkan图形学光线追踪相关（电子版）");
-    
-    std::string r1 = path.string();
-    std::wstring r2 = path.wstring();
-    std::u16string r3 = path.u16string();
-    std::u32string r4 = path.u32string();
 
     std::u16string s1;
-    baselib::StringConverter::UTF8ToUTF16(r1, s1);
+    baselib::StringConverter::NarrowToUTF16(r1, s1);
 
     std::string s2;
-    baselib::StringConverter::UTF16ToUTF8(s1, s2);
+    baselib::StringConverter::UTF16ToNarrow(s1, s2);
+    
+    std::wstring s3;
+    baselib::StringConverter::NarrowToWide(s2, s3);
+    
+    std::string s4;
+    baselib::StringConverter::WideToNarrow(s3, s4);
     
     assert(s2 == r1);
 
