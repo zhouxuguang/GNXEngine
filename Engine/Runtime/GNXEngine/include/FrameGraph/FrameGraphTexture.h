@@ -10,7 +10,7 @@ class GNXENGINE_API FrameGraphTexture
 public:
 	struct Desc
 	{
-		std::string name;
+		char name[64];
 		RenderCore::Rect2D extent;
 		uint32_t depth = 1;
 		uint32_t numMipLevels = 1;

@@ -160,7 +160,8 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
     }
     
     //创建图像
-    VulkanBufferUtil::CreateImageGeneral(mContext->vmaAllocator, imageCreateInfoCopy, mImage, mAllocation);
+    VkResult result = VulkanBufferUtil::CreateImageGeneral(mContext->vmaAllocator, imageCreateInfoCopy, mImage, mAllocation);
+    assert(result == VK_SUCCESS);
     
     mFormat = imageCreateInfoCopy.format;
     mWidth = imageCreateInfoCopy.extent.width;
@@ -168,6 +169,8 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
     mDepth = imageCreateInfoCopy.extent.depth;
     mMipLevels = imageCreateInfoCopy.mipLevels;
     mLayerCount = imageCreateInfoCopy.arrayLayers;
+
+    assert(mImage != VK_NULL_HANDLE);
 }
 
 VKTextureBase::~VKTextureBase()

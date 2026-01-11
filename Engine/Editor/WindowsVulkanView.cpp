@@ -268,14 +268,6 @@ void WindowsVulkanView::Render()
     {
         return;
     }
-    
-    // 从Compute队列创建计算命令缓冲区
-    CommandQueuePtr computeQueue = mRenderDevice->GetCommandQueue(QueueType::Compute, 0);
-    CommandBufferPtr computeCommandBuffer = computeQueue->CreateCommandBuffer();
-    if (!computeCommandBuffer)
-    {
-        return;
-    }
 
 	struct PassData
 	{
@@ -354,12 +346,9 @@ void WindowsVulkanView::Render()
 			GNXEngine::FrameGraphTexture& colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.inputColor);
 			GNXEngine::FrameGraphTexture& grayTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.outputColor);
 
-			ComputeEncoderPtr computeEncoder = computeCommandBuffer->CreateComputeEncoder();
+			ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
 			testImageGrayDraw(computeEncoder, computePipeline, colorTexture.texture, grayTexture.texture);
 			computeEncoder->EndEncode();
-
-			// 提交计算命令缓冲区到计算队列
-			computeCommandBuffer->Submit();
 		});
 
 

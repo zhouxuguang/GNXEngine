@@ -10,7 +10,7 @@ class GNXENGINE_API FrameGraphBuffer
 public:
 	struct Desc
 	{
-		std::string name;
+		char name[64];
 		uint32_t size;
 	};
 

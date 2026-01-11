@@ -34,7 +34,7 @@ namespace
 template<typename T> using ResourcePool = std::vector<TransientResources::ResourceEntry<T>>;
 
 template<typename T>
-void HeartBeat(std::vector<T> &objects, std::unordered_map<std::size_t, ResourcePool<T> > &pools, float deltaTime, std::unordered_map<void*, std::string>& nameCache)
+void HeartBeat(std::vector<T> &objects, std::unordered_map<std::size_t, ResourcePool<T> > &pools, float deltaTime)
 {
 	constexpr auto kMaxIdleTime = 1.0f; // in seconds
 
@@ -55,11 +55,6 @@ void HeartBeat(std::vector<T> &objects, std::unordered_map<std::size_t, Resource
                 idleTime += deltaTime;
                 if (idleTime >= kMaxIdleTime)
                 {
-                    // 从名称缓存中移除
-                    if (object)
-                    {
-                        nameCache.erase(object.get());
-                    }
                     object = nullptr;
                     objectIt = pool.erase(objectIt);
                 }
@@ -73,10 +68,9 @@ void HeartBeat(std::vector<T> &objects, std::unordered_map<std::size_t, Resource
 	}
 	// 清理空对象并从缓存中移除
 	objects.erase(std::remove_if(objects.begin(), objects.end(),
-		[&nameCache](auto &object) {
+		[](auto& object) {
 			if (!object)
 			{
-				nameCache.erase(object.get());
 				return true;
 			}
 			return false;
@@ -98,7 +92,7 @@ TransientResources::~TransientResources()
     {
         if (texture)
         {
-            m_resourceNameCache.erase(texture.get());
+            //m_resourceNameCache.erase(texture.get());
             texture.reset();
         }
     }
@@ -108,7 +102,7 @@ TransientResources::~TransientResources()
     {
         if (buffer)
         {
-            m_resourceNameCache.erase(buffer.get());
+            //m_resourceNameCache.erase(buffer.get());
             buffer.reset();
         }
     }
@@ -121,13 +115,13 @@ TransientResources::~TransientResources()
 	m_buffers.clear();
 
 	// 清理名称缓存
-	m_resourceNameCache.clear();
+	//m_resourceNameCache.clear();
 }
 
 void TransientResources::Update(float deltaTime)
 {
-    HeartBeat(m_textures, m_texturePools, deltaTime, m_resourceNameCache);
-    HeartBeat(m_buffers, m_bufferPools, deltaTime, m_resourceNameCache);
+    HeartBeat(m_textures, m_texturePools, deltaTime);
+    HeartBeat(m_buffers, m_bufferPools, deltaTime);
 }
 
 RenderCore::RCTexturePtr TransientResources::acquireTexture(const FrameGraphTexture::Desc &desc)
@@ -151,10 +145,7 @@ RenderCore::RCTexturePtr TransientResources::acquireTexture(const FrameGraphText
         }
 
         // 设置调试名称
-        if (!desc.name.empty())
-        {
-            SetDebugName(texture, desc.name);
-        }
+        SetDebugName(texture, desc.name);
 
         m_textures.push_back(texture);
         auto ptr = m_textures.back();
@@ -166,10 +157,7 @@ RenderCore::RCTexturePtr TransientResources::acquireTexture(const FrameGraphText
         pool.pop_back();
 
         // 从资源池复用时也要更新名称
-        if (!desc.name.empty())
-        {
-            SetDebugName(texture, desc.name);
-        }
+        SetDebugName(texture, desc.name);
 
         return texture;
     }
@@ -190,10 +178,7 @@ RenderCore::ComputeBufferPtr TransientResources::acquireBuffer(const FrameGraphB
         auto buffer = mRenderDevice->CreateComputeBuffer(desc.size);
 
         // 设置调试名称
-        if (!desc.name.empty())
-        {
-            SetDebugName(buffer, desc.name);
-        }
+        SetDebugName(buffer, desc.name);
 
         m_buffers.push_back(buffer);
         auto ptr = m_buffers.back();
@@ -205,10 +190,7 @@ RenderCore::ComputeBufferPtr TransientResources::acquireBuffer(const FrameGraphB
         pool.pop_back();
 
         // 从资源池复用时也要更新名称
-        if (!desc.name.empty())
-        {
-            SetDebugName(buffer, desc.name);
-        }
+        SetDebugName(buffer, desc.name);
 
         return buffer;
     }
@@ -222,30 +204,12 @@ void TransientResources::releaseBuffer(const FrameGraphBuffer::Desc &desc, Rende
 
 void TransientResources::SetDebugName(RenderCore::RCTexturePtr texture, const std::string& name)
 {
-    if (texture && !name.empty())
-    {
-        void* ptr = texture.get();
-        auto it = m_resourceNameCache.find(ptr);
-        if (it == m_resourceNameCache.end() || it->second != name)
-        {
-            texture->SetName(name.c_str());
-            m_resourceNameCache[ptr] = name;
-        }
-    }
+    texture->SetName(name.c_str());
 }
 
 void TransientResources::SetDebugName(RenderCore::ComputeBufferPtr buffer, const std::string& name)
 {
-    if (buffer && !name.empty())
-    {
-        void* ptr = buffer.get();
-        auto it = m_resourceNameCache.find(ptr);
-        if (it == m_resourceNameCache.end() || it->second != name)
-        {
-            buffer->SetName(name.c_str());
-            m_resourceNameCache[ptr] = name;
-        }
-    }
+    buffer->SetName(name.c_str());
 }
 
 NAMESPACE_GNXENGINE_END

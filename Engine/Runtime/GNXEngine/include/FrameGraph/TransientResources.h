@@ -50,9 +50,6 @@ private:
 
 	std::unordered_map<std::size_t, ResourcePool<RenderCore::RCTexturePtr>> m_texturePools;
 	std::unordered_map<std::size_t, ResourcePool<RenderCore::ComputeBufferPtr>> m_bufferPools;
-
-	// 资源名称缓存，避免重复设置相同的名称
-	std::unordered_map<void*, std::string> m_resourceNameCache;
 };
 
 NAMESPACE_GNXENGINE_END

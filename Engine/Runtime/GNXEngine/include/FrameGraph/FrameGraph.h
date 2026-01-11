@@ -206,10 +206,7 @@ private:
 template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
 inline FrameGraphResource FrameGraph::Import(const std::string_view name, const typename T::Desc& desc, T&& resource)
 {
-    // 创建 Desc 的副本并设置名称
-    typename T::Desc namedDesc = desc;
-    namedDesc.name = std::string(name);
-    return _create<T>(ResourceEntry::Type::Imported, name, namedDesc, std::forward<T>(resource));
+    return _create<T>(ResourceEntry::Type::Imported, name, desc, std::forward<T>(resource));
 }
 
 template <typename Writer>
@@ -249,10 +246,7 @@ template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
 inline FrameGraphResource
 FrameGraph::Builder::Create(const std::string_view name, const typename T::Desc& desc)
 {
-    // 创建 Desc 的副本并设置名称
-    typename T::Desc namedDesc = desc;
-    namedDesc.name = std::string(name);
-    const auto id = m_frameGraph._create<T>(ResourceEntry::Type::Transient, name, namedDesc, T{});
+    const auto id = m_frameGraph._create<T>(ResourceEntry::Type::Transient, name, desc, T{});
     return m_passNode.m_creates.emplace_back(id);
 }
 

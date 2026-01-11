@@ -184,7 +184,7 @@ void VulkanBufferUtil::CreateImageCube(VmaAllocator vmaAllocator,
     vmaCreateImage(vmaAllocator, &imageCreateInfo, &imageAllocCreateInfo, &image, &allocation, nullptr);
 }
 
-void VulkanBufferUtil::CreateImageGeneral(VmaAllocator vmaAllocator,
+VkResult VulkanBufferUtil::CreateImageGeneral(VmaAllocator vmaAllocator,
                             const VkImageCreateInfo& imageCreateInfo,
                             VkImage& image,
                             VmaAllocation& allocation)
@@ -193,7 +193,7 @@ void VulkanBufferUtil::CreateImageGeneral(VmaAllocator vmaAllocator,
     imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     imageAllocCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     
-    vmaCreateImage(vmaAllocator, &imageCreateInfo, &imageAllocCreateInfo, &image, &allocation, nullptr);
+    return vmaCreateImage(vmaAllocator, &imageCreateInfo, &imageAllocCreateInfo, &image, &allocation, nullptr);
 }
 
 void VulkanBufferUtil::CopyBufferToImage(VkDevice device, VkCommandBuffer commandBuffer,

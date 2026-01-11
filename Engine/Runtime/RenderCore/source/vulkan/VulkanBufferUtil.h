@@ -76,7 +76,7 @@ public:
                                 VmaAllocation& allocation);
     
     // 创建纹理的实用函数
-    static void CreateImageGeneral(VmaAllocator vmaAllocator,
+    static VkResult CreateImageGeneral(VmaAllocator vmaAllocator,
                                 const VkImageCreateInfo& imageCreateInfo,
                                 VkImage& image,
                                 VmaAllocation& allocation);
