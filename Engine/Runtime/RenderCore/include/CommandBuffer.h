@@ -11,6 +11,7 @@
 #include "RenderDefine.h"
 #include "RenderEncoder.h"
 #include "ComputeEncoder.h"
+#include "BlitEncoder.h"
 #include "RenderPass.h"
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -28,6 +29,8 @@ public:
     virtual RenderEncoderPtr CreateRenderEncoder(const RenderPass& renderPass) const = 0;
     
     virtual ComputeEncoderPtr CreateComputeEncoder() const = 0;
+    
+    virtual BlitEncoderPtr CreateBlitEncoder() const = 0;
     
     //呈现到屏幕上，上屏
     virtual void PresentFrameBuffer() = 0;

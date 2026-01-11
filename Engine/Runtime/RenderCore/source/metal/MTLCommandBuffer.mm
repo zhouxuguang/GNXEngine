@@ -8,6 +8,7 @@
 #include "MTLCommandBuffer.h"
 #include "MTLRenderEncoder.h"
 #include "MTLComputeEncoder.h"
+#include "MTLBlitEncoder.h"
 #include "MTLTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -235,6 +236,11 @@ RenderEncoderPtr MTLCommandBuffer::CreateRenderEncoder(const RenderPass& renderP
 ComputeEncoderPtr MTLCommandBuffer::CreateComputeEncoder() const
 {
     return std::make_shared<MTLComputeEncoder>(mCommandBuffer);
+}
+
+BlitEncoderPtr MTLCommandBuffer::CreateBlitEncoder() const
+{
+    return std::make_shared<MTLBlitEncoder>(mCommandBuffer);
 }
 
 //呈现到屏幕上，上屏

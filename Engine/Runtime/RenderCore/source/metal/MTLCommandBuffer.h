@@ -30,6 +30,9 @@ public:
     // 创建计算着色器的encoder
     virtual ComputeEncoderPtr CreateComputeEncoder() const;
     
+    // 创建Blit encoder，用于资源拷贝操作
+    virtual BlitEncoderPtr CreateBlitEncoder() const;
+    
     //呈现到屏幕上，上屏
     virtual void PresentFrameBuffer();
     

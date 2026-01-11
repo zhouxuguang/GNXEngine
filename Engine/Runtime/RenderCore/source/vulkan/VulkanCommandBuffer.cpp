@@ -9,6 +9,7 @@
 #include "VKRenderDevice.h"
 #include "VKRenderEncoder.h"
 #include "VKComputeEncoder.h"
+#include "VKBlitEncoder.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/BaseLib/include/DebugBreaker.h"
 #include "VKUtil.h"
@@ -238,6 +239,11 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
 ComputeEncoderPtr VulkanCommandBuffer::CreateComputeEncoder() const
 {
     return std::make_shared<VKComputeEncoder>(mCommandInfo->vulkanContext, mCommandBuffer);
+}
+
+BlitEncoderPtr VulkanCommandBuffer::CreateBlitEncoder() const
+{
+    return std::make_shared<VKBlitEncoder>(mCommandInfo->vulkanContext, mCommandBuffer);
 }
 
 //呈现到屏幕上，上屏

@@ -34,6 +34,7 @@ set(PROJECT_SOURCES
         TestTransform.hpp
         testSkybox.h
         testSkybox.cpp
+        TestBlitEncoder.cpp
 )
 
 set(PLATFORM_SRC )

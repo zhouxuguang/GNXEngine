@@ -47,6 +47,8 @@ public:
     
     virtual ComputeEncoderPtr CreateComputeEncoder() const;
     
+    virtual BlitEncoderPtr CreateBlitEncoder() const;
+    
     //呈现到屏幕上，上屏
     virtual void PresentFrameBuffer();
     
