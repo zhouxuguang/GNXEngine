@@ -224,7 +224,7 @@ RCTexture2DPtr MTLRenderDevice::CreateTexture2D(TextureFormat format,
     if (HasRenderTargetFlag(textureUsage))
     {
         // 属性设置为shader可读写以及rendertarget
-        textureDes.resourceOptions = MTLResourceStorageModePrivate;
+        textureDes.resourceOptions = MTLResourceStorageModePrivate | MTLResourceHazardTrackingModeUntracked;
         textureDes.usage |= MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
         textureDes.storageMode = MTLStorageModePrivate;
         if (@available(iOS 10.0, *))
@@ -279,7 +279,7 @@ RCTexture3DPtr MTLRenderDevice::CreateTexture3D(TextureFormat format,
     if (HasRenderTargetFlag(textureUsage))
     {
         // 属性设置为shader可读写以及rendertarget
-        textureDes.resourceOptions = MTLResourceStorageModePrivate;
+        textureDes.resourceOptions = MTLResourceStorageModePrivate | MTLResourceHazardTrackingModeUntracked;
         textureDes.usage |= MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
         textureDes.storageMode = MTLStorageModePrivate;
         if (@available(iOS 10.0, *))
@@ -332,7 +332,7 @@ RCTextureCubePtr MTLRenderDevice::CreateTextureCube(TextureFormat format,
     if (HasRenderTargetFlag(textureUsage))
     {
         // 属性设置为shader可读写以及rendertarget
-        textureDes.resourceOptions = MTLResourceStorageModePrivate;
+        textureDes.resourceOptions = MTLResourceStorageModePrivate | MTLResourceHazardTrackingModeUntracked;
         textureDes.usage |= MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
         textureDes.storageMode = MTLStorageModePrivate;
         if (@available(iOS 10.0, *))
@@ -389,7 +389,7 @@ RCTexture2DArrayPtr MTLRenderDevice::CreateTexture2DArray(TextureFormat format,
     if (HasRenderTargetFlag(textureUsage))
     {
         // 属性设置为shader可读写以及rendertarget
-        textureDes.resourceOptions = MTLResourceStorageModePrivate;
+        textureDes.resourceOptions = MTLResourceStorageModePrivate | MTLResourceHazardTrackingModeUntracked;
         textureDes.usage |= MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
         textureDes.storageMode = MTLStorageModePrivate;
         if (@available(iOS 10.0, *))

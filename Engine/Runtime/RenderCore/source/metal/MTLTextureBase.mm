@@ -194,7 +194,7 @@ static id<MTLTexture> createDefaultDepthStencilTexture(id<MTLDevice> device, uin
     
     if (@available(iOS 9.0, macOS 10.11, *))
     {
-        depthStencilDescriptor.resourceOptions = MTLResourceStorageModePrivate;
+        depthStencilDescriptor.resourceOptions = MTLResourceStorageModePrivate | MTLResourceHazardTrackingModeUntracked;
         depthStencilDescriptor.usage = MTLTextureUsageRenderTarget | MTLTextureUsageShaderRead | MTLTextureUsageShaderWrite;
         depthStencilDescriptor.storageMode = MTLStorageModePrivate;
         

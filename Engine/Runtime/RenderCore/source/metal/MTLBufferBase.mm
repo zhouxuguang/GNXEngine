@@ -13,7 +13,7 @@ void MTLBufferBase::createPrivateBuffer(id<MTLDevice> device, id<MTLCommandQueue
 {
     @autoreleasepool
     {
-        mBuffer = [device newBufferWithLength: [sharedBuffer length] options: MTLStorageModePrivate << MTLResourceStorageModeShift];
+        mBuffer = [device newBufferWithLength: [sharedBuffer length] options: MTLResourceStorageModePrivate | MTLResourceHazardTrackingModeUntracked];
         id<MTLCommandBuffer> cmd_buffer = [commandQueue commandBuffer];
         id<MTLBlitCommandEncoder> blit_encoder = [cmd_buffer blitCommandEncoder];
         [blit_encoder copyFromBuffer:sharedBuffer
