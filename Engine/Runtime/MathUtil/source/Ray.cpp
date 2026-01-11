@@ -7,7 +7,7 @@
 
 #include "Ray.h"
 
-NS_RENDERSYSTEM_BEGIN
+NS_MATHUTIL_BEGIN
 
 template<typename T>
 Ray<T>::Ray(const Vector3<T>& origin, const Vector3<T>& direction)
@@ -56,4 +56,4 @@ Ray<T> Ray<T>::operator-() const
 template class Ray<float>;
 template class Ray<double>;
 
-NS_RENDERSYSTEM_END
+NS_MATHUTIL_END

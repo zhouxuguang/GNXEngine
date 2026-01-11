@@ -7,7 +7,7 @@
 
 #include "Plane.h"
 
-NS_RENDERSYSTEM_BEGIN
+NS_MATHUTIL_BEGIN
 
 template<typename T>
 Plane<T>::Plane() : mNormal(0, 0, 1), mDist(0)
@@ -107,4 +107,4 @@ Vector3<T> Plane<T>::ProjectPointOntoPlane(const Vector3<T>& point) const
 template class Plane<float>;
 template class Plane<double>;
 
-NS_RENDERSYSTEM_END
+NS_MATHUTIL_END

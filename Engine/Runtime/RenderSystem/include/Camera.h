@@ -14,7 +14,7 @@
 #include "Runtime/MathUtil/include/Vector3.h"
 #include "Runtime/RenderCore/include/RenderDefine.h"
 #include "SceneObject.h"
-#include "Ray.h"
+#include "Runtime/MathUtil/include/Ray.h"
 
 USING_NS_MATHUTIL
 USING_NS_RENDERCORE

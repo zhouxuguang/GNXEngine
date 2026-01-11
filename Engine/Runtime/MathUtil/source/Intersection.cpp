@@ -11,7 +11,7 @@
 #include "PointTest.h"
 #include <limits>
 
-NS_RENDERSYSTEM_BEGIN
+NS_MATHUTIL_BEGIN
 
 bool IntersectRayTriangle(const Rayf& ray, const Vector3f& a, const Vector3f& b, const Vector3f& c)
 {
@@ -271,4 +271,4 @@ template bool IntersectRayAABB<double>(const Ray<double>& ray, const AxisAligned
 template bool IntersectSphereSphere<float>(const Sphere<float>& s1, const Sphere<float>& s2);
 template bool IntersectSphereSphere<double>(const Sphere<double>& s1, const Sphere<double>& s2);
 
-NS_RENDERSYSTEM_END
+NS_MATHUTIL_END

@@ -9,12 +9,12 @@
 #include <algorithm>
 #include <limits>
 
-NS_RENDERSYSTEM_BEGIN
+NS_MATHUTIL_BEGIN
 
 template <typename T>
 AxisAlignedBox<T> AxisAlignedBox<T>::FromPositions(const std::vector<Vector3<T>>& positions)
 {
-	if (positions.size() == 0) 
+	if (positions.size() == 0)
     {
 		return AxisAlignedBox();
 	}
@@ -22,7 +22,7 @@ AxisAlignedBox<T> AxisAlignedBox<T>::FromPositions(const std::vector<Vector3<T>>
 	Vector3<T> min = positions[0];
     Vector3<T> max = positions[0];
 
-	for (size_t i = 1; i < positions.size(); i++) 
+	for (size_t i = 1; i < positions.size(); i++)
     {
 		// Leftmost point.
         min.x = std::min(positions[i].x, min.x);
@@ -49,4 +49,4 @@ AxisAlignedBox<T> AxisAlignedBox<T>::FromPositions(const std::vector<Vector3<T>>
 template class AxisAlignedBox<float>;
 template class AxisAlignedBox<double>;
 
-NS_RENDERSYSTEM_END
+NS_MATHUTIL_END

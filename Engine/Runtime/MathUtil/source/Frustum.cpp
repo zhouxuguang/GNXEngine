@@ -7,7 +7,7 @@
 
 #include "Frustum.h"
 
-NS_RENDERSYSTEM_BEGIN
+NS_MATHUTIL_BEGIN
 
 template <typename T>
 Frustum<T>::Frustum()
@@ -30,61 +30,61 @@ bool Frustum<T>::InitFrustum(const Matrix4x4<T>& comboMatrix)
 
 enum MyEnum
 {
-	INTERSECT = 0, 
+	INTERSECT = 0,
 	INSIDE = 1,
 	OUTSIDE = 2,
 };
 
-// Returns: INTERSECT : 0 
-//          INSIDE : 1 
-//          OUTSIDE : 2 
+// Returns: INTERSECT : 0
+//          INSIDE : 1
+//          OUTSIDE : 2
 template<typename T>
 int FrustumAABBIntersect(const Plane<T>* planes, const Vector3<T>& mins, const Vector3<T>& maxs)
 {
 	int ret = INSIDE;
 	Vector3<T> vmin, vmax;
 
-	for (int i = 0; i < kPlaneFrustumNum; ++i) 
+	for (int i = 0; i < kPlaneFrustumNum; ++i)
 	{
-		// X axis 
-		if (planes[i].getNormal().x > 0)
+		// X axis
+		if (planes[i].GetNormal().x > 0)
 		{
 			vmin.x = mins.x;
 			vmax.x = maxs.x;
 		}
-		else 
+		else
 		{
 			vmin.x = maxs.x;
 			vmax.x = mins.x;
 		}
-		// Y axis 
-		if (planes[i].getNormal().y > 0)
+		// Y axis
+		if (planes[i].GetNormal().y > 0)
 		{
 			vmin.y = mins.y;
 			vmax.y = maxs.y;
 		}
-		else 
+		else
 		{
 			vmin.y = maxs.y;
 			vmax.y = mins.y;
 		}
-		// Z axis 
-		if (planes[i].getNormal().z > 0)
+		// Z axis
+		if (planes[i].GetNormal().z > 0)
 		{
 			vmin.z = mins.z;
 			vmax.z = maxs.z;
 		}
-		else 
+		else
 		{
 			vmin.z = maxs.z;
 			vmax.z = mins.z;
 		}
-		if (planes[i].getNormal().DotProduct(vmin) - planes[i].getDist() > 0)
+		if (planes[i].GetNormal().DotProduct(vmin) - planes[i].GetDist() > 0)
 		{
 			return OUTSIDE;
 		}
-			
-		if (planes[i].getNormal().DotProduct(vmax) - planes[i].getDist() >= 0)
+
+		if (planes[i].GetNormal().DotProduct(vmax) - planes[i].GetDist() >= 0)
 		{
 			ret = INTERSECT;
 		}
@@ -110,17 +110,17 @@ static inline void GetFrustumCorners(const Matrix4x4<T> viewProj, Vector4<T>* po
 template<typename T>
 static inline bool IsBoxInFrustumIMPL(const Vector4<T>* frustumPlanes, const Vector4<T>* frustumCorners, const AxisAlignedBox<T>& box)
 {
-	for (int i = 0; i < kPlaneFrustumNum; i++) 
+	for (int i = 0; i < kPlaneFrustumNum; i++)
 	{
 		int r = 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.minimum.y, box.minimum.z, 1.0)) < 0.0) ? 1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.minimum.y, box.minimum.z, 1.0)) < 0.0) ? 1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.maximum.y, box.minimum.z, 1.0)) < 0.0) ? 1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.maximum.y, box.minimum.z, 1.0)) < 0.0) ? 1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.minimum.y, box.maximum.z, 1.0)) < 0.0) ? 1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.minimum.y, box.maximum.z, 1.0)) < 0.0) ? 1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.maximum.y, box.maximum.z, 1.0)) < 0.0) ? 1 : 0;
-		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.maximum.y, box.maximum.z, 1.0)) < 0.0) ? 1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.minimum.y, box.minimum.z, 1.0)) < 0.0) ?1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.minimum.y, box.minimum.z, 1.0)) < 0.0) ?1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.maximum.y, box.minimum.z, 1.0)) < 0.0) ?1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.maximum.y, box.minimum.z, 1.0)) < 0.0) ?1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.minimum.y, box.maximum.z, 1.0)) < 0.0) ?1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.minimum.y, box.maximum.z, 1.0)) < 0.0) ?1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.minimum.x, box.maximum.y, box.maximum.z, 1.0)) < 0.0) ?1 : 0;
+		r += (Vector4<T>::DotProduct(frustumPlanes[i], Vector4<T>(box.maximum.x, box.maximum.y, box.maximum.z, 1.0)) < 0.0) ?1 : 0;
 		if (r == 8)
 		{
 			return false;
@@ -131,32 +131,32 @@ static inline bool IsBoxInFrustumIMPL(const Vector4<T>* frustumPlanes, const Vec
 	int r = 0;
 	r = 0;
 	for (int i = 0; i < 8; i++)
-		r += ((frustumCorners[i].x > box.maximum.x) ? 1 : 0);
+		r += ((frustumCorners[i].x > box.maximum.x) ?1 : 0);
 	if (r == 8)
 		return false;
 	r = 0;
 	for (int i = 0; i < 8; i++)
-		r += ((frustumCorners[i].x < box.minimum.x) ? 1 : 0);
+		r += ((frustumCorners[i].x < box.minimum.x) ?1 : 0);
 	if (r == 8)
 		return false;
 	r = 0;
 	for (int i = 0; i < 8; i++)
-		r += ((frustumCorners[i].y > box.maximum.y) ? 1 : 0);
+		r += ((frustumCorners[i].y > box.maximum.y) ?1 : 0);
 	if (r == 8)
 		return false;
 	r = 0;
 	for (int i = 0; i < 8; i++)
-		r += ((frustumCorners[i].y < box.minimum.y) ? 1 : 0);
+		r += ((frustumCorners[i].y < box.minimum.y) ?1 : 0);
 	if (r == 8)
 		return false;
 	r = 0;
 	for (int i = 0; i < 8; i++)
-		r += ((frustumCorners[i].z > box.maximum.z) ? 1 : 0);
+		r += ((frustumCorners[i].z > box.maximum.z) ?1 : 0);
 	if (r == 8)
 		return false;
 	r = 0;
 	for (int i = 0; i < 8; i++)
-		r += ((frustumCorners[i].z < box.minimum.z) ? 1 : 0);
+		r += ((frustumCorners[i].z < box.minimum.z) ?1 : 0);
 	if (r == 8)
 		return false;
 
@@ -194,8 +194,7 @@ bool Frustum<T>::IsOutOfFrustum(const OrientedBoundingBox<T>& obb) const
 
 			if (mPlane[i].getSide(point) == PointSide::FRONT_PLANE)
 				return true;
-		}
-	}*/
+		}*/
 	return  false;
 }
 
@@ -231,8 +230,8 @@ template <typename T>
 void Frustum<T>::createPlane(const Matrix4x4<T>& comboMatrix)
 {
     // 参考这篇文章，本质上也是在ndc坐标下定义平面后，然后再逆变换到世界空间
-    //Fast Extraction of Viewing Frustum Planes from the WorldView-Projection Matrix
-    
+    //Fast Extraction of Viewing Frustum Planes from WorldView-Projection Matrix
+
     // 提取平面方程的系数
     mPlanes[kPlaneFrustumLeft]    = (comboMatrix[3] + comboMatrix[0]);   // left
     mPlanes[kPlaneFrustumRight]   = (comboMatrix[3] - comboMatrix[0]);   // right
@@ -240,7 +239,7 @@ void Frustum<T>::createPlane(const Matrix4x4<T>& comboMatrix)
     mPlanes[kPlaneFrustumTop]     = (comboMatrix[3] - comboMatrix[1]);   // top
     mPlanes[kPlaneFrustumNear]    = (comboMatrix[3] + comboMatrix[2]);   // near
     mPlanes[kPlaneFrustumFar]     = (comboMatrix[3] - comboMatrix[2]);   // far
-    
+
     for (int i = 0; i < kPlaneFrustumNum; i ++)
     {
         NormalizePlane(mPlanes[i]);
@@ -252,4 +251,4 @@ void Frustum<T>::createPlane(const Matrix4x4<T>& comboMatrix)
 template class Frustum<float>;
 template class Frustum<double>;
 
-NS_RENDERSYSTEM_END
+NS_MATHUTIL_END

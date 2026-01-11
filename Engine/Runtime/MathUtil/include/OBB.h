@@ -5,20 +5,18 @@
 //  Created by zhouxuguang on 2021/5/30.
 //
 
-#ifndef GNXENGINE_RENDERSYSTEM_OBB_INCLUDE_MNFD
-#define GNXENGINE_RENDERSYSTEM_OBB_INCLUDE_MNFD
+#ifndef GNXENGINE_MATHUTIL_OBB_INCLUDE_MNFD
+#define GNXENGINE_MATHUTIL_OBB_INCLUDE_MNFD
 
-#include "RSDefine.h"
-#include "Runtime/MathUtil/include/Matrix4x4.h"
-#include "Runtime/MathUtil/include/Vector3.h"
+#include "Math3DCommon.h"
+#include "Matrix4x4.h"
+#include "Vector3.h"
 #include "AABB.h"
 
-USING_NS_MATHUTIL
-
-NS_RENDERSYSTEM_BEGIN
+NS_MATHUTIL_BEGIN
 
 template <typename T>
-class RENDERSYSTEM_API OrientedBoundingBox
+class MATH3D_API OrientedBoundingBox
 {
 public:
     /**
@@ -58,8 +56,6 @@ public:
 typedef OrientedBoundingBox<float> OrientedBoundingBoxf;
 typedef OrientedBoundingBox<double> OrientedBoundingBoxd;
 
-NS_RENDERSYSTEM_END
+NS_MATHUTIL_END
 
-#endif /* GNXENGINE_RENDERSYSTEM_OBB_INCLUDE_MNFD */
-
-
+#endif /* GNXENGINE_MATHUTIL_OBB_INCLUDE_MNFD */

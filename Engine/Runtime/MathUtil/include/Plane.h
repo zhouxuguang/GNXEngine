@@ -5,16 +5,14 @@
 //  Created by zhouxuguang on 2021/6/1.
 //
 
-#ifndef GNXENGINE_RENDERSYSTEM_PLANE_INCLUDE_MFFDF
-#define GNXENGINE_RENDERSYSTEM_PLANE_INCLUDE_MFFDF
+#ifndef GNXENGINE_MATHUTIL_PLANE_INCLUDE_MFFDF
+#define GNXENGINE_MATHUTIL_PLANE_INCLUDE_MFFDF
 
-#include "RSDefine.h"
-#include "Runtime/MathUtil/include/Vector3.h"
-#include "Runtime/MathUtil/include/Vector4.h"
+#include "Math3DCommon.h"
+#include "Vector3.h"
+#include "Vector4.h"
 
-USING_NS_MATHUTIL
-
-NS_RENDERSYSTEM_BEGIN
+NS_MATHUTIL_BEGIN
 
 enum PointSide
 {
@@ -27,7 +25,7 @@ enum PointSide
     平面定义
  **/
 template<typename T>
-class RENDERSYSTEM_API Plane
+class MATH3D_API Plane
 {
 public:
     /**
@@ -49,7 +47,7 @@ public:
 	* 根据平面上的四个系数创建平面方程
 	*/
 	Plane(const Vector4<T>& coff);
-    
+
     /**
      * 创建默认的平面
      */
@@ -61,17 +59,17 @@ public:
     T Dist2Plane(const Vector3<T>& p) const;
 
     /**
-    * Gets the plane's normal.
+    * Gets plane's normal.
     */
     const Vector3<T>& GetNormal() const { return mNormal; }
 
     /**
-    * Gets the plane's distance to the origin along its normal.
+    * Gets plane's distance to origin along its normal.
     */
     T GetDist() const { return mDist; }
 
     /**
-    * Return the side where the point is.
+    * Return side where point is.
     */
     PointSide GetSide(const Vector3<T>& point) const;
 
@@ -105,7 +103,7 @@ public:
 
     /**
      * @brief 将三维点投影到该平面上
-     * 
+     *
      * @param point 被投影的点
      * @returns 投影后的点
      */
@@ -113,12 +111,12 @@ public:
 
 private:
     Vector3<T> mNormal;         // 平面法线
-    T mDist;             // original displacement of the normal
+    T mDist;             // original displacement of normal
 };
 
 typedef Plane<float> Planef;
 typedef Plane<double> Planed;
 
-NS_RENDERSYSTEM_END
+NS_MATHUTIL_END
 
-#endif /* GNXENGINE_RENDERSYSTEM_PLANE_INCLUDE_MFFDF */
+#endif /* GNXENGINE_MATHUTIL_PLANE_INCLUDE_MFFDF */

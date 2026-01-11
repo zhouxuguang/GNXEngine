@@ -5,19 +5,17 @@
 //  Created by zhouxuguang on 2021/5/30.
 //
 
-#ifndef GNXENGINE_RENDERSYSTEM_POINTTEST_INCLUDE_MNFDBHFGHF
-#define GNXENGINE_RENDERSYSTEM_POINTTEST_INCLUDE_MNFDBHFGHF
+#ifndef GNXENGINE_MATHUTIL_POINTTEST_INCLUDE_MNFDBHFGHF
+#define GNXENGINE_MATHUTIL_POINTTEST_INCLUDE_MNFDBHFGHF
 
-#include "RSDefine.h"
-#include "Runtime/MathUtil/include/Matrix4x4.h"
-#include "Runtime/MathUtil/include/Vector3.h"
+#include "Math3DCommon.h"
+#include "Matrix4x4.h"
+#include "Vector3.h"
 #include "Sphere.h"
 #include "AABB.h"
 #include "OBB.h"
 
-USING_NS_MATHUTIL
-
-NS_RENDERSYSTEM_BEGIN
+NS_MATHUTIL_BEGIN
 
 class PointTest
 {
@@ -33,7 +31,7 @@ public:
     template<typename T>
     static Vector3<T> ClosestPoint(const Sphere<T>& sphere, const Vector3<T>& point)
     {
-        // Find a normalized vector from the center of the sphere to the test point
+        // Find a normalized vector from center of sphere to test point
         Vector3<T> sphereToPoint = point - sphere.mCenter;
         sphereToPoint.Normalize();
 
@@ -117,6 +115,6 @@ public:
 };
 
 
-NS_RENDERSYSTEM_END
+NS_MATHUTIL_END
 
-#endif /* GNXENGINE_RENDERSYSTEM_POINTTEST_INCLUDE_MNFDBHFGHF */
+#endif /* GNXENGINE_MATHUTIL_POINTTEST_INCLUDE_MNFDBHFGHF */

@@ -5,11 +5,11 @@
 //  Created by zhouxuguang on 2022/11/6.
 //
 
-#ifndef GNX_ENGINE_INTERSECTION_INCLUDE
-#define GNX_ENGINE_INTERSECTION_INCLUDE
+#ifndef GNX_ENGINE_MATH_UTLS_INTERSECTION_INCLUDE
+#define GNX_ENGINE_MATH_UTLS_INTERSECTION_INCLUDE
 
-#include "RSDefine.h"
-#include "Runtime/MathUtil/include/Vector3.h"
+#include "Math3DCommon.h"
+#include "Vector3.h"
 #include "Sphere.h"
 #include "Ray.h"
 #include "AABB.h"
@@ -17,7 +17,7 @@
 
 USING_NS_MATHUTIL
 
-NS_RENDERSYSTEM_BEGIN
+NS_MATHUTIL_BEGIN
 
 // Intersects a Ray with a triangle.
 bool IntersectRayTriangle(const Rayf& ray, const Vector3f& a, const Vector3f& b, const Vector3f& c);
@@ -48,6 +48,6 @@ bool IntersectSphereOBB(const Sphere<T>& sphere, const OrientedBoundingBox<T>& o
 template <typename T>
 bool IntersectAABBAABB(const AxisAlignedBox<T>& aabb1, const AxisAlignedBox<T>& aabb2);
 
-NS_RENDERSYSTEM_END
+NS_MATHUTIL_END
 
-#endif /* GNX_ENGINE_INTERSECTION_INCLUDE */
+#endif /* GNX_ENGINE_MATH_UTLS_INTERSECTION_INCLUDE */

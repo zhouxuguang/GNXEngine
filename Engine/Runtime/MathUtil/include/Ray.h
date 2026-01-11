@@ -5,22 +5,20 @@
 //  Created by zhouxuguang on 2021/6/1.
 //
 
-#ifndef GNXENGINE_RENDERSYSTEM_RAY_INCLUDE_MDEEVGFDGV
-#define GNXENGINE_RENDERSYSTEM_RAY_INCLUDE_MDEEVGFDGV
+#ifndef GNXENGINE_MATHUTIL_RAY_INCLUDE_MDEEVGFDGV
+#define GNXENGINE_MATHUTIL_RAY_INCLUDE_MDEEVGFDGV
 
-#include "RSDefine.h"
-#include "Runtime/MathUtil/include/Matrix4x4.h"
-#include "Runtime/MathUtil/include/Vector3.h"
+#include "Math3DCommon.h"
+#include "Matrix4x4.h"
+#include "Vector3.h"
 
-USING_NS_MATHUTIL
-
-NS_RENDERSYSTEM_BEGIN
+NS_MATHUTIL_BEGIN
 
 /**
  * 射线类
  **/
 template <typename T>
-class RENDERSYSTEM_API Ray
+class MATH3D_API Ray
 {
 public:
     /**
@@ -32,9 +30,9 @@ public:
     Ray(const Vector3<T>& origin, const Vector3<T>& direction);
 
     ~Ray();
-    
+
     Vector3<T> GetOrigin() const;
-    
+
     Vector3<T> GetDirection() const;
 
     /**
@@ -58,6 +56,6 @@ public:
 typedef Ray<float> Rayf;
 typedef Ray<double> Rayd;
 
-NS_RENDERSYSTEM_END
+NS_MATHUTIL_END
 
-#endif /* GNXENGINE_RENDERSYSTEM_RAY_INCLUDE_MDEEVGFDGV */
+#endif /* GNXENGINE_MATHUTIL_RAY_INCLUDE_MDEEVGFDGV */

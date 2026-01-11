@@ -1,6 +1,6 @@
 #include "PointTest.h"
 
-NS_RENDERSYSTEM_BEGIN
+NS_MATHUTIL_BEGIN
 
 //template <typename T>
 //bool PointTest::PointInSphere(const Vector3<T>& point, const Sphere& sphere)
@@ -11,7 +11,7 @@ NS_RENDERSYSTEM_BEGIN
 //template <typename T>
 //Vector3f PointTest::ClosestPoint(const Sphere& sphere, const Vector3f& point)
 //{
-//	// Find a normalized vector from the center of the sphere to the test point 
+//	// Find a normalized vector from center of sphere to test point
 //	Vector3f sphereToPoint = point - sphere.mCenter;
 //	sphereToPoint.Normalize();
 //
@@ -29,11 +29,11 @@ bool PointTest::PointInAABB(const Vector3f& point, const AABB& aabb)
 	const Vector3f& min = aabb.mMin;
 	const Vector3f& max = aabb.mMax;
 
-	if (point.x < min.x || point.y < min.y || point.z < min.z) 
+	if (point.x < min.x || point.y < min.y || point.z < min.z)
 	{
 		return false;
 	}
-	if (point.x > max.x || point.y > max.y || point.z > max.z) 
+	if (point.x > max.x || point.y > max.y || point.z > max.z)
 	{
 		return false;
 	}
@@ -69,11 +69,11 @@ bool PointTest::PointInOBB(const Vector3f& point, const OBB& obb)
 
 		float distance = Dot(dir, axis);
 
-		if (distance > obb.size.asArray[i]) 
+		if (distance > obb.size.asArray[i])
 		{
 			return false;
 		}
-		if (distance < -obb.size.asArray[i]) 
+		if (distance < -obb.size.asArray[i])
 		{
 			return false;
 		}
@@ -89,6 +89,4 @@ Vector3f PointTest::ClosestPoint(const OBB& obb, const Vector3f& point)
 
 #endif
 
-NS_RENDERSYSTEM_END
-
-
+NS_MATHUTIL_END

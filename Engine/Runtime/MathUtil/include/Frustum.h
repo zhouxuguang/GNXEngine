@@ -5,16 +5,16 @@
 //  Created by zhouxuguang on 2021/6/13.
 //
 
-#ifndef GNX_ENGINE_FRUSTUM_INCLUDE_H
-#define GNX_ENGINE_FRUSTUM_INCLUDE_H
+#ifndef GNX_MATHUTILS_FRUSTUM_INCLUDE_H
+#define GNX_MATHUTILS_FRUSTUM_INCLUDE_H
 
 #include "Plane.h"
-#include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "Matrix4x4.h"
 #include "OBB.h"
 #include "AABB.h"
 #include "Sphere.h"
 
-NS_RENDERSYSTEM_BEGIN
+NS_MATHUTIL_BEGIN
 
 // Frustum平面定义
 enum
@@ -30,13 +30,13 @@ enum
 
 // 相机视锥体
 template <typename T>
-class RENDERSYSTEM_API Frustum
+class MATH3D_API Frustum
 {
 public:
     Frustum();
-    
+
     ~Frustum();
-    
+
     /**
      * 从矩阵创建视锥体
      */
@@ -51,12 +51,12 @@ public:
      * 判断OBB和视锥体的关系
      */
     bool IsOutOfFrustum(const OrientedBoundingBox<T>& obb) const;
-    
+
     /**
      * 判断球和视锥体的关系
      */
     bool IsSphereInFrustum(const Sphere<T> sphere) const;
-    
+
 private:
     /**
      * 创建裁剪平面
@@ -70,6 +70,6 @@ private:
 typedef Frustum<float> Frustumf;
 typedef Frustum<double> Frustumd;
 
-NS_RENDERSYSTEM_END
+NS_MATHUTIL_END
 
-#endif /* GNX_ENGINE_FRUSTUM_INCLUDE_H */
+#endif /* GNX_MATHUTILS_FRUSTUM_INCLUDE_H */
