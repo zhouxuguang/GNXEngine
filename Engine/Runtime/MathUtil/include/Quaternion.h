@@ -15,7 +15,7 @@ template <typename T>
 class MATH3D_API Quaternion 
 {
 public:
-	T	m_dfW, m_dfX, m_dfY, m_dfZ;
+	T w, x, y, z;
 
 	//构造函数
 	Quaternion();

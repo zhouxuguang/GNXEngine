@@ -29,7 +29,7 @@ float AnimationClip::Sample(AnimationPose& outPose, float time)
         
 //        printf("animated i = %d, position x = %f, y = %f, z = %f, rotation w = %f, x = %f, y = %f, z = %f, scale x = %f, y = %f, z = %f\n",
 //               i, animated.position.x, animated.position.y, animated.position.z,
-//               animated.rotation.m_dfW, animated.rotation.m_dfX, animated.rotation.m_dfY, animated.rotation.m_dfZ,
+//               animated.rotation.w, animated.rotation.x, animated.rotation.y, animated.rotation.z,
 //               animated.scale.x, animated.scale.y, animated.scale.z);
     }
     return time;
