@@ -1,17 +1,18 @@
-#pragma once
+#ifndef GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_GRAPHNODE_H
+#define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_GRAPHNODE_H
 
 #include <string>
 #include <cstdint>
-#include "PreDefine.h"
+#include "../RSDefine.h"
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
 class FrameGraph;
 
 using FrameGraphResource = int32_t;
 
 // frameGraph的节点，主要包括pass和资源
-class GNXENGINE_API GraphNode
+class RENDERSYSTEM_API GraphNode
 {
 	friend class FrameGraph;
 
@@ -40,4 +41,5 @@ private:
 	int32_t m_refCount = 0;
 };
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END
+#endif

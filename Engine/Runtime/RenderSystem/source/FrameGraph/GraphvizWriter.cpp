@@ -7,7 +7,7 @@
 
 // https://www.graphviz.org/pdf/dotguide.pdf
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
 namespace graphviz 
 {
@@ -368,4 +368,4 @@ namespace graphviz
 
 } // namespace graphviz
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END

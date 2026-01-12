@@ -6,18 +6,18 @@
 namespace std
 {
 
-template<> struct hash<GNXEngine::FrameGraphTexture::Desc>
+template<> struct hash<RenderSystem::FrameGraphTexture::Desc>
 {
-    std::size_t operator()(const GNXEngine::FrameGraphTexture::Desc &desc) const noexcept 
+    std::size_t operator()(const RenderSystem::FrameGraphTexture::Desc &desc) const noexcept
 	{
         std::size_t hash = baselib::HashFunction(&desc, sizeof(desc));
 		return hash;
 	}
 };
 
-template<> struct hash<GNXEngine::FrameGraphBuffer::Desc>
+template<> struct hash<RenderSystem::FrameGraphBuffer::Desc>
 {
-    std::size_t operator()(const GNXEngine::FrameGraphBuffer::Desc &desc) const noexcept
+    std::size_t operator()(const RenderSystem::FrameGraphBuffer::Desc &desc) const noexcept
 	{
         std::size_t hash = baselib::HashFunction(&desc, sizeof(desc));
         return hash;
@@ -26,7 +26,7 @@ template<> struct hash<GNXEngine::FrameGraphBuffer::Desc>
 
 } // namespace std
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
 namespace
 {
@@ -212,4 +212,4 @@ void TransientResources::SetDebugName(RenderCore::ComputeBufferPtr buffer, const
     buffer->SetName(name.c_str());
 }
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END

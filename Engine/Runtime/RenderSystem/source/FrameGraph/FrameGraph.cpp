@@ -3,7 +3,7 @@
 #include "GraphvizWriter.h"
 #include <stack>
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
 //
 // FrameGraph class:
@@ -153,7 +153,7 @@ const ResourceEntry& FrameGraph::_getResourceEntry(const ResourceNode& node) con
 
 // 导出图表文件，本质是文本文件，方便检查，可视化，在线可视化工具如下：
 // https://dreampuf.github.io/GraphvizOnline
-GNXENGINE_API std::ostream& operator<<(std::ostream& os, const FrameGraph& fg)
+RENDERSYSTEM_API std::ostream& operator<<(std::ostream& os, const FrameGraph& fg)
 {
 	return fg.DebugOutput(os, graphviz::Writer{});
 }
@@ -192,4 +192,4 @@ FrameGraphResource FrameGraph::Builder::Write(FrameGraphResource id, uint32_t fl
 	}
 }
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END

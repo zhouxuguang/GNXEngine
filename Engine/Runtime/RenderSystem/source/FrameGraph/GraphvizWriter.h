@@ -1,11 +1,12 @@
-#pragma once
+#ifndef GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_GRAPHVIZWRITER_H
+#define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_GRAPHVIZWRITER_H
 
 #include "FrameGraph/PassNode.h"
 #include "FrameGraph/ResourceNode.h"
 #include "FrameGraph/ResourceEntry.h"
 #include <vector>
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
 namespace graphviz
 {
@@ -236,4 +237,5 @@ namespace graphviz
 
 } // namespace graphviz
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END
+#endif

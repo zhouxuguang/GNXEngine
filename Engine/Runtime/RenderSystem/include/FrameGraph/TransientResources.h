@@ -1,17 +1,18 @@
-#pragma once
+#ifndef GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_TRANSIENTRESOURCES_H
+#define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_TRANSIENTRESOURCES_H
 
 #include "FrameGraphTexture.h"
 #include "FrameGraphBuffer.h"
-#include "PreDefine.h"
+#include "../RSDefine.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include <memory>
 #include <vector>
 #include <unordered_map>
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
 // 瞬间时间资源管理，配合帧图一起使用
-class GNXENGINE_API TransientResources
+class RENDERSYSTEM_API TransientResources
 {
 public:
 	TransientResources() = delete;
@@ -52,4 +53,5 @@ private:
 	std::unordered_map<std::size_t, ResourcePool<RenderCore::ComputeBufferPtr>> m_bufferPools;
 };
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END
+#endif

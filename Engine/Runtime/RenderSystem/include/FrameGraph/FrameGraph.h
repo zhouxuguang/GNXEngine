@@ -1,12 +1,13 @@
-#pragma once
+#ifndef GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPH_H
+#define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPH_H
 
 #include "PassNode.h"
 #include "ResourceNode.h"
 #include "ResourceEntry.h"
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
-class GNXENGINE_API FrameGraph
+class RENDERSYSTEM_API FrameGraph
 {
     friend class FrameGraphPassResources;
 
@@ -18,11 +19,11 @@ public:
     FrameGraph& operator=(const FrameGraph&) = delete;
     FrameGraph& operator=(FrameGraph&&) noexcept = delete;
 
-    friend GNXENGINE_API std::ostream& operator<<(std::ostream& os, const FrameGraph& fg);
+    friend RENDERSYSTEM_API std::ostream& operator<<(std::ostream& os, const FrameGraph& fg);
 
     static constexpr auto kFlagsIgnored = ~0;
 
-    class GNXENGINE_API Builder final
+    class RENDERSYSTEM_API Builder final
     {
         friend class FrameGraph;
 
@@ -269,4 +270,5 @@ FrameGraphPassResources::GetDescriptor(FrameGraphResource id) const
     return m_frameGraph.GetDescriptor<T>(id);
 }
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END
+#endif

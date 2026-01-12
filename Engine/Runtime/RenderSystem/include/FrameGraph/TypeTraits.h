@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_TYPETRAITS_H
+#define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_TYPETRAITS_H
 
 #include <string_view>
 
@@ -87,3 +88,5 @@ struct has_toString<T, std::void_t<decltype(T::toString)>>
 };
 
 #endif
+#endif
+

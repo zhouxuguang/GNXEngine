@@ -1,11 +1,12 @@
-#pragma once
+#ifndef GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPHTEXTURE_H
+#define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPHTEXTURE_H
 
 #include "Runtime/RenderCore/include/RCTexture.h"
-#include "PreDefine.h"
+#include "../RSDefine.h"
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
-class GNXENGINE_API FrameGraphTexture
+class RENDERSYSTEM_API FrameGraphTexture
 {
 public:
 	struct Desc
@@ -30,4 +31,5 @@ public:
 	RenderCore::RCTexturePtr texture = nullptr;
 };
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END
+#endif

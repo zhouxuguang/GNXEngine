@@ -1,12 +1,13 @@
-#pragma once
+#ifndef GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPHBLACKBOARD_H
+#define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPHBLACKBOARD_H
 
 #include <typeindex>
 #include <any>
 #include <unordered_map>
 #include <cassert>
-#include "PreDefine.h"
+#include "../RSDefine.h"
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
 /**
  用于在不同模块之间传递数据
@@ -74,4 +75,5 @@ template <typename T> inline bool FrameGraphBlackboard::Has() const
 #endif
 }
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END
+#endif

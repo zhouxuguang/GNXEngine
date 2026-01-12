@@ -1,11 +1,12 @@
-#pragma once
+#ifndef GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPHBUFFER_H
+#define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPHBUFFER_H
 
 #include "Runtime/RenderCore/include/ComputeBuffer.h"
-#include "PreDefine.h"
+#include "../RSDefine.h"
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
-class GNXENGINE_API FrameGraphBuffer
+class RENDERSYSTEM_API FrameGraphBuffer
 {
 public:
 	struct Desc
@@ -22,4 +23,5 @@ public:
 	RenderCore::ComputeBufferPtr buffer = nullptr;
 };
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END
+#endif

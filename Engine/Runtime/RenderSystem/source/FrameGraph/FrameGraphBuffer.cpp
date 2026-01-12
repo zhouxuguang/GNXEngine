@@ -1,7 +1,7 @@
 #include "FrameGraph/FrameGraphBuffer.h"
 #include "FrameGraph/TransientResources.h"
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
 void FrameGraphBuffer::create(const Desc& desc, void* allocator) 
 {
@@ -21,4 +21,4 @@ std::string FrameGraphBuffer::toString(const Desc& desc)
     return std::string(szBuf);
 }
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END

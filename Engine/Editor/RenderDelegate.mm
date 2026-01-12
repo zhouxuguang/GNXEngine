@@ -25,9 +25,9 @@
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 #include "TestComputeShader.hpp"
 #include "Runtime/BaseLib/include/DateTime.h"
-#include "Runtime/GNXEngine/include/FrameGraph/FrameGraph.h"
-#include "Runtime/GNXEngine/include/FrameGraph/TransientResources.h"
-#include "Runtime/GNXEngine/include/FrameGraph/FrameGraphBlackboard.h"
+#include "Runtime/RenderSystem/include/FrameGraph/FrameGraph.h"
+#include "Runtime/RenderSystem/include/FrameGraph/TransientResources.h"
+#include "Runtime/RenderSystem/include/FrameGraph/FrameGraphBlackboard.h"
 
 
 static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
@@ -63,14 +63,14 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     
     uint64_t lastTime;
     
-    GNXEngine::TransientResources* mTransientResources;
+    RenderSystem::TransientResources* mTransientResources;
 }
 
 - (void)initRenderWithHandle:(nonnull CALayer *)layer andType:(RenderType)renderType
 {
     mRenderdevice = CreateRenderDevice(convertToRenderDeviceType(renderType), (__bridge void*)layer);
     
-    mTransientResources = new GNXEngine::TransientResources(mRenderdevice);
+    mTransientResources = new RenderSystem::TransientResources(mRenderdevice);
 }
 
 - (void)resizeRender:(NSUInteger)width andHeight:(NSUInteger)height
@@ -152,32 +152,32 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     
     struct PassData 
     {
-        GNXEngine::FrameGraphResource colorTarget;
-        GNXEngine::FrameGraphResource depthStencilTarget;
+        RenderSystem::FrameGraphResource colorTarget;
+        RenderSystem::FrameGraphResource depthStencilTarget;
     };
     
-    GNXEngine::FrameGraph frameGraph;
+    RenderSystem::FrameGraph frameGraph;
     const PassData& basePassData = frameGraph.AddPass<PassData>("BasePass",
-    [=](GNXEngine::FrameGraph::Builder &builder, PassData &data)
+    [=](RenderSystem::FrameGraph::Builder &builder, PassData &data)
     {
-        GNXEngine::FrameGraphTexture::Desc colorDesc;
+        RenderSystem::FrameGraphTexture::Desc colorDesc;
         colorDesc.extent.width = mViewSize.width;
         colorDesc.extent.height = mViewSize.height;
         colorDesc.format = kTexFormatRGBA16Float;
-        data.colorTarget = builder.Create<GNXEngine::FrameGraphTexture>("ColorTarget0", colorDesc);
+        data.colorTarget = builder.Create<RenderSystem::FrameGraphTexture>("ColorTarget0", colorDesc);
         data.colorTarget = builder.Write(data.colorTarget);
         
-        GNXEngine::FrameGraphTexture::Desc depthStencilDesc;
+        RenderSystem::FrameGraphTexture::Desc depthStencilDesc;
         depthStencilDesc.extent.width = mViewSize.width;
         depthStencilDesc.extent.height = mViewSize.height;
         depthStencilDesc.format = kTexFormatDepth32FloatStencil8;
-        data.depthStencilTarget = builder.Create<GNXEngine::FrameGraphTexture>("depthStencilTarget", depthStencilDesc);
+        data.depthStencilTarget = builder.Create<RenderSystem::FrameGraphTexture>("depthStencilTarget", depthStencilDesc);
         data.depthStencilTarget = builder.Write(data.depthStencilTarget);
     },
-    [=](const PassData &data, GNXEngine::FrameGraphPassResources &resources, void *)
+    [=](const PassData &data, RenderSystem::FrameGraphPassResources &resources, void *)
     {
-        GNXEngine::FrameGraphTexture &colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.colorTarget);
-        GNXEngine::FrameGraphTexture &depthStencilTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.depthStencilTarget);
+        RenderSystem::FrameGraphTexture &colorTexture = resources.Get<RenderSystem::FrameGraphTexture>(data.colorTarget);
+        RenderSystem::FrameGraphTexture &depthStencilTexture = resources.Get<RenderSystem::FrameGraphTexture>(data.depthStencilTarget);
         
         RenderPass renderPass;
         RenderPassColorAttachmentPtr colorAttachmentPtr = std::make_shared<RenderPassColorAttachment>();
@@ -207,28 +207,28 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     // 图像灰度化的计算管线
     struct ComputePassData
     {
-        GNXEngine::FrameGraphResource inputColor;
-        GNXEngine::FrameGraphResource outputColor;
+        RenderSystem::FrameGraphResource inputColor;
+        RenderSystem::FrameGraphResource outputColor;
     };
     
-    GNXEngine::FrameGraphBlackboard fgBlackboard;
+    RenderSystem::FrameGraphBlackboard fgBlackboard;
     fgBlackboard.Add<ComputePassData>() = frameGraph.AddPass<ComputePassData>("GrayCompute",
-    [=](GNXEngine::FrameGraph::Builder &builder, ComputePassData &data)
+    [=](RenderSystem::FrameGraph::Builder &builder, ComputePassData &data)
     {
         builder.EnableAsyncCompute(true);
-        GNXEngine::FrameGraphTexture::Desc colorDesc;
+        RenderSystem::FrameGraphTexture::Desc colorDesc;
         colorDesc.extent.width = mViewSize.width;
         colorDesc.extent.height = mViewSize.height;
         colorDesc.format = kTexFormatRGBA16Float;
-        data.outputColor = builder.Create<GNXEngine::FrameGraphTexture>("grayColor", colorDesc);
+        data.outputColor = builder.Create<RenderSystem::FrameGraphTexture>("grayColor", colorDesc);
         data.outputColor = builder.Write(data.outputColor);
 
         data.inputColor = builder.Read(basePassData.colorTarget);
     },
-    [=](const ComputePassData &data, GNXEngine::FrameGraphPassResources &resources, void *)
+    [=](const ComputePassData &data, RenderSystem::FrameGraphPassResources &resources, void *)
     {
-        GNXEngine::FrameGraphTexture &colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.inputColor);
-        GNXEngine::FrameGraphTexture &grayTexture = resources.Get<GNXEngine::FrameGraphTexture>(data.outputColor);
+        RenderSystem::FrameGraphTexture &colorTexture = resources.Get<RenderSystem::FrameGraphTexture>(data.inputColor);
+        RenderSystem::FrameGraphTexture &grayTexture = resources.Get<RenderSystem::FrameGraphTexture>(data.outputColor);
         
         float color[4] = {1.0, 0.0, 0.0, 1.0};
         SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), color);
@@ -242,16 +242,16 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     
     const ComputePassData& computePassData = fgBlackboard.Get<ComputePassData>();
     frameGraph.AddPass("PresentPass",
-    [=](GNXEngine::FrameGraph::Builder &builder, GNXEngine::FrameGraph::NoData &data)
+    [=](RenderSystem::FrameGraph::Builder &builder, RenderSystem::FrameGraph::NoData &data)
     {
         builder.Read(computePassData.outputColor);
 
         // present的pass必须设置这个标记，要不然不会执行
         builder.SetSideEffect();
     },
-    [=](const GNXEngine::FrameGraph::NoData &data, GNXEngine::FrameGraphPassResources &resources, void *)
+    [=](const RenderSystem::FrameGraph::NoData &data, RenderSystem::FrameGraphPassResources &resources, void *)
     {
-        GNXEngine::FrameGraphTexture &colorTexture = resources.Get<GNXEngine::FrameGraphTexture>(computePassData.outputColor);
+        RenderSystem::FrameGraphTexture &colorTexture = resources.Get<RenderSystem::FrameGraphTexture>(computePassData.outputColor);
         
         float color[4] = {1.0, 0.0, 0.0, 1.0};
         SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), color);

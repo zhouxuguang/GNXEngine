@@ -1,10 +1,11 @@
-#pragma once
+#ifndef GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_RESOURCEENTRY_H
+#define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_RESOURCEENTRY_H
 
 #include "TypeTraits.h"
 #include <memory>
 #include <cassert>
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
 // 虚拟资源的包装类
 class ResourceEntry final 
@@ -190,4 +191,5 @@ inline std::string ResourceEntry::Model<T>::toString() const
 		return "";
 }
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END
+#endif

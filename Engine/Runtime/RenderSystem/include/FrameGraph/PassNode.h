@@ -1,10 +1,11 @@
-#pragma once
+#ifndef GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_PASSNODE_H
+#define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_PASSNODE_H
 
 #include "GraphNode.h"
 #include <memory>
 #include <vector>
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
 class FrameGraphPassResources;
 
@@ -38,7 +39,7 @@ struct FrameGraphPass final : FrameGraphPassConcept
 };
 
 // pass的节点，包括计算和图形pass
-class GNXENGINE_API PassNode final : public GraphNode
+class RENDERSYSTEM_API PassNode final : public GraphNode
 {
 	friend class FrameGraph;
 
@@ -99,4 +100,5 @@ inline bool operator==(const PassNode::AccessDeclaration& lhs, const PassNode::A
 }
 #endif
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END
+#endif

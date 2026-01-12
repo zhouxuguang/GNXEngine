@@ -1,11 +1,12 @@
-#pragma once
+#ifndef GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPHHELPER_H
+#define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPHHELPER_H
 
 #include "GraphNode.h"
 #include "Runtime/RenderCore/include/ComputeBuffer.h"
 #include "Runtime/RenderCore/include/RCTexture.h"
 #include <string_view>
 
-NAMESPACE_GNXENGINE_BEGIN
+NS_RENDERSYSTEM_BEGIN
 
 class FrameGraph;
 class FrameGraphPassResources;
@@ -18,5 +19,6 @@ class FrameGraphPassResources;
 
 [[nodiscard]] RenderCore::ComputeBufferPtr GetBuffer(FrameGraphPassResources& resources, FrameGraphResource id);
 
-NAMESPACE_GNXENGINE_END
+NS_RENDERSYSTEM_END
+#endif
 
