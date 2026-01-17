@@ -14,12 +14,16 @@
 #include "skinnedMesh/SkinnedMeshRenderer.h"
 #include "animation/Skeleton.h"
 #include "animation/SkeletonAnimation.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
 
 NS_RENDERSYSTEM_BEGIN
 
 SceneNode::SceneNode()
 {
-    //
+    mIsVisible = true;
+    mIsActive = true;
+    mWorldTransformDirty = true;
+    mCachedWorldMatrix = mathutil::Matrix4x4f();
 }
 
 SceneNode::~SceneNode()
@@ -153,12 +157,14 @@ void SceneNode::AddSceneNode(SceneNode *pNode,
         transform->transform.position = translate;
         transform->transform.rotation = rotate;
         transform->transform.scale = scale;
+        pNode->MarkWorldTransformDirty();
     }
     else
     {
         // 没有 TransformComponent，创建新的
         transform = new TransformComponent(Transform(translate, rotate, scale));
         pNode->AddComponent(transform);
+        pNode->MarkWorldTransformDirty();
     }
 
     mChildNodes.push_back(pNode);
@@ -176,12 +182,12 @@ void SceneNode::DetachAllObjects(void)
 
 void SceneNode::DetachObject(SceneObject *obj)
 {
-    for (auto iter = mAttachedObjects.begin(); iter != mAttachedObjects.end(); iter ++)
+    for (auto it = mAttachedObjects.begin(); it != mAttachedObjects.end(); ++it)
     {
-        if (*iter == obj)
+        if (*it == obj)
         {
-            mAttachedObjects.erase(iter);
-            break;  // erase 后迭代器失效，必须 break
+            mAttachedObjects.erase(it);
+            break;
         }
     }
 }
@@ -310,6 +316,97 @@ void SceneNode::DestroyChild(SceneNode* child)
 
     RemoveChild(child);
     delete child;
+}
+
+int SceneNode::GetDepth() const
+{
+    int depth = 0;
+    const SceneNode* current = mParentNode;
+    while (current)
+    {
+        depth++;
+        current = current->mParentNode;
+    }
+    return depth;
+}
+
+mathutil::Matrix4x4f SceneNode::GetWorldMatrix() const
+{
+    if (mParentNode)
+    {
+        return mParentNode->GetWorldMatrix() * mCachedWorldMatrix;
+    }
+    return mCachedWorldMatrix;
+}
+
+void SceneNode::MarkWorldTransformDirty()
+{
+    mWorldTransformDirty = true;
+    for (SceneNode* child : mChildNodes)
+    {
+        child->MarkWorldTransformDirty();
+    }
+}
+
+mathutil::Matrix4x4f SceneNode::GetWorldTransform() const
+{
+    TransformComponent* transformCom = QueryComponentT<TransformComponent>();
+    if (transformCom)
+    {
+        if (mWorldTransformDirty)
+        {
+            if (mParentNode)
+            {
+                mCachedWorldMatrix = mParentNode->GetWorldTransform() * transformCom->transform.TransformToMat4();
+            }
+            else
+            {
+                mCachedWorldMatrix = transformCom->transform.TransformToMat4();
+            }
+            mWorldTransformDirty = false;
+        }
+    }
+    else
+    {
+        if (mWorldTransformDirty)
+        {
+            if (mParentNode)
+            {
+                mCachedWorldMatrix = mParentNode->GetWorldTransform();
+            }
+            else
+            {
+                mCachedWorldMatrix = mathutil::Matrix4x4f();
+            }
+            mWorldTransformDirty = false;
+        }
+    }
+    return mCachedWorldMatrix;
+}
+
+void SceneNode::RemoveComponent(Component* component)
+{
+    if (!component)
+    {
+        return;
+    }
+
+    auto it = std::find(mComponents.begin(), mComponents.end(), component);
+    if (it != mComponents.end())
+    {
+        mComponents.erase(it);
+    }
+}
+
+void SceneNode::DestroyComponent(Component* component)
+{
+    if (!component)
+    {
+        return;
+    }
+
+    RemoveComponent(component);
+    delete component;
 }
 
 NS_RENDERSYSTEM_END

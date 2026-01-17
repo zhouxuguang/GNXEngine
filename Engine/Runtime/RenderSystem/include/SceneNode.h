@@ -36,6 +36,20 @@ public:
     // 设置节点名称
     void SetName(const std::string& name) { mName = name; }
 
+    // 获取节点层级深度（根节点为0）
+    int GetDepth() const;
+
+    // 获取世界空间变换（相对于根节点）
+    mathutil::Matrix4x4f GetWorldMatrix() const;
+
+    // 节点可见性
+    bool IsVisible() const { return mIsVisible; }
+    void SetVisible(bool visible) { mIsVisible = visible; }
+
+    // 节点是否激活
+    bool IsActive() const { return mIsActive; }
+    void SetActive(bool active) { mIsActive = active; }
+
     // 获取父节点
     SceneNode* GetParent() const { return mParentNode; }
 
@@ -110,18 +124,35 @@ public:
         component->SetSceneNode(this);
         mComponents.push_back(component);
     }
-    
+
+    // 移除组件（不删除，只是从列表中移除）
+    void RemoveComponent(Component* component);
+
+    // 销毁组件（删除并释放）
+    void DestroyComponent(Component* component);
+
     virtual void Update(float deltaTime);
     
     // 获得所有的子节点列表
     const std::vector<SceneNode*>& GetAllNodes() const;
-    
+
+    // 标记世界变换需要重新计算
+    void MarkWorldTransformDirty();
+
+    // 获取世界变换（带缓存）
+    mathutil::Matrix4x4f GetWorldTransform() const;
+
 private:
     std::string mName;                      //节点名称
     std::vector<SceneNode*> mChildNodes;    //孩子节点
     SceneNode* mParentNode = nullptr;       //父亲节点
     std::vector<SceneObject*> mAttachedObjects;   //该节点关联的物体
     std::vector<Component*> mComponents;        //组件列表
+
+    bool mIsVisible = true;           //节点可见性
+    bool mIsActive = true;            //节点是否激活
+    mutable bool mWorldTransformDirty = true;  //世界变换是否需要重新计算
+    mutable mathutil::Matrix4x4f mCachedWorldMatrix;  //缓存的世界变换矩阵
 };
 
 

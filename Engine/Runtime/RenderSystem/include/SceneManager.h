@@ -40,6 +40,15 @@ public:
 
     virtual bool HasLight(const std::string &name) const;
 
+    // 移除灯光（不删除）
+    void RemoveLight(Light* light);
+
+    // 销毁灯光（删除）
+    void DestroyLight(Light* light);
+
+    // 清空所有灯光
+    void ClearLights();
+
     CameraPtr CreateCamera(const std::string &name);
 
     CameraPtr GetCamera(const std::string &name) const;
@@ -70,6 +79,12 @@ public:
 
     //更新函数, deltaTime 秒
     void Update(float deltaTime);
+
+    // 清空场景（删除所有节点和灯光）
+    void ClearScene();
+
+    // 重置场景到初始状态
+    void ResetScene();
 
 private:
     // 递归渲染节点，支持父子关系变换计算

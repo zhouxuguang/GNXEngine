@@ -12,6 +12,7 @@
 #include "animation/SkeletonAnimation.h"
 #include "SkyBoxNode.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
+#include <algorithm>
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -142,6 +143,75 @@ bool SceneManager::HasLight(const std::string &name) const
     return false;
 }
 
+void SceneManager::RemoveLight(Light* light)
+{
+    if (!light)
+    {
+        return;
+    }
+
+    auto it = std::find(mLights.begin(), mLights.end(), light);
+    if (it != mLights.end())
+    {
+        mLights.erase(it);
+    }
+}
+
+void SceneManager::DestroyLight(Light* light)
+{
+    if (!light)
+    {
+        return;
+    }
+
+    RemoveLight(light);
+    delete light;
+}
+
+void SceneManager::ClearLights()
+{
+    for (auto light : mLights)
+    {
+        delete light;
+    }
+    mLights.clear();
+}
+
+void SceneManager::ClearScene()
+{
+    // 清空所有灯光
+    ClearLights();
+
+    // 释放根节点及其所有子节点
+    if (mRootSceneNode)
+    {
+        delete mRootSceneNode;
+        mRootSceneNode = new SceneNode();
+    }
+}
+
+void SceneManager::ResetScene()
+{
+    // 重置到初始状态
+    ClearScene();
+
+    // 重新创建天空盒和后处理
+    if (mSkyBoxNode)
+    {
+        delete mSkyBoxNode;
+        mSkyBoxNode = new SkyBoxNode();
+    }
+
+    if (mPostProcessing)
+    {
+        delete mPostProcessing;
+        mPostProcessing = new PostProcessing(GetRenderDevice());
+    }
+
+    // 清空相机列表
+    mCameras.clear();
+}
+
 CameraPtr SceneManager::CreateCamera(const std::string &name)
 {
     CameraPtr camera = std::make_shared<Camera>(GetRenderDevice()->GetRenderDeviceType(), name);
@@ -255,8 +325,9 @@ void SceneManager::Update(float deltaTime)
 
 void SceneManager::RenderNodeRecursive(SceneNode* node, const mathutil::Matrix4x4f& parentWorldMatrix, const RenderInfo& renderInfo)
 {
-    if (!node)
+    if (!node || !node->IsVisible() || !node->IsActive())
     {
+        // 跳过不可见或不活跃的节点
         return;
     }
 
@@ -309,8 +380,9 @@ void SceneManager::RenderNodeRecursive(SceneNode* node, const mathutil::Matrix4x
 
 void SceneManager::UpdateNodeRecursive(SceneNode* node, float deltaTime)
 {
-    if (!node)
+    if (!node || !node->IsActive())
     {
+        // 跳过不活跃的节点
         return;
     }
 
