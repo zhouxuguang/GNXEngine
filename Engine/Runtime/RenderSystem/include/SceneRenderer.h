@@ -12,22 +12,18 @@
 
 NS_RENDERSYSTEM_BEGIN
 
+/**
+ 场景渲染基类
+ */
 class SceneRenderer
 {
 public:
     SceneRenderer();
     
-    ~SceneRenderer();
-    
-    //void BeginRender();
-    
-    //void EndRenderer();
+    virtual ~SceneRenderer();
     
     // 渲染场景部分
-    void Render(float deltaTime);
-    
-    // 渲染天空盒部分
-    void RenderSkyBox(float deltaTime);
+    virtual void Render(float deltaTime) = 0;
 };
 
 NS_RENDERSYSTEM_END

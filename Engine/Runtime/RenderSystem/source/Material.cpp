@@ -151,4 +151,53 @@ RCTexturePtr Material::GetTexture(const std::string& name)
     return nullptr;
 }
 
+// G-Buffer相关方法实现
+
+void Material::SetMaterialType(MaterialType type)
+{
+    mMaterialType = type;
+}
+
+Material::MaterialType Material::GetMaterialType() const
+{
+    return mMaterialType;
+}
+
+void Material::SetGBufferShader(ShaderAssetPtr shader)
+{
+    mGBufferShaderAsset = shader;
+}
+
+const ShaderAssetPtr Material::GetGBufferShader() const
+{
+    return mGBufferShaderAsset;
+}
+
+void Material::SetGBufferPSO(GraphicsPipelinePtr pso)
+{
+    mGBufferPSO = pso;
+}
+
+GraphicsPipelinePtr Material::GetGBufferPSO() const
+{
+    return mGBufferPSO;
+}
+
+const char* Material::GetGBufferShaderPath(MaterialType type)
+{
+    switch (type)
+    {
+        case MaterialType::PBR:
+            return "GBufferPBR";
+        case MaterialType::Diffuse:
+            return "GBufferDiffuse";
+        case MaterialType::SkinPBR:
+            return "GBufferSkinPBR";  // 需要另外实现
+        case MaterialType::Unlit:
+            return "GBufferUnlit";    // 需要另外实现
+        default:
+            return "GBufferPBR";
+    }
+}
+
 NS_RENDERSYSTEM_END

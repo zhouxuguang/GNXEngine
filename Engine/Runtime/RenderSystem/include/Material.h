@@ -22,6 +22,15 @@ NS_RENDERSYSTEM_BEGIN
 class RENDERSYSTEM_API Material
 {
 public:
+    // 材质类型枚举
+    enum class MaterialType
+    {
+        PBR,           // PBR材质
+        Diffuse,       // 简单漫反射
+        SkinPBR,       // 蒙皮PBR材质
+        Unlit          // 无光照材质
+    };
+    
     Material();
     
     ~Material();
@@ -41,6 +50,21 @@ public:
     // 设置材质关联的shader
     void SetShader(ShaderAssetPtr shader);
     const ShaderAssetPtr GetShader() const;
+    
+    // G-Buffer相关方法
+    void SetMaterialType(MaterialType type);
+    MaterialType GetMaterialType() const;
+    
+    // 设置G-Buffer shader
+    void SetGBufferShader(ShaderAssetPtr shader);
+    const ShaderAssetPtr GetGBufferShader() const;
+    
+    // 设置G-Buffer PSO
+    void SetGBufferPSO(GraphicsPipelinePtr pso);
+    GraphicsPipelinePtr GetGBufferPSO() const;
+    
+    // 获取材质对应的G-Buffer shader路径（用于自动加载）
+    static const char* GetGBufferShaderPath(MaterialType type);
     
     // 设置颜色
     void SetColor(const std::string& name, const mathutil::Vector4f &color);
@@ -80,6 +104,11 @@ private:
     std::string mName;
     
     GraphicsPipelinePtr mPSO = nullptr;
+    
+    // G-Buffer相关
+    MaterialType mMaterialType = MaterialType::PBR;
+    ShaderAssetPtr mGBufferShaderAsset = nullptr;
+    GraphicsPipelinePtr mGBufferPSO = nullptr;
 };
 
 typedef std::shared_ptr<Material> MaterialPtr;

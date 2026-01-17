@@ -47,6 +47,9 @@ SceneManager::SceneManager()
     
     mCameraUBO = GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbPerCamera));
     mLightUBO = GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbLighting));
+    
+    // 默认创建延迟渲染器
+    SetRenderPath(RenderPath::Deferred);
 }
 
 SceneManager::~SceneManager()
@@ -243,8 +246,22 @@ CameraPtr SceneManager::GetCamera(const std::string &name) const
     return nullptr;
 }
 
+void SceneManager::SetRenderPath(RenderPath path)
+{
+    mRenderPath = path;
+}
+
 void SceneManager::Render(RenderEncoderPtr renderEncoder)
 {
+    // 如果是延迟渲染，获取最终纹理并呈现
+    if (mRenderPath == RenderPath::Deferred)
+    {
+        // TODO: 呈现最终纹理
+        // RCTexturePtr finalTexture = mDeferredRenderer->GetFinalTexture();
+        // PresentTexture(renderEncoder, finalTexture);
+    }
+    
+    // 保留原有的渲染逻辑（前向渲染）
     if (!mRootSceneNode)
     {
         return;

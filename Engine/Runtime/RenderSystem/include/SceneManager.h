@@ -16,10 +16,21 @@
 #include "ArcballManipulate.h"
 #include "mesh/MeshDrawUtil.h"
 #include "PostProcess/PostProcessing.h"
+#include "SceneRenderer.h"
+#include "DeferredSceneRenderer.h"
+#include <memory>
 
 NS_RENDERSYSTEM_BEGIN
 
 class SkyBoxNode;
+
+// 渲染路径枚举
+enum class RenderPath
+{
+    Forward,        // 前向渲染
+    Deferred,       // 延迟渲染（默认）
+    Hybrid          // 混合渲染（部分前向，部分延迟）
+};
 
 // 场景管理器，先用这种简单的管理
 class RENDERSYSTEM_API SceneManager
@@ -74,8 +85,37 @@ public:
         return renderInfo;
     }
     
-    //渲染
+    /**
+     * 设置渲染路径
+     * @param path 渲染路径类型
+     */
+    void SetRenderPath(RenderPath path);
+    
+    /**
+     * 获取当前渲染路径
+     */
+    RenderPath GetRenderPath() const { return mRenderPath; }
+    
+    /**
+     * 设置场景渲染器
+     * @param renderer 场景渲染器指针
+     */
+    void SetSceneRenderer(std::shared_ptr<SceneRenderer> renderer);
+    
+    /**
+     * 获取延迟渲染器（仅在使用延迟渲染路径时有效）
+     */
+    std::shared_ptr<DeferredSceneRenderer> GetDeferredRenderer() const;
+    
+    //渲染（使用选择的渲染路径）
     void Render(RenderEncoderPtr renderEncoder);
+    
+    /**
+     * 初始化渲染器
+     * @param width 渲染宽度
+     * @param height 渲染高度
+     */
+    void InitializeRenderer(uint32_t width, uint32_t height);
 
     //更新函数, deltaTime 秒
     void Update(float deltaTime);
@@ -105,6 +145,8 @@ private:
     
     UniformBufferPtr mCameraUBO = nullptr;
     UniformBufferPtr mLightUBO = nullptr;
+    
+    RenderPath mRenderPath = RenderPath::Deferred;  // 默认使用延迟渲染
     
     SceneManager();
     
