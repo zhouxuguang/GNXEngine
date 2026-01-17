@@ -143,7 +143,7 @@ RCTextureCubePtr LoadEquirectangularMap(const std::string& fileName)
     Bitmap cubemap = convertVerticalCrossToCubeMapFaces(out);
     
     RCTextureCubePtr cubeMapPtr = GetRenderDevice()->CreateTextureCube(kTexFormatRGBA32Float,
-                                                TextureUsageShaderRead, cubemap.w_, cubemap.h_, 1);
+                                                TextureUsage::TextureUsageShaderRead, cubemap.w_, cubemap.h_, 1);
     
     const uint8_t* data = cubemap.data_.data();
 

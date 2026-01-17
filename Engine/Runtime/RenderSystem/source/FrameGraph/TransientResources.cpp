@@ -134,13 +134,13 @@ RenderCore::RCTexturePtr TransientResources::acquireTexture(const FrameGraphText
         if (desc.depth > 0)
         {
             texture = mRenderDevice->CreateTexture2D(desc.format,
-                                            RenderCore::TextureUsage(RenderCore::TextureUsageShaderRead | RenderCore::TextureUsageRenderTarget),
+                                            RenderCore::TextureUsage::TextureUsageShaderRead | RenderCore::TextureUsage::TextureUsageRenderTarget,
                                             desc.extent.width, desc.extent.height, desc.numMipLevels);
         }
         else
         {
             texture = mRenderDevice->CreateTexture3D(desc.format,
-                                            RenderCore::TextureUsage(RenderCore::TextureUsageShaderRead | RenderCore::TextureUsageRenderTarget),
+                                            RenderCore::TextureUsage::TextureUsageShaderRead | RenderCore::TextureUsage::TextureUsageRenderTarget,
                                             desc.extent.width, desc.extent.height, desc.depth, desc.numMipLevels);
         }
 

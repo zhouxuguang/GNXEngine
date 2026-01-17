@@ -64,7 +64,7 @@ void Example_BufferToTexture(RenderDevicePtr renderDevice, const void* textureDa
     // 创建目标Texture（Private模式，GPU专用）
     RCTexture2DPtr texture = renderDevice->CreateTexture2D(
         kTexFormatRGBA32,
-        (TextureUsage)(TextureUsageShaderRead | TextureUsageRenderTarget),
+        TextureUsage::TextureUsageShaderRead | TextureUsage::TextureUsageRenderTarget,
         width, height, 1);
     
     // 获取传输队列
@@ -186,7 +186,7 @@ void Example_AsyncResourceLoading(RenderDevicePtr renderDevice, const void* text
     // 创建目标Texture
     RCTexture2DPtr texture = renderDevice->CreateTexture2D(
         kTexFormatRGBA32,
-        (TextureUsage)(TextureUsageShaderRead | TextureUsageRenderTarget),
+        TextureUsage::TextureUsageShaderRead | TextureUsage::TextureUsageRenderTarget,
         width, height, 1);
     
     // 获取传输队列
@@ -236,7 +236,7 @@ void Example_MultipleBlitOperations(RenderDevicePtr renderDevice)
     blitEncoder->CopyBufferToBuffer(buffer1, 0, buffer2, 0, size1);
     
     // 操作2：Buffer到Texture
-    RCTexture2DPtr texture1 = renderDevice->CreateTexture2D(kTexFormatRGBA32, TextureUsageShaderRead, 512, 512, 1);
+    RCTexture2DPtr texture1 = renderDevice->CreateTexture2D(kTexFormatRGBA32, TextureUsage::TextureUsageShaderRead, 512, 512, 1);
     Rect2D region(0, 0, 512, 512);
     blitEncoder->CopyBufferToTexture(buffer2, 0, 512 * 4, 0, texture1, 0, 0, region, region);
     

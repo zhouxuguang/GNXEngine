@@ -643,13 +643,13 @@ VkImageUsageFlags VulkanBufferUtil::ConvertTextureUsage(TextureUsage textureUsag
                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     switch (textureUsage)
     {
-        case TextureUsageShaderRead:
+        case TextureUsage::TextureUsageShaderRead:
             flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
             
-        case TextureUsageShaderWrite:
+        case TextureUsage::TextureUsageShaderWrite:
             flags |= VK_IMAGE_USAGE_STORAGE_BIT;
             
-        case TextureUsageRenderTarget:
+        case TextureUsage::TextureUsageRenderTarget:
             // 还要区分是深度模板还是颜色缓冲
             if (VulkanBufferUtil::IsDepthStencilFormat(format))
             {

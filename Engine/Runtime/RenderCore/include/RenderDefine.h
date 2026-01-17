@@ -153,13 +153,80 @@ enum SamplerCompareMode
 };
 
 // 纹理使用的模式
-enum TextureUsage
+enum class TextureUsage : uint32_t
 {
     TextureUsageUnknown         = 0x0000,
     TextureUsageShaderRead      = 0x0001,
     TextureUsageShaderWrite     = 0x0002,
     TextureUsageRenderTarget    = 0x0004,
 };
+
+// TextureUsage 位运算符重载
+constexpr TextureUsage operator|(TextureUsage lhs, TextureUsage rhs) noexcept
+{
+    return static_cast<TextureUsage>(
+        static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+}
+
+constexpr TextureUsage operator&(TextureUsage lhs, TextureUsage rhs) noexcept
+{
+    return static_cast<TextureUsage>(
+        static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+}
+
+constexpr TextureUsage operator^(TextureUsage lhs, TextureUsage rhs) noexcept
+{
+    return static_cast<TextureUsage>(
+        static_cast<uint32_t>(lhs) ^ static_cast<uint32_t>(rhs));
+}
+
+constexpr TextureUsage operator~(TextureUsage value) noexcept
+{
+    return static_cast<TextureUsage>(~static_cast<uint32_t>(value));
+}
+
+constexpr TextureUsage& operator|=(TextureUsage& lhs, TextureUsage rhs) noexcept
+{
+    lhs = lhs | rhs;
+    return lhs;
+}
+
+constexpr TextureUsage& operator&=(TextureUsage& lhs, TextureUsage rhs) noexcept
+{
+    lhs = lhs & rhs;
+    return lhs;
+}
+
+constexpr TextureUsage& operator^=(TextureUsage& lhs, TextureUsage rhs) noexcept
+{
+    lhs = lhs ^ rhs;
+    return lhs;
+}
+
+// 模板函数：检查是否包含特定用途
+template<TextureUsage Usage>
+constexpr bool HasUsage(TextureUsage value) noexcept
+{
+    return (value & Usage) == Usage;
+}
+
+// 模板函数：检查是否有任何用途
+template<TextureUsage... Usages>
+constexpr bool HasAnyUsage(TextureUsage value) noexcept
+{
+    bool result = false;
+    ((result = result || ((value & Usages) != TextureUsage::TextureUsageUnknown)), ...);
+    return result;
+}
+
+// 模板函数：添加用途
+template<TextureUsage... Usages>
+constexpr TextureUsage AddUsages() noexcept
+{
+    TextureUsage result = TextureUsage::TextureUsageUnknown;
+    ((result = result | Usages), ...);
+    return result;
+}
 
 //模板测试的操作
 enum StencilOperation

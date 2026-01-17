@@ -236,7 +236,7 @@ public:
 struct TextureDescriptor
 {
     TextureFormat format = kTexFormatRGBA32;
-    TextureUsage usage = TextureUsageShaderRead;
+    TextureUsage usage = TextureUsage::TextureUsageShaderRead;
     bool mipmaped = false;
     uint32_t width = 1;
     uint32_t height = 1;
