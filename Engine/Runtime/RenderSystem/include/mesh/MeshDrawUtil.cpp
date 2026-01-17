@@ -193,4 +193,96 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
     }
 }
 
+//=============================================================================
+// 深度渲染优化 - 只绑定位置属性，不拷贝数据
+//=============================================================================
+
+void MeshDrawUtil::DrawMeshDepthOnly(const Mesh& mesh, const RenderInfo& renderInfo, GraphicsPipelinePtr depthPSO)
+{
+    RenderEncoderPtr renderEncoder = renderInfo.renderEncoder;
+    assert(renderEncoder);
+    assert(depthPSO);
+    
+    const ChannelInfo* channels = mesh.GetVertexData().GetChannels();
+    VertexBufferPtr vertexBuffer = mesh.GetVertexBuffer();
+    IndexBufferPtr indexBuffer = mesh.GetIndexBuffer();
+    
+    // 检查是否有位置数据
+    if (!mesh.HasChannel(kShaderChannelPosition))
+    {
+        return;
+    }
+    
+    for (int n = 0; n < mesh.GetSubMeshCount(); n++)
+    {
+        // 使用深度渲染的PSO
+        renderEncoder->SetGraphicsPipeline(depthPSO);
+        
+        // 只设置必要的uniform
+        renderEncoder->SetVertexUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+        renderEncoder->SetVertexUniformBuffer("cbPerObject", renderInfo.objectUBO);
+        
+        // 【关键优化】只绑定位置属性，跳过法线、纹理坐标等
+        // GPU只读取位置数据，减少内存带宽和顶点着色器的工作量
+        renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
+        
+        const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
+        
+        // 绘制
+        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex);
+    }
+}
+
+void MeshDrawUtil::DrawSkinnedMeshDepthOnly(const SkinnedMesh& mesh, const RenderInfo& renderInfo, GraphicsPipelinePtr depthPSO)
+{
+    RenderEncoderPtr renderEncoder = renderInfo.renderEncoder;
+    assert(renderEncoder);
+    assert(depthPSO);
+    
+    const ChannelInfo* channels = mesh.GetVertexData().GetChannels();
+    VertexBufferPtr vertexBuffer = mesh.GetVertexBuffer();
+    IndexBufferPtr indexBuffer = mesh.GetIndexBuffer();
+    
+    // 检查是否有必要的数据
+    if (!mesh.HasChannel(kShaderChannelPosition))
+    {
+        return;
+    }
+    
+    // 检查是否是GPU蒙皮
+    bool hasBoneData = mesh.HasChannel(kShaderChannelBoneIndex) && 
+                       mesh.HasChannel(kShaderChannelWeight);
+    
+    for (int n = 0; n < mesh.GetSubMeshCount(); n++)
+    {
+        renderEncoder->SetGraphicsPipeline(depthPSO);
+        
+        renderEncoder->SetVertexUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+        renderEncoder->SetVertexUniformBuffer("cbPerObject", renderInfo.objectUBO);
+        
+        // 蒙皮网格需要绑定骨骼动画数据
+        if (hasBoneData && renderInfo.skinnedMatrixUBO)
+        {
+            renderEncoder->SetVertexUniformBuffer("cbSkinned", renderInfo.skinnedMatrixUBO);
+        }
+        
+        // 【关键优化】只绑定必要的属性
+        // 对于GPU蒙皮网格：位置 + 骨骼索引 + 权重
+        renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
+        
+        if (hasBoneData)
+        {
+            // GPU蒙皮需要骨骼索引和权重
+            // 骨骼索引和权重需要根据实际 shader 绑定槽位调整
+            // 这里假设骨骼索引在槽位1，权重在槽位2
+            renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelBoneIndex].offset, 1);
+            renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelWeight].offset, 2);
+        }
+        
+        const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
+        
+        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex);
+    }
+}
+
 NS_RENDERSYSTEM_END

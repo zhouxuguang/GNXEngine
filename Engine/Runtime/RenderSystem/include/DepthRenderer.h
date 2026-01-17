@@ -122,7 +122,8 @@ private:
     bool mInitialized = false;
 };
 
-typedef std::shared_ptr<DepthRenderer> DepthRendererPtr;
+using DepthRendererPtr = std::shared_ptr<DepthRenderer>;
+using DepthRendererUniPtr = std::unique_ptr<DepthRenderer>;
 
 NS_RENDERSYSTEM_END
 

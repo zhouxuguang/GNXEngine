@@ -10,13 +10,19 @@
 #include <algorithm>
 #include <limits>
 
+#include "Runtime/RenderSystem/include/ShaderAssetLoader.h"
+
 USING_NS_MATHUTIL
 
 NS_RENDERSYSTEM_BEGIN
 
-DepthRenderer::DepthRenderer(RenderDevice* device)
-    : mDevice(device)
+DepthRenderer::DepthRenderer(RenderDevice* device) : mDevice(device)
 {
+    ShaderAssetString shaderAssetString = LoadShaderAsset("DepthGenerate");
+    ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
+    ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
+    
+    //ComputePipelinePtr computePipeline = GetRenderDevice()->creategr(*computeShader);
 }
 
 DepthRenderer::~DepthRenderer()
@@ -46,7 +52,6 @@ bool DepthRenderer::Initialize(const DepthRenderConfig& config)
 
 void DepthRenderer::Shutdown()
 {
-    // 智能指针会自动释放资源
     mDepthTexture = nullptr;
     mInitialized = false;
 }

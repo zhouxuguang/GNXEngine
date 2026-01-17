@@ -7,6 +7,7 @@
 
 #include "SceneManager.h"
 #include "RenderParameter.h"
+#include "DeferredSceneRenderer.h"
 #include "mesh/MeshRenderer.h"
 #include "skinnedMesh/SkinnedMeshRenderer.h"
 #include "animation/SkeletonAnimation.h"
@@ -50,6 +51,7 @@ SceneManager::SceneManager()
     
     // 默认创建延迟渲染器
     SetRenderPath(RenderPath::Deferred);
+    mSceneRenderer = std::make_unique<DeferredSceneRenderer>();
 }
 
 SceneManager::~SceneManager()

@@ -26,6 +26,9 @@ public:
     virtual void Render(float deltaTime) = 0;
 };
 
+using SceneRendererPtr = std::shared_ptr<SceneRenderer>;
+using SceneRendererUniPtr = std::unique_ptr<SceneRenderer>;
+
 NS_RENDERSYSTEM_END
 
 #endif /* GNX_ENGINE_SCENE_RENDERER_INCLUDE_HJDSJFHSH */

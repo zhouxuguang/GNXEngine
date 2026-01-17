@@ -21,6 +21,7 @@ DeferredSceneRenderer::DeferredSceneRenderer()
     : SceneRenderer()
 {
     mGBufferRenderer = std::make_shared<GBufferRenderer>();
+    mDepthRender = std::make_unique<DepthRenderer>(GetRenderDevice().get());
 }
 
 DeferredSceneRenderer::~DeferredSceneRenderer()
@@ -39,17 +40,13 @@ const GBufferRenderer::GBufferConfig& DeferredSceneRenderer::GetGBufferConfig() 
 
 void DeferredSceneRenderer::Render(float deltaTime)
 {
-    auto startTime = std::chrono::high_resolution_clock::now();
-    
     // 阶段1: G-Buffer Pass
     RenderGBufferPass();
-    
-    auto gBufferEndTime = std::chrono::high_resolution_clock::now();
     
     // 阶段2: 延迟光照Pass
     RenderDeferredLightingPass();
     
-    auto lightingEndTime = std::chrono::high_resolution_clock::now();
+    // 阶段3: 渲染天空盒
     
     // 阶段4: 前向渲染Pass（半透明物体）
     RenderForwardPass();

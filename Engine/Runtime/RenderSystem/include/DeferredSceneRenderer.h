@@ -10,7 +10,7 @@
 
 #include "SceneRenderer.h"
 #include "GBufferRenderer.h"
-#include <memory>
+#include "DepthRenderer.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -77,7 +77,7 @@ private:
 
 private:
     GBufferRendererPtr mGBufferRenderer;
-    
+    DepthRendererUniPtr mDepthRender = nullptr;
     bool mUseFrameGraph = false;
 };
 

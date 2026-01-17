@@ -17,7 +17,6 @@
 #include "mesh/MeshDrawUtil.h"
 #include "PostProcess/PostProcessing.h"
 #include "SceneRenderer.h"
-#include "DeferredSceneRenderer.h"
 #include <memory>
 
 NS_RENDERSYSTEM_BEGIN
@@ -96,26 +95,8 @@ public:
      */
     RenderPath GetRenderPath() const { return mRenderPath; }
     
-    /**
-     * 设置场景渲染器
-     * @param renderer 场景渲染器指针
-     */
-    void SetSceneRenderer(std::shared_ptr<SceneRenderer> renderer);
-    
-    /**
-     * 获取延迟渲染器（仅在使用延迟渲染路径时有效）
-     */
-    std::shared_ptr<DeferredSceneRenderer> GetDeferredRenderer() const;
-    
     //渲染（使用选择的渲染路径）
     void Render(RenderEncoderPtr renderEncoder);
-    
-    /**
-     * 初始化渲染器
-     * @param width 渲染宽度
-     * @param height 渲染高度
-     */
-    void InitializeRenderer(uint32_t width, uint32_t height);
 
     //更新函数, deltaTime 秒
     void Update(float deltaTime);
@@ -147,6 +128,7 @@ private:
     UniformBufferPtr mLightUBO = nullptr;
     
     RenderPath mRenderPath = RenderPath::Deferred;  // 默认使用延迟渲染
+    SceneRendererUniPtr mSceneRenderer = nullptr;
     
     SceneManager();
     
