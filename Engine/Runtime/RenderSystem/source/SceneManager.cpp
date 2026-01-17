@@ -11,6 +11,7 @@
 #include "skinnedMesh/SkinnedMeshRenderer.h"
 #include "animation/SkeletonAnimation.h"
 #include "SkyBoxNode.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -36,7 +37,40 @@ SceneManager::SceneManager()
 
 SceneManager::~SceneManager()
 {
-    mRootSceneNode = nullptr;
+    // 释放相机操作器
+    if (mCameraMani)
+    {
+        delete mCameraMani;
+        mCameraMani = nullptr;
+    }
+
+    // 释放后处理
+    if (mPostProcessing)
+    {
+        delete mPostProcessing;
+        mPostProcessing = nullptr;
+    }
+
+    // 释放天空盒
+    if (mSkyBoxNode)
+    {
+        delete mSkyBoxNode;
+        mSkyBoxNode = nullptr;
+    }
+
+    // 释放根节点（递归删除所有子节点）
+    if (mRootSceneNode)
+    {
+        delete mRootSceneNode;
+        mRootSceneNode = nullptr;
+    }
+
+    // 释放所有灯光
+    for (auto light : mLights)
+    {
+        delete light;
+    }
+    mLights.clear();
 }
 
 SceneNode * SceneManager::getRootNode() const
@@ -99,9 +133,16 @@ bool SceneManager::hasLight(const std::string &name) const
 CameraPtr SceneManager::createCamera(const std::string &name)
 {
     CameraPtr camera = std::make_shared<Camera>(GetRenderDevice()->GetRenderDeviceType(), name);
-    
+
+    // 释放旧的相机操作器，避免内存泄漏
+    if (mCameraMani)
+    {
+        delete mCameraMani;
+        mCameraMani = nullptr;
+    }
+
     mCameraMani = new ArcballManipulate(camera);
-    
+
     mCameras.push_back(camera);
     return camera;
 }
@@ -125,48 +166,20 @@ void SceneManager::Render(RenderEncoderPtr renderEncoder)
     {
         return;
     }
-    
+
     RenderInfo renderInfo = GetRenderInfo();
     renderInfo.renderEncoder = renderEncoder;
-    
-    for (const auto &iter : mRootSceneNode->GetAllNodes())
-    {
-        // 获得node的变换组件
-        TransformComponent *transformCom = iter->QueryComponentT<TransformComponent>();
-        assert(transformCom);
-        
-        UniformBufferPtr modelUniform = GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbPerObject));
-        cbPerObject modelMatrix;
-        modelMatrix.MATRIX_M = transformCom->transform.TransformToMat4();
-        modelMatrix.MATRIX_M_INV = transformCom->transform.Inverse().TransformToMat4();
-        modelMatrix.MATRIX_Normal = modelMatrix.MATRIX_M.Transpose();
-        modelUniform->SetData(&modelMatrix, 0, sizeof(cbPerObject));
-        
-        renderInfo.objectUBO = modelUniform;
-        
-        //获得网格渲染组件
-        MeshRenderer * meshRender = iter->QueryComponentT<MeshRenderer>();
-        SkinnedMeshRenderer *skinnedMeshRenderer = iter->QueryComponentT<SkinnedMeshRenderer>();
-        
-        if (meshRender)
-        {
-            meshRender->Render(renderInfo);
-        }
-        else if (skinnedMeshRenderer)
-        {
-            SkeletonAnimation *skeAnimation = iter->QueryComponentT<SkeletonAnimation>();
-            assert(skeAnimation);
-            skinnedMeshRenderer->Render(renderInfo, skeAnimation->mCPUSkin);
-        }
-        
-    }
-    
-    //天空盒最后绘制
+
+    // 从根节点开始递归渲染，使用默认构造函数创建单位矩阵作为初始父变换
+    mathutil::Matrix4x4f identityMatrix;
+    RenderNodeRecursive(mRootSceneNode, identityMatrix, renderInfo);
+
+    // 天空盒最后绘制
     if (mSkyBoxNode)
     {
         mSkyBoxNode->Render(renderEncoder);
     }
-    
+
     if (mPostProcessing)
     {
         //mPostProcessing->Process(renderEncoder);
@@ -204,22 +217,84 @@ void SceneManager::Update(float deltaTime)
         lightInfo.WorldSpaceLightPos = mathutil::make_simd_float4(lightPos.x, lightPos.y, lightPos.z, 1.0);
         lightInfo.FalloffStart = pointLight->getFalloffStart();
         lightInfo.FalloffEnd = pointLight->getFalloffEnd();
-        
+
         mLightUBO->SetData(&lightInfo, 0, sizeof(cbLighting));
     }
-    
-    for (const auto &iter : mRootSceneNode->GetAllNodes())
+
+    // 递归更新所有节点
+    UpdateNodeRecursive(mRootSceneNode, deltaTime);
+
+}
+
+void SceneManager::RenderNodeRecursive(SceneNode* node, const mathutil::Matrix4x4f& parentWorldMatrix, const RenderInfo& renderInfo)
+{
+    if (!node)
     {
-        //获得网格渲染组件
-//        SkinnedMeshRenderer *skinnedMeshRenderer = iter->QueryComponentT<SkinnedMeshRenderer>();
-//        if (skinnedMeshRenderer)
-//        {
-//            skinnedMeshRenderer->Update(deltaTime);
-//        }
-        
-        iter->Update(deltaTime);
+        return;
     }
-    
+
+    // 1. 计算当前节点的世界矩阵
+    mathutil::Matrix4x4f currentWorldMatrix = parentWorldMatrix;
+    TransformComponent* transformCom = node->QueryComponentT<TransformComponent>();
+
+    if (transformCom)
+    {
+        mathutil::Matrix4x4f localMatrix = transformCom->transform.TransformToMat4();
+        currentWorldMatrix = parentWorldMatrix * localMatrix;  // 关键：父矩阵 × 本地矩阵
+    }
+
+    // 2. 渲染当前节点
+    if (node->getAllAttachedObjects().size() > 0 || node->GetComponentCount() > 0)
+    {
+        UniformBufferPtr modelUniform = GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbPerObject));
+        cbPerObject modelMatrix;
+        modelMatrix.MATRIX_M = currentWorldMatrix;
+        modelMatrix.MATRIX_M_INV = currentWorldMatrix.Inverse();
+        modelMatrix.MATRIX_Normal = currentWorldMatrix.Transpose();
+        modelUniform->SetData(&modelMatrix, 0, sizeof(cbPerObject));
+
+        RenderInfo nodeRenderInfo = renderInfo;
+        nodeRenderInfo.objectUBO = modelUniform;
+
+        MeshRenderer* meshRender = node->QueryComponentT<MeshRenderer>();
+        SkinnedMeshRenderer* skinnedMeshRenderer = node->QueryComponentT<SkinnedMeshRenderer>();
+
+        if (meshRender)
+        {
+            meshRender->Render(nodeRenderInfo);
+        }
+        else if (skinnedMeshRenderer)
+        {
+            SkeletonAnimation* skeAnimation = node->QueryComponentT<SkeletonAnimation>();
+            if (skeAnimation)
+            {
+                skinnedMeshRenderer->Render(nodeRenderInfo, skeAnimation->mCPUSkin);
+            }
+        }
+    }
+
+    // 3. 递归渲染子节点
+    for (SceneNode* child : node->GetAllNodes())
+    {
+        RenderNodeRecursive(child, currentWorldMatrix, renderInfo);
+    }
+}
+
+void SceneManager::UpdateNodeRecursive(SceneNode* node, float deltaTime)
+{
+    if (!node)
+    {
+        return;
+    }
+
+    // 更新当前节点
+    node->Update(deltaTime);
+
+    // 递归更新所有子节点
+    for (SceneNode* child : node->GetAllNodes())
+    {
+        UpdateNodeRecursive(child, deltaTime);
+    }
 }
 
 NS_RENDERSYSTEM_END

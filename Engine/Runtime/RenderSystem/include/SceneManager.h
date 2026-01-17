@@ -67,10 +67,17 @@ public:
     
     //渲染
     void Render(RenderEncoderPtr renderEncoder);
-    
+
     //更新函数, deltaTime 秒
     void Update(float deltaTime);
-    
+
+private:
+    // 递归渲染节点，支持父子关系变换计算
+    void RenderNodeRecursive(SceneNode* node, const mathutil::Matrix4x4f& parentWorldMatrix, const RenderInfo& renderInfo);
+
+    // 递归更新节点
+    void UpdateNodeRecursive(SceneNode* node, float deltaTime);
+
 private:
     SceneNode *mRootSceneNode = nullptr;       //根节点
     std::vector<Light*> mLights;              //灯光的列表

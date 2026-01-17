@@ -15,6 +15,8 @@
 #include "SceneObject.h"
 #include "Component.h"
 #include <type_traits>
+#include <algorithm>
+#include <string>
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -25,8 +27,14 @@ class RENDERSYSTEM_API SceneNode
 {
 public:
     SceneNode();
-    
+
     virtual ~SceneNode();
+
+    // 获取节点名称
+    const std::string& GetName() const { return mName; }
+
+    // 设置节点名称
+    void SetName(const std::string& name) { mName = name; }
     
     virtual SceneNode * createChildSceneNode(const std::string &name,
                                              const Vector3f &translate = Vector3f(0, 0, 0),
@@ -91,6 +99,7 @@ public:
     const std::vector<SceneNode*>& GetAllNodes() const;
     
 private:
+    std::string mName;                      //节点名称
     std::vector<SceneNode*> mChildNodes;    //孩子节点
     SceneNode* mParentNode = nullptr;       //父亲节点
     std::vector<SceneObject*> mAttachedObjects;   //该节点关联的物体

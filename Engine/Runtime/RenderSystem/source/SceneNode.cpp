@@ -24,18 +24,38 @@ SceneNode::SceneNode()
 
 SceneNode::~SceneNode()
 {
-    
+    // 递归释放所有子节点
+    for (SceneNode* child : mChildNodes)
+    {
+        delete child;
+    }
+    mChildNodes.clear();
+
+    // 释放所有组件
+    for (Component* comp : mComponents)
+    {
+        delete comp;
+    }
+    mComponents.clear();
+
+    // 释放所有附加对象
+    for (SceneObject* obj : mAttachedObjects)
+    {
+        delete obj;
+    }
+    mAttachedObjects.clear();
 }
 
 SceneNode * SceneNode::createChildSceneNode(const std::string &name, const Vector3f &translate, const Quaternionf &rotate)
 {
     SceneNode *pNode = new SceneNode();
+    pNode->SetName(name);
     pNode->mParentNode = this;
-    
+
     TransformComponent* transform = new TransformComponent(
                        Transform(translate, rotate, Vector3f(1.0f, 1.0f, 1.0f)));
     pNode->AddComponent(transform);
-    
+
     mChildNodes.push_back(pNode);
     return pNode;
 }
@@ -47,6 +67,7 @@ SceneNode * SceneNode::createRendererNode(const std::string &name,
                                           const Vector3f &scale)
 {
     SceneNode *pNode = new SceneNode();
+    pNode->SetName(name);
     pNode->mParentNode = this;
     
     TransformComponent* transform = new TransformComponent(
@@ -106,12 +127,28 @@ void SceneNode::AddSceneNode(SceneNode *pNode,
            const Quaternionf &rotate,
                   const Vector3f &scale)
 {
+    if (!pNode)
+    {
+        return;
+    }
+
+    // 如果节点已经有父节点，先从旧的父节点中移除
+    if (pNode->mParentNode && pNode->mParentNode != this)
+    {
+        auto& siblings = pNode->mParentNode->mChildNodes;
+        auto it = std::find(siblings.begin(), siblings.end(), pNode);
+        if (it != siblings.end())
+        {
+            siblings.erase(it);
+        }
+    }
+
     pNode->mParentNode = this;
-    
+
     TransformComponent* transform = new TransformComponent(
                        Transform(translate, rotate, scale));
     pNode->AddComponent(transform);
-    
+
     mChildNodes.push_back(pNode);
 }
 
@@ -132,16 +169,23 @@ void SceneNode::detachObject(SceneObject *obj)
         if (*iter == obj)
         {
             mAttachedObjects.erase(iter);
+            break;  // erase 后迭代器失效，必须 break
         }
     }
 }
 
 SceneObject * SceneNode::detachObject(uint32_t index)
 {
+    if (index >= mAttachedObjects.size())
+    {
+        return nullptr;
+    }
+
     auto iter = mAttachedObjects.begin() + index;
+    SceneObject* obj = *iter;  // 先保存对象指针
     mAttachedObjects.erase(iter);
-    
-    return *iter;
+
+    return obj;  // 返回保存的对象指针
 }
 
 const std::vector<SceneObject*> &SceneNode::getAllAttachedObjects() const
