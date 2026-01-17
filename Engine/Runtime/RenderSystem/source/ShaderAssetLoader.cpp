@@ -18,7 +18,7 @@ ShaderAssetString LoadShaderAsset(const std::string &shaderName)
 {
     ShaderAssetString shaderAssetString;
     
-    std::string shaderFilePath = getBuiltInShaderDir() + shaderName + ".hlsl";
+    std::string shaderFilePath = getBuiltInShaderDir() + shaderName + ".shader";
     
     return LoadCustomShaderAsset(shaderFilePath);
 }

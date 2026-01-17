@@ -24,7 +24,9 @@ void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice)
 	sPSO->AttachGraphicsShader(shader);
     
     depthTexture = renderDevice->CreateTexture2D(RenderCore::kTexFormatDepth32FloatStencil8,
-                                                 RenderCore::TextureUsageShaderRead | RenderCore::TextureUsageRenderTarget, 1400, 480, 1);
+                                                RenderCore::TextureUsage::TextureUsageShaderRead |
+                                                 RenderCore::TextureUsage::TextureUsageRenderTarget, 
+                                                 1400, 480, 1);
 }
 
 void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer, 

@@ -19,9 +19,4 @@ SceneRenderer::~SceneRenderer()
     //
 }
 
-void SceneRenderer::Render(float deltaTime)
-{
-    //
-}
-
 NS_RENDERSYSTEM_END
