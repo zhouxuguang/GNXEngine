@@ -25,6 +25,18 @@ SceneManager* SceneManager::GetInstance()
     return instance;
 }
 
+bool SceneManager::HasCamera(const std::string &name) const
+{
+    for (const auto& iter : mCameras)
+    {
+        if (iter->GetName() == name)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 SceneManager::SceneManager()
 {
     mRootSceneNode = new SceneNode();
@@ -73,12 +85,12 @@ SceneManager::~SceneManager()
     mLights.clear();
 }
 
-SceneNode * SceneManager::getRootNode() const
+SceneNode * SceneManager::GetRootNode() const
 {
     return mRootSceneNode;
 }
 
-Light * SceneManager::createLight(const std::string &name, Light::LightType type)
+Light * SceneManager::CreateLight(const std::string &name, Light::LightType type)
 {
     Light *light = nullptr;
     switch (type)
@@ -106,7 +118,7 @@ Light * SceneManager::createLight(const std::string &name, Light::LightType type
     return light;
 }
 
-Light * SceneManager::getLight(const std::string &name) const
+Light * SceneManager::GetLight(const std::string &name) const
 {
     for (auto iter : mLights)
     {
@@ -117,8 +129,8 @@ Light * SceneManager::getLight(const std::string &name) const
     }
     return nullptr;
 }
- 
-bool SceneManager::hasLight(const std::string &name) const
+
+bool SceneManager::HasLight(const std::string &name) const
 {
     for (auto iter : mLights)
     {
@@ -130,7 +142,7 @@ bool SceneManager::hasLight(const std::string &name) const
     return false;
 }
 
-CameraPtr SceneManager::createCamera(const std::string &name)
+CameraPtr SceneManager::CreateCamera(const std::string &name)
 {
     CameraPtr camera = std::make_shared<Camera>(GetRenderDevice()->GetRenderDeviceType(), name);
 
@@ -147,7 +159,7 @@ CameraPtr SceneManager::createCamera(const std::string &name)
     return camera;
 }
 
-CameraPtr SceneManager::getCamera(const std::string &name) const
+CameraPtr SceneManager::GetCamera(const std::string &name) const
 {
     for (auto iter : mCameras)
     {
@@ -194,19 +206,34 @@ void SceneManager::Update(float deltaTime)
         //mCameraMani->Update();
     }
     
-    //更新相机
-    CameraPtr cameraPtr = getCamera("MainCamera");
+    //更新相机 - 支持当前激活的相机
+    CameraPtr cameraPtr = GetCamera("MainCamera");
+    if (!cameraPtr && !mCameras.empty())
+    {
+        // 如果找不到 MainCamera，使用第一个相机
+        cameraPtr = mCameras[0];
+    }
+
     if (!cameraPtr)
     {
+        // 递归更新所有节点
+        UpdateNodeRecursive(mRootSceneNode, deltaTime);
         return;
     }
+
     cbPerCamera perCamera;
     perCamera.MATRIX_P = cameraPtr->GetProjectionMatrix();
     perCamera.MATRIX_V = cameraPtr->GetViewMatrix();
     mCameraUBO->SetData(&perCamera, 0, sizeof(perCamera));
-    
-    //更新灯光
-    Light * pointLight = getLight("mainLight");
+
+    //更新灯光 - 支持第一个有效灯光
+    Light * pointLight = GetLight("mainLight");
+    if (!pointLight && !mLights.empty())
+    {
+        // 如果找不到 mainLight，使用第一个灯光
+        pointLight = mLights[0];
+    }
+
     if (pointLight)
     {
         cbLighting lightInfo;
@@ -244,7 +271,7 @@ void SceneManager::RenderNodeRecursive(SceneNode* node, const mathutil::Matrix4x
     }
 
     // 2. 渲染当前节点
-    if (node->getAllAttachedObjects().size() > 0 || node->GetComponentCount() > 0)
+    if (node->GetAllAttachedObjects().size() > 0 || node->GetComponentCount() > 0)
     {
         UniformBufferPtr modelUniform = GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbPerObject));
         cbPerObject modelMatrix;

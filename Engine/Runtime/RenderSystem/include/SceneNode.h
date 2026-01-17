@@ -35,31 +35,49 @@ public:
 
     // 设置节点名称
     void SetName(const std::string& name) { mName = name; }
-    
-    virtual SceneNode * createChildSceneNode(const std::string &name,
+
+    // 获取父节点
+    SceneNode* GetParent() const { return mParentNode; }
+
+    // 查找子节点（仅直接子节点）
+    SceneNode* FindChild(const std::string& name) const;
+
+    // 递归查找所有子孙节点（包括子节点的子节点）
+    SceneNode* FindChildRecursive(const std::string& name) const;
+
+    // 获取所有子孙节点（递归）
+    std::vector<SceneNode*> GetAllDescendants() const;
+
+    // 移除子节点（不会删除节点，只是断开父子关系）
+    void RemoveChild(SceneNode* child);
+
+    // 销毁子节点（从场景树中删除并释放）
+    void DestroyChild(SceneNode* child);
+
+    virtual SceneNode *CreateChildSceneNode(const std::string &name,
                                              const Vector3f &translate = Vector3f(0, 0, 0),
                                              const Quaternionf &rotate = Quaternionf(1, 0, 0, 0));
-    
-    virtual SceneNode * createRendererNode(const std::string &name,
+
+    virtual SceneNode *CreateRendererNode(const std::string &name,
                                            const std::string& filePath,
                                     const Vector3f &translate = Vector3f(0, 0, 0),
                                     const Quaternionf &rotate = Quaternionf(1, 0, 0, 0),
                                            const Vector3f &scale = Vector3f(1, 1, 1));
-    
+
     void AddSceneNode(SceneNode *pNode,
                const Vector3f &translate = Vector3f(0, 0, 0),
                const Quaternionf &rotate = Quaternionf(1, 0, 0, 0),
                       const Vector3f &scale = Vector3f(1, 1, 1));
-    
-    virtual void attachObject(SceneObject *obj);
-    
-    virtual void detachAllObjects(void);
-    
-    virtual void detachObject(SceneObject *obj);
-    
-    virtual SceneObject *detachObject(uint32_t index);
-    
-    const std::vector<SceneObject*>& getAllAttachedObjects() const;
+
+    virtual void AttachObject(SceneObject *obj);
+
+    virtual void DetachAllObjects(void);
+
+    virtual void DetachObject(SceneObject *obj);
+
+    virtual SceneObject *DetachObject(uint32_t index);
+
+    const std::vector<SceneObject*>& GetAllAttachedObjects() const;
     
     int GetComponentCount() const  { return (int)mComponents.size(); }
     Component* GetComponentPtrAtIndex(int i) const;

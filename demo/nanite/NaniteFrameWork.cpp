@@ -71,11 +71,11 @@ void NaniteFrameWork::Resize(uint32_t width, uint32_t height)
     AppFrameWork::Resize(width, height);
     
     RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
-    
-    RenderSystem::CameraPtr cameraPtr = sceneManager->getCamera("MainCamera");
+
+    RenderSystem::CameraPtr cameraPtr = sceneManager->GetCamera("MainCamera");
     if (!cameraPtr)
     {
-        cameraPtr = sceneManager->createCamera("MainCamera");
+        cameraPtr = sceneManager->CreateCamera("MainCamera");
     }
 
     cameraPtr->LookAt(mathutil::Vector3f(330.0f, 330.0f, -330.0f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
@@ -129,7 +129,7 @@ void NaniteFrameWork::RenderFrame()
 		}
 
 		float moveSpeed = 100.0f;
-        RenderSystem::CameraPtr cameraPtr = sceneManager->getCamera("MainCamera");
+        RenderSystem::CameraPtr cameraPtr = sceneManager->GetCamera("MainCamera");
         mathutil::Vector3f camPossition = cameraPtr->GetPosition();
 
 		if (moveState == 1)

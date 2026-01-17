@@ -46,7 +46,7 @@ SceneNode::~SceneNode()
     mAttachedObjects.clear();
 }
 
-SceneNode * SceneNode::createChildSceneNode(const std::string &name, const Vector3f &translate, const Quaternionf &rotate)
+SceneNode * SceneNode::CreateChildSceneNode(const std::string &name, const Vector3f &translate, const Quaternionf &rotate)
 {
     SceneNode *pNode = new SceneNode();
     pNode->SetName(name);
@@ -60,7 +60,7 @@ SceneNode * SceneNode::createChildSceneNode(const std::string &name, const Vecto
     return pNode;
 }
 
-SceneNode * SceneNode::createRendererNode(const std::string &name,
+SceneNode * SceneNode::CreateRendererNode(const std::string &name,
                                        const std::string& filePath,
                                 const Vector3f &translate,
                                 const Quaternionf &rotate,
@@ -145,24 +145,36 @@ void SceneNode::AddSceneNode(SceneNode *pNode,
 
     pNode->mParentNode = this;
 
-    TransformComponent* transform = new TransformComponent(
-                       Transform(translate, rotate, scale));
-    pNode->AddComponent(transform);
+    // 检查是否已有 TransformComponent，避免重复添加
+    TransformComponent* transform = pNode->QueryComponentT<TransformComponent>();
+    if (transform)
+    {
+        // 已有 TransformComponent，更新变换
+        transform->transform.position = translate;
+        transform->transform.rotation = rotate;
+        transform->transform.scale = scale;
+    }
+    else
+    {
+        // 没有 TransformComponent，创建新的
+        transform = new TransformComponent(Transform(translate, rotate, scale));
+        pNode->AddComponent(transform);
+    }
 
     mChildNodes.push_back(pNode);
 }
 
-void SceneNode::attachObject(SceneObject *obj)
+void SceneNode::AttachObject(SceneObject *obj)
 {
     mAttachedObjects.push_back(obj);
 }
 
-void SceneNode::detachAllObjects(void)
+void SceneNode::DetachAllObjects(void)
 {
     mAttachedObjects.clear();
 }
 
-void SceneNode::detachObject(SceneObject *obj)
+void SceneNode::DetachObject(SceneObject *obj)
 {
     for (auto iter = mAttachedObjects.begin(); iter != mAttachedObjects.end(); iter ++)
     {
@@ -174,7 +186,7 @@ void SceneNode::detachObject(SceneObject *obj)
     }
 }
 
-SceneObject * SceneNode::detachObject(uint32_t index)
+SceneObject * SceneNode::DetachObject(uint32_t index)
 {
     if (index >= mAttachedObjects.size())
     {
@@ -188,7 +200,7 @@ SceneObject * SceneNode::detachObject(uint32_t index)
     return obj;  // 返回保存的对象指针
 }
 
-const std::vector<SceneObject*> &SceneNode::getAllAttachedObjects() const
+const std::vector<SceneObject*> &SceneNode::GetAllAttachedObjects() const
 {
     return mAttachedObjects;
 }
@@ -214,6 +226,90 @@ void SceneNode::Update(float deltaTime)
 const std::vector<SceneNode*>& SceneNode::GetAllNodes() const
 {
     return mChildNodes;
+}
+
+SceneNode* SceneNode::FindChild(const std::string& name) const
+{
+    for (SceneNode* child : mChildNodes)
+    {
+        if (child && child->GetName() == name)
+        {
+            return child;
+        }
+    }
+    return nullptr;
+}
+
+SceneNode* SceneNode::FindChildRecursive(const std::string& name) const
+{
+    // 先在直接子节点中查找
+    SceneNode* found = FindChild(name);
+    if (found)
+    {
+        return found;
+    }
+
+    // 递归在子节点的子节点中查找
+    for (SceneNode* child : mChildNodes)
+    {
+        if (child)
+        {
+            found = child->FindChildRecursive(name);
+            if (found)
+            {
+                return found;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+std::vector<SceneNode*> SceneNode::GetAllDescendants() const
+{
+    std::vector<SceneNode*> descendants;
+
+    for (SceneNode* child : mChildNodes)
+    {
+        if (child)
+        {
+            descendants.push_back(child);
+            // 递归获取子节点的所有子孙节点
+            std::vector<SceneNode*> childDescendants = child->GetAllDescendants();
+            descendants.insert(descendants.end(), childDescendants.begin(), childDescendants.end());
+        }
+    }
+
+    return descendants;
+}
+
+void SceneNode::RemoveChild(SceneNode* child)
+{
+    if (!child)
+    {
+        return;
+    }
+
+    auto it = std::find(mChildNodes.begin(), mChildNodes.end(), child);
+    if (it != mChildNodes.end())
+    {
+        mChildNodes.erase(it);
+        if (child->mParentNode == this)
+        {
+            child->mParentNode = nullptr;
+        }
+    }
+}
+
+void SceneNode::DestroyChild(SceneNode* child)
+{
+    if (!child)
+    {
+        return;
+    }
+
+    RemoveChild(child);
+    delete child;
 }
 
 NS_RENDERSYSTEM_END

@@ -216,12 +216,12 @@ void WindowsVulkanView::resize(int width, int height)
     initPostResource(mRenderDevice);
     
     //初始化相机
-    CameraPtr cameraPtr = sceneManager->createCamera("MainCamera");
+    CameraPtr cameraPtr = sceneManager->CreateCamera("MainCamera");
     cameraPtr->LookAt(mathutil::Vector3f(0, 0, 5), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
     cameraPtr->SetLens(60, float(width) / height, 0.1f, 100.f);
-    
+
     //初始化灯光信息
-    Light * pointLight = sceneManager->createLight("mainLight", Light::LightType::PointLight);
+    Light * pointLight = sceneManager->CreateLight("mainLight", Light::LightType::PointLight);
     pointLight->setColor(Vector3f(1.0, 1.0, 1.0));
     //pointLight->setPosition(Vector3f(5.0, 8.0, 0.0));
     pointLight->setPosition(Vector3f(-1.0, -1.0, -1.0));
@@ -231,20 +231,19 @@ void WindowsVulkanView::resize(int width, int height)
     
     Quaternionf rotate;
     rotate.FromAngleAxis(90, Vector3f(1.0, 0.0, 0.0));
-    //sceneManager->getRootNode()->createRendererNode("hat", "DamagedHelmet/glTF/DamagedHelmet.gltf");
+    //sceneManager->GetRootNode()->CreateRendererNode("hat", "DamagedHelmet/glTF/DamagedHelmet.gltf");
 
-	
-    
+
     //gltf/BrainStem/glTF
     //gltf/BrainStem/glTF/BrainStem.gltf
     /*std::string pathSplit = std::string(1, PATHSPLIT);
-    sceneManager->getRootNode()->createRendererNode("hat", "gltf" + pathSplit + "BrainStem" + pathSplit + "glTF" + pathSplit + "BrainStem.gltf",
+    sceneManager->GetRootNode()->CreateRendererNode("hat", "gltf" + pathSplit + "BrainStem" + pathSplit + "glTF" + pathSplit + "BrainStem.gltf",
                                                     Vector3f(0, -3.0, -2), Quaternionf(), Vector3f(3, 3, 3));*/
-    //sceneManager->getRootNode()->createRendererNode("hat", "skin/Woman.gltf", Vector3f(0, -3.0, -2), Quaternionf(), Vector3f(0.01, 0.01, 0.01));
-    
-    //sceneManager->getRootNode()->createRendererNode("Marry", "asset/Marry.obj", Vector3f(0, -2.0, 0));
-    
-    //sceneManager->getRootNode()->createRendererNode("Marry", "nanosuit/nanosuit.obj", Vector3f(0, -4.0, 0));
+    //sceneManager->GetRootNode()->CreateRendererNode("hat", "skin/Woman.gltf", Vector3f(0, -3.0, -2), Quaternionf(), Vector3f(0.01, 0.01, 0.01));
+
+    //sceneManager->GetRootNode()->CreateRendererNode("Marry", "asset/Marry.obj", Vector3f(0, -2.0, 0));
+
+    //sceneManager->GetRootNode()->CreateRendererNode("Marry", "nanosuit/nanosuit.obj", Vector3f(0, -4.0, 0));
     
     //TestADD();
     //computeTexture = TestImageGray();

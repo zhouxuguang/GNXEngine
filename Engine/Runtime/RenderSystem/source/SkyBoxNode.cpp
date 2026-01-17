@@ -12,7 +12,7 @@ NS_RENDERSYSTEM_BEGIN
 
 void SkyBoxNode::AttachSkyBoxObject(SkyBox *obj)
 {
-    //SceneNode::attachObject(obj);
+    //SceneNode::AttachObject(obj);
     mSkyBox = obj;
 }
 

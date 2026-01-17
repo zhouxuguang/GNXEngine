@@ -26,27 +26,27 @@ class RENDERSYSTEM_API SceneManager
 {
 public:
     static SceneManager* GetInstance();
-    
-    SceneNode* getRootNode() const;
-    
+
+    SceneNode* GetRootNode() const;
+
     PostProcessing *GetPostProcessing() const
     {
         return mPostProcessing;
     }
-    
-    Light * createLight(const std::string &name, Light::LightType type);
-    
-    virtual Light * getLight(const std::string &name) const;
-     
-    virtual bool hasLight(const std::string &name) const;
-    
-    CameraPtr createCamera(const std::string &name);
-    
-    CameraPtr getCamera(const std::string &name) const;
-    
-    bool hasCamera(const std::string &name) const;
-    
-    void AddCamara(CameraPtr camera)
+
+    Light *CreateLight(const std::string &name, Light::LightType type);
+
+    virtual Light *GetLight(const std::string &name) const;
+
+    virtual bool HasLight(const std::string &name) const;
+
+    CameraPtr CreateCamera(const std::string &name);
+
+    CameraPtr GetCamera(const std::string &name) const;
+
+    bool HasCamera(const std::string &name) const;
+
+    void AddCamera(CameraPtr camera)
     {
         mCameras.push_back(camera);
     }
