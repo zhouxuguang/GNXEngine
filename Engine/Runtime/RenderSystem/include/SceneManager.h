@@ -88,7 +88,7 @@ public:
 
 private:
     // 递归渲染节点，支持父子关系变换计算
-    void RenderNodeRecursive(SceneNode* node, const mathutil::Matrix4x4f& parentWorldMatrix, const RenderInfo& renderInfo);
+    void RenderNodeRecursive(SceneNode* node, const RenderInfo& renderInfo);
 
     // 递归更新节点
     void UpdateNodeRecursive(SceneNode* node, float deltaTime);

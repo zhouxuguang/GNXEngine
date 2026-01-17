@@ -13,16 +13,17 @@
 #include "SkyBoxNode.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 #include <algorithm>
+#include <mutex>
 
 NS_RENDERSYSTEM_BEGIN
 
 SceneManager* SceneManager::GetInstance()
 {
+    static std::once_flag flag;
     static SceneManager *instance = nullptr;
-    if (nullptr == instance)
-    {
+    std::call_once(flag, []() {
         instance = new SceneManager();
-    }
+    });
     return instance;
 }
 
@@ -252,9 +253,8 @@ void SceneManager::Render(RenderEncoderPtr renderEncoder)
     RenderInfo renderInfo = GetRenderInfo();
     renderInfo.renderEncoder = renderEncoder;
 
-    // 从根节点开始递归渲染，使用默认构造函数创建单位矩阵作为初始父变换
-    mathutil::Matrix4x4f identityMatrix;
-    RenderNodeRecursive(mRootSceneNode, identityMatrix, renderInfo);
+    // 从根节点开始递归渲染
+    RenderNodeRecursive(mRootSceneNode, renderInfo);
 
     // 天空盒最后绘制
     if (mSkyBoxNode)
@@ -323,7 +323,7 @@ void SceneManager::Update(float deltaTime)
 
 }
 
-void SceneManager::RenderNodeRecursive(SceneNode* node, const mathutil::Matrix4x4f& parentWorldMatrix, const RenderInfo& renderInfo)
+void SceneManager::RenderNodeRecursive(SceneNode* node, const RenderInfo& renderInfo)
 {
     if (!node || !node->IsVisible() || !node->IsActive())
     {
@@ -331,25 +331,11 @@ void SceneManager::RenderNodeRecursive(SceneNode* node, const mathutil::Matrix4x
         return;
     }
 
-    // 1. 计算当前节点的世界矩阵
-    mathutil::Matrix4x4f currentWorldMatrix = parentWorldMatrix;
-    TransformComponent* transformCom = node->QueryComponentT<TransformComponent>();
-
-    if (transformCom)
-    {
-        mathutil::Matrix4x4f localMatrix = transformCom->transform.TransformToMat4();
-        currentWorldMatrix = parentWorldMatrix * localMatrix;  // 关键：父矩阵 × 本地矩阵
-    }
-
     // 2. 渲染当前节点
     if (node->GetAllAttachedObjects().size() > 0 || node->GetComponentCount() > 0)
     {
-        UniformBufferPtr modelUniform = GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbPerObject));
-        cbPerObject modelMatrix;
-        modelMatrix.MATRIX_M = currentWorldMatrix;
-        modelMatrix.MATRIX_M_INV = currentWorldMatrix.Inverse();
-        modelMatrix.MATRIX_Normal = currentWorldMatrix.Transpose();
-        modelUniform->SetData(&modelMatrix, 0, sizeof(cbPerObject));
+        // 使用缓存的 UBO，避免每帧创建新的
+        UniformBufferPtr modelUniform = node->GetOrCreateModelUBO(GetRenderDevice());
 
         RenderInfo nodeRenderInfo = renderInfo;
         nodeRenderInfo.objectUBO = modelUniform;
@@ -371,10 +357,10 @@ void SceneManager::RenderNodeRecursive(SceneNode* node, const mathutil::Matrix4x
         }
     }
 
-    // 3. 递归渲染子节点
+    // 3. 递归渲染子节点（子节点会通过 mParentNode 获取父节点变换）
     for (SceneNode* child : node->GetAllNodes())
     {
-        RenderNodeRecursive(child, currentWorldMatrix, renderInfo);
+        RenderNodeRecursive(child, renderInfo);
     }
 }
 

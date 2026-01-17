@@ -30,6 +30,14 @@ public:
 
     virtual ~SceneNode();
 
+    // 禁用拷贝构造和拷贝赋值，避免浅拷贝导致双重释放
+    SceneNode(const SceneNode&) = delete;
+    SceneNode& operator=(const SceneNode&) = delete;
+
+    // 禁用移动构造和移动赋值（SceneNode 不应被移动）
+    SceneNode(SceneNode&&) = delete;
+    SceneNode& operator=(SceneNode&&) = delete;
+
     // 获取节点名称
     const std::string& GetName() const { return mName; }
 
@@ -38,9 +46,6 @@ public:
 
     // 获取节点层级深度（根节点为0）
     int GetDepth() const;
-
-    // 获取世界空间变换（相对于根节点）
-    mathutil::Matrix4x4f GetWorldMatrix() const;
 
     // 节点可见性
     bool IsVisible() const { return mIsVisible; }
@@ -142,6 +147,12 @@ public:
     // 获取世界变换（带缓存）
     mathutil::Matrix4x4f GetWorldTransform() const;
 
+    // 获取缓存的模型 UBO（如果不存在则创建）
+    UniformBufferPtr GetOrCreateModelUBO(RenderDevicePtr renderDevice);
+
+    // 标记模型 UBO 需要更新
+    void MarkModelUBODirty();
+
 private:
     std::string mName;                      //节点名称
     std::vector<SceneNode*> mChildNodes;    //孩子节点
@@ -153,6 +164,9 @@ private:
     bool mIsActive = true;            //节点是否激活
     mutable bool mWorldTransformDirty = true;  //世界变换是否需要重新计算
     mutable mathutil::Matrix4x4f mCachedWorldMatrix;  //缓存的世界变换矩阵
+
+    mutable UniformBufferPtr mCachedModelUBO;    //缓存的模型 UniformBuffer
+    mutable bool mModelUBODirty = true;         //模型 UBO 是否需要更新
 };
 
 

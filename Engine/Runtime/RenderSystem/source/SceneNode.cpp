@@ -15,6 +15,7 @@
 #include "animation/Skeleton.h"
 #include "animation/SkeletonAnimation.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "RenderParameter.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -24,6 +25,8 @@ SceneNode::SceneNode()
     mIsActive = true;
     mWorldTransformDirty = true;
     mCachedWorldMatrix = mathutil::Matrix4x4f();
+    mCachedModelUBO = nullptr;
+    mModelUBODirty = true;
 }
 
 SceneNode::~SceneNode()
@@ -330,18 +333,10 @@ int SceneNode::GetDepth() const
     return depth;
 }
 
-mathutil::Matrix4x4f SceneNode::GetWorldMatrix() const
-{
-    if (mParentNode)
-    {
-        return mParentNode->GetWorldMatrix() * mCachedWorldMatrix;
-    }
-    return mCachedWorldMatrix;
-}
-
 void SceneNode::MarkWorldTransformDirty()
 {
     mWorldTransformDirty = true;
+    mModelUBODirty = true;  // 世界变换改变，UBO 也需要更新
     for (SceneNode* child : mChildNodes)
     {
         child->MarkWorldTransformDirty();
@@ -364,6 +359,7 @@ mathutil::Matrix4x4f SceneNode::GetWorldTransform() const
                 mCachedWorldMatrix = transformCom->transform.TransformToMat4();
             }
             mWorldTransformDirty = false;
+            mModelUBODirty = true;  // 世界变换改变，标记 UBO 需要更新
         }
     }
     else
@@ -379,6 +375,7 @@ mathutil::Matrix4x4f SceneNode::GetWorldTransform() const
                 mCachedWorldMatrix = mathutil::Matrix4x4f();
             }
             mWorldTransformDirty = false;
+            mModelUBODirty = true;  // 世界变换改变，标记 UBO 需要更新
         }
     }
     return mCachedWorldMatrix;
@@ -407,6 +404,34 @@ void SceneNode::DestroyComponent(Component* component)
 
     RemoveComponent(component);
     delete component;
+}
+
+UniformBufferPtr SceneNode::GetOrCreateModelUBO(RenderDevicePtr renderDevice)
+{
+    if (!mCachedModelUBO)
+    {
+        // 首次创建 UBO
+        mCachedModelUBO = renderDevice->CreateUniformBufferWithSize(sizeof(cbPerObject));
+    }
+
+    if (mModelUBODirty && mCachedModelUBO)
+    {
+        // 更新 UBO 数据
+        mathutil::Matrix4x4f worldMatrix = GetWorldTransform();
+        cbPerObject modelMatrix;
+        modelMatrix.MATRIX_M = worldMatrix;
+        modelMatrix.MATRIX_M_INV = worldMatrix.Inverse();
+        modelMatrix.MATRIX_Normal = worldMatrix.Transpose();
+        mCachedModelUBO->SetData(&modelMatrix, 0, sizeof(cbPerObject));
+        mModelUBODirty = false;
+    }
+
+    return mCachedModelUBO;
+}
+
+void SceneNode::MarkModelUBODirty()
+{
+    mModelUBODirty = true;
 }
 
 NS_RENDERSYSTEM_END
