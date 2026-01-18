@@ -45,7 +45,8 @@ DepthVertexOutput VS(DepthVertexInput vin)
     
     // 将顶点位置从模型空间变换到裁剪空间
     float4 worldPos = mul(float4(vin.position.xyz, 1.0), modelMatrix);
-    output.position = mul(worldPos, MATRIX_VP);
+    output.position = mul(worldPos, MATRIX_V);
+    output.position = mul(output.position, MATRIX_P);
     
     return output;
 }

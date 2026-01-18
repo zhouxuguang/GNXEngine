@@ -10,6 +10,7 @@
 
 #include "RSDefine.h"
 #include "AnimationPose.h"
+#include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 #include "Skeleton.h"
 #include "Component.h"
@@ -37,7 +38,7 @@ private:
     virtual void Update(float deltaTime) 
     {
         mPlayback = mAnimationClips[mClip]->Sample(mAnimatedPose, mPlayback + deltaTime);
-        printf("SkeletonAnimation Update mPlayback = %f\n", mPlayback);
+        LOG_INFO("SkeletonAnimation Update mPlayback = %f\n", mPlayback);
         
         // 拿到skinnedMesh
         SkinnedMeshRenderer * skinnedRenderer = mSceneNode->QueryComponentT<SkinnedMeshRenderer>();

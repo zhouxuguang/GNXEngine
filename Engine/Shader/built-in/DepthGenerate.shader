@@ -37,7 +37,8 @@ DepthVertexOutput VS(DepthVertexInput input)
     // 将顶点位置从模型空间变换到裁剪空间
     // lightSpaceMatrix * model * position
     float4 worldPos = mul(float4(input.position, 1.0), MATRIX_M);
-    output.position = mul(worldPos, MATRIX_VP);
+    output.position = mul(worldPos, MATRIX_V);
+    output.position = mul(output.position, MATRIX_P);
     
     return output;
 }
