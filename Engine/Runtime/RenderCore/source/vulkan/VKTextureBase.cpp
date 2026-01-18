@@ -14,11 +14,7 @@ NAMESPACE_RENDERCORE_BEGIN
 void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
 {
     //创建图像视图
-    VkImageAspectFlags imageAspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-    if (VulkanBufferUtil::IsDepthStencilFormat(mFormat))
-    {
-        imageAspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    }
+    VkImageAspectFlags imageAspectFlags = VulkanBufferUtil::GetImageAspectFlags(mFormat);
 
     VkImageView imageView = VK_NULL_HANDLE;
     if (GetTextureType() == TextureType_2D)
@@ -51,7 +47,7 @@ void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
         viewCreateInfo.format = mFormat;
         viewCreateInfo.subresourceRange = { imageAspectFlags, 0, 1, 0, 1 };
         // 6 array layers (faces)
-        viewCreateInfo.subresourceRange.layerCount = 1;
+        viewCreateInfo.subresourceRange.layerCount = 6;
         // Set number of mip levels
         viewCreateInfo.subresourceRange.levelCount = imageCreateInfo.mipLevels;
         viewCreateInfo.image = mImage;
