@@ -12,10 +12,16 @@
 #include "RSDefine.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/RenderCore/include/RCTexture.h"
+#include "Runtime/RenderCore/include/GraphicsPipeline.h"
 #include "Runtime/MathUtil/include/AABB.h"
 #include "Camera.h"
 #include "Light.h"
 #include "Scene.h"
+#include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/FrameGraphTexture.h"
+#include "mesh/Mesh.h"
+#include "skinnedMesh/SkinnedMesh.h"
+#include "mesh/MeshDrawUtil.h"
 #include <memory>
 #include <vector>
 #include <limits>
@@ -25,6 +31,9 @@ USING_NS_MATHUTIL
 
 NS_RENDERSYSTEM_BEGIN
 
+// 前置声明
+class FrameGraph;
+
 /**
  * @brief 深度渲染器配置参数
  */
@@ -32,14 +41,7 @@ struct DepthRenderConfig
 {
     uint32_t width = 1024;              // 深度纹理宽度
     uint32_t height = 1024;             // 深度纹理高度
-    uint32_t cascadeCount = 4;          // 级联阴影贴图数量（仅适用于DirectionalLight）
-    float nearPlane = 0.1f;             // 近裁剪面距离
-    float farPlane = 100.0f;            // 远裁剪面距离
-    float shadowBias = 0.005f;          // 阴影偏移（防止 acne）
     TextureFormat depthFormat = kTexFormatDepth32Float;  // 深度格式
-
-    // 级联阴影分割参数（仅适用于DirectionalLight）
-    float cascadeSplitLambda = 0.5f;     // 级联分割系数（0=对数分割，1=均匀分割）
 };
 
 /**
@@ -66,12 +68,40 @@ public:
      * @brief 关闭深度渲染器，释放资源
      */
     void Shutdown();
-
+    
     /**
-     * @brief 获取深度预通过纹理
-     * @return 深度纹理指针
+     * @brief 使用 FrameGraph 渲染深度图
+     * @param frameGraph 帧图
+     * @param meshes 要渲染的静态网格列表
+     * @param skinnedMeshes 要渲染的蒙皮网格列表
+     * @param cameraUBO 相机 UBO
+     * @param objectUBO 物体变换 UBO
+     * @param skinnedMatrixUBO 骨骼矩阵 UBO（可选）
+     * @return 深度纹理的 FrameGraph 资源 ID
      */
-    RCTexturePtr GetDepthTexture() const;
+    FrameGraphResource Render(
+        const std::string& passName,
+        FrameGraph& frameGraph,
+        const std::vector<MeshPtr>& meshes,
+        const std::vector<SkinnedMeshPtr>& skinnedMeshes,
+        UniformBufferPtr cameraUBO,
+        UniformBufferPtr objectUBO,
+        UniformBufferPtr skinnedMatrixUBO = nullptr);
+    
+    /**
+     * @brief 使用 FrameGraph 渲染深度图（简化版本，只渲染静态网格）
+     * @param frameGraph 帧图
+     * @param meshes 要渲染的网格列表
+     * @param cameraUBO 相机 UBO
+     * @param objectUBO 物体变换 UBO
+     * @return 深度纹理的 FrameGraph 资源 ID
+     */
+    FrameGraphResource Render(
+        const std::string& passName,
+        FrameGraph& frameGraph,
+        const std::vector<MeshPtr>& meshes,
+        UniformBufferPtr cameraUBO,
+        UniformBufferPtr objectUBO);
 
     /**
      * @brief 更新配置参数
@@ -86,39 +116,22 @@ public:
     const DepthRenderConfig& GetConfig() const;
 
     /**
-     * @brief 设置阴影偏移
-     * @param bias 偏移值
-     */
-    void SetShadowBias(float bias) { mConfig.shadowBias = bias; }
-
-    /**
-     * @brief 获取阴影偏移
-     * @return 偏移值
-     */
-    float GetShadowBias() const { return mConfig.shadowBias; }
-
-    /**
      * @brief 是否已初始化
      * @return 是否已初始化
      */
     bool IsInitialized() const { return mInitialized; }
 
 private:
-    /**
-     * @brief 创建深度纹理
-     * @param width 宽度
-     * @param height 高度
-     * @param format 格式
-     * @return 深度纹理指针
-     */
-    RCTexturePtr CreateDepthTexture(uint32_t width, uint32_t height, TextureFormat format);
-
-private:
     RenderDevice* mDevice;
     DepthRenderConfig mConfig;
-
-    // 深度纹理
-    RCTexturePtr mDepthTexture;
+    
+    // 深度渲染 PSO
+    GraphicsPipelinePtr mDepthOnlyPipeline = nullptr;
+    GraphicsPipelinePtr mSkinnedDepthOnlyPipeline = nullptr;
+    
+    // FrameGraph 资源 ID
+    FrameGraphResource mDepthResource;
+    
     bool mInitialized = false;
 };
 

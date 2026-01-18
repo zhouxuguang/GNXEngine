@@ -12,6 +12,8 @@
 
 NS_RENDERSYSTEM_BEGIN
 
+class SceneManager;
+
 /**
  场景渲染基类
  */
@@ -23,7 +25,7 @@ public:
     virtual ~SceneRenderer();
     
     // 渲染场景部分
-    virtual void Render(float deltaTime) = 0;
+    virtual void Render(SceneManager *sceneManager, float deltaTime) = 0;
 };
 
 using SceneRendererPtr = std::shared_ptr<SceneRenderer>;

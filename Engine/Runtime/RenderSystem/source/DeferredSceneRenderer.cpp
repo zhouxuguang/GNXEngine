@@ -38,8 +38,12 @@ const GBufferRenderer::GBufferConfig& DeferredSceneRenderer::GetGBufferConfig() 
     return mGBufferRenderer->GetConfig();
 }
 
-void DeferredSceneRenderer::Render(float deltaTime)
+void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 {
+    FrameGraph fg;
+//    mDepthRender->Render(fg, const std::vector<MeshPtr> &meshes, const std::vector<SkinnedMeshPtr> &skinnedMeshes, UniformBufferPtr cameraUBO, UniformBufferPtr objectUBO)
+    
+    return;
     // 阶段1: G-Buffer Pass
     RenderGBufferPass();
     

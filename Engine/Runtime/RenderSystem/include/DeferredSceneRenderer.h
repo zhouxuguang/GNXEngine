@@ -38,12 +38,6 @@ public:
     GBufferRendererPtr GetGBufferRenderer() const { return mGBufferRenderer; }
     
     /**
-     * 渲染场景（延迟渲染路径）
-     * @param deltaTime 帧时间（秒）
-     */
-    void Render(float deltaTime) override;
-    
-    /**
      * 设置是否使用FrameGraph
      */
     void SetUseFrameGraph(bool use) { mUseFrameGraph = use; }
@@ -74,6 +68,12 @@ private:
      * 执行前向渲染Pass（用于半透明物体）
      */
     void RenderForwardPass();
+    
+    /**
+     * 渲染场景（延迟渲染路径）
+     * @param deltaTime 帧时间（秒）
+     */
+    virtual void Render(SceneManager *sceneManager, float deltaTime) override;
 
 private:
     GBufferRendererPtr mGBufferRenderer;

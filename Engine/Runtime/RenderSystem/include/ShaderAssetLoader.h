@@ -12,6 +12,7 @@
 #include "Runtime/RenderCore/include/RenderDescriptor.h"
 #include "Runtime/RenderCore/include/ShaderFunction.h"
 #include "Runtime/ShaderCompiler/include/ShaderCompiler.h"
+#include "Runtime/RenderCore/include/GraphicsPipeline.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -35,9 +36,17 @@ struct ShaderAssetString
     shader_compiler::UniformBuffersLayout fragmentUniformBufferLayout; //片元ubo信息
 };
 
+struct GraphicsShaderInfo
+{
+    RenderCore::GraphicsPipelineDescriptor graphicsPipelineDesc;
+    RenderCore::GraphicsShaderPtr graphicsShader;
+};
+
 RENDERSYSTEM_API ShaderAssetString LoadShaderAsset(const std::string &shaderName);
 
 RENDERSYSTEM_API ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName);
+
+RENDERCORE_API GraphicsShaderInfo CreateGraphicsShaderInfo(const std::string& shaderName);
 
 NS_RENDERSYSTEM_END
 

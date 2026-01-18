@@ -22,7 +22,8 @@ SceneManager* SceneManager::GetInstance()
 {
     static std::once_flag flag;
     static SceneManager *instance = nullptr;
-    std::call_once(flag, []() {
+    std::call_once(flag, []() 
+    {
         instance = new SceneManager();
     });
     return instance;
@@ -258,9 +259,7 @@ void SceneManager::Render(RenderEncoderPtr renderEncoder)
     // 如果是延迟渲染，获取最终纹理并呈现
     if (mRenderPath == RenderPath::Deferred)
     {
-        // TODO: 呈现最终纹理
-        // RCTexturePtr finalTexture = mDeferredRenderer->GetFinalTexture();
-        // PresentTexture(renderEncoder, finalTexture);
+        mSceneRenderer->Render(this, 0.0);
     }
     
     // 保留原有的渲染逻辑（前向渲染）

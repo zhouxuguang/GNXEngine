@@ -52,4 +52,21 @@ ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName)
     return shaderAssetString;
 }
 
+GraphicsShaderInfo CreateGraphicsShaderInfo(const std::string& shaderName)
+{
+    ShaderAssetString shaderAssetString = LoadShaderAsset(shaderName);
+    
+    ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
+    ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
+
+    GraphicsShaderInfo graphicsShaderInfo;
+    
+    GraphicsShaderPtr graphicsShader = GetRenderDevice()->CreateGraphicsShader(*vertexShader, *fragmentShader);
+    graphicsShaderInfo.graphicsShader = graphicsShader;
+    
+    graphicsShaderInfo.graphicsPipelineDesc.vertexDescriptor = std::move(shaderAssetString.vertexDescriptor);
+    
+    return graphicsShaderInfo;
+}
+
 NS_RENDERSYSTEM_END
