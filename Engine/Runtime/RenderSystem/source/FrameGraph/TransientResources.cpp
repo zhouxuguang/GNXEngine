@@ -83,7 +83,7 @@ void HeartBeat(std::vector<T> &objects, std::unordered_map<std::size_t, Resource
 // TransientResources class:
 //
 
-TransientResources::TransientResources(RenderCore::RenderDevicePtr &renderDevice) : mRenderDevice(renderDevice) {}
+TransientResources::TransientResources(RenderCore::RenderDevicePtr renderDevice) : mRenderDevice(renderDevice) {}
 
 TransientResources::~TransientResources()
 {

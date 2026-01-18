@@ -9,6 +9,7 @@
 #define GNX_ENGINE_SCENE_RENDERER_INCLUDE_HJDSJFHSH
 
 #include "RSDefine.h"
+#include "FrameGraph/TransientResources.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -26,6 +27,9 @@ public:
     
     // 渲染场景部分
     virtual void Render(SceneManager *sceneManager, float deltaTime) = 0;
+    
+protected:
+    TransientResources *mTransientResources = nullptr;
 };
 
 using SceneRendererPtr = std::shared_ptr<SceneRenderer>;

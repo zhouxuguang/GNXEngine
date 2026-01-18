@@ -11,8 +11,12 @@
 #include "SceneRenderer.h"
 #include "GBufferRenderer.h"
 #include "DepthRenderer.h"
+#include <vector>
 
 NS_RENDERSYSTEM_BEGIN
+
+// 前置声明
+class SceneNode;
 
 /**
  * 延迟渲染场景渲染器
@@ -58,17 +62,28 @@ private:
      * 执行G-Buffer Pass
      */
     void RenderGBufferPass();
-    
+
     /**
      * 执行延迟光照Pass
      */
     void RenderDeferredLightingPass();
-    
+
     /**
      * 执行前向渲染Pass（用于半透明物体）
      */
     void RenderForwardPass();
-    
+
+    /**
+     * 递归收集场景中的所有网格
+     * @param node 场景节点
+     * @param meshItems 静态网格列表
+     * @param skinnedMeshItems 蒙皮网格列表
+     */
+    void CollectMeshesRecursive(
+        SceneNode* node,
+        std::vector<DepthMeshItem>& meshItems,
+        std::vector<DepthSkinnedMeshItem>& skinnedMeshItems);
+
     /**
      * 渲染场景（延迟渲染路径）
      * @param deltaTime 帧时间（秒）

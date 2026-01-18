@@ -16,7 +16,7 @@ class RENDERSYSTEM_API TransientResources
 {
 public:
 	TransientResources() = delete;
-	explicit TransientResources(RenderCore::RenderDevicePtr &renderDevice);
+	explicit TransientResources(RenderCore::RenderDevicePtr renderDevice);
 	TransientResources(const TransientResources &) = delete;
 	TransientResources(TransientResources &&) noexcept = delete;
 	~TransientResources();
@@ -42,7 +42,7 @@ public:
     };
 
 private:
-    RenderCore::RenderDevicePtr &mRenderDevice;
+    RenderCore::RenderDevicePtr mRenderDevice;
 
 	std::vector<RenderCore::RCTexturePtr> m_textures;
 	std::vector<RenderCore::ComputeBufferPtr> m_buffers;
