@@ -16,7 +16,7 @@ NAMESPACE_RENDERCORE_BEGIN
 class GraphicsPipeline
 {
 public:
-    GraphicsPipeline(const GraphicsPipelineDescriptor& des);
+    GraphicsPipeline(const GraphicsPipelineDesc& des);
     
     virtual ~GraphicsPipeline();
     

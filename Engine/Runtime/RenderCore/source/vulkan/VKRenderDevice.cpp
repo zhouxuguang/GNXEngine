@@ -222,7 +222,7 @@ IndexBufferPtr VKRenderDevice::CreateIndexBufferWithBytes(const void* buffer, ui
     return std::make_shared<VKIndexBuffer>(mVulkanContext, indexType, buffer, size);
 }
 
-TextureSamplerPtr VKRenderDevice::CreateSamplerWithDescriptor(const SamplerDescriptor& des) const
+TextureSamplerPtr VKRenderDevice::CreateSamplerWithDescriptor(const SamplerDesc& des) const
 {
     return std::make_shared<VKTextureSampler>(mVulkanContext, des);
 }
@@ -246,7 +246,7 @@ GraphicsShaderPtr VKRenderDevice::CreateGraphicsShader(const ShaderCode& vertexS
     return shader;
 }
 
-GraphicsPipelinePtr VKRenderDevice::CreateGraphicsPipeline(const GraphicsPipelineDescriptor& des) const
+GraphicsPipelinePtr VKRenderDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& des) const
 {
     return std::make_shared<VKGraphicsPipeline>(mVulkanContext, des);
 }

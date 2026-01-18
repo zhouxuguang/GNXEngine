@@ -17,7 +17,7 @@ NAMESPACE_RENDERCORE_BEGIN
 class MTLGraphicsPipeline : public GraphicsPipeline
 {
 public:
-    MTLGraphicsPipeline(id<MTLDevice> device, const GraphicsPipelineDescriptor& des);
+    MTLGraphicsPipeline(id<MTLDevice> device, const GraphicsPipelineDesc& des);
     
     ~MTLGraphicsPipeline();
     

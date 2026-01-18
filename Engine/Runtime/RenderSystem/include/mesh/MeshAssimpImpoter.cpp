@@ -27,7 +27,7 @@ static RCTexture2DPtr TextureFromFile(const char *filename)
         return nullptr;
     }
     
-    TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
+    TextureDesc textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     textureDescriptor.mipmaped = true;
     
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
@@ -47,7 +47,7 @@ static RCTexture2DPtr CreateDiffuseTexture(float r, float g, float b)
     imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
     image->SetImageInfo(FORMAT_RGBA8, 1, 1, pData, free);
     
-    TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
+    TextureDesc textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
@@ -67,7 +67,7 @@ static RCTexture2DPtr CreateMetalRoughTexture()
     imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
     image->SetImageInfo(FORMAT_RGBA8, 1, 1, pData, free);
     
-    TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
+    TextureDesc textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
@@ -87,7 +87,7 @@ static RCTexture2DPtr CreateNormalTexture()
     imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
     image->SetImageInfo(FORMAT_RGBA8, 1, 1, pData, free);
     
-    TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
+    TextureDesc textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
@@ -107,7 +107,7 @@ static RCTexture2DPtr CreateEmmisveTexture()
     imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
     image->SetImageInfo(FORMAT_RGBA8, 1, 1, pData, free);
     
-    TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
+    TextureDesc textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
@@ -127,7 +127,7 @@ static RCTexture2DPtr CreateAOTexture()
     imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
     image->SetImageInfo(FORMAT_RGBA8, 1, 1, pData, free);
     
-    TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
+    TextureDesc textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     //textureDescriptor.mipmaped = true;
     
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
@@ -150,7 +150,7 @@ static RCTexture2DPtr TextureFromMemory(const uint8_t* pImageData, uint32_t data
         return nullptr;
     }
     
-    TextureDescriptor textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
+    TextureDesc textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
                     TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);

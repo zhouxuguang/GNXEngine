@@ -16,14 +16,14 @@ NAMESPACE_RENDERCORE_BEGIN
 class VKTextureSampler : public TextureSampler
 {
 public:
-    VKTextureSampler(VulkanContextPtr context, const SamplerDescriptor& des);
+    VKTextureSampler(VulkanContextPtr context, const SamplerDesc& des);
 
     ~VKTextureSampler();
 
     const VkSampler GetVKSampler() const { return mSampler; }
     
 private:
-    void GenerateSamplerInfo(const SamplerDescriptor& des, VkSamplerCreateInfo& samplerInfo);
+    void GenerateSamplerInfo(const SamplerDesc& des, VkSamplerCreateInfo& samplerInfo);
 
     VkSamplerAddressMode TransToVulkanAdressMode(SamplerWrapMode mode);
 

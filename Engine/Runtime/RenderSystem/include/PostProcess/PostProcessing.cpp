@@ -16,7 +16,7 @@ PostProcessing::PostProcessing(RenderDevicePtr renderDevice)
     assert(renderDevice);
     mRenderDevice = renderDevice;
     
-    SamplerDescriptor samplerDescriptor;
+    SamplerDesc samplerDescriptor;
     mTextureSampler = renderDevice->CreateSamplerWithDescriptor(samplerDescriptor);
     
     ShaderAssetString shaderAssetString = LoadShaderAsset("PostProcessShader");
@@ -26,7 +26,7 @@ PostProcessing::PostProcessing(RenderDevicePtr renderDevice)
 
     GraphicsShaderPtr graphicsShader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
 
-    GraphicsPipelineDescriptor graphicsPipelineDescriptor;
+    GraphicsPipelineDesc graphicsPipelineDescriptor;
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
     
     mPipeline = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);

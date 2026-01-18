@@ -119,14 +119,14 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     images.push_back(negative_y);
     images.push_back(positive_z);
     images.push_back(negative_z);
-    std::vector<TextureDescriptor> desArray;
+    std::vector<TextureDesc> desArray;
     for (auto iter : images)
     {
         if (nullptr == iter || iter->GetPixels() == nullptr)
         {
             return false;
         }
-        TextureDescriptor textureDescriptor = ImageTextureUtil::getTextureDescriptor(*iter);
+        TextureDesc textureDescriptor = ImageTextureUtil::getTextureDescriptor(*iter);
         desArray.push_back(textureDescriptor);
     }
     
@@ -134,7 +134,7 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     mTextureCube = LoadEquirectangularMap(getMediaDir() + "IBL" + pathSplit + "piazza_bologni_1k.hdr");
     mTextureCube->SetName("CubeMap");
     
-    SamplerDescriptor samplerDescriptor;
+    SamplerDesc samplerDescriptor;
     mTextureSampler = renderDevice->CreateSamplerWithDescriptor(samplerDescriptor);
     
     initBuffers(renderDevice);
@@ -157,7 +157,7 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
 
     GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
 
-    GraphicsPipelineDescriptor graphicsPipelineDescriptor;
+    GraphicsPipelineDesc graphicsPipelineDescriptor;
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
     graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionLessThanOrEqual;
     graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;

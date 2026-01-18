@@ -137,9 +137,9 @@ UniformBuffersLayout GetMetalUniformReflectionInfo(const spirv_cross::CompilerMS
     return std::move(uniformBufferLayouts);
 }
 
-VertexDescriptor GetMetalReflectionInfo(const spirv_cross::CompilerMSL& msl, const spirv_cross::ShaderResources& resources)
+VertexDesc GetMetalReflectionInfo(const spirv_cross::CompilerMSL& msl, const spirv_cross::ShaderResources& resources)
 {
-    RenderCore::VertexDescriptor vertexDescriptor;
+    RenderCore::VertexDesc vertexDescriptor;
     
     for (auto &resource : resources.stage_inputs)
     {
@@ -147,8 +147,8 @@ VertexDescriptor GetMetalReflectionInfo(const spirv_cross::CompilerMSL& msl, con
 
         const spirv_cross::SPIRType &type = msl.get_type(resource.type_id);
         
-        RenderCore::VertextAttributesDescritptor vertextAttributesDescritptor;
-        RenderCore::VertexBufferLayoutDescriptor vertexBufferLayoutDescriptor;
+        RenderCore::VertextAttributesDesc vertextAttributesDescritptor;
+        RenderCore::VertexBufferLayoutDesc vertexBufferLayoutDescriptor;
         
         vertextAttributesDescritptor.index = index;
         vertextAttributesDescritptor.offset = 0;

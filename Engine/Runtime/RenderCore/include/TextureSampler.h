@@ -28,7 +28,7 @@ public:
      * - compareFunc    : Less or equal
      * - no anisotropic filtering
      */
-    TextureSampler(const SamplerDescriptor& des);
+    TextureSampler(const SamplerDesc& des);
     
     virtual ~TextureSampler();
 };

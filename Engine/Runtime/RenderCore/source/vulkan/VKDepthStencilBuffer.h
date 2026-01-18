@@ -46,7 +46,7 @@ using VKDepthStencilBufferPtr = std::shared_ptr<VKDepthStencilBuffer>;
 class VKDepthStencilState
 {
 public:
-    VKDepthStencilState(const DepthStencilDescriptor& des);
+    VKDepthStencilState(const DepthStencilDesc& des);
     
     ~VKDepthStencilState();
     

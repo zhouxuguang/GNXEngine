@@ -34,7 +34,7 @@ void SampleApplication::Resize(uint32_t width, uint32_t height)
     mHeight = height;
     
     //test
-    TextureDescriptor textureDescriptor;
+    TextureDesc textureDescriptor;
     textureDescriptor.width = width;
     textureDescriptor.height = height;
     textureDescriptor.mipmaped = false;

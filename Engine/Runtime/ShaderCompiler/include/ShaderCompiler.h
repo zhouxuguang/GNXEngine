@@ -38,7 +38,7 @@ typedef std::vector<UniformLayout> UniformBuffersLayout;
 struct CompiledShaderInfo
 {
     ShaderCodePtr shaderSource = nullptr;
-    RenderCore::VertexDescriptor vertexDescriptor;
+    RenderCore::VertexDesc vertexDescriptor;
 };
 
 using CompiledShaderInfoPtr = std::shared_ptr<CompiledShaderInfo>;

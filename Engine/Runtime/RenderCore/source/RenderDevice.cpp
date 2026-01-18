@@ -36,7 +36,7 @@ ShaderFunction::ShaderFunction(){}
 
 ShaderFunction::~ShaderFunction(){}
 
-TextureSampler::TextureSampler(const SamplerDescriptor& des){}
+TextureSampler::TextureSampler(const SamplerDesc& des){}
 
 TextureSampler::~TextureSampler(){}
 
@@ -44,7 +44,7 @@ IndexBuffer::IndexBuffer(IndexType indexType, const void* pData, uint32_t dataLe
 
 IndexBuffer::~IndexBuffer(){}
 
-GraphicsPipeline::GraphicsPipeline(const GraphicsPipelineDescriptor& des){}
+GraphicsPipeline::GraphicsPipeline(const GraphicsPipelineDesc& des){}
 
 GraphicsPipeline::~GraphicsPipeline(){}
 

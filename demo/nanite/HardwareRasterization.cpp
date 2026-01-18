@@ -14,7 +14,7 @@ void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice)
 
 	GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
 
-	GraphicsPipelineDescriptor graphicsPipelineDescriptor;
+    GraphicsPipelineDesc graphicsPipelineDescriptor;
 	graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
     graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionLess;
 	graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;

@@ -67,9 +67,9 @@ MaterialPtr Material::CreateMaterial(const char *shaderStrPath)
 
     GraphicsShaderPtr shader = GetRenderDevice()->CreateGraphicsShader(*vertexShader, *fragmentShader);
     
-    GraphicsPipelineDescriptor graphicsPipelineDescriptor;
-    VertextAttributesDescritptor vertextAttributesDescritptor;
-    VertexBufferLayoutDescriptor vertexBufferLayoutDescriptor;
+    GraphicsPipelineDesc graphicsPipelineDescriptor;
+    VertextAttributesDesc vertextAttributesDescritptor;
+    VertexBufferLayoutDesc vertexBufferLayoutDescriptor;
     
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
     

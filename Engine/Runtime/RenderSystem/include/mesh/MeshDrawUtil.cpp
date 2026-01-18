@@ -35,7 +35,7 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
     
     if (!cubeSampler)
     {
-        SamplerDescriptor sampleDes;
+        SamplerDesc sampleDes;
         sampleDes.filterMip = MIN_LINEAR_MIPMAP_LINEAR;
         sampleDes.maxLod = 8;
         cubeSampler = GetRenderDevice()->CreateSamplerWithDescriptor(sampleDes);
@@ -45,7 +45,7 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
     {
         VImage image;
         imagecodec::ImageDecoder::DecodeFile((getMediaDir() + "IBL" + pathSplit + "brdfLUT.ktx").c_str(), &image);
-        TextureDescriptor des = ImageTextureUtil::getTextureDescriptor(image);
+        TextureDesc des = ImageTextureUtil::getTextureDescriptor(image);
         brdfMap = GetRenderDevice()->CreateTexture2D(des.format, TextureUsage::TextureUsageShaderRead,
                                                      image.GetWidth(), image.GetHeight(), 1);
         Rect2D rect = Rect2D(0, 0, image.GetWidth(), image.GetHeight());
@@ -113,7 +113,7 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
     
     if (!cubeSampler)
     {
-        SamplerDescriptor sampleDes;
+        SamplerDesc sampleDes;
         sampleDes.filterMip = MIN_LINEAR_MIPMAP_LINEAR;
         sampleDes.maxLod = 8;
         cubeSampler = GetRenderDevice()->CreateSamplerWithDescriptor(sampleDes);
@@ -123,7 +123,7 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
     {
         VImage image;
         imagecodec::ImageDecoder::DecodeFile((getMediaDir() + "IBL" + pathSplit + "brdfLUT.ktx").c_str(), &image);
-        TextureDescriptor des = ImageTextureUtil::getTextureDescriptor(image);
+        TextureDesc des = ImageTextureUtil::getTextureDescriptor(image);
         brdfMap = GetRenderDevice()->CreateTexture2D(des.format, TextureUsage::TextureUsageShaderRead,
                                                      image.GetWidth(), image.GetHeight(), 1);
         Rect2D rect = Rect2D(0, 0, image.GetWidth(), image.GetHeight());

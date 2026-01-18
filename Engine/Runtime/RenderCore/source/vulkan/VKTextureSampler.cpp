@@ -9,7 +9,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-VKTextureSampler::VKTextureSampler(VulkanContextPtr context, const SamplerDescriptor& des) :TextureSampler(des)
+VKTextureSampler::VKTextureSampler(VulkanContextPtr context, const SamplerDesc& des) :TextureSampler(des)
 {
     mContext = context;
     VkSamplerCreateInfo samplerInfo;
@@ -31,7 +31,7 @@ VKTextureSampler::~VKTextureSampler()
     }
 }
 
-void VKTextureSampler::GenerateSamplerInfo(const SamplerDescriptor &des, VkSamplerCreateInfo &samplerInfo)
+void VKTextureSampler::GenerateSamplerInfo(const SamplerDesc &des, VkSamplerCreateInfo &samplerInfo)
 {
     switch (des.filterMag)
     {

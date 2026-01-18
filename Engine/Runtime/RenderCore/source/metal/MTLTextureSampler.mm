@@ -14,13 +14,13 @@ MTLTextureSampler::~MTLTextureSampler()
     mSamplerState = nil;
 }
 
-MTLTextureSampler::MTLTextureSampler(id<MTLDevice> device, const SamplerDescriptor& des) noexcept : TextureSampler(des)
+MTLTextureSampler::MTLTextureSampler(id<MTLDevice> device, const SamplerDesc& des) noexcept : TextureSampler(des)
 {
     MTLSamplerDescriptor* samplerDescriptor = transToMTLSamplerDescriptor(des);
     mSamplerState = [device newSamplerStateWithDescriptor:samplerDescriptor];
 }
 
-MTLSamplerDescriptor* MTLTextureSampler::transToMTLSamplerDescriptor(const SamplerDescriptor& des) noexcept
+MTLSamplerDescriptor* MTLTextureSampler::transToMTLSamplerDescriptor(const SamplerDesc& des) noexcept
 {
     MTLSamplerDescriptor *samplerDescriptor = [MTLSamplerDescriptor new];
     switch (des.filterMin)

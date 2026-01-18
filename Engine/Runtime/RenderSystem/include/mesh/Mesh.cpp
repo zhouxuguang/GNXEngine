@@ -127,7 +127,7 @@ void Mesh::SetUpBuffer()
             (uint32_t)mIndices.size() * sizeof(uint32_t), IndexType_UInt);
     //mIndiceCount = (uint32_t)mIndices.size();
     
-    SamplerDescriptor samplerDescriptor;
+    SamplerDesc samplerDescriptor;
     samplerDescriptor.filterMip = MIN_LINEAR_MIPMAP_LINEAR;
     mTextureSampler = GetRenderDevice()->CreateSamplerWithDescriptor(samplerDescriptor);
 }

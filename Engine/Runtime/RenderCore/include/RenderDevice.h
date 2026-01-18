@@ -73,7 +73,7 @@ public:
      @param des the description for sampler to be created.
      @return shared pointer to sampler object.
      */
-    virtual TextureSamplerPtr CreateSamplerWithDescriptor(const SamplerDescriptor& des) const = 0;
+    virtual TextureSamplerPtr CreateSamplerWithDescriptor(const SamplerDesc& des) const = 0;
     
     /**
      创建uniform buffer
@@ -93,7 +93,7 @@ public:
     /**
      创建图形管线
      */
-    virtual GraphicsPipelinePtr CreateGraphicsPipeline(const GraphicsPipelineDescriptor& des) const = 0;
+    virtual GraphicsPipelinePtr CreateGraphicsPipeline(const GraphicsPipelineDesc& des) const = 0;
     
     /**
      创建计算管线

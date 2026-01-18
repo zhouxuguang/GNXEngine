@@ -13,7 +13,7 @@ void InitSwapChainPass(RenderCore::RenderDevicePtr renderDevice)
 
 	GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
 
-	GraphicsPipelineDescriptor graphicsPipelineDescriptor;
+    GraphicsPipelineDesc graphicsPipelineDescriptor;
 	graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
 	graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionLessThanOrEqual;
 	graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;
@@ -21,7 +21,7 @@ void InitSwapChainPass(RenderCore::RenderDevicePtr renderDevice)
 	sPSO = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);
 	sPSO->AttachGraphicsShader(shader);
     
-    RenderCore::SamplerDescriptor samplerDesc;
+    RenderCore::SamplerDesc samplerDesc;
     sSam = renderDevice->CreateSamplerWithDescriptor(samplerDesc);
 }
 

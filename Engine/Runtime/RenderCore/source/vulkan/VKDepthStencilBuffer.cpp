@@ -170,7 +170,7 @@ static VkStencilOp TransformStencilOp(StencilOperation stencilOp)
     return vkStencilOp;
 }
 
-VKDepthStencilState::VKDepthStencilState(const DepthStencilDescriptor& des)
+VKDepthStencilState::VKDepthStencilState(const DepthStencilDesc& des)
 {
     mDepthStencilCreateInfo.depthTestEnable = (des.depthCompareFunction != CompareFunctionAlways);
     mDepthStencilCreateInfo.depthWriteEnable = des.depthWriteEnabled;

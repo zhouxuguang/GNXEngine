@@ -224,7 +224,7 @@ void SkinnedMesh::SetUpBuffer()
     mIndexBuffer = GetRenderDevice()->CreateIndexBufferWithBytes(mIndices.data(),
             (uint32_t)mIndices.size() * sizeof(uint32_t), IndexType_UInt);
     
-    SamplerDescriptor samplerDescriptor;
+    SamplerDesc samplerDescriptor;
     samplerDescriptor.filterMip = MIN_LINEAR_MIPMAP_LINEAR;
     mTextureSampler = GetRenderDevice()->CreateSamplerWithDescriptor(samplerDescriptor);
     

@@ -10,9 +10,9 @@
 
 NS_RENDERSYSTEM_BEGIN
 
-TextureDescriptor ImageTextureUtil::getTextureDescriptor(const VImage& image)
+TextureDesc ImageTextureUtil::getTextureDescriptor(const VImage& image)
 {
-    TextureDescriptor textureDescriptor;
+    TextureDesc textureDescriptor;
     switch (image.GetFormat())
     {
         case imagecodec::FORMAT_RGBA8:

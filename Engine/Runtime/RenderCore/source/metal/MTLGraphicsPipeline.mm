@@ -10,7 +10,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-static id<MTLDepthStencilState> convertToMTLDSDes(id<MTLDevice> device, const DepthStencilDescriptor& depthStencilDescriptor)
+static id<MTLDepthStencilState> convertToMTLDSDes(id<MTLDevice> device, const DepthStencilDesc& depthStencilDescriptor)
 {
     MTLDepthStencilDescriptor* mtlDescriptor = [MTLDepthStencilDescriptor new];
     MTLCompareFunction compareFunc = (MTLCompareFunction)depthStencilDescriptor.depthCompareFunction;
@@ -184,7 +184,7 @@ static MTLVertexFormat convertMETALVertexFormat(VertexFormat format)
     return mtlFormat;
 }
 
-static MTLRenderPipelineDescriptor* convertToMTLRenderPiplineDescriptor(const GraphicsPipelineDescriptor& des)
+static MTLRenderPipelineDescriptor* convertToMTLRenderPiplineDescriptor(const GraphicsPipelineDesc& des)
 {
     // 设置shader
     MTLRenderPipelineDescriptor* mtlPiplineDes = [MTLRenderPipelineDescriptor new];
@@ -223,7 +223,7 @@ static MTLRenderPipelineDescriptor* convertToMTLRenderPiplineDescriptor(const Gr
     return mtlPiplineDes;
 }
 
-MTLGraphicsPipeline::MTLGraphicsPipeline(id<MTLDevice> device, const GraphicsPipelineDescriptor& des) : GraphicsPipeline(des)
+MTLGraphicsPipeline::MTLGraphicsPipeline(id<MTLDevice> device, const GraphicsPipelineDesc& des) : GraphicsPipeline(des)
 {
     mDevice = device;
     mRenderPipelineDes = convertToMTLRenderPiplineDescriptor(des);

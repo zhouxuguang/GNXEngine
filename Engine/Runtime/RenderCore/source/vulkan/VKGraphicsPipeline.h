@@ -39,7 +39,7 @@ struct RenderPassImageView
 class VKGraphicsPipeline : public GraphicsPipeline
 {
 public:
-    VKGraphicsPipeline(VulkanContextPtr context, const GraphicsPipelineDescriptor& des);
+    VKGraphicsPipeline(VulkanContextPtr context, const GraphicsPipelineDesc& des);
     
     ~VKGraphicsPipeline()
     {
@@ -133,8 +133,8 @@ private:
     uint32_t mCurrentFrameIndex = 0;
     VKGraphicsShaderPtr mShader = nullptr;
     
-    GraphicsPipelineDescriptor mGraphicsPipelineDes;
-    std::vector<ColorAttachmentDescriptor> mColorAttachmentDescs;
+    GraphicsPipelineDesc mGraphicsPipelineDes;
+    std::vector<ColorAttachmentDesc> mColorAttachmentDescs;
     
     bool mGenerated = false;
     

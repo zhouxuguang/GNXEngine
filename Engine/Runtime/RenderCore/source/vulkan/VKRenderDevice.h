@@ -47,7 +47,7 @@ public:
     
     virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const;
     
-    virtual TextureSamplerPtr CreateSamplerWithDescriptor(const SamplerDescriptor& des) const;
+    virtual TextureSamplerPtr CreateSamplerWithDescriptor(const SamplerDesc& des) const;
     
     virtual UniformBufferPtr CreateUniformBufferWithSize(uint32_t bufSize) const;
     
@@ -55,7 +55,7 @@ public:
 
     virtual GraphicsShaderPtr CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const;
     
-    virtual GraphicsPipelinePtr CreateGraphicsPipeline(const GraphicsPipelineDescriptor& des) const;
+    virtual GraphicsPipelinePtr CreateGraphicsPipeline(const GraphicsPipelineDesc& des) const;
     
     virtual ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderString) const;
     

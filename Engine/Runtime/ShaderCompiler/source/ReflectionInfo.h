@@ -18,7 +18,7 @@ NAMESPACE_SHADERCOMPILER_BEGIN
 
 UniformBuffersLayout GetMetalUniformReflectionInfo(const spirv_cross::CompilerMSL& msl, const spirv_cross::ShaderResources& resources);
 
-VertexDescriptor GetMetalReflectionInfo(const spirv_cross::CompilerMSL& msl, const spirv_cross::ShaderResources& resources);
+VertexDesc GetMetalReflectionInfo(const spirv_cross::CompilerMSL& msl, const spirv_cross::ShaderResources& resources);
 
 NAMESPACE_SHADERCOMPILER_END
 

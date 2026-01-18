@@ -139,7 +139,7 @@ static VkColorComponentFlags ConvertToVulkanColorWriteMask(ColorWriteMask colorM
     return writeMask;
 }
 
-static VkPipelineColorBlendAttachmentState CreateColorBlendState(const ColorAttachmentDescriptor& colorDes)
+static VkPipelineColorBlendAttachmentState CreateColorBlendState(const ColorAttachmentDesc& colorDes)
 {
     VkPipelineColorBlendAttachmentState colorBlendState = {};
     colorBlendState.colorWriteMask = ConvertToVulkanColorWriteMask(colorDes.writeMask);
@@ -154,7 +154,7 @@ static VkPipelineColorBlendAttachmentState CreateColorBlendState(const ColorAtta
     return colorBlendState;
 }
 
-VKGraphicsPipeline::VKGraphicsPipeline(VulkanContextPtr context, const GraphicsPipelineDescriptor& des) : GraphicsPipeline(des), mGraphicsPipelineDes(des)
+VKGraphicsPipeline::VKGraphicsPipeline(VulkanContextPtr context, const GraphicsPipelineDesc& des) : GraphicsPipeline(des), mGraphicsPipelineDes(des)
 {
     mContext = context;
     memset(&mPipeCreateInfo, 0, sizeof(mPipeCreateInfo));

@@ -18,7 +18,7 @@ NAMESPACE_RENDERCORE_BEGIN
 /**
  模板测试描述信息
  */
-struct StencilDescriptor
+struct StencilDesc
 {
     bool stencilEnable = false;
     CompareFunction stencilCompareFunction = CompareFunctionNever;
@@ -28,16 +28,16 @@ struct StencilDescriptor
     uint32_t readMask = 255;
     uint32_t writeMask = 255;
 public:
-    bool operator == (const StencilDescriptor& des) const
+    bool operator == (const StencilDesc& des) const
     {
         return stencilEnable == des.stencilEnable && stencilCompareFunction == des.stencilCompareFunction &&
-        stencilFailureOperation == des.stencilFailureOperation &&
-        depthFailureOperation == des.depthFailureOperation &&
-        depthStencilPassOperation == des.depthStencilPassOperation &&
-        readMask == des.readMask && writeMask == des.writeMask;
+            stencilFailureOperation == des.stencilFailureOperation &&
+            depthFailureOperation == des.depthFailureOperation &&
+            depthStencilPassOperation == des.depthStencilPassOperation &&
+            readMask == des.readMask && writeMask == des.writeMask;
     }
     
-    StencilDescriptor& operator=(const StencilDescriptor& des)
+    StencilDesc& operator = (const StencilDesc& des)
     {
         stencilEnable = des.stencilEnable;
         stencilCompareFunction = des.stencilCompareFunction;
@@ -53,25 +53,25 @@ public:
 /**
  深度和模板测试描述信息
  */
-struct DepthStencilDescriptor
+struct DepthStencilDesc
 {
     CompareFunction depthCompareFunction = CompareFunctionAlways;
     bool depthWriteEnabled = true;
-    StencilDescriptor stencil;
+    StencilDesc stencil;
 public:
-    bool operator == (const DepthStencilDescriptor& des) const
+    bool operator == (const DepthStencilDesc& des) const
     {
         return depthCompareFunction == des.depthCompareFunction &&
         depthWriteEnabled == des.depthWriteEnabled &&
         stencil == des.stencil;
     }
     
-    bool operator != (const DepthStencilDescriptor& des) const
+    bool operator != (const DepthStencilDesc& des) const
     {
         return !(*this == des);
     }
     
-    DepthStencilDescriptor& operator=(const DepthStencilDescriptor& des)
+    DepthStencilDesc& operator=(const DepthStencilDesc& des)
     {
         depthCompareFunction = des.depthCompareFunction;
         depthWriteEnabled = des.depthWriteEnabled;
@@ -84,14 +84,14 @@ public:
 /**
  描述顶点属性的索引、格式等信息
  */
-struct VertextAttributesDescritptor
+struct VertextAttributesDesc
 {
     uint32_t index = 0;                                        //buffer的索引
     VertexFormat format = VertexFormatInvalid;                    //属性的格式
     uint32_t offset = 0;                                       //顶点属性在属性的偏移
     //char* attrName = nullptr;                                       //属性的名字
 public:
-    bool operator == (const VertextAttributesDescritptor& des) const
+    bool operator == (const VertextAttributesDesc& des) const
     {
         return index == des.index && format == des.format && offset == des.offset /*&& strcmp(attrName, des.attrName) == 0*/;
     }
@@ -100,28 +100,28 @@ public:
 /**
  描述顶点的跨距信息
  */
-struct VertexBufferLayoutDescriptor
+struct VertexBufferLayoutDesc
 {
     uint32_t stride = 0;
     uint32_t stepRate;
     VertextStepFunc stepFunction;
 public:
-    bool operator == (const VertexBufferLayoutDescriptor& des) const
+    bool operator == (const VertexBufferLayoutDesc& des) const
     {
         return stride == des.stride && stepRate == des.stepRate &&
-        stepFunction == des.stepFunction;
+            stepFunction == des.stepFunction;
     }
 };
 
 /**
  顶点的描述信息
  */
-struct VertexDescriptor
+struct VertexDesc
 {
-    std::vector<VertextAttributesDescritptor> attributes;
-    std::vector<VertexBufferLayoutDescriptor> layouts;
+    std::vector<VertextAttributesDesc> attributes;
+    std::vector<VertexBufferLayoutDesc> layouts;
 public:
-    bool operator == (const VertexDescriptor& des) const
+    bool operator == (const VertexDesc& des) const
     {
         if (attributes.size() != des.attributes.size())
         {
@@ -160,7 +160,7 @@ public:
         return true;
     }
     
-    bool operator != (const VertexDescriptor& des) const
+    bool operator != (const VertexDesc& des) const
     {
         return !(*this == des);
     }
@@ -169,7 +169,7 @@ public:
 /**
  纹理采样器的描述
  */
-struct SamplerDescriptor
+struct SamplerDesc
 {
     SamplerMagFilter filterMag = MAG_LINEAR;    // NEAREST
     SamplerMinFilter filterMin = MIN_LINEAR;    // NEAREST
@@ -183,8 +183,8 @@ struct SamplerDescriptor
     uint8_t minLod = 0;
     uint8_t maxLod = 0;
 public:
-    SamplerDescriptor(){}
-    SamplerDescriptor(SamplerMagFilter magfiler,SamplerMinFilter minfilter,SamplerWrapMode wrapS,
+    SamplerDesc(){}
+    SamplerDesc(SamplerMagFilter magfiler, SamplerMinFilter minfilter, SamplerWrapMode wrapS,
             SamplerWrapMode wrapT, uint8_t minLod, uint8_t maxLod)
     {
         this->filterMag = magfiler;
@@ -195,7 +195,7 @@ public:
         this->maxLod = maxLod;
     }
 
-    SamplerDescriptor(SamplerMagFilter magfiler,SamplerMinFilter minfilter,SamplerWrapMode wrapS,SamplerWrapMode wrapT)
+    SamplerDesc(SamplerMagFilter magfiler, SamplerMinFilter minfilter, SamplerWrapMode wrapS, SamplerWrapMode wrapT)
     {
         this->filterMag = magfiler;
         this->filterMin = minfilter;
@@ -203,21 +203,21 @@ public:
         this->wrapT = wrapT;
     }
     
-    SamplerDescriptor(SamplerWrapMode wrapS, SamplerWrapMode wrapT)
+    SamplerDesc(SamplerWrapMode wrapS, SamplerWrapMode wrapT)
     {
         this->wrapS = wrapS;
         this->wrapT = wrapT;
     }
     
-    SamplerDescriptor(SamplerMagFilter magfiler, SamplerMinFilter minfilter)
+    SamplerDesc(SamplerMagFilter magfiler, SamplerMinFilter minfilter)
     {
         this->filterMag = magfiler;
         this->filterMin = minfilter;
     }
     
-    bool operator == (const SamplerDescriptor& des) const
+    bool operator == (const SamplerDesc& des) const
     {
-        return filterMin==des.filterMin &&
+        return filterMin == des.filterMin &&
         filterMag == des.filterMag &&
         wrapS == des.wrapS &&
         wrapR == des.wrapR &&
@@ -233,7 +233,7 @@ public:
 /**
  纹理描述信息
  */
-struct TextureDescriptor
+struct TextureDesc
 {
     TextureFormat format = kTexFormatRGBA32;
     TextureUsage usage = TextureUsage::TextureUsageShaderRead;
@@ -244,7 +244,7 @@ struct TextureDescriptor
     uint32_t bytesPerRow = 0;
 };
 
-struct ColorAttachmentDescriptor
+struct ColorAttachmentDesc
 {
     bool blendingEnabled = false;
     BlendFactor sourceRGBBlendFactor = BlendFactorSourceAlpha;
@@ -255,7 +255,7 @@ struct ColorAttachmentDescriptor
     BlendEquation aplhaBlendOperation = BlendEquationAdd;
     ColorWriteMask writeMask = ColorWriteMaskAll;
     
-    bool operator == (const ColorAttachmentDescriptor& des) const
+    bool operator == (const ColorAttachmentDesc& des) const
     {
         return blendingEnabled == des.blendingEnabled &&
         sourceRGBBlendFactor == des.sourceRGBBlendFactor &&
@@ -267,26 +267,26 @@ struct ColorAttachmentDescriptor
         writeMask == des.writeMask;
     }
     
-    bool operator != (const ColorAttachmentDescriptor& des) const
+    bool operator != (const ColorAttachmentDesc& des) const
     {
         return !(*this == des);
     }
     
-    static ColorAttachmentDescriptor GetDisableDes()
+    static ColorAttachmentDesc GetDisableDes()
     {
-        return ColorAttachmentDescriptor();
+        return ColorAttachmentDesc();
     }
     
-    static ColorAttachmentDescriptor GetCommonBlendDes()
+    static ColorAttachmentDesc GetCommonBlendDes()
     {
-        ColorAttachmentDescriptor colorDes;
+        ColorAttachmentDesc colorDes;
         colorDes.blendingEnabled = true;
         return colorDes;
     }
     
-    static ColorAttachmentDescriptor GetPreMultilyAlphaBlendDes()
+    static ColorAttachmentDesc GetPreMultilyAlphaBlendDes()
     {
-        ColorAttachmentDescriptor colorDes;
+        ColorAttachmentDesc colorDes;
         colorDes.blendingEnabled = true;
         colorDes.sourceRGBBlendFactor = BlendFactorOne;
         return colorDes;
@@ -298,14 +298,14 @@ static const uint32_t MAX_COLOR_ATTACHMENT_COUNT = 16;
 /**
  渲染管线的描述
  */
-struct GraphicsPipelineDescriptor
+struct GraphicsPipelineDesc
 {
-    VertexDescriptor vertexDescriptor;                                                  //顶点buffer数据描述
+    VertexDesc vertexDescriptor;                                                  //顶点buffer数据描述
     uint32_t renderTargetCount = 1;
-    ColorAttachmentDescriptor colorAttachmentDescriptors[MAX_COLOR_ATTACHMENT_COUNT];   //颜色相关描述
-    DepthStencilDescriptor depthStencilDescriptor;                                      //深度模板测试状态
+    ColorAttachmentDesc colorAttachmentDescriptors[MAX_COLOR_ATTACHMENT_COUNT];   //颜色相关描述
+    DepthStencilDesc depthStencilDescriptor;                                      //深度模板测试状态
 public:
-    bool operator == (const GraphicsPipelineDescriptor& des) const
+    bool operator == (const GraphicsPipelineDesc& des) const
     {
         if (vertexDescriptor != des.vertexDescriptor)
         {

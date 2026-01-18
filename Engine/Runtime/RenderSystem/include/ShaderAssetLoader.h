@@ -31,14 +31,14 @@ struct ShaderAssetString
     CompiledShaderInfoPtr fragmentShader;
     CompiledShaderInfoPtr computeShader;
     
-    VertexDescriptor vertexDescriptor;                             // 顶点描述
+    VertexDesc vertexDescriptor;                             // 顶点描述
     shader_compiler::UniformBuffersLayout vertexUniformBufferLayout;  //顶点ubo信息
     shader_compiler::UniformBuffersLayout fragmentUniformBufferLayout; //片元ubo信息
 };
 
 struct GraphicsShaderInfo
 {
-    RenderCore::GraphicsPipelineDescriptor graphicsPipelineDesc;
+    RenderCore::GraphicsPipelineDesc graphicsPipelineDesc;
     RenderCore::GraphicsShaderPtr graphicsShader;
 };
 

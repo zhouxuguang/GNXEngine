@@ -21,7 +21,7 @@ NS_RENDERSYSTEM_BEGIN
 class RENDERSYSTEM_API ImageTextureUtil
 {
 public:
-    static TextureDescriptor getTextureDescriptor(const VImage& image);
+    static TextureDesc getTextureDescriptor(const VImage& image);
 };
 
 RCTextureCubePtr LoadEquirectangularMap(const std::string& fileName);

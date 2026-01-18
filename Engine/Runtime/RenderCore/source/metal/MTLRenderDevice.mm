@@ -143,7 +143,7 @@ IndexBufferPtr MTLRenderDevice::CreateIndexBufferWithBytes(const void* buffer, u
  @param des the description for sampler to be created.
  @return shared pointer to sampler object.
  */
-TextureSamplerPtr MTLRenderDevice::CreateSamplerWithDescriptor(const SamplerDescriptor& des) const
+TextureSamplerPtr MTLRenderDevice::CreateSamplerWithDescriptor(const SamplerDesc& des) const
 {
     auto textureSampler = std::make_shared<MTLTextureSampler>(mMetalLayer.device, des);
     return textureSampler;
@@ -176,7 +176,7 @@ GraphicsShaderPtr MTLRenderDevice::CreateGraphicsShader(const ShaderCode& vertex
 /**
  创建图形管线
  */
-GraphicsPipelinePtr MTLRenderDevice::CreateGraphicsPipeline(const GraphicsPipelineDescriptor& des) const
+GraphicsPipelinePtr MTLRenderDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& des) const
 {
     return std::make_shared<MTLGraphicsPipeline>(mMetalLayer.device, des);
 }

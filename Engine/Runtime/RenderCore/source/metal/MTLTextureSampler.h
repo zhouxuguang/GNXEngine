@@ -20,12 +20,12 @@ public:
     
     ~MTLTextureSampler();
     
-    MTLTextureSampler(id<MTLDevice> device, const SamplerDescriptor& des) noexcept;
+    MTLTextureSampler(id<MTLDevice> device, const SamplerDesc& des) noexcept;
     
     id<MTLSamplerState> getMTLSampler() noexcept {return mSamplerState;};
     
 private:
-    MTLSamplerDescriptor* transToMTLSamplerDescriptor(const SamplerDescriptor& des) noexcept;
+    MTLSamplerDescriptor* transToMTLSamplerDescriptor(const SamplerDesc& des) noexcept;
     
     MTLSamplerAddressMode transToMTLAdressMode(SamplerWrapMode mode) noexcept;
     
