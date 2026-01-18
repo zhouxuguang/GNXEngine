@@ -11,6 +11,7 @@
 #include "SceneRenderer.h"
 #include "GBufferRenderer.h"
 #include "DepthRenderer.h"
+#include "PostProcess/PostProcessing.h"
 #include <vector>
 
 NS_RENDERSYSTEM_BEGIN
@@ -42,12 +43,6 @@ public:
     GBufferRendererPtr GetGBufferRenderer() const { return mGBufferRenderer; }
     
     /**
-     * 设置是否使用FrameGraph
-     */
-    void SetUseFrameGraph(bool use) { mUseFrameGraph = use; }
-    bool GetUseFrameGraph() const { return mUseFrameGraph; }
-    
-    /**
      * 获取G-Buffer纹理（用于调试）
      */
     RCTexturePtr GetGBufferTexture(uint32_t index) const;
@@ -58,6 +53,10 @@ public:
     RCTexturePtr GetFinalTexture() const;
 
 private:
+    FrameGraphResource RenderPreDepthPass(SceneManager *sceneManager, FrameGraph& frameGraph, CommandBufferPtr commandBuffer);
+    
+    void RenderPresentPass(FrameGraph& frameGraph, CommandBufferPtr commandBuffer, FrameGraphResource depthResource);
+    
     /**
      * 执行G-Buffer Pass
      */
@@ -93,7 +92,7 @@ private:
 private:
     GBufferRendererPtr mGBufferRenderer;
     DepthRendererUniPtr mDepthRender = nullptr;
-    bool mUseFrameGraph = false;
+    PostProcessing* mPostProcessing = nullptr;
 };
 
 typedef std::shared_ptr<DeferredSceneRenderer> DeferredSceneRendererPtr;

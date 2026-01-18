@@ -23,6 +23,8 @@ DeferredSceneRenderer::DeferredSceneRenderer()
 {
     mGBufferRenderer = std::make_shared<GBufferRenderer>();
     mDepthRender = std::make_unique<DepthRenderer>(GetRenderDevice().get());
+    
+    mPostProcessing = new PostProcessing(GetRenderDevice());
 }
 
 DeferredSceneRenderer::~DeferredSceneRenderer()
@@ -45,13 +47,44 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     {
         return;
     }
+    
+    CommandQueuePtr graphicsQueue = RenderCore::GetRenderDevice()->GetCommandQueue(QueueType::Graphics, 0);
+    CommandBufferPtr commandBuffer = graphicsQueue->CreateCommandBuffer();
+    if (!commandBuffer)
+    {
+        return;
+    }
 
     // 创建FrameGraph
-    FrameGraph fg;
+    FrameGraph frameGraph;
+    FrameGraphResource depthResource = RenderPreDepthPass(sceneManager, frameGraph, commandBuffer);
+    
+    RenderPresentPass(frameGraph, commandBuffer, depthResource);
+    
+    frameGraph.Compile();
+    frameGraph.Execute(nullptr, mTransientResources);
+    
+    return;
 
+    // 阶段1: G-Buffer Pass
+    RenderGBufferPass();
+
+    // 阶段2: 延迟光照Pass
+    RenderDeferredLightingPass();
+
+    // 阶段3: 渲染天空盒
+
+    // 阶段4: 前向渲染Pass（半透明物体）
+    RenderForwardPass();
+}
+
+FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(SceneManager *sceneManager, FrameGraph& frameGraph, CommandBufferPtr commandBuffer)
+{
     // 收集场景中的静态网格和蒙皮网格
     std::vector<DepthMeshItem> meshItems;
     std::vector<DepthSkinnedMeshItem> skinnedMeshItems;
+    
+    FrameGraphResource depthResource = -1;
 
     // 递归收集所有网格
     SceneNode* rootNode = sceneManager->GetRootNode();
@@ -94,21 +127,37 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
         }
 
         // 使用FrameGraph渲染深度图
-        FrameGraphResource depthResource = mDepthRender->Render("DepthPass", fg, params);
+        depthResource = mDepthRender->Render("DepthPass", frameGraph, commandBuffer, params);
     }
     
-    return;
+    return depthResource;
+}
 
-    // 阶段1: G-Buffer Pass
-    RenderGBufferPass();
+void DeferredSceneRenderer::RenderPresentPass(FrameGraph& frameGraph, CommandBufferPtr commandBuffer, FrameGraphResource depthResource)
+{
+    frameGraph.AddPass("PresentPass",
+    [=](RenderSystem::FrameGraph::Builder &builder, RenderSystem::FrameGraph::NoData &data)
+    {
+        builder.Read(depthResource);
 
-    // 阶段2: 延迟光照Pass
-    RenderDeferredLightingPass();
+        // present的pass必须设置这个标记，要不然不会执行
+        builder.SetSideEffect();
+    },
+    [=](const RenderSystem::FrameGraph::NoData &data, RenderSystem::FrameGraphPassResources &resources, void *)
+    {
+        RenderSystem::FrameGraphTexture &colorTexture = resources.Get<RenderSystem::FrameGraphTexture>(depthResource);
+        
+        float color[4] = {1.0, 0.0, 0.0, 1.0};
+        SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), color);
 
-    // 阶段3: 渲染天空盒
-
-    // 阶段4: 前向渲染Pass（半透明物体）
-    RenderForwardPass();
+        RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
+        
+        mPostProcessing->SetRenderTexture(colorTexture.texture);
+        mPostProcessing->Process(renderEncoder);
+        
+        renderEncoder->EndEncode();
+        commandBuffer->PresentFrameBuffer();
+    });
 }
 
 void DeferredSceneRenderer::RenderGBufferPass()

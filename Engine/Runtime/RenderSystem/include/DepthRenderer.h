@@ -65,25 +65,24 @@ struct DepthSkinnedMeshItem
 struct DepthMeshData
 {
     /** 静态网格列表（每个mesh带自己的objectUBO） */
-    const std::vector<DepthMeshItem>* staticMeshes = nullptr;
+    std::vector<DepthMeshItem> staticMeshes;
     
     /** 蒙皮网格列表（每个mesh带自己的objectUBO） */
-    const std::vector<DepthSkinnedMeshItem>* skinnedMeshes = nullptr;
+    std::vector<DepthSkinnedMeshItem> skinnedMeshes;
     
     /** 获取总网格数量 */
     size_t GetTotalMeshCount() const
     {
         size_t count = 0;
-        if (staticMeshes) count += staticMeshes->size();
-        if (skinnedMeshes) count += skinnedMeshes->size();
+        count += staticMeshes.size();
+        count += skinnedMeshes.size();
         return count;
     }
     
     /** 是否有网格数据 */
     bool HasMeshes() const
     {
-        return (staticMeshes && !staticMeshes->empty()) || 
-               (skinnedMeshes && !skinnedMeshes->empty());
+        return (!staticMeshes.empty() || !skinnedMeshes.empty());
     }
 };
 
@@ -131,7 +130,7 @@ struct DepthRenderParams
         UniformBufferPtr skinnedMatrixUBO = nullptr)
     {
         DepthRenderParams params;
-        params.meshes.staticMeshes = &staticMeshItems;
+        params.meshes.staticMeshes = std::move(staticMeshItems);
         params.uniforms.cameraUBO = cameraUBO;
         params.uniforms.skinnedMatrixUBO = skinnedMatrixUBO;
         return params;
@@ -151,8 +150,8 @@ struct DepthRenderParams
         UniformBufferPtr skinnedMatrixUBO = nullptr)
     {
         DepthRenderParams params;
-        params.meshes.staticMeshes = &staticMeshItems;
-        params.meshes.skinnedMeshes = &skinnedMeshItems;
+        params.meshes.staticMeshes = std::move(staticMeshItems);
+        params.meshes.skinnedMeshes = std::move(skinnedMeshItems);
         params.uniforms.cameraUBO = cameraUBO;
         params.uniforms.skinnedMatrixUBO = skinnedMatrixUBO;
         return params;
@@ -170,7 +169,7 @@ struct DepthRenderParams
         UniformBufferPtr skinnedMatrixUBO)
     {
         DepthRenderParams params;
-        params.meshes.skinnedMeshes = &skinnedMeshItems;
+        params.meshes.skinnedMeshes = std::move(skinnedMeshItems);
         params.uniforms.cameraUBO = cameraUBO;
         params.uniforms.skinnedMatrixUBO = skinnedMatrixUBO;
         return params;
@@ -222,12 +221,14 @@ public:
      * @brief 使用 FrameGraph 渲染深度图（推荐接口，使用结构化参数）
      * @param passName Pass 名称（用于调试）
      * @param frameGraph 帧图
+     * @param commandBuffer 命令缓冲
      * @param params 深度渲染参数（包含网格和 UBO 数据）
      * @return 深度纹理的 FrameGraph 资源 ID
      */
     FrameGraphResource Render(
         const std::string& passName,
         FrameGraph& frameGraph,
+        CommandBufferPtr commandBuffer,
         const DepthRenderParams& params);
 
     /**

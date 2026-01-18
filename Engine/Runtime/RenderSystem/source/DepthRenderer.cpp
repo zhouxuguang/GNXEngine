@@ -76,6 +76,7 @@ const DepthRenderConfig& DepthRenderer::GetConfig() const
 FrameGraphResource DepthRenderer::Render(
     const std::string& passName,
     FrameGraph& frameGraph,
+    CommandBufferPtr commandBuffer,
     const DepthRenderParams& params)
 {
     // 参数验证
@@ -95,7 +96,7 @@ FrameGraphResource DepthRenderer::Render(
     // 添加深度渲染 Pass
     auto& passData = frameGraph.AddPass<DepthPassData>(
         passName,
-        [&](FrameGraph::Builder& builder, DepthPassData& data)
+        [=](FrameGraph::Builder& builder, DepthPassData& data)
         {
             // 创建深度纹理
             FrameGraphTexture::Desc depthDesc;
@@ -105,22 +106,34 @@ FrameGraphResource DepthRenderer::Render(
 
             data.depthTexture = builder.Create<FrameGraphTexture>("DepthTexture", depthDesc);
             builder.Write(data.depthTexture);
-            builder.SetSideEffect();
+            //builder.SetSideEffect();
 
             // 保存引用
-            data.meshes = params.meshes;
-            data.uniforms = params.uniforms;
+            data.meshes = std::move(params.meshes);
+            data.uniforms = std::move(params.uniforms);
         },
         [=](const DepthPassData& data, FrameGraphPassResources& resources, void* context)
         {
-            // 获取 RenderEncoder（从 context 中获取）
-            RenderEncoderPtr renderEncoder = nullptr;
-            if (!renderEncoder) return;
+            RenderSystem::FrameGraphTexture &depthTexture = resources.Get<RenderSystem::FrameGraphTexture>(data.depthTexture);
+            
+            RenderPass renderPass;
+            
+            renderPass.renderRegion = Rect2D(0, 0, (int)mConfig.width, (int)mConfig.height);
+            
+            renderPass.depthAttachment = std::make_shared<RenderPassDepthAttachment>();
+            renderPass.depthAttachment->texture = depthTexture.texture;
+            renderPass.depthAttachment->clearDepth = 1.0;
+            renderPass.depthAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            
+            float color[4] = {1.0, 0.0, 0.0, 1.0};
+            SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), color);
+
+            RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);
 
             // 渲染静态网格，每个mesh使用自己的objectUBO
-            if (data.meshes.staticMeshes)
+            if (!data.meshes.staticMeshes.empty())
             {
-                for (const auto& meshItem : *data.meshes.staticMeshes)
+                for (const auto& meshItem : data.meshes.staticMeshes)
                 {
                     if (!meshItem.mesh || !meshItem.objectUBO)
                         continue;
@@ -135,9 +148,9 @@ FrameGraphResource DepthRenderer::Render(
             }
 
             // 渲染蒙皮网格，每个mesh使用自己的objectUBO
-            if (data.meshes.skinnedMeshes && data.uniforms.skinnedMatrixUBO)
+            if (!data.meshes.skinnedMeshes.empty() && data.uniforms.skinnedMatrixUBO)
             {
-                for (const auto& meshItem : *data.meshes.skinnedMeshes)
+                for (const auto& meshItem : data.meshes.skinnedMeshes)
                 {
                     if (!meshItem.mesh || !meshItem.objectUBO)
                         continue;
@@ -151,6 +164,7 @@ FrameGraphResource DepthRenderer::Render(
                     MeshDrawUtil::DrawSkinnedMeshDepthOnly(*meshItem.mesh, renderInfo, mSkinnedDepthOnlyPipeline);
                 }
             }
+            renderEncoder->EndEncode();
         }
     );
 
