@@ -192,4 +192,5 @@ inline std::string ResourceEntry::Model<T>::toString() const
 }
 
 NS_RENDERSYSTEM_END
+
 #endif

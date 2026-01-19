@@ -88,5 +88,6 @@ struct has_toString<T, std::void_t<decltype(T::toString)>>
 };
 
 #endif
+
 #endif
 

@@ -76,4 +76,5 @@ template <typename T> inline bool FrameGraphBlackboard::Has() const
 }
 
 NS_RENDERSYSTEM_END
+
 #endif

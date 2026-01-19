@@ -2,7 +2,7 @@
 #define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPHTEXTURE_H
 
 #include "Runtime/RenderCore/include/CommandBuffer.h"
-#include "RSDefine.h"
+#include "../RSDefine.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -38,4 +38,5 @@ private:
 };
 
 NS_RENDERSYSTEM_END
+
 #endif

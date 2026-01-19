@@ -299,4 +299,9 @@ void MTLCommandBuffer::EndDebugGroup()
     }
 }
 
+void MTLCommandBuffer::ResourceBarrier(RCTexturePtr texture, ResourceAccessType accessType)
+{
+    //
+}
+
 NAMESPACE_RENDERCORE_END

@@ -42,4 +42,5 @@ private:
 };
 
 NS_RENDERSYSTEM_END
+
 #endif

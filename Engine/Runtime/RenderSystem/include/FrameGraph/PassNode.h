@@ -101,4 +101,5 @@ inline bool operator==(const PassNode::AccessDeclaration& lhs, const PassNode::A
 #endif
 
 NS_RENDERSYSTEM_END
+
 #endif

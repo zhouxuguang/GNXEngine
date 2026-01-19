@@ -274,4 +274,5 @@ FrameGraphPassResources::GetDescriptor(FrameGraphResource id) const
 }
 
 NS_RENDERSYSTEM_END
+
 #endif

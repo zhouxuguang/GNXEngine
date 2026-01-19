@@ -20,5 +20,6 @@ class FrameGraphPassResources;
 [[nodiscard]] RenderCore::ComputeBufferPtr GetBuffer(FrameGraphPassResources& resources, FrameGraphResource id);
 
 NS_RENDERSYSTEM_END
+
 #endif
 

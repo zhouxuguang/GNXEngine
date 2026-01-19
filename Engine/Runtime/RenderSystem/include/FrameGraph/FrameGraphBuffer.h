@@ -24,4 +24,5 @@ public:
 };
 
 NS_RENDERSYSTEM_END
+
 #endif
