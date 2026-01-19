@@ -1,4 +1,5 @@
 #include "FrameGraph/FrameGraphTexture.h"
+#include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/TransientResources.h"
 #include "FrameGraph/FrameGraphExecuteContext.h"
 #include "Runtime/RenderCore/include/TextureFormat.h"
@@ -32,7 +33,7 @@ void FrameGraphTexture::destroy(const Desc& desc, void* allocator)
 
 void FrameGraphTexture::preRead(const Desc& desc, uint32_t flags, void* context)
 {
-	// 从context获取FrameGraphExecuteContext
+	// Get FrameGraphExecuteContext from context
 	if (!context || !texture)
 	{
 		return;
@@ -44,16 +45,16 @@ void FrameGraphTexture::preRead(const Desc& desc, uint32_t flags, void* context)
 		return;
 	}
 
-	// 确定访问类型
+	// Determine access type
 	RenderCore::ResourceAccessType accessType = DetermineAccessFlags(desc, flags, false);
 
-	// 通知命令缓冲区，RHI层会自动处理layout转换
+	// Notify command buffer, RHI layer will automatically handle layout transition
 	executeContext->commandBuffer->ResourceBarrier(texture, accessType);
 }
 
 void FrameGraphTexture::preWrite(const Desc& desc, uint32_t flags, void* context)
 {
-	// 从context获取FrameGraphExecuteContext
+	// Get FrameGraphExecuteContext from context
 	if (!context || !texture)
 	{
 		return;
@@ -65,10 +66,10 @@ void FrameGraphTexture::preWrite(const Desc& desc, uint32_t flags, void* context
 		return;
 	}
 
-	// 确定访问类型
+	// Determine access type
 	RenderCore::ResourceAccessType accessType = DetermineAccessFlags(desc, flags, true);
 
-	// 通知命令缓冲区，RHI层会自动处理layout转换
+	// Notify command buffer, RHI layer will automatically handle layout transition
 	executeContext->commandBuffer->ResourceBarrier(texture, accessType);
 }
 
@@ -82,11 +83,35 @@ std::string FrameGraphTexture::toString(const Desc& desc)
 
 RenderCore::ResourceAccessType FrameGraphTexture::DetermineAccessFlags(const Desc& desc, uint32_t flags, bool isWrite) const
 {
-	// 根据flags和访问类型确定ResourceAccessType
-	// 这是RHI无关的抽象，由各RHI后端自行解释
+	RenderCore::ResourceAccessType accessFlags = static_cast<RenderCore::ResourceAccessType>(flags);
+
+	if (flags != FrameGraph::kFlagsIgnored)
+	{
+		if ((accessFlags & RenderCore::ResourceAccessType::DepthStencilAttachment) != static_cast<RenderCore::ResourceAccessType>(0))
+		{
+			return RenderCore::ResourceAccessType::DepthStencilAttachment;
+		}
+		if ((accessFlags & RenderCore::ResourceAccessType::ColorAttachment) != static_cast<RenderCore::ResourceAccessType>(0))
+		{
+			return RenderCore::ResourceAccessType::ColorAttachment;
+		}
+		if ((accessFlags & RenderCore::ResourceAccessType::ShaderRead) != static_cast<RenderCore::ResourceAccessType>(0))
+		{
+			return RenderCore::ResourceAccessType::ShaderRead;
+		}
+		if ((accessFlags & RenderCore::ResourceAccessType::TransferSrc) != static_cast<RenderCore::ResourceAccessType>(0))
+		{
+			return RenderCore::ResourceAccessType::TransferSrc;
+		}
+		if ((accessFlags & RenderCore::ResourceAccessType::TransferDst) != static_cast<RenderCore::ResourceAccessType>(0))
+		{
+			return RenderCore::ResourceAccessType::TransferDst;
+		}
+	}
 
 	if (isWrite)
 	{
+		// Write operation: determine if it's depth stencil attachment or color attachment based on texture format
 		if (desc.format == RenderCore::kTexFormatDepth16 ||
 			desc.format == RenderCore::kTexFormatDepth24Stencil8 ||
 			desc.format == RenderCore::kTexFormatDepth32Float ||
@@ -95,14 +120,12 @@ RenderCore::ResourceAccessType FrameGraphTexture::DetermineAccessFlags(const Des
 		{
 			return RenderCore::ResourceAccessType::DepthStencilAttachment;
 		}
-		
+
 		return RenderCore::ResourceAccessType::ColorAttachment;
 	}
-	else
-	{
-		// 读操作：默认为着色器读取
-		return RenderCore::ResourceAccessType::ShaderRead;
-	}
+
+	// Read operation: default to shader read
+	return RenderCore::ResourceAccessType::ShaderRead;
 }
 
 NS_RENDERSYSTEM_END
