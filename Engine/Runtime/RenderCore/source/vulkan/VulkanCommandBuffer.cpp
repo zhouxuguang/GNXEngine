@@ -262,11 +262,11 @@ void VulkanCommandBuffer::PresentFrameBuffer()
     waitStages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
     
 	// 如果有异步计算工作，等待计算完成
-	if (mCommandInfo->vulkanContext->asyncComputeSemaphore != VK_NULL_HANDLE)
+	/*if (mCommandInfo->vulkanContext->asyncComputeSemaphore != VK_NULL_HANDLE)
 	{
 		waitSemaphores.push_back(mCommandInfo->vulkanContext->asyncComputeSemaphore);
 		waitStages.push_back(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-	}
+	}*/
     
     // 信号图形完成
     VkSemaphore signalSemaphores[] = {mCommandInfo->renderFinishSemaphore};
