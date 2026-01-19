@@ -39,15 +39,18 @@ public:
         /** Declares the creation of a resource. */
         [[nodiscard]] FrameGraphResource Create(const std::string_view name, const typename T::Desc&);
         
-        /** Declares read operation. */
-        FrameGraphResource Read(FrameGraphResource id, uint32_t flags = kFlagsIgnored);
+        /**
+         * flags 实际上代表,ResourceAccessType,用uint32_t是为了不和RHI的具体类型耦合
+         */
+        [[nodiscard]] FrameGraphResource Read(FrameGraphResource id, uint32_t flags = kFlagsIgnored);
+
         /**
          * Declares write operation.
          * @remark Writing to imported resource counts as side-effect.
          */
         [[nodiscard]] FrameGraphResource Write(FrameGraphResource id, uint32_t flags = kFlagsIgnored);
 
-        /** Ensures that this pass is not culled during the compilation phase. */
+        /** 确保在编译阶段不被剔除掉 */
         Builder& SetSideEffect() 
         {
             m_passNode.mHasSideEffect = true;

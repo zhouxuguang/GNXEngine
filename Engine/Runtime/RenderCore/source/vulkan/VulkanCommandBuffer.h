@@ -63,6 +63,15 @@ public:
     
     // 结束调试标记
     virtual void EndDebugGroup();
+
+    /**
+     * 通知命令缓冲区纹理资源即将被访问
+     * 自动处理Vulkan的layout转换
+     * @param texture 纹理资源
+     * @param accessType 访问类型（读/写、着色器读取、颜色附件等）
+     */
+    virtual void ResourceBarrier(RCTexturePtr texture, ResourceAccessType accessType) override;
+
 private:
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
     CommandBufferInfoPtr mCommandInfo = nullptr;

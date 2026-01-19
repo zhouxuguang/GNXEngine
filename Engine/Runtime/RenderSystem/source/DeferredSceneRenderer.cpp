@@ -14,6 +14,7 @@
 #include "RenderParameter.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
+#include "FrameGraph/FrameGraphExecuteContext.h"
 #include <algorithm>
 
 NS_RENDERSYSTEM_BEGIN
@@ -47,7 +48,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     {
         return;
     }
-    
+
     CommandQueuePtr graphicsQueue = RenderCore::GetRenderDevice()->GetCommandQueue(QueueType::Graphics, 0);
     CommandBufferPtr commandBuffer = graphicsQueue->CreateCommandBuffer();
     if (!commandBuffer)
@@ -55,15 +56,21 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
         return;
     }
 
+    // 创建FrameGraph执行上下文，包含命令缓冲区
+    FrameGraphExecuteContext executeContext;
+    executeContext.commandBuffer = commandBuffer;
+    // Vulkan后端会利用commandBuffer自动处理layout转换
+
     // 创建FrameGraph
     FrameGraph frameGraph;
     FrameGraphResource depthResource = RenderPreDepthPass(sceneManager, frameGraph, commandBuffer);
-    
+
     RenderPresentPass(frameGraph, commandBuffer, depthResource);
-    
+
     frameGraph.Compile();
-    frameGraph.Execute(nullptr, mTransientResources);
-    
+    // 执行FrameGraph，RHI层会自动处理资源状态转换
+    frameGraph.Execute(&executeContext, mTransientResources);
+
     return;
 
     // 阶段1: G-Buffer Pass
@@ -138,7 +145,7 @@ void DeferredSceneRenderer::RenderPresentPass(FrameGraph& frameGraph, CommandBuf
     frameGraph.AddPass("PresentPass",
     [=](RenderSystem::FrameGraph::Builder &builder, RenderSystem::FrameGraph::NoData &data)
     {
-        builder.Read(depthResource);
+        builder.Read(depthResource, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
 
         // present的pass必须设置这个标记，要不然不会执行
         builder.SetSideEffect();

@@ -86,24 +86,35 @@ void FrameGraph::Execute(void* context, void* allocator)
 		if (!pass.canExecute()) continue;
 
 		for (const auto id : pass.m_creates)
+		{
 			_getResourceEntry(id).create(allocator);
+		}
 
+		// 资源状态转换
 		for (const auto [id, flags] : pass.m_reads)
 		{
-			if (flags != kFlagsIgnored) _getResourceEntry(id).preRead(flags, context);
+			if (flags != kFlagsIgnored)
+			{
+				_getResourceEntry(id).preRead(flags, context);
+			}
 		}
 		for (const auto [id, flags] : pass.m_writes)
 		{
 			if (flags != kFlagsIgnored)
+			{
 				_getResourceEntry(id).preWrite(flags, context);
+			}
 		}
+
 		FrameGraphPassResources resources{ *this, pass };
 		std::invoke(*pass.m_exec, resources, context);
 
 		for (auto& entry : m_resourceRegistry)
 		{
 			if (entry.m_last == &pass && entry.isTransient())
+			{
 				entry.destroy(allocator);
+			}
 		}
 	}
 }

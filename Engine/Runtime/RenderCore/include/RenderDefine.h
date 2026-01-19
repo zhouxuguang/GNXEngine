@@ -373,6 +373,31 @@ struct Rect2D
     int height;
 };
 
+/**
+ * 资源访问类型枚举
+ */
+enum class ResourceAccessType : uint32_t
+{
+    Unknown = 0,
+    Read = 1 << 0,
+    Write = 1 << 1,
+    ShaderRead = 1 << 2,
+    ColorAttachment = 1 << 3,
+    DepthStencilAttachment = 1 << 4,
+    TransferSrc = 1 << 5,
+    TransferDst = 1 << 6,
+};
+
+inline ResourceAccessType operator|(ResourceAccessType a, ResourceAccessType b)
+{
+    return static_cast<ResourceAccessType>(static_cast<uint32_t>(a) | static_cast<uint32_t>(b));
+}
+
+inline ResourceAccessType operator&(ResourceAccessType a, ResourceAccessType b)
+{
+    return static_cast<ResourceAccessType>(static_cast<uint32_t>(a) & static_cast<uint32_t>(b));
+}
+
 
 //non indexed
 struct DrawIndirectCommand

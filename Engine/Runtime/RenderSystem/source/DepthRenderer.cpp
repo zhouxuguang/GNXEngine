@@ -105,7 +105,7 @@ FrameGraphResource DepthRenderer::Render(
             depthDesc.format = mConfig.depthFormat;
 
             data.depthTexture = builder.Create<FrameGraphTexture>("DepthTexture", depthDesc);
-            builder.Write(data.depthTexture);
+            builder.Write(data.depthTexture, (uint32_t)RenderCore::ResourceAccessType::DepthStencilAttachment);
             //builder.SetSideEffect();
 
             // 保存引用
