@@ -78,7 +78,7 @@ if(APPLE)
     set_target_properties(GNXEditor PROPERTIES LINK_FLAGS "-fobjc-arc")
 endif()
 
-target_link_libraries(GNXEditor PRIVATE Qt${QT_VERSION_MAJOR}::Widgets GNXEngine AssetProcess)
+target_link_libraries(GNXEditor PRIVATE Qt${QT_VERSION_MAJOR}::Widgets GNXEngine)
 
 set_target_properties(GNXEditor PROPERTIES
     MACOSX_BUNDLE_GUI_IDENTIFIER zhouxuguang.gnxengine.com

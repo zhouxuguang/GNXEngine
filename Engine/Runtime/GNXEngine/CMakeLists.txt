@@ -15,6 +15,7 @@ source_group(TREE ${GNXEngine_include_dir} PREFIX include FILES ${GNXEngine_Incl
 target_include_directories(GNXEngine PUBLIC ${GNXEngine_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 
 target_link_libraries(GNXEngine PRIVATE 
+    ISPCCompress
     AssetProcess 
     Allocator
     BaseLib
@@ -32,14 +33,14 @@ target_compile_definitions(GNXEngine PRIVATE GNXENGINE_EXPORTS)
 
 if(UNIX)
     # Linux/macOS 使用 --whole-archive
-    # target_link_libraries(GNXEngine PRIVATE 
-    #     -Wl,--whole-archive
-    #     AssetProcess
-    #     -Wl,--no-whole-archive
-    # )
+    target_link_libraries(GNXEngine PRIVATE 
+        -Wl,--whole-archive
+        ISPCCompress
+        -Wl,--no-whole-archive
+    )
 elseif(MSVC)
     # Windows 使用 /WHOLEARCHIVE
-    # target_link_options(GNXEngine PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:AssetProcess>")
+    target_link_options(GNXEngine PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:ISPCCompress>")
 endif()
 
 if(APPLE)

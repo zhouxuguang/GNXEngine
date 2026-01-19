@@ -74,7 +74,7 @@ typedef struct ChannelInfo
 } ChannelInfoArray[kShaderChannelCount];
 
 //顶点数据的类用于存储所有的顶点属性
-class  VertexData
+class RENDERSYSTEM_API VertexData
 {
 public:
     VertexData();
