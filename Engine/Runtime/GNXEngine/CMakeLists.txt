@@ -31,8 +31,13 @@ target_link_libraries(GNXEngine PRIVATE
 )
 target_compile_definitions(GNXEngine PRIVATE GNXENGINE_EXPORTS)
 
-if(UNIX)
-    # Linux/macOS 使用 --whole-archive
+if(APPLE)
+    # macOS
+    target_link_libraries(GNXEngine PRIVATE
+        "-Wl,-force_load,$<TARGET_FILE:ISPCCompress>"
+    )
+elseif(UNIX)
+    # Linux使用 --whole-archive
     target_link_libraries(GNXEngine PRIVATE 
         -Wl,--whole-archive
         ISPCCompress
