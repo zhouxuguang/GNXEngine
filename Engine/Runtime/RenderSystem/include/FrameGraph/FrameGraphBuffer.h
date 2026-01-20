@@ -18,9 +18,15 @@ public:
 	void create(const Desc& desc, void* allocator);
 	void destroy(const Desc& desc, void* allocator);
 
+	void preRead(const Desc& desc, uint32_t flags, void* context);
+	void preWrite(const Desc& desc, uint32_t flags, void* context);
+
 	static std::string toString(const Desc& desc);
 
 	RenderCore::ComputeBufferPtr buffer = nullptr;
+
+private:
+	RenderCore::ResourceAccessType DetermineAccessFlags(const Desc& desc, uint32_t flags, bool isWrite) const;
 };
 
 NS_RENDERSYSTEM_END

@@ -10,6 +10,7 @@
 #include "VKRenderEncoder.h"
 #include "VKComputeEncoder.h"
 #include "VKBlitEncoder.h"
+#include "VKComputeBuffer.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/BaseLib/include/DebugBreaker.h"
 #include "VKUtil.h"
@@ -564,6 +565,88 @@ void VulkanCommandBuffer::ResourceBarrier(RCTexturePtr texture, ResourceAccessTy
 
     // 插入pipeline barrier
     vkCmdPipelineBarrier(mCommandBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+}
+
+void VulkanCommandBuffer::ResourceBarrier(ComputeBufferPtr buffer, ResourceAccessType accessType)
+{
+    if (!buffer)
+    {
+        return;
+    }
+
+    // 转换到Vulkan计算缓冲区
+    VKComputeBuffer* vkBuffer = dynamic_cast<VKComputeBuffer*>(buffer.get());
+    if (!vkBuffer)
+    {
+        return;
+    }
+
+    // 确定目标访问掩码和管道阶段
+    VkAccessFlags dstAccessMask = 0;
+    VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
+    if (accessType == ResourceAccessType::ShaderRead)
+    {
+        dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        dstStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    }
+	else if (accessType == ResourceAccessType::ComputeShaderRead)
+	{
+		dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	}
+    else if (accessType == ResourceAccessType::ComputeShaderWrite)
+    {
+        dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+        dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
+    }
+    else if (accessType == ResourceAccessType::TransferSrc)
+    {
+        dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+        dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    }
+    else if (accessType == ResourceAccessType::TransferDst)
+    {
+        dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    }
+    else
+    {
+        // 未知访问类型，默认为shader读写
+        dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+        dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    }
+
+    // 创建buffer barrier
+    VkBufferMemoryBarrier barrier = {};
+    barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.buffer = vkBuffer->GetBuffer();
+    barrier.offset = 0;
+    barrier.size = VK_WHOLE_SIZE;
+
+    // 源access mask（简化处理）
+    VkAccessFlags srcAccessMask = 0;
+    VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+    // 假设之前的状态是transfer write
+    if ((accessType & ResourceAccessType::ShaderRead) == ResourceAccessType::ShaderRead)
+    {
+        srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+        srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    }
+    else if ((accessType & ResourceAccessType::ComputeShaderWrite) == ResourceAccessType::ComputeShaderWrite)
+    {
+        srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
+        srcStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
+    }
+
+    barrier.srcAccessMask = srcAccessMask;
+    barrier.dstAccessMask = dstAccessMask;
+
+    // 插入pipeline barrier
+    vkCmdPipelineBarrier(mCommandBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 1, &barrier, 0, nullptr);
 }
 
 NAMESPACE_RENDERCORE_END

@@ -379,8 +379,8 @@ struct Rect2D
 enum class ResourceAccessType : uint32_t
 {
     Unknown = 0,
-    Read = 1 << 0,
-    Write = 1 << 1,
+    ComputeShaderRead = 1 << 0,
+    ComputeShaderWrite = 1 << 1,
     ShaderRead = 1 << 2,
     ColorAttachment = 1 << 3,
     DepthStencilAttachment = 1 << 4,

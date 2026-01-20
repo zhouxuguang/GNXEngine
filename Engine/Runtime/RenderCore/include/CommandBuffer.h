@@ -55,6 +55,14 @@ public:
      * @param accessType 访问类型（读/写、着色器读取、颜色附件等）
      */
     virtual void ResourceBarrier(RCTexturePtr texture, ResourceAccessType accessType) = 0;
+
+    /**
+     * 通知命令缓冲区某个计算缓冲区资源即将被访问
+     * RHI层会自动处理资源状态转换（如Vulkan的barrier）
+     * @param buffer 计算缓冲区资源
+     * @param accessType 访问类型（读/写、着色器读取等）
+     */
+    virtual void ResourceBarrier(ComputeBufferPtr buffer, ResourceAccessType accessType) = 0;
 };
 
 typedef std::shared_ptr<CommandBuffer> CommandBufferPtr;
