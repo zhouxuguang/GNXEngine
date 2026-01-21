@@ -91,9 +91,17 @@ RenderCore::ResourceAccessType FrameGraphTexture::DetermineAccessFlags(const Des
 		{
 			return RenderCore::ResourceAccessType::DepthStencilAttachment;
 		}
+		if ((accessFlags & RenderCore::ResourceAccessType::ComputeShaderWrite) != static_cast<RenderCore::ResourceAccessType>(0))
+		{
+			return RenderCore::ResourceAccessType::ComputeShaderWrite;
+		}
 		if ((accessFlags & RenderCore::ResourceAccessType::ColorAttachment) != static_cast<RenderCore::ResourceAccessType>(0))
 		{
 			return RenderCore::ResourceAccessType::ColorAttachment;
+		}
+		if ((accessFlags & RenderCore::ResourceAccessType::ComputeShaderRead) != static_cast<RenderCore::ResourceAccessType>(0))
+		{
+			return RenderCore::ResourceAccessType::ComputeShaderRead;
 		}
 		if ((accessFlags & RenderCore::ResourceAccessType::ShaderRead) != static_cast<RenderCore::ResourceAccessType>(0))
 		{

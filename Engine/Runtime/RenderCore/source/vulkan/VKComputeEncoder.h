@@ -44,10 +44,6 @@ private:
     VulkanContextPtr mContext = nullptr;
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
     VKComputePipeline *mVKPipeline = nullptr;
-
-    std::vector<VkImage> mSetImages;   // 当前encoder设置的图像列表
-
-    VkBuffer mBuffer = nullptr;
 };
 
 NAMESPACE_RENDERCORE_END

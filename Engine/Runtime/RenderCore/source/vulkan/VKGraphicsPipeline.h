@@ -11,6 +11,7 @@
 #include "VulkanContext.h"
 #include "GraphicsPipeline.h"
 #include "VKShaderFunction.h"
+#include "VKTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -27,6 +28,14 @@ struct RenderPassImage
     std::vector<VkImage> colorImages;
     VkImage depthImage = VK_NULL_HANDLE;
     VkImage stencilImage = VK_NULL_HANDLE;
+};
+
+struct RenderPassTexture
+{
+    bool isPresentStage = false;
+    std::vector<VKTextureBasePtr> colorTextures;
+    VKTextureBasePtr depthTexture = nullptr;
+    VKTextureBasePtr stencilTexture = nullptr;
 };
 
 struct RenderPassImageView

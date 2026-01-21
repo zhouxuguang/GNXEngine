@@ -80,11 +80,6 @@ void VKComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.range = VK_WHOLE_SIZE;
     bufferInfo.buffer = vkComputeBuffer->GetBuffer();
-
-    if (index == 2)
-    {
-        mBuffer = bufferInfo.buffer;
-    }
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
     VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(VK_NULL_HANDLE,
@@ -103,24 +98,13 @@ void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t index)
         return;
     }
     VKTextureBasePtr vkTexture2D = std::dynamic_pointer_cast<VKTextureBase>(texture);
-    mSetImages.push_back(vkTexture2D->GetVKImage());
 
-    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    
-    /*VulkanBufferUtil::InsertImageMemoryBarrier(
-            mCommandBuffer,
-            vkTexture2D->GetVKImage(),
-            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            0,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            imageLayout,
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });*/
-    
+    // 使用纹理的当前layout
+    VkImageLayout imageLayout = vkTexture2D->GetCurrentLayout();
+
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkTexture2D->GetImageView()->GetHandle();
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageInfo.imageLayout = imageLayout;
     imageInfo.sampler = nullptr;
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
@@ -139,24 +123,13 @@ void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint3
         return;
     }
     VKTextureBasePtr vkRenderTex = std::dynamic_pointer_cast<VKTextureBase>(texture);
-    mSetImages.push_back(vkRenderTex->GetVKImage());
 
-    /*VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    
-    VulkanBufferUtil::InsertImageMemoryBarrier(
-            mCommandBuffer,
-            vkRenderTex->GetVKImage(),
-            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            0,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            imageLayout,
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });*/
-    
+    // Sampled image descriptor可以使用具体的layout，使用纹理的当前layout
+    VkImageLayout imageLayout = vkRenderTex->GetCurrentLayout();
+
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageInfo.imageLayout = imageLayout;
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
     VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
@@ -174,24 +147,13 @@ void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t index)
         return;
     }
     VKTextureBasePtr vkRenderTex = std::dynamic_pointer_cast<VKTextureBase>(texture);
-    mSetImages.push_back(vkRenderTex->GetVKImage());
 
-   /* VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    
-    VulkanBufferUtil::InsertImageMemoryBarrier(
-            mCommandBuffer,
-            vkRenderTex->GetVKImage(),
-            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            0,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            imageLayout,
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });*/
-    
+    // Sampled image descriptor可以使用具体的layout，使用纹理的当前layout
+    VkImageLayout imageLayout = vkRenderTex->GetCurrentLayout();
+
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageInfo.imageLayout = imageLayout;
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
     VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
@@ -209,24 +171,13 @@ void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t mipLevel, ui
         return;
     }
     VKTextureBasePtr vkRenderTex = std::dynamic_pointer_cast<VKTextureBase>(texture);
-    mSetImages.push_back(vkRenderTex->GetVKImage());
 
-   /* VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-    
-    VulkanBufferUtil::InsertImageMemoryBarrier(
-            mCommandBuffer,
-            vkRenderTex->GetVKImage(),
-            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            0,
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            imageLayout,
-            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });*/
-    
+    // Sampled image descriptor可以使用具体的layout，使用纹理的当前layout
+    VkImageLayout imageLayout = vkRenderTex->GetCurrentLayout();
+
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    imageInfo.imageLayout = imageLayout;
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
     VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,
@@ -246,55 +197,6 @@ void VKComputeEncoder::EndEncode()
 {
     // vulkan中的计算着色器没有pass的概念
     //vkCmdEndRenderingKHR(mCommandBuffer);
-
-    /*VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-    for (auto &iter : mSetImages)
-    {
-        VulkanBufferUtil::InsertImageMemoryBarrier(
-            mCommandBuffer,
-            iter,
-            VK_ACCESS_NONE,
-            0,
-            VK_IMAGE_LAYOUT_GENERAL,
-            imageLayout,
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });   
-    }
-    mSetImages.clear();*/
-
-	/*typedef struct VkBufferMemoryBarrier2 {
-		VkStructureType          sType;
-		const void* pNext;
-		VkPipelineStageFlags2    srcStageMask;
-		VkAccessFlags2           srcAccessMask;
-		VkPipelineStageFlags2    dstStageMask;
-		VkAccessFlags2           dstAccessMask;
-		uint32_t                 srcQueueFamilyIndex;
-		uint32_t                 dstQueueFamilyIndex;
-		VkBuffer                 buffer;
-		VkDeviceSize             offset;
-		VkDeviceSize             size;
-	} VkBufferMemoryBarrier2;*/
-
-    /*if (mBuffer != VK_NULL_HANDLE)
-    {
-        VkBufferMemoryBarrier2 bufferMemoryBarrier2 = {};
-        bufferMemoryBarrier2.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR;
-        bufferMemoryBarrier2.buffer = mBuffer;
-        bufferMemoryBarrier2.size = VK_WHOLE_SIZE;
-        bufferMemoryBarrier2.srcStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR;
-        bufferMemoryBarrier2.dstStageMask = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR;
-        bufferMemoryBarrier2.srcAccessMask = VK_ACCESS_2_SHADER_WRITE_BIT_KHR;
-        bufferMemoryBarrier2.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT_KHR;
-        VkDependencyInfo DependencyInfo = {};
-		DependencyInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-		DependencyInfo.bufferMemoryBarrierCount = 1;
-		DependencyInfo.pBufferMemoryBarriers = &bufferMemoryBarrier2;
-
-        vkCmdPipelineBarrier2KHR(mCommandBuffer, &DependencyInfo);
-    }*/
 }
 
 NAMESPACE_RENDERCORE_END

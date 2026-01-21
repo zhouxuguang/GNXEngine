@@ -71,7 +71,17 @@ public:
     {
         return mImage;
     }
-    
+
+    VkImageLayout GetCurrentLayout() const
+    {
+        return mCurrentLayout;
+    }
+
+    void SetCurrentLayout(VkImageLayout layout)
+    {
+        mCurrentLayout = layout;
+    }
+
 private:
     VkImage mImage = VK_NULL_HANDLE;
     VmaAllocation mAllocation = VK_NULL_HANDLE;
@@ -85,6 +95,7 @@ private:
     VulkanImageViewPtr mVulkanImageViewPtr = nullptr;
     std::vector<VulkanImageViewPtr> mRenderTargetViews;
     bool mSupportHostImageCopy = false;
+    VkImageLayout mCurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 };
 
 using VKTextureBasePtr = std::shared_ptr<VKTextureBase>;

@@ -53,21 +53,50 @@ VkPrimitiveTopology ConvertToVulkanPrimitiveTopology(PrimitiveMode mode)
 void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInfo)
 {
     // 动态渲染没有子流程依赖，所以需要插入图像内存屏障
-    for (auto &iter : mPassImage.colorImages)
+    for (size_t i = 0; i < mPassImage.colorImages.size(); ++i)
     {
+        VkImageLayout currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        if (!mPassTexture.colorTextures.empty() && i < mPassTexture.colorTextures.size() && mPassTexture.colorTextures[i])
+        {
+            currentLayout = mPassTexture.colorTextures[i]->GetCurrentLayout();
+        }
+
         VulkanBufferUtil::InsertImageMemoryBarrier(
             mCommandBuffer,
-            iter,
+            mPassImage.colorImages[i],
             0,
             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            VK_IMAGE_LAYOUT_UNDEFINED,
+            currentLayout,
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+        // 更新纹理layout
+        if (!mPassTexture.colorTextures.empty() && i < mPassTexture.colorTextures.size() && mPassTexture.colorTextures[i])
+        {
+            mPassTexture.colorTextures[i]->SetCurrentLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        }
     }
-    
-    if (mPassImage.depthImage)
+
+    if (mPassImage.depthImage && !mPassTexture.colorTextures.empty() && mPassTexture.depthTexture)
+    {
+        VkImageLayout currentLayout = mPassTexture.depthTexture->GetCurrentLayout();
+
+        VulkanBufferUtil::InsertImageMemoryBarrier(
+            mCommandBuffer,
+            mPassImage.depthImage,
+            0,
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            currentLayout,
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.depthFormat), 0, 1, 0, 1 });
+
+        mPassTexture.depthTexture->SetCurrentLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    }
+    else if (mPassImage.depthImage)
     {
         VulkanBufferUtil::InsertImageMemoryBarrier(
             mCommandBuffer,
@@ -80,8 +109,25 @@ void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInf
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.depthFormat), 0, 1, 0, 1 });
     }
-    
-    if (mPassImage.stencilImage)
+
+    if (mPassImage.stencilImage && !mPassTexture.colorTextures.empty() && mPassTexture.stencilTexture)
+    {
+        VkImageLayout currentLayout = mPassTexture.stencilTexture->GetCurrentLayout();
+
+        VulkanBufferUtil::InsertImageMemoryBarrier(
+            mCommandBuffer,
+            mPassImage.stencilImage,
+            0,
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            currentLayout,
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+            VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.stencilFormat), 0, 1, 0, 1 });
+
+        mPassTexture.stencilTexture->SetCurrentLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    }
+    else if (mPassImage.stencilImage)
     {
         VulkanBufferUtil::InsertImageMemoryBarrier(
             mCommandBuffer,
@@ -94,26 +140,26 @@ void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInf
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.stencilFormat), 0, 1, 0, 1 });
     }
-    
+
     vkCmdBeginRenderingKHR(mCommandBuffer, &renderInfo);
 }
 
 void VKRenderEncoder::EndDynamicRenderPass()
 {
     vkCmdEndRenderingKHR(mCommandBuffer);
-    
+
     VkImageLayout imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     if (!mPassImage.isPresentStage)
     {
         imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
-    
+
     // 对颜色附件进行转换
-    for (auto &iter : mPassImage.colorImages)
+    for (size_t i = 0; i < mPassImage.colorImages.size(); ++i)
     {
         VulkanBufferUtil::InsertImageMemoryBarrier(
             mCommandBuffer,
-            iter,
+            mPassImage.colorImages[i],
             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
             0,
             VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
@@ -121,6 +167,12 @@ void VKRenderEncoder::EndDynamicRenderPass()
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
             VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+        // 更新纹理layout
+        if (!mPassTexture.colorTextures.empty() && i < mPassTexture.colorTextures.size() && mPassTexture.colorTextures[i])
+        {
+            mPassTexture.colorTextures[i]->SetCurrentLayout(imageLayout);
+        }
     }
 }
 
@@ -183,14 +235,15 @@ void VKRenderEncoder::EndRenderPass()
     vkCmdEndRenderPass(mCommandBuffer);
 }
 
-VKRenderEncoder::VKRenderEncoder(VulkanContextPtr context, 
+VKRenderEncoder::VKRenderEncoder(VulkanContextPtr context,
                                  VkCommandBuffer commandBuffer,
                                  const VkRenderingInfoKHR& renderInfo,
-                                 const RenderPassFormat& passFormat, 
+                                 const RenderPassFormat& passFormat,
                                  const RenderPassImage& passImage,
+                                 const RenderPassTexture& passTexture,
                                  const std::vector<VkClearValue> &clearValues,
                                  const RenderPassImageView& passImageView,
-                                 uint32_t currentFrameIndex) : mPassFormat(passFormat), mPassImage(passImage)
+                                 uint32_t currentFrameIndex) : mPassFormat(passFormat), mPassImage(passImage), mPassTexture(passTexture)
 {
     mCommandBuffer = commandBuffer;
     mContext = context;

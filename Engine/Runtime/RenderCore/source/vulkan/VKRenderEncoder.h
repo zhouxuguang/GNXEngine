@@ -18,11 +18,12 @@ NAMESPACE_RENDERCORE_BEGIN
 class VKRenderEncoder : public RenderEncoder
 {
 public:
-    VKRenderEncoder(VulkanContextPtr context, 
+    VKRenderEncoder(VulkanContextPtr context,
                     VkCommandBuffer commandBuffer,
                     const VkRenderingInfoKHR& renderInfo,
-                    const RenderPassFormat& passFormat, 
+                    const RenderPassFormat& passFormat,
                     const RenderPassImage& passImage,
+                    const RenderPassTexture& passTexture,
                     const std::vector<VkClearValue> &clearValues,
                     const RenderPassImageView& passImageView,
                     uint32_t currentFrameIndex);
@@ -73,6 +74,7 @@ private:
     VkFramebuffer mFrameBuffer = VK_NULL_HANDLE;
     RenderPassFormat mPassFormat;
     RenderPassImage mPassImage;
+    RenderPassTexture mPassTexture;
     VulkanContextPtr mContext = nullptr;
     uint32_t mCurrentFrameIndex = 0;
     

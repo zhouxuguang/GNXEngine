@@ -443,7 +443,7 @@ void NaniteFrameWork::RenderFrame()
             visBufferDesc.format = RenderCore::kTexFormatRGBA32Float;
 
             data.visBuffer = builder.Create<RenderSystem::FrameGraphTexture>("VisBuffer", visBufferDesc);
-            data.visBuffer = builder.Write(data.visBuffer, static_cast<uint32_t>(RenderCore::ResourceAccessType::ColorAttachment));
+            data.visBuffer = builder.Write(data.visBuffer, static_cast<uint32_t>(RenderCore::ResourceAccessType::ComputeShaderWrite));
         },
         [&](const VisualizationPassData& data, RenderSystem::FrameGraphPassResources& resources, void* context)
         {
