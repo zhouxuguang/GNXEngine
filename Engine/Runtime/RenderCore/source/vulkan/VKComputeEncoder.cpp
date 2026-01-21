@@ -107,7 +107,7 @@ void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t index)
 
     VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     
-    VulkanBufferUtil::InsertImageMemoryBarrier(
+    /*VulkanBufferUtil::InsertImageMemoryBarrier(
             mCommandBuffer,
             vkTexture2D->GetVKImage(),
             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -116,7 +116,7 @@ void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t index)
             imageLayout,
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });*/
     
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkTexture2D->GetImageView()->GetHandle();
@@ -141,7 +141,7 @@ void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint3
     VKTextureBasePtr vkRenderTex = std::dynamic_pointer_cast<VKTextureBase>(texture);
     mSetImages.push_back(vkRenderTex->GetVKImage());
 
-    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    /*VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     
     VulkanBufferUtil::InsertImageMemoryBarrier(
             mCommandBuffer,
@@ -152,7 +152,7 @@ void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint3
             imageLayout,
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });*/
     
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();
@@ -176,7 +176,7 @@ void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t index)
     VKTextureBasePtr vkRenderTex = std::dynamic_pointer_cast<VKTextureBase>(texture);
     mSetImages.push_back(vkRenderTex->GetVKImage());
 
-    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+   /* VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     
     VulkanBufferUtil::InsertImageMemoryBarrier(
             mCommandBuffer,
@@ -187,7 +187,7 @@ void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t index)
             imageLayout,
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });*/
     
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();
@@ -211,7 +211,7 @@ void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t mipLevel, ui
     VKTextureBasePtr vkRenderTex = std::dynamic_pointer_cast<VKTextureBase>(texture);
     mSetImages.push_back(vkRenderTex->GetVKImage());
 
-    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+   /* VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     
     VulkanBufferUtil::InsertImageMemoryBarrier(
             mCommandBuffer,
@@ -222,7 +222,7 @@ void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t mipLevel, ui
             imageLayout,
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+            VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });*/
     
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();
@@ -247,7 +247,7 @@ void VKComputeEncoder::EndEncode()
     // vulkan中的计算着色器没有pass的概念
     //vkCmdEndRenderingKHR(mCommandBuffer);
 
-    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    /*VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
     for (auto &iter : mSetImages)
     {
@@ -262,7 +262,7 @@ void VKComputeEncoder::EndEncode()
             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
             VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });   
     }
-    mSetImages.clear();
+    mSetImages.clear();*/
 
 	/*typedef struct VkBufferMemoryBarrier2 {
 		VkStructureType          sType;
@@ -278,7 +278,7 @@ void VKComputeEncoder::EndEncode()
 		VkDeviceSize             size;
 	} VkBufferMemoryBarrier2;*/
 
-    if (mBuffer != VK_NULL_HANDLE)
+    /*if (mBuffer != VK_NULL_HANDLE)
     {
         VkBufferMemoryBarrier2 bufferMemoryBarrier2 = {};
         bufferMemoryBarrier2.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR;
@@ -294,7 +294,7 @@ void VKComputeEncoder::EndEncode()
 		DependencyInfo.pBufferMemoryBarriers = &bufferMemoryBarrier2;
 
         vkCmdPipelineBarrier2KHR(mCommandBuffer, &DependencyInfo);
-    }
+    }*/
 }
 
 NAMESPACE_RENDERCORE_END

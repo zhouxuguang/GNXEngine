@@ -156,6 +156,16 @@ RenderCore::RCTexturePtr TransientResources::acquireTexture(const FrameGraphText
         auto texture = pool.back().resource;
         pool.pop_back();
 
+        // 检查从池中取出的资源是否有效
+        if (!texture)
+        {
+            // 如果池中的资源无效，创建新资源
+            texture = mRenderDevice->CreateTexture2D(desc.format,
+                                            RenderCore::TextureUsage::TextureUsageShaderRead | RenderCore::TextureUsage::TextureUsageRenderTarget,
+                                            desc.extent.width, desc.extent.height, desc.numMipLevels);
+            m_textures.push_back(texture);
+        }
+
         // 从资源池复用时也要更新名称
         SetDebugName(texture, desc.name);
 

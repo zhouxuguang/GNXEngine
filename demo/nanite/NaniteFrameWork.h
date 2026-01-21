@@ -52,6 +52,8 @@ private:
 
     GlobaleData mGlobalData;
 
+    RenderSystem::TransientResources *mTransientResources = nullptr;
+
 private:
     RenderCore::ComputeBufferPtr InitNaniteMeshBuffer();
 

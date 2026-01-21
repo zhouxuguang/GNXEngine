@@ -251,7 +251,8 @@ inline FrameGraphResource
 FrameGraph::Builder::Create(const std::string_view name, const typename T::Desc& desc)
 {
     const auto id = m_frameGraph._create<T>(ResourceEntry::Type::Transient, name, desc, T{});
-    return m_passNode.m_creates.emplace_back(id);
+    m_passNode.m_creates.emplace_back(id);
+    return id;
 }
 
 //

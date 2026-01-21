@@ -2,7 +2,7 @@
 #define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPHEXECUTECONTEXT_H
 
 #include "Runtime/RenderCore/include/CommandBuffer.h"
-#include "RSDefine.h"
+#include "../RSDefine.h"
 
 NS_RENDERSYSTEM_BEGIN
 
