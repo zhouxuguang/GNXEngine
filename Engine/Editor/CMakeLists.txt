@@ -24,6 +24,8 @@ set(PROJECT_SOURCES
         mainwindow.ui
         ContentWidget.h
         ContentWidget.cpp
+        RenderWindowWidget.h
+        RenderWindowWidget.cpp
         TestPost/TestPost.cpp
         TestPost/TestPost.hpp
         TestImageDecode.cpp
@@ -40,6 +42,8 @@ set(PROJECT_SOURCES
 set(PLATFORM_SRC )
 if(APPLE)
 set(PLATFORM_SRC 
+                macUtils.h
+                macUtils.mm
                 view.mm
                 view.h
                 MetalView.mm

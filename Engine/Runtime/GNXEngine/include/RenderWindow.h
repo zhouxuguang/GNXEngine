@@ -34,11 +34,11 @@ class GNXENGINE_API RenderWindow
 {
 public:
     using EventCallbackFunc = std::function<void(Event&)>;
-    
+
     RenderWindow() = default;
-    
+
     virtual ~RenderWindow() = default;
-    
+
     virtual void OnUpdate() = 0;
 
     virtual bool ShouldClose() const = 0;
@@ -51,10 +51,15 @@ public:
     virtual bool IsVSync() const = 0;
 
     virtual void* GetNativeWindow() const = 0;
-    
+
     virtual void Resize(uint32_t width, uint32_t height) = 0;
-    
+
+    // 手动触发事件回调（用于外部事件系统如 Qt 的事件转发）
+    virtual void TriggerEventCallback(Event& event) = 0;
+
     static std::shared_ptr<RenderWindow> Create(const WindowProps& props = WindowProps());
+    // 创建使用外部窗口句柄的 RenderWindow（用于 Qt 嵌入）
+    static std::shared_ptr<RenderWindow> CreateWithExternalWindow(const WindowProps& props, void* externalWindowHandle);
 };
 
 typedef std::shared_ptr<RenderWindow> RenderWindowPtr;
@@ -62,5 +67,6 @@ typedef std::shared_ptr<RenderWindow> RenderWindowPtr;
 RenderWindowPtr GetRenderWindow();
 
 NAMESPACE_GNXENGINE_END
+
 
 #endif //GNX_ENGINE_RENDERWINDOW_INCLUDE_DGNJDFHGFHGDF_INCLUDE

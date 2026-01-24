@@ -36,7 +36,10 @@ struct WindowData
 class DefaultRenderWindow : public RenderWindow
 {
 public:
+    // 默认构造函数，创建独立的窗口
     DefaultRenderWindow(const WindowProps& props);
+    // 构造函数，使用外部窗口句柄（用于 Qt 嵌入）
+    DefaultRenderWindow(const WindowProps& props, void* externalWindowHandle);
     ~DefaultRenderWindow();
 
     virtual void OnUpdate()
@@ -57,7 +60,7 @@ public:
     }
 
     virtual void SetEventCallback(const EventCallbackFunc& callback);
-    
+
     virtual void SetVSync(bool enabled);
     virtual bool IsVSync() const
     {
@@ -68,17 +71,21 @@ public:
     {
         return mWindow;
     }
-    
+
     virtual void Resize(uint32_t width, uint32_t height);
 
     virtual void Shutdown();
-    
+
     void Init();
+
+    // 手动触发事件回调（用于 Qt 事件转发）
+    void TriggerEventCallback(Event& event);
 
 private:
     WindowData mData;
     GLFWwindow *mWindow = nullptr;
     RenderCore::RenderDevicePtr mRenderDevice = nullptr;
+    bool mUseExternalWindow = false; // 是否使用外部窗口
 };
 
 NAMESPACE_GNXENGINE_END

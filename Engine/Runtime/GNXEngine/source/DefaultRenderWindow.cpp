@@ -40,7 +40,7 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
 #elif OS_MACOS
     mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nativeWnd);
 #endif
-    
+
     mRenderDevice->Resize(mData.width, mData.height);
     SetVSync(false);
     Init();
@@ -51,6 +51,43 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
     RenderSystem::CameraPtr cameraPtr = sceneManager->CreateCamera("MainCamera");
     cameraPtr->LookAt(mathutil::Vector3f(0, 0, 5), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
     cameraPtr->SetLens(60, float(mData.width) / mData.height, 0.1f, 1000.f);
+}
+
+DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props, void* externalWindowHandle)
+{
+    mData.width = props.width;
+    mData.height = props.height;
+    mData.title = props.title;
+    mUseExternalWindow = (externalWindowHandle != nullptr);
+
+    if (mUseExternalWindow) 
+    {
+        // 使用外部窗口
+        glfwInit();
+
+        // 创建一个隐藏的 GLFW 窗口用于事件轮询
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        mWindow = glfwCreateWindow(1, 1, "Hidden GLFW Window", NULL, NULL);
+
+        // 使用外部窗口句柄创建 RenderDevice
+#if OS_WINDOWS
+        mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, externalWindowHandle);
+#elif OS_MACOS
+        mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, externalWindowHandle);
+#endif
+
+        mRenderDevice->Resize(mData.width, mData.height);
+        SetVSync(false);
+
+        // 不需要初始化 GLFW 回调，因为事件由 Qt 处理
+        RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
+
+        //初始化相机
+        RenderSystem::CameraPtr cameraPtr = sceneManager->CreateCamera("MainCamera");
+        cameraPtr->LookAt(mathutil::Vector3f(0, 0, 5), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
+        cameraPtr->SetLens(60, float(mData.width) / mData.height, 0.1f, 1000.f);
+    }
 }
 
 DefaultRenderWindow::~DefaultRenderWindow()
@@ -98,99 +135,111 @@ bool DefaultRenderWindow::ShouldClose() const
 
 void DefaultRenderWindow::Init()
 {
-    glfwSetWindowUserPointer(mWindow, &mData);
-    
-    // Set GLFW callbacks
-    glfwSetWindowSizeCallback(mWindow, [](GLFWwindow* window, int width, int height)
+    // 只在使用 GLFW 窗口时才设置回调
+    if (!mUseExternalWindow) 
     {
-        WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-        data.width = width;
-        data.height = height;
+        glfwSetWindowUserPointer(mWindow, &mData);
 
-        WindowResizeEvent event(width, height);
-        data.eventCallback(event);
-    });
-    
-    glfwSetWindowCloseCallback(mWindow, [](GLFWwindow* window)
-    {
-        WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-        WindowCloseEvent event;
-        data.eventCallback(event);
-    });
-    
-    glfwSetKeyCallback(mWindow, [](GLFWwindow* window, int key, int scancode, int action, int mods)
-    {
-        WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-
-        switch (action)
+        // Set GLFW callbacks
+        glfwSetWindowSizeCallback(mWindow, [](GLFWwindow* window, int width, int height)
         {
-            case GLFW_PRESS:
-            {
-                KeyPressedEvent event(key, 0);
-                data.eventCallback(event);
-                break;
-            }
-            case GLFW_RELEASE:
-            {
-                KeyReleasedEvent event(key);
-                data.eventCallback(event);
-                break;
-            }
-            case GLFW_REPEAT:
-            {
-                KeyPressedEvent event(key, true);
-                data.eventCallback(event);
-                break;
-            }
-        }
-    });
-    
-    glfwSetMouseButtonCallback(mWindow, [](GLFWwindow* window, int button, int action, int mods)
-    {
-        WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+            data.width = width;
+            data.height = height;
 
-        switch (action)
-        {
-            case GLFW_PRESS:
-            {
-                MouseButtonPressedEvent event(button);
-                data.eventCallback(event);
-                break;
-            }
-            case GLFW_RELEASE:
-            {
-                MouseButtonReleasedEvent event(button);
-                data.eventCallback(event);
-                break;
-            }
-        }
-    });
-    
-    glfwSetScrollCallback(mWindow, [](GLFWwindow* window, double xOffset, double yOffset)
-    {
-        WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-        
-        // 标准化滚轮的数值
-        if (yOffset < 0)
-        {
-            yOffset = -120;
-        }
-        else if (yOffset > 0)
-        {
-            yOffset = 120;
-        }
+            WindowResizeEvent event(width, height);
+            data.eventCallback(event);
+        });
 
-        MouseScrolledEvent event((float)xOffset, (float)yOffset);
-        data.eventCallback(event);
-    });
-    
-    glfwSetCursorPosCallback(mWindow, [](GLFWwindow* window, double xPos, double yPos)
-    {
-        WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+        glfwSetWindowCloseCallback(mWindow, [](GLFWwindow* window)
+        {
+            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+            WindowCloseEvent event;
+            data.eventCallback(event);
+        });
 
-        MouseMovedEvent event((float)xPos, (float)yPos);
-        data.eventCallback(event);
-    });
+        glfwSetKeyCallback(mWindow, [](GLFWwindow* window, int key, int scancode, int action, int mods)
+        {
+            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+
+            switch (action)
+            {
+                case GLFW_PRESS:
+                {
+                    KeyPressedEvent event(key, 0);
+                    data.eventCallback(event);
+                    break;
+                }
+                case GLFW_RELEASE:
+                {
+                    KeyReleasedEvent event(key);
+                    data.eventCallback(event);
+                    break;
+                }
+                case GLFW_REPEAT:
+                {
+                    KeyPressedEvent event(key, true);
+                    data.eventCallback(event);
+                    break;
+                }
+            }
+        });
+
+        glfwSetMouseButtonCallback(mWindow, [](GLFWwindow* window, int button, int action, int mods)
+        {
+            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+
+            switch (action)
+            {
+                case GLFW_PRESS:
+                {
+                    MouseButtonPressedEvent event(button);
+                    data.eventCallback(event);
+                    break;
+                }
+                case GLFW_RELEASE:
+                {
+                    MouseButtonReleasedEvent event(button);
+                    data.eventCallback(event);
+                    break;
+                }
+            }
+        });
+
+        glfwSetScrollCallback(mWindow, [](GLFWwindow* window, double xOffset, double yOffset)
+        {
+            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+
+            // 标准化滚轮的数值
+            if (yOffset < 0)
+            {
+                yOffset = -120;
+            }
+            else if (yOffset > 0)
+            {
+                yOffset = 120;
+            }
+
+            MouseScrolledEvent event((float)xOffset, (float)yOffset);
+            data.eventCallback(event);
+        });
+
+        glfwSetCursorPosCallback(mWindow, [](GLFWwindow* window, double xPos, double yPos)
+        {
+            WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+
+            MouseMovedEvent event((float)xPos, (float)yPos);
+            data.eventCallback(event);
+        });
+    }
+}
+
+void DefaultRenderWindow::TriggerEventCallback(Event& event)
+{
+    if (mData.eventCallback) 
+    {
+        mData.eventCallback(event);
+    }
 }
 
 NAMESPACE_GNXENGINE_END

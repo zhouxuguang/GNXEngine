@@ -99,6 +99,8 @@ FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(SceneManager *scene
     {
         CollectMeshesRecursive(rootNode, meshItems, skinnedMeshItems);
     }
+    
+    DepthRenderParams params;
 
     // 如果有网格，则渲染深度图
     if (!meshItems.empty() || !skinnedMeshItems.empty())
@@ -115,8 +117,6 @@ FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(SceneManager *scene
             skinnedMatrixUBO = skinnedMeshItems[0].mesh->GetSkinnedMatrixBuffer();
         }
 
-        // 创建深度渲染参数
-        DepthRenderParams params;
         if (!meshItems.empty() && !skinnedMeshItems.empty())
         {
             // 同时有静态网格和蒙皮网格
@@ -132,10 +132,10 @@ FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(SceneManager *scene
             // 只有蒙皮网格
             params = DepthRenderParams::Create(skinnedMeshItems, cameraUBO, skinnedMatrixUBO);
         }
-
-        // 使用FrameGraph渲染深度图
-        depthResource = mDepthRender->Render("DepthPass", frameGraph, commandBuffer, params);
     }
+    
+    // 使用FrameGraph渲染深度图
+    depthResource = mDepthRender->Render("DepthPass", frameGraph, commandBuffer, params);
     
     return depthResource;
 }

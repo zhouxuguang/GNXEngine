@@ -79,12 +79,6 @@ FrameGraphResource DepthRenderer::Render(
     CommandBufferPtr commandBuffer,
     const DepthRenderParams& params)
 {
-    // 参数验证
-    if (!params.IsValid())
-    {
-        return FrameGraphResource{}; // 返回无效资源
-    }
-
     // 定义 Pass 数据结构
     struct DepthPassData
     {
