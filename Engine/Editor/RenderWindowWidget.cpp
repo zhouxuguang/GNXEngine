@@ -1,5 +1,7 @@
 #include "RenderWindowWidget.h"
 
+#include "Runtime/GNXEngine/include/Input.h"
+#include "Runtime/GNXEngine/include/InputState.h"
 #include "Runtime/GNXEngine/include/Events/Event.h"
 #include "Runtime/GNXEngine/include/Events/ApplicationEvent.h"
 #include "Runtime/GNXEngine/include/Events/MouseEvent.h"
@@ -214,6 +216,9 @@ void RenderWindowWidget::onRenderTick()
     {
         mRenderWindow->OnUpdate();
         sceneManager->Render(nullptr);
+        
+        mathutil::Vector2f mousePos = GNXEngine::Input::GetMousePosition();
+        LOG_INFO("mousePos x = %f, y = %f", mousePos.x, mousePos.y);
     }
 }
 
@@ -330,4 +335,64 @@ void RenderWindowWidget::ForwardEventToRenderWindow(GNXEngine::Event& event)
         // 这样不依赖于具体的 DefaultRenderWindow 实现，未来可以支持 SDL 等其他窗口系统
         mRenderWindow->TriggerEventCallback(event);
     }
+
+    // 同时更新 InputState，用于输入查询
+    GNXEngine::InputState& inputState = GNXEngine::InputState::GetInstance();
+
+    // 根据事件类型更新输入状态
+    GNXEngine::EventDispatcher dispatcher(event);
+
+    // 键盘按下
+    dispatcher.Dispatch<GNXEngine::KeyPressedEvent>(
+        [&inputState](GNXEngine::KeyPressedEvent& e)
+        {
+            inputState.SetKeyState(e.GetKeyCode(), true);
+            return false;
+        }
+    );
+
+    // 键盘释放
+    dispatcher.Dispatch<GNXEngine::KeyReleasedEvent>(
+        [&inputState](GNXEngine::KeyReleasedEvent& e)
+        {
+            inputState.SetKeyState(e.GetKeyCode(), false);
+            return false;
+        }
+    );
+
+    // 鼠标按钮按下
+    dispatcher.Dispatch<GNXEngine::MouseButtonPressedEvent>(
+        [&inputState](GNXEngine::MouseButtonPressedEvent& e)
+        {
+            inputState.SetMouseButtonState(e.GetMouseButton(), true);
+            return false;
+        }
+    );
+
+    // 鼠标按钮释放
+    dispatcher.Dispatch<GNXEngine::MouseButtonReleasedEvent>(
+        [&inputState](GNXEngine::MouseButtonReleasedEvent& e)
+        {
+            inputState.SetMouseButtonState(e.GetMouseButton(), false);
+            return false;
+        }
+    );
+
+    // 鼠标移动
+    dispatcher.Dispatch<GNXEngine::MouseMovedEvent>(
+        [&inputState](GNXEngine::MouseMovedEvent& e)
+        {
+            inputState.SetMousePosition(e.GetX(), e.GetY());
+            return false;
+        }
+    );
+
+    // 鼠标滚轮
+    dispatcher.Dispatch<GNXEngine::MouseScrolledEvent>(
+        [&inputState](GNXEngine::MouseScrolledEvent& e)
+        {
+            inputState.UpdateMouseScroll(e.GetXOffset(), e.GetYOffset());
+            return false;
+        }
+    );
 }

@@ -10,6 +10,7 @@
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
+#include "InputState.h"
 
 NAMESPACE_GNXENGINE_BEGIN
 
@@ -60,9 +61,12 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props, void* externa
     mData.title = props.title;
     mUseExternalWindow = (externalWindowHandle != nullptr);
 
-    if (mUseExternalWindow) 
+    if (mUseExternalWindow)
     {
-        // 使用外部窗口
+        // 使用外部窗口（如 Qt）
+        // 设置输入模式为 Event，由 Qt 事件驱动输入状态
+        InputState::GetInstance().SetMode(InputMode::Event);
+
         glfwInit();
 
         // 创建一个隐藏的 GLFW 窗口用于事件轮询
@@ -136,7 +140,7 @@ bool DefaultRenderWindow::ShouldClose() const
 void DefaultRenderWindow::Init()
 {
     // 只在使用 GLFW 窗口时才设置回调
-    if (!mUseExternalWindow) 
+    if (!mUseExternalWindow)
     {
         glfwSetWindowUserPointer(mWindow, &mData);
 
