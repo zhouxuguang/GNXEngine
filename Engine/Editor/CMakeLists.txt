@@ -26,6 +26,10 @@ set(PROJECT_SOURCES
         ContentWidget.cpp
         RenderWindowWidget.h
         RenderWindowWidget.cpp
+        NewProjectDialog.h
+        NewProjectDialog.cpp
+        OpenProjectDialog.h
+        OpenProjectDialog.cpp
         TestPost/TestPost.cpp
         TestPost/TestPost.hpp
         TestImageDecode.cpp

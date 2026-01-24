@@ -15,6 +15,7 @@ source_group(TREE ${GNXEngine_include_dir} PREFIX include FILES ${GNXEngine_Incl
 target_include_directories(GNXEngine PUBLIC ${GNXEngine_include_dir} ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 
 target_link_libraries(GNXEngine PRIVATE 
+    nlohmann_json
     ISPCCompress
     AssetProcess 
     Allocator

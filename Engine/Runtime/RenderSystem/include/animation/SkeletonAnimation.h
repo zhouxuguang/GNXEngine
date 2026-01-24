@@ -8,15 +8,15 @@
 #ifndef GNX_ENGINE_RENDERSYSTEM_SKELETON_ANIMATION_INCLUDE_SDJJ
 #define GNX_ENGINE_RENDERSYSTEM_SKELETON_ANIMATION_INCLUDE_SDJJ
 
-#include "RSDefine.h"
+#include "../RSDefine.h"
 #include "AnimationPose.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 #include "Skeleton.h"
-#include "Component.h"
-#include "SceneNode.h"
-#include "animation/AnimationClip.h"
-#include "skinnedMesh/SkinnedMeshRenderer.h"
+#include "../Component.h"
+#include "../SceneNode.h"
+#include "../animation/AnimationClip.h"
+#include "../skinnedMesh/SkinnedMeshRenderer.h"
 
 USING_NS_MATHUTIL;
 

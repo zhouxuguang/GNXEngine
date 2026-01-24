@@ -1,4 +1,5 @@
 
+add_subdirectory(nlohmann nlohmann)
 add_subdirectory(assimp assimp)
 add_subdirectory(SPIRV-Reflect SPIRV-Reflect)
 add_subdirectory(tbb tbb)

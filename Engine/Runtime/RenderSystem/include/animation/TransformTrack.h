@@ -8,9 +8,9 @@
 #ifndef GNX_ENGINE_TRANSFORM_TRACK_INCLUDE_HHLFSD
 #define GNX_ENGINE_TRANSFORM_TRACK_INCLUDE_HHLFSD
 
-#include "RSDefine.h"
+#include "Runtime/RenderSystem/include/RSDefine.h"
 #include "AnimationFrame.h"
-#include "Transform.h"
+#include "Runtime/RenderSystem/include/Transform.h"
 
 NS_RENDERSYSTEM_BEGIN
 
