@@ -103,6 +103,7 @@ public:
     }
 };
 
+/*
 Allocator::MallocAnsi* alloc = nullptr;
 
 void TestAllocator()
@@ -162,10 +163,11 @@ void TestAllocator()
 	uint64_t tt4 = cost4.GetCostTime();
 	LOG_INFO("mimalloc %lld", tt4);
 }
+*/
 
 int main(int argc, char* argv[])
 {
-    TestAllocator();
+    //TestAllocator();
     
 	fs::path currentPath = getMediaDir();
 
