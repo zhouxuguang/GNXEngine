@@ -9,6 +9,30 @@
 
 NS_ASSETPROCESS_BEGIN
 
+// 辅助函数：根据像素格式计算每个像素的字节数
+static uint32_t GetBytesPerPixel(imagecodec::ImagePixelFormat format)
+{
+	switch (format)
+	{
+	case imagecodec::FORMAT_GRAY8:
+		return 1;
+	case imagecodec::FORMAT_GRAY8_ALPHA8:
+		return 2;
+	case imagecodec::FORMAT_RGBA8:
+	case imagecodec::FORMAT_SRGB8_ALPHA8:
+		return 4;
+	case imagecodec::FORMAT_RGB8:
+	case imagecodec::FORMAT_SRGB8:
+		return 3;
+	case imagecodec::FORMAT_RGBA32Float:
+		return 16;
+	case imagecodec::FORMAT_RGB32Float:
+		return 12;
+	default:
+		return 0;
+	}
+}
+
 struct KTXFormat
 {
 	uint32_t glInternalformat;
@@ -277,6 +301,91 @@ bool ImageImporter::Load()
 	std::vector<uint8_t> ktxData = CreateKTXFormatData(image, false, (currentPath / fileName).string());
 
 	//保存文件
+	if (!ktxData.empty())
+	{
+		baselib::FileUtil::WriteBinaryFile((currentPath / fileName).string(), ktxData.data(), ktxData.size());
+		return true;
+	}
+
+	return false;
+}
+
+bool ImageImporter::LoadFromMemory(const uint8_t* data, size_t size, const std::string& saveDir, const std::string& outputFileName)
+{
+	if (data == nullptr || size == 0)
+	{
+		return false;
+	}
+
+	// 计算GUID
+	baselib::NXGUID guid = CreateGUIDFromBinaryData(data, size);
+	std::string guidStr = baselib::GUIDToString(guid);
+
+	imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
+	bool result = imagecodec::ImageDecoder::DecodeMemory(data, size, image.get());
+	if (!result)
+	{
+		return result;
+	}
+
+	fs::path currentPath = saveDir;
+	std::string fileName = outputFileName.empty() ? (guidStr + ".ktx") : outputFileName;
+
+	//生成ktx的压缩格式以及保存一些元数据
+	std::vector<uint8_t> ktxData = CreateKTXFormatData(image, false, (currentPath / fileName).string());
+
+	//保存文件
+	if (!ktxData.empty())
+	{
+		baselib::FileUtil::WriteBinaryFile((currentPath / fileName).string(), ktxData.data(), ktxData.size());
+		return true;
+	}
+
+	return false;
+}
+
+bool ImageImporter::LoadFromRawPixels(const uint8_t* data, uint32_t width, uint32_t height, imagecodec::ImagePixelFormat format, const std::string& saveDir, const std::string& outputFileName)
+{
+	if (data == nullptr || width == 0 || height == 0)
+	{
+		return false;
+	}
+
+	// 计算数据大小
+	uint32_t bytesPerPixel = GetBytesPerPixel(format);
+	if (bytesPerPixel == 0)
+	{
+		return false;
+	}
+	size_t dataSize = width * height * bytesPerPixel;
+
+	// 计算GUID
+	baselib::NXGUID guid = CreateGUIDFromBinaryData(data, dataSize);
+	std::string guidStr = baselib::GUIDToString(guid);
+
+	// 创建VImage对象并设置像素数据
+	imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
+	image->SetImageInfo(format, width, height);
+	image->AllocPixels();
+
+	// 复制像素数据到VImage
+	uint8_t* imagePixels = image->GetPixels();
+	memcpy(imagePixels, data, dataSize);
+
+	fs::path currentPath = saveDir;
+	std::string fileName = outputFileName.empty() ? (guidStr + ".ktx") : outputFileName;
+
+	//生成ktx的压缩格式以及保存一些元数据
+	std::vector<uint8_t> ktxData = CreateKTXFormatData(image, false, (currentPath / fileName).string());
+
+	//保存文件
+	if (!ktxData.empty())
+	{
+		baselib::FileUtil::WriteBinaryFile((currentPath / fileName).string(), ktxData.data(), ktxData.size());
+		return true;
+	}
+
+	return false;
 }
 
 NS_ASSETPROCESS_END

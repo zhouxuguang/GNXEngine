@@ -69,13 +69,46 @@ bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std:
 			const aiTexture* texture = scene->mTextures[i];
 			if (texture != nullptr)
 			{
-				// 高度为0说明是嵌入的纹理
+				// 高度为0说明是压缩的嵌入式纹理（如DDS）
 				if (texture->mHeight == 0)
 				{
-					// mHeight = 0 means embedded textures inside
-					// here we use stb to save texture images
-					//Texture2DPtr texturePtr = TextureFromMemory((unsigned char*)texture->pcData, texture->mWidth);
-					//fileTextures.push_back(texturePtr);
+					// mHeight = 0 means compressed embedded texture (e.g. DDS)
+					// texture->mWidth contains the size in bytes
+					// texture->pcData contains the compressed data
+					baselib::NXGUID guid = CreateGUIDFromBinaryData((uint8_t*)texture->pcData, texture->mWidth);
+					std::string guidStr = baselib::GUIDToString(guid);
+					std::string outputFileName = guidStr + ".ktx";
+
+					// 使用ImageImporter从内存导入嵌入式纹理
+					ImageImporter::LoadFromMemory((uint8_t*)texture->pcData, texture->mWidth, saveDir, outputFileName);
+				}
+				else
+				{
+					// 未压缩的嵌入式纹理（ARGB8888等）
+					// texture->mHeight > 0 表示未压缩的像素数据
+					// texture->mWidth 表示宽度
+					// texture->mHeight 表示高度
+					// texture->pcData 包含像素数据（每个像素是aiTexel结构，包含r,g,b,a）
+					uint32_t pixelCount = texture->mWidth * texture->mHeight;
+					std::vector<uint8_t> pixelData;
+					pixelData.reserve(pixelCount * 4); // RGBA每个像素4字节
+
+					for (uint32_t j = 0; j < pixelCount; j++)
+					{
+						const aiTexel& texel = texture->pcData[j];
+						pixelData.push_back(texel.r);
+						pixelData.push_back(texel.g);
+						pixelData.push_back(texel.b);
+						pixelData.push_back(texel.a);
+					}
+
+					// 使用LoadFromRawPixels方法直接处理原始像素数据
+					baselib::NXGUID guid = CreateGUIDFromBinaryData(pixelData.data(), pixelData.size());
+					std::string guidStr = baselib::GUIDToString(guid);
+					std::string outputFileName = guidStr + ".ktx";
+
+					ImageImporter::LoadFromRawPixels(pixelData.data(), texture->mWidth, texture->mHeight,
+						imagecodec::FORMAT_RGBA8, saveDir, outputFileName);
 				}
 			}
 		}
