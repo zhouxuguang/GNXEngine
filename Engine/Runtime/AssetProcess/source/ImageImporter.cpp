@@ -1,5 +1,6 @@
 #include "ImageImporter.h"
 #include "AssetImporter.h"
+#include "TextureMetaData.h"
 #include "ktx.h"
 #include "Runtime/ImageCodec/include/ImageUtil.h"
 #include "TextureProcess/stb_image_resize2.h"
@@ -304,6 +305,15 @@ bool ImageImporter::Load()
 	if (!ktxData.empty())
 	{
 		baselib::FileUtil::WriteBinaryFile((currentPath / fileName).string(), ktxData.data(), ktxData.size());
+
+		// 生成并保存纹理元数据
+		TextureMetaData metaData;
+		metaData.FillFromImage(image);
+		metaData.SetSourceFile("embedded_texture");
+		metaData.SetDataSize(ktxData.size());
+		metaData.SetIsCompressed(true);
+		metaData.SaveToFile((currentPath / (guidStr + ".meta")).string());
+
 		return true;
 	}
 
@@ -338,6 +348,15 @@ bool ImageImporter::LoadFromMemory(const uint8_t* data, size_t size, const std::
 	if (!ktxData.empty())
 	{
 		baselib::FileUtil::WriteBinaryFile((currentPath / fileName).string(), ktxData.data(), ktxData.size());
+
+		// 生成并保存纹理元数据
+		TextureMetaData metaData;
+		metaData.FillFromImage(image);
+		metaData.SetSourceFile("embedded_texture");
+		metaData.SetDataSize(ktxData.size());
+		metaData.SetIsCompressed(true);
+		metaData.SaveToFile((currentPath / (guidStr + ".meta")).string());
+
 		return true;
 	}
 
@@ -382,6 +401,15 @@ bool ImageImporter::LoadFromRawPixels(const uint8_t* data, uint32_t width, uint3
 	if (!ktxData.empty())
 	{
 		baselib::FileUtil::WriteBinaryFile((currentPath / fileName).string(), ktxData.data(), ktxData.size());
+
+		// 生成并保存纹理元数据
+		TextureMetaData metaData;
+		metaData.FillFromImage(image);
+		metaData.SetSourceFile("embedded_texture");
+		metaData.SetDataSize(ktxData.size());
+		metaData.SetIsCompressed(true);
+		metaData.SaveToFile((currentPath / (guidStr + ".meta")).string());
+
 		return true;
 	}
 

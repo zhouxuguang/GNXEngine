@@ -1,24 +1,130 @@
 syntax = "proto3";
 import "Common.proto";
 
-//采样器
+// ==================== 纹理类型 ====================
+enum TextureType
+{
+    Unknown = 0;
+    Default = 1;
+    // PBR材质贴图
+    Albedo = 2;          // 漫反射/基础色
+    Normal = 3;           // 法线
+    Roughness = 4;        // 粗糙度
+    Metallic = 5;          // 金属度
+    Occlusion = 6;         // AO/环境光遮蔽
+    Emissive = 7;          // 自发光
+    Height = 8;            // 高度/位移
+    // 其他
+    Specular = 9;
+    Detail = 10;
+    // 特殊类型
+    Cubemap = 20;
+    Lightmap = 21;
+    Shadowmap = 22;
+    LookupTable = 23;
+    Noise = 24;
+    UI = 25;
+};
+
+// ==================== 像素格式 ====================
+enum PixelFormat
+{
+    UNKNOWN = 0;
+    // 未压缩格式
+    GRAY8 = 1;
+    GRAY8_ALPHA8 = 2;
+    RGB8 = 3;
+    RGBA8 = 4;
+    RGB16F = 5;
+    RGBA16F = 6;
+    RGB32F = 7;
+    RGBA32F = 8;
+    SRGB8 = 9;
+    SRGB8_ALPHA8 = 10;
+    // 压缩格式
+    BC1 = 60;
+    BC1_SRGB = 61;
+    BC2 = 62;
+    BC3 = 63;
+    BC3_SRGB = 64;
+    BC4 = 65;
+    BC5 = 66;
+    BC6H = 67;
+    BC7 = 68;
+    BC7_SRGB = 69;
+    ETC2_RGB = 80;
+    ETC2_SRGB = 81;
+    ETC2_RGBA = 82;
+    ASTC_4x4 = 100;
+    ASTC_8x8 = 101;
+    // 其他压缩格式
+    PVRTC1_4BPP = 120;
+    PVRTC2_4BPP = 121;
+};
+
+// ==================== 采样器 ====================
 message SamplerMessage
 {
+    enum FilterMode
+    {
+        NEAREST = 0;
+        LINEAR = 1;
+        NEAREST_MIPMAP_NEAREST = 2;
+        NEAREST_MIPMAP_LINEAR = 3;
+        LINEAR_MIPMAP_NEAREST = 4;
+        LINEAR_MIPMAP_LINEAR = 5;
+    };
 
+    enum WrapMode
+    {
+        REPEAT = 0;
+        CLAMP = 1;
+        MIRROR = 2;
+        CLAMP_TO_EDGE = 3;
+    };
+
+    FilterMode minFilter = 1;
+    FilterMode magFilter = 2;
+    WrapMode wrapS = 4;
+    WrapMode wrapT = 5;
+    float anisotropy = 7;
+    float minLOD = 8;
+    float maxLOD = 9;
+    float lodBias = 10;
 };
 
-// 纹理的类型
-enum TextureType 
-{
-    Default = 0;
-    Normal = 1;
-};
-
-//纹理的message
+// ==================== 纹理消息 ====================
 message TextureMessage
 {
-    CompressType compressType = 1;
-    TextureType textureType = 2;
+    // 基本属性
+    TextureType textureType = 1;
+    CompressType compressType = 2;
+
+    // 尺寸信息
+    uint32 width = 5;
+    uint32 height = 6;
+    uint32 depth = 7;
+    uint32 mipLevels = 8;
+    uint32 arrayLayers = 9;
+
+    // 格式信息
+    PixelFormat format = 10;
+    uint32 bytesPerPixel = 11;
+
+    // 布尔属性
+    bool isSRGB = 12;
+    bool hasAlpha = 13;
+    bool isCubemap = 14;
+    bool isCompressed = 15;
+
+    // 数据信息
     SamplerMessage sampler = 3;
     bytes imageData = 4;
+    uint32 dataSize = 16;
+    uint64 hash = 17;
+
+    // 源信息（可选）
+    string sourceFile = 18;
+    string importTime = 19;
+    string engineVersion = 20;
 };
