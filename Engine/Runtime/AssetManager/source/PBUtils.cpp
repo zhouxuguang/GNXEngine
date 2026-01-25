@@ -1,7 +1,7 @@
 #include "PBUtils.h"
 
 
-NS_ASSETPROCESS_BEGIN
+NS_ASSETMANAGER_BEGIN
 
 bool nanopb_decode_gnx_bytes(pb_istream_t* stream, const pb_field_t* field, void** arg)
 {
@@ -52,4 +52,4 @@ bool nanopb_encode_gnx_bytes(pb_ostream_t* stream, const pb_field_t* field, void
 	return status;
 }
 
-NS_ASSETPROCESS_END
+NS_ASSETMANAGER_END

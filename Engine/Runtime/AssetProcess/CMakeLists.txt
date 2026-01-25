@@ -57,6 +57,6 @@ source_group(TREE ${asset_process_include_dir} PREFIX include FILES ${ASSET_PROC
 
 target_include_directories(AssetProcess PRIVATE ${asset_process_include_dir} ${ISPC_HEADER_DIR})
 
-target_link_libraries(AssetProcess PRIVATE assimp RenderSystem nanopb tbb ktx pvrtc ImageCodec)
+target_link_libraries(AssetProcess PRIVATE assimp RenderSystem nanopb tbb ktx pvrtc ImageCodec AssetManager)
 
 set_property(TARGET AssetProcess PROPERTY FOLDER "Runtime")

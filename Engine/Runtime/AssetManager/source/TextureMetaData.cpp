@@ -6,7 +6,7 @@
 #include <ctime>
 #include <iomanip>
 
-NS_ASSETPROCESS_BEGIN
+NS_ASSETMANAGER_BEGIN
 
 TextureMetaData::TextureMetaData()
 {
@@ -453,4 +453,4 @@ void TextureMetaData::SetupStringCallbacks()
 	m_message.engineVersion.arg = const_cast<std::string*>(&m_engineVersion);
 }
 
-NS_ASSETPROCESS_END
+NS_ASSETMANAGER_END

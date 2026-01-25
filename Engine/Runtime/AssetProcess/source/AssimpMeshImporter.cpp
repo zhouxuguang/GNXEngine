@@ -35,7 +35,7 @@ void AssimpMeshImporter::LoadMesh(const baselib::NXGUID& guid)
 		mesh->AddSubMeshInfo(iter);
 	}
 
-	ByteVectorPtr encodedBuffer = MeshMessageUtil::EncodeMeshMessage(mesh.get());
+    ByteVectorPtr encodedBuffer = AssetManager::MeshMessageUtil::EncodeMeshMessage(mesh.get());
 
 	std::string guidStr = baselib::GUIDToString(guid);
 	fs::path path = (fs::path(mSaveDir) / guidStr).lexically_normal();
@@ -43,7 +43,7 @@ void AssimpMeshImporter::LoadMesh(const baselib::NXGUID& guid)
 	baselib::FileUtil::WriteBinaryFile(path.string(), encodedBuffer->data(), encodedBuffer->size());
 
 	MeshPtr meshDecode = std::make_shared<Mesh>();
-	MeshMessageUtil::DecodeMeshMessage(encodedBuffer->data(), encodedBuffer->size(), meshDecode.get());
+    AssetManager::MeshMessageUtil::DecodeMeshMessage(encodedBuffer->data(), encodedBuffer->size(), meshDecode.get());
 }
 
 void AssimpMeshImporter::getVertexCountAndLayout(aiNode* node, const aiScene* scene)

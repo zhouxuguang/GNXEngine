@@ -1,7 +1,7 @@
 #ifndef GNX_ENGINE_TEXTURE_METADATA_INCLUDE
 #define GNX_ENGINE_TEXTURE_METADATA_INCLUDE
 
-#include "AssetProcessDefine.h"
+#include "AssetDefine.h"
 #include "Runtime/ImageCodec/include/VImage.h"
 #include "TextureMessage.pb.h"
 #include "pb_decode.h"
@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-NS_ASSETPROCESS_BEGIN
+NS_ASSETMANAGER_BEGIN
 
 /**
  * 纹理元数据管理类
@@ -89,6 +89,6 @@ private:
 	void SetupStringCallbacks();
 };
 
-NS_ASSETPROCESS_END
+NS_ASSETMANAGER_END
 
 #endif // !GNX_ENGINE_TEXTURE_METADATA_INCLUDE

@@ -17,6 +17,7 @@ target_include_directories(GNXEngine PUBLIC ${GNXEngine_include_dir} ${CMAKE_CUR
 target_link_libraries(GNXEngine PRIVATE 
     nlohmann_json
     ISPCCompress
+    AssetManager
     AssetProcess 
     Allocator
     BaseLib
