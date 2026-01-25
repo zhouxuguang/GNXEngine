@@ -107,6 +107,7 @@ bool ProjectConfig::LoadFromFile(const std::string& filepath)
         assetsPath = (path.parent_path() / "Assets").string();
         scenesPath = (path.parent_path() / "Scenes").string();
         settingsPath = (path.parent_path() / "Settings").string();
+        cachePath = (path.parent_path() / ".gnx" / "Cache").string();
 
         LOG_INFO("Project loaded: %s", projectName.c_str());
         LOG_INFO("Project path: %s", projectPath.c_str());
@@ -128,6 +129,11 @@ std::string ProjectConfig::GetAbsoluteAssetPath(const std::string& relativePath)
 std::string ProjectConfig::GetAbsoluteScenePath(const std::string& relativePath) const
 {
     return (fs::path(scenesPath) / relativePath).string();
+}
+
+std::string ProjectConfig::GetAbsoluteCachePath(const std::string& relativePath) const
+{
+    return (fs::path(cachePath) / relativePath).string();
 }
 
 std::string ProjectConfig::GetRelativeAssetPath(const std::string& absolutePath) const
@@ -210,6 +216,7 @@ bool ProjectManager::CreateNewProject(const std::string& projectPath, const std:
     config->assetsPath = (fs::path(projectPath) / "Assets").string();
     config->scenesPath = (fs::path(projectPath) / "Scenes").string();
     config->settingsPath = (fs::path(projectPath) / "Settings").string();
+    config->cachePath = (fs::path(projectPath) / ".gnx" / "Cache").string();
 
     // 保存工程文件
     std::string projectFile = (fs::path(projectPath) / (projectName + ".gnxproj")).string();
@@ -323,13 +330,22 @@ bool ProjectManager::CreateProjectDirectories(const std::string& projectPath)
 {
     try
     {
-        // 创建 Assets 目录（空目录，不创建子目录）
+        // 创建 Assets 目录
         fs::path assetsDir = fs::path(projectPath) / "Assets";
         fs::create_directories(assetsDir);
+
+        // 创建 Scenes 目录
+        fs::path scenesDir = fs::path(projectPath) / "Scenes";
+        fs::create_directories(scenesDir);
 
         // 创建 Settings 目录
         fs::path settingsDir = fs::path(projectPath) / "Settings";
         fs::create_directories(settingsDir);
+
+        // 创建 .gnx 隐藏目录（存放导入后的资源）
+        fs::path gnxDir = fs::path(projectPath) / ".gnx";
+        fs::create_directories(gnxDir);
+        fs::create_directories(gnxDir / "Cache");
 
         LOG_INFO("Project directories created");
         return true;

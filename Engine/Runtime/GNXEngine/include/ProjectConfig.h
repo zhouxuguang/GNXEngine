@@ -32,9 +32,10 @@ struct GNXENGINE_API ProjectConfig
 
     // 工程路径
     std::string projectPath;              // 工程根目录（包含 project.gnxproj 的路径）
-    std::string assetsPath;               // Assets 目录
+    std::string assetsPath;               // Assets 目录（源资源）
     std::string scenesPath;               // Scenes 目录
     std::string settingsPath;             // Settings 目录
+    std::string cachePath;                // .gnx/Cache 目录（导入后的资源）
 
     // 渲染设置
     RenderPath renderPath = RenderPath::Deferred;  // 默认延迟渲染
@@ -64,6 +65,7 @@ struct GNXENGINE_API ProjectConfig
     // 获取绝对路径
     std::string GetAbsoluteAssetPath(const std::string& relativePath) const;
     std::string GetAbsoluteScenePath(const std::string& relativePath) const;
+    std::string GetAbsoluteCachePath(const std::string& relativePath) const;  // 获取缓存路径
     std::string GetRelativeAssetPath(const std::string& absolutePath) const;
     std::string GetRelativeScenePath(const std::string& absolutePath) const;
 };
