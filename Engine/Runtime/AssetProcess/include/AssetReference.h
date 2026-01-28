@@ -67,6 +67,6 @@ private:
 	void SetupStringCallbacks();
 };
 
-NS_ASSETMANAGER_END
+NS_ASSETPROCESS_END
 
 #endif // !GNX_ENGINE_ASSET_REFERENCE_INCLUDE

@@ -1,4 +1,5 @@
 #include "TextureAsset.h"
+#include "AssetFileHeader.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
 #include <fstream>
 #include <algorithm>
@@ -445,13 +446,37 @@ bool TextureAsset::SaveToFile(const std::string& filePath)
 		return false;
 	}
 	
-	// 写入文件
+	// 创建资产文件头
+	uint32_t flags = AssetFileFlags::NONE;
+	if (m_message.isCompressed)
+	{
+		flags |= AssetFileFlags::COMPRESSED;
+	}
+	// 计算protobuf数据的哈希
+	uint64_t hash = AssetFileHeaderUtil::ComputeHash(buffer, stream.bytes_written);
+	AssetFileHeader header = AssetFileHeaderUtil::CreateHeader(
+		AssetType::Texture,
+		m_name,
+		hash,
+		stream.bytes_written,
+		flags
+	);
+	
+	// 写入文件：先写文件头，再写protobuf数据
 	std::ofstream outFile(filePath, std::ios::binary);
 	if (!outFile.is_open())
 	{
 		return false;
 	}
 	
+	// 写入文件头
+	if (!AssetFileHeaderUtil::WriteHeader(outFile, header))
+	{
+		outFile.close();
+		return false;
+	}
+	
+	// 写入protobuf数据
 	outFile.write(reinterpret_cast<const char*>(buffer), stream.bytes_written);
 	outFile.close();
 	
@@ -478,15 +503,32 @@ bool TextureAsset::LoadFromFile(const std::string& filePath)
 	};
 	m_message.imageData.arg = &m_imageData;
 	
-	// 读取文件
-	std::vector<uint8_t> data = baselib::FileUtil::ReadBinaryFile(filePath);
-	if (data.empty())
+	// 读取整个文件
+	std::vector<uint8_t> fileData = baselib::FileUtil::ReadBinaryFile(filePath);
+	if (fileData.empty())
 	{
 		return false;
 	}
 	
+	// 检查是否包含资产文件头
+	const uint8_t* dataPtr = fileData.data();
+	uint64_t dataSize = fileData.size();
+	
+	// 尝试读取文件头
+	AssetFileHeader header;
+	if (AssetFileHeaderUtil::ReadHeader(filePath, header))
+	{
+		// 文件头有效，数据从dataOffset开始
+		if (header.dataOffset >= sizeof(AssetFileHeader) && header.dataOffset + header.dataSize <= dataSize)
+		{
+			dataPtr = fileData.data() + header.dataOffset;
+			dataSize = header.dataSize;
+		}
+		// 如果偏移量无效，回退到原始数据（可能是旧格式文件）
+	}
+	
 	// 反序列化protobuf消息
-	pb_istream_t stream = pb_istream_from_buffer(data.data(), data.size());
+	pb_istream_t stream = pb_istream_from_buffer(dataPtr, dataSize);
 	if (!pb_decode(&stream, TextureMessage_fields, &m_message))
 	{
 		// 解码失败

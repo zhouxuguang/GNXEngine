@@ -1,4 +1,5 @@
 #include "AssetReference.h"
+#include "Runtime/AssetManager/include/AssetFileHeader.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
 #include <fstream>
 #include <ctime>
@@ -61,6 +62,21 @@ AssetType AssetReference::GetAssetType() const
 	return m_message.assetType;
 }
 
+static AssetManager::AssetType ConvertToAssetManagerType(AssetType protoType)
+{
+    switch (protoType)
+    {
+        case AssetType_Unknown:
+            return AssetManager::AssetType::Unknown;
+        case AssetType_Mesh:
+            return AssetManager::AssetType::Mesh;
+        case AssetType_Texture:
+            return AssetManager::AssetType::Texture;
+        default:
+            return AssetManager::AssetType::Unknown;
+    }
+}
+
 bool AssetReference::SaveToFile(const std::string& filePath)
 {
 	// 设置导入时间戳
@@ -69,30 +85,50 @@ bool AssetReference::SaveToFile(const std::string& filePath)
 	std::ostringstream oss;
 	oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
 	const_cast<std::string&>(m_importTime) = oss.str();
-
+	
 	// 设置字符串回调
 	SetupStringCallbacks();
-
+	
 	// 序列化protobuf消息
 	uint8_t buffer[1024];
 	pb_ostream_t stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
-
+	
 	if (!pb_encode(&stream, AssetReferenceMessage_fields, &m_message))
 	{
 		// 编码失败
 		return false;
 	}
-
-	// 写入文件
+	
+	// 创建资产文件头
+	uint32_t flags = AssetManager::AssetFileFlags::NONE;
+	// 计算protobuf数据的哈希
+	uint64_t hash = AssetManager::AssetFileHeaderUtil::ComputeHash(buffer, stream.bytes_written);
+	AssetManager::AssetFileHeader header = AssetManager::AssetFileHeaderUtil::CreateHeader(
+		ConvertToAssetManagerType(m_message.assetType),
+		m_originalFileName,
+		hash,
+		stream.bytes_written,
+		flags
+	);
+	
+	// 写入文件：先写文件头，再写protobuf数据
 	std::ofstream outFile(filePath, std::ios::binary);
 	if (!outFile.is_open())
 	{
 		return false;
 	}
-
+	
+	// 写入文件头
+	if (!AssetManager::AssetFileHeaderUtil::WriteHeader(outFile, header))
+	{
+		outFile.close();
+		return false;
+	}
+	
+	// 写入protobuf数据
 	outFile.write(reinterpret_cast<const char*>(buffer), stream.bytes_written);
 	outFile.close();
-
+	
 	return true;
 }
 
@@ -103,25 +139,42 @@ bool AssetReference::LoadFromFile(const std::string& filePath)
 	m_originalPath.clear();
 	m_importTime.clear();
 	m_engineVersion.clear();
-
+	
 	// 设置字符串回调
 	SetupStringCallbacks();
-
-	// 读取文件
-	std::vector<uint8_t> data = baselib::FileUtil::ReadBinaryFile(filePath);
-	if (data.empty())
+	
+	// 读取整个文件
+	std::vector<uint8_t> fileData = baselib::FileUtil::ReadBinaryFile(filePath);
+	if (fileData.empty())
 	{
 		return false;
 	}
-
+	
+	// 检查是否包含资产文件头
+	const uint8_t* dataPtr = fileData.data();
+	uint64_t dataSize = fileData.size();
+	
+	// 尝试读取文件头
+	AssetManager::AssetFileHeader header;
+	if (AssetManager::AssetFileHeaderUtil::ReadHeader(filePath, header))
+	{
+		// 文件头有效，数据从dataOffset开始
+		if (header.dataOffset >= sizeof(AssetManager::AssetFileHeader) && header.dataOffset + header.dataSize <= dataSize)
+		{
+			dataPtr = fileData.data() + header.dataOffset;
+			dataSize = header.dataSize;
+		}
+		// 如果偏移量无效，回退到原始数据（可能是旧格式文件）
+	}
+	
 	// 反序列化protobuf消息
-	pb_istream_t stream = pb_istream_from_buffer(data.data(), data.size());
+	pb_istream_t stream = pb_istream_from_buffer(dataPtr, dataSize);
 	if (!pb_decode(&stream, AssetReferenceMessage_fields, &m_message))
 	{
 		// 解码失败
 		return false;
 	}
-
+	
 	return true;
 }
 
@@ -188,4 +241,4 @@ void AssetReference::SetupStringCallbacks()
 	m_message.engineVersion.arg = const_cast<std::string*>(&m_engineVersion);
 }
 
-NS_ASSETMANAGER_END
+NS_ASSETPROCESS_END

@@ -65,7 +65,9 @@ struct ASSET_MANAGER_API AssetFileHeader
     uint64_t hash;            // 内容哈希（用于快速查找和缓存）
     uint32_t flags;           // 标志位（压缩、加密等）
     uint32_t reserved1;       // 保留字段
-    char name[76];            // 资产名称（可选，便于调试）
+    uint32_t reserved2;       // 保留字段
+    char name[72];            // 资产名称（可选，便于调试）
+    char padding[4];          // 填充到128字节
 
     /**
      * 构造函数，初始化为默认值
@@ -80,6 +82,7 @@ struct ASSET_MANAGER_API AssetFileHeader
         , hash(0)
         , flags(0)
         , reserved1(0)
+        , reserved2(0)
     {
         memset(name, 0, sizeof(name));
     }
