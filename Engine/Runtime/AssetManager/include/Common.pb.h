@@ -10,6 +10,13 @@
 #endif
 
 /* Enum definitions */
+/* 资产类型 */
+typedef enum _AssetType {
+    AssetType_Unknown = 0,
+    AssetType_Mesh = 1,
+    AssetType_Texture = 2
+} AssetType;
+
 /* 索引类型 */
 typedef enum _IndiceType {
     IndiceType_UnsignedShort = 0,
@@ -87,6 +94,10 @@ extern "C" {
 #endif
 
 /* Helper constants for enums */
+#define _AssetType_MIN AssetType_Unknown
+#define _AssetType_MAX AssetType_Texture
+#define _AssetType_ARRAYSIZE ((AssetType)(AssetType_Texture+1))
+
 #define _IndiceType_MIN IndiceType_UnsignedShort
 #define _IndiceType_MAX IndiceType_UnsignedInt
 #define _IndiceType_ARRAYSIZE ((IndiceType)(IndiceType_UnsignedInt+1))

@@ -17,7 +17,7 @@ NS_ASSETMANAGER_BEGIN
  * 负责所有资源（纹理、材质等）的加载、卸载和管理
  * 提供统一的资源访问接口，支持引用计数和内存管理
  */
-class AssetManager
+class ASSET_MANAGER_API AssetManager
 {
 public:
 	// ==================== 单例模式 ====================
@@ -55,6 +55,13 @@ public:
 	 */
 	void LoadTextureAsync(const std::string& path,
 	                  std::function<void(TextureAsset*)> callback);
+
+	/**
+	 * 通过hash值加载纹理资源
+	 * @param hash 资产的hash值
+	 * @return 加载的纹理资源，失败返回nullptr
+	 */
+	TextureAsset* LoadTextureByHash(uint64_t hash);
 
 	// ==================== 资源查找 ====================
 
@@ -109,14 +116,6 @@ public:
 	 * @return 重新加载的资源数量
 	 */
 	int ReloadChangedAssets();
-
-	// ==================== Lumen 相关 ====================
-
-	/**
-	 * 获取所有支持Lumen的纹理
-	 * @return Lumen纹理列表（法线、反照率、粗糙度等）
-	 */
-	std::vector<TextureAsset*> GetAllLumenTextures() const;
 
 	/**
 	 * 获取所有法线贴图

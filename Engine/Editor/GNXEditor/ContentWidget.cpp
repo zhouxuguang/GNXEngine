@@ -5,9 +5,12 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMessageBox>
 
 #include "Runtime/ImageCodec/include/ImageDecoder.h"
 #include "Runtime/AssetProcess/include/AssetImporter.h"
+#include "Runtime/AssetProcess/include/AssetReference.h"
+#include "Runtime/AssetManager/include/AssetManager.h"
 
 ContentWidget::ContentWidget(QDockWidget* parent, const QString& currentDir)
 	: QWidget(parent),
@@ -135,6 +138,42 @@ void ContentWidget::onDoubleClicked(const QModelIndex& index)
 		mBackButton->setEnabled(true);
 		mListView->setRootIndex(mModel->index(path));
 		UpdatePathLabel();
+	}
+	else
+	{
+		QString filePath = mModel->filePath(index);
+
+		// 检查是否为.gnx引用文件
+		if (filePath.endsWith(".gnx"))
+		{
+			// 读取.gnx引用文件获取hash
+			AssetProcess::AssetReference assetRef;
+			if (assetRef.LoadFromFile(filePath.toStdString()))
+			{
+				// 通过AssetManager加载纹理
+				AssetManager::AssetManager* assetManager = AssetManager::AssetManager::GetInstance();
+				if (assetManager)
+				{
+					AssetManager::TextureAsset* texture = assetManager->LoadTextureByHash(assetRef.GetHash());
+
+					if (texture)
+					{
+						//std::cout << "Loaded texture: " << assetRef.GetOriginalFileName() << std::endl;
+						
+						// TODO: 添加纹理预览
+						// 例如：
+						// emit textureLoaded(texture);
+						// 或者显示预览窗口
+					}
+					else
+					{
+						//std::cerr << "Failed to load texture: " << assetRef.GetOriginalFileName() << std::endl;
+						QMessageBox::warning(this, "加载失败", 
+							QString("无法加载纹理: %1").arg(QString::fromStdString(assetRef.GetOriginalFileName())));
+					}
+				}
+			}
+		}
 	}
 }
 

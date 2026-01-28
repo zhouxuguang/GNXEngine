@@ -22,7 +22,8 @@ enum class AssetType : uint8_t
 	Font = 7,           // 字体资源
 	Cubemap = 8,        // 立方体贴图
 	Lightmap = 9,      // 光照贴图
-	ReflectionProbe = 10 // 反射探针
+	ReflectionProbe = 10, // 反射探针
+	Mesh = 11           // 网格资源
 };
 
 /**
@@ -57,6 +58,7 @@ inline const char* GetAssetTypeName(AssetType type)
 	case AssetType::Cubemap: return "Cubemap";
 	case AssetType::Lightmap: return "Lightmap";
 	case AssetType::ReflectionProbe: return "ReflectionProbe";
+	case AssetType::Mesh: return "Mesh";
 	default: return "Unknown";
 	}
 }

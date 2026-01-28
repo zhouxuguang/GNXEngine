@@ -2,6 +2,7 @@
 #include "Runtime/BaseLib/include/BaseLib.h"
 #include <iostream>
 #include <algorithm>
+#include <filesystem>
 
 NS_ASSETMANAGER_BEGIN
 
@@ -86,19 +87,30 @@ TextureAsset* AssetManager::LoadTextureInternal(const std::string& path, bool as
 		return nullptr;
 	}
 
-	// 构建完整路径
-	std::string fullPath = m_rootPath + "/" + path;
+	// 构建完整路径（支持带或不带.texture扩展名）
+	std::string texturePath = path;
+	if (path.find(".texture") == std::string::npos)
+	{
+		texturePath = path + ".texture";
+	}
+	std::string fullPath = m_rootPath + "/" + texturePath;
 
-	// 检查是否已加载
-	TextureAsset* existing = FindTexture(path);
+	// 检查是否已加载（使用hash作为key）
+	std::string hashKey = path;
+	if (hashKey.find(".texture") != std::string::npos)
+	{
+		hashKey = hashKey.substr(0, hashKey.find(".texture"));
+	}
+	
+	TextureAsset* existing = FindTexture(hashKey);
 	if (existing)
 	{
 		existing->AddRef();
 		return existing;
 	}
 
-	// 加载纹理
-	TextureAsset* texture = TextureAsset::CreateFromFiles(fullPath + ".meta", fullPath);
+	// 加载纹理（使用CreateFromTextureMessageFile替代CreateFromFiles）
+	TextureAsset* texture = TextureAsset::CreateFromTextureMessageFile(fullPath);
 	if (!texture)
 	{
 		std::cerr << "Failed to load texture: " << path << std::endl;
@@ -126,11 +138,26 @@ Asset* AssetManager::FindAsset(const std::string& guid)
 
 TextureAsset* AssetManager::FindTexture(const std::string& name)
 {
+	// 先直接查找
 	auto it = m_textures.find(name);
 	if (it != m_textures.end())
 	{
 		return it->second;
 	}
+	
+	// 如果没找到，尝试去除扩展名后查找
+	std::string nameNoExt = name;
+	size_t extPos = nameNoExt.find(".texture");
+	if (extPos != std::string::npos)
+	{
+		nameNoExt = nameNoExt.substr(0, extPos);
+	}
+	it = m_textures.find(nameNoExt);
+	if (it != m_textures.end())
+	{
+		return it->second;
+	}
+	
 	return nullptr;
 }
 
@@ -255,21 +282,6 @@ int AssetManager::ReloadChangedAssets()
 
 
 
-
-std::vector<TextureAsset*> AssetManager::GetAllLumenTextures() const
-{
-	std::vector<TextureAsset*> lumenTextures;
-
-	for (const auto& pair : m_textures)
-	{
-		if (pair.second->SupportsLumen())
-		{
-			lumenTextures.push_back(pair.second);
-		}
-	}
-
-	return lumenTextures;
-}
 
 std::vector<TextureAsset*> AssetManager::GetAllNormalMaps() const
 {
@@ -404,6 +416,41 @@ void AssetManager::AddToCache(const std::string& guid, T* asset)
 		TextureAsset* texture = static_cast<TextureAsset*>(asset);
 		m_textures[texture->GetName()] = texture;
 	}
+}
+
+TextureAsset* AssetManager::LoadTextureByHash(uint64_t hash)
+{
+	if (!m_initialized)
+	{
+		std::cerr << "AssetManager not initialized!" << std::endl;
+		return nullptr;
+	}
+
+	// 构建.texture文件路径（在.gnx目录中）
+	std::string textureFilePath = m_rootPath + "/" + std::to_string(hash) + ".texture";
+	std::string guid = std::to_string(hash);
+
+	// 检查是否已加载
+	TextureAsset* existing = FindTexture(guid);
+	if (existing)
+	{
+		existing->AddRef();
+		return existing;
+	}
+
+	// 加载纹理（使用CreateFromTextureMessageFile）
+	TextureAsset* texture = TextureAsset::CreateFromTextureMessageFile(textureFilePath);
+	if (!texture)
+	{
+		std::cerr << "Failed to load texture: " << textureFilePath << std::endl;
+		return nullptr;
+	}
+
+	// 添加到缓存
+	AddToCache(texture->GetGUID(), texture);
+
+	std::cout << "Loaded texture by hash: " << hash << std::endl;
+	return texture;
 }
 
 NS_ASSETMANAGER_END

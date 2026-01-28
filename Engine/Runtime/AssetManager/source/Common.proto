@@ -1,5 +1,13 @@
 syntax = "proto3";
 
+// 资产类型
+enum AssetType
+{
+    Unknown = 0;
+    Mesh = 1;
+    Texture = 2;
+};
+
 // 索引类型
 enum IndiceType 
 {

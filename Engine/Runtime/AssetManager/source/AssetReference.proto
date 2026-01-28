@@ -1,0 +1,25 @@
+syntax = "proto3";
+import "Common.proto";
+
+// ==================== 资产引用消息 ====================
+// 用于在编辑器目录中记录原始文件与.gnx目录中资产文件的映射关系
+message AssetReferenceMessage
+{
+    // 资产类型（可选，用于快速识别）
+    AssetType assetType = 1;
+
+    // 资产哈希值（对应.gnx目录中的文件名）
+    uint64 hash = 2;
+
+    // 原始文件名（例如：my_albedo.png）
+    string originalFileName = 3;
+
+    // 导入时间
+    string importTime = 4;
+
+    // 引擎版本
+    string engineVersion = 5;
+
+    // 原始文件路径（相对路径）
+    string originalPath = 6;
+};

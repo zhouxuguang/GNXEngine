@@ -74,16 +74,4 @@ void Asset::SetLastModified(int64_t timestamp)
 	m_lastModified = timestamp;
 }
 
-bool Asset::SupportsLumen() const
-{
-	// 默认不支持Lumen，子类可以重写
-	return false;
-}
-
-void* Asset::GetLumenData() const
-{
-	// 默认无额外数据，子类可以重写
-	return nullptr;
-}
-
 NS_ASSETMANAGER_END

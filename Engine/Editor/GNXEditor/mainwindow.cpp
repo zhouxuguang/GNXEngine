@@ -50,7 +50,8 @@ MainWindow::MainWindow(QWidget *parent)
 
             // 处理窗口大小调整事件
             dispatcher.Dispatch<GNXEngine::WindowResizeEvent>(
-                [](GNXEngine::WindowResizeEvent& e) {
+                [](GNXEngine::WindowResizeEvent& e) 
+                {
                     // std::cout << "Window resized to " << e.GetWidth() << "x" << e.GetHeight() << std::endl;
                     return false;
                 }

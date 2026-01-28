@@ -142,20 +142,6 @@ public:
 	 */
 	void SetLastModified(int64_t timestamp);
 
-	// ==================== Lumen 相关 ====================
-
-	/**
-	 * 检查资源是否支持Lumen全局光照
-	 * @return 默认返回 false，子类可以重写
-	 */
-	virtual bool SupportsLumen() const;
-
-	/**
-	 * 获取Lumen需要的额外数据
-	 * @return 默认返回 nullptr，子类可以重写
-	 */
-	virtual void* GetLumenData() const;
-
 protected:
 	std::string m_guid;
 	std::string m_name;

@@ -1,11 +1,15 @@
 #include "ImageImporter.h"
 #include "AssetImporter.h"
+#include "AssetReference.h"
 #include "ktx.h"
 #include "Runtime/ImageCodec/include/ImageUtil.h"
 #include "TextureProcess/stb_image_resize2.h"
 #include "DXTCompressor.h"
 #include "PVRCompressor.h"
 #include "Runtime/BaseLib/include/AlignedMalloc.h"
+#include "Runtime/AssetManager/include/TextureAsset.h"
+#include <sstream>
+#include <iomanip>
 
 NS_ASSETPROCESS_BEGIN
 
@@ -285,7 +289,7 @@ bool ImageImporter::Load()
 
 	// 计算GUID
 	baselib::NXGUID guid = CreateGUIDFromBinaryData(data.data(), data.size());
-	std::string guidStr = baselib::GUIDToString(guid);
+	uint64_t hash = guid.Data1;  // 使用GUID的Data1作为hash值
 
 	imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
 	bool result = imagecodec::ImageDecoder::DecodeMemory(data.data(), data.size(), image.get());
@@ -295,28 +299,58 @@ bool ImageImporter::Load()
 	}
 
 	fs::path currentPath = mSaveDir;
-	std::string fileName = guidStr + ".ktx";
+	fs::path gnxPath = currentPath / ".gnx";
+	std::string originalFileName = fs::path(mFileName).filename().string();
+	std::string originalPath = fs::path(mFileName).parent_path().string();
 
-	//生成ktx的压缩格式以及保存一些元数据
-	std::vector<uint8_t> ktxData = CreateKTXFormatData(image, false, (currentPath / fileName).string());
-
-	//保存文件
-	if (!ktxData.empty())
+	// 确保.gnx目录存在
+	if (!baselib::FileUtil::IsDir(gnxPath.string()))
 	{
-		baselib::FileUtil::WriteBinaryFile((currentPath / fileName).string(), ktxData.data(), ktxData.size());
-
-		// 生成并保存纹理元数据
-//		TextureMetaData metaData;
-//		metaData.FillFromImage(image);
-//		metaData.SetSourceFile("embedded_texture");
-//		metaData.SetDataSize(ktxData.size());
-//		metaData.SetIsCompressed(true);
-//		metaData.SaveToFile((currentPath / (guidStr + ".meta")).string());
-
-		return true;
+		fs::create_directories(gnxPath);
 	}
 
-	return false;
+	// .gnx目录中的文件名为hash值.texture
+	std::string textureFileName = std::to_string(hash) + ".texture";
+	std::string ktxFileName = std::to_string(hash) + ".ktx";
+
+	// 生成KTX压缩格式
+	std::vector<uint8_t> ktxData = CreateKTXFormatData(image, false, (gnxPath / ktxFileName).string());
+	if (ktxData.empty())
+	{
+		return false;
+	}
+
+	// 读取KTX数据
+	std::vector<uint8_t> finalKtxData = baselib::FileUtil::ReadBinaryFile((gnxPath / ktxFileName).string());
+	if (finalKtxData.empty())
+	{
+		return false;
+	}
+
+	// 生成并保存纹理元数据（完整的TextureMessage）
+	AssetManager::TextureAsset textureAsset;
+	textureAsset.FillFromImage(image);
+	textureAsset.SetSourceFile(mFileName);
+	textureAsset.SetDataSize(static_cast<uint32_t>(finalKtxData.size()));
+	textureAsset.SetHash(hash);
+	textureAsset.SetIsCompressed(true);
+	textureAsset.AutoDetectTextureType(originalFileName);
+
+	// 设置KTX数据
+	textureAsset.SetImageData(finalKtxData.data(), static_cast<uint32_t>(finalKtxData.size()));
+
+	// 保存完整的TextureMessage（包含元数据和KTX数据）到.texture文件
+	textureAsset.SaveToFile((gnxPath / textureFileName).string());
+
+	// 在编辑器目录生成.gnx引用文件
+	AssetProcess::AssetReference assetRef;
+	assetRef.SetHash(hash);
+	assetRef.SetOriginalFileName(originalFileName);
+	assetRef.SetOriginalPath(originalPath);
+	assetRef.SetAssetType(AssetType_Texture);
+	assetRef.SaveToFile((currentPath / (originalFileName + ".gnx")).string());
+
+	return true;
 }
 
 bool ImageImporter::LoadFromMemory(const uint8_t* data, size_t size, const std::string& saveDir, const std::string& outputFileName)
@@ -328,7 +362,7 @@ bool ImageImporter::LoadFromMemory(const uint8_t* data, size_t size, const std::
 
 	// 计算GUID
 	baselib::NXGUID guid = CreateGUIDFromBinaryData(data, size);
-	std::string guidStr = baselib::GUIDToString(guid);
+	uint64_t hash = guid.Data1;  // 使用GUID的Data1作为hash值
 
 	imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
 	bool result = imagecodec::ImageDecoder::DecodeMemory(data, size, image.get());
@@ -338,28 +372,57 @@ bool ImageImporter::LoadFromMemory(const uint8_t* data, size_t size, const std::
 	}
 
 	fs::path currentPath = saveDir;
-	std::string fileName = outputFileName.empty() ? (guidStr + ".ktx") : outputFileName;
+	fs::path gnxPath = currentPath / ".gnx";
+	std::string originalFileName = outputFileName.empty() ? "embedded_texture" : outputFileName;
 
-	//生成ktx的压缩格式以及保存一些元数据
-	std::vector<uint8_t> ktxData = CreateKTXFormatData(image, false, (currentPath / fileName).string());
-
-	//保存文件
-	if (!ktxData.empty())
+	// 确保.gnx目录存在
+	if (!baselib::FileUtil::IsDir(gnxPath.string()))
 	{
-		baselib::FileUtil::WriteBinaryFile((currentPath / fileName).string(), ktxData.data(), ktxData.size());
-
-		// 生成并保存纹理元数据
-//		TextureMetaData metaData;
-//		metaData.FillFromImage(image);
-//		metaData.SetSourceFile("embedded_texture");
-//		metaData.SetDataSize(ktxData.size());
-//		metaData.SetIsCompressed(true);
-//		metaData.SaveToFile((currentPath / (guidStr + ".meta")).string());
-
-		return true;
+		fs::create_directories(gnxPath);
 	}
 
-	return false;
+	// .gnx目录中的文件名为hash值.texture
+	std::string textureFileName = std::to_string(hash) + ".texture";
+	std::string ktxFileName = std::to_string(hash) + ".ktx";
+
+	// 生成KTX压缩格式
+	std::vector<uint8_t> ktxData = CreateKTXFormatData(image, false, (gnxPath / ktxFileName).string());
+	if (ktxData.empty())
+	{
+		return false;
+	}
+
+	// 读取KTX数据
+	std::vector<uint8_t> finalKtxData = baselib::FileUtil::ReadBinaryFile((gnxPath / ktxFileName).string());
+	if (finalKtxData.empty())
+	{
+		return false;
+	}
+
+	// 生成并保存纹理元数据（完整的TextureMessage）
+	AssetManager::TextureAsset textureAsset;
+	textureAsset.FillFromImage(image);
+	textureAsset.SetSourceFile("embedded_texture");
+	textureAsset.SetDataSize(static_cast<uint32_t>(finalKtxData.size()));
+	textureAsset.SetHash(hash);
+	textureAsset.SetIsCompressed(true);
+	textureAsset.AutoDetectTextureType(originalFileName);
+
+	// 设置KTX数据
+	textureAsset.SetImageData(finalKtxData.data(), static_cast<uint32_t>(finalKtxData.size()));
+
+	// 保存完整的TextureMessage（包含元数据和KTX数据）到.texture文件
+	textureAsset.SaveToFile((gnxPath / textureFileName).string());
+
+	// 在编辑器目录生成.gnx引用文件
+	AssetProcess::AssetReference assetRef;
+	assetRef.SetHash(hash);
+	assetRef.SetOriginalFileName(originalFileName);
+	assetRef.SetOriginalPath("");
+	assetRef.SetAssetType(AssetType_Texture);
+	assetRef.SaveToFile((currentPath / (originalFileName + ".gnx")).string());
+
+	return true;
 }
 
 bool ImageImporter::LoadFromRawPixels(const uint8_t* data, uint32_t width, uint32_t height, imagecodec::ImagePixelFormat format, const std::string& saveDir, const std::string& outputFileName)
@@ -379,7 +442,7 @@ bool ImageImporter::LoadFromRawPixels(const uint8_t* data, uint32_t width, uint3
 
 	// 计算GUID
 	baselib::NXGUID guid = CreateGUIDFromBinaryData(data, dataSize);
-	std::string guidStr = baselib::GUIDToString(guid);
+	uint64_t hash = guid.Data1;  // 使用GUID的Data1作为hash值
 
 	// 创建VImage对象并设置像素数据
 	imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
@@ -391,28 +454,57 @@ bool ImageImporter::LoadFromRawPixels(const uint8_t* data, uint32_t width, uint3
 	memcpy(imagePixels, data, dataSize);
 
 	fs::path currentPath = saveDir;
-	std::string fileName = outputFileName.empty() ? (guidStr + ".ktx") : outputFileName;
+	fs::path gnxPath = currentPath / ".gnx";
+	std::string originalFileName = outputFileName.empty() ? "embedded_texture" : outputFileName;
 
-	//生成ktx的压缩格式以及保存一些元数据
-	std::vector<uint8_t> ktxData = CreateKTXFormatData(image, false, (currentPath / fileName).string());
-
-	//保存文件
-	if (!ktxData.empty())
+	// 确保.gnx目录存在
+	if (!baselib::FileUtil::IsDir(gnxPath.string()))
 	{
-		baselib::FileUtil::WriteBinaryFile((currentPath / fileName).string(), ktxData.data(), ktxData.size());
-
-		// 生成并保存纹理元数据
-//		TextureMetaData metaData;
-//		metaData.FillFromImage(image);
-//		metaData.SetSourceFile("embedded_texture");
-//		metaData.SetDataSize(ktxData.size());
-//		metaData.SetIsCompressed(true);
-//		metaData.SaveToFile((currentPath / (guidStr + ".meta")).string());
-
-		return true;
+		fs::create_directories(gnxPath);
 	}
 
-	return false;
+	// .gnx目录中的文件名为hash值.texture
+	std::string textureFileName = std::to_string(hash) + ".texture";
+	std::string ktxFileName = std::to_string(hash) + ".ktx";
+
+	// 生成KTX压缩格式
+	std::vector<uint8_t> ktxData = CreateKTXFormatData(image, false, (gnxPath / ktxFileName).string());
+	if (ktxData.empty())
+	{
+		return false;
+	}
+
+	// 读取KTX数据
+	std::vector<uint8_t> finalKtxData = baselib::FileUtil::ReadBinaryFile((gnxPath / ktxFileName).string());
+	if (finalKtxData.empty())
+	{
+		return false;
+	}
+
+	// 生成并保存纹理元数据（完整的TextureMessage）
+	AssetManager::TextureAsset textureAsset;
+	textureAsset.FillFromImage(image);
+	textureAsset.SetSourceFile("embedded_texture");
+	textureAsset.SetDataSize(static_cast<uint32_t>(finalKtxData.size()));
+	textureAsset.SetHash(hash);
+	textureAsset.SetIsCompressed(true);
+	textureAsset.AutoDetectTextureType(originalFileName);
+
+	// 设置KTX数据
+	textureAsset.SetImageData(finalKtxData.data(), static_cast<uint32_t>(finalKtxData.size()));
+
+	// 保存完整的TextureMessage（包含元数据和KTX数据）到.texture文件
+	textureAsset.SaveToFile((gnxPath / textureFileName).string());
+
+	// 在编辑器目录生成.gnx引用文件
+	AssetProcess::AssetReference assetRef;
+	assetRef.SetHash(hash);
+	assetRef.SetOriginalFileName(originalFileName);
+	assetRef.SetOriginalPath("");
+	assetRef.SetAssetType(AssetType_Texture);
+	assetRef.SaveToFile((currentPath / (originalFileName + ".gnx")).string());
+
+	return true;
 }
 
 NS_ASSETPROCESS_END
