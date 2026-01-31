@@ -6,6 +6,7 @@
 //
 
 #include "AssetFileHeader.h"
+#include "Runtime/BaseLib/include/HashFunction.h"
 #include <iostream>
 #include <iomanip>
 #include <cstring>
@@ -142,20 +143,12 @@ void AssetFileHeaderUtil::PrintHeader(const AssetFileHeader& header)
 
 uint64_t AssetFileHeaderUtil::ComputeHash(const void* data, uint64_t size)
 {
-    // 使用 FNV-1a 哈希算法（简单但有效）
     if (data == nullptr || size == 0)
     {
         return 0;
     }
 
-    const uint8_t* bytes = static_cast<const uint8_t*>(data);
-    uint64_t hash = 14695981039346656037ULL; // FNV offset basis
-
-    for (uint64_t i = 0; i < size; ++i)
-    {
-        hash ^= bytes[i];
-        hash *= 1099511628211ULL; // FNV prime
-    }
+    uint64_t hash = baselib::HashFunction(data, size);
 
     return hash;
 }

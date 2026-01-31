@@ -121,7 +121,7 @@ struct ASSET_MANAGER_API AssetFileHeader
      */
     void SetName(const std::string& assetName)
     {
-        strncpy_s(name, assetName.c_str(), sizeof(name) - 1);
+        strncpy(name, assetName.c_str(), sizeof(name) - 1);
         name[sizeof(name) - 1] = '\0';
     }
 
