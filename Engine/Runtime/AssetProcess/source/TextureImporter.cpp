@@ -1,13 +1,16 @@
 #include "TextureImporter.h"
 #include "AssetReference.h"
 #include "TextureMetaFormat.h"
+#include "Runtime/AssetManager/include/TextureMessage.pb.h"
 #include "ktx.h"
 #include "Runtime/ImageCodec/include/ImageUtil.h"
 #include "TextureProcess/stb_image_resize2.h"
 #include "DXTCompressor.h"
 #include "PVRCompressor.h"
 #include "ASTCCompressor.h"
+#include "AssetFileHeader.h"
 #include "Runtime/BaseLib/include/AlignedMalloc.h"
+#include "Runtime/BaseLib/include/LogService.h"
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -547,29 +550,80 @@ std::vector<uint8_t> TextureImporter::GenerateKTXData(imagecodec::VImagePtr imag
     return std::move(resultData);
 }
 
-bool TextureImporter::SaveTextureFile(const std::string& textureFilePath, 
-                                    const std::vector<uint8_t>& ktxData, 
+bool TextureImporter::SaveTextureFile(const std::string& textureFilePath,
+                                    const std::vector<uint8_t>& ktxData,
                                     const std::string& originalFileName)
 {
-	// 生成 TextureMessage
-	//TextureMessage textureMsg = TextureMessage_init_default;
-	
-	// 设置基本属性
-	//	textureMsg.textureType = mSettings.textureType;
-	//	textureMsg.compressType = mSettings.enableCompression ? CompressType_ZLIB : CompressType_NONE;
-	//	textureMsg.isSRGB = mSettings.sRGB;
-	//	textureMsg.hasAlpha = mSettings.hasAlpha;
-	//	textureMsg.isCompressed = mSettings.enableCompression;
-	//	textureMsg.hash = mTextureHash;
+	// 1. 创建并初始化 TextureMessage
+	TextureMessage textureMsg = TextureMessage_init_default;
 
-	// 设置源信息
-	// TODO: 设置 sourceFile, importTime, engineVersion
-	
-	// 设置 KTX 数据
-	// TODO: 设置 imageData
+	// 3. 设置图像数据回调
+	textureMsg.imageData.funcs.encode = [](pb_ostream_t* stream, const pb_field_t* field, void* const* arg) -> bool {
+		const std::vector<uint8_t>* data = static_cast<const std::vector<uint8_t>*>(*arg);
+		if (!pb_encode_tag_for_field(stream, field))
+			return false;
+		return pb_encode_string(stream, data->data(), data->size());
+	};
+	textureMsg.imageData.arg = const_cast<std::vector<uint8_t>*>(&ktxData);
 
-	// TODO: 使用 AssetFileHeader 和 nanopb 序列化并保存
-	
+	// 4. 序列化 protobuf 消息
+	uint8_t pbBuffer[1024 * 1024];  // 1MB 缓冲区
+	pb_ostream_t stream = pb_ostream_from_buffer(pbBuffer, sizeof(pbBuffer));
+
+	if (!pb_encode(&stream, TextureMessage_fields, &textureMsg))
+	{
+		LOG_ERROR("Failed to encode TextureMessage: %s", PB_GET_ERROR(&stream));
+		return false;
+	}
+
+	// 5. 创建资产文件头
+	uint32_t flags = AssetManager::AssetFileFlags::NONE;
+	if (mMeta.isCompressed)
+	{
+		flags |= AssetManager::AssetFileFlags::COMPRESSED;
+	}
+
+	// 计算 protobuf 数据的 hash
+	uint64_t hash = AssetManager::AssetFileHeaderUtil::ComputeHash(pbBuffer, stream.bytes_written);
+
+	AssetManager::AssetFileHeader header = AssetManager::AssetFileHeaderUtil::CreateHeader(
+		AssetManager::AssetType::Texture,
+		originalFileName,
+		hash,
+		stream.bytes_written,
+		flags
+	);
+
+	// 6. 确保目标目录存在
+	fs::path filePath(textureFilePath);
+	fs::path parentDir = filePath.parent_path();
+	if (!fs::exists(parentDir))
+	{
+		fs::create_directories(parentDir);
+	}
+
+	// 7. 写入文件：先写文件头，再写 protobuf 数据
+	std::ofstream outFile(textureFilePath, std::ios::binary);
+	if (!outFile.is_open())
+	{
+		LOG_ERROR("Failed to open texture file for writing: %s", textureFilePath.c_str());
+		return false;
+	}
+
+	// 写入文件头
+	if (!AssetManager::AssetFileHeaderUtil::WriteHeader(outFile, header))
+	{
+		LOG_ERROR("Failed to write asset file header");
+		outFile.close();
+		return false;
+	}
+
+	// 写入 protobuf 数据
+	outFile.write(reinterpret_cast<const char*>(pbBuffer), stream.bytes_written);
+	outFile.close();
+
+	LOG_INFO("Saved texture file: %s (size: %zu bytes)", textureFilePath.c_str(), stream.bytes_written);
+
 	return true;
 }
 

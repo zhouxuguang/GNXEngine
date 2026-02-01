@@ -110,7 +110,7 @@ TextureAsset* AssetManager::LoadTextureInternal(const std::string& path, bool as
 	}
 
 	// 加载纹理（使用CreateFromTextureMessageFile替代CreateFromFiles）
-	TextureAsset* texture = TextureAsset::CreateFromTextureMessageFile(fullPath);
+    TextureAsset* texture = nullptr;
 	if (!texture)
 	{
 		std::cerr << "Failed to load texture: " << path << std::endl;
@@ -279,70 +279,6 @@ int AssetManager::ReloadChangedAssets()
 	return reloadedCount;
 }
 
-
-
-
-
-std::vector<TextureAsset*> AssetManager::GetAllNormalMaps() const
-{
-	std::vector<TextureAsset*> normalMaps;
-
-	for (const auto& pair : m_textures)
-	{
-		if (pair.second->IsNormalMap())
-		{
-			normalMaps.push_back(pair.second);
-		}
-	}
-
-	return normalMaps;
-}
-
-std::vector<TextureAsset*> AssetManager::GetAllAlbedoMaps() const
-{
-	std::vector<TextureAsset*> albedoMaps;
-
-	for (const auto& pair : m_textures)
-	{
-		if (pair.second->IsAlbedoMap())
-		{
-			albedoMaps.push_back(pair.second);
-		}
-	}
-
-	return albedoMaps;
-}
-
-std::vector<TextureAsset*> AssetManager::GetAllRoughnessMaps() const
-{
-	std::vector<TextureAsset*> roughnessMaps;
-
-	for (const auto& pair : m_textures)
-	{
-		if (pair.second->IsRoughnessMap())
-		{
-			roughnessMaps.push_back(pair.second);
-		}
-	}
-
-	return roughnessMaps;
-}
-
-std::vector<TextureAsset*> AssetManager::GetAllMetallicMaps() const
-{
-	std::vector<TextureAsset*> metallicMaps;
-
-	for (const auto& pair : m_textures)
-	{
-		if (pair.second->IsMetallicMap())
-		{
-			metallicMaps.push_back(pair.second);
-		}
-	}
-
-	return metallicMaps;
-}
-
 uint64_t AssetManager::GetTotalMemoryUsage() const
 {
 	uint64_t totalMemory = 0;
@@ -439,7 +375,7 @@ TextureAsset* AssetManager::LoadTextureByHash(uint64_t hash)
 	}
 
 	// 加载纹理（使用CreateFromTextureMessageFile）
-	TextureAsset* texture = TextureAsset::CreateFromTextureMessageFile(textureFilePath);
+	TextureAsset* texture = nullptr;
 	if (!texture)
 	{
 		std::cerr << "Failed to load texture: " << textureFilePath << std::endl;

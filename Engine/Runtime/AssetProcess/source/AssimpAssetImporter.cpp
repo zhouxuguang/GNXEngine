@@ -1,6 +1,6 @@
 #include "AssimpAssetImporter.h"
 #include "AssimpMeshImporter.h"
-#include "ImageImporter.h"
+#include "TextureImporter.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
 
 NS_ASSETPROCESS_BEGIN
@@ -80,7 +80,7 @@ bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std:
 					std::string outputFileName = guidStr + ".ktx";
 
 					// 使用ImageImporter从内存导入嵌入式纹理
-					ImageImporter::LoadFromMemory((uint8_t*)texture->pcData, texture->mWidth, saveDir, outputFileName);
+                    TextureImporter::ImportFromMemory((uint8_t*)texture->pcData, texture->mWidth, saveDir, outputFileName);
 				}
 				else
 				{
@@ -107,7 +107,7 @@ bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std:
 					std::string guidStr = baselib::GUIDToString(guid);
 					std::string outputFileName = guidStr + ".ktx";
 
-					ImageImporter::LoadFromRawPixels(pixelData.data(), texture->mWidth, texture->mHeight,
+                    TextureImporter::ImportFromRawPixels(pixelData.data(), texture->mWidth, texture->mHeight,
 						imagecodec::FORMAT_RGBA8, saveDir, outputFileName);
 				}
 			}
@@ -125,8 +125,8 @@ bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std:
 		material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuseMap);
 		printf("diffuse texname = %s\n", diffuseMap.C_Str());
 		{
-			ImageImporter imageImporter((parentDir + std::string("/") + std::string(diffuseMap.C_Str())).c_str(), saveDir);
-			imageImporter.Load();
+            TextureImporter imageImporter;
+			imageImporter.Import(parentDir + std::string("/") + std::string(diffuseMap.C_Str()), saveDir);
 		}
 
 		aiString baseColorMap;
@@ -135,8 +135,8 @@ bool AssimpAssetImporter::ImportFromFile(const std::string& fileName, const std:
 		aiString normalMap;
 		material->Get(AI_MATKEY_TEXTURE_NORMALS(0), normalMap);
 		{
-			ImageImporter imageImporter((parentDir + std::string("/") + std::string(normalMap.C_Str())).c_str(), saveDir);
-			imageImporter.Load();
+            TextureImporter imageImporter;
+            imageImporter.Import(parentDir + std::string("/") + std::string(normalMap.C_Str()), saveDir);
 		}
 		
 		

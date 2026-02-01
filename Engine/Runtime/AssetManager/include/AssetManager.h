@@ -117,26 +117,6 @@ public:
 	 */
 	int ReloadChangedAssets();
 
-	/**
-	 * 获取所有法线贴图
-	 */
-	std::vector<TextureAsset*> GetAllNormalMaps() const;
-
-	/**
-	 * 获取所有反照率贴图
-	 */
-	std::vector<TextureAsset*> GetAllAlbedoMaps() const;
-
-	/**
-	 * 获取所有粗糙度贴图
-	 */
-	std::vector<TextureAsset*> GetAllRoughnessMaps() const;
-
-	/**
-	 * 获取所有金属度贴图
-	 */
-	std::vector<TextureAsset*> GetAllMetallicMaps() const;
-
 	// ==================== 内存管理 ====================
 
 	/**

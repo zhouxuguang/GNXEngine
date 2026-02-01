@@ -17,7 +17,3 @@ PB_BIND(TextureMessage, TextureMessage, AUTO)
 
 
 
-
-
-
-
