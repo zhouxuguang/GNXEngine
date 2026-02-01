@@ -4,14 +4,19 @@
 //
 
 #include "OpenProjectDialog.h"
+#include "EditorConfig.h"
 #include "Runtime/GNXEngine/include/ProjectConfig.h"
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QFileInfo>
+#include <QDir>
 
 OpenProjectDialog::OpenProjectDialog(QWidget* parent)
     : QDialog(parent)
 {
+    // 加载编辑器配置
+    EditorConfig::GetInstance().LoadConfig();
+
     SetupUI();
 
     setWindowTitle("打开工程");
@@ -76,8 +81,8 @@ void OpenProjectDialog::LoadRecentProjects()
 {
     mRecentProjectsList->clear();
 
-    // 从工程管理器获取最近工程列表
-    auto recentProjects = GNXEngine::ProjectManager::GetInstance().GetRecentProjects();
+    // 从编辑器配置获取最近工程列表
+    auto recentProjects = EditorConfig::GetInstance().GetRecentProjects();
 
     if (recentProjects.empty())
     {
@@ -99,12 +104,20 @@ void OpenProjectDialog::LoadRecentProjects()
 
 void OpenProjectDialog::OnBrowseButtonClicked()
 {
-    // 获取当前工程的目录作为默认路径
-    QString defaultPath = QDir::homePath();
-    GNXEngine::ProjectConfig* project = GNXEngine::ProjectManager::GetInstance().GetProject();
-    if (project)
+    // 从编辑器配置获取上次打开工程时的路径作为默认路径
+    QString defaultPath = EditorConfig::GetInstance().GetLastOpenProjectPath().c_str();
+
+    // 如果没有记录，则使用用户主目录
+    if (defaultPath.isEmpty())
     {
-        defaultPath = QString::fromStdString(project->projectPath);
+        defaultPath = QDir::homePath();
+    }
+
+    // 确保路径存在
+    QDir dir(defaultPath);
+    if (!dir.exists())
+    {
+        defaultPath = QDir::homePath();
     }
 
     QString filepath = QFileDialog::getOpenFileName(
@@ -144,6 +157,13 @@ void OpenProjectDialog::OnOpenButtonClicked()
 
     if (success)
     {
+        // 添加到最近工程列表
+        EditorConfig::GetInstance().AddRecentProject(mSelectedProjectPath.toStdString());
+
+        // 保存上次打开工程时的路径（使用工程文件所在目录）
+        std::string lastOpenPath = fileInfo.absolutePath().toStdString();
+        EditorConfig::GetInstance().SetLastOpenProjectPath(lastOpenPath);
+
         QMessageBox::information(this, "成功", "工程打开成功！");
         accept();
     }

@@ -30,6 +30,8 @@ set(PROJECT_SOURCES
         NewProjectDialog.cpp
         OpenProjectDialog.h
         OpenProjectDialog.cpp
+        EditorConfig.h
+        EditorConfig.cpp
         TestPost/TestPost.cpp
         TestPost/TestPost.hpp
         TestImageDecode.cpp
