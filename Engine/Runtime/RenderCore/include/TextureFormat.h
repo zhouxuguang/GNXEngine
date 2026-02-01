@@ -39,6 +39,9 @@ enum
     kTexFormatDXT3_SRGB = 24,
     kTexFormatDXT5_RGB = 25,
     kTexFormatDXT5_SRGB = 26,
+    kTexFormatBC6H = 27,
+    kTexFormatBC7_RGB = 28,
+    kTexFormatBC7_SRGB = 29,
 
     // iPhone
     kTexFormatPVRTC_RGB2 = 30,
