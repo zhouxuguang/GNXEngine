@@ -263,173 +263,130 @@ std::string TextureMetaSerializer::ToYAMLString(const TextureMeta& meta)
     {
         YAML::Emitter emitter;
 
-        // 设置输出样式
+        // 设置输出格式
         emitter << YAML::BeginMap;
 
         // 版本信息
         emitter << YAML::Key << "importerVersion";
         emitter << YAML::Value << meta.importerVersion;
-        emitter << YAML::Comment("导入器版本 (用于检测格式变化)");
 
         emitter << YAML::Key << "engineVersion";
         emitter << YAML::Value << meta.engineVersion;
-        emitter << YAML::Comment("引擎版本");
 
         // 源文件信息
         emitter << YAML::Newline << YAML::Newline;
-        emitter << YAML::Comment("源文件信息");
         emitter << YAML::Key << "sourceFile";
         emitter << YAML::Value << meta.sourceFile;
-        emitter << YAML::Comment("源文件名 (不含路径)");
 
         emitter << YAML::Key << "sourceFileHash";
         emitter << YAML::Value << meta.sourceFileHash;
-        emitter << YAML::Comment("源文件 hash (用于检测变化)");
 
         // 纹理信息
         emitter << YAML::Newline << YAML::Newline;
-        emitter << YAML::Comment("纹理信息");
         emitter << YAML::Key << "width";
         emitter << YAML::Value << meta.width;
-        emitter << YAML::Comment("纹理宽度");
 
         emitter << YAML::Key << "height";
         emitter << YAML::Value << meta.height;
-        emitter << YAML::Comment("纹理高度");
 
         emitter << YAML::Key << "depth";
         emitter << YAML::Value << meta.depth;
-        emitter << YAML::Comment("深度 (3D 纹理)");
 
         emitter << YAML::Key << "mipLevels";
         emitter << YAML::Value << meta.mipLevels;
-        emitter << YAML::Comment("Mipmap 等级数");
 
         emitter << YAML::Key << "arrayLayers";
         emitter << YAML::Value << meta.arrayLayers;
-        emitter << YAML::Comment("数组层数 (纹理数组)");
 
         emitter << YAML::Key << "textureType";
         emitter << YAML::Value << static_cast<uint32_t>(meta.textureType);
-        emitter << YAML::Comment("纹理类型 (0:Texture2D, 1:Texture3D, 2:Cubemap, 3:Texture2DArray, 4:CubemapArray)");
 
         emitter << YAML::Key << "hasAlpha";
         emitter << YAML::Value << meta.hasAlpha;
-        emitter << YAML::Comment("是否有 Alpha 通道");
 
         // 压缩信息
         emitter << YAML::Newline << YAML::Newline;
-        emitter << YAML::Comment("压缩信息");
         emitter << YAML::Key << "isCompressed";
         emitter << YAML::Value << meta.isCompressed;
-        emitter << YAML::Comment("是否已压缩");
 
         emitter << YAML::Key << "compressFormat";
         emitter << YAML::Value << meta.compressFormat;
-        emitter << YAML::Comment("压缩格式 (数字)");
 
         emitter << YAML::Key << "colorSpace";
         emitter << YAML::Value << static_cast<uint32_t>(meta.colorSpace);
-        emitter << YAML::Comment("颜色空间 (0:Linear, 1:sRGB, 2:Gamma)");
 
         // 缓存信息
         emitter << YAML::Newline << YAML::Newline;
-        emitter << YAML::Comment("缓存信息");
         emitter << YAML::Key << "textureHash";
         emitter << YAML::Value << meta.textureHash;
-        emitter << YAML::Comment("纹理 hash (.texture 文件名)");
 
         emitter << YAML::Key << "textureFile";
         emitter << YAML::Value << meta.textureFile;
-        emitter << YAML::Comment("纹理文件名 (hash.texture)");
 
         // 导入时间
         emitter << YAML::Newline << YAML::Newline;
-        emitter << YAML::Comment("导入时间");
         emitter << YAML::Key << "importTime";
         emitter << YAML::Value << meta.importTime;
-        emitter << YAML::Comment("导入时间 (ISO 8601)");
 
         // 导入设置
         emitter << YAML::Newline << YAML::Newline;
-        emitter << YAML::Comment("导入设置");
         emitter << YAML::Key << "settings";
 
         // 设置子节点
         emitter << YAML::BeginMap;
 
         // 基本设置
-        emitter << YAML::Comment("基本设置");
         emitter << YAML::Key << "enableCompression";
         emitter << YAML::Value << meta.settings.enableCompression;
-        emitter << YAML::Comment("是否启用压缩");
 
         emitter << YAML::Key << "compressFormat";
         emitter << YAML::Value << static_cast<uint32_t>(meta.settings.compressFormat);
-        emitter << YAML::Comment("压缩格式");
 
         emitter << YAML::Key << "maxSize";
         emitter << YAML::Value << meta.settings.maxSize;
-        emitter << YAML::Comment("最大尺寸限制 (0 = 无限制)");
 
         // Mipmap 设置
         emitter << YAML::Newline;
-        emitter << YAML::Comment("Mipmap 设置");
         emitter << YAML::Key << "mipmapMode";
         emitter << YAML::Value << static_cast<uint32_t>(meta.settings.mipmapMode);
-        emitter << YAML::Comment("Mipmap 生成模式 (0:None, 1:Auto, 2:Box, 3:Cubic, 4:Lanczos)");
 
         emitter << YAML::Key << "maxMipLevel";
         emitter << YAML::Value << meta.settings.maxMipLevel;
-        emitter << YAML::Comment("最大 Mipmap 等级 (0 = 全部生成)");
 
         // 颜色空间
         emitter << YAML::Newline;
-        emitter << YAML::Comment("颜色空间");
         emitter << YAML::Key << "colorSpace";
         emitter << YAML::Value << static_cast<uint32_t>(meta.settings.colorSpace);
-        emitter << YAML::Comment("颜色空间 (0:Linear, 1:sRGB, 2:Gamma)");
 
         // Alpha 处理
         emitter << YAML::Newline;
-        emitter << YAML::Comment("Alpha 处理");
         emitter << YAML::Key << "alphaMode";
         emitter << YAML::Value << static_cast<uint32_t>(meta.settings.alphaMode);
-        emitter << YAML::Comment("Alpha 处理方式 (0:None, 1:Straight, 2:Premultiplied, 3:Mask)");
 
         emitter << YAML::Key << "alphaCutoff";
         emitter << YAML::Value << meta.settings.alphaCutoff;
-        emitter << YAML::Comment("Alpha 测试阈值 (AlphaMode::Mask 时使用)");
 
         // 纹理类型
         emitter << YAML::Newline;
-        emitter << YAML::Comment("纹理类型");
         emitter << YAML::Key << "textureType";
         emitter << YAML::Value << static_cast<uint32_t>(meta.settings.textureType);
-        emitter << YAML::Comment("纹理类型 (0:Texture2D, 1:Texture3D, 2:Cubemap, 3:Texture2DArray, 4:CubemapArray)");
 
         // 高级设置
         emitter << YAML::Newline;
-        emitter << YAML::Comment("高级设置");
         emitter << YAML::Key << "compressQuality";
         emitter << YAML::Value << meta.settings.compressQuality;
-        emitter << YAML::Comment("压缩质量 (0-100)");
 
         emitter << YAML::Key << "isNormalMap";
         emitter << YAML::Value << meta.settings.isNormalMap;
-        emitter << YAML::Comment("是否为法线贴图 (特殊处理)");
 
         emitter << YAML::Key << "readWrite";
         emitter << YAML::Value << meta.settings.readWrite;
-        emitter << YAML::Comment("是否读/写 (默认可读写)");
 
         emitter << YAML::Key << "streaming";
         emitter << YAML::Value << meta.settings.streaming;
-        emitter << YAML::Comment("是否流式加载");
 
         emitter << YAML::Key << "streamingMipLevel";
         emitter << YAML::Value << meta.settings.streamingMipLevel;
-        emitter << YAML::Comment("流式加载的 Mipmap 等级 (如果启用 streaming)");
 
         emitter << YAML::EndMap;
 
@@ -490,7 +447,7 @@ bool TextureMetaSerializer::SaveToYAML(const TextureMeta& meta, const std::strin
             return false;
         }
 
-        // 写入文件
+        // 保存文件
         std::ofstream file(filePath);
         if (!file.is_open())
         {
@@ -517,7 +474,7 @@ bool TextureMetaSerializer::LoadFromYAML(TextureMeta& meta, const std::string& f
 {
     try
     {
-        // 检查文件是否存在
+        // 检查目标文件是否存在
         std::ifstream file(filePath);
         if (!file.is_open())
         {
