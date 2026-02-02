@@ -6,24 +6,57 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMessageBox>
+#include <QSortFilterProxyModel>
 
 #include "Runtime/ImageCodec/include/ImageDecoder.h"
 #include "Runtime/AssetProcess/include/AssetImporter.h"
 #include "Runtime/AssetProcess/include/AssetReference.h"
 #include "Runtime/AssetManager/include/AssetManager.h"
 
+// 代理模型：过滤掉.meta文件和.gnx目录
+class FileSystemProxyModel : public QSortFilterProxyModel
+{
+public:
+	explicit FileSystemProxyModel(QObject* parent = nullptr) : QSortFilterProxyModel(parent) {}
+
+protected:
+	bool filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const override
+	{
+		QFileSystemModel* fileModel = qobject_cast<QFileSystemModel*>(sourceModel());
+		if (!fileModel)
+			return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
+
+		QModelIndex index = fileModel->index(sourceRow, 0, sourceParent);
+		QString fileName = fileModel->fileName(index);
+
+		// 过滤掉.gnx目录
+		if (fileModel->isDir(index) && fileName == ".gnx")
+			return false;
+
+		// 过滤掉.meta文件
+		if (!fileModel->isDir(index) && fileName.endsWith(".meta"))
+			return false;
+
+		return QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
+	}
+};
+
 ContentWidget::ContentWidget(QDockWidget* parent, const QString& currentDir)
 	: QWidget(parent),
 	mModel(new QFileSystemModel(this)),
+	mProxyModel(new FileSystemProxyModel(this)),
 	mListView(new QListView(this))
 {
 	mModel->setRootPath(currentDir);
 	mCurrentDir = currentDir;
 	mInitDir = currentDir;
 
+	// 设置代理模型的源模型
+	mProxyModel->setSourceModel(mModel);
+
 	// 创建QListView并设置相关属性
-	mListView->setModel(mModel);
-	mListView->setRootIndex(mModel->index(currentDir));
+	mListView->setModel(mProxyModel);
+	mListView->setRootIndex(mProxyModel->mapFromSource(mModel->index(currentDir)));
 	mListView->setViewMode(QListView::IconMode);
 	mListView->setIconSize(QSize(64, 64));
 	mListView->setResizeMode(QListView::Adjust);
@@ -124,24 +157,25 @@ void ContentWidget::SetRootPath(const QString& path)
 	mModel->setRootPath(path);
 	mCurrentDir = path;
 	mInitDir = path;
-	mListView->setRootIndex(mModel->index(path));
+	mListView->setRootIndex(mProxyModel->mapFromSource(mModel->index(path)));
 	mBackButton->setEnabled(false);
 	UpdatePathLabel();
 }
 
 void ContentWidget::onDoubleClicked(const QModelIndex& index)
 {
-	if (mModel->isDir(index))
+	QModelIndex sourceIndex = mProxyModel->mapToSource(index);
+	if (mModel->isDir(sourceIndex))
 	{
-		QString path = mModel->filePath(index);
+		QString path = mModel->filePath(sourceIndex);
 		mCurrentDir = path;
 		mBackButton->setEnabled(true);
-		mListView->setRootIndex(mModel->index(path));
+		mListView->setRootIndex(mProxyModel->mapFromSource(mModel->index(path)));
 		UpdatePathLabel();
 	}
 	else
 	{
-		QString filePath = mModel->filePath(index);
+		QString filePath = mModel->filePath(sourceIndex);
 
 		// 检查是否为.gnx引用文件
 		if (filePath.endsWith(".gnx"))
@@ -182,7 +216,7 @@ void ContentWidget::onBackClicked()
 	QDir dir(mCurrentDir);
 	dir.cd(".."); // 返回上一级目录
 	QString parentPath = dir.absolutePath();
-	mListView->setRootIndex(mModel->index(parentPath));
+	mListView->setRootIndex(mProxyModel->mapFromSource(mModel->index(parentPath)));
 	mCurrentDir = parentPath;
 	UpdatePathLabel();
 

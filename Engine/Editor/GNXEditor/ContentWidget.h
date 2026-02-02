@@ -9,6 +9,7 @@
 #include <QMenu>
 #include <QMainWindow>
 #include <QLabel>
+#include <QSortFilterProxyModel>
 
 //内容浏览器的窗口
 
@@ -33,6 +34,7 @@ private:
 	void UpdatePathLabel();
 
 	QFileSystemModel* mModel = nullptr;
+	QSortFilterProxyModel* mProxyModel = nullptr;
 	QListView* mListView = nullptr;
 	QPushButton* mBackButton = nullptr;
 	QLabel* mPathLabel = nullptr;
