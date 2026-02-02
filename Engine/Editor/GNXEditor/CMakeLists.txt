@@ -24,6 +24,8 @@ set(PROJECT_SOURCES
         mainwindow.ui
         ContentWidget.h
         ContentWidget.cpp
+        TextureItemDelegate.h
+        TextureItemDelegate.cpp
         RenderWindowWidget.h
         RenderWindowWidget.cpp
         NewProjectDialog.h
@@ -43,7 +45,7 @@ set(PROJECT_SOURCES
         testSkybox.h
         testSkybox.cpp
         TestBlitEncoder.cpp
-)
+        )
 
 set(PLATFORM_SRC )
 if(APPLE)

@@ -11,6 +11,9 @@
 #include <QLabel>
 #include <QSortFilterProxyModel>
 
+// 前向声明
+class TextureItemDelegate;
+
 //内容浏览器的窗口
 
 class ContentWidget : public QWidget
@@ -36,6 +39,7 @@ private:
 	QFileSystemModel* mModel = nullptr;
 	QSortFilterProxyModel* mProxyModel = nullptr;
 	QListView* mListView = nullptr;
+	TextureItemDelegate* mThumbnailDelegate = nullptr;
 	QPushButton* mBackButton = nullptr;
 	QLabel* mPathLabel = nullptr;
 	QString mInitDir;

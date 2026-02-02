@@ -146,7 +146,7 @@ struct TextureMeta
 };
 
 // ==================== Meta 文件序列化 ====================
-class TextureMetaSerializer
+class ASSET_PROCESS_API TextureMetaSerializer
 {
 public:
     // 序列化到 YAML 文件

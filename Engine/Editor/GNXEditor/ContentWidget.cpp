@@ -1,4 +1,5 @@
 #include "ContentWidget.h"
+#include "TextureItemDelegate.h"
 #include <QPushButton>
 #include <QFileDialog>
 #include <QSettings>
@@ -45,7 +46,8 @@ ContentWidget::ContentWidget(QDockWidget* parent, const QString& currentDir)
 	: QWidget(parent),
 	mModel(new QFileSystemModel(this)),
 	mProxyModel(new FileSystemProxyModel(this)),
-	mListView(new QListView(this))
+	mListView(new QListView(this)),
+	mThumbnailDelegate(new TextureItemDelegate(this))
 {
 	mModel->setRootPath(currentDir);
 	mCurrentDir = currentDir;
@@ -61,7 +63,9 @@ ContentWidget::ContentWidget(QDockWidget* parent, const QString& currentDir)
 	mListView->setIconSize(QSize(64, 64));
 	mListView->setResizeMode(QListView::Adjust);
 	mListView->setSpacing(8);
-	mListView->setGridSize(QSize(80, 100));
+	mListView->setGridSize(QSize(100, 120));
+	// 设置自定义 delegate 来显示缩略图
+	mListView->setItemDelegate(mThumbnailDelegate);
 	// 启用上下文菜单
 	mListView->setContextMenuPolicy(Qt::CustomContextMenu);
 	mListView->setEditTriggers(QAbstractItemView::NoEditTriggers);

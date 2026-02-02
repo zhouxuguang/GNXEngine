@@ -302,7 +302,10 @@ bool TextureImporter::Import(const std::string& sourceFilePath, const std::strin
 	}
 
 	// 16. 生成缩略图
-	if (!GenerateThumbnail(image, mSourceFileHash, currentDir))
+	// currentDir 是 Assets 目录，项目根目录是 Assets 的父目录
+	fs::path assetsPath(currentDir);
+	fs::path projectRoot = assetsPath.parent_path();
+	if (!GenerateThumbnail(image, mSourceFileHash, projectRoot.string()))
 	{
 		LOG_WARN("Failed to generate thumbnail for: %s", targetFilePath.c_str());
 	}
@@ -632,13 +635,13 @@ std::string TextureImporter::GetTextureFilePath(uint64_t hash, const std::string
 	return (cacheDir / (std::to_string(hash) + ".texture")).string();
 }
 
-std::string TextureImporter::GetThumbnailFilePath(uint64_t hash, const std::string& projectRootPath) const
+std::string TextureImporter::GetThumbnailFilePath(uint64_t hash, const std::string& projectRootPath)
 {
-	fs::path cacheDir = GetCacheDirectoryPath(projectRootPath);
+	fs::path cacheDir = (fs::path(projectRootPath) / ".gnx" / "Cache");
 	return (cacheDir / (std::to_string(hash) + "_thumb.png")).string();
 }
 
-bool TextureImporter::GenerateThumbnail(imagecodec::VImagePtr image, uint64_t hash, const std::string& currentDir, uint32_t thumbnailSize)
+bool TextureImporter::GenerateThumbnail(imagecodec::VImagePtr image, uint64_t hash, const std::string& projectRootPath, uint32_t thumbnailSize)
 {
 	// 1. 计算缩略图尺寸（保持宽高比）
 	uint32_t srcWidth = image->GetWidth();
@@ -767,7 +770,7 @@ bool TextureImporter::GenerateThumbnail(imagecodec::VImagePtr image, uint64_t ha
 	memcpy(thumbnail.GetPixels(), rgbaData.data(), rgbaData.size());
 
 	// 6. 保存为 PNG 文件
-	std::string thumbnailPath = GetThumbnailFilePath(hash, currentDir);
+	std::string thumbnailPath = GetThumbnailFilePath(hash, projectRootPath);
 
 	// 确保目录存在
 	fs::path filePath(thumbnailPath);

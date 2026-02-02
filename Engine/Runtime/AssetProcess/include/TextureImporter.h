@@ -73,6 +73,14 @@ public:
 	 */
 	TextureMeta& GetTextureMeta();
 
+	/**
+	 * 获取缩略图文件路径（静态方法，用于内容浏览器）
+	 * @param hash 纹理hash
+	 * @param projectRootPath 项目根目录
+	 * @return 缩略图文件路径
+	 */
+	static std::string GetThumbnailFilePath(uint64_t hash, const std::string& projectRootPath);
+
 	// ==================== 工厂方法 ====================
 
 	/**
@@ -160,18 +168,13 @@ private:
 	std::string GetTextureFilePath(uint64_t hash, const std::string& projectRootPath) const;
 
 	/**
-	 * 获取缩略图文件路径
-	 */
-	std::string GetThumbnailFilePath(uint64_t hash, const std::string& projectRootPath) const;
-
-	/**
 	 * 生成缩略图并保存到文件
 	 * @param image 原始图像数据
 	 * @param hash 纹理hash
-	 * @param currentDir 当前目录（保存缩略图的目录）
+	 * @param projectRootPath 项目根目录（保存缩略图的目录）
 	 * @param thumbnailSize 缩略图大小（默认256x256）
 	 */
-	bool GenerateThumbnail(imagecodec::VImagePtr image, uint64_t hash, const std::string& currentDir, uint32_t thumbnailSize = 128);
+	bool GenerateThumbnail(imagecodec::VImagePtr image, uint64_t hash, const std::string& projectRootPath, uint32_t thumbnailSize = 128);
 
 	// ==================== 成员变量 ====================
 
