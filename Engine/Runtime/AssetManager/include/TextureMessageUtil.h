@@ -14,10 +14,8 @@ NS_ASSETMANAGER_BEGIN
 struct TextureData
 {
 	std::vector<uint8_t> imageData;  // 图像数据（KTX格式）
-	uint32_t dataSize;                // 数据大小
 
 	TextureData()
-		: dataSize(0)
 	{
 	}
 };
@@ -48,9 +46,6 @@ public:
 	 * @return 序列化后的 protobuf 数据
 	 */
 	static ByteVectorPtr EncodeTextureMessage(const uint8_t* imageData, uint32_t dataSize);
-
-private:
-	//
 };
 
 NS_ASSETMANAGER_END

@@ -2,6 +2,7 @@
 #include "AssetReference.h"
 #include "TextureMetaFormat.h"
 #include "Runtime/AssetManager/include/TextureMessage.pb.h"
+#include "Runtime/AssetManager/include/TextureMessageUtil.h"
 #include "ktx.h"
 #include "Runtime/ImageCodec/include/ImageUtil.h"
 #include "TextureProcess/stb_image_resize2.h"
@@ -554,27 +555,7 @@ bool TextureImporter::SaveTextureFile(const std::string& textureFilePath,
                                     const std::vector<uint8_t>& ktxData,
                                     const std::string& originalFileName)
 {
-	// 1. 创建并初始化 TextureMessage
-	TextureMessage textureMsg = TextureMessage_init_default;
-
-	// 3. 设置图像数据回调
-	textureMsg.imageData.funcs.encode = [](pb_ostream_t* stream, const pb_field_t* field, void* const* arg) -> bool {
-		const std::vector<uint8_t>* data = static_cast<const std::vector<uint8_t>*>(*arg);
-		if (!pb_encode_tag_for_field(stream, field))
-			return false;
-		return pb_encode_string(stream, data->data(), data->size());
-	};
-	textureMsg.imageData.arg = const_cast<std::vector<uint8_t>*>(&ktxData);
-
-	// 4. 序列化 protobuf 消息
-	uint8_t pbBuffer[1024 * 1024];  // 1MB 缓冲区
-	pb_ostream_t stream = pb_ostream_from_buffer(pbBuffer, sizeof(pbBuffer));
-
-	if (!pb_encode(&stream, TextureMessage_fields, &textureMsg))
-	{
-		LOG_ERROR("Failed to encode TextureMessage: %s", PB_GET_ERROR(&stream));
-		return false;
-	}
+	ByteVectorPtr encodedData = AssetManager::TextureMessageUtil::EncodeTextureMessage(ktxData.data(), ktxData.size());
 
 	// 5. 创建资产文件头
 	uint32_t flags = AssetManager::AssetFileFlags::NONE;
@@ -584,13 +565,13 @@ bool TextureImporter::SaveTextureFile(const std::string& textureFilePath,
 	}
 
 	// 计算 protobuf 数据的 hash
-	uint64_t hash = AssetManager::AssetFileHeaderUtil::ComputeHash(pbBuffer, stream.bytes_written);
+	uint64_t hash = AssetManager::AssetFileHeaderUtil::ComputeHash(encodedData->data(), encodedData->size());
 
 	AssetManager::AssetFileHeader header = AssetManager::AssetFileHeaderUtil::CreateHeader(
 		AssetManager::AssetType::Texture,
 		originalFileName,
 		hash,
-		stream.bytes_written,
+		encodedData->size(),
 		flags
 	);
 
@@ -619,10 +600,10 @@ bool TextureImporter::SaveTextureFile(const std::string& textureFilePath,
 	}
 
 	// 写入 protobuf 数据
-	outFile.write(reinterpret_cast<const char*>(pbBuffer), stream.bytes_written);
+	outFile.write(reinterpret_cast<const char*>(encodedData->data()), encodedData->size());
 	outFile.close();
 
-	LOG_INFO("Saved texture file: %s (size: %zu bytes)", textureFilePath.c_str(), stream.bytes_written);
+	LOG_INFO("Saved texture file: %s (size: %zu bytes)", textureFilePath.c_str(), encodedData->size());
 
 	return true;
 }
