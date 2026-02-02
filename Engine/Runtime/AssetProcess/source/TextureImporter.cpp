@@ -301,6 +301,12 @@ bool TextureImporter::Import(const std::string& sourceFilePath, const std::strin
 		return false;
 	}
 
+	// 16. 生成缩略图
+	if (!GenerateThumbnail(image, mSourceFileHash, currentDir))
+	{
+		LOG_WARN("Failed to generate thumbnail for: %s", targetFilePath.c_str());
+	}
+
 	return true;
 }
 
@@ -624,6 +630,169 @@ std::string TextureImporter::GetTextureFilePath(uint64_t hash, const std::string
 {
 	fs::path cacheDir = GetCacheDirectoryPath(projectRootPath);
 	return (cacheDir / (std::to_string(hash) + ".texture")).string();
+}
+
+std::string TextureImporter::GetThumbnailFilePath(uint64_t hash, const std::string& projectRootPath) const
+{
+	fs::path cacheDir = GetCacheDirectoryPath(projectRootPath);
+	return (cacheDir / (std::to_string(hash) + "_thumb.png")).string();
+}
+
+bool TextureImporter::GenerateThumbnail(imagecodec::VImagePtr image, uint64_t hash, const std::string& currentDir, uint32_t thumbnailSize)
+{
+	// 1. 计算缩略图尺寸（保持宽高比）
+	uint32_t srcWidth = image->GetWidth();
+	uint32_t srcHeight = image->GetHeight();
+
+	// 如果原始图像已经很小，直接使用原始大小
+	if (srcWidth <= thumbnailSize && srcHeight <= thumbnailSize)
+	{
+		thumbnailSize = std::max(srcWidth, srcHeight);
+	}
+
+	// 计算目标宽高（保持宽高比）
+	uint32_t dstWidth, dstHeight;
+	if (srcWidth > srcHeight)
+	{
+		dstWidth = thumbnailSize;
+		dstHeight = static_cast<uint32_t>(static_cast<float>(srcHeight) * thumbnailSize / srcWidth);
+	}
+	else
+	{
+		dstHeight = thumbnailSize;
+		dstWidth = static_cast<uint32_t>(static_cast<float>(srcWidth) * thumbnailSize / srcHeight);
+	}
+
+	// 2. 确定图像格式
+	imagecodec::ImagePixelFormat srcFormat = image->GetFormat();
+	stbir_pixel_layout stbLayout = STBIR_RGBA;
+	stbir_datatype stbDatatype = STBIR_TYPE_UINT8;
+
+	// 转换格式为 STBIR 可识别的格式，统一使用 RGBA 进行缩放
+	switch (srcFormat)
+	{
+	case imagecodec::FORMAT_RGB8:
+	case imagecodec::FORMAT_RGBA8:
+	case imagecodec::FORMAT_SRGB8:
+	case imagecodec::FORMAT_SRGB8_ALPHA8:
+		stbLayout = STBIR_RGBA;
+		break;
+	case imagecodec::FORMAT_GRAY8:
+		stbLayout = STBIR_1CHANNEL;
+		break;
+	case imagecodec::FORMAT_GRAY8_ALPHA8:
+		stbLayout = STBIR_2CHANNEL;
+		break;
+	default:
+		LOG_WARN("Unsupported image format for thumbnail: %d", srcFormat);
+		return false;
+	}
+
+	// 3. 分配缩略图内存
+	size_t srcBytesPerPixel = image->GetBytesPerPixels();
+	size_t dstBytesPerPixel = (stbLayout == STBIR_RGBA) ? 4 : (stbLayout == STBIR_RGB) ? 3 : (stbLayout == STBIR_2CHANNEL) ? 2 : 1;
+	size_t dstDataSize = dstWidth * dstHeight * dstBytesPerPixel;
+
+	std::vector<uint8_t> dstData(dstDataSize);
+
+	// 4. 使用 stbir_resize 进行缩放
+	const uint8_t* srcData = image->GetPixels();
+	void* result = stbir_resize(
+		srcData, srcWidth, srcHeight, 0,
+		dstData.data(), dstWidth, dstHeight, 0,
+		stbLayout, stbDatatype,
+		STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT
+	);
+
+	if (result == nullptr)
+	{
+		LOG_ERROR("Failed to resize image for thumbnail");
+		return false;
+	}
+
+	// 5. 转换为 RGBA 格式
+	std::vector<uint8_t> rgbaData(dstWidth * dstHeight * 4);
+
+	if (stbLayout == STBIR_RGBA)
+	{
+		// 已经是 RGBA，直接拷贝
+		memcpy(rgbaData.data(), dstData.data(), dstDataSize);
+	}
+	else if (stbLayout == STBIR_RGB)
+	{
+		// RGB 转 RGBA，添加 alpha 通道
+		uint32_t pixelCount = dstWidth * dstHeight;
+		for (uint32_t i = 0; i < pixelCount; i++)
+		{
+			rgbaData[i * 4 + 0] = dstData[i * 3 + 0]; // R
+			rgbaData[i * 4 + 1] = dstData[i * 3 + 1]; // G
+			rgbaData[i * 4 + 2] = dstData[i * 3 + 2]; // B
+			rgbaData[i * 4 + 3] = 255;                 // A
+		}
+	}
+	else if (stbLayout == STBIR_1CHANNEL)
+	{
+		// 灰度转 RGBA
+		uint32_t pixelCount = dstWidth * dstHeight;
+		for (uint32_t i = 0; i < pixelCount; i++)
+		{
+			uint8_t gray = dstData[i];
+			rgbaData[i * 4 + 0] = gray;  // R
+			rgbaData[i * 4 + 1] = gray;  // G
+			rgbaData[i * 4 + 2] = gray;  // B
+			rgbaData[i * 4 + 3] = 255;   // A
+		}
+	}
+	else if (stbLayout == STBIR_2CHANNEL)
+	{
+		// 灰度+Alpha 转 RGBA
+		uint32_t pixelCount = dstWidth * dstHeight;
+		for (uint32_t i = 0; i < pixelCount; i++)
+		{
+			uint8_t gray = dstData[i * 2 + 0];
+			uint8_t alpha = dstData[i * 2 + 1];
+			rgbaData[i * 4 + 0] = gray;  // R
+			rgbaData[i * 4 + 1] = gray;  // G
+			rgbaData[i * 4 + 2] = gray;  // B
+			rgbaData[i * 4 + 3] = alpha; // A
+		}
+	}
+
+	// 6. 创建 VImage 对象用于编码（始终使用 RGBA 格式）
+	imagecodec::VImage thumbnail;
+	imagecodec::ImagePixelFormat dstFormat = imagecodec::FORMAT_RGBA8;
+
+	thumbnail.SetImageInfo(dstFormat, dstWidth, dstHeight);
+	thumbnail.AllocPixels();
+	memcpy(thumbnail.GetPixels(), rgbaData.data(), rgbaData.size());
+
+	// 6. 保存为 PNG 文件
+	std::string thumbnailPath = GetThumbnailFilePath(hash, currentDir);
+
+	// 确保目录存在
+	fs::path filePath(thumbnailPath);
+	fs::path parentDir = filePath.parent_path();
+	if (!fs::exists(parentDir))
+	{
+		fs::create_directories(parentDir);
+	}
+
+	// 使用 ImageEncoder 保存为 PNG
+	bool success = imagecodec::ImageEncoder::EncodeFile(
+		thumbnailPath.c_str(),
+		thumbnail,
+		imagecodec::kPNG_Format,
+		90
+	);
+
+	if (!success)
+	{
+		LOG_ERROR("Failed to save thumbnail: %s", thumbnailPath.c_str());
+		return false;
+	}
+
+	LOG_INFO("Generated thumbnail: %s (%ux%u)", thumbnailPath.c_str(), dstWidth, dstHeight);
+	return true;
 }
 
 // ==================== 工厂方法 ====================

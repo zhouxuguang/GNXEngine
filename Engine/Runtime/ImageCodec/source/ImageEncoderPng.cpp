@@ -336,9 +336,9 @@ bool EncodeWithLibPNG(std::vector<unsigned char>& dataStream, const VImage& imag
     png_set_packing(png_ptr);
     png_write_info(png_ptr, info_ptr);
     
-    size_t nPerLinuint8_ts = image. GetHeight() * image.GetBytesPerRow();
-    unsigned char* srcImage =  image.GetPixels() + (image.GetHeight() - 1) * nPerLinuint8_ts;
-    unsigned char* storage = (unsigned char*)malloc(image.GetWidth() * 4);
+    size_t nPerLineBytes = image.GetBytesPerRow();
+    unsigned char* srcImage =  image.GetPixels();
+    unsigned char* storage = new uint8_t[image.GetWidth() * 4];
     transform_line_proc transformProc = choose_tranform_proc(format, hasAlpha);
     
     //实际的写入操作
@@ -346,11 +346,11 @@ bool EncodeWithLibPNG(std::vector<unsigned char>& dataStream, const VImage& imag
     {
         transformProc(srcImage, image.GetWidth(), storage);
         png_write_rows(png_ptr, &storage, 1);
-        srcImage -= nPerLinuint8_ts;
+        srcImage += nPerLineBytes;
     }
     
     png_write_end(png_ptr, info_ptr);
-    free(storage);
+    delete []storage;
     
     /* 清除相关的内存 */
     png_destroy_write_struct(&png_ptr, &info_ptr);
