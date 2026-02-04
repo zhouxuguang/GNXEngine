@@ -8,11 +8,30 @@
 
 NS_ASSETMANAGER_BEGIN
 
+// 纹理的文件头 https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
+struct TextureDataHeader
+{
+	char identifier[12];
+	uint32_t endianness;
+	uint32_t glType;
+	uint32_t glTypeSize;
+	uint32_t glFormat;
+	uint32_t glInternalFormat;
+	uint32_t glBaseInternalFormat; // e.g. GL_RGBA, GL_BGRA, GL_RED
+	uint32_t pixelWidth;
+	uint32_t pixelHeight;
+	uint32_t pixelDepth;
+	uint32_t numberOfArrayElements;
+	uint32_t numberOfFaces;
+	uint32_t numberOfMipmapLevels;
+	uint32_t bytesOfKeyValueData;
+};
+
 /**
  * 纹理资源类
  * 继承自Asset基类，提供纹理特定的功能
  */
-class TextureAsset : public Asset
+class ASSET_MANAGER_API TextureAsset : public Asset
 {
 public:
 	TextureAsset();
@@ -65,11 +84,6 @@ public:
 	 * 获取每像素字节数
 	 */
 	uint32_t GetBytesPerPixel() const;
-
-	/**
-	 * 获取压缩类型
-	 */
-	CompressType GetCompressType() const;
 
 	// ==================== 纹理数据访问 ====================
 
@@ -131,13 +145,10 @@ public:
 	void SetIsCubemap(bool isCubemap);
 	void SetIsCompressed(bool isCompressed);
 
-	// 从VImage填充元数据
-	void FillFromImage(const imagecodec::VImagePtr& image);
-
 	// 序列化为protobuf并保存到文件
 	bool SaveToFile(const std::string& filePath);
 
-	// 从文件加载元数据
+	// 从文件加载数据,pb格式
 	bool LoadFromFile(const std::string& filePath);
 
 	// 设置图像数据（用于序列化）
@@ -148,18 +159,8 @@ public:
 	uint32_t GetImageDataSize() const;
 
 private:
-	TextureMessage m_message;
-	
-	// 字符串字段的存储
-	std::string m_sourceFile;
-	std::string m_importTime;
-	std::string m_engineVersion;
-	
-	// 图像数据存储（KTX数据）
-	std::vector<uint8_t> m_imageData;
-	
-	std::vector<uint8_t> m_textureData;
-	uint32_t m_dataSize;
+	ByteVector mTextureData;
+	TextureDataHeader mTextureHeader;
 
 	bool m_isOnGPU;
 

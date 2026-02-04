@@ -5,25 +5,15 @@
 #include <algorithm>
 #include <cctype>
 #include <ctime>
-#include <iomanip>
+#include "TextureMessageUtil.h"
 
-// nanopb 头文件
-#include <pb.h>
-#include <pb_encode.h>
-#include <pb_decode.h>
 
 NS_ASSETMANAGER_BEGIN
 
-TextureAsset::TextureAsset()
-	: m_dataSize(0)
-	, m_isOnGPU(false)
+TextureAsset::TextureAsset() : 
+	m_isOnGPU(false)
 	, m_gpuHandle(nullptr)
 {
-	// 初始化protobuf消息为默认值
-	m_message = TextureMessage_init_default;
-	
-	// 设置默认引擎版本
-	m_engineVersion = "1.0.0";
 }
 
 TextureAsset::~TextureAsset()
@@ -54,27 +44,6 @@ const std::string& TextureAsset::GetFilePath() const
 
 bool TextureAsset::Load()
 {
-	// 从磁盘加载纹理元数据（.meta文件）
-	if (!LoadFromFile(m_filePath + ".meta"))
-	{
-		return false;
-	}
-
-	// 读取纹理数据（.ktx等）
-	std::vector<uint8_t> data = baselib::FileUtil::ReadBinaryFile(m_filePath);
-	if (data.empty())
-	{
-		SetState(AssetState::Error);
-		return false;
-	}
-
-	// 保存纹理数据
-	m_textureData = std::move(data);
-	m_dataSize = static_cast<uint32_t>(m_textureData.size());
-
-	// 更新元数据
-	SetMemorySize(m_dataSize);
-	SetLastModified(0); // TODO: 实现文件修改时间获取
 
 	SetState(AssetState::Loaded);
 	return true;
@@ -82,13 +51,6 @@ bool TextureAsset::Load()
 
 void TextureAsset::Unload()
 {
-	if (m_textureData.empty())
-	{
-		return;
-	}
-
-	m_textureData.clear();
-	m_dataSize = 0;
 
 	SetState(AssetState::Unloaded);
 }
@@ -171,18 +133,16 @@ uint32_t TextureAsset::GetBytesPerPixel() const
 
 const uint8_t* TextureAsset::GetData() const
 {
-	return m_textureData.data();
+	return nullptr;
 }
 
 uint32_t TextureAsset::GetDataSize() const
 {
-	return m_dataSize;
+	return 0;
 }
 
 void TextureAsset::SetData(const uint8_t* data, uint32_t size)
 {
-	m_textureData.assign(data, data + size);
-	m_dataSize = size;
 }
 
 bool TextureAsset::IsSRGB() const
@@ -263,10 +223,6 @@ void TextureAsset::SetIsCompressed(bool isCompressed)
 	//m_message.isCompressed = isCompressed;
 }
 
-void TextureAsset::FillFromImage(const imagecodec::VImagePtr& image)
-{
-}
-
 bool TextureAsset::SaveToFile(const std::string& filePath)
 {
 	
@@ -275,7 +231,28 @@ bool TextureAsset::SaveToFile(const std::string& filePath)
 
 bool TextureAsset::LoadFromFile(const std::string& filePath)
 {
-	
+	ByteVector imageData = baselib::FileUtil::ReadBinaryFile(filePath);
+	if (imageData.empty())
+	{
+		return false;
+	}
+
+	size_t assetHeader = sizeof(AssetFileHeader);
+
+	TextureData packedImageData;
+	bool suc = TextureMessageUtil::DecodeTextureMessage(imageData.data() + assetHeader, imageData.size() - assetHeader, &packedImageData);
+	if (!suc)
+	{
+		return false;
+	}
+
+	memcpy(&mTextureHeader, packedImageData.imageData.data(), sizeof(TextureDataHeader));
+
+	size_t textureDataSize = packedImageData.imageData.size() - sizeof(TextureDataHeader);
+
+	mTextureData.resize(textureDataSize);
+	memcpy(mTextureData.data(), packedImageData.imageData.data() + sizeof(TextureDataHeader), textureDataSize);
+
 	return true;
 }
 
@@ -286,11 +263,6 @@ void TextureAsset::SetImageData(const uint8_t* data, uint32_t size)
 const uint8_t* TextureAsset::GetImageData() const
 {
     return nullptr;
-}
-
-uint32_t TextureAsset::GetImageDataSize() const
-{
-	return static_cast<uint32_t>(m_imageData.size());
 }
 
 NS_ASSETMANAGER_END
