@@ -8,28 +8,12 @@
 NS_ASSETMANAGER_BEGIN
 
 /**
- * 纹理数据结构
- * 用于存储从 TextureMessage 反序列化后的数据
- */
-struct TextureData
-{
-	std::vector<uint8_t> imageData;  // 图像数据（KTX格式）
-
-	TextureData()
-	{
-	}
-};
-
-/**
  * TextureMessage 工具类
  * 提供 TextureMessage 的序列化和反序列化功能
  */
 class TextureMessageUtil
 {
 public:
-	TextureMessageUtil();
-	~TextureMessageUtil();
-
 	/**
 	 * 反序列化 TextureMessage
 	 * @param pData protobuf 数据指针
@@ -37,7 +21,7 @@ public:
 	 * @param textureData 输出的纹理数据
 	 * @return 是否成功
 	 */
-	static bool DecodeTextureMessage(const uint8_t* pData, uint32_t dataSize, TextureData* textureData);
+	static bool DecodeTextureMessage(const uint8_t* pData, uint32_t dataSize, ByteVector& textureData);
 
 	/**
 	 * 序列化 TextureMessage
@@ -46,6 +30,10 @@ public:
 	 * @return 序列化后的 protobuf 数据
 	 */
 	static ByteVectorPtr EncodeTextureMessage(const uint8_t* imageData, uint32_t dataSize);
+
+private:
+	TextureMessageUtil();
+	~TextureMessageUtil();
 };
 
 NS_ASSETMANAGER_END

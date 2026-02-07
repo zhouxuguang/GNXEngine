@@ -16,9 +16,9 @@ TextureMessageUtil::~TextureMessageUtil()
 {
 }
 
-bool TextureMessageUtil::DecodeTextureMessage(const uint8_t* pData, uint32_t dataSize, TextureData* textureData)
+bool TextureMessageUtil::DecodeTextureMessage(const uint8_t* pData, uint32_t dataSize, ByteVector& textureData)
 {
-	if (!pData || dataSize <= 0 || !textureData)
+	if (!pData || dataSize <= 0)
 	{
 		return false;
 	}
@@ -43,8 +43,8 @@ bool TextureMessageUtil::DecodeTextureMessage(const uint8_t* pData, uint32_t dat
 	pb_bytes_array_t* pImageData = (pb_bytes_array_t*)textureMessage.imageData.arg;
 	if (pImageData)
 	{
-		textureData->imageData.resize(pImageData->size);
-		memcpy(textureData->imageData.data(), pImageData->bytes, pImageData->size);
+		textureData.resize(pImageData->size);
+		memcpy(textureData.data(), pImageData->bytes, pImageData->size);
 
 		free(pImageData);
 		textureMessage.imageData.arg = nullptr;  // 防止重复释放
@@ -71,7 +71,7 @@ ByteVectorPtr TextureMessageUtil::EncodeTextureMessage(const uint8_t* imageData,
 
 	TextureMessage textureMessage = TextureMessage_init_default;
 
-	// 顶点数据
+	// 纹理数据
 	pb_bytes_array_t* pDataBytes = (pb_bytes_array_t*)malloc(PB_BYTES_ARRAY_T_ALLOCSIZE(dataSize));
 	pDataBytes->size = dataSize;
 	textureMessage.imageData.arg = pDataBytes;

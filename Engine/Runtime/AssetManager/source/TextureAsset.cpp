@@ -239,19 +239,19 @@ bool TextureAsset::LoadFromFile(const std::string& filePath)
 
 	size_t assetHeader = sizeof(AssetFileHeader);
 
-	TextureData packedImageData;
-	bool suc = TextureMessageUtil::DecodeTextureMessage(imageData.data() + assetHeader, imageData.size() - assetHeader, &packedImageData);
+	ByteVector packedImageData;
+	bool suc = TextureMessageUtil::DecodeTextureMessage(imageData.data() + assetHeader, imageData.size() - assetHeader, packedImageData);
 	if (!suc)
 	{
 		return false;
 	}
 
-	memcpy(&mTextureHeader, packedImageData.imageData.data(), sizeof(TextureDataHeader));
+	memcpy(&mTextureHeader, packedImageData.data(), sizeof(TextureDataHeader));
 
-	size_t textureDataSize = packedImageData.imageData.size() - sizeof(TextureDataHeader);
+	size_t textureDataSize = packedImageData.size() - sizeof(TextureDataHeader);
 
 	mTextureData.resize(textureDataSize);
-	memcpy(mTextureData.data(), packedImageData.imageData.data() + sizeof(TextureDataHeader), textureDataSize);
+	memcpy(mTextureData.data(), packedImageData.data() + sizeof(TextureDataHeader), textureDataSize);
 
 	return true;
 }
