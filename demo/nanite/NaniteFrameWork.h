@@ -37,29 +37,19 @@ public:
 private:
     RenderCore::RenderDevicePtr mRenderDevice = nullptr;
     RenderCore::ComputeBufferPtr mHierarchyBuffer = nullptr;
-    RenderCore::ComputeBufferPtr mClusterSelectionArgs1 = nullptr;
     RenderCore::ComputeBufferPtr mClusterPageData = nullptr;
-    RenderCore::RCTexture2DPtr mVisBuffer = nullptr;
-    RenderCore::RCTexture2DPtr mVisBuffer64 = nullptr;
     
-    RenderCore::ComputeBufferPtr mRasterBinMeta = nullptr;
-    RenderCore::ComputeBufferPtr mRasterBinData = nullptr;
-    RenderCore::ComputeBufferPtr mMainAndPostNodeAndClusterBatches = nullptr;
     RenderCore::UniformBufferPtr mGlobalBuffer = nullptr;
-    RenderCore::ComputeBufferPtr mWorkArgs[2];
-    RenderCore::ComputeBufferPtr mQueueState = nullptr;
-    RenderCore::ComputeBufferPtr mVisibleClustersSWHW = nullptr;
 
     GlobaleData mGlobalData;
 
     RenderSystem::TransientResources *mTransientResources = nullptr;
 
+    uint32_t mWidth = 0;
+    uint32_t mHeight = 0;
+
 private:
     RenderCore::ComputeBufferPtr InitNaniteMeshBuffer();
-
-    RenderCore::RCTexture2DPtr InitVisualizeBuffer();
-
-    RenderCore::RCTexture2DPtr InitVisBuffer64();
     
     bool OnKeyUp(GNXEngine::KeyReleasedEvent& e);
 };

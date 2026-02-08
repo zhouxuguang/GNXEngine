@@ -2,7 +2,7 @@
 
 #include "Runtime/RenderCore/include/RenderDevice.h"
 
-void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice);
+void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice, uint32_t width, uint32_t height);
 
 void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer, 
                             RenderCore::RCTexture2DPtr visBuffer64,

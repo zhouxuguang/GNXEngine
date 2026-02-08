@@ -27,7 +27,7 @@ float3 IntToColor(uint Index)
 void CS(uint3 dispatchThreadID : SV_DispatchThreadID, uint3 GID : SV_GroupID)
 {
     uint2 threadID = dispatchThreadID.xy;
-	if (any(threadID >= uint2(1400u, 480u)))
+	if (any(threadID >= uint2(1280u, 720u)))
 	{
         return;
     }

@@ -25,11 +25,14 @@
 #include <cstring>
 
 static int sCurrentMipLevelIndex = 0;
+
 //0, 1, 2, 3, 4, 5, 6, 7, 8, 10
 static uint32_t mipLevels[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 10};
 
 NaniteFrameWork::NaniteFrameWork(const GNXEngine::WindowProps& props) : GNXEngine::AppFrameWork(props)
 {
+    mWidth = props.width;
+    mHeight = props.height;
 }
 
 void NaniteFrameWork::Initlize()
@@ -38,37 +41,16 @@ void NaniteFrameWork::Initlize()
     
     mRenderDevice = RenderCore::GetRenderDevice();
     mHierarchyBuffer = InitHierarchyBuffer(mRenderDevice);
-    mClusterSelectionArgs1 = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
-    mClusterSelectionArgs1->SetName("DebugBuffer");
     
-    mRasterBinMeta = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
-    mRasterBinMeta->SetName("Nanite.RasterBinMeta");
-    mRasterBinData = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
-    mRasterBinData->SetName("Nanite.RasterBinData");
-    mMainAndPostNodeAndClusterBatches = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
-    mMainAndPostNodeAndClusterBatches->SetName("Nanite.MainAndPostNodeAndClusterBatches");
     mGlobalBuffer = mRenderDevice->CreateUniformBufferWithSize(sizeof(GlobaleData));
-    
-    mWorkArgs[0] = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
-    mWorkArgs[0]->SetName("mWorkArgs0");
-    mWorkArgs[1] = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
-    mWorkArgs[1]->SetName("mWorkArgs1");
-    
-    mQueueState = mRenderDevice->CreateComputeBuffer(8);
-    mQueueState->SetName("QueueState");
-
-    mVisibleClustersSWHW = mRenderDevice->CreateComputeBuffer(4 * 1024 * 1024);
-    mVisibleClustersSWHW->SetName("Nanite.VisibleClustersSWHW");
     
     InitRasterClearPass(mRenderDevice);
     InitNodeAndClusterCullPass(mRenderDevice);
     InitClusterCullPass(mRenderDevice);
 
     mClusterPageData = InitNaniteMeshBuffer();
-    mVisBuffer = InitVisualizeBuffer();
-    mVisBuffer64 = InitVisBuffer64();
 
-    InitHWRasterizePass(mRenderDevice);
+    InitHWRasterizePass(mRenderDevice, mWidth, mHeight);
     InitVisualizationPass(mRenderDevice);
     InitSwapChainPass(mRenderDevice);
 
@@ -211,7 +193,7 @@ void NaniteFrameWork::RenderFrame()
             RenderSystem::FrameGraphTexture::Desc visBuffer64Desc;
             memset(visBuffer64Desc.name, 0, sizeof(visBuffer64Desc.name));
             strncpy(visBuffer64Desc.name, "VisBuffer64", sizeof(visBuffer64Desc.name) - 1);
-            visBuffer64Desc.extent = RenderCore::Rect2D(0, 0, 1400, 480);
+            visBuffer64Desc.extent = RenderCore::Rect2D(0, 0, mWidth, mHeight);
             visBuffer64Desc.depth = 1;
             visBuffer64Desc.numMipLevels = 1;
             visBuffer64Desc.layers = 1;
@@ -344,7 +326,6 @@ void NaniteFrameWork::RenderFrame()
         "ClusterCull",
         [&](RenderSystem::FrameGraph::Builder& builder, ClusterCullPassData& data)
         {
-            //return;
             // 创建visibleClustersSWHW资源
             RenderSystem::FrameGraphBuffer::Desc visibleClustersSWHWDesc;
             memset(visibleClustersSWHWDesc.name, 0, sizeof(visibleClustersSWHWDesc.name));
@@ -414,7 +395,7 @@ void NaniteFrameWork::RenderFrame()
             RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches = RenderSystem::GetBuffer(resources, data.mainAndPostNodeAndClusterBatches);
 
             ExecuteHWRasterizePass(cmdBuffer, std::dynamic_pointer_cast<RenderCore::RCTexture2D>(visBuffer64),
-                clusterPageData, drawArgs, visibleClustersSWHW, mGlobalBuffer, 1400, 480);
+                clusterPageData, drawArgs, visibleClustersSWHW, mGlobalBuffer, mWidth, mHeight);
         }
     );
 
@@ -436,7 +417,7 @@ void NaniteFrameWork::RenderFrame()
             RenderSystem::FrameGraphTexture::Desc visBufferDesc;
             memset(visBufferDesc.name, 0, sizeof(visBufferDesc.name));
             strncpy(visBufferDesc.name, "VisBuffer", sizeof(visBufferDesc.name) - 1);
-            visBufferDesc.extent = RenderCore::Rect2D(0, 0, 1400, 480);
+            visBufferDesc.extent = RenderCore::Rect2D(0, 0, mWidth, mHeight);
             visBufferDesc.depth = 1;
             visBufferDesc.numMipLevels = 1;
             visBufferDesc.layers = 1;
@@ -521,28 +502,6 @@ RenderCore::ComputeBufferPtr NaniteFrameWork::InitNaniteMeshBuffer()
 		RenderCore::StorageMode::StorageModePrivate);
 	naniteMeshBuffer->SetName("Nanite.ClusterPageData");
 	return naniteMeshBuffer;
-}
-
-RenderCore::RCTexture2DPtr NaniteFrameWork::InitVisualizeBuffer()
-{
-    RenderCore::RCTexture2DPtr visBuffer = mRenderDevice->CreateTexture2D(RenderCore::kTexFormatRGBA32Float,
-                                                                          RenderCore::TextureUsage::TextureUsageShaderRead |
-                                                                          RenderCore::TextureUsage::TextureUsageRenderTarget, 
-                                                                          1400, 480, 1);
-
-    visBuffer->SetName("Nanite.VisualizeBuffer");
-    return visBuffer;
-}
-
-RenderCore::RCTexture2DPtr NaniteFrameWork::InitVisBuffer64()
-{
-    RenderCore::RCTexture2DPtr visBuffer64 = mRenderDevice->CreateTexture2D(RenderCore::kTexFormatRG32Uint,
-                                                                            RenderCore::TextureUsage::TextureUsageShaderRead |
-                                                                            RenderCore::TextureUsage::TextureUsageRenderTarget, 
-                                                                            1400, 480, 1);
-
-    visBuffer64->SetName("Nanite.VisBuffer64");
-    return visBuffer64;
 }
 
 bool NaniteFrameWork::OnKeyUp(GNXEngine::KeyReleasedEvent& e)

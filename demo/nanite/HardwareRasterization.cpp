@@ -5,7 +5,7 @@
 static RenderCore::GraphicsPipelinePtr sPSO = nullptr;
 static RenderCore::RCTexture2DPtr depthTexture = nullptr;
 
-void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice)
+void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice, uint32_t width, uint32_t height)
 {
 	RenderSystem::ShaderAssetString shaderAssetString = RenderSystem::LoadShaderAsset("Nanite/HWRasterize");
 
@@ -26,7 +26,7 @@ void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice)
     depthTexture = renderDevice->CreateTexture2D(RenderCore::kTexFormatDepth32FloatStencil8,
                                                 RenderCore::TextureUsage::TextureUsageShaderRead |
                                                  RenderCore::TextureUsage::TextureUsageRenderTarget, 
-                                                 1400, 480, 1);
+                                                 width, height, 1);
 }
 
 void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer, 
