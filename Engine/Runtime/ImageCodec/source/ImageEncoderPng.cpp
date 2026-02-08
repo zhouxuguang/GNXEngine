@@ -35,6 +35,7 @@ bool ImageEncoderPNG::onEncode(std::vector<unsigned char>& dataStream, const VIm
     switch (format)
     {
         case FORMAT_RGBA8:
+        case FORMAT_SRGB8_ALPHA8:
             sig_bit.red = 8;
             sig_bit.green = 8;
             sig_bit.blue = 8;
@@ -43,6 +44,7 @@ bool ImageEncoderPNG::onEncode(std::vector<unsigned char>& dataStream, const VIm
             break;
 
         case FORMAT_RGB8:
+        case FORMAT_SRGB8:
             sig_bit.red = 8;
             sig_bit.green = 8;
             sig_bit.blue = 8;
@@ -269,9 +271,11 @@ static transform_line_proc choose_tranform_proc(ImagePixelFormat format, bool ha
     switch (format)
     {
         case FORMAT_RGBA8:
+        case FORMAT_SRGB8_ALPHA8:
             return transform_scanline_8888;
 
         case FORMAT_RGB8:
+        case FORMAT_SRGB8:
             return transform_scanline_888;
 
         case FORMAT_RGBA4444:
