@@ -3,29 +3,10 @@
 
 #include "Asset.h"
 #include "TextureMessage.pb.h"
-#include "Runtime/ImageCodec/include/VImage.h"
+#include "Runtime/RenderCore/include/TextureFormat.h"
 #include <vector>
 
 NS_ASSETMANAGER_BEGIN
-
-// 纹理的文件头 https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
-struct TextureDataHeader
-{
-	char identifier[12];
-	uint32_t endianness;
-	uint32_t glType;
-	uint32_t glTypeSize;
-	uint32_t glFormat;
-	uint32_t glInternalFormat;
-	uint32_t glBaseInternalFormat; // e.g. GL_RGBA, GL_BGRA, GL_RED
-	uint32_t pixelWidth;
-	uint32_t pixelHeight;
-	uint32_t pixelDepth;
-	uint32_t numberOfArrayElements;
-	uint32_t numberOfFaces;
-	uint32_t numberOfMipmapLevels;
-	uint32_t bytesOfKeyValueData;
-};
 
 /**
  * 纹理资源类
@@ -85,8 +66,6 @@ public:
 	 */
 	uint32_t GetBytesPerPixel() const;
 
-	// ==================== 纹理数据访问 ====================
-
 	/**
 	 * 获取纹理数据
 	 */
@@ -97,75 +76,37 @@ public:
 	 */
 	uint32_t GetDataSize() const;
 
-	/**
-	 * 设置纹理数据
-	 */
-	void SetData(const uint8_t* data, uint32_t size);
+    /**
+     * 获取纹理格式
+     */
+    RenderCore::TextureFormat GetFormat() const;
 
-	// ==================== 纹理属性 ====================
-
-	/**
-	 * 是否为sRGB色彩空间
-	 */
-	bool IsSRGB() const;
-
-	/**
-	 * 是否有Alpha通道
-	 */
-	bool HasAlpha() const;
-
-	/**
-	 * 是否为立方体贴图
-	 */
-	bool IsCubemap() const;
-
-	/**
-	 * 是否为压缩纹理
-	 */
-	bool IsCompressed() const;
-
-	/**
-	 * 检查纹理是否为法线贴图
-	 */
-	bool IsNormalMap() const;
-
-	// ==================== 元数据操作 ====================
-
-	// 设置纹理基本信息
-	void SetSize(uint32_t width, uint32_t height);
-	void SetSize(uint32_t width, uint32_t height, uint32_t depth);
-	void SetMipLevels(uint32_t levels);
-	void SetArrayLayers(uint32_t layers);
-	void SetPixelFormat(imagecodec::ImagePixelFormat format);
-	void SetSourceFile(const std::string& sourceFile);
-	void SetDataSize(uint32_t size);
-	void SetHash(uint64_t hash);
-	void SetIsSRGB(bool isSRGB);
-	void SetHasAlpha(bool hasAlpha);
-	void SetIsCubemap(bool isCubemap);
-	void SetIsCompressed(bool isCompressed);
-
-	// 序列化为protobuf并保存到文件
-	bool SaveToFile(const std::string& filePath);
+    /**
+     * 获取纹理类型（2D/3D/CUBE/2D_ARRAY）
+     */
+    RenderCore::TextureType GetTextureType() const;
 
 	// 从文件加载数据,pb格式
 	bool LoadFromFile(const std::string& filePath);
 
-	// 设置图像数据（用于序列化）
-	void SetImageData(const uint8_t* data, uint32_t size);
-
-	// 获取图像数据（用于反序列化）
-	const uint8_t* GetImageData() const;
-	uint32_t GetImageDataSize() const;
-
+	bool LoadFromMemory(const void* pData, size_t dataSize);
 private:
 	ByteVector mTextureData;
-	TextureDataHeader mTextureHeader;
 
-	bool m_isOnGPU;
+	bool mIsOnGPU = false;
 
 	// GPU 句柄（RenderSystem会实现）
-	void* m_gpuHandle;
+	void* mGpuHandle;
+
+	RenderCore::TextureType mTextureType = RenderCore::TextureType_Unkown;
+	RenderCore::TextureFormat mTextureFormat;
+	uint32_t mWidth = 0;
+	uint32_t mHeight = 0;
+	uint32_t mMipLevels = 0;
+	uint32_t mDepth = 0;
+	uint32_t mArrayLayers = 0;
+
+	void ParseMeta(const ByteVector& binData);
 };
 
 NS_ASSETMANAGER_END
