@@ -21,88 +21,68 @@ NAMESPACE_IMAGECODEC_BEGIN
 static uint8_t* DecodeJPEGData(const uint8_t* pJPEGData, size_t dataLen, uint32_t* uiWidth, uint32_t* uiHeight, uint32_t* uChannelCount, uint32_t* uBitCount, ImagePixelFormat &pixelFormat)
 {
     /* these are standard libjpeg structures for reading(decompression) */
-    struct jpeg_decompress_struct cinfo;
-    //cinfo.error_map = 0;
-    struct jpeg_error_mgr jerr;
+    struct jpeg_decompress_struct cInfo = {};
+    struct jpeg_error_mgr jerr = {};
 
     uint8_t* pData = NULL;
 
     do
     {
         /* here we set up the standard libjpeg error handler */
-        cinfo.err = jpeg_std_error(&jerr);
+        cInfo.err = jpeg_std_error(&jerr);
         /* setup decompression process and source, then read JPEG header */
-        jpeg_create_decompress(&cinfo);
+        jpeg_create_decompress(&cInfo);
 
-//        if (cinfo.error_map != 0)
-//            return NULL;
-
-        if (NULL == cinfo.mem)
+        if (NULL == cInfo.mem)
         {
             return NULL;
         }
 
         /* this makes the library read from infile */
-        jpeg_mem_src(&cinfo, (uint8_t*)pJPEGData, dataLen);    //fuck，新版本的库为啥不支持内存解码了
-        //jpeg_stdio_src(j_decompress_ptr cinfo, FILE *infile)
-
-//        if (cinfo.error_map != 0)
-//        {
-//            return NULL;
-//        }
+        jpeg_mem_src(&cInfo, (uint8_t*)pJPEGData, dataLen);    //fuck，新版本的库为啥不支持内存解码了
 
         /* reading the image header which contains image information */
-        jpeg_read_header(&cinfo, true);
-
-//        if (cinfo.error_map != 0)
-//        {
-//            return NULL;
-//        }
+        jpeg_read_header(&cInfo, true);
 
         /* init image info */
-        int width = cinfo.image_width;
-        int height = cinfo.image_height;
-        *uChannelCount = cinfo.num_components;
-        *uBitCount = cinfo.num_components * 8;
+        int width = cInfo.image_width;
+        int height = cInfo.image_height;
+        *uChannelCount = cInfo.num_components;
+        *uBitCount = cInfo.num_components * 8;
         /* Start decompression jpeg here */
-        jpeg_start_decompress(&cinfo);
+        jpeg_start_decompress(&cInfo);
         
         //解析图像格式，使用输出格式
-        if (cinfo.out_color_space == JCS_RGB)
+        if (cInfo.out_color_space == JCS_RGB)
         {
-            if (cinfo.num_components == 4)
+            if (cInfo.num_components == 4)
             {
                 pixelFormat = FORMAT_SRGB8_ALPHA8;
             }
             
-            else if (cinfo.num_components == 3)
+            else if (cInfo.num_components == 3)
             {
                 pixelFormat = FORMAT_SRGB8;
             }
         }
         
-        else if (cinfo.out_color_space == JCS_GRAYSCALE)
+        else if (cInfo.out_color_space == JCS_GRAYSCALE)
         {
-            if (cinfo.num_components == 2)
+            if (cInfo.num_components == 2)
             {
                 pixelFormat = FORMAT_GRAY8_ALPHA8;
             }
             
-            else if (cinfo.num_components == 1)
+            else if (cInfo.num_components == 1)
             {
                 pixelFormat = FORMAT_GRAY8;
             }
         }
 
-//        if (cinfo.error_map != 0)
-//        {
-//            return NULL;
-//        }
-
         bool bError = false;
-        int nWidthBytes = cinfo.image_width * cinfo.num_components;
+        int nWidthBytes = cInfo.image_width * cInfo.num_components;
         int nLen = height * nWidthBytes;
-        uint8_t* pDataTmp = pData = (uint8_t*)malloc(nLen);
+        uint8_t* pDataTmp = pData = (uint8_t*)baselib::AlignedMalloc(nLen, 64);
 
         if (pData == NULL)
         {
@@ -111,25 +91,18 @@ static uint8_t* DecodeJPEGData(const uint8_t* pJPEGData, size_t dataLen, uint32_
 
         for (int y = 0; y < height; y++)
         {
-            jpeg_read_scanlines(&cinfo, (JSAMPARRAY)&pDataTmp , 1);
-
-//            if (cinfo.error_map != 0)
-//            {
-//                bError = true;
-//                break;
-//            }
+            jpeg_read_scanlines(&cInfo, (JSAMPARRAY)&pDataTmp , 1);
 
             pDataTmp += nWidthBytes;
         }
 
-
-        jpeg_finish_decompress(&cinfo);
-        jpeg_destroy_decompress(&cinfo);
+        jpeg_finish_decompress(&cInfo);
+        jpeg_destroy_decompress(&cInfo);
 
         /* wrap up decompression, destroy objects, free pointers and close open files */
         if (bError)
         {
-            free(pData);
+            baselib::AlignedFree(pData);
             pData = NULL;
         }
 
@@ -156,26 +129,12 @@ bool ImageDecoderJPEG::onDecode(const void *buffer, size_t size, VImage *bitmap)
         return false;
     }
 
-    // 创建4通道的数据
-    uint32_t pixelCount = nWidth * nHeight;
-    uint8_t* pDataNew = (uint8_t*)baselib::AlignedMalloc(nWidth * nHeight * 4, 64);
-    for (uint32_t i = 0; i < pixelCount; i ++)
-    {
-        pDataNew[i * 4 + 0] = pData[i * 3 + 0];
-        pDataNew[i * 4 + 1] = pData[i * 3 + 1];
-        pDataNew[i * 4 + 2] = pData[i * 3 + 2];
-        pDataNew[i * 4 + 3] = 255;
-    }
-    pixelFormat = FORMAT_RGBA8;
-
-    bitmap->SetImageInfo(pixelFormat, nWidth, nHeight, pDataNew, baselib::AlignedFree);
-    free(pData);
+    bitmap->SetImageInfo(pixelFormat, nWidth, nHeight, pData, baselib::AlignedFree);
     
     bool hasAlpha = hasAlphaChannel(pixelFormat);
     if (hasAlpha)
     {
-        nChannelCount = 4;
-        PremultipliedAlpha(pDataNew, nWidth, nHeight, nChannelCount);
+        PremultipliedAlpha(pData, nWidth, nHeight, nChannelCount);
     }
     bitmap->SetPremultipliedAlpha(hasAlpha);
     return true;

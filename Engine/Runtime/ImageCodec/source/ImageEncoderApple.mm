@@ -68,7 +68,7 @@ CGImageRef imageFormVImage(const VImage& image)
                 bitsPerComponent = 8;
                 bitsPerPixel = 8;
                 colorSpace = CGColorSpaceCreateDeviceGray();
-                bitmapInfo = kCGImageAlphaOnly;
+                bitmapInfo = kCGImageAlphaNone | kCGImageByteOrderDefault;
                 break;
                 
             case FORMAT_GRAY8_ALPHA8:
@@ -143,7 +143,6 @@ bool saveCGImageToFile(const char* fileName, CGImageRef imageRef, ImageStoreForm
                 break;
                 
             default:
-                CGImageRelease(imageRef);
                 return false;
         }
         

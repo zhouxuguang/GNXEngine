@@ -22,7 +22,12 @@ bool ImageEncoderPNG::onEncode(std::vector<unsigned char>& dataStream, const VIm
 bool ImageEncoderPNG::onEncodeFile(const char* fileName, const VImage& image, int quality) const
 {
     CGImageRef imageRef = imageFormVImage(image);
-    return saveCGImageToFile(fileName, imageRef, kPNG_Format, quality);
+    bool suc = saveCGImageToFile(fileName, imageRef, kPNG_Format, quality);
+    if (imageRef)
+    {
+        CGImageRelease(imageRef);
+    }
+    return suc;
 }
 
 NAMESPACE_IMAGECODEC_END
