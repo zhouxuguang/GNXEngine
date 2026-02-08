@@ -8,15 +8,12 @@
 
 NAMESPACE_IMAGECODEC_BEGIN
 
-static uint32_t GetFormatBytesPerRow(ImagePixelFormat format, uint32_t width, uint32_t height,
-                                     uint32_t &encodedWidth, uint32_t &encodedHeight)
+static uint32_t GetFormatBytesPerRow(ImagePixelFormat format, uint32_t width, uint32_t height)
 {
     switch (format)
     {
         case FORMAT_GRAY8:
         {
-            encodedWidth = width;
-            encodedHeight = height;
             return width;
         }
             
@@ -25,8 +22,6 @@ static uint32_t GetFormatBytesPerRow(ImagePixelFormat format, uint32_t width, ui
         case FORMAT_RGB5A1:
         case FORMAT_R5G6B5:
         {
-            encodedWidth = width;
-            encodedHeight = height;
             return width * 2;
         }
             
@@ -34,68 +29,23 @@ static uint32_t GetFormatBytesPerRow(ImagePixelFormat format, uint32_t width, ui
         case FORMAT_RGBA8:
         case FORMAT_SRGB8_ALPHA8:
         {
-            encodedWidth = width;
-            encodedHeight = height;
             return width * 4;
         }
             
         case FORMAT_RGB8:
         case FORMAT_SRGB8:
         {
-            encodedWidth = width;
-            encodedHeight = height;
             return width * 3;
         }
 
 		case FORMAT_RGBA32Float:
 		{
-			encodedWidth = width;
-			encodedHeight = height;
 			return width * 16;
 		}
 
 		case FORMAT_RGB32Float:
 		{
-			encodedWidth = width;
-			encodedHeight = height;
 			return width * 12;
-		}
-            
-        case FORMAT_EAC_R:
-        case FORMAT_EAC_R_SIGNED:
-        case FORMAT_ETC2_RGB:
-        case FORMAT_ETC2_SRGB:
-        case FORMAT_ETC2_RGBA1:
-        case FORMAT_ETC2_SRGBA1:
-        case FORMAT_ETC1_RGB:
-        {
-            int xBlockCount = (width + 3) / 4;
-            int yBlockCount = (height + 3) / 4;
-            encodedWidth = xBlockCount * 4;
-            encodedHeight = yBlockCount * 4;
-            return xBlockCount * 8;
-        }
-            
-        case FORMAT_EAC_RG:
-        case FORMAT_EAC_RG_SIGNED:
-        case FORMAT_ETC2_RGBA8:
-        case FORMAT_ETC2_SRGBA8:
-        {
-            int xBlockCount = (width + 3) / 4;
-            int yBlockCount = (height + 3) / 4;
-            encodedWidth = xBlockCount * 4;
-            encodedHeight = yBlockCount * 4;
-            return xBlockCount * 16;
-        }
-
-		case FORMAT_DXT1_RGB:
-		case FORMAT_DXT1_SRGB:
-		{
-			int xBlockCount = (width + 3) / 4;
-			int yBlockCount = (height + 3) / 4;
-			encodedWidth = xBlockCount * 4;
-			encodedHeight = yBlockCount * 4;
-			return xBlockCount * 8;
 		}
             
         default:
@@ -148,186 +98,143 @@ static uint32_t GetFormatBytes(ImagePixelFormat format)
 }
 
 VImage::VImage(ImagePixelFormat format, uint32_t nWidth, uint32_t nHeight, const void *pData) :
-                 m_eFormat(format),
-                 m_nWidth(nWidth),
-                 m_nHeight(nHeight),
-                 m_pDeleteFunc(NULL),
-                 m_bPremultipliedAlpha(false),
-                 m_mipCount(1)
+                 mFormat(format),
+                 mWidth(nWidth),
+                 mHeight(nHeight),
+                 mDeleteFunc(NULL),
+                 mPremultipliedAlpha(false),
+                 mMipCount(1)
 {
-    m_pData = (void *)pData;
-    m_nBytesPerRow = GetFormatBytesPerRow(format, nWidth, nHeight, m_nEncodedWidth, m_nEncodedHeight);
-    m_nBytesPerPixels = GetFormatBytes(format);
+    mData = (void *)pData;
+    mBytesPerRow = GetFormatBytesPerRow(format, nWidth, nHeight);
+    mBytesPerPixels = GetFormatBytes(format);
 }
 
 VImage::VImage()
 {
-    m_eFormat = FORMAT_UNKNOWN;
-    m_nWidth = 0;
-    m_nHeight = 0;
-    m_nEncodedWidth = 0;
-    m_nEncodedHeight = 0;
-    m_nBytesPerRow = 0;
-    m_pDeleteFunc = NULL;
-    m_pData = NULL;
-    m_bPremultipliedAlpha = false;
-    m_mipCount = 1;
+    mFormat = FORMAT_UNKNOWN;
+    mWidth = 0;
+    mHeight = 0;
+    mBytesPerRow = 0;
+    mDeleteFunc = NULL;
+    mData = NULL;
+    mPremultipliedAlpha = false;
+    mMipCount = 1;
 }
 
 VImage::~VImage()
 {
-    if (m_pDeleteFunc && m_pData)
+    if (mDeleteFunc && mData)
     {
-        m_pDeleteFunc(m_pData);
-        m_pData = NULL;
+        mDeleteFunc(mData);
+        mData = NULL;
     }
 
-    m_eFormat = FORMAT_UNKNOWN;
-    m_nWidth = 0;
-    m_nHeight = 0;
-    m_nEncodedWidth = 0;
-    m_nEncodedHeight = 0;
-    m_nBytesPerRow = 0;
-    m_pDeleteFunc = NULL;
-    m_bPremultipliedAlpha = false;
+    mFormat = FORMAT_UNKNOWN;
+    mWidth = 0;
+    mHeight = 0;
+    mBytesPerRow = 0;
+    mDeleteFunc = NULL;
+    mPremultipliedAlpha = false;
 }
 
 void VImage::AllocPixels()
 {
-    size_t nByteCount = m_nBytesPerRow * m_nHeight;
+    size_t nByteCount = mBytesPerRow * mHeight;
     if (nByteCount == 0)
     {
         return;
     }
 
-    m_pData = baselib::AlignedMalloc(nByteCount, 64);
-    m_pDeleteFunc = baselib::AlignedFree;
+    mData = baselib::AlignedMalloc(nByteCount, 64);
+    mDeleteFunc = baselib::AlignedFree;
 }
 
 uint32_t VImage::GetWidth(int level) const
 {
-    if (level > 0)
-    {
-        return m_dataSizeAndOffsets[level].levelWidth;
-    }
-    return m_nWidth;
+    return mWidth;
 }
 
 uint32_t VImage::GetHeight(int level) const
 {
-    if (level > 0)
-    {
-        return m_dataSizeAndOffsets[level].levelHeight;
-    }
-    return m_nHeight;
+    return mHeight;
 }
 
 uint32_t VImage::GetBytesPerRow() const
 {
-    return m_nBytesPerRow;
+    return mBytesPerRow;
 }
 
 uint32_t VImage::GetBytesPerPixels() const
 {
-    return m_nBytesPerPixels;
+    return mBytesPerPixels;
 }
 
 ImagePixelFormat VImage::GetFormat() const
 {
-    return m_eFormat;
+    return mFormat;
 }
 
 uint8_t* VImage::GetPixels(int level) const
 {
-    //TODO 这里需要重构
-    uint8_t* data = (uint8_t*)m_pData;
-    if (0 == level)
-    {
-        /*if (IsCompressedFormat(m_eFormat))
-        {
-            return data + m_dataSizeAndOffsets[0].offset;
-        }
-        else*/
-        {
-            return (uint8_t*)data;
-        }
-    }
-    return data + m_dataSizeAndOffsets[level].offset;
+    return (uint8_t*)mData;
 }
 
 bool VImage::HasPremultipliedAlpha() const
 {
-    return m_bPremultipliedAlpha;
+    return mPremultipliedAlpha;
 }
 
 void VImage::SetImageInfo(ImagePixelFormat format, uint32_t nWidth, uint32_t nHeight)
 {
-    m_eFormat = format;
-    m_nBytesPerRow = GetFormatBytesPerRow(m_eFormat, nWidth, nHeight, m_nEncodedWidth, m_nEncodedHeight);
-    m_nBytesPerPixels = GetFormatBytes(m_eFormat);
-    m_nWidth = nWidth;
-    m_nHeight = nHeight;
-    m_pData = NULL;
-    m_pDeleteFunc = NULL;
-    m_mipCount = 1;
+    mFormat = format;
+    mBytesPerRow = GetFormatBytesPerRow(mFormat, nWidth, nHeight);
+    mBytesPerPixels = GetFormatBytes(mFormat);
+    mWidth = nWidth;
+    mHeight = nHeight;
+    mData = NULL;
+    mDeleteFunc = NULL;
+    mMipCount = 1;
 }
 
 void VImage::SetImageInfo(ImagePixelFormat format, uint32_t nWidth, uint32_t nHeight, const void* pData, DeleteFun pDeleteFunc)
 {
-    m_eFormat = format;
-    m_nBytesPerRow = GetFormatBytesPerRow(m_eFormat, nWidth, nHeight, m_nEncodedWidth, m_nEncodedHeight);
-    m_nBytesPerPixels = GetFormatBytes(m_eFormat);
-    m_nWidth = nWidth;
-    m_nHeight = nHeight;
-    m_pData = (void*)pData;
+    mFormat = format;
+    mBytesPerRow = GetFormatBytesPerRow(mFormat, nWidth, nHeight);
+    mBytesPerPixels = GetFormatBytes(mFormat);
+    mWidth = nWidth;
+    mHeight = nHeight;
+    mData = (void*)pData;
     
-    m_pDeleteFunc = pDeleteFunc;
+    mDeleteFunc = pDeleteFunc;
 }
 
 void VImage::SetPremultipliedAlpha(bool bPremultipliedAlpha)
 {
-    m_bPremultipliedAlpha = bPremultipliedAlpha;
+    mPremultipliedAlpha = bPremultipliedAlpha;
 }
 
 void VImage::SetMipCount(int mipCount)
 {
-    m_mipCount = mipCount;
+    mMipCount = mipCount;
 }
 
 int VImage::GetMipCount() const
 {
-    return m_mipCount;
+    return mMipCount;
 }
 
 int VImage::GetImageSize(int level) const
 {
-    //TODO 这里也需要重构
-    if (0 == level)
-    {
-        /*if (IsCompressedFormat(m_eFormat))
-        {
-            return m_dataSizeAndOffsets[0].dataSize;;
-        }
-        else*/
-        {
-            return m_nBytesPerRow * m_nHeight;
-        }
-    }
-    return m_dataSizeAndOffsets[level].dataSize;
-}
-
-void VImage::SetMipDataSizeAndOffset(const std::vector<MipDataSizeAndOffset>& dataSizeAndOffset)
-{
-    m_dataSizeAndOffsets.clear();
-    m_dataSizeAndOffsets.insert(m_dataSizeAndOffsets.end(), dataSizeAndOffset.begin(), dataSizeAndOffset.end());
+    return mBytesPerRow * mHeight;
 }
 
 void VImage::Release()
 {
-    if (m_pDeleteFunc && m_pData)
+    if (mDeleteFunc && mData)
     {
-        m_pDeleteFunc(m_pData);
-        m_pData = NULL;
+        mDeleteFunc(mData);
+        mData = NULL;
     }
 }
 

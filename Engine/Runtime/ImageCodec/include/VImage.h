@@ -29,31 +29,7 @@ enum
 
 	FORMAT_RGBA32Float = 9,            //RGBA32位float
 	FORMAT_RGB32Float = 10,             //RGB float
-    
-    //压缩纹理
-    // EAC and ETC2 compressed formats, mandated by OpenGL ES 3.0
-    FORMAT_EAC_R = 41,
-    FORMAT_EAC_R_SIGNED = 42,
-    FORMAT_EAC_RG = 43,
-    FORMAT_EAC_RG_SIGNED = 44,
-    FORMAT_ETC2_RGB = 45,
-    FORMAT_ETC2_SRGB = 46,
-    FORMAT_ETC2_RGBA1 = 47,
-    FORMAT_ETC2_SRGBA1 = 48,
-    FORMAT_ETC2_RGBA8 = 49,
-    FORMAT_ETC2_SRGBA8 = 50,
-    
-    FORMAT_ETC1_RGB = 51,
-
-    // S3TC
-    FORMAT_DXT1_RGB = 60,
-    FORMAT_DXT1_SRGB = 61,
 };
-
-inline bool IsCompressedFormat(ImagePixelFormat format)
-{
-    return format >= FORMAT_EAC_R;
-}
 
 //图像的存储格式  bmp/png等
 enum ImageStoreFormat
@@ -67,17 +43,8 @@ enum ImageStoreFormat
     kHDR_Format
 };
 
-struct MipDataSizeAndOffset
-{
-    int dataSize;
-    int offset;
-    uint16_t levelWidth;
-    uint16_t levelHeight;
-    uint32_t bytesPerRow;
-};
-
 /**
-    图像数据的类，支持普通纹理和压缩纹理
+    图像数据的类，表示图像的基本信息，以及图像数据
     通过imageDecoder解析出来的图像数据，左上角的纹理坐标是(0,0)，左下角是(0,1)
  **/
 class IMAGECODEC_API VImage
@@ -124,8 +91,6 @@ public:
     
     int GetImageSize(int level = 0) const;
     
-    void SetMipDataSizeAndOffset(const std::vector<MipDataSizeAndOffset>& dataSizeAndOffset);
-    
     /**
     * 设置图像的基本信息，基本信息设置后再使用的话需要调用AllocPixels分配内存
     *
@@ -163,19 +128,15 @@ public:
     void Release();
 
 private:
-    uint32_t                    m_nWidth;                //宽
-    uint32_t                    m_nHeight;               //高
-    uint32_t                    m_nEncodedWidth;        //压缩纹理编码后的宽
-    uint32_t                    m_nEncodedHeight;       //压缩纹理编码后的高
-    uint32_t                    m_nBytesPerRow;        //每个像素的字节数，根据m_eFormat决定
-    uint32_t                    m_nBytesPerPixels;      //每个像素多少个字节
-    uint16_t                    m_mipCount;             //mipcount
-    ImagePixelFormat            m_eFormat;               //数据格式
-    bool                        m_bPremultipliedAlpha;   //是否预先乘以alpha
-    void *                      m_pData;                 //数据
-    DeleteFun                   m_pDeleteFunc;           //删除回调函数
-    
-    std::vector<MipDataSizeAndOffset> m_dataSizeAndOffsets;
+    uint32_t                    mWidth;                //宽
+    uint32_t                    mHeight;               //高
+    uint32_t                    mBytesPerRow;          //每个像素的字节数，根据m_eFormat决定
+    uint32_t                    mBytesPerPixels;       //每个像素多少个字节
+    uint16_t                    mMipCount;             //mipcount
+    ImagePixelFormat            mFormat;               //数据格式
+    bool                        mPremultipliedAlpha;   //是否预先乘以alpha
+    void *                      mData;                 //数据
+    DeleteFun                   mDeleteFunc;           //删除回调函数
 };
 
 typedef std::shared_ptr<VImage> VImagePtr;

@@ -52,62 +52,6 @@ TextureDesc ImageTextureUtil::getTextureDescriptor(const VImage& image)
             textureDescriptor.format = kTexFormatSRGB8_ALPHA8;
             break;
             
-        //ETC2
-        case imagecodec::FORMAT_EAC_R:
-            textureDescriptor.format = kTexFormatEAC_R;
-            break;
-            
-        case imagecodec::FORMAT_EAC_R_SIGNED:
-            textureDescriptor.format = kTexFormatEAC_R_SIGNED;
-            break;
-            
-        case imagecodec::FORMAT_EAC_RG:
-            textureDescriptor.format = kTexFormatEAC_RG;
-            break;
-            
-        case imagecodec::FORMAT_EAC_RG_SIGNED:
-            textureDescriptor.format = kTexFormatEAC_RG_SIGNED;
-            break;
-            
-        case imagecodec::FORMAT_ETC2_RGB:
-            textureDescriptor.format = kTexFormatETC2_RGB;
-            break;
-            
-        case imagecodec::FORMAT_ETC2_SRGB:
-            textureDescriptor.format = kTexFormatETC2_SRGB;
-            break;
-            
-        case imagecodec::FORMAT_ETC2_RGBA1:
-            textureDescriptor.format = kTexFormatETC2_RGBA1;
-            break;
-            
-        case imagecodec::FORMAT_ETC2_SRGBA1:
-            textureDescriptor.format = kTexFormatETC2_SRGBA1;
-            break;
-            
-        case imagecodec::FORMAT_ETC2_RGBA8:
-            textureDescriptor.format = kTexFormatETC2_RGBA8;
-            break;
-            
-        case imagecodec::FORMAT_ETC2_SRGBA8:
-            textureDescriptor.format = kTexFormatETC2_SRGBA8;
-            break;
-            
-        case imagecodec::FORMAT_ETC1_RGB:
-            textureDescriptor.format = kTexFormatETC1_RGB;
-            break;
-            
-        //ASTC
-
-        // s3tc
-		case imagecodec::FORMAT_DXT1_RGB:
-			textureDescriptor.format = kTexFormatDXT1_RGB;
-			break;
-
-		case imagecodec::FORMAT_DXT1_SRGB:
-			textureDescriptor.format = kTexFormatDXT1_SRGB;
-			break;
-            
         default:
             break;
     }
