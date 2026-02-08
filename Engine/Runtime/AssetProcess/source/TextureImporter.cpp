@@ -670,7 +670,7 @@ bool TextureImporter::GenerateThumbnail(imagecodec::VImagePtr image, uint64_t ha
 	stbir_pixel_layout stbLayout = STBIR_RGBA;
 	stbir_datatype stbDatatype = STBIR_TYPE_UINT8;
 
-	// 转换格式为 STBIR 可识别的格式，统一使用 RGBA 进行缩放
+	// 转换格式为 STBIR 可识别的格式
 	switch (srcFormat)
 	{
 	case imagecodec::FORMAT_RGB8:
@@ -687,6 +687,14 @@ bool TextureImporter::GenerateThumbnail(imagecodec::VImagePtr image, uint64_t ha
 	case imagecodec::FORMAT_GRAY8_ALPHA8:
 		stbLayout = STBIR_2CHANNEL;
 		break;
+	case imagecodec::FORMAT_RGBA32Float:
+		stbLayout = STBIR_RGBA;
+		stbDatatype = STBIR_TYPE_FLOAT;
+		break;
+	case imagecodec::FORMAT_RGB32Float:
+		stbLayout = STBIR_RGB;
+		stbDatatype = STBIR_TYPE_FLOAT;
+		break;
 	default:
 		LOG_WARN("Unsupported image format for thumbnail: %d", srcFormat);
 		return false;
@@ -694,7 +702,9 @@ bool TextureImporter::GenerateThumbnail(imagecodec::VImagePtr image, uint64_t ha
 
 	// 3. 分配缩略图内存
 	size_t srcBytesPerPixel = image->GetBytesPerPixels();
-	size_t dstBytesPerPixel = (stbLayout == STBIR_RGBA) ? 4 : (stbLayout == STBIR_RGB) ? 3 : (stbLayout == STBIR_2CHANNEL) ? 2 : 1;
+	size_t bytesPerChannel = (stbDatatype == STBIR_TYPE_FLOAT) ? 4 : 1;
+	size_t numChannels = (stbLayout == STBIR_RGBA) ? 4 : (stbLayout == STBIR_RGB) ? 3 : (stbLayout == STBIR_2CHANNEL) ? 2 : 1;
+	size_t dstBytesPerPixel = bytesPerChannel * numChannels;
 	size_t dstDataSize = dstWidth * dstHeight * dstBytesPerPixel;
 
 	std::vector<uint8_t> dstData(dstDataSize);
@@ -714,61 +724,10 @@ bool TextureImporter::GenerateThumbnail(imagecodec::VImagePtr image, uint64_t ha
 		return false;
 	}
 
-	// 5. 转换为 RGBA 格式
-	std::vector<uint8_t> rgbaData(dstWidth * dstHeight * 4);
-
-	if (stbLayout == STBIR_RGBA)
-	{
-		// 已经是 RGBA，直接拷贝
-		memcpy(rgbaData.data(), dstData.data(), dstDataSize);
-	}
-	else if (stbLayout == STBIR_RGB)
-	{
-		// RGB 转 RGBA，添加 alpha 通道
-		uint32_t pixelCount = dstWidth * dstHeight;
-		for (uint32_t i = 0; i < pixelCount; i++)
-		{
-			rgbaData[i * 4 + 0] = dstData[i * 3 + 0]; // R
-			rgbaData[i * 4 + 1] = dstData[i * 3 + 1]; // G
-			rgbaData[i * 4 + 2] = dstData[i * 3 + 2]; // B
-			rgbaData[i * 4 + 3] = 255;                 // A
-		}
-	}
-	else if (stbLayout == STBIR_1CHANNEL)
-	{
-		// 灰度转 RGBA
-		uint32_t pixelCount = dstWidth * dstHeight;
-		for (uint32_t i = 0; i < pixelCount; i++)
-		{
-			uint8_t gray = dstData[i];
-			rgbaData[i * 4 + 0] = gray;  // R
-			rgbaData[i * 4 + 1] = gray;  // G
-			rgbaData[i * 4 + 2] = gray;  // B
-			rgbaData[i * 4 + 3] = 255;   // A
-		}
-	}
-	else if (stbLayout == STBIR_2CHANNEL)
-	{
-		// 灰度+Alpha 转 RGBA
-		uint32_t pixelCount = dstWidth * dstHeight;
-		for (uint32_t i = 0; i < pixelCount; i++)
-		{
-			uint8_t gray = dstData[i * 2 + 0];
-			uint8_t alpha = dstData[i * 2 + 1];
-			rgbaData[i * 4 + 0] = gray;  // R
-			rgbaData[i * 4 + 1] = gray;  // G
-			rgbaData[i * 4 + 2] = gray;  // B
-			rgbaData[i * 4 + 3] = alpha; // A
-		}
-	}
-
-	// 6. 创建 VImage 对象用于编码（始终使用 RGBA 格式）
 	imagecodec::VImage thumbnail;
-	imagecodec::ImagePixelFormat dstFormat = imagecodec::FORMAT_RGBA8;
+	imagecodec::ImagePixelFormat dstFormat = image->GetFormat();
 
-	thumbnail.SetImageInfo(dstFormat, dstWidth, dstHeight);
-	thumbnail.AllocPixels();
-	memcpy(thumbnail.GetPixels(), rgbaData.data(), rgbaData.size());
+	thumbnail.SetImageInfo(dstFormat, dstWidth, dstHeight, result, nullptr);
 
 	// 6. 保存为 PNG 文件
 	std::string thumbnailPath = GetThumbnailFilePath(hash, projectRootPath);

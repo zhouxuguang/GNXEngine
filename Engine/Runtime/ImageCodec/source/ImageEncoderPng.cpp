@@ -92,6 +92,24 @@ bool ImageEncoderPNG::onEncode(std::vector<unsigned char>& dataStream, const VIm
             colorType = PNG_COLOR_TYPE_GRAY_ALPHA;
             break;
 
+		case FORMAT_RGBA32Float:
+			sig_bit.red = 32;
+			sig_bit.green = 32;
+			sig_bit.blue = 32;
+			sig_bit.alpha = 32;
+			colorType = PNG_COLOR_TYPE_RGBA;
+            bitDepth = 32;
+			break;
+
+		case FORMAT_RGB32Float:
+			sig_bit.red = 32;
+			sig_bit.green = 32;
+			sig_bit.blue = 32;
+            sig_bit.alpha = 0;
+			colorType = PNG_COLOR_TYPE_RGB;
+            bitDepth = 32;
+			break;
+
         default:
             return false;
     }
@@ -100,10 +118,7 @@ bool ImageEncoderPNG::onEncode(std::vector<unsigned char>& dataStream, const VIm
 }
 
 bool ImageEncoderPNG::onEncodeFile(const char* fileName, const VImage& image, int quality) const
-{
-//    stbi_write_png(fileName, image.GetWidth(), image.GetHeight(), 4, image.GetPixels(), image.GetWidth() * 4);
-//    return true;
-    
+{    
     if (!fileName)
     {
         return false;
@@ -125,8 +140,8 @@ bool ImageEncoderPNG::onEncodeFile(const char* fileName, const VImage& image, in
         return false;
     }
     
-    size_t nWrituint8_ts = fwrite(dataStream.data(), 1, dataStream.size(), pFile);
-    if (nWrituint8_ts != dataStream.size())
+    size_t nWrites = fwrite(dataStream.data(), 1, dataStream.size(), pFile);
+    if (nWrites != dataStream.size())
     {
         remove(fileName);
         fclose(pFile);
@@ -226,28 +241,17 @@ static void transform_scanline_888(const unsigned char* src, int width, unsigned
 
 static void transform_scanline_8888(const unsigned char* src, int width, unsigned char* dst)
 {
-//    unsigned char* pSrc = (unsigned char*)src;
-//    for (int i = 0; i < width; i++)
-//    {
-//        uint32_t r = *pSrc++;
-//        uint32_t g = *pSrc++;
-//        uint32_t b = *pSrc++;
-//        uint32_t a = *pSrc++;
-//
-//        if (a != 0)
-//        {
-//            float invAlpha = 255.0f / a;
-//            r *= invAlpha;
-//            g *= invAlpha;
-//            b *= invAlpha;
-//        }
-//
-//        *dst++ = r;
-//        *dst++ = g;
-//        *dst++ = b;
-//        *dst++ = a;
-//    }
     memcpy(dst, src, width * 4);
+}
+
+static void transform_scanline_hdr_888(const unsigned char* src, int width, unsigned char* dst)
+{
+	memcpy(dst, src, width * 12);
+}
+
+static void transform_scanline_hdr_8888(const unsigned char* src, int width, unsigned char* dst)
+{
+	memcpy(dst, src, width * 16);
 }
 
 static void transform_scanline_8(const unsigned char* src, int width, unsigned char* dst)
@@ -284,6 +288,12 @@ static transform_line_proc choose_tranform_proc(ImagePixelFormat format, bool ha
 
         case FORMAT_GRAY8_ALPHA8:
             return transform_scanline_88;
+
+		case FORMAT_RGBA32Float:
+			return transform_scanline_hdr_8888;
+
+		case FORMAT_RGB32Float:
+			return transform_scanline_hdr_888;
 
         default:
             return NULL;
@@ -338,7 +348,7 @@ bool EncodeWithLibPNG(std::vector<unsigned char>& dataStream, const VImage& imag
     
     size_t nPerLineBytes = image.GetBytesPerRow();
     unsigned char* srcImage =  image.GetPixels();
-    unsigned char* storage = new uint8_t[image.GetWidth() * 4];
+    unsigned char* storage = new uint8_t[nPerLineBytes];
     transform_line_proc transformProc = choose_tranform_proc(format, hasAlpha);
     
     //实际的写入操作
