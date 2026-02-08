@@ -2,16 +2,13 @@
 // Created by Zhou,Xuguang on 2018/10/27.
 //
 
-#include <new>
 #include "ImageDecoderTGA.h"
 #include "libtga/TGAlib.h"
-#include "libtga/tga.h"
 
 NAMESPACE_IMAGECODEC_BEGIN
 
 bool ImageDecoderTGA::onDecode(const void *buffer, size_t size, VImage *bitmap)
 {
-#if 0
     tImageTGA *imageTGA = tgaLoadBuffer((unsigned char*)buffer, size);
     if (NULL == imageTGA)
     {
@@ -33,30 +30,6 @@ bool ImageDecoderTGA::onDecode(const void *buffer, size_t size, VImage *bitmap)
     imageTGA->imageData = NULL;
     
     tgaDestroy(imageTGA);
-    
-#else
-    tga::MemoryFileInterface file((uint8_t*)buffer, size);
-    tga::Decoder decoder(&file);
-    tga::Header header;
-    if (!decoder.readHeader(header))
-        return 2;
-    
-    tga::Image image;
-    image.bytesPerPixel = header.bytesPerPixel();
-    image.rowstride = header.width * header.bytesPerPixel();
-    
-    std::vector<uint8_t> imageBuffer(image.rowstride * header.height);
-    image.pixels = imageBuffer.data();
-    
-    if (!decoder.readImage(header, image, nullptr))
-        return 3;
-    
-    // Optional post-process to fix the alpha channel in
-    // some TGA files where alpha=0 for all pixels when
-    // it shouldn't.
-    decoder.postProcessImage(header, image);
-    
-#endif
     
     return true;
 }

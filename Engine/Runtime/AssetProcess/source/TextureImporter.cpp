@@ -457,7 +457,6 @@ bool TextureImporter::CompressTexture(imagecodec::VImagePtr image, const std::st
 
 	// 计算纹理 hash（基于 KTX 数据）
     mTextureHash = baselib::HashFunction(ktxData.data(), ktxData.size());
-//	mSettings.textureHash = mTextureHash;
 
 	// 保存 .texture 文件
 	return SaveTextureFile(textureFilePath, ktxData, fs::path(mSourceFilePath).filename().string());
@@ -675,8 +674,10 @@ bool TextureImporter::GenerateThumbnail(imagecodec::VImagePtr image, uint64_t ha
 	switch (srcFormat)
 	{
 	case imagecodec::FORMAT_RGB8:
-	case imagecodec::FORMAT_RGBA8:
 	case imagecodec::FORMAT_SRGB8:
+		stbLayout = STBIR_RGB;
+		break;
+	case imagecodec::FORMAT_RGBA8:
 	case imagecodec::FORMAT_SRGB8_ALPHA8:
 		stbLayout = STBIR_RGBA;
 		break;
