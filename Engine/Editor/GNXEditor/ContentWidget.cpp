@@ -1,5 +1,6 @@
 #include "ContentWidget.h"
 #include "TextureItemDelegate.h"
+#include "TextureEditorDialog.h"
 #include <QPushButton>
 #include <QFileDialog>
 #include <QSettings>
@@ -8,11 +9,11 @@
 #include <QLabel>
 #include <QMessageBox>
 #include <QSortFilterProxyModel>
+#include <QImage>
+#include <QDir>
 
 #include "Runtime/ImageCodec/include/ImageDecoder.h"
 #include "Runtime/AssetProcess/include/AssetImporter.h"
-#include "Runtime/AssetProcess/include/AssetReference.h"
-#include "Runtime/AssetManager/include/AssetManager.h"
 
 // 代理模型：过滤掉.meta文件和.gnx目录
 class FileSystemProxyModel : public QSortFilterProxyModel
@@ -181,35 +182,73 @@ void ContentWidget::onDoubleClicked(const QModelIndex& index)
 	{
 		QString filePath = mModel->filePath(sourceIndex);
 
-		// 检查是否为.gnx引用文件
-		if (filePath.endsWith(".gnx"))
+		// 检查是否为原始图像文件
+		if (filePath.endsWith(".png", Qt::CaseInsensitive) ||
+		    filePath.endsWith(".jpg", Qt::CaseInsensitive) ||
+		    filePath.endsWith(".jpeg", Qt::CaseInsensitive) ||
+		    filePath.endsWith(".bmp", Qt::CaseInsensitive) ||
+		    filePath.endsWith(".tga", Qt::CaseInsensitive) ||
+		    filePath.endsWith(".webp", Qt::CaseInsensitive) ||
+		    filePath.endsWith(".hdr", Qt::CaseInsensitive))
 		{
-			// 读取.gnx引用文件获取hash
-			AssetProcess::AssetReference assetRef;
-			if (assetRef.LoadFromFile(filePath.toStdString()))
+			// 使用ImageDecoder解码图像文件
+			imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
+			if (imagecodec::ImageDecoder::DecodeFile(filePath.toStdString().c_str(), image.get()))
 			{
-				// 通过AssetManager加载纹理
-				AssetManager::AssetManager* assetManager = AssetManager::AssetManager::GetInstance();
-				if (assetManager)
-				{
-					AssetManager::TextureAsset* texture = assetManager->LoadTextureByHash(assetRef.GetHash());
+				// 将VImage转换为QImage
+				QImage qimage;
 
-					if (texture)
-					{
-						//std::cout << "Loaded texture: " << assetRef.GetOriginalFileName() << std::endl;
-						
-						// TODO: 添加纹理预览
-						// 例如：
-						// emit textureLoaded(texture);
-						// 或者显示预览窗口
-					}
-					else
-					{
-						//std::cerr << "Failed to load texture: " << assetRef.GetOriginalFileName() << std::endl;
-						QMessageBox::warning(this, "加载失败", 
-							QString("无法加载纹理: %1").arg(QString::fromStdString(assetRef.GetOriginalFileName())));
-					}
+				switch (image->GetFormat())
+				{
+					case imagecodec::FORMAT_RGBA8:
+						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						               image->GetBytesPerRow(), QImage::Format_RGBA8888);
+						break;
+					case imagecodec::FORMAT_RGB8:
+						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						               image->GetBytesPerRow(), QImage::Format_RGB888);
+						break;
+					case imagecodec::FORMAT_SRGB8_ALPHA8:
+						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						               image->GetBytesPerRow(), QImage::Format_RGBA8888);
+						break;
+					case imagecodec::FORMAT_SRGB8:
+						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						               image->GetBytesPerRow(), QImage::Format_RGB888);
+						break;
+					case imagecodec::FORMAT_GRAY8:
+						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						               image->GetBytesPerRow(), QImage::Format_Grayscale8);
+						break;
+					case imagecodec::FORMAT_GRAY8_ALPHA8:
+						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						               image->GetBytesPerRow(), QImage::Format_RGBA8888);
+						break;
+					default:
+						// 尝试按RGBA8处理
+						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						               image->GetBytesPerRow(), QImage::Format_RGBA8888);
+						break;
 				}
+
+				// 创建图像副本
+				qimage = qimage.copy();
+
+				if (!qimage.isNull())
+				{
+					// 显示纹理查看器对话框
+					TextureEditorDialog* dialog = new TextureEditorDialog(qimage, filePath, this);
+					dialog->setAttribute(Qt::WA_DeleteOnClose);
+					dialog->show();
+				}
+				else
+				{
+					QMessageBox::warning(this, "加载失败", "无法解码图像文件");
+				}
+			}
+			else
+			{
+				QMessageBox::warning(this, "加载失败", "无法解码图像文件");
 			}
 		}
 	}

@@ -34,6 +34,8 @@ set(PROJECT_SOURCES
         OpenProjectDialog.cpp
         EditorConfig.h
         EditorConfig.cpp
+        TextureEditorDialog.h
+        TextureEditorDialog.cpp
         TestPost/TestPost.cpp
         TestPost/TestPost.hpp
         TestImageDecode.cpp
