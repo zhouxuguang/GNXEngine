@@ -26,6 +26,7 @@ mathutil::Vector2f IntegrateBRDF(float NdotV, float roughness, uint32_t samples)
 
 imagecodec::VImagePtr GenerateBRDFLUT(uint32_t imageSize, uint32_t samples);
 
+void GenerateBRDFLUT_Texture(const std::string& fileName, uint32_t imageSize, uint32_t samples);
 
 NS_ASSETPROCESS_END
 

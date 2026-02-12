@@ -7,6 +7,9 @@
 
 #include "PBRBase.h"
 #include "Runtime/MathUtil/include/HalfFloat.h"
+#include "Runtime/BaseLib/include/LogService.h"
+#include "TextureImporter.h"
+#include <fstream>
 
 NS_ASSETPROCESS_BEGIN
 
@@ -134,6 +137,26 @@ imagecodec::VImagePtr GenerateBRDFLUT(uint32_t imageSize, uint32_t samples)
         }
     }
     return image;
+}
+
+void GenerateBRDFLUT_Texture(const std::string& fileName, uint32_t imageSize, uint32_t samples)
+{
+    imagecodec::VImagePtr image = GenerateBRDFLUT(imageSize, samples);
+    TextureImporter textureImporter;
+    TextureImportSettings textureImportSettings;
+    textureImportSettings.mipmapMode = MipmapMode::None;
+    std::vector<uint8_t> ktxData = textureImporter.GenerateKTXData(image, textureImportSettings);
+    
+    std::ofstream outFile(fileName, std::ios::binary);
+    if (!outFile.is_open())
+    {
+        LOG_ERROR("Failed to open texture file for writing: %s", fileName.c_str());
+        return false;
+    }
+
+    // 写入 ktx 数据
+    outFile.write(reinterpret_cast<const char*>(ktxData.data()), ktxData.size());
+    outFile.close();
 }
 
 NS_ASSETPROCESS_END

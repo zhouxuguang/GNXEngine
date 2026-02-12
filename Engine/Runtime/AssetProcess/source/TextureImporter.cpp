@@ -35,6 +35,12 @@ struct KTXFormat
     stbir_filter stbFilter;
 };
 
+static const uint32_t VK_FORMAT_R16G16_UINT = 81;
+static const uint32_t VK_FORMAT_R16G16_SINT = 82;
+static const uint32_t VK_FORMAT_R16G16_SFLOAT = 83;
+static const uint32_t VK_FORMAT_R32G32_UINT = 101;
+static const uint32_t VK_FORMAT_R32G32_SINT = 102;
+static const uint32_t VK_FORMAT_R32G32_SFLOAT = 103;
 static const uint32_t VK_FORMAT_R32G32B32A32_SFLOAT = 109;
 static const uint32_t VK_FORMAT_BC1_RGB_UNORM_BLOCK = 131;
 static const uint32_t VK_FORMAT_BC1_RGB_SRGB_BLOCK = 132;
@@ -83,7 +89,9 @@ static const uint32_t VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG = 1000054007;
 #define GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT                  0x8E8E
 #define GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT                0x8E8F
 
-#define GL_RGBA32F 0x8814
+#define GL_RGBA32F                        0x8814
+#define GL_RG16F                          0x822F
+#define GL_RG32F                          0x8230
 
 #define GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG                   0x8C00
 #define GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG                   0x8C01
@@ -160,6 +168,20 @@ KTXFormat CreateKTXFormat(uint32_t imageFormat, RenderCore::TextureFormat compre
     case imagecodec::FORMAT_RGB32Float:
         ktxFormat.glInternalformat = GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT;
         ktxFormat.vkFormat = VK_FORMAT_BC6H_UFLOAT_BLOCK;
+        ktxFormat.stbDatatype = STBIR_TYPE_FLOAT;
+        ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
+        ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
+        break;
+    case imagecodec::FORMAT_RG16Float:
+        ktxFormat.glInternalformat = GL_RG16F;
+        ktxFormat.vkFormat = VK_FORMAT_R16G16_SFLOAT;
+        ktxFormat.stbDatatype = STBIR_TYPE_HALF_FLOAT;
+        ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
+        ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
+        break;
+    case imagecodec::FORMAT_RG32Float:
+        ktxFormat.glInternalformat = GL_RG32F;
+        ktxFormat.vkFormat = VK_FORMAT_R32G32_SFLOAT;
         ktxFormat.stbDatatype = STBIR_TYPE_FLOAT;
         ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
         ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;

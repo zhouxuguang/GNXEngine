@@ -109,6 +109,11 @@ public:
 	                                  imagecodec::ImagePixelFormat format,
 	                                  const std::string& fileName,
 	                                  const std::string& projectRootPath);
+    
+    /**
+     * 生成 KTX 数据
+     */
+    std::vector<uint8_t> GenerateKTXData(imagecodec::VImagePtr image, const TextureImportSettings& textureImportSettings);
 
 private:
 	// ==================== 导入流程内部方法 ====================
@@ -137,11 +142,6 @@ private:
 	 * 根据导入设置压缩纹理
 	 */
 	bool CompressTexture(imagecodec::VImagePtr image, const std::string& textureFilePath);
-
-	/**
-	 * 生成 KTX 数据
-	 */
-	std::vector<uint8_t> GenerateKTXData(imagecodec::VImagePtr image, const TextureImportSettings& textureImportSettings);
 
 	/**
 	 * 保存 .texture 文件到 .gnx/Cache
