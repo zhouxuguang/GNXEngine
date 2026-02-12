@@ -5,10 +5,6 @@
 #include "ImageDecoderImpl.h"
 #include "ImageDecoderFactory.h"
 
-//#ifdef __ANDROID__
-//#include "android_fopen.h"
-//#endif
-
 #include <stdio.h>
 #include <memory.h>
 #include <math.h>
@@ -95,28 +91,6 @@ bool ImageDecoderImpl::DecodeFile(const char *fileName, VImage *bitmap, ImageSto
     {
         return false;
     }
-    
-    //后续Android  asst目录又得考虑
-
-//#ifdef __ANDROID__
-//
-//    FILE *fp = NULL;
-//    const char* pTmp = NULL;
-//
-//    //判断路径名是否以assets/开头
-//    if ((pTmp = strstr(fileName, "assets/")) != NULL)
-//    {
-//        pTmp += 7;
-//        fp = android_fopen(pTmp, "rb");
-//    }
-//    else
-//    {
-//        fp = fopen(fileName, "rb");
-//    }
-//
-//#else
-//    FILE *fp = fopen(fileName, "rb");
-//#endif
 
     FILE *fp = fopen(fileName, "rb");
 
