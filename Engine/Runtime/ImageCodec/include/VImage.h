@@ -29,6 +29,8 @@ enum
 
 	FORMAT_RGBA32Float = 9,            //RGBA32位float
 	FORMAT_RGB32Float = 10,             //RGB float
+    FORMAT_RG16Float = 11,             //RG half float
+    FORMAT_RG32Float = 12,             //RG float
 };
 
 //图像的存储格式  bmp/png等

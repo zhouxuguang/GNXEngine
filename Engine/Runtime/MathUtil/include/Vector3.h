@@ -154,8 +154,14 @@ public:
     }
 
     T DotProduct(const Vector3 &a) const;
-    
+
     static Vector3 CrossProduct(const Vector3 &a, const Vector3 &b);
+
+    // 支持标量 * 向量 (T * Vector3)
+    friend Vector3 operator*(T s, const Vector3& v)
+    {
+        return Vector3(s * v.x, s * v.y, s * v.z);
+    }
 
     //根据入射光线和法线计算反射向量，必须要注意的是，入射光线和法线必须是单位向量，incident指向着色点
     static Vector3 Reflection(const Vector3& incident, const Vector3& normal);

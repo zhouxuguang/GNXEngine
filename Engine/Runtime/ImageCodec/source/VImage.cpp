@@ -47,6 +47,16 @@ static uint32_t GetFormatBytesPerRow(ImagePixelFormat format, uint32_t width, ui
 		{
 			return width * 12;
 		}
+
+		case FORMAT_RG16Float:
+		{
+			return width * 4;
+		}
+
+		case FORMAT_RG32Float:
+		{
+			return width * 8;
+		}
             
         default:
             break;
@@ -88,6 +98,16 @@ static uint32_t GetFormatBytes(ImagePixelFormat format)
 	case FORMAT_RGB32Float:
 	{
 		return 12;
+	}
+
+	case FORMAT_RG16Float:
+	{
+		return 4;
+	}
+
+	case FORMAT_RG32Float:
+	{
+		return 8;
 	}
 
 	default:
