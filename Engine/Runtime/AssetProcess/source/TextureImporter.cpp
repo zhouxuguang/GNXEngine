@@ -17,6 +17,7 @@
 #include <iomanip>
 #include <ctime>
 #include <filesystem>
+#include "IBLBaker/PBRBase.h"
 
 namespace fs = std::filesystem;
 
@@ -161,6 +162,7 @@ KTXFormat CreateKTXFormat(uint32_t imageFormat, RenderCore::TextureFormat compre
     case imagecodec::FORMAT_RGBA32Float:
         ktxFormat.glInternalformat = GL_RGBA32F;
         ktxFormat.vkFormat = VK_FORMAT_R32G32B32A32_SFLOAT;
+        ktxFormat.stbLayout = STBIR_RGBA;
         ktxFormat.stbDatatype = STBIR_TYPE_FLOAT;
         ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
         ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
@@ -168,6 +170,7 @@ KTXFormat CreateKTXFormat(uint32_t imageFormat, RenderCore::TextureFormat compre
     case imagecodec::FORMAT_RGB32Float:
         ktxFormat.glInternalformat = GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT;
         ktxFormat.vkFormat = VK_FORMAT_BC6H_UFLOAT_BLOCK;
+        ktxFormat.stbLayout = STBIR_RGB;
         ktxFormat.stbDatatype = STBIR_TYPE_FLOAT;
         ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
         ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
@@ -175,6 +178,7 @@ KTXFormat CreateKTXFormat(uint32_t imageFormat, RenderCore::TextureFormat compre
     case imagecodec::FORMAT_RG16Float:
         ktxFormat.glInternalformat = GL_RG16F;
         ktxFormat.vkFormat = VK_FORMAT_R16G16_SFLOAT;
+        ktxFormat.stbLayout = STBIR_2CHANNEL;
         ktxFormat.stbDatatype = STBIR_TYPE_HALF_FLOAT;
         ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
         ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
@@ -182,6 +186,7 @@ KTXFormat CreateKTXFormat(uint32_t imageFormat, RenderCore::TextureFormat compre
     case imagecodec::FORMAT_RG32Float:
         ktxFormat.glInternalformat = GL_RG32F;
         ktxFormat.vkFormat = VK_FORMAT_R32G32_SFLOAT;
+        ktxFormat.stbLayout = STBIR_2CHANNEL;
         ktxFormat.stbDatatype = STBIR_TYPE_FLOAT;
         ktxFormat.stbEdge = STBIR_EDGE_CLAMP;
         ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
@@ -207,6 +212,7 @@ TextureImporter::~TextureImporter()
 
 bool TextureImporter::Import(const std::string& sourceFilePath, const std::string& currentDir)
 {
+    //GenerateBRDFLUT_Texture("", 512, 1024);
 	mSourceFilePath = sourceFilePath;
 	mCurrentDir = currentDir;
 
@@ -533,8 +539,19 @@ std::vector<uint8_t> TextureImporter::GenerateKTXData(imagecodec::VImagePtr imag
 
     uint8_t* pTmpData = (uint8_t*)baselib::AlignedMalloc(width * height * image->GetBytesPerPixels() * 2, 64);
     uint8_t* pFormatData = (uint8_t*)baselib::AlignedMalloc(width * height * image->GetBytesPerPixels() * 2, 64);
+    
+    {
+        size_t offset = 0;
+        ktxTexture_GetImageOffset(ktxTexture(textureKTX1), 0, 0, 0, &offset);
+        
+        uint32_t bytesForImage = width * height * image->GetBytesPerPixels();
+        memcpy(ktxTexture_GetData(ktxTexture(textureKTX1)) + offset, image->GetPixels(), bytesForImage);
 
-    for (uint32_t i = 0; i != numMipLevels; ++i)
+        h = h > 1 ? h >> 1 : 1;
+        w = w > 1 ? w >> 1 : 1;
+    }
+
+    for (uint32_t i = 1; i != numMipLevels; ++i)
     {
         size_t offset = 0;
         ktxTexture_GetImageOffset(ktxTexture(textureKTX1), i, 0, 0, &offset);
