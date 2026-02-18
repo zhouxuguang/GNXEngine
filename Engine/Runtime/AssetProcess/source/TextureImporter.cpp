@@ -105,10 +105,9 @@ static const uint32_t VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG = 1000054007;
 
 
 // 创建导入的格式信息，根据导入设置和格式信息自动推导
-KTXFormat CreateKTXFormat(uint32_t imageFormat, RenderCore::TextureFormat compressFormat)
+KTXFormat CreateKTXFormat(uint32_t imageFormat)
 {
     KTXFormat ktxFormat = {};
-#if TARGET_X86_64
     switch (imageFormat)
     {
     case imagecodec::FORMAT_GRAY8:
@@ -192,7 +191,6 @@ KTXFormat CreateKTXFormat(uint32_t imageFormat, RenderCore::TextureFormat compre
         ktxFormat.stbFilter = STBIR_FILTER_MITCHELL;
         break;
     }
-#endif
 
     return ktxFormat;
 }
@@ -490,11 +488,23 @@ bool TextureImporter::CompressTexture(imagecodec::VImagePtr image, const std::st
 	return SaveTextureFile(textureFilePath, ktxData, fs::path(mSourceFilePath).filename().string());
 }
 
-static void CompressTextureInner(const uint8_t* imageData, uint32_t width, uint32_t height, uint8_t* pDest, uint32_t vkFormat)
+static void CompressTextureInner(const uint8_t* imageData, uint32_t width, uint32_t height, uint8_t* pDest, uint32_t vkFormat, uint32_t imageBytes)
 {
     if (vkFormat == VK_FORMAT_BC1_RGB_UNORM_BLOCK || vkFormat == VK_FORMAT_BC1_RGB_SRGB_BLOCK)
     {
-        CompressDXT1(pDest, imageData, width, height, width * 4);
+        uint32_t pixelCount = width * height;
+        uint8_t* pData = new uint8_t[pixelCount * 4];
+        for (uint32_t i = 0; i < pixelCount; i++)
+        {
+            pData[i * 4 + 0] = imageData[i * 3 + 0];
+            pData[i * 4 + 1] = imageData[i * 3 + 1];
+            pData[i * 4 + 2] = imageData[i * 3 + 2];
+            pData[i * 4 + 3] = 255;
+        }
+        
+        CompressDXT1(pDest, pData, width, height, width * 4);
+        
+        delete [] pData;
     }
     else if (vkFormat == VK_FORMAT_BC7_UNORM_BLOCK || vkFormat == VK_FORMAT_BC7_SRGB_BLOCK)
     {
@@ -502,14 +512,30 @@ static void CompressTextureInner(const uint8_t* imageData, uint32_t width, uint3
     }
     else if (vkFormat == VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG || vkFormat == VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG)
     {
-        CompressPVRRGBA4Bpp(pDest, imageData, width, height);
+        uint32_t pixelCount = width * height;
+        uint8_t* pData = new uint8_t[pixelCount * 4];
+        for (uint32_t i = 0; i < pixelCount; i++)
+        {
+            pData[i * 4 + 0] = imageData[i * 3 + 0];
+            pData[i * 4 + 1] = imageData[i * 3 + 1];
+            pData[i * 4 + 2] = imageData[i * 3 + 2];
+            pData[i * 4 + 3] = 255;
+        }
+        CompressPVRRGBA4Bpp(pDest, pData, width, height);
+        
+        delete [] pData;
+    }
+    // 非压缩格式
+    else
+    {
+        memcpy(pDest, imageData, imageBytes);
     }
 }
 
 std::vector<uint8_t> TextureImporter::GenerateKTXData(imagecodec::VImagePtr image, const TextureImportSettings& textureImportSettings)
 {
     bool generateMipmap = textureImportSettings.mipmapMode != MipmapMode::None;
-    KTXFormat ktxFormat = CreateKTXFormat(image->GetFormat(), generateMipmap);
+    KTXFormat ktxFormat = CreateKTXFormat(image->GetFormat());
 
     uint32_t width = image->GetWidth();
     uint32_t height = image->GetHeight();
@@ -545,7 +571,7 @@ std::vector<uint8_t> TextureImporter::GenerateKTXData(imagecodec::VImagePtr imag
         ktxTexture_GetImageOffset(ktxTexture(textureKTX1), 0, 0, 0, &offset);
         
         uint32_t bytesForImage = width * height * image->GetBytesPerPixels();
-        memcpy(ktxTexture_GetData(ktxTexture(textureKTX1)) + offset, image->GetPixels(), bytesForImage);
+        CompressTextureInner(image->GetPixels(), w, h, ktxTexture_GetData(ktxTexture(textureKTX1)) + offset, ktxFormat.vkFormat, bytesForImage);
 
         h = h > 1 ? h >> 1 : 1;
         w = w > 1 ? w >> 1 : 1;
@@ -558,23 +584,10 @@ std::vector<uint8_t> TextureImporter::GenerateKTXData(imagecodec::VImagePtr imag
 
         stbir_resize((const unsigned char*)image->GetPixels(), width, height, 0, pTmpData, w, h, 0,
                      ktxFormat.stbLayout, ktxFormat.stbDatatype, ktxFormat.stbEdge, ktxFormat.stbFilter);
+        
+        uint32_t bytesForImage = w * h * image->GetBytesPerPixels();
 
-        uint8_t* pDestImage = pTmpData;
-
-        if (image->GetFormat() == imagecodec::FORMAT_RGB8 || image->GetFormat() == imagecodec::FORMAT_SRGB8)
-        {
-            uint32_t pixelCount = w * h;
-            for (uint32_t i = 0; i < pixelCount; i++)
-            {
-                pFormatData[i * 4 + 0] = pTmpData[i * 3 + 0];
-                pFormatData[i * 4 + 1] = pTmpData[i * 3 + 1];
-                pFormatData[i * 4 + 2] = pTmpData[i * 3 + 2];
-                pFormatData[i * 4 + 3] = 255;
-            }
-            pDestImage = pFormatData;
-        }
-
-        CompressTextureInner(pDestImage, w, h, ktxTexture_GetData(ktxTexture(textureKTX1)) + offset, ktxFormat.vkFormat);
+        CompressTextureInner(pTmpData, w, h, ktxTexture_GetData(ktxTexture(textureKTX1)) + offset, ktxFormat.vkFormat, bytesForImage);
 
         h = h > 1 ? h >> 1 : 1;
         w = w > 1 ? w >> 1 : 1;
