@@ -151,7 +151,7 @@ void GenerateBRDFLUT_Texture(const std::string& fileName, uint32_t imageSize, ui
     if (!outFile.is_open())
     {
         LOG_ERROR("Failed to open texture file for writing: %s", fileName.c_str());
-        return false;
+        return;
     }
 
     // 写入 ktx 数据
