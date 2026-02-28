@@ -12,7 +12,10 @@ if(APPLE)  #苹果平台
                                                     ${imagecodec_dir}/libbmp/*.cpp
                                                     ${imagecodec_dir}/libbmp/*.h
                                                     ${imagecodec_dir}/libhdr/*.cpp
-                                                    ${imagecodec_dir}/libhdr/*.h) 
+                                                    ${imagecodec_dir}/libhdr/*.h
+                                                    ${imagecodec_dir}/tinyexr/*.cc
+                                                    ${imagecodec_dir}/tinyexr/*.c
+                                                    ${imagecodec_dir}/tinyexr/*.h) 
 else() #其它平台
     file(GLOB IMAGECODEC_SOURCES CONFIGURE_DEPENDS 
                                     ${imagecodec_dir}/*.cpp 
@@ -25,7 +28,10 @@ else() #其它平台
                                     ${imagecodec_dir}/libpng/*.c
                                     ${imagecodec_dir}/libpng/*.h
                                     ${imagecodec_dir}/libhdr/*.cpp
-                                    ${imagecodec_dir}/libhdr/*.h) 
+                                    ${imagecodec_dir}/libhdr/*.h
+                                    ${imagecodec_dir}/tinyexr/*.cc
+                                    ${imagecodec_dir}/tinyexr/*.c
+                                    ${imagecodec_dir}/tinyexr/*.h) 
 endif()
 
 file(GLOB_RECURSE WEBP_SOURCES CONFIGURE_DEPENDS ${imagecodec_dir}/libwebp/*.h 

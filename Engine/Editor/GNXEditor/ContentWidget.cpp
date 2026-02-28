@@ -189,7 +189,8 @@ void ContentWidget::onDoubleClicked(const QModelIndex& index)
 		    filePath.endsWith(".bmp", Qt::CaseInsensitive) ||
 		    filePath.endsWith(".tga", Qt::CaseInsensitive) ||
 		    filePath.endsWith(".webp", Qt::CaseInsensitive) ||
-		    filePath.endsWith(".hdr", Qt::CaseInsensitive))
+		    filePath.endsWith(".hdr", Qt::CaseInsensitive) ||
+			filePath.endsWith(".exr", Qt::CaseInsensitive))
 		{
 			// 使用ImageDecoder解码图像文件
 			imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
@@ -305,7 +306,7 @@ void ContentWidget::OpenImportAssetDialog()
 		this,
 		"导入资产",          // 对话框标题
 		lastDir,       // 默认目录
-		"模型文件 (*.obj *.fbx *.gltf *.glb);;图像文件 (*.png *.jpg *.bmp *.tga *.hdr *.webp)" // 文件过滤器
+		"模型文件 (*.obj *.fbx *.gltf *.glb);;图像文件 (*.png *.jpg *.bmp *.tga *.hdr *.exr *.webp)" // 文件过滤器
 	);
 
 	if (!filePath.isEmpty())

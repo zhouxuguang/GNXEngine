@@ -32,7 +32,8 @@ bool AssetImporter::ImportFromFile(const std::string& fileName, const std::strin
 		HasExtension(filePath, "jpg") ||
 		HasExtension(filePath, "png") ||
 		HasExtension(filePath, "hdr") ||
-		HasExtension(filePath, "webp"))
+		HasExtension(filePath, "webp") ||
+		HasExtension(filePath, "exr"))
 	{
 		//加载和处理图像
         TextureImporter imageImporter;

@@ -24,4 +24,6 @@ elseif(LINUX)
     target_link_libraries(BaseLib PRIVATE ${UUID_LIBRARIES})
 endif()
 
+target_link_libraries(BaseLib PUBLIC miniz)
+
 set_property(TARGET BaseLib PROPERTY FOLDER "Runtime")
