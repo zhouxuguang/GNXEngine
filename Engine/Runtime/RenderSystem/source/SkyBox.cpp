@@ -122,7 +122,7 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     std::vector<TextureDesc> desArray;
     for (auto iter : images)
     {
-        if (nullptr == iter || iter->GetPixels() == nullptr)
+        if (nullptr == iter || iter->GetImageData() == nullptr)
         {
             return false;
         }

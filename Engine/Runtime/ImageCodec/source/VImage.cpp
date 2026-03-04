@@ -170,12 +170,12 @@ void VImage::AllocPixels()
     mDeleteFunc = baselib::AlignedFree;
 }
 
-uint32_t VImage::GetWidth(int level) const
+uint32_t VImage::GetWidth() const
 {
     return mWidth;
 }
 
-uint32_t VImage::GetHeight(int level) const
+uint32_t VImage::GetHeight() const
 {
     return mHeight;
 }
@@ -195,9 +195,32 @@ ImagePixelFormat VImage::GetFormat() const
     return mFormat;
 }
 
-uint8_t* VImage::GetPixels(int level) const
+uint8_t* VImage::GetImageData() const
 {
     return (uint8_t*)mData;
+}
+
+mathutil::Vector4f VImage::GetPixel(uint32_t x, uint32_t y) const
+{
+    float* pData = (float*)mData;
+    uint32_t offset = (y * mWidth + x) * 3;
+    float r = pData[offset];
+    float g = pData[offset + 1];
+    float b = pData[offset + 2];
+    //float a = pData[offset + 3];
+
+    return mathutil::Vector4f(r, g, b, 1.0);
+}
+
+void VImage::SetPixel(uint32_t x, uint32_t y, const mathutil::Vector4f& color)
+{
+    float* pData = (float*)mData;
+	uint32_t offset = (y * mWidth + x) * 3;
+
+    pData[offset + 0] = color.x;
+    pData[offset + 1] = color.y;
+    pData[offset + 2] = color.z;
+    //pData[offset + 3] = color.w;
 }
 
 bool VImage::HasPremultipliedAlpha() const
@@ -244,7 +267,7 @@ int VImage::GetMipCount() const
     return mMipCount;
 }
 
-int VImage::GetImageSize(int level) const
+int VImage::GetImageSize() const
 {
     return mBytesPerRow * mHeight;
 }

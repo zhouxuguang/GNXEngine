@@ -83,7 +83,7 @@ CGImageRef imageFormVImage(const VImage& image)
         }
         
         const size_t bufferLength = bytesPerRow * height;
-        NSData *data = [NSData dataWithBytesNoCopy : image.GetPixels() length : bufferLength freeWhenDone : NO];
+        NSData *data = [NSData dataWithBytesNoCopy : image.GetImageData() length : bufferLength freeWhenDone : NO];
         CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)data);
         
         // Creating CGImage from image buffer

@@ -202,32 +202,32 @@ void ContentWidget::onDoubleClicked(const QModelIndex& index)
 				switch (image->GetFormat())
 				{
 					case imagecodec::FORMAT_RGBA8:
-						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						qimage = QImage(image->GetImageData(), image->GetWidth(), image->GetHeight(),
 						               image->GetBytesPerRow(), QImage::Format_RGBA8888);
 						break;
 					case imagecodec::FORMAT_RGB8:
-						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						qimage = QImage(image->GetImageData(), image->GetWidth(), image->GetHeight(),
 						               image->GetBytesPerRow(), QImage::Format_RGB888);
 						break;
 					case imagecodec::FORMAT_SRGB8_ALPHA8:
-						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						qimage = QImage(image->GetImageData(), image->GetWidth(), image->GetHeight(),
 						               image->GetBytesPerRow(), QImage::Format_RGBA8888);
 						break;
 					case imagecodec::FORMAT_SRGB8:
-						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						qimage = QImage(image->GetImageData(), image->GetWidth(), image->GetHeight(),
 						               image->GetBytesPerRow(), QImage::Format_RGB888);
 						break;
 					case imagecodec::FORMAT_GRAY8:
-						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						qimage = QImage(image->GetImageData(), image->GetWidth(), image->GetHeight(),
 						               image->GetBytesPerRow(), QImage::Format_Grayscale8);
 						break;
 					case imagecodec::FORMAT_GRAY8_ALPHA8:
-						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						qimage = QImage(image->GetImageData(), image->GetWidth(), image->GetHeight(),
 						               image->GetBytesPerRow(), QImage::Format_RGBA8888);
 						break;
 					default:
 						// 尝试按RGBA8处理
-						qimage = QImage(image->GetPixels(), image->GetWidth(), image->GetHeight(),
+						qimage = QImage(image->GetImageData(), image->GetWidth(), image->GetHeight(),
 						               image->GetBytesPerRow(), QImage::Format_RGBA8888);
 						break;
 				}

@@ -7,6 +7,7 @@
 #define RENDERENGINE_IMAGE_H
 
 #include "Define.h"
+#include "Runtime/MathUtil/include/Vector4.h"
 #include <memory>
 
 NAMESPACE_IMAGECODEC_BEGIN
@@ -72,13 +73,19 @@ public:
     /**
             获得图像数据
      */
-    uint8_t* GetPixels(int level = 0) const;
+    uint8_t* GetImageData() const;
+
+    // for test hdr
+    mathutil::Vector4f GetPixel(uint32_t x, uint32_t y) const;
+
+    // for test hdr
+    void SetPixel(uint32_t x, uint32_t y, const mathutil::Vector4f& color);
 
     ImagePixelFormat GetFormat() const;
 
-    uint32_t GetWidth(int level = 0) const;
+    uint32_t GetWidth() const;
 
-    uint32_t GetHeight(int level = 0) const;
+    uint32_t GetHeight() const;
 
     uint32_t GetBytesPerRow() const;
 
@@ -92,7 +99,7 @@ public:
     
     int GetMipCount() const;
     
-    int GetImageSize(int level = 0) const;
+    int GetImageSize() const;
     
     /**
     * 设置图像的基本信息，基本信息设置后再使用的话需要调用AllocPixels分配内存

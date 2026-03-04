@@ -119,7 +119,7 @@ imagecodec::VImagePtr GenerateBRDFLUT(uint32_t imageSize, uint32_t samples)
                         imageSize, imageSize);
     image->AllocPixels();
     
-    uint16_t* pImageData = (uint16_t*)image->GetPixels();
+    uint16_t* pImageData = (uint16_t*)image->GetImageData();
     
     for (int x = 0; x < imageSize; x++)
     {

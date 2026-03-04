@@ -84,7 +84,7 @@ void testKTX()
 		ktxTexture_GetImageOffset(ktxTexture(textureKTX2), i, 0, 0, &offset);
 
         uint8_t* pDst = ktxTexture_GetData(ktxTexture(textureKTX2)) + offset;
-        memcpy(pDst, image.GetPixels(), image.GetWidth() * image.GetHeight() * 4);
+        memcpy(pDst, image.GetImageData(), image.GetWidth() * image.GetHeight() * 4);
 	}
 
 	ktxTexture_WriteToNamedFile(ktxTexture(textureKTX2), "image1.ktx");
@@ -204,14 +204,14 @@ int main(int argc, char* argv[])
     uint8_t* pOut = new uint8_t[xBlockCount * yBlockCount * 16];
     baselib::TimeCost cost;
     cost.Begin();
-    AssetProcess::CompressASTC(pOut, image->GetPixels(), image->GetWidth(), image->GetHeight(), block_width, block_height, image->GetBytesPerRow());
+    AssetProcess::CompressASTC(pOut, image->GetImageData(), image->GetWidth(), image->GetHeight(), block_width, block_height, image->GetBytesPerRow());
     cost.End();
     
     uint64_t t1 = cost.GetCostTime();
     LOG_INFO("AssetProcess::CompressASTC cost time = %lf", t1 / 1000.0);
     
     cost.Begin();
-    AssetProcess::CompressASTC_MT(pOut, image->GetPixels(), image->GetWidth(), image->GetHeight(), block_width, block_height, image->GetBytesPerRow());
+    AssetProcess::CompressASTC_MT(pOut, image->GetImageData(), image->GetWidth(), image->GetHeight(), block_width, block_height, image->GetBytesPerRow());
     cost.End();
     t1 = cost.GetCostTime();
     LOG_INFO("AssetProcess::CompressASTC_MT cost time = %lf", t1 / 1000.0);

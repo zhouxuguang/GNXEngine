@@ -571,7 +571,7 @@ std::vector<uint8_t> TextureImporter::GenerateKTXData(imagecodec::VImagePtr imag
         ktxTexture_GetImageOffset(ktxTexture(textureKTX1), 0, 0, 0, &offset);
         
         uint32_t bytesForImage = width * height * image->GetBytesPerPixels();
-        CompressTextureInner(image->GetPixels(), w, h, ktxTexture_GetData(ktxTexture(textureKTX1)) + offset, ktxFormat.vkFormat, bytesForImage);
+        CompressTextureInner(image->GetImageData(), w, h, ktxTexture_GetData(ktxTexture(textureKTX1)) + offset, ktxFormat.vkFormat, bytesForImage);
 
         h = h > 1 ? h >> 1 : 1;
         w = w > 1 ? w >> 1 : 1;
@@ -582,7 +582,7 @@ std::vector<uint8_t> TextureImporter::GenerateKTXData(imagecodec::VImagePtr imag
         size_t offset = 0;
         ktxTexture_GetImageOffset(ktxTexture(textureKTX1), i, 0, 0, &offset);
 
-        stbir_resize((const unsigned char*)image->GetPixels(), width, height, 0, pTmpData, w, h, 0,
+        stbir_resize((const unsigned char*)image->GetImageData(), width, height, 0, pTmpData, w, h, 0,
                      ktxFormat.stbLayout, ktxFormat.stbDatatype, ktxFormat.stbEdge, ktxFormat.stbFilter);
         
         uint32_t bytesForImage = w * h * image->GetBytesPerPixels();
@@ -762,7 +762,7 @@ bool TextureImporter::GenerateThumbnail(imagecodec::VImagePtr image, uint64_t ha
 	std::vector<uint8_t> dstData(dstDataSize);
 
 	// 4. 使用 stbir_resize 进行缩放
-	const uint8_t* srcData = image->GetPixels();
+	const uint8_t* srcData = image->GetImageData();
 	void* result = stbir_resize(
 		srcData, srcWidth, srcHeight, 0,
 		dstData.data(), dstWidth, dstHeight, 0,

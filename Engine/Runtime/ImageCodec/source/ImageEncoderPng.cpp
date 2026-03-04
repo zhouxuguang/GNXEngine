@@ -351,7 +351,7 @@ bool EncodeWithLibPNG(std::vector<unsigned char>& dataStream, const VImage& imag
     png_write_info(png_ptr, info_ptr);
     
     size_t nPerLineBytes = image.GetBytesPerRow();
-    unsigned char* srcImage =  image.GetPixels();
+    unsigned char* srcImage =  image.GetImageData();
     unsigned char* storage = new uint8_t[nPerLineBytes];
     transform_line_proc transformProc = choose_tranform_proc(format, hasAlpha);
     

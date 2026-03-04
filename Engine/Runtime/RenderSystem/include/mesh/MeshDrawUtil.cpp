@@ -49,7 +49,7 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
         brdfMap = GetRenderDevice()->CreateTexture2D(des.format, TextureUsage::TextureUsageShaderRead,
                                                      image.GetWidth(), image.GetHeight(), 1);
         Rect2D rect = Rect2D(0, 0, image.GetWidth(), image.GetHeight());
-        brdfMap->ReplaceRegion(rect, 0, image.GetPixels(), image.GetBytesPerRow());
+        brdfMap->ReplaceRegion(rect, 0, image.GetImageData(), image.GetBytesPerRow());
     }
     
     RenderEncoderPtr renderEncoder = renderInfo.renderEncoder;
@@ -127,7 +127,7 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
         brdfMap = GetRenderDevice()->CreateTexture2D(des.format, TextureUsage::TextureUsageShaderRead,
                                                      image.GetWidth(), image.GetHeight(), 1);
         Rect2D rect = Rect2D(0, 0, image.GetWidth(), image.GetHeight());
-        brdfMap->ReplaceRegion(rect, 0, image.GetPixels(), image.GetBytesPerRow());
+        brdfMap->ReplaceRegion(rect, 0, image.GetImageData(), image.GetBytesPerRow());
     }
     
     RenderEncoderPtr renderEncoder = renderInfo.renderEncoder;

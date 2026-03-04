@@ -33,7 +33,7 @@ static RCTexture2DPtr TextureFromFile(const char *filename)
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
                     TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
+    texture->ReplaceRegion(rect, 0, image->GetImageData(), image->GetBytesPerRow());
     return texture;
 }
 
@@ -53,7 +53,7 @@ static RCTexture2DPtr CreateDiffuseTexture(float r, float g, float b)
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
                     TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
+    texture->ReplaceRegion(rect, 0, image->GetImageData(), image->GetBytesPerRow());
     return texture;
 }
 
@@ -73,7 +73,7 @@ static RCTexture2DPtr CreateMetalRoughTexture()
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
                     TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
+    texture->ReplaceRegion(rect, 0, image->GetImageData(), image->GetBytesPerRow());
     return texture;
 }
 
@@ -93,7 +93,7 @@ static RCTexture2DPtr CreateNormalTexture()
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
                     TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
+    texture->ReplaceRegion(rect, 0, image->GetImageData(), image->GetBytesPerRow());
     return texture;
 }
 
@@ -113,7 +113,7 @@ static RCTexture2DPtr CreateEmmisveTexture()
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
                     TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
+    texture->ReplaceRegion(rect, 0, image->GetImageData(), image->GetBytesPerRow());
     return texture;
 }
 
@@ -133,7 +133,7 @@ static RCTexture2DPtr CreateAOTexture()
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
                     TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
+    texture->ReplaceRegion(rect, 0, image->GetImageData(), image->GetBytesPerRow());
     return texture;
 }
 
@@ -155,7 +155,7 @@ static RCTexture2DPtr TextureFromMemory(const uint8_t* pImageData, uint32_t data
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format, 
                     TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
     Rect2D rect(0, 0, image->GetWidth(), image->GetHeight());
-    texture->ReplaceRegion(rect, 0, image->GetPixels(), image->GetBytesPerRow());
+    texture->ReplaceRegion(rect, 0, image->GetImageData(), image->GetBytesPerRow());
     return texture;
 }
 

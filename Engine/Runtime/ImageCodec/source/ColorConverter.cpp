@@ -38,13 +38,13 @@ void ColorConverter::convert_RGBA32toRGB565(const std::shared_ptr<VImage>& srcIm
     if (__builtin_available(iOS 7, *))
     {
         vImage_Buffer srcBuffer;
-        srcBuffer.data = srcImage->GetPixels();
+        srcBuffer.data = srcImage->GetImageData();
         srcBuffer.width = srcImage->GetWidth();
         srcBuffer.height = srcImage->GetHeight();
         srcBuffer.rowBytes = srcImage->GetBytesPerRow();
         
         vImage_Buffer dstBuffer;
-        dstBuffer.data = dstImage->GetPixels();
+        dstBuffer.data = dstImage->GetImageData();
         dstBuffer.width = dstImage->GetWidth();
         dstBuffer.height = dstImage->GetHeight();
         dstBuffer.rowBytes = dstImage->GetBytesPerRow();
@@ -56,12 +56,12 @@ void ColorConverter::convert_RGBA32toRGB565(const std::shared_ptr<VImage>& srcIm
     {
         uint32_t width = srcImage->GetWidth();
         uint32_t height = srcImage->GetHeight();
-        convert_RGBA32toRGB565(srcImage->GetPixels(), width * height, dstImage->GetPixels());
+        convert_RGBA32toRGB565(srcImage->GetImageData(), width * height, dstImage->GetImageData());
     }
 #else
     uint32_t width = srcImage->GetWidth();
     uint32_t height = srcImage->GetHeight();
-    convert_RGBA32toRGB565(srcImage->GetPixels(), width * height, dstImage->GetPixels());
+    convert_RGBA32toRGB565(srcImage->GetImageData(), width * height, dstImage->GetImageData());
 #endif
 }
 
@@ -137,7 +137,7 @@ bool ColorConverter::convert_RGB24toRGB565(const std::shared_ptr<VImage>& srcIma
     dstImage->SetImageInfo(FORMAT_R5G6B5, width, height);
     dstImage->AllocPixels();
     
-    convert_RGB24toRGB565(srcImage->GetPixels(), width * height, dstImage->GetPixels());
+    convert_RGB24toRGB565(srcImage->GetImageData(), width * height, dstImage->GetImageData());
     return true;
 }
 
@@ -225,7 +225,7 @@ void ColorConverter::convert_RGB24toRGBA32(const void* sP, unsigned int sN, void
 
 void ColorConverter::convert_RGB24toRGBA32(const std::shared_ptr<VImage>& srcImage, std::shared_ptr<VImage> &dstImage)
 {
-    convert_RGB24toRGBA32(srcImage->GetPixels(), srcImage->GetWidth() * srcImage->GetHeight(), dstImage->GetPixels());
+    convert_RGB24toRGBA32(srcImage->GetImageData(), srcImage->GetWidth() * srcImage->GetHeight(), dstImage->GetImageData());
 }
 
 NAMESPACE_IMAGECODEC_END

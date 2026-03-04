@@ -24,7 +24,7 @@ bool ImageEncoderJPEG::onEncode(std::vector<unsigned char>& dataStream, const VI
 #if 0
     unsigned int width = image.GetWidth();
     unsigned int height = image.GetHeight();
-    unsigned int bytesPerPixel = image.GetBytesPerPixel();
+    unsigned int bytesPerPixel = image.GetBytesPerPixels();
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr jerr;
 
@@ -79,8 +79,8 @@ bool ImageEncoderJPEG::onEncodeFile(const char* fileName, const VImage& image, i
         return false;
     }
 
-    size_t nWrituint8_ts = fwrite(dataStream.data(), 1, dataStream.size(), fp);
-    if (nWrituint8_ts != dataStream.size())
+    size_t nWrites = fwrite(dataStream.data(), 1, dataStream.size(), fp);
+    if (nWrites != dataStream.size())
     {
         fclose(fp);
         remove(fileName);

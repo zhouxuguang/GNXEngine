@@ -23,3 +23,9 @@ add_executable(YamlTest YamlTest.cpp)
 target_link_libraries(YamlTest PRIVATE yaml-cpp)
 
 set_property(TARGET YamlTest PROPERTY FOLDER "test")
+
+add_executable(TestHDR2Cubemap TestHDR2Cubemap.cpp)
+
+target_link_libraries(TestHDR2Cubemap PRIVATE GNXEngine)
+
+set_property(TARGET TestHDR2Cubemap PROPERTY FOLDER "test")

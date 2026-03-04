@@ -257,7 +257,7 @@ public:
     void AllocatePixels();
 
     // 获取图像数据
-    uint8_t* GetPixels() const;
+    uint8_t* GetImageData() const;
 
     ImagePixelFormat GetFormat() const;
     uint32_t GetWidth() const;
