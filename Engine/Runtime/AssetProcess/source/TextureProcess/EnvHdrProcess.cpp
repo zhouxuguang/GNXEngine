@@ -97,4 +97,100 @@ imagecodec::VImagePtr ConvertEquirectangularMapToVerticalCross(const imagecodec:
 	return result;
 }
 
+std::vector<imagecodec::VImagePtr> ConvertVerticalCrossToCubeMapFaces(const imagecodec::VImage* envImage)
+{
+	if (!envImage)
+	{
+		return {};
+	}
+
+	uint32_t width = envImage->GetWidth();
+	uint32_t height = envImage->GetHeight();
+	const uint32_t faceWidth = width / 3;
+	const uint32_t faceHeight = height / 4;
+
+	const uint8_t* src = (const uint8_t*)envImage->GetImageData();
+
+	std::vector<imagecodec::VImagePtr> cubeMaps;
+
+	/*
+			------
+			| +Y |
+	   ----------------
+	   | -X | -Z | +X |
+	   ----------------
+			| -Y |
+			------
+			| +Z |
+			------
+	*/
+
+	const uint32_t pixelSize = envImage->GetBytesPerPixels();
+
+	for (uint32_t face = 0; face != 6; ++face)
+	{
+		imagecodec::VImagePtr cubeMap = std::make_shared<imagecodec::VImage>();
+		cubeMap->SetImageInfo(envImage->GetFormat(), faceWidth, faceHeight);
+		cubeMap->AllocPixels();
+
+		uint8_t* pImageData = cubeMap->GetImageData();
+
+		for (uint32_t j = 0; j != faceHeight; ++j)
+		{
+			for (uint32_t i = 0; i != faceWidth; ++i)
+			{
+				uint32_t x = 0;
+				uint32_t y = 0;
+
+				switch (face)
+				{
+					// GL_TEXTURE_CUBE_MAP_POSITIVE_X
+				case 0:
+					x = i;
+					y = faceHeight + j;
+					break;
+
+					// GL_TEXTURE_CUBE_MAP_NEGATIVE_X
+				case 1:
+					x = 2 * faceWidth + i;
+					y = 1 * faceHeight + j;
+					break;
+
+					// GL_TEXTURE_CUBE_MAP_POSITIVE_Y
+				case 2:
+					x = 2 * faceWidth - (i + 1);
+					y = 1 * faceHeight - (j + 1);
+					break;
+
+					// GL_TEXTURE_CUBE_MAP_NEGATIVE_Y
+				case 3:
+					x = 2 * faceWidth - (i + 1);
+					y = 3 * faceHeight - (j + 1);
+					break;
+
+					// GL_TEXTURE_CUBE_MAP_POSITIVE_Z
+				case 4:
+					x = 2 * faceWidth - (i + 1);
+					y = height - (j + 1);
+					break;
+
+					// GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+				case 5:
+					x = faceWidth + i;
+					y = faceHeight + j;
+					break;
+				}
+
+				memcpy(pImageData, src + (y * width + x) * pixelSize, pixelSize);
+
+				pImageData += pixelSize;
+			}
+		}
+
+		cubeMaps.push_back(cubeMap);
+	}
+
+	return cubeMaps;
+}
+
 NS_ASSETPROCESS_END

@@ -17,6 +17,8 @@ NS_ASSETPROCESS_BEGIN
 
 ASSET_PROCESS_API imagecodec::VImagePtr ConvertEquirectangularMapToVerticalCross(const imagecodec::VImage* envImage);
 
+ASSET_PROCESS_API std::vector<imagecodec::VImagePtr > ConvertVerticalCrossToCubeMapFaces(const imagecodec::VImage* envImage);
+
 NS_ASSETPROCESS_END
 
 #endif

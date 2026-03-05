@@ -3,6 +3,8 @@
 #include "Runtime/ImageCodec/include/ImageEncoder.h"
 #include "Runtime/MathUtil/include/MathUtil.h"
 #include <iostream>
+#include <filesystem>
+#include <sstream>
 
 void PrintUsage(const char* programName)
 {
@@ -14,6 +16,62 @@ void PrintUsage(const char* programName)
 	std::cout << std::endl;
 	std::cout << "Example:" << std::endl;
 	std::cout << "  " << programName << " environment.hdr cubemap_cross.png" << std::endl;
+}
+
+/**
+ * @brief Convert HDR RGB32Float image to RGBA8 with Reinhard tone mapping
+ * @param srcImage Source HDR image (RGB32Float format)
+ * @return Converted RGBA8 image, nullptr on failure
+ */
+imagecodec::VImagePtr ConvertHDRToRGBA8(const imagecodec::VImage* srcImage)
+{
+	if (!srcImage || !srcImage->GetImageData())
+	{
+		return nullptr;
+	}
+
+	// Create output RGBA8 image
+	imagecodec::VImagePtr result = std::make_shared<imagecodec::VImage>();
+	result->SetImageInfo(imagecodec::FORMAT_RGBA8, srcImage->GetWidth(), srcImage->GetHeight());
+	result->AllocPixels();
+
+	float* pSrc = (float*)srcImage->GetImageData();
+	uint8_t* pDst = (uint8_t*)result->GetImageData();
+	uint32_t offset = 0;
+
+	for (uint32_t i = 0; i < srcImage->GetWidth() * srcImage->GetHeight(); i++)
+	{
+		float R = pSrc[offset + 0];
+		float G = pSrc[offset + 1];
+		float B = pSrc[offset + 2];
+
+		// Calculate luminance using Rec.709 weights
+		float L = 0.2126f * R + 0.7152f * G + 0.0722f * B;
+
+		// Apply Reinhard tone mapping
+		float Ld = L / (1.0f + L);
+
+		// Scale RGB based on compressed luminance
+		float scale = (L > 0.0f) ? (Ld / L) : 1.0f;
+		R = R * scale;
+		G = G * scale;
+		B = B * scale;
+
+		// Clamp to [0, 1]
+		R = Clamp(R, 0.0f, 1.0f);
+		G = Clamp(G, 0.0f, 1.0f);
+		B = Clamp(B, 0.0f, 1.0f);
+
+		// Convert to 8-bit
+		pDst[i * 4 + 0] = (uint8_t)(R * 255.0f + 0.5f);
+		pDst[i * 4 + 1] = (uint8_t)(G * 255.0f + 0.5f);
+		pDst[i * 4 + 2] = (uint8_t)(B * 255.0f + 0.5f);
+		pDst[i * 4 + 3] = 255;
+
+		offset += 3;
+	}
+
+	return result;
 }
 
 int main(int argc, char* argv[])
@@ -52,44 +110,11 @@ int main(int argc, char* argv[])
 	std::cout << "Cubemap generated: " << resultImage->GetWidth() << "x" << resultImage->GetHeight() << std::endl;
 
 	// Convert from RGB32Float to RGBA8 with tone mapping
-	imagecodec::VImagePtr result1 = std::make_shared<imagecodec::VImage>();
-	result1->SetImageInfo(imagecodec::FORMAT_RGBA8, resultImage->GetWidth(), resultImage->GetHeight());
-	result1->AllocPixels();
-
-	float* pSrc = (float*)resultImage->GetImageData();
-	uint8_t* pDst = (uint8_t*)result1->GetImageData();
-	uint32_t offset = 0;
-
-	for (uint32_t i = 0; i < resultImage->GetWidth() * resultImage->GetHeight(); i++)
+	imagecodec::VImagePtr result1 = ConvertHDRToRGBA8(resultImage.get());
+	if (!result1)
 	{
-		float R = pSrc[offset + 0];
-		float G = pSrc[offset + 1];
-		float B = pSrc[offset + 2];
-
-		// Calculate luminance using Rec.709 weights
-		float L = 0.2126f * R + 0.7152f * G + 0.0722f * B;
-
-		// Apply Reinhard tone mapping
-		float Ld = L / (1.0f + L);
-
-		// Scale RGB based on compressed luminance
-		float scale = (L > 0.0f) ? (Ld / L) : 1.0f;
-		R = R * scale;
-		G = G * scale;
-		B = B * scale;
-
-		// Clamp to [0, 1]
-		R = Clamp(R, 0.0f, 1.0f);
-		G = Clamp(G, 0.0f, 1.0f);
-		B = Clamp(B, 0.0f, 1.0f);
-
-		// Convert to 8-bit
-		pDst[i * 4 + 0] = (uint8_t)(R * 255.0f + 0.5f);
-		pDst[i * 4 + 1] = (uint8_t)(G * 255.0f + 0.5f);
-		pDst[i * 4 + 2] = (uint8_t)(B * 255.0f + 0.5f);
-		pDst[i * 4 + 3] = 255;
-
-		offset += 3;
+		std::cerr << "Error: Failed to convert HDR to RGBA8." << std::endl;
+		return 1;
 	}
 
 	// Encode output image
@@ -100,5 +125,39 @@ int main(int argc, char* argv[])
 	}
 
 	std::cout << "Cubemap saved successfully: " << outputFile << std::endl;
+
+	// Convert to cubemap faces
+	std::vector<imagecodec::VImagePtr> cubeMaps = AssetProcess::ConvertVerticalCrossToCubeMapFaces(resultImage.get());
+
+	// Save each cubemap face as separate PNG file
+	std::filesystem::path outputPath(outputFile);
+	std::filesystem::path outputDir = outputPath.parent_path();
+	std::string baseName = outputPath.stem().string();
+
+	for (size_t i = 0; i < cubeMaps.size(); i++)
+	{
+		// Convert HDR to RGBA8
+		imagecodec::VImagePtr rgbaImage = ConvertHDRToRGBA8(cubeMaps[i].get());
+		if (!rgbaImage)
+		{
+			std::cerr << "Error: Failed to convert cubemap face " << i << " to RGBA8." << std::endl;
+			continue;
+		}
+
+		// Generate output filename with index
+		std::ostringstream oss;
+		oss << baseName << "_" << i << ".png";
+		std::filesystem::path facePath = outputDir / oss.str();
+
+		// Encode and save
+		if (!imagecodec::ImageEncoder::EncodeFile(facePath.string().c_str(), *rgbaImage, imagecodec::ImageStoreFormat::kPNG_Format, 100))
+		{
+			std::cerr << "Error: Failed to save cubemap face " << i << std::endl;
+			continue;
+		}
+
+		std::cout << "Cubemap face " << i << " saved: " << facePath << std::endl;
+	}
+
 	return 0;
 }
