@@ -341,6 +341,35 @@ enum ColorWriteMask
     ColorWriteMaskAll   = 0xf
 };
 
+// Reverse-Z 深度配置
+// Reverse-Z 通过反转深度值映射（近处=1，远处=0）来提高深度精度
+struct RENDERCORE_API DepthConfig
+{
+    // 全局 Reverse-Z 开关，默认启用
+    static bool UseReverseZ;
+    
+    // 获取默认深度比较函数
+    static CompareFunction GetDefaultDepthCompareFunc() 
+    {
+        return UseReverseZ ? CompareFunctionGreater : CompareFunctionLess;
+    }
+    
+    // 获取天空盒深度比较函数
+    // 天空盒渲染在深度最大处，Reverse-Z 时使用 GreaterThanOrEqual
+    static CompareFunction GetSkyboxDepthCompareFunc() 
+    {
+        return UseReverseZ ? CompareFunctionGreaterThanOrEqual : CompareFunctionLessThanOrEqual;
+    }
+    
+    // 获取默认深度清除值
+    // Reverse-Z: 清除为 0.0（远处）
+    // 传统 Z: 清除为 1.0（远处）
+    static float GetDefaultClearDepth() 
+    {
+        return UseReverseZ ? 0.0f : 1.0f;
+    }
+};
+
 enum CubemapFace
 {
     kCubeFaceUnknown = -1,

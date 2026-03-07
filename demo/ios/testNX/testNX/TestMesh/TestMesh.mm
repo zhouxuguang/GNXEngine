@@ -147,7 +147,7 @@ void init(rendercore::RenderDevicePtr renderDevice)
     vertexBufferLayoutDescriptor.stride = sizeof(Vertex);
     graphicsPipelineDescriptor.vertexDescriptor.layouts.push_back(vertexBufferLayoutDescriptor);
     
-    graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = rendercore::CompareFunctionLess;
+    graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = rendercore::DepthConfig::GetDefaultDepthCompareFunc();
     graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;
     
     mPipeline = renderDevice->createGraphicsPipeline(graphicsPipelineDescriptor);

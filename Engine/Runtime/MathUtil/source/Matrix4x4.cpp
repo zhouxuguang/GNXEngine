@@ -375,27 +375,53 @@ Matrix4x4<T> Matrix4x4<T>::CreatePerspective(T fieldOfView, T aspectRatio, T zNe
 template<typename T>
 Matrix4x4<T> Matrix4x4<T>::CreateReverseZPerspective(T fieldOfView, T aspectRatio, T zNearPlane, T zFarPlane)
 {
-	/*
-	* https://tomhultonharrop.com/posts/reverse-z/
-	*   mat4 reverse_z(const mat4& perspective_projection)
-		{
-		  constexpr mat4 reverse_z {1.0f, 0.0f,  0.0f, 0.0f,
-									0.0f, 1.0f,  0.0f, 0.0f,
-									0.0f, 0.0f, -1.0f, 0.0f,
-									0.0f, 0.0f,  1.0f, 1.0f};
-		  return mat_mul(perspective_projection, reverse_z);
-		}
-	*/
+	// Reverse-Z 投影矩阵：近处 z=1，远处 z=0
+	// 参考：https://developer.nvidia.com/content/depth-precision-visualized
 	T dbFov = fieldOfView * DEGTORAD;
 	T dbTan = tan(dbFov * 0.5);
-	Matrix4x4<T> matrix = CreateFrustum(-zNearPlane * dbTan * aspectRatio,
-		zNearPlane * dbTan * aspectRatio,
-		-zNearPlane * dbTan,
-		zNearPlane * dbTan,
-		zNearPlane, zFarPlane);
 
-	matrix[3][3] *= -1.0;
-	return matrix;
+	Matrix4x4<T> dst;
+	memset(&dst, 0, MATRIX4_SIZE);
+
+	// 对于 OpenGL 风格的投影矩阵（NDC z 范围 [-1, 1]），Reverse-Z 需要：
+	// z_n = (n-f)/(f-n) + 2nf/(n-f)/z = n/(n-f) - fn/(n-f)/z
+	// 简化后：
+	dst.m_adfValues[0] = 1.0 / (dbTan * aspectRatio);
+	dst.m_adfValues[5] = 1.0 / dbTan;
+	
+	// Reverse-Z 的关键：交换 near 和 far 的映射
+	// 传统：z_n = -(f+n)/(f-n) - 2fn/(f-n)/z  => [near: -1, far: 1]
+	// Reverse: z_n = n/(n-f) - fn/(n-f)/z     => [near: 1, far: -1]
+	// 注意：这里保持 OpenGL 风格的 [-1, 1] NDC，后续由 mAdjust 矩阵映射到 [0, 1]
+	dst.m_adfValues[10] = zNearPlane / (zNearPlane - zFarPlane);
+	dst.m_adfValues[11] = zNearPlane * zFarPlane / (zNearPlane - zFarPlane);
+	dst.m_adfValues[14] = -1;
+
+	return dst;
+}
+
+template<typename T>
+Matrix4x4<T> Matrix4x4<T>::CreateInfiniteReverseZPerspective(T fieldOfView, T aspectRatio, T zNearPlane)
+{
+	// 无限远平面的 Reverse-Z 投影矩阵
+	// 优势：消除远平面裁剪问题，深度精度更均匀
+	T dbFov = fieldOfView * DEGTORAD;
+	T dbTan = tan(dbFov * 0.5);
+
+	Matrix4x4<T> dst;
+	memset(&dst, 0, MATRIX4_SIZE);
+
+	dst.m_adfValues[0] = 1.0 / (dbTan * aspectRatio);
+	dst.m_adfValues[5] = 1.0 / dbTan;
+	
+	// 无限远时，令 zFar -> infinity
+	// z_n = n/(n-f) - fn/(n-f)/z -> -1 - n/z (far -> 0)
+	// 对于 Metal/Vulkan 的 [0,1] NDC，配合 mAdjust 矩阵使用
+	dst.m_adfValues[10] = 0.0;    // 无限远
+	dst.m_adfValues[11] = zNearPlane;
+	dst.m_adfValues[14] = -1;
+
+	return dst;
 }
 
 template <typename T>

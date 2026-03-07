@@ -159,7 +159,7 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
 
     GraphicsPipelineDesc graphicsPipelineDescriptor;
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
-    graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionLessThanOrEqual;
+    graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetSkyboxDepthCompareFunc();
     graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;
     
     mPipeline = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);

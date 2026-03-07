@@ -93,7 +93,7 @@ static rendercore::RenderDeviceType convertToRenderDeviceType(RenderType renderT
     
     renderPass.depthAttachment = std::make_shared<RenderPassDepthAttachment>();
     renderPass.depthAttachment->texture = depthStencilTexture;
-    renderPass.depthAttachment->clearDepth = 1.0;
+    renderPass.depthAttachment->clearDepth = DepthConfig::GetDefaultClearDepth();
     
     renderPass.stencilAttachment = std::make_shared<RenderPassStencilAttachment>();
     renderPass.stencilAttachment->texture = depthStencilTexture;

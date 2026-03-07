@@ -73,7 +73,7 @@ MaterialPtr Material::CreateMaterial(const char *shaderStrPath)
     
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
     
-    graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionLess;
+    graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
     graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;
     
     GraphicsPipelinePtr pso = GetRenderDevice()->CreateGraphicsPipeline(graphicsPipelineDescriptor);

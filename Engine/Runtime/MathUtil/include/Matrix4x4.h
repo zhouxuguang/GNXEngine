@@ -117,6 +117,16 @@ public:
     static Matrix4x4 CreateReverseZPerspective(T fieldOfView, T aspectRatio, T zNearPlane, T zFarPlane);
 
     /**
+     *  创建无限远平面的 Reverse-Z 透视投影矩阵
+     *  无限远平面可以消除远平面裁剪问题，配合 Reverse-Z 效果更好
+     *
+     *  @param fieldOfView 垂直视角（度）
+     *  @param aspectRatio 宽高比
+     *  @param zNearPlane  近裁剪面
+     */
+    static Matrix4x4 CreateInfiniteReverseZPerspective(T fieldOfView, T aspectRatio, T zNearPlane);
+
+    /**
      *  创建透视投影矩阵
      *
      *  @param left       左边边界

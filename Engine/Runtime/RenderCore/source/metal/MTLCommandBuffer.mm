@@ -91,7 +91,7 @@ RenderEncoderPtr MTLCommandBuffer::CreateDefaultRenderEncoder() const
         passDescriptor.depthAttachment.texture = mDepthStencilTexture;
         passDescriptor.depthAttachment.loadAction = MTLLoadActionClear;
         passDescriptor.depthAttachment.storeAction = MTLStoreActionDontCare;
-        passDescriptor.depthAttachment.clearDepth = 1.0;
+        passDescriptor.depthAttachment.clearDepth = DepthConfig::GetDefaultClearDepth();
         
         passDescriptor.stencilAttachment.texture = mDepthStencilTexture;
         passDescriptor.stencilAttachment.loadAction = MTLLoadActionClear;

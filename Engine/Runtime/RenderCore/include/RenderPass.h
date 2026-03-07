@@ -69,7 +69,7 @@ typedef std::shared_ptr<RenderPassColorAttachment> RenderPassColorAttachmentPtr;
 //深度附件定义
 struct RenderPassDepthAttachment : public RenderPassAttachment
 {
-    float clearDepth;
+    float clearDepth = 1.0f;  // 默认深度清除值，Reverse-Z 时应设为 0.0f
 	AttachmentLoadOp       loadOp = ATTACHMENT_LOAD_OP_CLEAR;
 	AttachmentStoreOp      storeOp = ATTACHMENT_STORE_OP_DONT_CARE;
 };

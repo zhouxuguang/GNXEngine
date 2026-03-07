@@ -6,6 +6,7 @@
 //
 
 #include "Camera.h"
+#include <limits>
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -32,6 +33,12 @@ Camera::Camera(RenderDeviceType renderType, const std::string& name)
         default:
             break;
     }
+    
+    // Reverse-Z 模式下，需要调整 mAdjust 矩阵
+    // 传统 Z: 从 [-1,1] 映射到 [0,1]，使用 z' = 0.5*z + 0.5
+    // Reverse-Z: 投影矩阵已处理，但仍需从 [-1,1] 映射到 [0,1]
+    // 无限远 Reverse-Z 的投影矩阵输出 [-1, 0] 范围，需要映射到 [0, 1]
+    // 当前 mAdjust 矩阵已经正确处理了这种映射
 }
 
 Camera::~Camera()
@@ -54,9 +61,19 @@ void Camera::LookAt(const Vector3f& position, const Vector3f& target, const Vect
 
 void Camera::SetLens(float fovY, float aspect, float zNear, float zFar)
 {
-    mProjection = Matrix4x4f::CreatePerspective(fovY, aspect, zNear, zFar);
+    if (mUseReverseZ)
+    {
+        // 使用无限远平面 + Reverse-Z
+        // 优势：消除远平面裁剪问题，深度精度更均匀
+        mProjection = Matrix4x4f::CreateInfiniteReverseZPerspective(fovY, aspect, zNear);
+        mFarZ = std::numeric_limits<float>::max();  // 无限远
+    }
+    else
+    {
+        mProjection = Matrix4x4f::CreatePerspective(fovY, aspect, zNear, zFar);
+        mFarZ = zFar;
+    }
     mNearZ = zNear;
-    mFarZ = zFar;
     mAspect = aspect;
     mFov = fovY;
 }

@@ -224,7 +224,7 @@ void GBufferRenderer::CreateGBufferPipeline()
     
     // 设置深度测试
     pipelineDesc.depthStencilDescriptor.depthWriteEnabled = true;
-    pipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionLess;
+    pipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
     
     // 创建PSO
     mGBufferPipeline = GetRenderDevice()->CreateGraphicsPipeline(pipelineDesc);

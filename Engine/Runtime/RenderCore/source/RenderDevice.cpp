@@ -20,6 +20,9 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+// DepthConfig 静态成员定义
+bool DepthConfig::UseReverseZ = true;
+
 RenderDevice::RenderDevice() {}
 
 RenderDevice::~RenderDevice() {}

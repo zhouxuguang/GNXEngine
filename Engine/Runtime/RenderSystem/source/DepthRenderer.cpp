@@ -19,12 +19,12 @@ NS_RENDERSYSTEM_BEGIN
 DepthRenderer::DepthRenderer(RenderDevice* device) : mDevice(device)
 {
     GraphicsShaderInfo shaderInfoDepth = CreateGraphicsShaderInfo("DepthGenerate");
-    shaderInfoDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionLess;
+    shaderInfoDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
     mDepthOnlyPipeline = mDevice->CreateGraphicsPipeline(shaderInfoDepth.graphicsPipelineDesc);
     mDepthOnlyPipeline->AttachGraphicsShader(shaderInfoDepth.graphicsShader);
     
     GraphicsShaderInfo shaderInfoSkinnedDepth = CreateGraphicsShaderInfo("SkinnedDepthGenerate");
-    shaderInfoSkinnedDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionLess;
+    shaderInfoSkinnedDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
     mSkinnedDepthOnlyPipeline = mDevice->CreateGraphicsPipeline(shaderInfoSkinnedDepth.graphicsPipelineDesc);
     mSkinnedDepthOnlyPipeline->AttachGraphicsShader(shaderInfoSkinnedDepth.graphicsShader);
 }
@@ -116,7 +116,7 @@ FrameGraphResource DepthRenderer::Render(
             
             renderPass.depthAttachment = std::make_shared<RenderPassDepthAttachment>();
             renderPass.depthAttachment->texture = depthTexture.texture;
-            renderPass.depthAttachment->clearDepth = 1.0;
+            renderPass.depthAttachment->clearDepth = DepthConfig::GetDefaultClearDepth();
             renderPass.depthAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
             
             float color[4] = {1.0, 0.0, 0.0, 1.0};

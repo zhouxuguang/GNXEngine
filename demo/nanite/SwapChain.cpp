@@ -15,7 +15,7 @@ void InitSwapChainPass(RenderCore::RenderDevicePtr renderDevice)
 
     GraphicsPipelineDesc graphicsPipelineDescriptor;
 	graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
-	graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionLessThanOrEqual;
+	graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionGreaterThanOrEqual;
 	graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;
 
 	sPSO = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);

@@ -14,9 +14,9 @@ void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice, uint32_t widt
 
 	GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
 
-    GraphicsPipelineDesc graphicsPipelineDescriptor;
+	GraphicsPipelineDesc graphicsPipelineDescriptor;
 	graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
-    graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = CompareFunctionLess;
+    graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
 	graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;
 	graphicsPipelineDescriptor.depthStencilDescriptor.stencil.stencilEnable = false;
 
@@ -47,7 +47,7 @@ void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer,
     renderPass.colorAttachments.push_back(colorAttachmentPtr);
     
     RenderPassDepthAttachmentPtr depthAttachmentPtr = std::make_shared<RenderPassDepthAttachment>();
-    depthAttachmentPtr->clearDepth = 1.0f;
+    depthAttachmentPtr->clearDepth = DepthConfig::GetDefaultClearDepth();
     depthAttachmentPtr->texture = depthTexture;
     renderPass.depthAttachment = depthAttachmentPtr;
 
