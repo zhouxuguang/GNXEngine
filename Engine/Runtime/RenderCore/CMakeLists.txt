@@ -48,6 +48,7 @@ source_group(TREE ${rendercore_dir} PREFIX source FILES ${RENDERCORE_SOURCES})
 source_group(TREE ${rendercore_include_dir} PREFIX include FILES ${RENDERCORE_INCLUDES})
 
 target_include_directories(RenderCore PRIVATE ${rendercore_include_dir})
+target_compile_definitions(RenderCore PRIVATE RENDERCORE_EXPORTS)
 target_link_libraries(RenderCore PRIVATE MathUtil spirv_reflect)
 
 if(APPLE)

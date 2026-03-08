@@ -14,10 +14,18 @@
 #include <string>
 
 #if _WIN32
-	#ifdef __GNUC__
-		#define RENDERCORE_API __attribute__((dllexport))
+	#ifdef RENDERCORE_EXPORTS
+		#ifdef __GNUC__
+			#define RENDERCORE_API __attribute__((dllexport))
+		#else
+			#define RENDERCORE_API __declspec(dllexport)
+		#endif
 	#else
-		#define RENDERCORE_API __declspec(dllexport)
+		#ifdef __GNUC__
+			#define RENDERCORE_API __attribute__((dllimport))
+		#else
+			#define RENDERCORE_API __declspec(dllimport)
+		#endif
 	#endif
 	#define RENDERCORE_API_HIDE
 #else

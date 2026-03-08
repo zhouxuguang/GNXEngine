@@ -31,7 +31,11 @@ target_link_libraries(GNXEngine PRIVATE
     ktx 
     glfw
 )
-target_compile_definitions(GNXEngine PRIVATE GNXENGINE_EXPORTS)
+target_compile_definitions(GNXEngine PRIVATE 
+    GNXENGINE_EXPORTS
+    RENDERCORE_EXPORTS
+    RENDERSYSTEM_EXPORTS
+)
 
 if(APPLE)
     # macOS

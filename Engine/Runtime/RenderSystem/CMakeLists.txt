@@ -37,6 +37,8 @@ source_group(TREE ${rendersystem_include_dir} PREFIX include FILES ${RENDERSYSTE
 
 target_include_directories(RenderSystem PRIVATE ${rendersystem_include_dir})
 
+target_compile_definitions(RenderSystem PRIVATE RENDERSYSTEM_EXPORTS)
+
 target_include_directories(RenderSystem PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/glm-0.9.9.8)
                                            
 

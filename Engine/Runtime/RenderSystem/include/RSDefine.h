@@ -16,10 +16,18 @@
 #include "Runtime/BaseLib/include/BaseLib.h"
 
 #if _WIN32
-	#ifdef __GNUC__
-		#define RENDERSYSTEM_API __attribute__((dllexport))
+	#ifdef RENDERSYSTEM_EXPORTS
+		#ifdef __GNUC__
+			#define RENDERSYSTEM_API __attribute__((dllexport))
+		#else
+			#define RENDERSYSTEM_API __declspec(dllexport)
+		#endif
 	#else
-		#define RENDERSYSTEM_API __declspec(dllexport)
+		#ifdef __GNUC__
+			#define RENDERSYSTEM_API __attribute__((dllimport))
+		#else
+			#define RENDERSYSTEM_API __declspec(dllimport)
+		#endif
 	#endif
 	#define RENDERSYSTEM_API_HIDE
 #else
