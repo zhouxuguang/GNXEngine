@@ -73,7 +73,7 @@ RenderEncoderPtr VulkanCommandBuffer::CreateDefaultRenderEncoder() const
     depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     depth_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depth_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment_info.clearValue.depthStencil.depth = 1.0;
+    depth_attachment_info.clearValue.depthStencil.depth = DepthConfig::GetDefaultClearDepth();
     depth_attachment_info.clearValue.depthStencil.stencil = 0;
     clearValues.push_back(depth_attachment_info.clearValue);
     clearValues.push_back(depth_attachment_info.clearValue);
