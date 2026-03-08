@@ -12,6 +12,7 @@
 #include "ComputeEncoder.h"
 #include "MTLComputePipeline.h"
 #include "MTLTextureBase.h"
+#include "MTLRCBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -35,6 +36,9 @@ public:
     virtual void SetUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
     
     virtual void SetBuffer(ComputeBufferPtr buffer, uint32_t index);
+    
+    // 新的RCBuffer接口
+    virtual void SetStorageBuffer(RCBufferPtr buffer, uint32_t index);
     
     virtual void SetTexture(RCTexturePtr texture, uint32_t index);
     

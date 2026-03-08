@@ -176,6 +176,18 @@ public:
 		return mVertexInputLayout;
 	}
 
+    // 获取资源绑定索引
+    uint32_t GetResourceBindIndex(const std::string& resourceName) const;
+
+    // 获取资源反射数据
+    const std::unordered_map<std::string, BindMetaData>& GetReflectionDatas() const
+    {
+        return mReflectionDatas;
+    }
+
+    // 获取指定描述符类型的 set 偏移
+    uint32_t GetSetOffset(DescriptorType descriptorType) const;
+
 private:
     void CollectResource(SpvReflectShaderModule shaderModule, ShaderStage shaderStage);
 

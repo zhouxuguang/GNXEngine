@@ -8,6 +8,7 @@
 #include "MTLBlitEncoder.h"
 #include "MTLVertexBuffer.h"
 #include "MTLIndexBuffer.h"
+#include "MTLRCBuffer.h"
 #include "MTLTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -53,6 +54,23 @@ id<MTLBuffer> MTLBlitEncoder::GetMTLBuffer(VertexBufferPtr buffer) const
     if (mtlIndexBuffer)
     {
         return mtlIndexBuffer->getMTLBuffer();
+    }
+    
+    return nil;
+}
+
+id<MTLBuffer> MTLBlitEncoder::GetMTLBufferFromRC(RCBufferPtr buffer) const
+{
+    if (!buffer)
+    {
+        return nil;
+    }
+    
+    // 尝试转换为MTLRCBuffer
+    MTLRCBufferPtr mtlRCBuffer = std::dynamic_pointer_cast<MTLRCBuffer>(buffer);
+    if (mtlRCBuffer)
+    {
+        return mtlRCBuffer->GetMTLBuffer();
     }
     
     return nil;
@@ -117,6 +135,102 @@ void MTLBlitEncoder::FillBuffer(VertexBufferPtr destination,
         [mBlitEncoder fillBuffer:destBuffer
                          range:NSMakeRange(destinationOffset, dataSize)
                           value:*(const uint8_t*)data];
+    }
+}
+
+// ==================== RCBuffer操作（新接口） ====================
+
+void MTLBlitEncoder::CopyBuffer(RCBufferPtr source,
+                                uint64_t sourceOffset,
+                                RCBufferPtr destination,
+                                uint64_t destinationOffset,
+                                uint64_t size)
+{
+    if (!mBlitEncoder)
+    {
+        return;
+    }
+    
+    id<MTLBuffer> sourceBuffer = GetMTLBufferFromRC(source);
+    id<MTLBuffer> destBuffer = GetMTLBufferFromRC(destination);
+    
+    if (sourceBuffer && destBuffer)
+    {
+        [mBlitEncoder copyFromBuffer:sourceBuffer
+                        sourceOffset:sourceOffset
+                            toBuffer:destBuffer
+                   destinationOffset:destinationOffset
+                                size:size];
+    }
+}
+
+void MTLBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
+                                         uint32_t sourceSlice,
+                                         uint32_t sourceMipLevel,
+                                         const Rect2D& sourceOffset,
+                                         const Rect2D& sourceSize,
+                                         RCBufferPtr destination,
+                                         uint64_t destinationOffset,
+                                         uint64_t destinationBytesPerRow,
+                                         uint64_t destinationBytesPerImage)
+{
+    if (!mBlitEncoder)
+    {
+        return;
+    }
+    
+    id<MTLTexture> sourceTexture = GetMTLTexture(source);
+    id<MTLBuffer> destBuffer = GetMTLBufferFromRC(destination);
+    
+    if (sourceTexture && destBuffer)
+    {
+        MTLOrigin origin = MTLOriginMake(sourceOffset.offsetX, sourceOffset.offsetY, 0);
+        MTLSize size = MTLSizeMake(sourceSize.width, sourceSize.height, 1);
+        
+        [mBlitEncoder copyFromTexture:sourceTexture
+                          sourceSlice:sourceSlice
+                          sourceLevel:sourceMipLevel
+                         sourceOrigin:origin
+                           sourceSize:size
+                             toBuffer:destBuffer
+                    destinationOffset:destinationOffset
+               destinationBytesPerRow:destinationBytesPerRow
+             destinationBytesPerImage:destinationBytesPerImage];
+    }
+}
+
+void MTLBlitEncoder::CopyBufferToTexture(RCBufferPtr source,
+                                         uint64_t sourceOffset,
+                                         uint64_t sourceBytesPerRow,
+                                         uint64_t sourceBytesPerImage,
+                                         RCTexturePtr destination,
+                                         uint32_t destinationSlice,
+                                         uint32_t destinationMipLevel,
+                                         const Rect2D& destinationOffset,
+                                         const Rect2D& destinationSize)
+{
+    if (!mBlitEncoder)
+    {
+        return;
+    }
+    
+    id<MTLBuffer> sourceBuffer = GetMTLBufferFromRC(source);
+    id<MTLTexture> destTexture = GetMTLTexture(destination);
+    
+    if (sourceBuffer && destTexture)
+    {
+        MTLOrigin origin = MTLOriginMake(destinationOffset.offsetX, destinationOffset.offsetY, 0);
+        MTLSize size = MTLSizeMake(destinationSize.width, destinationSize.height, 1);
+        
+        [mBlitEncoder copyFromBuffer:sourceBuffer
+                        sourceOffset:sourceOffset
+                   sourceBytesPerRow:sourceBytesPerRow
+                 sourceBytesPerImage:sourceBytesPerImage
+                         sourceSize:size
+                          toTexture:destTexture
+                   destinationSlice:destinationSlice
+                   destinationLevel:destinationMipLevel
+                  destinationOrigin:origin];
     }
 }
 

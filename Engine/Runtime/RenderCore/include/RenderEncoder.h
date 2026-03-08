@@ -16,6 +16,7 @@
 #include "TextureSampler.h"
 #include "RCTexture.h"
 #include "ComputeBuffer.h"
+#include "RCBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -41,6 +42,43 @@ public:
      @param index 绑定的索引
      */
     virtual void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index) = 0;
+    
+    // ==================== 新的RCBuffer接口 ====================
+    
+    /**
+     * @brief 设置RCBuffer作为顶点缓冲区
+     * @param buffer RCBuffer指针（需要包含VertexBuffer用途）
+     * @param offset 偏移量
+     * @param index 绑定索引
+     */
+    virtual void SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index) = 0;
+    
+    /**
+     * @brief 设置RCBuffer作为SSBO
+     * @param resourceName 资源名称
+     * @param buffer RCBuffer指针（需要包含StorageBuffer用途）
+     * @param stage shader阶段
+     */
+    virtual void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer, ShaderStage stage) = 0;
+    
+    /**
+     * @brief 间接绘制（使用RCBuffer）
+     * @param mode 图元类型
+     * @param buffer 间接绘制参数buffer（需要包含IndirectBuffer用途）
+     * @param offset buffer偏移
+     * @param drawCount 绘制次数
+     * @param stride 步长
+     */
+    virtual void DrawPrimitvesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset, 
+            uint32_t drawCount, uint32_t stride) = 0;
+
+    /**
+     * @brief 索引间接绘制（使用RCBuffer）
+     */
+    virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
+		    uint32_t drawCount, uint32_t stride) = 0;
+    
+    // ==================== 旧接口 ====================
     
     /**
      设置uniformbuffer的索引

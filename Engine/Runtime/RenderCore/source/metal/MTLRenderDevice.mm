@@ -17,6 +17,7 @@
 #include "MTLComputeBuffer.h"
 #include "MTLTextureBase.h"
 #include "MTLCommandQueue.h"
+#include "MTLRCBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -135,6 +136,16 @@ IndexBufferPtr MTLRenderDevice::CreateIndexBufferWithBytes(const void* buffer, u
 {
     auto indexBuffer = std::make_shared<MTLIndexBuffer>(mMetalLayer.device, mMetalCommandQueue, indexType, buffer, size);
     return indexBuffer;
+}
+
+RCBufferPtr MTLRenderDevice::CreateBuffer(const RCBufferDesc& desc) const
+{
+    return std::make_shared<MTLRCBuffer>(mMetalLayer.device, desc);
+}
+
+RCBufferPtr MTLRenderDevice::CreateBuffer(const RCBufferDesc& desc, const void* data) const
+{
+    return std::make_shared<MTLRCBuffer>(mMetalLayer.device, mMetalCommandQueue, desc, data);
 }
 
 /**

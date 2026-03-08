@@ -91,6 +91,33 @@ void VKComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
     vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), bufSetOffset, 1, &writeDescriptorSet);
 }
 
+void VKComputeEncoder::SetStorageBuffer(RCBufferPtr buffer, uint32_t index)
+{
+    if (!buffer || !mVKPipeline)
+    {
+        return;
+    }
+    
+    VKRCBufferPtr vkBuffer = std::dynamic_pointer_cast<VKRCBuffer>(buffer);
+    if (!vkBuffer)
+    {
+        return;
+    }
+    
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = vkBuffer->GetVkBuffer();
+    bufferInfo.offset = 0;
+    bufferInfo.range = VK_WHOLE_SIZE;
+    
+    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(VK_NULL_HANDLE,
+                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, index, &bufferInfo);
+    writeDescriptorSet.dstSet = 0;
+    
+    uint32_t bufSetOffset = mVKPipeline->GetSetOffset(DESCRIPTOR_TYPE_STORAGE_BUFFER);
+    
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), bufSetOffset, 1, &writeDescriptorSet);
+}
+
 void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t index)
 {
     if (!texture)

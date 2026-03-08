@@ -134,6 +134,12 @@ public:
 
     VKGraphicsShaderPtr GetCurrentShader() const;
     
+    // 获取资源绑定索引
+    uint32_t GetResourceBindIndex(const std::string& resourceName) const;
+    
+    // 获取指定描述符类型的 set 偏移
+    uint32_t GetSetOffset(DescriptorType descriptorType) const;
+    
 private:
     VkPipeline mPipeline = VK_NULL_HANDLE;
     VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;

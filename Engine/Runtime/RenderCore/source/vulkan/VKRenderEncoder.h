@@ -12,6 +12,7 @@
 #include "RenderEncoder.h"
 #include "VKGraphicsPipeline.h"
 #include "VulkanRenderPass.h"
+#include "VKRCBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -35,6 +36,17 @@ public:
     virtual void SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline);
     
     virtual void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index);
+    
+    // 新的RCBuffer接口
+    virtual void SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index);
+    
+    virtual void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer, ShaderStage stage);
+    
+    virtual void DrawPrimitvesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
+        uint32_t drawCount, uint32_t stride);
+
+    virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
+        uint32_t drawCount, uint32_t stride);
     
     virtual void SetVertexUniformBuffer(UniformBufferPtr buffer, int index);
     

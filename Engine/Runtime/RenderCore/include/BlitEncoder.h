@@ -11,6 +11,7 @@
 #include "RenderDefine.h"
 #include "VertexBuffer.h"
 #include "ComputeBuffer.h"
+#include "RCBuffer.h"
 #include "RCTexture.h"
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -63,6 +64,48 @@ public:
                           uint64_t destinationOffset,
                           const void* data,
                           uint64_t dataSize) = 0;
+    
+    // ==================== RCBuffer操作（新接口） ====================
+    
+    /**
+     * @brief 拷贝RCBuffer数据
+     * @param source 源Buffer
+     * @param sourceOffset 源偏移量（字节）
+     * @param destination 目标Buffer
+     * @param destinationOffset 目标偏移量（字节）
+     * @param size 拷贝大小（字节）
+     */
+    virtual void CopyBuffer(RCBufferPtr source,
+                           uint64_t sourceOffset,
+                           RCBufferPtr destination,
+                           uint64_t destinationOffset,
+                           uint64_t size) = 0;
+    
+    /**
+     * @brief 从Texture拷贝数据到RCBuffer
+     */
+    virtual void CopyTextureToBuffer(RCTexturePtr source,
+                                    uint32_t sourceSlice,
+                                    uint32_t sourceMipLevel,
+                                    const Rect2D& sourceOffset,
+                                    const Rect2D& sourceSize,
+                                    RCBufferPtr destination,
+                                    uint64_t destinationOffset,
+                                    uint64_t destinationBytesPerRow,
+                                    uint64_t destinationBytesPerImage = 0) = 0;
+    
+    /**
+     * @brief 从RCBuffer拷贝数据到Texture
+     */
+    virtual void CopyBufferToTexture(RCBufferPtr source,
+                                    uint64_t sourceOffset,
+                                    uint64_t sourceBytesPerRow,
+                                    uint64_t sourceBytesPerImage,
+                                    RCTexturePtr destination,
+                                    uint32_t destinationSlice,
+                                    uint32_t destinationMipLevel,
+                                    const Rect2D& destinationOffset,
+                                    const Rect2D& destinationSize) = 0;
     
     // ==================== Texture到Buffer操作 ====================
     

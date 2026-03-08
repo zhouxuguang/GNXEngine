@@ -102,6 +102,16 @@ void MTLComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
     }
 }
 
+void MTLComputeEncoder::SetStorageBuffer(RCBufferPtr buffer, uint32_t index)
+{
+    @autoreleasepool
+    {
+        MTLRCBufferPtr mtlBuffer = std::dynamic_pointer_cast<MTLRCBuffer>(buffer);
+        assert(mtlBuffer);
+        [mComputeEncoder setBuffer:mtlBuffer->GetMTLBuffer() offset:0 atIndex:index];
+    }
+}
+
 void MTLComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t index)
 {
     @autoreleasepool 

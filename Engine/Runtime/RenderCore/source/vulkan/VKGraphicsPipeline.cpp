@@ -424,4 +424,22 @@ VKGraphicsShaderPtr VKGraphicsPipeline::GetCurrentShader() const
     return mShader;
 }
 
+uint32_t VKGraphicsPipeline::GetResourceBindIndex(const std::string& resourceName) const
+{
+    if (!mShader)
+    {
+        return (uint32_t)-1;
+    }
+    return mShader->GetResourceBindIndex(resourceName);
+}
+
+uint32_t VKGraphicsPipeline::GetSetOffset(DescriptorType descriptorType) const
+{
+    if (!mShader)
+    {
+        return 0;
+    }
+    return mShader->GetSetOffset(descriptorType);
+}
+
 NAMESPACE_RENDERCORE_END

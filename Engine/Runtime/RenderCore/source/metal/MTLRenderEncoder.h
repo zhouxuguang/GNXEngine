@@ -11,6 +11,7 @@
 #include "MTLRenderDefine.h"
 #include "RenderEncoder.h"
 #include "MTLGraphicsPipeline.h"
+#include "MTLRCBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -35,6 +36,17 @@ public:
      @param index 绑定的索引
      */
     virtual void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index);
+    
+    // 新的RCBuffer接口
+    virtual void SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index);
+    
+    virtual void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer, ShaderStage stage);
+    
+    virtual void DrawPrimitvesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
+        uint32_t drawCount, uint32_t stride);
+
+    virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
+        uint32_t drawCount, uint32_t stride);
     
     /**
      设置uniformbuffer的索引

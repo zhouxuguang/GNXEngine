@@ -11,6 +11,7 @@
 #include "VulkanContext.h"
 #include "BlitEncoder.h"
 #include "VKVertexBuffer.h"
+#include "VKRCBuffer.h"
 #include "VKTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -47,6 +48,34 @@ public:
                           uint64_t destinationOffset,
                           const void* data,
                           uint64_t dataSize) override;
+    
+    // ==================== RCBuffer操作（新接口） ====================
+    
+    virtual void CopyBuffer(RCBufferPtr source,
+                           uint64_t sourceOffset,
+                           RCBufferPtr destination,
+                           uint64_t destinationOffset,
+                           uint64_t size) override;
+    
+    virtual void CopyTextureToBuffer(RCTexturePtr source,
+                                    uint32_t sourceSlice,
+                                    uint32_t sourceMipLevel,
+                                    const Rect2D& sourceOffset,
+                                    const Rect2D& sourceSize,
+                                    RCBufferPtr destination,
+                                    uint64_t destinationOffset,
+                                    uint64_t destinationBytesPerRow,
+                                    uint64_t destinationBytesPerImage = 0) override;
+    
+    virtual void CopyBufferToTexture(RCBufferPtr source,
+                                    uint64_t sourceOffset,
+                                    uint64_t sourceBytesPerRow,
+                                    uint64_t sourceBytesPerImage,
+                                    RCTexturePtr destination,
+                                    uint32_t destinationSlice,
+                                    uint32_t destinationMipLevel,
+                                    const Rect2D& destinationOffset,
+                                    const Rect2D& destinationSize) override;
     
     // ==================== Texture到Buffer操作 ====================
     
@@ -108,9 +137,14 @@ private:
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
     
     /**
-     * @brief 辅助函数：获取VkBuffer
+     * @brief 辅助函数：获取VkBuffer (from VertexBuffer)
      */
     VkBuffer GetVkBuffer(VertexBufferPtr buffer) const;
+    
+    /**
+     * @brief 辅助函数：获取VkBuffer (from RCBuffer)
+     */
+    VkBuffer GetVkBufferFromRC(RCBufferPtr buffer) const;
     
     /**
      * @brief 辅助函数：获取VkImage

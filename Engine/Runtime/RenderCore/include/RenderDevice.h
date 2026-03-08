@@ -17,6 +17,7 @@
 #include "CommandBuffer.h"
 #include "RenderPass.h"
 #include "ComputeBuffer.h"
+#include "RCBuffer.h"
 #include "RCTexture.h"
 #include "CommandQueue.h"
 
@@ -66,6 +67,25 @@ public:
      @return 成功申请buffer句柄，失败返回0；
      */
     virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const = 0;
+    
+    // ==================== 新的统一Buffer接口 ====================
+    
+    /**
+     * @brief 创建统一Buffer
+     * 
+     * @param desc Buffer描述符，包含大小、用途和存储模式
+     * @return RCBufferPtr Buffer指针
+     */
+    virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc) const = 0;
+    
+    /**
+     * @brief 创建统一Buffer并初始化数据
+     * 
+     * @param desc Buffer描述符
+     * @param data 初始数据指针
+     * @return RCBufferPtr Buffer指针
+     */
+    virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc, const void* data) const = 0;
     
     /**
      根据采样描述创建纹理采样器

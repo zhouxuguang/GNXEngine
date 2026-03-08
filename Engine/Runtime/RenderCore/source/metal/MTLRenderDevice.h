@@ -61,6 +61,10 @@ public:
      */
     virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const;
     
+    // 新的统一Buffer接口
+    virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc) const override;
+    virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc, const void* data) const override;
+    
     /**
      根据采样描述创建纹理采样器
 

@@ -20,6 +20,7 @@
 #include "VKTextureBase.h"
 #include "VulkanBufferUtil.h"
 #include "VKCommandQueue.h"
+#include "VKRCBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -220,6 +221,16 @@ ComputeBufferPtr VKRenderDevice::CreateComputeBuffer(const void* buffer, uint32_
 IndexBufferPtr VKRenderDevice::CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const
 {
     return std::make_shared<VKIndexBuffer>(mVulkanContext, indexType, buffer, size);
+}
+
+RCBufferPtr VKRenderDevice::CreateBuffer(const RCBufferDesc& desc) const
+{
+    return std::make_shared<VKRCBuffer>(mVulkanContext, desc);
+}
+
+RCBufferPtr VKRenderDevice::CreateBuffer(const RCBufferDesc& desc, const void* data) const
+{
+    return std::make_shared<VKRCBuffer>(mVulkanContext, desc, data);
 }
 
 TextureSamplerPtr VKRenderDevice::CreateSamplerWithDescriptor(const SamplerDesc& des) const

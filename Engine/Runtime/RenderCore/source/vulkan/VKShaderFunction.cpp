@@ -541,4 +541,29 @@ void VKGraphicsShader::GenerateDescriptorSets()
     }
 }
 
+uint32_t VKGraphicsShader::GetResourceBindIndex(const std::string& resourceName) const
+{
+    auto bindData = mReflectionDatas.find(resourceName);
+    if (bindData == mReflectionDatas.end())
+    {
+        LOG_INFO("Fail to find shader resource %s", resourceName.c_str());
+        return (uint32_t)-1;
+    }
+    return bindData->second.binding;
+}
+
+uint32_t VKGraphicsShader::GetSetOffset(DescriptorType descriptorType) const
+{
+    // 遍历反射数据找到指定类型的 set
+    for (const auto& [name, metaData] : mReflectionDatas)
+    {
+        DescriptorType type = GetDescriptorType(metaData.descriptorType);
+        if (type == descriptorType)
+        {
+            return metaData.set;
+        }
+    }
+    return 0;
+}
+
 NAMESPACE_RENDERCORE_END

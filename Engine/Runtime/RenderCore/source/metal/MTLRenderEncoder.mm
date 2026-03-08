@@ -67,6 +67,58 @@ void MTLRenderEncoder::SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, 
     [mRenderEncoder setVertexBuffer:mtlBuffer offset:offset atIndex:index];
 }
 
+void MTLRenderEncoder::SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index)
+{
+    if (buffer == nullptr)
+    {
+        return;
+    }
+    MTLRCBufferPtr mtlBuffer = std::dynamic_pointer_cast<MTLRCBuffer>(buffer);
+    if (!mtlBuffer)
+    {
+        return;
+    }
+    [mRenderEncoder setVertexBuffer:mtlBuffer->GetMTLBuffer() offset:offset atIndex:index];
+}
+
+void MTLRenderEncoder::SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer, ShaderStage stage)
+{
+    if (!buffer || !mMtlGraphicsPipeline)
+    {
+        return;
+    }
+    
+    MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
+    if (!shader)
+    {
+        return;
+    }
+    
+    MTLRCBufferPtr mtlBuffer = std::dynamic_pointer_cast<MTLRCBuffer>(buffer);
+    if (!mtlBuffer)
+    {
+        return;
+    }
+    
+    NSUInteger realIndex = InvalidBindingIndex;
+    if (stage == ShaderStage_Vertex)
+    {
+        realIndex = shader->GetVertexResourceBindIndex(resourceName);
+        if (realIndex != InvalidBindingIndex)
+        {
+            [mRenderEncoder setVertexBuffer:mtlBuffer->GetMTLBuffer() offset:0 atIndex:realIndex];
+        }
+    }
+    else if (stage == ShaderStage_Fragment)
+    {
+        realIndex = shader->GetFragmentResourceBindIndex(resourceName);
+        if (realIndex != InvalidBindingIndex)
+        {
+            [mRenderEncoder setFragmentBuffer:mtlBuffer->GetMTLBuffer() offset:0 atIndex:realIndex];
+        }
+    }
+}
+
 /**
  设置uniformbuffer的索引
  
@@ -410,6 +462,58 @@ void MTLRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, Compute
     MTLComputeBufferPtr mtlBufferPtr = std::dynamic_pointer_cast<MTLComputeBuffer>(buffer);
 
     id<MTLBuffer> mtlBuffer = mtlBufferPtr->getMTLBuffer();
+    if (!mtlBuffer)
+    {
+        return;
+    }
+    
+    // 还未实现
+}
+
+// RCBuffer版本的间接绘制
+void MTLRenderEncoder::DrawPrimitvesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
+        uint32_t drawCount, uint32_t stride)
+{
+    if (!buffer)
+    {
+        return;
+    }
+
+    MTLRCBufferPtr mtlBufferPtr = std::dynamic_pointer_cast<MTLRCBuffer>(buffer);
+    if (!mtlBufferPtr)
+    {
+        return;
+    }
+
+    id<MTLBuffer> mtlBuffer = mtlBufferPtr->GetMTLBuffer();
+    if (!mtlBuffer)
+    {
+        return;
+    }
+
+    uint32_t currentOffset = offset;
+    for (uint32_t i = 0; i < drawCount; i++)
+    {
+        [mRenderEncoder drawPrimitives:ConvertPrimitiveType(mode) indirectBuffer:mtlBuffer indirectBufferOffset:currentOffset];
+        currentOffset += stride;
+    }
+}
+
+void MTLRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
+        uint32_t drawCount, uint32_t stride)
+{
+    if (!buffer)
+    {
+        return;
+    }
+
+    MTLRCBufferPtr mtlBufferPtr = std::dynamic_pointer_cast<MTLRCBuffer>(buffer);
+    if (!mtlBufferPtr)
+    {
+        return;
+    }
+
+    id<MTLBuffer> mtlBuffer = mtlBufferPtr->GetMTLBuffer();
     if (!mtlBuffer)
     {
         return;

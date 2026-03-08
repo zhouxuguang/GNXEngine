@@ -47,6 +47,10 @@ public:
     
     virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const;
     
+    // 新的统一Buffer接口
+    virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc) const override;
+    virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc, const void* data) const override;
+    
     virtual TextureSamplerPtr CreateSamplerWithDescriptor(const SamplerDesc& des) const;
     
     virtual UniformBufferPtr CreateUniformBufferWithSize(uint32_t bufSize) const;
