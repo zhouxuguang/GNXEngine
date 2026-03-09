@@ -267,7 +267,7 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     rasterInfo.depthClampEnable = VK_FALSE;
     rasterInfo.rasterizerDiscardEnable = VK_FALSE;
     rasterInfo.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterInfo.cullMode = VK_CULL_MODE_NONE;
     rasterInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;   //注意这里设置为逆时针
     rasterInfo.depthBiasEnable = VK_TRUE;
     rasterInfo.lineWidth = 1;
