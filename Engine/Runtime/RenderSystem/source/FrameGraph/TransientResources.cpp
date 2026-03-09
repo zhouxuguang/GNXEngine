@@ -179,13 +179,14 @@ void TransientResources::releaseTexture(const FrameGraphTexture::Desc &desc, Ren
     m_texturePools[h].push_back({texture, 0.0f});
 }
 
-RenderCore::ComputeBufferPtr TransientResources::acquireBuffer(const FrameGraphBuffer::Desc &desc)
+RenderCore::RCBufferPtr TransientResources::acquireBuffer(const FrameGraphBuffer::Desc &desc)
 {
     const auto h = std::hash<FrameGraphBuffer::Desc>{}(desc);
     auto &pool = m_bufferPools[h];
     if (pool.empty())
     {
-        auto buffer = mRenderDevice->CreateComputeBuffer(desc.size);
+        auto buffer = mRenderDevice->CreateBuffer(
+            RenderCore::RCBufferDesc(desc.size, RenderCore::RCBufferUsage::StorageBuffer));
 
         // 设置调试名称
         SetDebugName(buffer, desc.name);
@@ -206,7 +207,7 @@ RenderCore::ComputeBufferPtr TransientResources::acquireBuffer(const FrameGraphB
     }
 }
 
-void TransientResources::releaseBuffer(const FrameGraphBuffer::Desc &desc, RenderCore::ComputeBufferPtr buffer)
+void TransientResources::releaseBuffer(const FrameGraphBuffer::Desc &desc, RenderCore::RCBufferPtr buffer)
 {
     const auto h = std::hash<FrameGraphBuffer::Desc>{}(desc);
     m_bufferPools[h].push_back({buffer, 0.0f});
@@ -217,7 +218,7 @@ void TransientResources::SetDebugName(RenderCore::RCTexturePtr texture, const st
     texture->SetName(name.c_str());
 }
 
-void TransientResources::SetDebugName(RenderCore::ComputeBufferPtr buffer, const std::string& name)
+void TransientResources::SetDebugName(RenderCore::RCBufferPtr buffer, const std::string& name)
 {
     buffer->SetName(name.c_str());
 }

@@ -12,7 +12,6 @@
 #include "VKVertexBuffer.h"
 #include "VKIndexBuffer.h"
 #include "VulkanCommandBuffer.h"
-#include "VKComputeBuffer.h"
 #include "VKComputePipeline.h"
 #include "VKUniformBuffer.h"
 #include "VKGraphicsPipeline.h"
@@ -206,16 +205,6 @@ VertexBufferPtr VKRenderDevice::CreateVertexBufferWithLength(uint32_t size) cons
 VertexBufferPtr VKRenderDevice::CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const
 {
     return std::make_shared<VKVertexBuffer>(mVulkanContext, buffer, size, mode);
-}
-
-ComputeBufferPtr VKRenderDevice::CreateComputeBuffer(uint32_t size, StorageMode mode) const
-{
-    return std::make_shared<VKComputeBuffer>(mVulkanContext, size, mode);
-}
-
-ComputeBufferPtr VKRenderDevice::CreateComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const
-{
-    return std::make_shared<VKComputeBuffer>(mVulkanContext, buffer, size, mode);
 }
 
 IndexBufferPtr VKRenderDevice::CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const

@@ -12,9 +12,9 @@ void InitRasterClearPass(RenderCore::RenderDevicePtr renderDevice)
 }
 
 void ExecuteRasterClearPass(RenderCore::CommandBufferPtr commandBuffer,
-                            RenderCore::ComputeBufferPtr queueState,
-                            RenderCore::ComputeBufferPtr workArgs0,
-                            RenderCore::ComputeBufferPtr workArgs1,
+                            RenderCore::RCBufferPtr queueState,
+                            RenderCore::RCBufferPtr workArgs0,
+                            RenderCore::RCBufferPtr workArgs1,
                             RenderCore::RCTexture2DPtr visBuffer64)
 {
     float color[4] = { 0.5, 0.8, 0.5, 1.0 };
@@ -23,9 +23,9 @@ void ExecuteRasterClearPass(RenderCore::CommandBufferPtr commandBuffer,
     RenderCore::ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
     computeEncoder->SetComputePipeline(sPSO);
     computeEncoder->SetOutTexture(visBuffer64, 0);
-    computeEncoder->SetBuffer(queueState, 1);
-    computeEncoder->SetBuffer(workArgs0, 2);
-    computeEncoder->SetBuffer(workArgs1, 3);
+    computeEncoder->SetStorageBuffer(queueState, 1);
+    computeEncoder->SetStorageBuffer(workArgs0, 2);
+    computeEncoder->SetStorageBuffer(workArgs1, 3);
     
     uint32_t x, y ,z;
     sPSO->GetThreadGroupSizes(x, y, z);

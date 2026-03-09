@@ -11,13 +11,14 @@
 
 static RenderCore::ComputePipelinePtr sPSO = nullptr;
 
-RenderCore::ComputeBufferPtr InitHierarchyBuffer(RenderCore::RenderDevicePtr renderDevice)
+RenderCore::RCBufferPtr InitHierarchyBuffer(RenderCore::RenderDevicePtr renderDevice)
 {
     // 加载hierarchyBuffer的文件
     std::string strDataFile = GetProjectAssetDir() + "Nanite/mitsuba.bvh";
     std::vector<uint8_t> hBufferData = baselib::FileUtil::ReadBinaryFile(strDataFile);
-    RenderCore::ComputeBufferPtr hierarchyBuffer = renderDevice->CreateComputeBuffer(hBufferData.data(), (uint32_t)hBufferData.size(),
-                                                                        RenderCore::StorageMode::StorageModePrivate);
+    RenderCore::RCBufferDesc desc(static_cast<uint32_t>(hBufferData.size()),
+        RenderCore::RCBufferUsage::StorageBuffer, RenderCore::StorageMode::StorageModePrivate);
+    RenderCore::RCBufferPtr hierarchyBuffer = renderDevice->CreateBuffer(desc, hBufferData.data());
     hierarchyBuffer->SetName("Nanite.HierarchyBuffer");
     return hierarchyBuffer;
 }
@@ -32,11 +33,11 @@ void InitNodeAndClusterCullPass(RenderCore::RenderDevicePtr renderDevice)
 //cluster selection pass
 void ExecuteNodeAndClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
                                    uint32_t level,
-                                 RenderCore::ComputeBufferPtr hierarchyBuffer,
-                                 RenderCore::ComputeBufferPtr inWorkArgs,
-                                 RenderCore::ComputeBufferPtr outResult,
-                                 RenderCore::ComputeBufferPtr queueState,
-                                 RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
+                                 RenderCore::RCBufferPtr hierarchyBuffer,
+                                 RenderCore::RCBufferPtr inWorkArgs,
+                                 RenderCore::RCBufferPtr outResult,
+                                 RenderCore::RCBufferPtr queueState,
+                                 RenderCore::RCBufferPtr mainAndPostNodeAndClusterBatches,
                                  RenderCore::UniformBufferPtr globalBuffer)
 {
     float color[4] = {1.0, 0.0, 0.0, 1.0};
@@ -47,11 +48,11 @@ void ExecuteNodeAndClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
     
     ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
     computeEncoder->SetComputePipeline(sPSO);
-    computeEncoder->SetBuffer(hierarchyBuffer, 0);
-    computeEncoder->SetBuffer(inWorkArgs, 1);
-    computeEncoder->SetBuffer(outResult, 2);
-    computeEncoder->SetBuffer(queueState, 3);
-    computeEncoder->SetBuffer(mainAndPostNodeAndClusterBatches, 4);
+    computeEncoder->SetStorageBuffer(hierarchyBuffer, 0);
+    computeEncoder->SetStorageBuffer(inWorkArgs, 1);
+    computeEncoder->SetStorageBuffer(outResult, 2);
+    computeEncoder->SetStorageBuffer(queueState, 3);
+    computeEncoder->SetStorageBuffer(mainAndPostNodeAndClusterBatches, 4);
     computeEncoder->SetUniformBuffer("GlobalData", globalBuffer);
     
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();

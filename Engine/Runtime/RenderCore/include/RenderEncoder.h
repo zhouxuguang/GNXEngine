@@ -15,7 +15,6 @@
 #include "IndexBuffer.h"
 #include "TextureSampler.h"
 #include "RCTexture.h"
-#include "ComputeBuffer.h"
 #include "RCBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -43,7 +42,7 @@ public:
      */
     virtual void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index) = 0;
     
-    // ==================== 新的RCBuffer接口 ====================
+    // ==================== RCBuffer接口 ====================
     
     /**
      * @brief 设置RCBuffer作为顶点缓冲区
@@ -78,7 +77,7 @@ public:
     virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
 		    uint32_t drawCount, uint32_t stride) = 0;
     
-    // ==================== 旧接口 ====================
+    // ==================== UniformBuffer接口 ====================
     
     /**
      设置uniformbuffer的索引
@@ -97,14 +96,6 @@ public:
     virtual void SetFragmentUniformBuffer(UniformBufferPtr buffer, int index) = 0;
 
     /**
-     设置片元UAV
-
-     @param resourceName 名字
-     @param buffer buffer handle
-     */
-    virtual void SetFragmentUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer) = 0;
-
-    /**
      设置片元存储图像
 
      @param buffer buffer description
@@ -121,20 +112,14 @@ public:
     virtual void SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer) = 0;
 
     /**
-     设置顶点UAV
-
-     @param buffer buffer description
-     @param index index description
-     */
-    virtual void SetVertexUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer) = 0;
-
-    /**
      设置片元uniformbuffer
 
      @param buffer buffer description
      @param index index description
      */
     virtual void SetFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer) = 0;
+    
+    // ==================== 绘制接口 ====================
     
     /**
      draw function
@@ -178,30 +163,6 @@ public:
      */
     virtual void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, 
         uint32_t firstInstance, uint32_t instanceCount) = 0;
-
-    /**
-    * 
-     间接绘制
-     @param mode 图元类型
-	 @param buffer 间接绘制的参数buffer
-	 @param offset 间接绘制的参数buffer的偏移
-	 @param drawCount 第一个实例的索引
-	 @param stride 实例的个数
-     */
-    virtual void DrawPrimitvesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset, 
-            uint32_t drawCount, uint32_t stride) = 0;
-
-    /**
-    *
-     间接绘制
-     @param mode 图元类型
-     @param buffer 间接绘制的参数buffer
-     @param offset 间接绘制的参数buffer的偏移
-     @param drawCount 第一个实例的索引
-     @param stride 实例的个数
-     */
-    virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset,
-		    uint32_t drawCount, uint32_t stride) = 0;
 
     /**
      * @brief 设置片源的纹理和采样器

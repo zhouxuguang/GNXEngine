@@ -34,16 +34,19 @@ void TestADD()
     {
         data_a[i] = i + 1;
     }
-    ComputeBufferPtr buffer1 = GetRenderDevice()->CreateComputeBuffer(data_a, count * 4, StorageModePrivate);
+    RCBufferDesc desc1(count * 4, RCBufferUsage::StorageBuffer, StorageModePrivate);
+    RCBufferPtr buffer1 = GetRenderDevice()->CreateBuffer(desc1, data_a);
     
     float *data_b = new float[count];
     for (int i = 0; i < count; i ++)
     {
         data_b[i] = (i + 1) * 2;
     }
-    ComputeBufferPtr buffer2 = GetRenderDevice()->CreateComputeBuffer(data_b, count * 4, StorageModePrivate);
+    RCBufferDesc desc2(count * 4, RCBufferUsage::StorageBuffer, StorageModePrivate);
+    RCBufferPtr buffer2 = GetRenderDevice()->CreateBuffer(desc2, data_b);
     
-    ComputeBufferPtr buffer3 = GetRenderDevice()->CreateComputeBuffer(data_b, count * 4, StorageModeShared);
+    RCBufferDesc desc3(count * 4, RCBufferUsage::StorageBuffer, StorageModeShared);
+    RCBufferPtr buffer3 = GetRenderDevice()->CreateBuffer(desc3, data_b);
     
     ComputePipelinePtr computePipeline = GetRenderDevice()->CreateComputePipeline(*computeShader);
     
@@ -53,9 +56,9 @@ void TestADD()
     
     ComputeEncoderPtr computeEncoder = command->CreateComputeEncoder();
     computeEncoder->SetComputePipeline(computePipeline);
-    computeEncoder->SetBuffer(buffer1, 0);
-    computeEncoder->SetBuffer(buffer2, 1);
-    computeEncoder->SetBuffer(buffer3, 2);
+    computeEncoder->SetStorageBuffer(buffer1, 0);
+    computeEncoder->SetStorageBuffer(buffer2, 1);
+    computeEncoder->SetStorageBuffer(buffer3, 2);
     
     uint32_t x, y ,z;
     computePipeline->GetThreadGroupSizes(x, y, z);
@@ -70,7 +73,7 @@ void TestADD()
     //检查结果
     float* a = data_a;
     float* b = data_b;
-    float* result = (float*)buffer3->MapBufferData();
+    float* result = (float*)buffer3->Map();
 
     for (unsigned long index = 0; index < count; index++)
     {
@@ -82,7 +85,7 @@ void TestADD()
         }
     }
     printf("Compute results as expected\n");
-    buffer3->UnmapBufferData(result);
+    buffer3->Unmap();
     
     delete [] data_a;
     delete [] data_b;

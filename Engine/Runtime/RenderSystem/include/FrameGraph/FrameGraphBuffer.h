@@ -1,7 +1,7 @@
 #ifndef GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPHBUFFER_H
 #define GNXENGINE_RENDERSYSYTEM_FRAMEGRAPH_FRAMEGRAPHBUFFER_H
 
-#include "Runtime/RenderCore/include/ComputeBuffer.h"
+#include "Runtime/RenderCore/include/RCBuffer.h"
 #include "../RSDefine.h"
 
 NS_RENDERSYSTEM_BEGIN
@@ -23,7 +23,7 @@ public:
 
 	static std::string toString(const Desc& desc);
 
-	RenderCore::ComputeBufferPtr buffer = nullptr;
+	RenderCore::RCBufferPtr buffer = nullptr;
 
 private:
 	RenderCore::ResourceAccessType DetermineAccessFlags(const Desc& desc, uint32_t flags, bool isWrite) const;

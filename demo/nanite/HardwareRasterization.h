@@ -6,8 +6,8 @@ void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice, uint32_t widt
 
 void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer, 
                             RenderCore::RCTexture2DPtr visBuffer64,
-                            RenderCore::ComputeBufferPtr clusterPageData,
-                            RenderCore::ComputeBufferPtr drawArgs,
-                            RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
+                            RenderCore::RCBufferPtr clusterPageData,
+                            RenderCore::RCBufferPtr drawArgs,
+                            RenderCore::RCBufferPtr mainAndPostNodeAndClusterBatches,
                             RenderCore::UniformBufferPtr globalData,
                             uint32_t width, uint32_t height);

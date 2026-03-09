@@ -14,7 +14,6 @@
 #include "MTLComputePipeline.h"
 #include "MTLShaderFunction.h"
 #include "MTLCommandBuffer.h"
-#include "MTLComputeBuffer.h"
 #include "MTLTextureBase.h"
 #include "MTLCommandQueue.h"
 #include "MTLRCBuffer.h"
@@ -109,18 +108,6 @@ VertexBufferPtr MTLRenderDevice::CreateVertexBufferWithLength(uint32_t size) con
 VertexBufferPtr MTLRenderDevice::CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const
 {
     auto vertexBuffer = std::make_shared<MTLVertexBuffer>(mMetalLayer.device, mMetalCommandQueue, buffer, size, mode);
-    return vertexBuffer;
-}
-
-ComputeBufferPtr MTLRenderDevice::CreateComputeBuffer(uint32_t size, StorageMode mode) const
-{
-    auto vertexBuffer = std::make_shared<MTLComputeBuffer>(mMetalLayer.device, size, mode);
-    return vertexBuffer;
-}
-
-ComputeBufferPtr MTLRenderDevice::CreateComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const
-{
-    auto vertexBuffer = std::make_shared<MTLComputeBuffer>(mMetalLayer.device, mMetalCommandQueue, buffer, size, mode);
     return vertexBuffer;
 }
 

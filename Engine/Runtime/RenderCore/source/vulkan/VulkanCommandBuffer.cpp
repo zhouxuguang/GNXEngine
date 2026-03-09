@@ -10,7 +10,6 @@
 #include "VKRenderEncoder.h"
 #include "VKComputeEncoder.h"
 #include "VKBlitEncoder.h"
-#include "VKComputeBuffer.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/BaseLib/include/DebugBreaker.h"
 #include "VKUtil.h"
@@ -592,15 +591,15 @@ void VulkanCommandBuffer::ResourceBarrier(RCTexturePtr texture, ResourceAccessTy
     vkTexture->SetCurrentLayout(targetLayout);
 }
 
-void VulkanCommandBuffer::ResourceBarrier(ComputeBufferPtr buffer, ResourceAccessType accessType)
+void VulkanCommandBuffer::ResourceBarrier(RCBufferPtr buffer, ResourceAccessType accessType)
 {
     if (!buffer)
     {
         return;
     }
 
-    // 转换到Vulkan计算缓冲区
-    VKComputeBuffer* vkBuffer = dynamic_cast<VKComputeBuffer*>(buffer.get());
+    // 转换到Vulkan统一缓冲区
+    VKRCBufferPtr vkBuffer = std::dynamic_pointer_cast<VKRCBuffer>(buffer);
     if (!vkBuffer)
     {
         return;
@@ -615,11 +614,11 @@ void VulkanCommandBuffer::ResourceBarrier(ComputeBufferPtr buffer, ResourceAcces
         dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         dstStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
     }
-	else if (accessType == ResourceAccessType::ComputeShaderRead)
-	{
-		dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-		dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	}
+    else if (accessType == ResourceAccessType::ComputeShaderRead)
+    {
+        dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    }
     else if (accessType == ResourceAccessType::ComputeShaderWrite)
     {
         dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -647,7 +646,7 @@ void VulkanCommandBuffer::ResourceBarrier(ComputeBufferPtr buffer, ResourceAcces
     barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.buffer = vkBuffer->GetBuffer();
+    barrier.buffer = vkBuffer->GetVkBuffer();
     barrier.offset = 0;
     barrier.size = VK_WHOLE_SIZE;
 

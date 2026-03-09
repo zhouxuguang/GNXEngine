@@ -11,7 +11,7 @@
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
 
-RenderCore::ComputeBufferPtr InitHierarchyBuffer(RenderCore::RenderDevicePtr renderDevice);
+RenderCore::RCBufferPtr InitHierarchyBuffer(RenderCore::RenderDevicePtr renderDevice);
 
 //init cluster selection
 void InitNodeAndClusterCullPass(RenderCore::RenderDevicePtr renderDevice);
@@ -19,11 +19,11 @@ void InitNodeAndClusterCullPass(RenderCore::RenderDevicePtr renderDevice);
 //cluster selection pass
 void ExecuteNodeAndClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
                                    uint32_t level,
-                                 RenderCore::ComputeBufferPtr hierarchyBuffer,
-                                 RenderCore::ComputeBufferPtr inWorkArgs,
-                                 RenderCore::ComputeBufferPtr outResult,
-                                 RenderCore::ComputeBufferPtr queueState,
-                                 RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
+                                 RenderCore::RCBufferPtr hierarchyBuffer,
+                                 RenderCore::RCBufferPtr inWorkArgs,
+                                 RenderCore::RCBufferPtr outResult,
+                                 RenderCore::RCBufferPtr queueState,
+                                 RenderCore::RCBufferPtr mainAndPostNodeAndClusterBatches,
                                  RenderCore::UniformBufferPtr globalBuffer);
 
 #endif /* NANITE_NODEAND_CLUSTER_CULL_INCLUDE_JDJKMDSK */

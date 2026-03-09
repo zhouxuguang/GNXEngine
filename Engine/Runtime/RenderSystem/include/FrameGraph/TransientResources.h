@@ -29,11 +29,11 @@ public:
 	[[nodiscard]] RenderCore::RCTexturePtr acquireTexture(const FrameGraphTexture::Desc &);
 	void releaseTexture(const FrameGraphTexture::Desc &, RenderCore::RCTexturePtr);
 
-	[[nodiscard]] RenderCore::ComputeBufferPtr acquireBuffer(const FrameGraphBuffer::Desc &);
-	void releaseBuffer(const FrameGraphBuffer::Desc &, RenderCore::ComputeBufferPtr);
+	[[nodiscard]] RenderCore::RCBufferPtr acquireBuffer(const FrameGraphBuffer::Desc &);
+	void releaseBuffer(const FrameGraphBuffer::Desc &, RenderCore::RCBufferPtr);
 
 	void SetDebugName(RenderCore::RCTexturePtr texture, const std::string& name);
-	void SetDebugName(RenderCore::ComputeBufferPtr buffer, const std::string& name);
+	void SetDebugName(RenderCore::RCBufferPtr buffer, const std::string& name);
     
     template<typename T> struct ResourceEntry
     {
@@ -45,12 +45,12 @@ private:
     RenderCore::RenderDevicePtr mRenderDevice;
 
 	std::vector<RenderCore::RCTexturePtr> m_textures;
-	std::vector<RenderCore::ComputeBufferPtr> m_buffers;
+	std::vector<RenderCore::RCBufferPtr> m_buffers;
 
     template<typename T> using ResourcePool = std::vector<ResourceEntry<T>>;
 
 	std::unordered_map<std::size_t, ResourcePool<RenderCore::RCTexturePtr>> m_texturePools;
-	std::unordered_map<std::size_t, ResourcePool<RenderCore::ComputeBufferPtr>> m_bufferPools;
+	std::unordered_map<std::size_t, ResourcePool<RenderCore::RCBufferPtr>> m_bufferPools;
 };
 
 NS_RENDERSYSTEM_END

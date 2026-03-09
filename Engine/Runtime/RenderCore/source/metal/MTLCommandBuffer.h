@@ -50,19 +50,19 @@ public:
     
     /**
      * 通知命令缓冲区纹理资源即将被访问
-     * 自动处理Vulkan的layout转换
+     * Metal不需要显式barrier
      * @param texture 纹理资源
      * @param accessType 访问类型（读/写、着色器读取、颜色附件等）
      */
     virtual void ResourceBarrier(RCTexturePtr texture, ResourceAccessType accessType) override;
 
     /**
-     * 通知命令缓冲区计算缓冲区资源即将被访问
-     * 自动处理Metal的barrier
-     * @param buffer 计算缓冲区资源
+     * 通知命令缓冲区统一缓冲区资源即将被访问
+     * Metal不需要显式barrier
+     * @param buffer 统一缓冲区资源
      * @param accessType 访问类型（读/写、着色器读取等）
      */
-    virtual void ResourceBarrier(ComputeBufferPtr buffer, ResourceAccessType accessType) override;
+    virtual void ResourceBarrier(RCBufferPtr buffer, ResourceAccessType accessType) override;
 
 private:
     id<MTLCommandBuffer> mCommandBuffer;

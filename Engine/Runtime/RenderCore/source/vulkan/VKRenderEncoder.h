@@ -37,7 +37,7 @@ public:
     
     virtual void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index);
     
-    // 新的RCBuffer接口
+    // RCBuffer接口
     virtual void SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index);
     
     virtual void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer, ShaderStage stage);
@@ -52,13 +52,9 @@ public:
     
     virtual void SetFragmentUniformBuffer(UniformBufferPtr buffer, int index);
 
-    virtual void SetFragmentUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer);
-
     virtual void SetFragmentStorageTexture(const std::string& resourceName, RCTexturePtr texture);
 
     virtual void SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
-
-    virtual void SetVertexUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer);
 
     virtual void SetFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
     
@@ -70,12 +66,6 @@ public:
 
     virtual void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
         uint32_t firstInstance, uint32_t instanceCount);
-
-    virtual void DrawPrimitvesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset,
-        uint32_t drawCount, uint32_t stride);
-
-    virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset,
-        uint32_t drawCount, uint32_t stride);
     
     virtual void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
     

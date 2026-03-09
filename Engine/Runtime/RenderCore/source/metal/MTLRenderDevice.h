@@ -46,11 +46,6 @@ public:
      */
     virtual VertexBufferPtr CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const;
     
-    //创建计算buffer
-    virtual ComputeBufferPtr CreateComputeBuffer(uint32_t size, StorageMode mode) const;
-    
-    virtual ComputeBufferPtr CreateComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const;
-    
     /**
      以指定buffer和长度以内存拷贝方式创建索引buffer
      
@@ -61,7 +56,7 @@ public:
      */
     virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const;
     
-    // 新的统一Buffer接口
+    // 统一Buffer接口
     virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc) const override;
     virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc, const void* data) const override;
     

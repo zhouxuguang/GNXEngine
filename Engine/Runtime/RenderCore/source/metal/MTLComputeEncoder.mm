@@ -7,7 +7,6 @@
 
 #include "MTLComputeEncoder.h"
 #include "MTLComputePipeline.h"
-#include "MTLComputeBuffer.h"
 #include "MTLUniformBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -89,16 +88,6 @@ void MTLComputeEncoder::SetUniformBuffer(const std::string& resourceName, Unifor
             [mComputeEncoder setBytes:data.data() length:data.size() atIndex:realIndex];
         }
         
-    }
-}
-
-void MTLComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
-{
-    @autoreleasepool
-    {
-        MTLComputeBuffer *mtlComputeBuffer = (MTLComputeBuffer*)buffer.get();
-        assert(mtlComputeBuffer);
-        [mComputeEncoder setBuffer:mtlComputeBuffer->getMTLBuffer() offset:0 atIndex:index];
     }
 }
 

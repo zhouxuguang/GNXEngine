@@ -20,10 +20,10 @@ void InitClusterCullPass(RenderCore::RenderDevicePtr renderDevice)
 
 //cluster selection pass
 void ExecuteClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
-                                 RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
-                                 RenderCore::ComputeBufferPtr workArgs,
-                                 RenderCore::ComputeBufferPtr clusterPageData,
-                                 RenderCore::ComputeBufferPtr outVisibleClustersSWHW,
+                                 RenderCore::RCBufferPtr mainAndPostNodeAndClusterBatches,
+                                 RenderCore::RCBufferPtr workArgs,
+                                 RenderCore::RCBufferPtr clusterPageData,
+                                 RenderCore::RCBufferPtr outVisibleClustersSWHW,
                                  RenderCore::UniformBufferPtr globalBuffer)
 {
     float color[4] = {1.0, 0.0, 0.0, 1.0};
@@ -31,10 +31,10 @@ void ExecuteClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
     
     ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
     computeEncoder->SetComputePipeline(sPSO);
-    computeEncoder->SetBuffer(mainAndPostNodeAndClusterBatches, 0);
-    computeEncoder->SetBuffer(clusterPageData, 1);
-    computeEncoder->SetBuffer(workArgs, 2);
-    computeEncoder->SetBuffer(outVisibleClustersSWHW, 3);
+    computeEncoder->SetStorageBuffer(mainAndPostNodeAndClusterBatches, 0);
+    computeEncoder->SetStorageBuffer(clusterPageData, 1);
+    computeEncoder->SetStorageBuffer(workArgs, 2);
+    computeEncoder->SetStorageBuffer(outVisibleClustersSWHW, 3);
 
     computeEncoder->SetUniformBuffer("GlobalData", globalBuffer);
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();

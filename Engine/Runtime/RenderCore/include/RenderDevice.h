@@ -16,7 +16,6 @@
 #include "DeviceExtension.h"
 #include "CommandBuffer.h"
 #include "RenderPass.h"
-#include "ComputeBuffer.h"
 #include "RCBuffer.h"
 #include "RCTexture.h"
 #include "CommandQueue.h"
@@ -53,10 +52,6 @@ public:
      @return 成功申请buffer句柄，失败返回0；
      */
     virtual VertexBufferPtr CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const = 0;
-    
-    virtual ComputeBufferPtr CreateComputeBuffer(uint32_t size, StorageMode mode = StorageModePrivate) const = 0;
-    
-    virtual ComputeBufferPtr CreateComputeBuffer(const void* buffer, uint32_t size, StorageMode mode) const = 0;
     
     /**
      以指定buffer和长度以内存拷贝方式创建索引buffer

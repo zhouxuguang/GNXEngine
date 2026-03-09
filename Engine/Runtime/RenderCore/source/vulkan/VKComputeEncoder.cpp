@@ -7,8 +7,6 @@
 
 #include "VKComputeEncoder.h"
 #include "VKComputePipeline.h"
-#include "VKComputeBuffer.h"
-#include "VKComputePipeline.h"
 #include "VulkanDescriptorUtil.h"
 #include "VKTextureBase.h"
 #include "VKUniformBuffer.h"
@@ -67,28 +65,6 @@ void VKComputeEncoder::SetUniformBuffer(const std::string& resourceName, Uniform
 	uint32_t bufSetOffset = mVKPipeline->GetSetOffset(DESCRIPTOR_TYPE_UNIFORM_BUFFER);
 
 	vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), bufSetOffset, 1, &writeDescriptorSet);
-}
-
-void VKComputeEncoder::SetBuffer(ComputeBufferPtr buffer, uint32_t index)
-{
-    if (!buffer)
-    {
-        return;
-    }
-    VKComputeBuffer *vkComputeBuffer = (VKComputeBuffer*)buffer.get();
-    
-    VkDescriptorBufferInfo bufferInfo = {};
-    bufferInfo.range = VK_WHOLE_SIZE;
-    bufferInfo.buffer = vkComputeBuffer->GetBuffer();
-    
-    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
-    VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(VK_NULL_HANDLE,
-                VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, index, &bufferInfo);
-    writeDescriptorSet.dstSet = 0;   //这句也是可以的
-    
-    uint32_t bufSetOffset = mVKPipeline->GetSetOffset(DESCRIPTOR_TYPE_STORAGE_BUFFER);
-    
-    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), bufSetOffset, 1, &writeDescriptorSet);
 }
 
 void VKComputeEncoder::SetStorageBuffer(RCBufferPtr buffer, uint32_t index)

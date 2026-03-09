@@ -14,7 +14,6 @@
 #include "VulkanDescriptorUtil.h"
 #include "VulkanBufferUtil.h"
 #include "VKTextureBase.h"
-#include "VKComputeBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -483,25 +482,7 @@ void VKRenderEncoder::SetFragmentUniformBuffer(UniformBufferPtr buffer, int inde
     //            VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, index, &bufferInfo);
     //
     //vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
-    ////vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, &writeDescriptorSet);
-}
-
-void VKRenderEncoder::SetFragmentUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer)
-{
-	if (!buffer)
-	{
-		return;
-	}
-	VKComputeBuffer* vkUniformBuffer = (VKComputeBuffer*)buffer.get();
-
-	VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
-
-	ShaderBufferDesc bufferDesc;
-	bufferDesc.buffer = vkUniformBuffer->GetBuffer();
-	bufferDesc.offset = 0;
-	bufferDesc.range = VK_WHOLE_SIZE;
-
-	shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
+    //	//vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, &writeDescriptorSet);
 }
 
 void VKRenderEncoder::SetFragmentStorageTexture(const std::string& resourceName, RCTexturePtr texture)
@@ -538,24 +519,6 @@ void VKRenderEncoder::SetVertexUniformBuffer(const std::string& resourceName, Un
     bufferDesc.range = VK_WHOLE_SIZE;
 
     shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
-}
-
-void VKRenderEncoder::SetVertexUAVBuffer(const std::string& resourceName, ComputeBufferPtr buffer)
-{
-	if (!buffer)
-	{
-		return;
-	}
-	VKComputeBuffer* vkUniformBuffer = (VKComputeBuffer*)buffer.get();
-
-	VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
-
-	ShaderBufferDesc bufferDesc;
-	bufferDesc.buffer = vkUniformBuffer->GetBuffer();
-	bufferDesc.offset = 0;
-	bufferDesc.range = VK_WHOLE_SIZE;
-
-	shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
 }
 
 void VKRenderEncoder::SetFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
@@ -734,38 +697,6 @@ void VKRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size
 	}
 
 	vkCmdDrawIndexed(mCommandBuffer, size, instanceCount, offset, 0, firstInstance);
-}
-
-void VKRenderEncoder::DrawPrimitvesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
-{
-	VKComputeBuffer* computeBuffer = (VKComputeBuffer*)buffer.get();
-	if (!computeBuffer || !computeBuffer->GetBuffer())
-	{
-		return;
-	}
-
-	if (mContext->vulkanExtension.enabledExtendedDynamicState)
-	{
-		vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
-	}
-
-    vkCmdDrawIndirect(mCommandBuffer, computeBuffer->GetBuffer(), offset, drawCount, stride);
-}
-
-void VKRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, ComputeBufferPtr buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
-{
-	VKComputeBuffer* computeBuffer = (VKComputeBuffer*)buffer.get();
-	if (!computeBuffer || !computeBuffer->GetBuffer())
-	{
-		return;
-	}
-
-	if (mContext->vulkanExtension.enabledExtendedDynamicState)
-	{
-		vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
-	}
-
-	vkCmdDrawIndexedIndirect(mCommandBuffer, computeBuffer->GetBuffer(), offset, drawCount, stride);
 }
 
 // RCBuffer版本的间接绘制

@@ -10,7 +10,6 @@
 
 #include "RenderDefine.h"
 #include "GraphicsPipeline.h"
-#include "ComputeBuffer.h"
 #include "RCBuffer.h"
 #include "RCTexture.h"
 #include "UniformBuffer.h"
@@ -32,8 +31,6 @@ public:
     virtual void SetComputePipeline(ComputePipelinePtr computePipeline) = 0;
     
     virtual void SetUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer) = 0;
-    
-    virtual void SetBuffer(ComputeBufferPtr buffer, uint32_t index) = 0;
     
     /**
      * @brief 设置RCBuffer作为存储缓冲区（SSBO）

@@ -16,10 +16,10 @@ void InitClusterCullPass(RenderCore::RenderDevicePtr renderDevice);
 
 //cluster cull pass
 void ExecuteClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
-	RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
-	RenderCore::ComputeBufferPtr workArgs,
-	RenderCore::ComputeBufferPtr clusterPageData,
-	RenderCore::ComputeBufferPtr outVisibleClustersSWHW,
+	RenderCore::RCBufferPtr mainAndPostNodeAndClusterBatches,
+	RenderCore::RCBufferPtr workArgs,
+	RenderCore::RCBufferPtr clusterPageData,
+	RenderCore::RCBufferPtr outVisibleClustersSWHW,
 	RenderCore::UniformBufferPtr globalBuffer);
 
 #endif /* NANITE_CLUSTER_CULL_INCLUDE_JDJKSDGFDGDFH */

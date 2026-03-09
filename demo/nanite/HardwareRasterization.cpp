@@ -31,9 +31,9 @@ void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice, uint32_t widt
 
 void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer, 
                             RenderCore::RCTexture2DPtr visBuffer64,
-                            RenderCore::ComputeBufferPtr clusterPageData,
-                            RenderCore::ComputeBufferPtr drawArgs,
-                            RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches,
+                            RenderCore::RCBufferPtr clusterPageData,
+                            RenderCore::RCBufferPtr drawArgs,
+                            RenderCore::RCBufferPtr mainAndPostNodeAndClusterBatches,
                             RenderCore::UniformBufferPtr globalData,
                             uint32_t width, uint32_t height)
 {
@@ -60,8 +60,8 @@ void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer,
     
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", sceneManager->GetRenderInfo().cameraUBO);
     renderEncoder->SetVertexUniformBuffer("GlobalData", globalData);
-    renderEncoder->SetVertexUAVBuffer("ClusterPageData", clusterPageData);
-    renderEncoder->SetVertexUAVBuffer("MainAndPostNodeAndClusterBatches", mainAndPostNodeAndClusterBatches);
+    renderEncoder->SetStorageBuffer("ClusterPageData", clusterPageData, RenderCore::ShaderStage::ShaderStage_Vertex);
+    renderEncoder->SetStorageBuffer("MainAndPostNodeAndClusterBatches", mainAndPostNodeAndClusterBatches, RenderCore::ShaderStage::ShaderStage_Vertex);
     
     renderEncoder->DrawPrimitvesIndirect(PrimitiveMode_TRIANGLES, drawArgs, 0, 1, sizeof(DrawIndirectCommand));
     renderEncoder->EndEncode();

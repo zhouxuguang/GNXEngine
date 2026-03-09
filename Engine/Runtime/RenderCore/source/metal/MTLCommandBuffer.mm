@@ -305,7 +305,7 @@ void MTLCommandBuffer::ResourceBarrier(RCTexturePtr texture, ResourceAccessType 
     // Explicit barriers are rarely needed for Metal
 }
 
-void MTLCommandBuffer::ResourceBarrier(ComputeBufferPtr buffer, ResourceAccessType accessType)
+void MTLCommandBuffer::ResourceBarrier(RCBufferPtr buffer, ResourceAccessType accessType)
 {
     // Metal automatically handles most resource synchronization
     // Explicit barriers are rarely needed for Metal

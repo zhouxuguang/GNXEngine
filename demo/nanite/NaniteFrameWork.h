@@ -36,8 +36,8 @@ public:
     
 private:
     RenderCore::RenderDevicePtr mRenderDevice = nullptr;
-    RenderCore::ComputeBufferPtr mHierarchyBuffer = nullptr;
-    RenderCore::ComputeBufferPtr mClusterPageData = nullptr;
+    RenderCore::RCBufferPtr mHierarchyBuffer = nullptr;
+    RenderCore::RCBufferPtr mClusterPageData = nullptr;
     
     RenderCore::UniformBufferPtr mGlobalBuffer = nullptr;
 
@@ -49,7 +49,7 @@ private:
     uint32_t mHeight = 0;
 
 private:
-    RenderCore::ComputeBufferPtr InitNaniteMeshBuffer();
+    RenderCore::RCBufferPtr InitNaniteMeshBuffer();
     
     bool OnKeyUp(GNXEngine::KeyReleasedEvent& e);
 };

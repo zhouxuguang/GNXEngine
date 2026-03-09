@@ -218,9 +218,9 @@ void NaniteFrameWork::RenderFrame()
             RenderSystem::FrameGraphExecuteContext* executeContext = static_cast<RenderSystem::FrameGraphExecuteContext*>(context);
             RenderCore::CommandBufferPtr cmdBuffer = executeContext->commandBuffer;
 
-            RenderCore::ComputeBufferPtr queueState = RenderSystem::GetBuffer(resources, data.queueState);
-            RenderCore::ComputeBufferPtr workArgs0 = RenderSystem::GetBuffer(resources, data.workArgs0);
-            RenderCore::ComputeBufferPtr workArgs1 = RenderSystem::GetBuffer(resources, data.workArgs1);
+            RenderCore::RCBufferPtr queueState = RenderSystem::GetBuffer(resources, data.queueState);
+            RenderCore::RCBufferPtr workArgs0 = RenderSystem::GetBuffer(resources, data.workArgs0);
+            RenderCore::RCBufferPtr workArgs1 = RenderSystem::GetBuffer(resources, data.workArgs1);
             RenderCore::RCTexturePtr visBuffer64 = RenderSystem::GetTexture(resources, data.visBuffer64);
 
             ExecuteRasterClearPass(cmdBuffer, queueState, workArgs0, workArgs1,
@@ -293,11 +293,11 @@ void NaniteFrameWork::RenderFrame()
                 RenderSystem::FrameGraphExecuteContext* executeContext = static_cast<RenderSystem::FrameGraphExecuteContext*>(context);
                 RenderCore::CommandBufferPtr cmdBuffer = executeContext->commandBuffer;
 
-                RenderCore::ComputeBufferPtr hierarchyBuffer = RenderSystem::GetBuffer(resources, data.hierarchyBuffer);
-                RenderCore::ComputeBufferPtr inWorkArgs = RenderSystem::GetBuffer(resources, data.inWorkArgs);
-                RenderCore::ComputeBufferPtr outResult = RenderSystem::GetBuffer(resources, data.outResult);
-                RenderCore::ComputeBufferPtr queueState = RenderSystem::GetBuffer(resources, data.queueState);
-                RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches = RenderSystem::GetBuffer(resources, data.mainAndPostNodeAndClusterBatches);
+                RenderCore::RCBufferPtr hierarchyBuffer = RenderSystem::GetBuffer(resources, data.hierarchyBuffer);
+                RenderCore::RCBufferPtr inWorkArgs = RenderSystem::GetBuffer(resources, data.inWorkArgs);
+                RenderCore::RCBufferPtr outResult = RenderSystem::GetBuffer(resources, data.outResult);
+                RenderCore::RCBufferPtr queueState = RenderSystem::GetBuffer(resources, data.queueState);
+                RenderCore::RCBufferPtr mainAndPostNodeAndClusterBatches = RenderSystem::GetBuffer(resources, data.mainAndPostNodeAndClusterBatches);
 
                 ExecuteNodeAndClusterCullPass(cmdBuffer, data.level, hierarchyBuffer, inWorkArgs,
                     outResult, queueState, mainAndPostNodeAndClusterBatches, mGlobalBuffer);
@@ -345,10 +345,10 @@ void NaniteFrameWork::RenderFrame()
             RenderSystem::FrameGraphExecuteContext* executeContext = static_cast<RenderSystem::FrameGraphExecuteContext*>(context);
             RenderCore::CommandBufferPtr cmdBuffer = executeContext->commandBuffer;
 
-            RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches = RenderSystem::GetBuffer(resources, data.mainAndPostNodeAndClusterBatches);
-            RenderCore::ComputeBufferPtr clusterPageData = RenderSystem::GetBuffer(resources, data.clusterPageData);
-            RenderCore::ComputeBufferPtr workArgs = RenderSystem::GetBuffer(resources, data.workArgs);
-            RenderCore::ComputeBufferPtr visibleClustersSWHW = RenderSystem::GetBuffer(resources, data.visibleClustersSWHW);
+            RenderCore::RCBufferPtr mainAndPostNodeAndClusterBatches = RenderSystem::GetBuffer(resources, data.mainAndPostNodeAndClusterBatches);
+            RenderCore::RCBufferPtr clusterPageData = RenderSystem::GetBuffer(resources, data.clusterPageData);
+            RenderCore::RCBufferPtr workArgs = RenderSystem::GetBuffer(resources, data.workArgs);
+            RenderCore::RCBufferPtr visibleClustersSWHW = RenderSystem::GetBuffer(resources, data.visibleClustersSWHW);
 
             ExecuteClusterCullPass(cmdBuffer, mainAndPostNodeAndClusterBatches, workArgs,
                 clusterPageData, visibleClustersSWHW, mGlobalBuffer);
@@ -389,10 +389,10 @@ void NaniteFrameWork::RenderFrame()
             RenderCore::CommandBufferPtr cmdBuffer = executeContext->commandBuffer;
 
             RenderCore::RCTexturePtr visBuffer64 = RenderSystem::GetTexture(resources, data.visBuffer64);
-            RenderCore::ComputeBufferPtr clusterPageData = RenderSystem::GetBuffer(resources, data.clusterPageData);
-            RenderCore::ComputeBufferPtr drawArgs = RenderSystem::GetBuffer(resources, data.drawArgs);
-            RenderCore::ComputeBufferPtr visibleClustersSWHW = RenderSystem::GetBuffer(resources, data.visibleClustersSWHW);
-            RenderCore::ComputeBufferPtr mainAndPostNodeAndClusterBatches = RenderSystem::GetBuffer(resources, data.mainAndPostNodeAndClusterBatches);
+            RenderCore::RCBufferPtr clusterPageData = RenderSystem::GetBuffer(resources, data.clusterPageData);
+            RenderCore::RCBufferPtr drawArgs = RenderSystem::GetBuffer(resources, data.drawArgs);
+            RenderCore::RCBufferPtr visibleClustersSWHW = RenderSystem::GetBuffer(resources, data.visibleClustersSWHW);
+            RenderCore::RCBufferPtr mainAndPostNodeAndClusterBatches = RenderSystem::GetBuffer(resources, data.mainAndPostNodeAndClusterBatches);
 
             ExecuteHWRasterizePass(cmdBuffer, std::dynamic_pointer_cast<RenderCore::RCTexture2D>(visBuffer64),
                 clusterPageData, drawArgs, visibleClustersSWHW, mGlobalBuffer, mWidth, mHeight);
@@ -493,13 +493,14 @@ void NaniteFrameWork::OnEvent(GNXEngine::Event& e)
     dispatcher.Dispatch<GNXEngine::KeyReleasedEvent>(GNX_BIND_EVENT_FN(OnKeyUp));
 }
 
-RenderCore::ComputeBufferPtr NaniteFrameWork::InitNaniteMeshBuffer()
+RenderCore::RCBufferPtr NaniteFrameWork::InitNaniteMeshBuffer()
 {
 	// 加载nanitemesh
 	std::string strDataFile = GetProjectAssetDir() + "Nanite/mitsuba.nanitemesh";
 	std::vector<uint8_t> hBufferData = baselib::FileUtil::ReadBinaryFile(strDataFile);
-	RenderCore::ComputeBufferPtr naniteMeshBuffer = mRenderDevice->CreateComputeBuffer(hBufferData.data(), (uint32_t)hBufferData.size(),
-		RenderCore::StorageMode::StorageModePrivate);
+	RenderCore::RCBufferDesc desc(static_cast<uint32_t>(hBufferData.size()),
+		RenderCore::RCBufferUsage::StorageBuffer, RenderCore::StorageMode::StorageModePrivate);
+	RenderCore::RCBufferPtr naniteMeshBuffer = mRenderDevice->CreateBuffer(desc, hBufferData.data());
 	naniteMeshBuffer->SetName("Nanite.ClusterPageData");
 	return naniteMeshBuffer;
 }
