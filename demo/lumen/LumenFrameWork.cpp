@@ -62,7 +62,7 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
     uint32_t* indices = new uint32_t[indexData.size() / 2];
 	for (uint32_t i = 0; i < indexData.size() / 2; i++)
 	{
-        indices[i] = indexData[i];
+        indices[i] = ((uint16_t*)indexData.data())[i];
 	}
 
     mesh->SetIndices(indices, indexData.size() / 2);
