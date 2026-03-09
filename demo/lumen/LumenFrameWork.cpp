@@ -24,7 +24,11 @@ void LumenFrameWork::Initlize()
 
 static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
 {
-	RenderSystem::SceneNode* node = sceneManager->GetRootNode()->CreateChildSceneNode("Marry");
+	RenderSystem::SceneNode* node1 = sceneManager->GetRootNode()->CreateChildSceneNode("BOX1", 
+        Vector3f(0.0, 0.0, 0.0), Quaternionf(1.0, 0.0, 0.0, 0.0), Vector3f(10.0, 10.0, 0.1));
+
+	RenderSystem::SceneNode* node2 = sceneManager->GetRootNode()->CreateChildSceneNode("BOX2",
+		Vector3f(0.0, 0.0, 500.0), Quaternionf(1.0, 0.0, 0.0, 0.0), Vector3f(10.0, 10.0, 0.1));
 
 	RenderSystem::MeshPtr mesh = std::make_shared<RenderSystem::Mesh>();
 
@@ -53,7 +57,7 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
     }
 
     mesh->SetPositions(position, positionData.size() / 12);
-    delete[]position;
+    delete []position;
 
     uint32_t* indices = new uint32_t[indexData.size() / 2];
 	for (uint32_t i = 0; i < indexData.size() / 2; i++)
@@ -62,13 +66,22 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
 	}
 
     mesh->SetIndices(indices, indexData.size() / 2);
-    delete[]indices;
-    
+    delete []indices;
+
+    RenderSystem::SubMeshInfo subMeshInfo;
+    subMeshInfo.firstIndex = 0;
+    subMeshInfo.indexCount = indexData.size() / 2;
+    subMeshInfo.vertexCount = positionData.size() / 12;
+    subMeshInfo.topology = PrimitiveMode_TRIANGLES;
+    mesh->AddSubMeshInfo(subMeshInfo);
+
+    mesh->SetUpBuffer();
 
     RenderSystem::MeshRenderer* meshRender = new(std::nothrow) RenderSystem::MeshRenderer();
 	meshRender->SetSharedMesh(mesh);
 	
-    node->AddComponent(meshRender);
+    node1->AddComponent(meshRender);
+    node2->AddComponent(meshRender);
 }
 
 void LumenFrameWork::Resize(uint32_t width, uint32_t height)
