@@ -53,14 +53,14 @@ SceneNode::~SceneNode()
     mAttachedObjects.clear();
 }
 
-SceneNode * SceneNode::CreateChildSceneNode(const std::string &name, const Vector3f &translate, const Quaternionf &rotate)
+SceneNode * SceneNode::CreateChildSceneNode(const std::string &name, const Vector3f &translate, const Quaternionf &rotate, const Vector3f& scale)
 {
     SceneNode *pNode = new SceneNode();
     pNode->SetName(name);
     pNode->mParentNode = this;
 
     TransformComponent* transform = new TransformComponent(
-                       Transform(translate, rotate, Vector3f(1.0f, 1.0f, 1.0f)));
+                       Transform(translate, rotate, scale));
     pNode->AddComponent(transform);
 
     mChildNodes.push_back(pNode);

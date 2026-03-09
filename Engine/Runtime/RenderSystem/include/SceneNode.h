@@ -75,7 +75,8 @@ public:
 
     virtual SceneNode *CreateChildSceneNode(const std::string &name,
                                              const Vector3f &translate = Vector3f(0, 0, 0),
-                                             const Quaternionf &rotate = Quaternionf(1, 0, 0, 0));
+                                             const Quaternionf &rotate = Quaternionf(1, 0, 0, 0),
+                                             const Vector3f& scale = Vector3f(1, 1, 1));
 
     virtual SceneNode *CreateRendererNode(const std::string &name,
                                            const std::string& filePath,
