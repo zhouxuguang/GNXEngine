@@ -25,10 +25,10 @@ void LumenFrameWork::Initlize()
 static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
 {
 	RenderSystem::SceneNode* node1 = sceneManager->GetRootNode()->CreateChildSceneNode("BOX1", 
-        Vector3f(0.0, 0.0, 0.0), Quaternionf(1.0, 0.0, 0.0, 0.0), Vector3f(10.0, 10.0, 0.1));
+        Vector3f(0.0, 0.0, 0.0), Quaternionf(1.0, 0.0, 0.0, 0.0), Vector3f(10.0, 0.1, 10.0));
 
 	RenderSystem::SceneNode* node2 = sceneManager->GetRootNode()->CreateChildSceneNode("BOX2",
-		Vector3f(0.0, 0.0, 500.0), Quaternionf(1.0, 0.0, 0.0, 0.0), Vector3f(10.0, 10.0, 0.1));
+		Vector3f(0.0, 500.0, 0.0), Quaternionf(1.0, 0.0, 0.0, 0.0), Vector3f(10.0, 0.1, 10.0));
 
 	RenderSystem::MeshPtr mesh = std::make_shared<RenderSystem::Mesh>();
 
@@ -97,7 +97,7 @@ void LumenFrameWork::Resize(uint32_t width, uint32_t height)
 		cameraPtr = sceneManager->CreateCamera("MainCamera");
 	}
 
-	cameraPtr->LookAt(mathutil::Vector3f(1059.769897f, -833.207886f, 336.560120f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
+	cameraPtr->LookAt(mathutil::Vector3f(1059.769897f, 336.560120f, -833.207886f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
 	cameraPtr->SetLens(90, float(width) / height, 10.0f, 10000.f);
     
 }
