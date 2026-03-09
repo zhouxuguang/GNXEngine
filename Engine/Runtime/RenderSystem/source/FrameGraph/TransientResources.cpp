@@ -186,7 +186,9 @@ RenderCore::RCBufferPtr TransientResources::acquireBuffer(const FrameGraphBuffer
     if (pool.empty())
     {
         auto buffer = mRenderDevice->CreateBuffer(
-            RenderCore::RCBufferDesc(desc.size, RenderCore::RCBufferUsage::StorageBuffer));
+            RenderCore::RCBufferDesc(desc.size, RenderCore::RCBufferUsage::StorageBuffer | 
+                RenderCore::RCBufferUsage::VertexBuffer | RenderCore::RCBufferUsage::IndirectBuffer |
+                RenderCore::RCBufferUsage::TransferSrc | RenderCore::RCBufferUsage::TransferDst));
 
         // 设置调试名称
         SetDebugName(buffer, desc.name);
