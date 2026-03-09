@@ -45,10 +45,11 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
 	channels[RenderSystem::kShaderChannelPosition].format = VertexFormatFloat4;
     channels[RenderSystem::kShaderChannelPosition].stride = sizeof(Vector4f);
 
-    vertexData.Resize(positionData.size() / 12, 12);
+    uint32_t vertexCount = positionData.size() / 12;
+    vertexData.Resize(vertexCount, 12);
 
-    Vector4f* position = new Vector4f[positionData.size() / 12];
-    for (uint32_t i = 0; i < positionData.size() / 12; i++)
+    std::vector<Vector4f> position(vertexCount);
+    for (uint32_t i = 0; i < vertexCount; i++)
     {
         position[i].x = posPtr[i].x;
         position[i].y = posPtr[i].y;
@@ -56,8 +57,7 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
         position[i].w = 1;
     }
 
-    mesh->SetPositions(position, positionData.size() / 12);
-    delete []position;
+    mesh->SetPositions(position.data(), vertexCount);
 
     uint32_t* indices = new uint32_t[indexData.size() / 2];
 	for (uint32_t i = 0; i < indexData.size() / 2; i++)

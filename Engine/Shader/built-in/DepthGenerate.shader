@@ -18,7 +18,7 @@
 // 顶点着色器输入
 struct DepthVertexInput
 {
-    float3 position : POSITION;
+    float4 position : POSITION;
 };
 
 // 顶点着色器输出（几何着色器输入）
@@ -36,7 +36,7 @@ DepthVertexOutput VS(DepthVertexInput input)
     
     // 将顶点位置从模型空间变换到裁剪空间
     // lightSpaceMatrix * model * position
-    float4 worldPos = mul(float4(input.position, 1.0), MATRIX_M);
+    float4 worldPos = mul(float4(input.position.xyz, 1.0), MATRIX_M);
     output.position = mul(worldPos, MATRIX_V);
     output.position = mul(output.position, MATRIX_P);
     
