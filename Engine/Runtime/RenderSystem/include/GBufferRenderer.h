@@ -12,6 +12,7 @@
 #include "Runtime/RenderCore/include/RCTexture.h"
 #include "Runtime/RenderCore/include/GraphicsPipeline.h"
 #include "FrameGraph/GraphNode.h"
+#include "DepthRenderer.h"
 #include <memory>
 #include <vector>
 
@@ -22,7 +23,49 @@ class Material;
 class SceneRenderer;
 class FrameGraph;
 
-class RENDERSYSTEM_API GBufferRenderer
+struct GBufferData
+{
+    FrameGraphResource depth;
+	FrameGraphResource sceneColor;
+    FrameGraphResource gBufferA;
+    FrameGraphResource gBufferB;
+    FrameGraphResource gBufferC;
+};
+
+// G-Buffer 渲染的网格数据
+struct GBufferMeshData
+{
+    std::vector<DepthMeshItem> staticMeshes;
+    std::vector<DepthSkinnedMeshItem> skinnedMeshes;
+};
+
+// G-Buffer 渲染的 UBO 数据
+struct GBufferUniformData
+{
+    UniformBufferPtr cameraUBO = nullptr;
+    UniformBufferPtr skinnedMatrixUBO = nullptr;
+};
+
+// G-Buffer 渲染的完整参数
+struct GBufferRenderParams
+{
+    GBufferMeshData meshes;
+    GBufferUniformData uniforms;
+    
+    static GBufferRenderParams Create(
+        const std::vector<DepthMeshItem>& staticMeshItems,
+        UniformBufferPtr cameraUBO,
+        UniformBufferPtr skinnedMatrixUBO = nullptr)
+    {
+        GBufferRenderParams params;
+        params.meshes.staticMeshes = std::move(staticMeshItems);
+        params.uniforms.cameraUBO = cameraUBO;
+        params.uniforms.skinnedMatrixUBO = skinnedMatrixUBO;
+        return params;
+    }
+};
+
+class GBufferRenderer
 {
 public:
     GBufferRenderer();
@@ -34,26 +77,15 @@ public:
     // 重置大小（窗口大小改变时调用）
     void Resize(uint32_t width, uint32_t height);
     
-    // 开始G-Buffer渲染
-    void BeginGBufferPass();
-    
-    // 结束G-Buffer渲染
-    void EndGBufferPass();
-    
     // 设置当前材质
     void SetMaterial(std::shared_ptr<Material> material);
     
-    // 执行延迟光照
-    void ExecuteDeferredLighting();
-    
-    // 获取G-Buffer纹理（用于调试或其他用途）
-    RCTexturePtr GetGBufferTexture(uint32_t index) const;
-    
-    // 获取最终的渲染结果
-    RCTexturePtr GetFinalTexture() const;
-    
     // 添加到FrameGraph
-    void AddToFrameGraph(FrameGraph& frameGraph);
+    GBufferData AddToFrameGraph(
+        const std::string& passName,
+        FrameGraph& frameGraph,
+        CommandBufferPtr commandBuffer,
+        const GBufferRenderParams& params);
     
     // 获取FrameGraph资源ID（用于调试或FrameGraph集成）
     struct FrameGraphResourceIds
@@ -65,8 +97,6 @@ public:
         FrameGraphResource gBuffer3;  // 可选
         FrameGraphResource finalColor;
     };
-    
-    const FrameGraphResourceIds& GetFrameGraphResourceIds() const { return mResourceIds; }
     
     // G-Buffer配置
     struct GBufferConfig
@@ -80,42 +110,18 @@ public:
     const GBufferConfig& GetConfig() const { return mConfig; }
     
 private:
-    // 创建G-Buffer纹理
-    void CreateGBufferTextures(uint32_t width, uint32_t height);
-    
-    // 销毁G-Buffer纹理
-    void DestroyGBufferTextures();
     
     // 创建G-Buffer渲染管线
     void CreateGBufferPipeline();
-    
-    // 创建延迟光照管线
-    void CreateLightingPipeline();
-    
-private:
+
     uint32_t mWidth = 0;
     uint32_t mHeight = 0;
     GBufferConfig mConfig;
     
-    // G-Buffer纹理（4个render targets）
-    std::vector<RCTexturePtr> mGBufferTextures;
-    
-    // 深度纹理
-    RCTexturePtr mDepthTexture = nullptr;
-    
-    // 最终输出纹理
-    RCTexturePtr mFinalTexture = nullptr;
-    
     // 当前材质
     std::shared_ptr<Material> mCurrentMaterial = nullptr;
-    
     // 渲染管线
     GraphicsPipelinePtr mGBufferPipeline = nullptr;
-    GraphicsPipelinePtr mLightingPipeline = nullptr;
-    
-    // FrameGraph资源ID
-    FrameGraphResourceIds mResourceIds;
-    
     bool mIsInitialized = false;
 };
 

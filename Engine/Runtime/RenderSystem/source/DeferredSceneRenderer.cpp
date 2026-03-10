@@ -63,7 +63,11 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // 创建FrameGraph
     FrameGraph frameGraph;
+
+    // PreZPass
     FrameGraphResource depthResource = RenderPreDepthPass(sceneManager, frameGraph, commandBuffer);
+
+    // BasePass
 
     RenderPresentPass(frameGraph, commandBuffer, depthResource);
 
@@ -175,9 +179,6 @@ void DeferredSceneRenderer::RenderGBufferPass()
         return;
     }
     
-    // 开始G-Buffer渲染
-    mGBufferRenderer->BeginGBufferPass();
-    
     // 获取渲染信息
     RenderInfo renderInfo = sceneManager->GetRenderInfo();
     
@@ -191,15 +192,10 @@ void DeferredSceneRenderer::RenderGBufferPass()
     {
         //RenderGBufferNodeRecursive(rootNode, renderInfo);
     }
-    
-    // 结束G-Buffer渲染
-    mGBufferRenderer->EndGBufferPass();
 }
 
 void DeferredSceneRenderer::RenderDeferredLightingPass()
 {
-    // 执行延迟光照
-    mGBufferRenderer->ExecuteDeferredLighting();
 }
 
 void DeferredSceneRenderer::RenderForwardPass()
@@ -257,16 +253,6 @@ void DeferredSceneRenderer::CollectMeshesRecursive(
     {
         CollectMeshesRecursive(child, meshItems, skinnedMeshItems);
     }
-}
-
-RCTexturePtr DeferredSceneRenderer::GetGBufferTexture(uint32_t index) const
-{
-    return mGBufferRenderer->GetGBufferTexture(index);
-}
-
-RCTexturePtr DeferredSceneRenderer::GetFinalTexture() const
-{
-    return mGBufferRenderer->GetFinalTexture();
 }
 
 NS_RENDERSYSTEM_END

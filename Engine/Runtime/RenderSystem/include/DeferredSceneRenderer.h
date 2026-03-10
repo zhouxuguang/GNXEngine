@@ -43,11 +43,6 @@ public:
     GBufferRendererPtr GetGBufferRenderer() const { return mGBufferRenderer; }
     
     /**
-     * 获取G-Buffer纹理（用于调试）
-     */
-    RCTexturePtr GetGBufferTexture(uint32_t index) const;
-    
-    /**
      * 获取最终渲染结果
      */
     RCTexturePtr GetFinalTexture() const;

@@ -9,8 +9,10 @@
 #include "Material.h"
 #include "SceneRenderer.h"
 #include "FrameGraph/FrameGraph.h"
+#include "FrameGraph/FrameGraphTexture.h"
 #include "ShaderAssetLoader.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/RenderCore/include/RenderPass.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -20,7 +22,6 @@ GBufferRenderer::GBufferRenderer()
 
 GBufferRenderer::~GBufferRenderer()
 {
-    DestroyGBufferTextures();
 }
 
 bool GBufferRenderer::Initialize(uint32_t width, uint32_t height)
@@ -33,13 +34,8 @@ bool GBufferRenderer::Initialize(uint32_t width, uint32_t height)
     mWidth = width;
     mHeight = height;
     
-    // 创建G-Buffer纹理
-    CreateGBufferTextures(width, height);
-    
     // 创建渲染管线
     CreateGBufferPipeline();
-    CreateLightingPipeline();
-    
     mIsInitialized = true;
     return true;
 }
@@ -53,21 +49,6 @@ void GBufferRenderer::Resize(uint32_t width, uint32_t height)
     
     mWidth = width;
     mHeight = height;
-    
-    // 重新创建G-Buffer纹理
-    DestroyGBufferTextures();
-    CreateGBufferTextures(width, height);
-}
-
-void GBufferRenderer::BeginGBufferPass()
-{
-    // TODO: 设置渲染目标到G-Buffer纹理
-    // 这里需要调用RenderDevice的API来设置多个渲染目标
-}
-
-void GBufferRenderer::EndGBufferPass()
-{
-    // TODO: 恢复默认渲染目标
 }
 
 void GBufferRenderer::SetMaterial(std::shared_ptr<Material> material)
@@ -81,132 +62,177 @@ void GBufferRenderer::SetMaterial(std::shared_ptr<Material> material)
     }
 }
 
-void GBufferRenderer::ExecuteDeferredLighting()
+GBufferData GBufferRenderer::AddToFrameGraph(
+    const std::string& passName,
+    FrameGraph& frameGraph,
+    CommandBufferPtr commandBuffer,
+    const GBufferRenderParams& params)
 {
-    // TODO: 执行延迟光照Pass
-    // 1. 绑定G-Buffer纹理
-    // 2. 绘制全屏四边形
-    // 3. 输出到最终纹理
-}
-
-RCTexturePtr GBufferRenderer::GetGBufferTexture(uint32_t index) const
-{
-    if (index < mGBufferTextures.size())
+    // 定义 GBuffer Pass 数据结构
+    struct GBufferPassData
     {
-        return mGBufferTextures[index];
-    }
-    return nullptr;
-}
-
-RCTexturePtr GBufferRenderer::GetFinalTexture() const
-{
-    return mFinalTexture;
-}
-
-void GBufferRenderer::AddToFrameGraph(FrameGraph& frameGraph)
-{
-    // TODO: 将G-Buffer Pass添加到FrameGraph
-    // 示例代码（需要根据实际FrameGraph API调整）:
-    /*
-    struct GBufferData
-    {
-        FrameGraphResource depth;
-        std::vector<FrameGraphResource> gBufferOutputs;
+        GBufferData gbuffer;
+        GBufferMeshData meshes;
+        GBufferUniformData uniforms;
     };
-    
-    frameGraph.AddPass<GBufferData>(
-        "GBufferPass",
-        [&](FrameGraph::Builder& builder, GBufferData& data) {
-            // 创建G-Buffer资源
-            for (int i = 0; i < 4; i++)
-            {
-                auto desc = TextureDescriptor::Create2D(
-                    mWidth, mHeight,
-                    GetGBufferFormat(i),
-                    TextureUsageRenderTarget);
-                data.gBufferOutputs.push_back(builder.Create<GBufferTexture>(
-                    "GBuffer" + std::to_string(i), desc));
-            }
+
+    auto& passData = frameGraph.AddPass<GBufferPassData>(
+        passName,
+        [=](FrameGraph::Builder& builder, GBufferPassData& data)
+        {
+            // 创建深度纹理
+            /*
+            FrameGraphTexture::Desc depthDesc;
+            depthDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
+            depthDesc.depth = 1;
+            depthDesc.format = RenderCore::TextureFormat::D24_UNORM_S8_UINT;
+            data.gbuffer.depth = builder.Create<FrameGraphTexture>("GBufferDepth", depthDesc);
+            builder.Write(data.gbuffer.depth, (uint32_t)RenderCore::ResourceAccessType::DepthStencilAttachment);
+
+            // 创建 SceneColor 纹理 (HDR)
+            FrameGraphTexture::Desc sceneColorDesc;
+            sceneColorDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
+            sceneColorDesc.depth = 1;
+            sceneColorDesc.format = RenderCore::TextureFormat::RGBA16_FLOAT;
+            data.gbuffer.sceneColor = builder.Create<FrameGraphTexture>("SceneColor", sceneColorDesc);
+            builder.Write(data.gbuffer.sceneColor, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
+
+            // 创建 GBufferA (Albedo + Opacity, RGBA8_UNORM)
+            FrameGraphTexture::Desc gBufferADesc;
+            gBufferADesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
+            gBufferADesc.depth = 1;
+            gBufferADesc.format = RenderCore::TextureFormat::RGBA8_UNORM;
+            data.gbuffer.gBufferA = builder.Create<FrameGraphTexture>("GBufferA", gBufferADesc);
+            builder.Write(data.gbuffer.gBufferA, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
+
+            // 创建 GBufferB (Normal + Roughness)
+            FrameGraphTexture::Desc gBufferBDesc;
+            gBufferBDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
+            gBufferBDesc.depth = 1;
+            gBufferBDesc.format = mConfig.useOctahedralNormal ? 
+                RenderCore::TextureFormat::RGBA8_UNORM : RenderCore::TextureFormat::RGBA16_FLOAT;
+            data.gbuffer.gBufferB = builder.Create<FrameGraphTexture>("GBufferB", gBufferBDesc);
+            builder.Write(data.gbuffer.gBufferB, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
+
+            // 创建 GBufferC (Metallic + AO + Emissive, RGBA8_UNORM)
+            FrameGraphTexture::Desc gBufferCDesc;
+            gBufferCDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
+            gBufferCDesc.depth = 1;
+            gBufferCDesc.format = RenderCore::TextureFormat::RGBA8_UNORM;
+            data.gbuffer.gBufferC = builder.Create<FrameGraphTexture>("GBufferC", gBufferCDesc);
+            builder.Write(data.gbuffer.gBufferC, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
+
+            // 保存渲染参数
+            data.meshes = std::move(params.meshes);
+            data.uniforms = std::move(params.uniforms);
+            */
         },
-        [](const GBufferData& data, FrameGraphPassResources& resources, void* context) {
-            // 执行G-Buffer渲染
+        [=](const GBufferPassData& data, FrameGraphPassResources& resources, void* context)
+        {
+            // 获取纹理资源
+            FrameGraphTexture& depthTexture = resources.Get<FrameGraphTexture>(data.gbuffer.depth);
+            FrameGraphTexture& sceneColorTexture = resources.Get<FrameGraphTexture>(data.gbuffer.sceneColor);
+            FrameGraphTexture& gBufferA = resources.Get<FrameGraphTexture>(data.gbuffer.gBufferA);
+            FrameGraphTexture& gBufferB = resources.Get<FrameGraphTexture>(data.gbuffer.gBufferB);
+            FrameGraphTexture& gBufferC = resources.Get<FrameGraphTexture>(data.gbuffer.gBufferC);
+
+            float debugColor[4] = {0.0f, 1.0f, 0.0f, 1.0f};
+            SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), debugColor);
+
+            // 创建 RenderPass（多渲染目标）
+            RenderPass renderPass;
+            renderPass.renderRegion = Rect2D(0, 0, (int)mWidth, (int)mHeight);
+
+            // 深度附件
+            renderPass.depthAttachment = std::make_shared<RenderPassDepthAttachment>();
+            renderPass.depthAttachment->texture = depthTexture.texture;
+            renderPass.depthAttachment->clearDepth = DepthConfig::GetDefaultClearDepth();
+            renderPass.depthAttachment->loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+            renderPass.depthAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+
+            // 颜色附件 0: SceneColor
+            auto sceneColorAttachment = std::make_shared<RenderPassColorAttachment>();
+            sceneColorAttachment->texture = sceneColorTexture.texture;
+            sceneColorAttachment->clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+            sceneColorAttachment->loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+            sceneColorAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            renderPass.colorAttachments.push_back(sceneColorAttachment);
+
+            // 颜色附件 1: GBufferA 
+            auto gBufferAAttachment = std::make_shared<RenderPassColorAttachment>();
+            gBufferAAttachment->texture = gBufferA.texture;
+            gBufferAAttachment->clearColor = {0.0f, 0.0f, 0.0f, 0.0f};
+            gBufferAAttachment->loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+            gBufferAAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            renderPass.colorAttachments.push_back(gBufferAAttachment);
+
+            // 颜色附件 2: GBufferB
+            auto gBufferBAttachment = std::make_shared<RenderPassColorAttachment>();
+            gBufferBAttachment->texture = gBufferB.texture;
+            gBufferBAttachment->clearColor = {0.5f, 0.5f, 0.0f, 0.0f}; // 法线默认朝向
+            gBufferBAttachment->loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+            gBufferBAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            renderPass.colorAttachments.push_back(gBufferBAttachment);
+
+            // 颜色附件 3: GBufferC 
+            auto gBufferCAttachment = std::make_shared<RenderPassColorAttachment>();
+            gBufferCAttachment->texture = gBufferC.texture;
+            gBufferCAttachment->clearColor = {0.0f, 0.0f, 0.0f, 0.0f};
+            gBufferCAttachment->loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+            gBufferCAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            renderPass.colorAttachments.push_back(gBufferCAttachment);
+
+            // 创建 RenderEncoder
+            RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);
+
+            // 渲染静态网格
+            if (!data.meshes.staticMeshes.empty() && mGBufferPipeline)
+            {
+                for (const auto& meshItem : data.meshes.staticMeshes)
+                {
+                    if (!meshItem.mesh || !meshItem.objectUBO)
+                        continue;
+
+                    RenderInfo renderInfo;
+                    renderInfo.renderEncoder = renderEncoder;
+                    renderInfo.cameraUBO = data.uniforms.cameraUBO;
+                    renderInfo.objectUBO = meshItem.objectUBO;
+
+                    // 使用材质的 G-Buffer PSO 或默认管线
+                    if (mCurrentMaterial && mCurrentMaterial->GetGBufferPSO())
+                    {
+                        MeshDrawUtil::DrawMesh(*meshItem.mesh, renderInfo);
+                    }
+                    else
+                    {
+                        MeshDrawUtil::DrawMesh(*meshItem.mesh, renderInfo);
+                    }
+                }
+            }
+
+            // 渲染蒙皮网格
+            if (!data.meshes.skinnedMeshes.empty() && data.uniforms.skinnedMatrixUBO)
+            {
+                for (const auto& meshItem : data.meshes.skinnedMeshes)
+                {
+                    if (!meshItem.mesh || !meshItem.objectUBO)
+                        continue;
+
+                    RenderInfo renderInfo;
+                    renderInfo.renderEncoder = renderEncoder;
+                    renderInfo.cameraUBO = data.uniforms.cameraUBO;
+                    renderInfo.objectUBO = meshItem.objectUBO;
+                    renderInfo.skinnedMatrixUBO = data.uniforms.skinnedMatrixUBO;
+
+                    MeshDrawUtil::DrawSkinnedMesh(*meshItem.mesh, renderInfo, false);
+                }
+            }
+
+            renderEncoder->EndEncode();
         }
     );
-    */
-}
 
-void GBufferRenderer::CreateGBufferTextures(uint32_t width, uint32_t height)
-{
-    auto device = GetRenderDevice();
-    
-    // 创建4个G-Buffer纹理
-    // RT0: Albedo + Opacity (RGBA8_UNORM)
-    // RT1: Normal + Roughness (RGBA16_FLOAT 或 RGBA8_UNORM with encoding)
-    // RT2: Metallic + AO + Emissive (RGBA8_UNORM)
-    // RT3: Position (RGBA16_FLOAT 或省略，从深度重建)
-    
-    // TODO: 根据具体RenderDevice API创建纹理
-    // 示例伪代码：
-    /*
-    // RT0: Albedo
-    TextureDescriptor albedoDesc;
-    albedoDesc.width = width;
-    albedoDesc.height = height;
-    albedoDesc.format = TextureFormat::RGBA8_UNORM;
-    albedoDesc.usage = TextureUsageRenderTarget | TextureUsageShaderRead;
-    mGBufferTextures[0] = device->CreateTexture(albedoDesc);
-    
-    // RT1: Normal + Roughness
-    TextureDescriptor normalDesc;
-    normalDesc.width = width;
-    normalDesc.height = height;
-    normalDesc.format = mConfig.useOctahedralNormal ? 
-                         TextureFormat::RGBA8_UNORM : TextureFormat::RGBA16_FLOAT;
-    normalDesc.usage = TextureUsageRenderTarget | TextureUsageShaderRead;
-    mGBufferTextures[1] = device->CreateTexture(normalDesc);
-    
-    // RT2: Metallic + AO + Emissive
-    TextureDescriptor materialDesc;
-    materialDesc.width = width;
-    materialDesc.height = height;
-    materialDesc.format = TextureFormat::RGBA8_UNORM;
-    materialDesc.usage = TextureUsageRenderTarget | TextureUsageShaderRead;
-    mGBufferTextures[2] = device->CreateTexture(materialDesc);
-    
-    // RT3: Position (可选)
-    if (mConfig.enablePositionTexture)
-    {
-        TextureDescriptor positionDesc;
-        positionDesc.width = width;
-        positionDesc.height = height;
-        positionDesc.format = TextureFormat::RGBA16_FLOAT;
-        positionDesc.usage = TextureUsageRenderTarget | TextureUsageShaderRead;
-        mGBufferTextures[3] = device->CreateTexture(positionDesc);
-    }
-    
-    // 深度纹理
-    TextureDescriptor depthDesc;
-    depthDesc.width = width;
-    depthDesc.height = height;
-    depthDesc.format = TextureFormat::D24_UNORM_S8_UINT;
-    depthDesc.usage = TextureUsageDepthStencil;
-    mDepthTexture = device->CreateTexture(depthDesc);
-    
-    // 最终输出纹理
-    TextureDescriptor finalDesc;
-    finalDesc.width = width;
-    finalDesc.height = height;
-    finalDesc.format = TextureFormat::RGBA16_FLOAT;  // HDR
-    finalDesc.usage = TextureUsageRenderTarget | TextureUsageShaderRead;
-    mFinalTexture = device->CreateTexture(finalDesc);
-    */
-}
-
-void GBufferRenderer::DestroyGBufferTextures()
-{
-    mGBufferTextures.clear();
-    mDepthTexture = nullptr;
-    mFinalTexture = nullptr;
+    return passData.gbuffer;
 }
 
 void GBufferRenderer::CreateGBufferPipeline()
@@ -228,23 +254,6 @@ void GBufferRenderer::CreateGBufferPipeline()
     
     // 创建PSO
     mGBufferPipeline = GetRenderDevice()->CreateGraphicsPipeline(pipelineDesc);
-    */
-}
-
-void GBufferRenderer::CreateLightingPipeline()
-{
-    // 加载延迟光照shader
-    /*
-    ShaderAssetString shaderAsset = LoadShaderAsset("DeferredLighting");
-    GraphicsPipelineDescriptor pipelineDesc;
-    
-    // 单个渲染目标
-    pipelineDesc.colorAttachmentCount = 1;
-    
-    // 不需要深度测试（全屏四边形）
-    pipelineDesc.depthStencilDescriptor.depthTestEnabled = false;
-    
-    mLightingPipeline = GetRenderDevice()->CreateGraphicsPipeline(pipelineDesc);
     */
 }
 
