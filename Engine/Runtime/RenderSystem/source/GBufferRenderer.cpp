@@ -26,13 +26,13 @@ GBufferRenderer::~GBufferRenderer()
 
 bool GBufferRenderer::Initialize(uint32_t width, uint32_t height)
 {
+	mWidth = width;
+	mHeight = height;
+
     if (mIsInitialized)
     {
         return true;
     }
-    
-    mWidth = width;
-    mHeight = height;
     
     // 创建渲染管线
     CreateGBufferPipeline();
@@ -80,57 +80,46 @@ GBufferData GBufferRenderer::AddToFrameGraph(
         passName,
         [=](FrameGraph::Builder& builder, GBufferPassData& data)
         {
-            // 创建深度纹理
-            /*
-            FrameGraphTexture::Desc depthDesc;
-            depthDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
-            depthDesc.depth = 1;
-            depthDesc.format = RenderCore::TextureFormat::D24_UNORM_S8_UINT;
-            data.gbuffer.depth = builder.Create<FrameGraphTexture>("GBufferDepth", depthDesc);
-            builder.Write(data.gbuffer.depth, (uint32_t)RenderCore::ResourceAccessType::DepthStencilAttachment);
-
             // 创建 SceneColor 纹理 (HDR)
             FrameGraphTexture::Desc sceneColorDesc;
             sceneColorDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
             sceneColorDesc.depth = 1;
-            sceneColorDesc.format = RenderCore::TextureFormat::RGBA16_FLOAT;
+            sceneColorDesc.format = RenderCore::kTexFormatRGBA16Float;
             data.gbuffer.sceneColor = builder.Create<FrameGraphTexture>("SceneColor", sceneColorDesc);
             builder.Write(data.gbuffer.sceneColor, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
-            // 创建 GBufferA (Albedo + Opacity, RGBA8_UNORM)
+            // 创建 GBufferA
             FrameGraphTexture::Desc gBufferADesc;
             gBufferADesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
             gBufferADesc.depth = 1;
-            gBufferADesc.format = RenderCore::TextureFormat::RGBA8_UNORM;
+            gBufferADesc.format = RenderCore::kTexFormatRGBA32;
             data.gbuffer.gBufferA = builder.Create<FrameGraphTexture>("GBufferA", gBufferADesc);
             builder.Write(data.gbuffer.gBufferA, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
-            // 创建 GBufferB (Normal + Roughness)
+            // 创建 GBufferB
             FrameGraphTexture::Desc gBufferBDesc;
             gBufferBDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
             gBufferBDesc.depth = 1;
-            gBufferBDesc.format = mConfig.useOctahedralNormal ? 
-                RenderCore::TextureFormat::RGBA8_UNORM : RenderCore::TextureFormat::RGBA16_FLOAT;
+            gBufferBDesc.format = RenderCore::kTexFormatRGBA32;
             data.gbuffer.gBufferB = builder.Create<FrameGraphTexture>("GBufferB", gBufferBDesc);
             builder.Write(data.gbuffer.gBufferB, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
-            // 创建 GBufferC (Metallic + AO + Emissive, RGBA8_UNORM)
+            // 创建 GBufferC
             FrameGraphTexture::Desc gBufferCDesc;
             gBufferCDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
             gBufferCDesc.depth = 1;
-            gBufferCDesc.format = RenderCore::TextureFormat::RGBA8_UNORM;
+            gBufferCDesc.format = RenderCore::kTexFormatSRGB8_ALPHA8;
             data.gbuffer.gBufferC = builder.Create<FrameGraphTexture>("GBufferC", gBufferCDesc);
             builder.Write(data.gbuffer.gBufferC, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
             // 保存渲染参数
             data.meshes = std::move(params.meshes);
             data.uniforms = std::move(params.uniforms);
-            */
+            
         },
         [=](const GBufferPassData& data, FrameGraphPassResources& resources, void* context)
         {
             // 获取纹理资源
-            FrameGraphTexture& depthTexture = resources.Get<FrameGraphTexture>(data.gbuffer.depth);
             FrameGraphTexture& sceneColorTexture = resources.Get<FrameGraphTexture>(data.gbuffer.sceneColor);
             FrameGraphTexture& gBufferA = resources.Get<FrameGraphTexture>(data.gbuffer.gBufferA);
             FrameGraphTexture& gBufferB = resources.Get<FrameGraphTexture>(data.gbuffer.gBufferB);
@@ -142,13 +131,6 @@ GBufferData GBufferRenderer::AddToFrameGraph(
             // 创建 RenderPass（多渲染目标）
             RenderPass renderPass;
             renderPass.renderRegion = Rect2D(0, 0, (int)mWidth, (int)mHeight);
-
-            // 深度附件
-            renderPass.depthAttachment = std::make_shared<RenderPassDepthAttachment>();
-            renderPass.depthAttachment->texture = depthTexture.texture;
-            renderPass.depthAttachment->clearDepth = DepthConfig::GetDefaultClearDepth();
-            renderPass.depthAttachment->loadOp = ATTACHMENT_LOAD_OP_CLEAR;
-            renderPass.depthAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
 
             // 颜色附件 0: SceneColor
             auto sceneColorAttachment = std::make_shared<RenderPassColorAttachment>();

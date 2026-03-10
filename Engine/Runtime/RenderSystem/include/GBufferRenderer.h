@@ -25,7 +25,6 @@ class FrameGraph;
 
 struct GBufferData
 {
-    FrameGraphResource depth;
 	FrameGraphResource sceneColor;
     FrameGraphResource gBufferA;
     FrameGraphResource gBufferB;
@@ -79,6 +78,9 @@ public:
     
     // 设置当前材质
     void SetMaterial(std::shared_ptr<Material> material);
+    
+    // 是否已初始化
+    bool IsInitialized() const { return mIsInitialized; }
     
     // 添加到FrameGraph
     GBufferData AddToFrameGraph(

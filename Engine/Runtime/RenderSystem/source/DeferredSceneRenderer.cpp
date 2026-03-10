@@ -64,10 +64,36 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     // 创建FrameGraph
     FrameGraph frameGraph;
 
-    // PreZPass
-    FrameGraphResource depthResource = RenderPreDepthPass(sceneManager, frameGraph, commandBuffer);
+    // ========== 统一收集场景数据（只收集一次）==========
+    std::vector<DepthMeshItem> meshItems;
+    std::vector<DepthSkinnedMeshItem> skinnedMeshItems;
+    
+    SceneNode* rootNode = sceneManager->GetRootNode();
+    if (rootNode)
+    {
+        CollectMeshesRecursive(rootNode, meshItems, skinnedMeshItems);
+    }
 
-    // BasePass
+    // 获取相机UBO
+    RenderInfo renderInfo = sceneManager->GetRenderInfo();
+    UniformBufferPtr cameraUBO = renderInfo.cameraUBO;
+
+    // 收集蒙皮网格的骨骼矩阵UBO
+    UniformBufferPtr skinnedMatrixUBO = nullptr;
+    if (!skinnedMeshItems.empty())
+    {
+        skinnedMatrixUBO = skinnedMeshItems[0].mesh->GetSkinnedMatrixBuffer();
+    }
+
+    // ========== 执行渲染 Pass ==========
+    
+    // PreZPass
+    FrameGraphResource depthResource = RenderPreDepthPass(
+        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO);
+
+    // BasePass (G-Buffer)
+    GBufferData gbufferData = RenderBasePass(
+        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO);
 
     RenderPresentPass(frameGraph, commandBuffer, depthResource);
 
@@ -78,7 +104,6 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     return;
 
     // 阶段1: G-Buffer Pass
-    RenderGBufferPass();
 
     // 阶段2: 延迟光照Pass
     RenderDeferredLightingPass();
@@ -89,59 +114,71 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     RenderForwardPass();
 }
 
-FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(SceneManager *sceneManager, FrameGraph& frameGraph, CommandBufferPtr commandBuffer)
+FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(
+    FrameGraph& frameGraph,
+    CommandBufferPtr commandBuffer,
+    const std::vector<DepthMeshItem>& meshItems,
+    const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
+    UniformBufferPtr cameraUBO)
 {
-    // 收集场景中的静态网格和蒙皮网格
-    std::vector<DepthMeshItem> meshItems;
-    std::vector<DepthSkinnedMeshItem> skinnedMeshItems;
-    
     FrameGraphResource depthResource = -1;
 
-    // 递归收集所有网格
-    SceneNode* rootNode = sceneManager->GetRootNode();
-    if (rootNode)
+    if (meshItems.empty() && skinnedMeshItems.empty())
     {
-        CollectMeshesRecursive(rootNode, meshItems, skinnedMeshItems);
+        return depthResource;
     }
-    
+
+    // 收集蒙皮网格的骨骼矩阵UBO
+    UniformBufferPtr skinnedMatrixUBO = nullptr;
+    if (!skinnedMeshItems.empty())
+    {
+        skinnedMatrixUBO = skinnedMeshItems[0].mesh->GetSkinnedMatrixBuffer();
+    }
+
+    // 构建 DepthRenderParams
     DepthRenderParams params;
+    params.meshes.staticMeshes = meshItems;
+    params.meshes.skinnedMeshes = skinnedMeshItems;
+    params.uniforms.cameraUBO = cameraUBO;
+    params.uniforms.skinnedMatrixUBO = skinnedMatrixUBO;
 
-    // 如果有网格，则渲染深度图
-    if (!meshItems.empty() || !skinnedMeshItems.empty())
-    {
-        // 获取相机UBO
-        RenderInfo renderInfo = sceneManager->GetRenderInfo();
-        UniformBufferPtr cameraUBO = renderInfo.cameraUBO;
-
-        // 收集蒙皮网格的骨骼矩阵UBO（如果所有蒙皮网格共享同一个）
-        UniformBufferPtr skinnedMatrixUBO = nullptr;
-        if (!skinnedMeshItems.empty())
-        {
-            // 假设所有蒙皮网格共享骨骼矩阵（根据实际需求调整）
-            skinnedMatrixUBO = skinnedMeshItems[0].mesh->GetSkinnedMatrixBuffer();
-        }
-
-        if (!meshItems.empty() && !skinnedMeshItems.empty())
-        {
-            // 同时有静态网格和蒙皮网格
-            params = DepthRenderParams::Create(meshItems, skinnedMeshItems, cameraUBO, skinnedMatrixUBO);
-        }
-        else if (!meshItems.empty())
-        {
-            // 只有静态网格
-            params = DepthRenderParams::Create(meshItems, cameraUBO, nullptr);
-        }
-        else
-        {
-            // 只有蒙皮网格
-            params = DepthRenderParams::Create(skinnedMeshItems, cameraUBO, skinnedMatrixUBO);
-        }
-    }
-    
     // 使用FrameGraph渲染深度图
     depthResource = mDepthRender->Render("DepthPass", frameGraph, commandBuffer, params);
     
     return depthResource;
+}
+
+GBufferData DeferredSceneRenderer::RenderBasePass(
+    FrameGraph& frameGraph,
+    CommandBufferPtr commandBuffer,
+    const std::vector<DepthMeshItem>& meshItems,
+    const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
+    UniformBufferPtr cameraUBO)
+{
+    // 收集蒙皮网格的骨骼矩阵UBO
+    UniformBufferPtr skinnedMatrixUBO = nullptr;
+    if (!skinnedMeshItems.empty())
+    {
+        skinnedMatrixUBO = skinnedMeshItems[0].mesh->GetSkinnedMatrixBuffer();
+    }
+
+    // 构建 GBuffer 渲染参数
+    GBufferRenderParams params;
+    params.meshes.staticMeshes = meshItems;
+    params.meshes.skinnedMeshes = skinnedMeshItems;
+    params.uniforms.cameraUBO = cameraUBO;
+    params.uniforms.skinnedMatrixUBO = skinnedMatrixUBO;
+
+    // 初始化 GBufferRenderer（如果需要）
+    if (!mGBufferRenderer->IsInitialized())
+    {
+        uint32_t width = 1920;   // TODO: 从配置获取
+        uint32_t height = 1080;
+        mGBufferRenderer->Initialize(width, height);
+    }
+
+    // 调用 GBufferRenderer::AddToFrameGraph
+    return mGBufferRenderer->AddToFrameGraph("BasePass", frameGraph, commandBuffer, params);
 }
 
 void DeferredSceneRenderer::RenderPresentPass(FrameGraph& frameGraph, CommandBufferPtr commandBuffer, FrameGraphResource depthResource)
@@ -169,29 +206,6 @@ void DeferredSceneRenderer::RenderPresentPass(FrameGraph& frameGraph, CommandBuf
         renderEncoder->EndEncode();
         commandBuffer->PresentFrameBuffer();
     });
-}
-
-void DeferredSceneRenderer::RenderGBufferPass()
-{
-    auto* sceneManager = SceneManager::GetInstance();
-    if (!sceneManager)
-    {
-        return;
-    }
-    
-    // 获取渲染信息
-    RenderInfo renderInfo = sceneManager->GetRenderInfo();
-    
-    // TODO: 设置RenderEncoder
-    // RenderEncoderPtr renderEncoder = ...;
-    // renderInfo.renderEncoder = renderEncoder;
-    
-    // 递归渲染场景节点（G-Buffer）
-    SceneNode* rootNode = sceneManager->GetRootNode();
-    if (rootNode)
-    {
-        //RenderGBufferNodeRecursive(rootNode, renderInfo);
-    }
 }
 
 void DeferredSceneRenderer::RenderDeferredLightingPass()
