@@ -92,7 +92,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
             FrameGraphTexture::Desc gBufferADesc;
             gBufferADesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
             gBufferADesc.depth = 1;
-            gBufferADesc.format = RenderCore::kTexFormatRGBA32;
+            gBufferADesc.format = RenderCore::kTexFormatRGBA8;
             data.gbuffer.gBufferA = builder.Create<FrameGraphTexture>("GBufferA", gBufferADesc);
             builder.Write(data.gbuffer.gBufferA, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
@@ -100,7 +100,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
             FrameGraphTexture::Desc gBufferBDesc;
             gBufferBDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
             gBufferBDesc.depth = 1;
-            gBufferBDesc.format = RenderCore::kTexFormatRGBA32;
+            gBufferBDesc.format = RenderCore::kTexFormatRGBA8;
             data.gbuffer.gBufferB = builder.Create<FrameGraphTexture>("GBufferB", gBufferBDesc);
             builder.Write(data.gbuffer.gBufferB, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 

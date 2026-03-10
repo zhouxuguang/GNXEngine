@@ -16,8 +16,8 @@ enum
     kTexFormatLuma = 2,
     kTexFormatARGB4444 = 3,
     kTexFormatRGB24 = 4,
-    kTexFormatRGBA32 = 5,
-    kTexFormatARGB32 = 6,
+    kTexFormatRGBA8 = 5,
+    kTexFormatARGB8 = 6,
     kTexFormatARGBFloat = 8, // only for internal use at runtime
     kTexFormatRGB565 = 9,
     kTexFormatRGBA5551 = 10,

@@ -16,7 +16,7 @@ TextureDesc ImageTextureUtil::getTextureDescriptor(const VImage& image)
     switch (image.GetFormat())
     {
         case imagecodec::FORMAT_RGBA8:
-            textureDescriptor.format = kTexFormatRGBA32;
+            textureDescriptor.format = kTexFormatRGBA8;
             break;
             
         case imagecodec::FORMAT_RGB8:

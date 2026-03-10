@@ -235,7 +235,7 @@ public:
  */
 struct TextureDesc
 {
-    TextureFormat format = kTexFormatRGBA32;
+    TextureFormat format = kTexFormatRGBA8;
     TextureUsage usage = TextureUsage::TextureUsageShaderRead;
     bool mipmaped = false;
     uint32_t width = 1;

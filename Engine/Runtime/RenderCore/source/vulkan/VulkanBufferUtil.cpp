@@ -565,7 +565,7 @@ VkFormat VulkanBufferUtil::ConvertTextureFormat(TextureFormat texFormat)
             format = VK_FORMAT_R8G8_UNORM;
             break;
 
-        case kTexFormatRGBA32:
+        case kTexFormatRGBA8:
             format = VK_FORMAT_R8G8B8A8_UNORM;
             break;
             

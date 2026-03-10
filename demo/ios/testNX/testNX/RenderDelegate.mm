@@ -63,7 +63,7 @@ static rendercore::RenderDeviceType convertToRenderDeviceType(RenderType renderT
     textureDescriptor.width = width;
     textureDescriptor.height = height;
     textureDescriptor.mipmaped = false;
-    textureDescriptor.format = kTexFormatRGBA32;
+    textureDescriptor.format = kTexFormatRGBA8;
     renderTexture = mRenderdevice->createRenderTexture(textureDescriptor);
     
     textureDescriptor.width = width;

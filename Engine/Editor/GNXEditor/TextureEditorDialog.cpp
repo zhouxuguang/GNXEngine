@@ -291,7 +291,7 @@ QImage TextureEditorDialog::ConvertToQImage()
     // 根据纹理格式确定QImage格式
     switch (textureFormat)
     {
-        case RenderCore::kTexFormatRGBA32:
+        case RenderCore::kTexFormatRGBA8:
         case RenderCore::kTexFormatBGRA32:
         case RenderCore::kTexFormatSRGB8_ALPHA8:
             qimageFormat = QImage::Format_RGBA8888;

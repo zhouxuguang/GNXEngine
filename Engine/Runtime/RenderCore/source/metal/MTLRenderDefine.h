@@ -40,7 +40,7 @@ inline MTLPixelFormat ConvertTextureFormatToMetal(uint32_t textureFormat)
         case kTexFormatAlphaLum16:
             return MTLPixelFormatRG8Unorm;
 
-        case kTexFormatRGBA32:
+        case kTexFormatRGBA8:
             return MTLPixelFormatRGBA8Unorm;
             
         case kTexFormatRGB24:

@@ -12,8 +12,8 @@ const static int kTextureByteTable[kTexFormatTotalCount] =
 	1,	// kTexFormatAlpha8
 	2,	// kTexFormatARGB4444
 	3,  // kTexFormatRGB24
-	4,	// kTexFormatRGBA32
-	4,	// kTexFormatARGB32
+	4,	// kTexFormatRGBA8
+	4,	// kTexFormatARGB8
 	16, // kTexFormatARGBFloat
 	2,  // kTexFormatRGB565
 	3,  // kTexFormatBGR24
@@ -93,7 +93,7 @@ bool IsAlphaOnlyTextureFormat( TextureFormat format )
 TextureFormat ConvertToAlphaTextureFormat (TextureFormat format)
 {
 	if (format == kTexFormatRGB24 || format == kTexFormatBGR24)
-		return kTexFormatARGB32;
+		return kTexFormatARGB8;
 	else if (format == kTexFormatRGB565)
 		return kTexFormatARGB4444;
 	else if (format == kTexFormatDXT1_RGB)
@@ -114,7 +114,7 @@ TextureFormat ConvertToAlphaTextureFormat (TextureFormat format)
 
 bool HasAlphaTextureFormat( TextureFormat format )
 {
-	return format == kTexFormatAlpha8 || format == kTexFormatARGB4444 || format == kTexFormatRGBA4444 || format == kTexFormatRGBA32 || format == kTexFormatARGB32
+	return format == kTexFormatAlpha8 || format == kTexFormatARGB4444 || format == kTexFormatRGBA4444 || format == kTexFormatRGBA8 || format == kTexFormatARGB8
 	|| format == kTexFormatARGBFloat || format == kTexFormatAlphaLum16 || format == kTexFormatDXT5_RGB || format == kTexFormatDXT3_RGB
 	|| format == kTexFormatPVRTC_RGBA2 || format == kTexFormatPVRTC_RGBA4 || format == kTexFormatATC_RGBA8 || format == kTexFormatBGRA32
 	|| format == kTexFormatETC2_RGBA1 || format == kTexFormatETC2_RGBA8 || (format >= kTexFormatASTC_RGBA_4x4 && format <= kTexFormatASTC_RGBA_12x12);
@@ -158,8 +158,8 @@ const char* GetTextureFormatString(TextureFormat format)
 		case kTexFormatARGB4444: return "ARGB 16 bit";
 		case kTexFormatRGBA4444: return "RGBA 16 bit";
 		case kTexFormatRGB24: return "RGB 24 bit";
-		case kTexFormatRGBA32: return "RGBA 32 bit";
-		case kTexFormatARGB32: return "ARGB 32 bit";
+		case kTexFormatRGBA8: return "RGBA 32 bit";
+		case kTexFormatARGB8: return "ARGB 32 bit";
 		case kTexFormatARGBFloat: return "ARGB float";
 		case kTexFormatRGB565: return "RGB 16 bit";
 		case kTexFormatBGR24: return "BGR 24 bit";
