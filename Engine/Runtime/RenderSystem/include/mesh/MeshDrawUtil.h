@@ -48,6 +48,8 @@ public:
      * @param depthPSO 深度渲染的PSO（只有位置输入）
      */
     static void DrawMeshDepthOnly(const Mesh& mesh, const RenderInfo& renderInfo, GraphicsPipelinePtr depthPSO);
+
+    static void DrawMeshBasePass(const Mesh& mesh, const RenderInfo& renderInfo, GraphicsPipelinePtr basePassPSO);
     
     /**
      * 蒙皮网格完整渲染

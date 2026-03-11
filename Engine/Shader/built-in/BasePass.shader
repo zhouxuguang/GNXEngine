@@ -48,7 +48,7 @@ FragmentOutput PS(VertexOutput input)
     
     FragmentOutput output;
 
-    output.outRT0 = float4(0.0f, 0.0f, 1.0f, 1.0f);
+    output.outRT0 = float4(input.position.xyz, 1.0f);
 
     output.outRT1 = float4(normal, 0.333333f);
 

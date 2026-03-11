@@ -285,4 +285,38 @@ void MeshDrawUtil::DrawSkinnedMeshDepthOnly(const SkinnedMesh& mesh, const Rende
     }
 }
 
+void MeshDrawUtil::DrawMeshBasePass(const Mesh& mesh, const RenderInfo& renderInfo, GraphicsPipelinePtr basePassPSO)
+{
+	RenderEncoderPtr renderEncoder = renderInfo.renderEncoder;
+	assert(renderEncoder);
+	assert(basePassPSO);
+
+	const ChannelInfo* channels = mesh.GetVertexData().GetChannels();
+	VertexBufferPtr vertexBuffer = mesh.GetVertexBuffer();
+	IndexBufferPtr indexBuffer = mesh.GetIndexBuffer();
+
+	// 检查是否有位置数据
+	if (!mesh.HasChannel(kShaderChannelPosition))
+	{
+		return;
+	}
+    renderEncoder->SetGraphicsPipeline(basePassPSO);
+
+	for (int n = 0; n < mesh.GetSubMeshCount(); n++)
+	{
+		// 只设置必要的uniform
+		renderEncoder->SetVertexUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+		renderEncoder->SetVertexUniformBuffer("cbPerObject", renderInfo.objectUBO);
+
+		renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
+        renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelNormal].offset, 1);
+        renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTangent].offset, 2);
+
+		const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
+
+		// 绘制
+		renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex);
+	}
+}
+
 NS_RENDERSYSTEM_END

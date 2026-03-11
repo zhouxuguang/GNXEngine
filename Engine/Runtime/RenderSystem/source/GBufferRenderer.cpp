@@ -180,20 +180,12 @@ GBufferData GBufferRenderer::AddToFrameGraph(
                     renderInfo.cameraUBO = data.uniforms.cameraUBO;
                     renderInfo.objectUBO = meshItem.objectUBO;
 
-                    // 使用材质的 G-Buffer PSO 或默认管线
-                    if (mCurrentMaterial && mCurrentMaterial->GetGBufferPSO())
-                    {
-                        MeshDrawUtil::DrawMesh(*meshItem.mesh, renderInfo);
-                    }
-                    else
-                    {
-                        MeshDrawUtil::DrawMesh(*meshItem.mesh, renderInfo);
-                    }
+                    MeshDrawUtil::DrawMeshBasePass(*meshItem.mesh, renderInfo, mGBufferPipeline);
                 }
             }
 
             // 渲染蒙皮网格
-            if (!data.meshes.skinnedMeshes.empty() && data.uniforms.skinnedMatrixUBO)
+            /*if (!data.meshes.skinnedMeshes.empty() && data.uniforms.skinnedMatrixUBO)
             {
                 for (const auto& meshItem : data.meshes.skinnedMeshes)
                 {
@@ -208,7 +200,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
 
                     MeshDrawUtil::DrawSkinnedMesh(*meshItem.mesh, renderInfo, false);
                 }
-            }
+            }*/
 
             renderEncoder->EndEncode();
         }
