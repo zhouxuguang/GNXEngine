@@ -37,42 +37,6 @@ void Mesh::SetPositions(Vector4f const* data, size_t count)
     strided_copy(data, data + count, GetPositionBegin());
 }
 
-void Mesh::SetNormals(Vector4f const* data, size_t count)
-{
-    if (count > std::numeric_limits<uint16_t>::max())
-    {
-        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
-        return;
-    }
-
-    size_t prevCount = GetVertexCount();
-
-    // Make sure we'll not be overrunning the buffer
-    if (GetVertexCount() < count)
-        count = GetVertexCount();
-
-    strided_copy(data, data + count, GetNormalBegin());
-}
-
-void Mesh::SetTangents(Vector4f const* data, size_t count)
-{
-    if (count > std::numeric_limits<uint16_t>::max())
-    {
-        LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
-        return;
-    }
-
-    size_t prevCount = GetVertexCount();
-
-    // Make sure we'll not be overrunning the buffer
-    if (GetVertexCount() < count)
-        count = GetVertexCount();
-    
-    memcpy(GetTangentBegin().GetPointer(), data, count * sizeof(simd_float4));
-
-    //strided_copy(data, data + count, GetTangentBegin());
-}
-
 void Mesh::SetUv(int uvIndex, Vector2f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())

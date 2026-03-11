@@ -34,6 +34,10 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
 
 	std::string strDataFile = GetProjectAssetDir() + "Lumen/PositionOnly.data";
 	std::vector<uint8_t> positionData = baselib::FileUtil::ReadBinaryFile(strDataFile);
+
+	std::string strAttrDataFile = GetProjectAssetDir() + "Lumen/TangentAndNormal.data";
+	std::vector<uint8_t> attrData = baselib::FileUtil::ReadBinaryFile(strAttrDataFile);
+
     std::string indexFile = GetProjectAssetDir() + "Lumen/IndexBuffer.data";
     std::vector<uint8_t> indexData = baselib::FileUtil::ReadBinaryFile(indexFile);
     Vector3f* posPtr = (Vector3f*)positionData.data();
@@ -46,7 +50,22 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
     channels[RenderSystem::kShaderChannelPosition].stride = sizeof(Vector4f);
 
     uint32_t vertexCount = positionData.size() / 12;
-    vertexData.Resize(vertexCount, 12);
+    vertexData.Resize(vertexCount, 20);
+
+    std::vector<uint8_t> normalData(attrData.size() / 2);
+    std::vector<uint8_t> tangentData(attrData.size() / 2);
+    for (uint32_t i = 0; i < vertexCount; i++)
+    {
+        memcpy(tangentData.data() + (i * 4), attrData.data() + i * 8, 4);
+        memcpy(normalData.data() + (i * 4), attrData.data() + 4 + (i * 8), 4);
+    }
+
+	channels[RenderSystem::kShaderChannelTangent].offset = positionData.size();
+	channels[RenderSystem::kShaderChannelTangent].format = VertexFormatChar4;
+	channels[RenderSystem::kShaderChannelTangent].stride = 4;
+	channels[RenderSystem::kShaderChannelNormal].offset = positionData.size() + (attrData.size() / 2);
+	channels[RenderSystem::kShaderChannelNormal].format = VertexFormatChar4;
+	channels[RenderSystem::kShaderChannelNormal].stride = 4;
 
     std::vector<Vector4f> position(vertexCount);
     for (uint32_t i = 0; i < vertexCount; i++)
@@ -57,7 +76,14 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
         position[i].w = 1;
     }
 
+    struct ByteNormal
+    {
+        uint8_t temp[4];
+    };
+
     mesh->SetPositions(position.data(), vertexCount);
+    mesh->SetNormals((ByteNormal*)normalData.data(), vertexCount);
+    mesh->SetTangents((ByteNormal*)tangentData.data(), vertexCount);
 
     uint32_t* indices = new uint32_t[indexData.size() / 2];
 	for (uint32_t i = 0; i < indexData.size() / 2; i++)

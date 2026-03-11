@@ -15,6 +15,7 @@
 #include "Runtime/MathUtil/include/Vector4.h"
 #include "Runtime/MathUtil/include/SimdMath.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/BaseLib/include/LogService.h"
 #include "VertexData.h"
 
 
@@ -49,8 +50,10 @@ public:
     StrideIterator<Vector4f> GetPositionBegin() const { return mVertexData.MakeStrideIterator<Vector4f>(kShaderChannelPosition);}
     StrideIterator<Vector4f> GetPositionEnd() const { return mVertexData.MakeEndIterator<Vector4f>(kShaderChannelPosition); }
 
-    StrideIterator<Vector4f> GetNormalBegin() const { return mVertexData.MakeStrideIterator<Vector4f>(kShaderChannelNormal); }
-    StrideIterator<Vector4f> GetNormalEnd() const { return mVertexData.MakeEndIterator<Vector4f>(kShaderChannelNormal); }
+    template<class T>
+    StrideIterator<T> GetNormalBegin() const { return mVertexData.MakeStrideIterator<T>(kShaderChannelNormal); }
+    template<class T>
+    StrideIterator<T> GetNormalEnd() const { return mVertexData.MakeEndIterator<T>(kShaderChannelNormal); }
 
     StrideIterator<uint32_t> GetColorBegin() const { return mVertexData.MakeStrideIterator<uint32_t>(kShaderChannelColor); }
     StrideIterator<uint32_t> GetColorEnd() const { return mVertexData.MakeEndIterator<uint32_t>(kShaderChannelColor); }
@@ -64,12 +67,49 @@ public:
         return mVertexData.MakeEndIterator<Vector2f>((ShaderChannel)(kShaderChannelTexCoord0 + uvIndex));
     }
 
-    StrideIterator<Vector4f> GetTangentBegin() const { return mVertexData.MakeStrideIterator<Vector4f>(kShaderChannelTangent); }
-    StrideIterator<Vector4f> GetTangentEnd() const { return mVertexData.MakeEndIterator<Vector4f>(kShaderChannelTangent); }
+    template<class T>
+    StrideIterator<T> GetTangentBegin() const { return mVertexData.MakeStrideIterator<T>(kShaderChannelTangent); }
+    template<class T>
+    StrideIterator<T> GetTangentEnd() const { return mVertexData.MakeEndIterator<T>(kShaderChannelTangent); }
     
     void SetPositions(Vector4f const* data, size_t count);
-    void SetNormals(Vector4f const* data, size_t count);
-    void SetTangents(Vector4f const* data, size_t count);
+
+    template<class T>
+    void SetNormals(T const* data, size_t count)
+    {
+		if (count > std::numeric_limits<uint16_t>::max())
+		{
+			LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+			return;
+		}
+
+		size_t prevCount = GetVertexCount();
+
+		// Make sure we'll not be overrunning the buffer
+		if (GetVertexCount() < count)
+			count = GetVertexCount();
+
+		strided_copy<T>(data, data + count, GetNormalBegin<T>());
+    }
+
+    template<class T>
+    void SetTangents(T const* data, size_t count)
+    {
+		if (count > std::numeric_limits<uint16_t>::max())
+		{
+			LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
+			return;
+		}
+
+		size_t prevCount = GetVertexCount();
+
+		// Make sure we'll not be overrunning the buffer
+		if (GetVertexCount() < count)
+			count = GetVertexCount();
+
+        strided_copy(data, data + count, GetTangentBegin<T>());
+    }
+
     void SetUv(int uvIndex, Vector2f const* data, size_t count);
     void SetColors(uint32_t const* data, size_t count);
     
