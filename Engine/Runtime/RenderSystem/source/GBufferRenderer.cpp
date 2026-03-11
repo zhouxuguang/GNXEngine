@@ -219,24 +219,10 @@ GBufferData GBufferRenderer::AddToFrameGraph(
 
 void GBufferRenderer::CreateGBufferPipeline()
 {
-    // 加载G-Buffer shader
-    // 这里可以加载不同材质类型的G-Buffer shader变体
-    
-    // 示例：
-    /*
-    ShaderAssetString shaderAsset = LoadShaderAsset("GBufferPBR");
-    GraphicsPipelineDescriptor pipelineDesc;
-    
-    // 设置多渲染目标
-    pipelineDesc.colorAttachmentCount = mConfig.enablePositionTexture ? 4 : 3;
-    
-    // 设置深度测试
-    pipelineDesc.depthStencilDescriptor.depthWriteEnabled = true;
-    pipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
-    
-    // 创建PSO
-    mGBufferPipeline = GetRenderDevice()->CreateGraphicsPipeline(pipelineDesc);
-    */
+	GraphicsShaderInfo shaderInfoDepth = CreateGraphicsShaderInfo("BasePass");
+	shaderInfoDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
+    mGBufferPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shaderInfoDepth.graphicsPipelineDesc);
+    mGBufferPipeline->AttachGraphicsShader(shaderInfoDepth.graphicsShader);
 }
 
 NS_RENDERSYSTEM_END
