@@ -140,6 +140,12 @@ public:
     static uint32_t GetFormatSize(VkFormat format);
 
     static VkImageAspectFlags GetImageAspectFlags(VkFormat format);
+    
+    // VertexFormat 转 VkFormat
+    static VkFormat ConvertVertexFormat(VertexFormat format);
+    
+    // 获取 VertexFormat 的大小（字节数）
+    static uint32_t GetVertexFormatSize(VertexFormat format);
 };
 
 NAMESPACE_RENDERCORE_END

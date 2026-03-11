@@ -332,6 +332,18 @@ enum VertexFormat
     VertexFormatHalfFloat2 = 41,
     VertexFormatHalfFloat3 = 42,
     VertexFormatHalfFloat4 = 43,
+    
+    // 无符号归一化格式: uint8 [0,255] -> float [0,1]
+    VertexFormatUCharNorm = 50,
+    VertexFormatUChar2Norm = 51,
+    VertexFormatUChar3Norm = 52,
+    VertexFormatUChar4Norm = 53,
+    
+    // 有符号归一化格式: int8 [-128,127] -> float [-1,1]
+    VertexFormatCharNorm = 54,
+    VertexFormatChar2Norm = 55,
+    VertexFormatChar3Norm = 56,
+    VertexFormatChar4Norm = 57,
 };
 
 enum VertextStepFunc

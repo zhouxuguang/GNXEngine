@@ -40,6 +40,28 @@ struct VertexInputLayout
 {
     std::vector<VkVertexInputBindingDescription> inputBindings;
     std::vector<VkVertexInputAttributeDescription> attributeDescriptions;
+    
+    // 按 location 覆盖属性格式（用于归一化等场景）
+    void OverrideAttributeFormat(uint32_t location, VkFormat format, uint32_t stride)
+    {
+        for (auto& attr : attributeDescriptions)
+        {
+            if (attr.location == location)
+            {
+                attr.format = format;
+                // 更新对应的 binding stride
+                for (auto& binding : inputBindings)
+                {
+                    if (binding.binding == attr.binding)
+                    {
+                        binding.stride = stride;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+    }
 };
 
 // 工作组线程的大小
@@ -175,6 +197,17 @@ public:
 	{
 		return mVertexInputLayout;
 	}
+
+	/**
+	 * @brief 按 location 覆盖顶点属性格式
+	 * 
+	 * 用于处理顶点缓冲区数据格式与 shader 声明格式不一致的情况
+	 * 例如：shader 声明 float3，但顶点缓冲区存储 int8_t[3]（需要归一化）
+	 * 
+	 * @param location 顶点属性的 location
+	 * @param format 实际的顶点数据格式（使用 VertexFormatChar3Norm 等归一化格式）
+	 */
+	void OverrideVertexAttributeFormat(uint32_t location, VertexFormat format);
 
     // 获取资源绑定索引
     uint32_t GetResourceBindIndex(const std::string& resourceName) const;

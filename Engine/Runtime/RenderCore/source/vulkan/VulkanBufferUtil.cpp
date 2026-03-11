@@ -1079,4 +1079,134 @@ VkImageAspectFlags VulkanBufferUtil::GetImageAspectFlags(VkFormat format)
     return VK_IMAGE_ASPECT_COLOR_BIT;
 }
 
+VkFormat VulkanBufferUtil::ConvertVertexFormat(VertexFormat format)
+{
+    switch (format)
+    {
+        // 浮点格式
+        case VertexFormatFloat:      return VK_FORMAT_R32_SFLOAT;
+        case VertexFormatFloat2:     return VK_FORMAT_R32G32_SFLOAT;
+        case VertexFormatFloat3:     return VK_FORMAT_R32G32B32_SFLOAT;
+        case VertexFormatFloat4:     return VK_FORMAT_R32G32B32A32_SFLOAT;
+        
+        // 整数格式（不归一化）
+        case VertexFormatInt:        return VK_FORMAT_R32_SINT;
+        case VertexFormatInt2:       return VK_FORMAT_R32G32_SINT;
+        case VertexFormatInt3:       return VK_FORMAT_R32G32B32_SINT;
+        case VertexFormatInt4:       return VK_FORMAT_R32G32B32A32_SINT;
+        
+        case VertexFormatUInt:       return VK_FORMAT_R32_UINT;
+        case VertexFormatUInt2:      return VK_FORMAT_R32G32_UINT;
+        case VertexFormatUInt3:      return VK_FORMAT_R32G32B32_UINT;
+        case VertexFormatUInt4:      return VK_FORMAT_R32G32B32A32_UINT;
+        
+        // 半精度浮点
+        case VertexFormatHalfFloat:  return VK_FORMAT_R16_SFLOAT;
+        case VertexFormatHalfFloat2: return VK_FORMAT_R16G16_SFLOAT;
+        case VertexFormatHalfFloat3: return VK_FORMAT_R16G16B16_SFLOAT;
+        case VertexFormatHalfFloat4: return VK_FORMAT_R16G16B16A16_SFLOAT;
+        
+        // 无符号字节（不归一化）
+        case VertexFormatUChar:      return VK_FORMAT_R8_UINT;
+        case VertexFormatUChar2:     return VK_FORMAT_R8G8_UINT;
+        case VertexFormatUChar3:     return VK_FORMAT_R8G8B8_UINT;
+        case VertexFormatUChar4:     return VK_FORMAT_R8G8B8A8_UINT;
+        
+        // 有符号字节（不归一化）
+        case VertexFormatChar:       return VK_FORMAT_R8_SINT;
+        case VertexFormatChar2:      return VK_FORMAT_R8G8_SINT;
+        case VertexFormatChar3:      return VK_FORMAT_R8G8B8_SINT;
+        case VertexFormatChar4:      return VK_FORMAT_R8G8B8A8_SINT;
+        
+        // 无符号短整数（不归一化）
+        case VertexFormatUShort:     return VK_FORMAT_R16_UINT;
+        case VertexFormatUShort2:    return VK_FORMAT_R16G16_UINT;
+        case VertexFormatUShort3:    return VK_FORMAT_R16G16B16_UINT;
+        case VertexFormatUShort4:    return VK_FORMAT_R16G16B16A16_UINT;
+        
+        // 有符号短整数（不归一化）
+        case VertexFormatShort:      return VK_FORMAT_R16_SINT;
+        case VertexFormatShort2:     return VK_FORMAT_R16G16_SINT;
+        case VertexFormatShort3:     return VK_FORMAT_R16G16B16_SINT;
+        case VertexFormatShort4:     return VK_FORMAT_R16G16B16A16_SINT;
+        
+        // ★★★ 无符号归一化格式: uint8 [0,255] → float [0,1] ★★★
+        case VertexFormatUCharNorm:   return VK_FORMAT_R8_UNORM;
+        case VertexFormatUChar2Norm:  return VK_FORMAT_R8G8_UNORM;
+        case VertexFormatUChar3Norm:  return VK_FORMAT_R8G8B8_UNORM;
+        case VertexFormatUChar4Norm:  return VK_FORMAT_R8G8B8A8_UNORM;
+        
+        // ★★★ 有符号归一化格式: int8 [-128,127] → float [-1,1] ★★★
+        case VertexFormatCharNorm:    return VK_FORMAT_R8_SNORM;
+        case VertexFormatChar2Norm:   return VK_FORMAT_R8G8_SNORM;
+        case VertexFormatChar3Norm:   return VK_FORMAT_R8G8B8_SNORM;   // 法线归一化常用
+        case VertexFormatChar4Norm:   return VK_FORMAT_R8G8B8A8_SNORM;
+        
+        default:
+            return VK_FORMAT_UNDEFINED;
+    }
+}
+
+uint32_t VulkanBufferUtil::GetVertexFormatSize(VertexFormat format)
+{
+    switch (format)
+    {
+        // 浮点格式
+        case VertexFormatFloat:      return 4;
+        case VertexFormatFloat2:     return 8;
+        case VertexFormatFloat3:     return 12;
+        case VertexFormatFloat4:     return 16;
+        
+        // 整数格式
+        case VertexFormatInt:
+        case VertexFormatUInt:       return 4;
+        case VertexFormatInt2:
+        case VertexFormatUInt2:      return 8;
+        case VertexFormatInt3:
+        case VertexFormatUInt3:      return 12;
+        case VertexFormatInt4:
+        case VertexFormatUInt4:      return 16;
+        
+        // 半精度浮点
+        case VertexFormatHalfFloat:  return 2;
+        case VertexFormatHalfFloat2: return 4;
+        case VertexFormatHalfFloat3: return 6;
+        case VertexFormatHalfFloat4: return 8;
+        
+        // 单字节（归一化与非归一化相同）
+        case VertexFormatUChar:
+        case VertexFormatChar:
+        case VertexFormatUCharNorm:
+        case VertexFormatCharNorm:   return 1;
+        
+        case VertexFormatUChar2:
+        case VertexFormatChar2:
+        case VertexFormatUChar2Norm:
+        case VertexFormatChar2Norm:  return 2;
+        
+        case VertexFormatUChar3:
+        case VertexFormatChar3:
+        case VertexFormatUChar3Norm:
+        case VertexFormatChar3Norm:  return 3;
+        
+        case VertexFormatUChar4:
+        case VertexFormatChar4:
+        case VertexFormatUChar4Norm:
+        case VertexFormatChar4Norm:  return 4;
+        
+        // 双字节
+        case VertexFormatUShort:
+        case VertexFormatShort:      return 2;
+        case VertexFormatUShort2:
+        case VertexFormatShort2:     return 4;
+        case VertexFormatUShort3:
+        case VertexFormatShort3:     return 6;
+        case VertexFormatUShort4:
+        case VertexFormatShort4:     return 8;
+        
+        default:
+            return 0;
+    }
+}
+
 NAMESPACE_RENDERCORE_END

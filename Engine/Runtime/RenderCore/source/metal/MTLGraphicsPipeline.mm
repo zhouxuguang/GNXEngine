@@ -177,6 +177,40 @@ static MTLVertexFormat convertMETALVertexFormat(VertexFormat format)
             mtlFormat = MTLVertexFormatHalf4;
             break;
             
+        // ★★★ 无符号归一化格式: uint8 [0,255] → float [0,1] ★★★
+        case VertexFormatUCharNorm:
+            mtlFormat = MTLVertexFormatUCharNormalized;
+            break;
+            
+        case VertexFormatUChar2Norm:
+            mtlFormat = MTLVertexFormatUChar2Normalized;
+            break;
+            
+        case VertexFormatUChar3Norm:
+            mtlFormat = MTLVertexFormatUChar3Normalized;
+            break;
+            
+        case VertexFormatUChar4Norm:
+            mtlFormat = MTLVertexFormatUChar4Normalized;
+            break;
+            
+        // ★★★ 有符号归一化格式: int8 [-128,127] → float [-1,1] ★★★
+        case VertexFormatCharNorm:
+            mtlFormat = MTLVertexFormatCharNormalized;
+            break;
+            
+        case VertexFormatChar2Norm:
+            mtlFormat = MTLVertexFormatChar2Normalized;
+            break;
+            
+        case VertexFormatChar3Norm:
+            mtlFormat = MTLVertexFormatChar3Normalized;   // 法线归一化常用
+            break;
+            
+        case VertexFormatChar4Norm:
+            mtlFormat = MTLVertexFormatChar4Normalized;
+            break;
+            
         default:
             break;
     }

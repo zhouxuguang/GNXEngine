@@ -552,6 +552,13 @@ uint32_t VKGraphicsShader::GetResourceBindIndex(const std::string& resourceName)
     return bindData->second.binding;
 }
 
+void VKGraphicsShader::OverrideVertexAttributeFormat(uint32_t location, VertexFormat format)
+{
+    VkFormat vkFormat = VulkanBufferUtil::ConvertVertexFormat(format);
+    uint32_t stride = VulkanBufferUtil::GetVertexFormatSize(format);
+    mVertexInputLayout.OverrideAttributeFormat(location, vkFormat, stride);
+}
+
 uint32_t VKGraphicsShader::GetSetOffset(DescriptorType descriptorType) const
 {
     // 遍历反射数据找到指定类型的 set

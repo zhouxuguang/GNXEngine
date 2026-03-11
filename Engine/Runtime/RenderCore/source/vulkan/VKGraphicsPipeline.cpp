@@ -8,6 +8,7 @@
 #include "VKGraphicsPipeline.h"
 #include "VKDepthStencilBuffer.h"
 #include "VulkanDescriptorUtil.h"
+#include "VulkanBufferUtil.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -216,7 +217,35 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     mPipeCreateInfo.pStages = shaderStages.data();
 
     //2、顶点输入状态
-    const VertexInputLayout& vertexInputLayout = mShader->GetVertexInputLayout();
+    VertexInputLayout vertexInputLayout = mShader->GetVertexInputLayout();
+    
+    // 如果 GraphicsPipelineDesc 中指定了顶点属性格式，则覆盖 shader 反射的格式
+    // 这对于 byte4 -> float4 归一化等场景非常重要
+    const auto& pipelineAttributes = mGraphicsPipelineDes.vertexDescriptor.attributes;
+    if (!pipelineAttributes.empty())
+    {
+        for (const auto& attr : pipelineAttributes)
+        {
+            for (auto& vertexAttr : vertexInputLayout.attributeDescriptions)
+            {
+                if (vertexAttr.location == attr.index)
+                {
+                    vertexAttr.format = VulkanBufferUtil::ConvertVertexFormat(attr.format);
+                    // 更新对应的 binding stride
+                    uint32_t stride = VulkanBufferUtil::GetVertexFormatSize(attr.format);
+                    for (auto& binding : vertexInputLayout.inputBindings)
+                    {
+                        if (binding.binding == vertexAttr.binding)
+                        {
+                            binding.stride = stride;
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
     
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
