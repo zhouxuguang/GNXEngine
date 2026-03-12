@@ -421,7 +421,7 @@ UniformBufferPtr SceneNode::GetOrCreateModelUBO(RenderDevicePtr renderDevice)
         cbPerObject modelMatrix;
         modelMatrix.MATRIX_M = worldMatrix;
         modelMatrix.MATRIX_M_INV = worldMatrix.Inverse();
-        modelMatrix.MATRIX_Normal = worldMatrix.Transpose();
+        modelMatrix.MATRIX_Normal = modelMatrix.MATRIX_M_INV.Transpose();
         mCachedModelUBO->SetData(&modelMatrix, 0, sizeof(cbPerObject));
         mModelUBODirty = false;
     }
