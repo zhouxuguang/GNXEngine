@@ -8,6 +8,7 @@
 #include "LumenFrameWork.h"
 #include "Runtime/RenderSystem/include/mesh/MeshRenderer.h"
 #include "Runtime/RenderSystem/include/RenderEngine.h"
+#include "Runtime/MathUtil/include/MathUtil.h"
 
 LumenFrameWork::LumenFrameWork(const GNXEngine::WindowProps& props) : GNXEngine::AppFrameWork(props)
 {
@@ -43,29 +44,13 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
     Vector3f* posPtr = (Vector3f*)positionData.data();
 
     RenderSystem::VertexData& vertexData = mesh->GetVertexData();
+	uint32_t vertexCount = positionData.size() / 12;
+	vertexData.Resize(vertexCount, 48);
 
     RenderSystem::ChannelInfo* channels = vertexData.GetChannels();
 	channels[RenderSystem::kShaderChannelPosition].offset = 0;
 	channels[RenderSystem::kShaderChannelPosition].format = VertexFormatFloat4;
     channels[RenderSystem::kShaderChannelPosition].stride = sizeof(Vector4f);
-
-    uint32_t vertexCount = positionData.size() / 12;
-    vertexData.Resize(vertexCount, 20);
-
-    std::vector<uint8_t> normalData(attrData.size() / 2);
-    std::vector<uint8_t> tangentData(attrData.size() / 2);
-    for (uint32_t i = 0; i < vertexCount; i++)
-    {
-        memcpy(tangentData.data() + (i * 4), attrData.data() + i * 8, 4);
-        memcpy(normalData.data() + (i * 4), attrData.data() + 4 + (i * 8), 4);
-    }
-
-	channels[RenderSystem::kShaderChannelTangent].offset = positionData.size();
-	channels[RenderSystem::kShaderChannelTangent].format = VertexFormatChar4;
-	channels[RenderSystem::kShaderChannelTangent].stride = 4;
-	channels[RenderSystem::kShaderChannelNormal].offset = positionData.size() + (attrData.size() / 2);
-	channels[RenderSystem::kShaderChannelNormal].format = VertexFormatChar4;
-	channels[RenderSystem::kShaderChannelNormal].stride = 4;
 
     std::vector<Vector4f> position(vertexCount);
     for (uint32_t i = 0; i < vertexCount; i++)
@@ -76,14 +61,39 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
         position[i].w = 1;
     }
 
-    struct ByteNormal
+	std::vector<float> attrDataFlt(attrData.size());
+	for (int i = 0; i < attrData.size(); i++)
+	{
+		int8_t value = attrData[i];
+
+		attrDataFlt[i] = Clamp(value, (int8_t)-127, (int8_t)127) / 127.0f;
+	}
+
+	std::vector<simd_float4> normalData(vertexCount);
+	std::vector<simd_float4> tangentData(vertexCount);
+	for (uint32_t i = 0; i < vertexCount; i++)
+	{
+		memcpy(tangentData.data() + i, attrDataFlt.data() + i * 8, 16);
+		memcpy(normalData.data() + i, attrDataFlt.data() + 4 + (i * 8), 16);
+	}
+
+    // tangentData 和 normalData需要做特殊处理，适配我自己引擎的坐标系
+    for (uint32_t i = 0; i < vertexCount; i++)
     {
-        uint8_t temp[4];
-    };
+        //std::swap(tangentData[i].y, tangentData[i].z);
+        std::swap(normalData[i].y, normalData[i].z);
+    }
+
+	channels[RenderSystem::kShaderChannelTangent].offset = position.size() * 16;
+	channels[RenderSystem::kShaderChannelTangent].format = VertexFormatFloat4;
+	channels[RenderSystem::kShaderChannelTangent].stride = 16;
+	channels[RenderSystem::kShaderChannelNormal].offset = position.size() * 16 + tangentData.size() * 16;
+	channels[RenderSystem::kShaderChannelNormal].format = VertexFormatFloat4;
+	channels[RenderSystem::kShaderChannelNormal].stride = 16;
 
     mesh->SetPositions(position.data(), vertexCount);
-    mesh->SetNormals((ByteNormal*)normalData.data(), vertexCount);
-    mesh->SetTangents((ByteNormal*)tangentData.data(), vertexCount);
+    mesh->SetNormals(normalData.data(), vertexCount);
+    mesh->SetTangents(tangentData.data(), vertexCount);
 
     uint32_t* indices = new uint32_t[indexData.size() / 2];
 	for (uint32_t i = 0; i < indexData.size() / 2; i++)
@@ -124,7 +134,7 @@ void LumenFrameWork::Resize(uint32_t width, uint32_t height)
 	}
 
 	cameraPtr->LookAt(mathutil::Vector3f(1059.769897f, 336.560120f, -833.207886f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
-	cameraPtr->SetLens(90, float(width) / height, 10.0f, 10000.f);
+	cameraPtr->SetLens(60, float(width) / height, 10.0f, 10000.f);
     
 }
 
