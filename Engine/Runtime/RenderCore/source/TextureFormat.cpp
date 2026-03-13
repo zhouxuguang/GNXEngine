@@ -6,27 +6,48 @@ NAMESPACE_RENDERCORE_BEGIN
 
 // NOTE: match indices in kTexFormat* enum!
 
+// NOTE: indices must match kTexFormat* enum values!
 const static int kTextureByteTable[kTexFormatTotalCount] =
 {
-	0,
-	1,	// kTexFormatAlpha8
-	2,	// kTexFormatARGB4444
-	3,  // kTexFormatRGB24
-	4,	// kTexFormatRGBA8
-	4,	// kTexFormatARGB8
-	16, // kTexFormatARGBFloat
-	2,  // kTexFormatRGB565
-	3,  // kTexFormatBGR24
-	2,  // kTexFormatAlphaLum16
-	0,  // kTexFormatDXT1 (Depends on width, height, depth)
-	0,  // kTexFormatDXT3 (Depends on width, height, depth)
-	0,  // kTexFormatDXT5 (Depends on width, height, depth)
-	2,	// kTexFormatRGBA4444
+	0,	// 0:  kTexFormatInvalid
+	1,	// 1:  kTexFormatAlpha8
+	1,	// 2:  kTexFormatLuma
+	2,	// 3:  kTexFormatARGB4444
+	3,	// 4:  kTexFormatRGB24
+	4,	// 5:  kTexFormatRGBA8
+	4,	// 6:  kTexFormatARGB8
+	0,	// 7:  (skipped)
+	16,	// 8:  kTexFormatARGBFloat
+	2,	// 9:  kTexFormatRGB565
+	2,	// 10: kTexFormatRGBA5551
+	3,	// 11: kTexFormatBGR24
+	2,	// 12: kTexFormatRGBA4444
+	0,	// 13: kTexFormatSRGB8 (same as RGB24, handled separately)
+	0,	// 14: kTexFormatSRGB8_ALPHA8 (same as RGBA8, handled separately)
+	4,	// 15: kTexR10G10B10A2
+	0,	// 16: (skipped)
+	0,	// 17: (skipped)
+	0,	// 18: (skipped)
+	0,	// 19: (skipped)
+	2,	// 20: kTexFormatAlphaLum16
+	0,	// 21: kTexFormatDXT1_RGB (compressed)
+	0,	// 22: kTexFormatDXT1_SRGB (compressed)
+	0,	// 23: kTexFormatDXT3_RGB (compressed)
+	0,	// 24: kTexFormatDXT3_SRGB (compressed)
+	0,	// 25: kTexFormatDXT5_RGB (compressed)
+	0,	// 26: kTexFormatDXT5_SRGB (compressed)
+	0,	// 27: kTexFormatBC6H (compressed)
+	0,	// 28: kTexFormatBC7_RGB (compressed)
+	0,	// 29: kTexFormatBC7_SRGB (compressed)
 };
 
 uint32_t GetBytesFromTextureFormat (TextureFormat inFormat)
 {
-    assert (inFormat < kTexFormatDXT1_RGB || inFormat == kTexFormatBGRA32 || inFormat == kTexFormatRGBA4444);
+    assert (inFormat < kTexFormatDXT1_RGB || inFormat == kTexFormatBGRA32 || inFormat == kTexFormatRGBA4444
+            || inFormat == kTexFormatSRGB8 || inFormat == kTexFormatSRGB8_ALPHA8 || inFormat == kTexR10G10B10A2);
+    // SRGB formats have same byte size as their linear counterparts
+    if (inFormat == kTexFormatSRGB8) return 3;
+    if (inFormat == kTexFormatSRGB8_ALPHA8) return 4;
 	return (inFormat == kTexFormatBGRA32) ? 4 : kTextureByteTable[inFormat];
 }
 
@@ -38,13 +59,16 @@ uint32_t GetMaxBytesPerPixel (TextureFormat inFormat)
 
 int GetRowBytesFromWidthAndFormat (int width, TextureFormat inFormat)
 {
-    assert (inFormat < kTexFormatDXT1_RGB || inFormat == kTexFormatBGRA32 || inFormat == kTexFormatRGBA4444);
+    assert (inFormat < kTexFormatDXT1_RGB || inFormat == kTexFormatBGRA32 || inFormat == kTexFormatRGBA4444
+            || inFormat == kTexFormatSRGB8 || inFormat == kTexFormatSRGB8_ALPHA8 || inFormat == kTexR10G10B10A2);
 	return GetBytesFromTextureFormat (inFormat) * width;
 }
 
 bool IsValidTextureFormat (TextureFormat format)
 {
 	if ((format >= kTexFormatAlpha8 && format <= kTexFormatRGBA4444) ||
+		format == kTexFormatSRGB8 || format == kTexFormatSRGB8_ALPHA8 ||
+		format == kTexR10G10B10A2 ||
 		IsCompressedPVRTCTextureFormat(format) ||
 		IsCompressedETCTextureFormat(format) ||
 		IsCompressedATCTextureFormat(format) ||
@@ -117,7 +141,8 @@ bool HasAlphaTextureFormat( TextureFormat format )
 	return format == kTexFormatAlpha8 || format == kTexFormatARGB4444 || format == kTexFormatRGBA4444 || format == kTexFormatRGBA8 || format == kTexFormatARGB8
 	|| format == kTexFormatARGBFloat || format == kTexFormatAlphaLum16 || format == kTexFormatDXT5_RGB || format == kTexFormatDXT3_RGB
 	|| format == kTexFormatPVRTC_RGBA2 || format == kTexFormatPVRTC_RGBA4 || format == kTexFormatATC_RGBA8 || format == kTexFormatBGRA32
-	|| format == kTexFormatETC2_RGBA1 || format == kTexFormatETC2_RGBA8 || (format >= kTexFormatASTC_RGBA_4x4 && format <= kTexFormatASTC_RGBA_12x12);
+	|| format == kTexFormatETC2_RGBA1 || format == kTexFormatETC2_RGBA8 || (format >= kTexFormatASTC_RGBA_4x4 && format <= kTexFormatASTC_RGBA_12x12)
+	|| format == kTexFormatSRGB8_ALPHA8 || format == kTexR10G10B10A2;
 }
 
 const char* GetCompressionTypeString (TextureFormat format)
@@ -167,6 +192,9 @@ const char* GetTextureFormatString(TextureFormat format)
 		case kTexFormatDXT1_RGB: return "RGB Compressed DXT1";
 		case kTexFormatDXT3_RGB: return "RGBA Compressed DXT3";
 		case kTexFormatDXT5_RGB: return "RGBA Compressed DXT5";
+		case kTexFormatSRGB8: return "sRGB 8";
+		case kTexFormatSRGB8_ALPHA8: return "sRGBA 8";
+		case kTexR10G10B10A2: return "R10G10B10A2";
 
 		// gles
 		case kTexFormatPVRTC_RGB2: return "RGB Compressed PVRTC 2 bits";

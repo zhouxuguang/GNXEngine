@@ -27,6 +27,8 @@ enum
     //srgb
     kTexFormatSRGB8 = 13,
     kTexFormatSRGB8_ALPHA8 = 14,
+
+    kTexR10G10B10A2 = 15,
     
     
     // This one is for internal use; storage is 16 bits/pixel; samples
