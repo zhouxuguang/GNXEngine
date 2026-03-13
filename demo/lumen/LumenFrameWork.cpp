@@ -77,13 +77,6 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
 		memcpy(normalData.data() + i, attrDataFlt.data() + 4 + (i * 8), 16);
 	}
 
-    // tangentData 和 normalData需要做特殊处理，适配我自己引擎的坐标系
-    for (uint32_t i = 0; i < vertexCount; i++)
-    {
-        //std::swap(tangentData[i].y, tangentData[i].z);
-        std::swap(normalData[i].y, normalData[i].z);
-    }
-
 	channels[RenderSystem::kShaderChannelTangent].offset = position.size() * 16;
 	channels[RenderSystem::kShaderChannelTangent].format = VertexFormatFloat4;
 	channels[RenderSystem::kShaderChannelTangent].stride = 16;
