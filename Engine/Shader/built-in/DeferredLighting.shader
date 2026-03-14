@@ -46,7 +46,7 @@ Texture2D gGBufferD;  // Position
 SamplerState gGBufferDSam;
 
 // 或者从深度重建位置
-Texture2D gDepthTexture;
+Texture2D gDepth;
 SamplerState gDepthSam;
 
 // 从深度重建世界坐标
@@ -112,7 +112,7 @@ float4 PS(VertexOut pin) : SV_Target0
     // 如果没有位置数据，从深度重建
     if (position.a < 0.5)
     {
-        float depth = gDepthTexture.Sample(gDepthSam, pin.texCoord).r;
+        float depth = gDepth.Sample(gDepthSam, pin.texCoord).r;
         position.rgb = ReconstructWorldPosition(pin.texCoord, depth);
     }
     

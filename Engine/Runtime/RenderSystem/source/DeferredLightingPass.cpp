@@ -179,6 +179,7 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
         FrameGraphResource gBufferA;
         FrameGraphResource gBufferB;
         FrameGraphResource gBufferC;
+        FrameGraphResource gBufferD;
         FrameGraphResource depthTexture;
         
         // Uniform Buffers
@@ -208,6 +209,7 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             data.gBufferA = builder.Read(params.gBufferA, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             data.gBufferB = builder.Read(params.gBufferB, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             data.gBufferC = builder.Read(params.gBufferC, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
+            data.gBufferD = builder.Read(params.gBufferD, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             data.depthTexture = builder.Read(params.depthTexture, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             
             // 保存Uniform Buffers
@@ -229,6 +231,7 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             FrameGraphTexture& gBufferA = resources.Get<FrameGraphTexture>(data.gBufferA);
             FrameGraphTexture& gBufferB = resources.Get<FrameGraphTexture>(data.gBufferB);
             FrameGraphTexture& gBufferC = resources.Get<FrameGraphTexture>(data.gBufferC);
+            FrameGraphTexture& gBufferD = resources.Get<FrameGraphTexture>(data.gBufferD);
             FrameGraphTexture& depthTexture = resources.Get<FrameGraphTexture>(data.depthTexture);
             FrameGraphTexture& outputTexture = resources.Get<FrameGraphTexture>(data.output.lightingResult);
             
@@ -274,14 +277,12 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             }
             
             // 绑定G-Buffer纹理
-            // GBuffer0: Albedo + Opacity
-            renderEncoder->SetFragmentTextureAndSampler("gGBuffer0", gBufferA.texture, mGBufferSampler);
-            // GBuffer1: Normal + Roughness
-            renderEncoder->SetFragmentTextureAndSampler("gGBuffer1", gBufferB.texture, mGBufferSampler);
-            // GBuffer2: Metallic + AO + Emissive
-            renderEncoder->SetFragmentTextureAndSampler("gGBuffer2", gBufferC.texture, mGBufferSampler);
-            // GBuffer3: Position（从深度重建，这里绑定深度纹理）
-            renderEncoder->SetFragmentTextureAndSampler("gDepthTexture", depthTexture.texture, mGBufferSampler);
+            renderEncoder->SetFragmentTextureAndSampler("gGBufferA", gBufferA.texture, mGBufferSampler);
+            renderEncoder->SetFragmentTextureAndSampler("gGBufferB", gBufferB.texture, mGBufferSampler);
+            renderEncoder->SetFragmentTextureAndSampler("gGBufferC", gBufferC.texture, mGBufferSampler);
+            renderEncoder->SetFragmentTextureAndSampler("gGBufferD", gBufferD.texture, mGBufferSampler);
+            // gDepthTexture: Position（从深度重建，这里绑定深度纹理）
+            renderEncoder->SetFragmentTextureAndSampler("gDepth", depthTexture.texture, mGBufferSampler);
             
             // 绑定IBL纹理（如果启用）
             if (data.enableIBL)

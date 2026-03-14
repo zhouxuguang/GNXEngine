@@ -35,6 +35,7 @@ struct DeferredLightingParams
     FrameGraphResource gBufferA;
     FrameGraphResource gBufferB;
     FrameGraphResource gBufferC;
+    FrameGraphResource gBufferD;
     FrameGraphResource depthTexture;   
     
     // 光源数据

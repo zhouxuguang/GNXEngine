@@ -51,7 +51,8 @@ private:
         CommandBufferPtr commandBuffer,
         const std::vector<DepthMeshItem>& meshItems,
         const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
-        UniformBufferPtr cameraUBO);
+        UniformBufferPtr cameraUBO,
+        FrameGraphResource preDepthTexture = -1);
 
     void RenderPresentPass(FrameGraph& frameGraph, CommandBufferPtr commandBuffer, FrameGraphResource depthResource);
 

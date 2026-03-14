@@ -112,6 +112,18 @@ GBufferData GBufferRenderer::AddToFrameGraph(
             data.gbuffer.gBufferC = builder.Create<FrameGraphTexture>("GBufferC", gBufferCDesc);
             builder.Write(data.gbuffer.gBufferC, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
+            // 创建 GBufferD
+            FrameGraphTexture::Desc gBufferDDesc;
+            gBufferDDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
+            gBufferDDesc.depth = 1;
+            gBufferDDesc.format = RenderCore::kTexFormatRGBA8;
+            data.gbuffer.gBufferD = builder.Create<FrameGraphTexture>("GBufferD", gBufferDDesc);
+            builder.Write(data.gbuffer.gBufferD, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
+
+            // 使用 PreDepth Pass 的深度图，读取并作为深度附件
+            // 管线总是先执行 PreDepth Pass
+            data.gbuffer.depthTexture = builder.Read(params.preDepthTexture, (uint32_t)RenderCore::ResourceAccessType::DepthStencilAttachment);
+
             // 保存渲染参数
             data.meshes = std::move(params.meshes);
             data.uniforms = std::move(params.uniforms);
@@ -124,6 +136,8 @@ GBufferData GBufferRenderer::AddToFrameGraph(
             FrameGraphTexture& gBufferA = resources.Get<FrameGraphTexture>(data.gbuffer.gBufferA);
             FrameGraphTexture& gBufferB = resources.Get<FrameGraphTexture>(data.gbuffer.gBufferB);
             FrameGraphTexture& gBufferC = resources.Get<FrameGraphTexture>(data.gbuffer.gBufferC);
+            FrameGraphTexture& gBufferD = resources.Get<FrameGraphTexture>(data.gbuffer.gBufferD);
+            FrameGraphTexture& depthTexture = resources.Get<FrameGraphTexture>(data.gbuffer.depthTexture);
 
             float debugColor[4] = {0.0f, 1.0f, 0.0f, 1.0f};
             SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), debugColor);
@@ -163,6 +177,22 @@ GBufferData GBufferRenderer::AddToFrameGraph(
             gBufferCAttachment->loadOp = ATTACHMENT_LOAD_OP_CLEAR;
             gBufferCAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
             renderPass.colorAttachments.push_back(gBufferCAttachment);
+
+            // 颜色附件 4: GBufferD
+            auto gBufferDAttachment = std::make_shared<RenderPassColorAttachment>();
+            gBufferDAttachment->texture = gBufferD.texture;
+            gBufferDAttachment->clearColor = {0.0f, 0.0f, 0.0f, 0.0f};
+            gBufferDAttachment->loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+            gBufferDAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            renderPass.colorAttachments.push_back(gBufferDAttachment);
+
+            // 深度附件
+            // 使用 PreDepth Pass 的深度图：读取已有深度，不再写入
+            auto depthAttachment = std::make_shared<RenderPassDepthAttachment>();
+            depthAttachment->texture = depthTexture.texture;
+            depthAttachment->loadOp = ATTACHMENT_LOAD_OP_LOAD;
+            depthAttachment->storeOp = ATTACHMENT_STORE_OP_DONT_CARE;
+            renderPass.depthAttachment = depthAttachment;
 
             // 创建 RenderEncoder
             RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);
@@ -212,7 +242,11 @@ GBufferData GBufferRenderer::AddToFrameGraph(
 void GBufferRenderer::CreateGBufferPipeline()
 {
 	GraphicsShaderInfo shaderInfoDepth = CreateGraphicsShaderInfo("BasePass");
+    shaderInfoDepth.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
 	shaderInfoDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
+    // 注意：如果有 PreDepth，管线应该设置 depthWriteEnabled = false
+    // 但由于管线是预先创建的，这里使用默认设置
+    // 实际使用时可以通过 RenderEncoder 动态设置
     mGBufferPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shaderInfoDepth.graphicsPipelineDesc);
     mGBufferPipeline->AttachGraphicsShader(shaderInfoDepth.graphicsShader);
 }

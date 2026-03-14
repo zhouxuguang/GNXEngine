@@ -97,13 +97,13 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // BasePass (G-Buffer)
     GBufferData gbufferData = RenderBasePass(
-        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO);
+        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, depthResource);
 
     // Deferred Lighting Pass
     FrameGraphResource lightingResult = RenderDeferredLightingPass(
         frameGraph, commandBuffer, gbufferData, depthResource, cameraUBO);
 
-    RenderPresentPass(frameGraph, commandBuffer, depthResource);
+    RenderPresentPass(frameGraph, commandBuffer, lightingResult);
 
     frameGraph.Compile();
     // 执行FrameGraph，RHI层会自动处理资源状态转换
@@ -175,7 +175,8 @@ GBufferData DeferredSceneRenderer::RenderBasePass(
     CommandBufferPtr commandBuffer,
     const std::vector<DepthMeshItem>& meshItems,
     const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
-    UniformBufferPtr cameraUBO)
+    UniformBufferPtr cameraUBO,
+    FrameGraphResource preDepthTexture)
 {
     // 收集蒙皮网格的骨骼矩阵UBO
     UniformBufferPtr skinnedMatrixUBO = nullptr;
@@ -190,6 +191,7 @@ GBufferData DeferredSceneRenderer::RenderBasePass(
     params.meshes.skinnedMeshes = skinnedMeshItems;
     params.uniforms.cameraUBO = cameraUBO;
     params.uniforms.skinnedMatrixUBO = skinnedMatrixUBO;
+    params.preDepthTexture = preDepthTexture;  // 传递 PreDepth 深度图
 
     // 初始化 GBufferRenderer（如果需要）
     if (!mGBufferRenderer->IsInitialized())
@@ -253,6 +255,7 @@ FrameGraphResource DeferredSceneRenderer::RenderDeferredLightingPass(
     params.gBufferA = gbufferData.gBufferA;
     params.gBufferB = gbufferData.gBufferB;
     params.gBufferC = gbufferData.gBufferC;
+    params.gBufferD = gbufferData.gBufferD;
     params.depthTexture = depthTexture;
     params.directionalLights = directionalLights;
     params.pointLights = pointLights;

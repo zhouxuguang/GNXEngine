@@ -29,6 +29,8 @@ struct GBufferData
     FrameGraphResource gBufferA;
     FrameGraphResource gBufferB;
     FrameGraphResource gBufferC;
+    FrameGraphResource gBufferD;
+    FrameGraphResource depthTexture;  // 深度纹理
 };
 
 // G-Buffer 渲染的网格数据
@@ -50,7 +52,11 @@ struct GBufferRenderParams
 {
     GBufferMeshData meshes;
     GBufferUniformData uniforms;
-    
+
+    // PreDepth Pass 生成的深度图
+    // BasePass 使用该深度图进行深度测试（关闭深度写入）
+    FrameGraphResource preDepthTexture;
+
     static GBufferRenderParams Create(
         const std::vector<DepthMeshItem>& staticMeshItems,
         UniformBufferPtr cameraUBO,
