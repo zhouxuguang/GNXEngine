@@ -165,7 +165,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
             // 颜色附件 2: GBufferB
             auto gBufferBAttachment = std::make_shared<RenderPassColorAttachment>();
             gBufferBAttachment->texture = gBufferB.texture;
-            gBufferBAttachment->clearColor = {0.5f, 0.5f, 0.0f, 0.0f}; // 法线默认朝向
+            gBufferBAttachment->clearColor = {0.0f, 0.0f, 0.0f, 0.0f};
             gBufferBAttachment->loadOp = ATTACHMENT_LOAD_OP_CLEAR;
             gBufferBAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
             renderPass.colorAttachments.push_back(gBufferBAttachment);
@@ -243,7 +243,9 @@ void GBufferRenderer::CreateGBufferPipeline()
 {
 	GraphicsShaderInfo shaderInfoDepth = CreateGraphicsShaderInfo("BasePass");
     shaderInfoDepth.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
-	shaderInfoDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
+    
+    // 这里必须带上有相等的操作符，因为在preZ阶段已经写入深度，现阶段只是比较深度而已，理论上深度是一样的才通过绘制
+	shaderInfoDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionEqual;
     // 注意：如果有 PreDepth，管线应该设置 depthWriteEnabled = false
     // 但由于管线是预先创建的，这里使用默认设置
     // 实际使用时可以通过 RenderEncoder 动态设置
