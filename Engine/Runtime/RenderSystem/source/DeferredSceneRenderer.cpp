@@ -24,6 +24,7 @@ DeferredSceneRenderer::DeferredSceneRenderer()
 {
     mGBufferRenderer = std::make_shared<GBufferRenderer>();
     mDepthRender = std::make_unique<DepthRenderer>(GetRenderDevice().get());
+    mDeferredLightingPass = std::make_shared<DeferredLightingPass>();
     
     mPostProcessing = new PostProcessing(GetRenderDevice());
 }
@@ -48,6 +49,8 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     {
         return;
     }
+    
+    UpdateCameraView(sceneManager);
 
     CommandQueuePtr graphicsQueue = RenderCore::GetRenderDevice()->GetCommandQueue(QueueType::Graphics, 0);
     CommandBufferPtr commandBuffer = graphicsQueue->CreateCommandBuffer();
@@ -95,6 +98,10 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     GBufferData gbufferData = RenderBasePass(
         frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO);
 
+    // Deferred Lighting Pass
+    FrameGraphResource lightingResult = RenderDeferredLightingPass(
+        frameGraph, commandBuffer, gbufferData, depthResource, cameraUBO);
+
     RenderPresentPass(frameGraph, commandBuffer, depthResource);
 
     frameGraph.Compile();
@@ -106,12 +113,26 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     // 阶段1: G-Buffer Pass
 
     // 阶段2: 延迟光照Pass
-    RenderDeferredLightingPass();
 
     // 阶段3: 渲染天空盒
 
     // 阶段4: 前向渲染Pass（半透明物体）
     RenderForwardPass();
+}
+
+void DeferredSceneRenderer::UpdateCameraView(SceneManager *sceneManager)
+{
+    uint32_t width = 1;
+    uint32_t height = 1;
+    RenderSystem::CameraPtr cameraPtr = sceneManager->GetCamera("MainCamera");
+    if (cameraPtr)
+    {
+        Vector2i viewSize = cameraPtr->GetViewSize();
+        width = viewSize.x;
+        height = viewSize.y;
+    }
+    mWidth = width;
+    mHeight = height;
 }
 
 FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(
@@ -172,9 +193,7 @@ GBufferData DeferredSceneRenderer::RenderBasePass(
     // 初始化 GBufferRenderer（如果需要）
     if (!mGBufferRenderer->IsInitialized())
     {
-        uint32_t width = 1920;   // TODO: 从配置获取
-        uint32_t height = 1080;
-        mGBufferRenderer->Initialize(width, height);
+        mGBufferRenderer->Initialize(mWidth, mHeight);
     }
 
     // 调用 GBufferRenderer::AddToFrameGraph
@@ -208,8 +227,66 @@ void DeferredSceneRenderer::RenderPresentPass(FrameGraph& frameGraph, CommandBuf
     });
 }
 
-void DeferredSceneRenderer::RenderDeferredLightingPass()
+FrameGraphResource DeferredSceneRenderer::RenderDeferredLightingPass(
+    FrameGraph& frameGraph,
+    CommandBufferPtr commandBuffer,
+    const GBufferData& gbufferData,
+    FrameGraphResource depthTexture,
+    UniformBufferPtr cameraUBO)
 {
+    // 初始化延迟光照Pass（如果需要）
+    if (!mDeferredLightingPass->IsInitialized())
+    {
+        DeferredLightingConfig config;
+        mDeferredLightingPass->Initialize(config);
+    }
+
+    // 收集场景中的光源
+    std::vector<DirectionLight*> directionalLights;
+    std::vector<PointLight*> pointLights;
+    std::vector<SpotLight*> spotLights;
+    CollectLights(directionalLights, pointLights, spotLights);
+
+    // 构建延迟光照参数
+    DeferredLightingParams params;
+    params.gBufferA = gbufferData.gBufferA;
+    params.gBufferB = gbufferData.gBufferB;
+    params.gBufferC = gbufferData.gBufferC;
+    params.depthTexture = depthTexture;
+    params.directionalLights = directionalLights;
+    params.pointLights = pointLights;
+    params.spotLights = spotLights;
+    params.cameraUBO = cameraUBO;
+    params.width = mWidth;
+    params.height = mHeight;
+
+    // 执行延迟光照Pass
+    DeferredLightingOutput output = mDeferredLightingPass->AddToFrameGraph(
+        "DeferredLightingPass", frameGraph, commandBuffer, params);
+
+    return output.lightingResult;
+}
+
+void DeferredSceneRenderer::CollectLights(
+    std::vector<DirectionLight*>& directionalLights,
+    std::vector<PointLight*>& pointLights,
+    std::vector<SpotLight*>& spotLights)
+{
+    SceneManager* sceneManager = SceneManager::GetInstance();
+    if (!sceneManager)
+    {
+        return;
+    }
+
+    // 从场景节点递归收集光源
+    SceneNode* rootNode = sceneManager->GetRootNode();
+    if (!rootNode)
+    {
+        return;
+    }
+
+    // TODO: 实现光源收集
+    // 目前先返回空列表，后续需要从场景节点中查询光源组件
 }
 
 void DeferredSceneRenderer::RenderForwardPass()

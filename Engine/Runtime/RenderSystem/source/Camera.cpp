@@ -59,8 +59,12 @@ void Camera::LookAt(const Vector3f& position, const Vector3f& target, const Vect
     mViewDirty = false;
 }
 
-void Camera::SetLens(float fovY, float aspect, float zNear, float zFar)
+void Camera::SetLens(float fovY, uint32_t width, uint32_t height, float zNear, float zFar)
 {
+    mWidth = width;
+    mHeight = height;
+    
+    float aspect = (float)width / (float)height;
     if (mUseReverseZ)
     {
         // 使用无限远平面 + Reverse-Z
@@ -76,12 +80,6 @@ void Camera::SetLens(float fovY, float aspect, float zNear, float zFar)
     mNearZ = zNear;
     mAspect = aspect;
     mFov = fovY;
-}
-
-void Camera::SetViewSize(uint32_t width, uint32_t height)
-{
-    mWidth = width;
-    mHeight = height;
 }
 
 void Camera::UpdateViewMatrix()
@@ -166,6 +164,11 @@ float Camera::GetAspect() const
 Vector3f Camera::GetTarget() const
 {
     return mLook;
+}
+
+Vector2i Camera::GetViewSize() const
+{
+    return Vector2i(mWidth, mHeight);
 }
 
 Rayf Camera::GenerateRay(float screenX, float screenY) const

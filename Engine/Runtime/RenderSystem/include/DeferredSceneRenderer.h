@@ -11,6 +11,7 @@
 #include "SceneRenderer.h"
 #include "GBufferRenderer.h"
 #include "DepthRenderer.h"
+#include "DeferredLightingPass.h"
 #include "PostProcess/PostProcessing.h"
 #include <vector>
 
@@ -57,7 +58,20 @@ private:
     /**
      * 执行延迟光照Pass
      */
-    void RenderDeferredLightingPass();
+    FrameGraphResource RenderDeferredLightingPass(
+        FrameGraph& frameGraph,
+        CommandBufferPtr commandBuffer,
+        const GBufferData& gbufferData,
+        FrameGraphResource depthTexture,
+        UniformBufferPtr cameraUBO);
+
+    /**
+     * 收集场景中的光源
+     */
+    void CollectLights(
+        std::vector<DirectionLight*>& directionalLights,
+        std::vector<PointLight*>& pointLights,
+        std::vector<SpotLight*>& spotLights);
 
     /**
      * 执行前向渲染Pass（用于半透明物体）
@@ -80,11 +94,17 @@ private:
      * @param deltaTime 帧时间（秒）
      */
     virtual void Render(SceneManager *sceneManager, float deltaTime) override;
+    
+    void UpdateCameraView(SceneManager *sceneManager);
 
 private:
     GBufferRendererPtr mGBufferRenderer;
     DepthRendererUniPtr mDepthRender = nullptr;
+    DeferredLightingPassPtr mDeferredLightingPass = nullptr;
     PostProcessing* mPostProcessing = nullptr;
+    
+    uint32_t mWidth = 1;
+    uint32_t mHeight = 1;
 };
 
 typedef std::shared_ptr<DeferredSceneRenderer> DeferredSceneRendererPtr;

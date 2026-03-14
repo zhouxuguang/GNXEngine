@@ -29,7 +29,6 @@ DeferredLightingPass::DeferredLightingPass()
 
 DeferredLightingPass::~DeferredLightingPass()
 {
-    Shutdown();
 }
 
 //=============================================================================
@@ -55,35 +54,6 @@ bool DeferredLightingPass::Initialize(const DeferredLightingConfig& config)
     return true;
 }
 
-void DeferredLightingPass::Shutdown()
-{
-    mLightingPipeline = nullptr;
-    mLightDataUBO = nullptr;
-    mInitialized = false;
-}
-
-void DeferredLightingPass::Resize(uint32_t width, uint32_t height)
-{
-    if (mConfig.width == width && mConfig.height == height)
-    {
-        return;
-    }
-    
-    mConfig.width = width;
-    mConfig.height = height;
-}
-
-void DeferredLightingPass::UpdateConfig(const DeferredLightingConfig& config)
-{
-    bool needResize = (config.width != mConfig.width || config.height != mConfig.height);
-    mConfig = config;
-    
-    if (needResize && mInitialized)
-    {
-        Resize(config.width, config.height);
-    }
-}
-
 //=============================================================================
 // 创建渲染管线
 //=============================================================================
@@ -95,7 +65,6 @@ void DeferredLightingPass::CreateLightingPipeline()
     
     // 配置深度测试（只读深度）
     shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
-    shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionGreater;
     
     // 创建管线
     mLightingPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shaderInfo.graphicsPipelineDesc);
@@ -197,12 +166,16 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
     CommandBufferPtr commandBuffer,
     const DeferredLightingParams& params)
 {
+    mWidth = params.width;
+    mHeight = params.height;
+    
     // 定义Pass数据结构
     struct LightingPassData
     {
         DeferredLightingOutput output;
         
         // 输入纹理
+        FrameGraphResource gSceneColor;
         FrameGraphResource gBufferA;
         FrameGraphResource gBufferB;
         FrameGraphResource gBufferC;
@@ -225,7 +198,7 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
         {
             // 创建输出纹理（HDR格式）
             FrameGraphTexture::Desc outputDesc;
-            outputDesc.extent = RenderCore::Rect2D{0, 0, (int)mConfig.width, (int)mConfig.height};
+            outputDesc.extent = RenderCore::Rect2D{0, 0, (int)params.width, (int)params.height};
             outputDesc.depth = 1;
             outputDesc.format = RenderCore::kTexFormatRGBA16Float;
             data.output.lightingResult = builder.Create<FrameGraphTexture>("LightingResult", outputDesc);
@@ -264,7 +237,7 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             
             // 创建RenderPass
             RenderPass renderPass;
-            renderPass.renderRegion = Rect2D(0, 0, (int)mConfig.width, (int)mConfig.height);
+            renderPass.renderRegion = Rect2D(0, 0, (int)mWidth, (int)mHeight);
             
             // 颜色附件
             auto colorAttachment = std::make_shared<RenderPassColorAttachment>();

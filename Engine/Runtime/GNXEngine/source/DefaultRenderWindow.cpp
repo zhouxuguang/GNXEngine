@@ -51,7 +51,7 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
     //初始化相机
     RenderSystem::CameraPtr cameraPtr = sceneManager->CreateCamera("MainCamera");
     cameraPtr->LookAt(mathutil::Vector3f(0, 0, 5), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
-    cameraPtr->SetLens(60, float(mData.width) / mData.height, 0.1f, 1000.f);
+    cameraPtr->SetLens(60, mData.width, mData.height, 0.1f, 1000.f);
 }
 
 DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props, void* externalWindowHandle)
@@ -90,7 +90,7 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props, void* externa
         //初始化相机
         RenderSystem::CameraPtr cameraPtr = sceneManager->CreateCamera("MainCamera");
         cameraPtr->LookAt(mathutil::Vector3f(0, 0, 5), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
-        cameraPtr->SetLens(60, float(mData.width) / mData.height, 0.1f, 1000.f);
+        cameraPtr->SetLens(60, mData.width, mData.height, 0.1f, 1000.f);
     }
 }
 

@@ -12,6 +12,7 @@
 #include "RSDefine.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 #include "Runtime/MathUtil/include/Vector3.h"
+#include "Runtime/MathUtil/include/Vector2.h"
 #include "Runtime/RenderCore/include/RenderDefine.h"
 #include "SceneObject.h"
 #include "Runtime/MathUtil/include/Ray.h"
@@ -34,10 +35,7 @@ public:
     void LookAt(const Vector3f& position, const Vector3f& target, const Vector3f& up);
     
     //设置投影矩阵的参数
-    void SetLens(float fovY, float aspect, float zNear, float zFar);
-    
-    // 设置渲染区域的大小
-    void SetViewSize(uint32_t width, uint32_t height);
+    void SetLens(float fovY, uint32_t width, uint32_t height, float zNear, float zFar);
     
     void SetPosition(float x, float y, float z);
     
@@ -68,6 +66,9 @@ public:
     float GetAspect() const;
     
     Vector3f GetTarget() const;
+    
+    // 获得渲染视口的大小
+    Vector2i GetViewSize() const;
     
     // 根据屏幕坐标产生射线
     Rayf GenerateRay(float screenX, float screenY) const;

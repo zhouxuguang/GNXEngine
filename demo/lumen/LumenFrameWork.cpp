@@ -127,7 +127,7 @@ void LumenFrameWork::Resize(uint32_t width, uint32_t height)
 	}
 
 	cameraPtr->LookAt(mathutil::Vector3f(1059.769897f, 336.560120f, -833.207886f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
-	cameraPtr->SetLens(60, float(width) / height, 10.0f, 10000.f);
+	cameraPtr->SetLens(60, width, height, 10.0f, 10000.f);
     
 }
 
