@@ -59,6 +59,9 @@ public:
     // 清空所有灯光
     void ClearLights();
 
+    // 获取所有灯光
+    const std::vector<Light*>& GetAllLights() const { return mLights; }
+
     CameraPtr CreateCamera(const std::string &name);
 
     CameraPtr GetCamera(const std::string &name) const;

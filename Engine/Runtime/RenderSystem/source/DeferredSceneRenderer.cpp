@@ -16,6 +16,7 @@
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "FrameGraph/FrameGraphExecuteContext.h"
 #include <algorithm>
+#include <functional>
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -278,15 +279,30 @@ void DeferredSceneRenderer::CollectLights(
         return;
     }
 
-    // 从场景节点递归收集光源
-    SceneNode* rootNode = sceneManager->GetRootNode();
-    if (!rootNode)
-    {
-        return;
-    }
+    // 从 SceneManager 获取所有光源
+    const std::vector<Light*>& allLights = sceneManager->GetAllLights();
 
-    // TODO: 实现光源收集
-    // 目前先返回空列表，后续需要从场景节点中查询光源组件
+    // 按类型分类
+    for (Light* light : allLights)
+    {
+        if (!light)
+        {
+            continue;
+        }
+
+        switch (light->getLightType())
+        {
+        case Light::LightType::DirectionLight:
+            directionalLights.push_back(static_cast<DirectionLight*>(light));
+            break;
+        case Light::LightType::PointLight:
+            pointLights.push_back(static_cast<PointLight*>(light));
+            break;
+        case Light::LightType::SpotLight:
+            spotLights.push_back(static_cast<SpotLight*>(light));
+            break;
+        }
+    }
 }
 
 void DeferredSceneRenderer::RenderForwardPass()
