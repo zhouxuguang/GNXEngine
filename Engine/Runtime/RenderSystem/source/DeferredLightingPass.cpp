@@ -7,55 +7,17 @@
 
 #include "DeferredLightingPass.h"
 #include "ShaderAssetLoader.h"
+#include "RenderParameter.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/RenderCore/include/RenderPass.h"
+#include "Runtime/RenderCore/include/TextureSampler.h"
 #include "Runtime/MathUtil/include/Vector4.h"
 #include <cmath>
 
 USING_NS_MATHUTIL
+USING_NS_RENDERCORE
 
 NS_RENDERSYSTEM_BEGIN
-
-//=============================================================================
-// 光源数据结构（用于GPU）
-//=============================================================================
-
-// 最大光源数量
-constexpr uint32_t MAX_DIRECTIONAL_LIGHTS = 4;
-constexpr uint32_t MAX_POINT_LIGHTS = 64;
-constexpr uint32_t MAX_SPOT_LIGHTS = 32;
-
-// GPU端的光源数据结构
-struct GPUDirectionalLight
-{
-    Vector4f direction;      // 方向 (xyz), 强度 (w)
-    Vector4f color;          // RGB颜色 + 强度
-};
-
-struct GPUPointLight
-{
-    Vector4f position;       // 位置 (xyz), 强度 (w)
-    Vector4f color;          // RGB颜色 + 衰减半径
-    Vector4f attenuation;    // 常数衰减, 线性衰减, 二次衰减, 范围
-};
-
-struct GPUSpotLight
-{
-    Vector4f position;       // 位置 (xyz), 强度 (w)
-    Vector4f direction;      // 方向 (xyz), 内锥角余弦 (w)
-    Vector4f color;          // RGB颜色 + 外锥角余弦
-    Vector4f attenuation;    // 常数衰减, 线性衰减, 二次衰减, 范围
-};
-
-// 光源UBO数据结构
-struct LightDataUBO
-{
-    GPUDirectionalLight directionalLights[MAX_DIRECTIONAL_LIGHTS];
-    GPUPointLight pointLights[MAX_POINT_LIGHTS];
-    GPUSpotLight spotLights[MAX_SPOT_LIGHTS];
-    
-    Vector4f ambientColor;       // 环境光颜色 + 强度
-};
 
 //=============================================================================
 // 构造/析构函数
@@ -132,13 +94,20 @@ void DeferredLightingPass::CreateLightingPipeline()
     GraphicsShaderInfo shaderInfo = CreateGraphicsShaderInfo("DeferredLighting");
     
     // 配置深度测试（只读深度）
-    shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = true;
     shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
-    shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
+    shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionGreater;
     
     // 创建管线
     mLightingPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shaderInfo.graphicsPipelineDesc);
     mLightingPipeline->AttachGraphicsShader(shaderInfo.graphicsShader);
+    
+    // 创建纹理采样器
+    SamplerDesc samplerDesc;
+    samplerDesc.filterMin = MIN_LINEAR;
+    samplerDesc.filterMag = MAG_LINEAR;
+    samplerDesc.wrapS = CLAMP_TO_EDGE;
+    samplerDesc.wrapT = CLAMP_TO_EDGE;
+    mGBufferSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(samplerDesc);
 }
 
 //=============================================================================
@@ -147,6 +116,8 @@ void DeferredLightingPass::CreateLightingPipeline()
 
 void DeferredLightingPass::CreateLightUniformBuffers()
 {
+    // 创建光源数据UBO - 使用引擎统一的cbLighting结构
+    mLightDataUBO = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbLighting));
 }
 
 //=============================================================================
@@ -155,6 +126,65 @@ void DeferredLightingPass::CreateLightUniformBuffers()
 
 void DeferredLightingPass::UpdateLightData(const DeferredLightingParams& params)
 {
+    if (!mLightDataUBO)
+    {
+        return;
+    }
+    
+    // 使用引擎统一的cbLighting结构传递主光源数据
+    cbLighting lightData;
+    memset(&lightData, 0, sizeof(lightData));
+    
+    // 优先使用第一个方向光
+    if (!params.directionalLights.empty() && params.directionalLights[0])
+    {
+        DirectionLight* light = params.directionalLights[0];
+        Vector3f dir = light->getDirection();
+        // 方向光：w=0表示方向
+        lightData.WorldSpaceLightPos = mathutil::make_simd_float4(dir.x, dir.y, dir.z, 0.0f);
+        
+        Vector3f color = light->getColor();
+        Vector3f strength = light->getStrength();
+        lightData.LightColor = mathutil::make_simd_float4(color.x, color.y, color.z, 1.0f);
+        lightData.Strength = mathutil::make_simd_float3(strength.x, strength.y, strength.z);
+        lightData.FalloffStart = light->getFalloffStart();
+        lightData.FalloffEnd = light->getFalloffEnd();
+        lightData.SpotPower = 0.0f;
+    }
+    // 如果没有方向光，使用第一个点光源
+    else if (!params.pointLights.empty() && params.pointLights[0])
+    {
+        PointLight* light = params.pointLights[0];
+        Vector3f pos = light->getPosition();
+        // 点光源：w=1表示位置
+        lightData.WorldSpaceLightPos = mathutil::make_simd_float4(pos.x, pos.y, pos.z, 1.0f);
+        
+        Vector3f color = light->getColor();
+        Vector3f strength = light->getStrength();
+        lightData.LightColor = mathutil::make_simd_float4(color.x, color.y, color.z, 1.0f);
+        lightData.Strength = mathutil::make_simd_float3(strength.x, strength.y, strength.z);
+        lightData.FalloffStart = light->getFalloffStart();
+        lightData.FalloffEnd = light->getFalloffEnd();
+        lightData.SpotPower = 0.0f;
+    }
+    // 如果没有点光源，使用第一个聚光灯
+    else if (!params.spotLights.empty() && params.spotLights[0])
+    {
+        SpotLight* light = params.spotLights[0];
+        Vector3f pos = light->getPosition();
+        lightData.WorldSpaceLightPos = mathutil::make_simd_float4(pos.x, pos.y, pos.z, 1.0f);
+        
+        Vector3f color = light->getColor();
+        Vector3f strength = light->getStrength();
+        lightData.LightColor = mathutil::make_simd_float4(color.x, color.y, color.z, 1.0f);
+        lightData.Strength = mathutil::make_simd_float3(strength.x, strength.y, strength.z);
+        lightData.FalloffStart = light->getFalloffStart();
+        lightData.FalloffEnd = light->getFalloffEnd();
+        lightData.SpotPower = light->getSpotPower();
+    }
+    
+    // 更新到UBO
+    mLightDataUBO->SetData(&lightData, 0, sizeof(lightData));
 }
 
 //=============================================================================
@@ -257,18 +287,49 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             // 绑定渲染管线
             renderEncoder->SetGraphicsPipeline(mLightingPipeline);
             
-            // 绑定相机UBO
+            // 绑定相机UBO - 使用名称绑定匹配cbPerCamera
             if (data.cameraUBO)
             {
-                renderEncoder->SetVertexUniformBuffer(data.cameraUBO, 0);
-                renderEncoder->SetFragmentUniformBuffer(data.cameraUBO, 0);
+                renderEncoder->SetVertexUniformBuffer("cbPerCamera", data.cameraUBO);
+                renderEncoder->SetFragmentUniformBuffer("cbPerCamera", data.cameraUBO);
             }
             
-            // 绑定光源UBO
+            // 绑定光源UBO - 使用名称绑定匹配cbLighting
             if (data.lightUBO)
             {
-                renderEncoder->SetFragmentUniformBuffer(data.lightUBO, 1);
+                renderEncoder->SetFragmentUniformBuffer("cbLighting", data.lightUBO);
             }
+            
+            // 绑定G-Buffer纹理
+            // GBuffer0: Albedo + Opacity
+            renderEncoder->SetFragmentTextureAndSampler("gGBuffer0", gBufferA.texture, mGBufferSampler);
+            // GBuffer1: Normal + Roughness
+            renderEncoder->SetFragmentTextureAndSampler("gGBuffer1", gBufferB.texture, mGBufferSampler);
+            // GBuffer2: Metallic + AO + Emissive
+            renderEncoder->SetFragmentTextureAndSampler("gGBuffer2", gBufferC.texture, mGBufferSampler);
+            // GBuffer3: Position（从深度重建，这里绑定深度纹理）
+            renderEncoder->SetFragmentTextureAndSampler("gDepthTexture", depthTexture.texture, mGBufferSampler);
+            
+            // 绑定IBL纹理（如果启用）
+            if (data.enableIBL)
+            {
+                if (data.irradianceMap)
+                {
+                    renderEncoder->SetFragmentTextureAndSampler("texEnvMapIrradiance", data.irradianceMap, mGBufferSampler);
+                }
+                if (data.prefilteredMap)
+                {
+                    renderEncoder->SetFragmentTextureAndSampler("texEnvMap", data.prefilteredMap, mGBufferSampler);
+                }
+                if (data.brdfLUT)
+                {
+                    renderEncoder->SetFragmentTextureAndSampler("texBRDF_LUT", data.brdfLUT, mGBufferSampler);
+                }
+            }
+            
+            // 绘制全屏三角形（3个顶点）
+            // Shader中使用SV_VertexID生成顶点，不需要顶点缓冲区
+            renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
             
             renderEncoder->EndEncode();
         }

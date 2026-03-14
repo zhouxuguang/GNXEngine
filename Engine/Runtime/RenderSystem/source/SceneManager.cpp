@@ -262,6 +262,8 @@ void SceneManager::Render(RenderEncoderPtr renderEncoder)
         mSceneRenderer->Render(this, 0.0);
     }
     
+    return;
+    
     // 保留原有的渲染逻辑（前向渲染）
     if (!mRootSceneNode)
     {

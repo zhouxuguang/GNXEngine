@@ -162,6 +162,9 @@ private:
     // 延迟光照管线
     GraphicsPipelinePtr mLightingPipeline = nullptr;
     
+    // G-Buffer采样器
+    TextureSamplerPtr mGBufferSampler = nullptr;
+    
     // 光源数据UBO
     UniformBufferPtr mLightDataUBO = nullptr;
     

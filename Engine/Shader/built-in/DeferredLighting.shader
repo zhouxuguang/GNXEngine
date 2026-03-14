@@ -56,23 +56,9 @@ SamplerState gGBufferSam3 : register(s3);
 Texture2D gDepthTexture : register(t4);
 SamplerState gDepthSam : register(s4);
 
-// 光照信息常量缓冲区
-cbuffer LightCB : register(b2)
-{
-    float4 _WorldSpaceLightPos;
-    float4 _LightColor;
-    float3 _Strength;
-    float _FalloffStart;
-    float _FalloffEnd;
-    float _SpotPower;
-};
-
-// 相机信息
-cbuffer CameraCB : register(b5)
-{
-    float4x4 _InvViewProjMatrix;
-    float3 _CameraPosition;
-};
+// 注意：使用引擎统一的cbPerCamera和cbLighting（在GNXEngineVariables.hlsl中定义）
+// cbPerCamera包含: MATRIX_INV_VP, _WorldSpaceCameraPos 等
+// cbLighting包含: _WorldSpaceLightPos, _LightColor, _Strength, _FalloffStart, _FalloffEnd, _SpotPower
 
 // 从深度重建世界坐标
 float3 ReconstructWorldPosition(float2 uv, float depth)
@@ -81,7 +67,7 @@ float3 ReconstructWorldPosition(float2 uv, float depth)
     #if defined(VULKAN)
     clipPos.y = -clipPos.y;  // Vulkan的Y轴翻转
     #endif
-    float4 worldPos = mul(_InvViewProjMatrix, clipPos);
+    float4 worldPos = mul(MATRIX_INV_VP, clipPos);
     return worldPos.xyz / worldPos.w;
 }
 
@@ -91,7 +77,7 @@ float3 ComputeLighting(GBufferData gBufferData, float3 lightDir, float3 lightCol
     // 标准PBR光照计算
     
     float3 N = normalize(gBufferData.normal);
-    float3 V = normalize(_CameraPosition - gBufferData.position);
+    float3 V = normalize(_WorldSpaceCameraPos - gBufferData.position);
     float3 L = normalize(lightDir);
     float3 H = normalize(V + L);
     
