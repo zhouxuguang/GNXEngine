@@ -35,10 +35,10 @@ VertexOutput VS(VertexInput input)
 
 struct FragmentOutput 
 {
-    float4 outRT0 : SV_TARGET0;
-    float4 outRT1 : SV_TARGET1;
-    float4 outRT2 : SV_TARGET2;
-    float4 outRT3 : SV_TARGET3;
+    float4 outRT0 : SV_TARGET0;   //scene color
+    float4 outRT1 : SV_TARGET1;   //Normal + 0.33333f
+    float4 outRT2 : SV_TARGET2;   //Metallic + Specular + Roughness + [4 bit 0b1010 | 4 bit ShadingModel]
+    float4 outRT3 : SV_TARGET3;   //BaseColor + GenericAO
 };
 
 FragmentOutput PS(VertexOutput input)
@@ -48,13 +48,14 @@ FragmentOutput PS(VertexOutput input)
     
     FragmentOutput output;
 
-    output.outRT0 = float4(input.position.xyz, 1.0f);
+    output.outRT0 = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
     output.outRT1 = float4(normal, 0.333333f);
 
-    output.outRT2 = float4(0.0f, 0.0f, 1.0f, 1.0f);
+    uint lastCompoent = (10 << 4) | (1);
+    output.outRT2 = float4(0.0f, 0.5f, 0.6407f, float(lastCompoent) / 255.0f);
 
-    output.outRT3 = float4(0.0f, 0.0f, 1.0f, 1.0f);
+    output.outRT3 = float4(0.9f, 0.9f, 0.9f, 1.0f);
 
     return output;
 }
