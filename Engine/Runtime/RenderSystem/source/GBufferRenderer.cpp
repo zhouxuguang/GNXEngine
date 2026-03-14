@@ -92,7 +92,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
             FrameGraphTexture::Desc gBufferADesc;
             gBufferADesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
             gBufferADesc.depth = 1;
-            gBufferADesc.format = RenderCore::kTexFormatRGBA8;
+            gBufferADesc.format = RenderCore::kTexR10G10B10A2;
             data.gbuffer.gBufferA = builder.Create<FrameGraphTexture>("GBufferA", gBufferADesc);
             builder.Write(data.gbuffer.gBufferA, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
