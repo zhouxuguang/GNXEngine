@@ -75,7 +75,6 @@ public:
     
 protected:
     bool mViewDirty = true;
-    bool mUseReverseZ = true;   // 是否使用 Reverse-Z，默认启用
     Matrix4x4f mProjection;
     Matrix4x4f mView;
     Matrix4x4f mAdjust;    //调整矩阵，将OpenGL的投影矩阵适配道各个后端图形API

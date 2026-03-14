@@ -6,6 +6,7 @@
 //
 
 #include "Camera.h"
+#include "BuildSetting.h"
 #include <limits>
 
 NS_RENDERSYSTEM_BEGIN
@@ -65,7 +66,7 @@ void Camera::SetLens(float fovY, uint32_t width, uint32_t height, float zNear, f
     mHeight = height;
     
     float aspect = (float)width / (float)height;
-    if (mUseReverseZ)
+    if (BuildSetting::mUseReverseZ)
     {
         // 使用无限远平面 + Reverse-Z
         // 优势：消除远平面裁剪问题，深度精度更均匀

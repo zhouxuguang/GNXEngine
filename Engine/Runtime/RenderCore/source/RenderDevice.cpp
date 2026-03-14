@@ -21,6 +21,7 @@
 NAMESPACE_RENDERCORE_BEGIN
 
 // DepthConfig 静态成员定义
+// 注意：UseReverseZ 的值由上层 RenderSystem 的 BuildSetting 在初始化时同步
 bool DepthConfig::UseReverseZ = true;
 
 RenderDevice::RenderDevice() {}
