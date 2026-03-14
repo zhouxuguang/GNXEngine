@@ -159,6 +159,8 @@ FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(
 
     // 构建 DepthRenderParams
     DepthRenderParams params;
+    params.width = mWidth;
+    params.height = mHeight;
     params.meshes.staticMeshes = meshItems;
     params.meshes.skinnedMeshes = skinnedMeshItems;
     params.uniforms.cameraUBO = cameraUBO;

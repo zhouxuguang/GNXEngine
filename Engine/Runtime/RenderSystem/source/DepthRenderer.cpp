@@ -94,7 +94,7 @@ FrameGraphResource DepthRenderer::Render(
         {
             // 创建深度纹理
             FrameGraphTexture::Desc depthDesc;
-            depthDesc.extent = RenderCore::Rect2D{0, 0, (int)mConfig.width, (int)mConfig.height};
+            depthDesc.extent = RenderCore::Rect2D{0, 0, (int)params.width, (int)params.height};
             depthDesc.depth = 1;
             depthDesc.format = mConfig.depthFormat;
 
@@ -112,7 +112,7 @@ FrameGraphResource DepthRenderer::Render(
             
             RenderPass renderPass;
             
-            renderPass.renderRegion = Rect2D(0, 0, (int)mConfig.width, (int)mConfig.height);
+            renderPass.renderRegion = Rect2D(0, 0, (int)params.width, (int)params.height);
             
             renderPass.depthAttachment = std::make_shared<RenderPassDepthAttachment>();
             renderPass.depthAttachment->texture = depthTexture.texture;

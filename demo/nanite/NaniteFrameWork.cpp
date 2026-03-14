@@ -70,7 +70,7 @@ void NaniteFrameWork::Resize(uint32_t width, uint32_t height)
     }
 
     cameraPtr->LookAt(mathutil::Vector3f(330.0f, 330.0f, -330.0f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
-    cameraPtr->SetLens(60, float(width) / height, 0.1f, 1000.f);
+    cameraPtr->SetLens(60, width, height, 0.1f, 1000.f);
 
     mGlobalData.modelMatrix = mathutil::Matrix4x4f::CreateRotation(0, 1, 0, -90) * mathutil::Matrix4x4f::CreateRotation(1, 0, 0, 180);
     mGlobalData.misc0[0] = mipLevels[sCurrentMipLevelIndex];
