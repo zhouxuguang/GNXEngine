@@ -310,33 +310,10 @@ void SceneManager::Update(float deltaTime)
         UpdateNodeRecursive(mRootSceneNode, deltaTime);
         return;
     }
+    
+    UpdateCameraInfo(cameraPtr);
 
-    cbPerCamera perCamera;
-    perCamera.MATRIX_P = cameraPtr->GetProjectionMatrix();
-    perCamera.MATRIX_V = cameraPtr->GetViewMatrix();
-    mCameraUBO->SetData(&perCamera, 0, sizeof(perCamera));
-
-    //更新灯光 - 支持第一个有效灯光
-    Light * pointLight = GetLight("mainLight");
-    if (!pointLight && !mLights.empty())
-    {
-        // 如果找不到 mainLight，使用第一个灯光
-        pointLight = mLights[0];
-    }
-
-    if (pointLight)
-    {
-        cbLighting lightInfo;
-        Vector3f lightColor = pointLight->getColor();
-        lightInfo.LightColor = mathutil::make_simd_float4(lightColor.x, lightColor.y, lightColor.z, 1.0);
-        lightInfo.Strength = mathutil::make_simd_float3(pointLight->getStrength());
-        Vector3f lightPos = pointLight->getPosition();
-        lightInfo.WorldSpaceLightPos = mathutil::make_simd_float4(lightPos.x, lightPos.y, lightPos.z, 1.0);
-        lightInfo.FalloffStart = pointLight->getFalloffStart();
-        lightInfo.FalloffEnd = pointLight->getFalloffEnd();
-
-        mLightUBO->SetData(&lightInfo, 0, sizeof(cbLighting));
-    }
+    UpdateLightInfo();
 
     // 递归更新所有节点
     UpdateNodeRecursive(mRootSceneNode, deltaTime);
@@ -399,6 +376,39 @@ void SceneManager::UpdateNodeRecursive(SceneNode* node, float deltaTime)
     for (SceneNode* child : node->GetAllNodes())
     {
         UpdateNodeRecursive(child, deltaTime);
+    }
+}
+
+void SceneManager::UpdateCameraInfo(CameraPtr cameraPtr)
+{
+    cbPerCamera perCamera;
+    perCamera.MATRIX_P = cameraPtr->GetProjectionMatrix();
+    perCamera.MATRIX_V = cameraPtr->GetViewMatrix();
+    mCameraUBO->SetData(&perCamera, 0, sizeof(perCamera));
+}
+
+void SceneManager::UpdateLightInfo()
+{
+    //更新灯光 - 支持第一个有效灯光
+    Light * pointLight = GetLight("mainLight");
+    if (!pointLight && !mLights.empty())
+    {
+        // 如果找不到 mainLight，使用第一个灯光
+        pointLight = mLights[0];
+    }
+
+    if (pointLight)
+    {
+        cbLighting lightInfo;
+        Vector3f lightColor = pointLight->getColor();
+        lightInfo.LightColor = mathutil::make_simd_float4(lightColor.x, lightColor.y, lightColor.z, 1.0);
+        lightInfo.Strength = mathutil::make_simd_float3(pointLight->getStrength());
+        Vector3f lightPos = pointLight->getPosition();
+        lightInfo.WorldSpaceLightPos = mathutil::make_simd_float4(lightPos.x, lightPos.y, lightPos.z, 1.0);
+        lightInfo.FalloffStart = pointLight->getFalloffStart();
+        lightInfo.FalloffEnd = pointLight->getFalloffEnd();
+
+        mLightUBO->SetData(&lightInfo, 0, sizeof(cbLighting));
     }
 }
 

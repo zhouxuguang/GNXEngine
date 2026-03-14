@@ -116,6 +116,12 @@ private:
 
     // 递归更新节点
     void UpdateNodeRecursive(SceneNode* node, float deltaTime);
+    
+    // 更新相机信息
+    void UpdateCameraInfo(CameraPtr camera);
+    
+    // 更新灯光信息
+    void UpdateLightInfo();
 
 private:
     SceneNode *mRootSceneNode = nullptr;       //根节点
