@@ -6,6 +6,7 @@
 //
 
 #include "SceneManager.h"
+#include "BuildSetting.h"
 #include "RenderParameter.h"
 #include "DeferredSceneRenderer.h"
 #include "mesh/MeshRenderer.h"
@@ -385,13 +386,37 @@ void SceneManager::UpdateCameraInfo(CameraPtr cameraPtr)
     perCamera.MATRIX_P = cameraPtr->GetProjectionMatrix();
     perCamera.MATRIX_V = cameraPtr->GetViewMatrix();
     
+    perCamera.WorldSpaceCameraPos = mathutil::make_simd_float3(cameraPtr->GetPosition());
+    
     Vector2i viewSize = cameraPtr->GetViewSize();
+    double near = cameraPtr->GetNearZ();
+    double far = cameraPtr->GetFarZ();
     
     perCamera.ScreenParams = mathutil::make_simd_float4(viewSize.x, viewSize.y,
                                                 1.0 + 1.0 / viewSize.x, 1.0 + 1.0 / viewSize.y);
     
-    perCamera.ProjectionParams = mathutil::make_simd_float4(1.0, cameraPtr->GetNearZ(),
-                                                cameraPtr->GetFarZ(), 1.0 / cameraPtr->GetFarZ());
+    perCamera.ProjectionParams = mathutil::make_simd_float4(1.0, near, far, 1.0 / far);
+    
+    // Values used to linearize the Z buffer (http://www.humus.name/temp/Linearize%20depth.txt)
+    // x = 1-far/near
+    // y = far/near
+    // z = x/far
+    // w = y/far
+    // or in case of a reversed depth buffer (UNITY_REVERSED_Z is 1)
+    // x = -1+far/near
+    // y = 1
+    // z = x/far
+    // w = 1/far
+    if (BuildSetting::mUseReverseZ)
+    {
+        perCamera.ZBufferParams = mathutil::make_simd_float4(-1.0 + (far / near), 1.0,
+                                                             (-1.0 + (far / near)) / far, 1.0 / far);
+    }
+    else
+    {
+        perCamera.ZBufferParams = mathutil::make_simd_float4(1.0 - (far / near), far / near,
+                                                             (1.0 - (far / near)) / far, (far / near) / far);
+    }
     
     mCameraUBO->SetData(&perCamera, 0, sizeof(perCamera));
 }
