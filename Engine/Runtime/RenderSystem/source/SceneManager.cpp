@@ -393,13 +393,13 @@ void SceneManager::UpdateCameraInfo(CameraPtr cameraPtr)
     perCamera.WorldSpaceCameraPos = mathutil::make_simd_float3(cameraPtr->GetPosition());
     
     Vector2i viewSize = cameraPtr->GetViewSize();
-    double near = cameraPtr->GetNearZ();
-    double far = cameraPtr->GetFarZ();
+    double nearPlane = cameraPtr->GetNearZ();
+    double farPlane = cameraPtr->GetFarZ();
     
     perCamera.ScreenParams = mathutil::make_simd_float4(viewSize.x, viewSize.y,
                                                 1.0 + 1.0 / viewSize.x, 1.0 + 1.0 / viewSize.y);
     
-    perCamera.ProjectionParams = mathutil::make_simd_float4(1.0, near, far, 1.0 / far);
+    perCamera.ProjectionParams = mathutil::make_simd_float4(1.0, nearPlane, farPlane, 1.0 / farPlane);
     
     // Values used to linearize the Z buffer (http://www.humus.name/temp/Linearize%20depth.txt)
     // x = 1-far/near
@@ -413,13 +413,13 @@ void SceneManager::UpdateCameraInfo(CameraPtr cameraPtr)
     // w = 1/far
     if (BuildSetting::mUseReverseZ)
     {
-        perCamera.ZBufferParams = mathutil::make_simd_float4(-1.0 + (far / near), 1.0,
-                                                             (-1.0 + (far / near)) / far, 1.0 / far);
+        perCamera.ZBufferParams = mathutil::make_simd_float4(-1.0 + (farPlane / nearPlane), 1.0,
+                                                             (-1.0 + (farPlane / nearPlane)) / farPlane, 1.0 / farPlane);
     }
     else
     {
-        perCamera.ZBufferParams = mathutil::make_simd_float4(1.0 - (far / near), far / near,
-                                                             (1.0 - (far / near)) / far, (far / near) / far);
+        perCamera.ZBufferParams = mathutil::make_simd_float4(1.0 - (farPlane / nearPlane), farPlane / nearPlane,
+                                                             (1.0 - (farPlane / nearPlane)) / farPlane, (farPlane / nearPlane) / farPlane);
     }
     
     mCameraUBO->SetData(&perCamera, 0, sizeof(perCamera));
