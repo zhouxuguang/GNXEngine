@@ -251,9 +251,10 @@ void GBufferRenderer::CreateGBufferPipeline()
     
     // 这里必须带上有相等的操作符，因为在preZ阶段已经写入深度，现阶段只是比较深度而已，理论上深度是一样的才通过绘制
 	shaderInfoDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionEqual;
-    // 注意：如果有 PreDepth，管线应该设置 depthWriteEnabled = false
-    // 但由于管线是预先创建的，这里使用默认设置
-    // 实际使用时可以通过 RenderEncoder 动态设置
+    
+    // GBuffer 有5个颜色附件：SceneColor + GBufferA + GBufferB + GBufferC + GBufferD
+    shaderInfoDepth.graphicsPipelineDesc.renderTargetCount = 5;
+    
     mGBufferPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shaderInfoDepth.graphicsPipelineDesc);
     mGBufferPipeline->AttachGraphicsShader(shaderInfoDepth.graphicsShader);
 }
