@@ -384,7 +384,11 @@ void SceneManager::UpdateCameraInfo(CameraPtr cameraPtr)
 {
     cbPerCamera perCamera;
     perCamera.MATRIX_P = cameraPtr->GetProjectionMatrix();
+    perCamera.MATRIX_INV_P = perCamera.MATRIX_P.Inverse();
     perCamera.MATRIX_V = cameraPtr->GetViewMatrix();
+    perCamera.MATRIX_INV_V = perCamera.MATRIX_V.Inverse();
+    perCamera.MATRIX_VP = perCamera.MATRIX_P * perCamera.MATRIX_V;
+    perCamera.MATRIX_INV_VP = perCamera.MATRIX_VP.Inverse();
     
     perCamera.WorldSpaceCameraPos = mathutil::make_simd_float3(cameraPtr->GetPosition());
     
