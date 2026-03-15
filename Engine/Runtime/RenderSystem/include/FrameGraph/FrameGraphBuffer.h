@@ -11,8 +11,19 @@ class RENDERSYSTEM_API FrameGraphBuffer
 public:
 	struct Desc
 	{
-		char name[64];
-		uint32_t size;
+		char name[64] = {};
+		uint32_t size = 0;
+
+		// 便捷的名称设置方法
+		void SetName(const char* str)
+		{
+			snprintf(name, sizeof(name), "%s", str ? str : "");
+		}
+		
+		void SetName(const std::string& str)
+		{
+			snprintf(name, sizeof(name), "%s", str.c_str());
+		}
 	};
 
 	void create(const Desc& desc, void* allocator);

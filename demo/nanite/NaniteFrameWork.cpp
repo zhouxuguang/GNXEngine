@@ -179,20 +179,17 @@ void NaniteFrameWork::RenderFrame()
         {
             // 创建queueState资源
             RenderSystem::FrameGraphBuffer::Desc queueStateDesc;
-            memset(queueStateDesc.name, 0, sizeof(queueStateDesc.name));
-            strncpy(queueStateDesc.name, "QueueState", sizeof(queueStateDesc.name) - 1);
+            queueStateDesc.SetName("QueueState");
             queueStateDesc.size = 8;
 
             // 创建workArgs0和workArgs1资源
             RenderSystem::FrameGraphBuffer::Desc workArgsDesc;
-            memset(workArgsDesc.name, 0, sizeof(workArgsDesc.name));
-            strncpy(workArgsDesc.name, "WorkArgs0", sizeof(workArgsDesc.name) - 1);
+            workArgsDesc.SetName("WorkArgs0");
             workArgsDesc.size = 4 * 1024 * 1024;
 
             // 创建visBuffer64资源
             RenderSystem::FrameGraphTexture::Desc visBuffer64Desc;
-            memset(visBuffer64Desc.name, 0, sizeof(visBuffer64Desc.name));
-            strncpy(visBuffer64Desc.name, "VisBuffer64", sizeof(visBuffer64Desc.name) - 1);
+            visBuffer64Desc.SetName("VisBuffer64");
             visBuffer64Desc.extent = RenderCore::Rect2D(0, 0, mWidth, mHeight);
             visBuffer64Desc.depth = 1;
             visBuffer64Desc.numMipLevels = 1;
@@ -274,8 +271,7 @@ void NaniteFrameWork::RenderFrame()
                 if (i == 0)
                 {
                     RenderSystem::FrameGraphBuffer::Desc mainAndPostNodeAndClusterBatchesDesc;
-                    memset(mainAndPostNodeAndClusterBatchesDesc.name, 0, sizeof(mainAndPostNodeAndClusterBatchesDesc.name));
-                    strncpy(mainAndPostNodeAndClusterBatchesDesc.name, "MainAndPostNodeAndClusterBatches", sizeof(mainAndPostNodeAndClusterBatchesDesc.name) - 1);
+                    mainAndPostNodeAndClusterBatchesDesc.SetName("MainAndPostNodeAndClusterBatches");
                     mainAndPostNodeAndClusterBatchesDesc.size = 4 * 1024 * 1024;
 
                     data.mainAndPostNodeAndClusterBatches = builder.Create<RenderSystem::FrameGraphBuffer>("MainAndPostNodeAndClusterBatches", mainAndPostNodeAndClusterBatchesDesc);
@@ -328,8 +324,7 @@ void NaniteFrameWork::RenderFrame()
         {
             // 创建visibleClustersSWHW资源
             RenderSystem::FrameGraphBuffer::Desc visibleClustersSWHWDesc;
-            memset(visibleClustersSWHWDesc.name, 0, sizeof(visibleClustersSWHWDesc.name));
-            strncpy(visibleClustersSWHWDesc.name, "VisibleClustersSWHW", sizeof(visibleClustersSWHWDesc.name) - 1);
+            visibleClustersSWHWDesc.SetName("VisibleClustersSWHW");
             visibleClustersSWHWDesc.size = 4 * 1024 * 1024;
 
             data.visibleClustersSWHW = builder.Create<RenderSystem::FrameGraphBuffer>("VisibleClustersSWHW", visibleClustersSWHWDesc);
@@ -415,8 +410,7 @@ void NaniteFrameWork::RenderFrame()
 
             // 创建visBuffer资源
             RenderSystem::FrameGraphTexture::Desc visBufferDesc;
-            memset(visBufferDesc.name, 0, sizeof(visBufferDesc.name));
-            strncpy(visBufferDesc.name, "VisBuffer", sizeof(visBufferDesc.name) - 1);
+            visBufferDesc.SetName("VisBuffer");
             visBufferDesc.extent = RenderCore::Rect2D(0, 0, mWidth, mHeight);
             visBufferDesc.depth = 1;
             visBufferDesc.numMipLevels = 1;

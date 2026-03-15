@@ -82,42 +82,47 @@ GBufferData GBufferRenderer::AddToFrameGraph(
         {
             // 创建 SceneColor 纹理 (HDR)
             FrameGraphTexture::Desc sceneColorDesc;
+            sceneColorDesc.SetName("SceneColor");
             sceneColorDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
             sceneColorDesc.depth = 1;
             sceneColorDesc.format = RenderCore::kTexFormatRGBA16Float;
-            data.gbuffer.sceneColor = builder.Create<FrameGraphTexture>("SceneColor", sceneColorDesc);
+            data.gbuffer.sceneColor = builder.Create<FrameGraphTexture>(sceneColorDesc.name, sceneColorDesc);
             builder.Write(data.gbuffer.sceneColor, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
             // 创建 GBufferA
             FrameGraphTexture::Desc gBufferADesc;
+            gBufferADesc.SetName("GBufferA");
             gBufferADesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
             gBufferADesc.depth = 1;
             gBufferADesc.format = RenderCore::kTexR10G10B10A2;
-            data.gbuffer.gBufferA = builder.Create<FrameGraphTexture>("GBufferA", gBufferADesc);
+            data.gbuffer.gBufferA = builder.Create<FrameGraphTexture>(gBufferADesc.name, gBufferADesc);
             builder.Write(data.gbuffer.gBufferA, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
             // 创建 GBufferB
             FrameGraphTexture::Desc gBufferBDesc;
+            gBufferBDesc.SetName("GBufferB");
             gBufferBDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
             gBufferBDesc.depth = 1;
             gBufferBDesc.format = RenderCore::kTexFormatRGBA8;
-            data.gbuffer.gBufferB = builder.Create<FrameGraphTexture>("GBufferB", gBufferBDesc);
+            data.gbuffer.gBufferB = builder.Create<FrameGraphTexture>(gBufferBDesc.name, gBufferBDesc);
             builder.Write(data.gbuffer.gBufferB, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
             // 创建 GBufferC
             FrameGraphTexture::Desc gBufferCDesc;
+            gBufferCDesc.SetName("GBufferC");
             gBufferCDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
             gBufferCDesc.depth = 1;
             gBufferCDesc.format = RenderCore::kTexFormatSRGB8_ALPHA8;
-            data.gbuffer.gBufferC = builder.Create<FrameGraphTexture>("GBufferC", gBufferCDesc);
+            data.gbuffer.gBufferC = builder.Create<FrameGraphTexture>(gBufferCDesc.name, gBufferCDesc);
             builder.Write(data.gbuffer.gBufferC, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
             // 创建 GBufferD
             FrameGraphTexture::Desc gBufferDDesc;
+            gBufferDDesc.SetName("GBufferD");
             gBufferDDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
             gBufferDDesc.depth = 1;
             gBufferDDesc.format = RenderCore::kTexFormatRGBA8;
-            data.gbuffer.gBufferD = builder.Create<FrameGraphTexture>("GBufferD", gBufferDDesc);
+            data.gbuffer.gBufferD = builder.Create<FrameGraphTexture>(gBufferDDesc.name, gBufferDDesc);
             builder.Write(data.gbuffer.gBufferD, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
             // 使用 PreDepth Pass 的深度图，读取并作为深度附件

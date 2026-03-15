@@ -11,12 +11,23 @@ class RENDERSYSTEM_API FrameGraphTexture
 public:
 	struct Desc
 	{
-		char name[64];
+		char name[64] = {};
 		RenderCore::Rect2D extent;
 		uint32_t depth = 1;
 		uint32_t numMipLevels = 1;
 		uint32_t layers = 1;
 		RenderCore::TextureFormat format = RenderCore::kTexFormatInvalid;
+
+		// 便捷的名称设置方法
+		void SetName(const char* str)
+		{
+			snprintf(name, sizeof(name), "%s", str ? str : "");
+		}
+		
+		void SetName(const std::string& str)
+		{
+			snprintf(name, sizeof(name), "%s", str.c_str());
+		}
 
 		//bool shadowSampler{ false };
 		//WrapMode wrapMode{ WrapMode::ClampToEdge };

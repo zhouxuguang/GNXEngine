@@ -199,10 +199,11 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
         {
             // 创建输出纹理（HDR格式）
             FrameGraphTexture::Desc outputDesc;
+            outputDesc.SetName("LightingResult");
             outputDesc.extent = RenderCore::Rect2D{0, 0, (int)params.width, (int)params.height};
             outputDesc.depth = 1;
             outputDesc.format = RenderCore::kTexFormatRGBA16Float;
-            data.output.lightingResult = builder.Create<FrameGraphTexture>("LightingResult", outputDesc);
+            data.output.lightingResult = builder.Create<FrameGraphTexture>(outputDesc.name, outputDesc);
             builder.Write(data.output.lightingResult, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
             
             // 读取G-Buffer纹理

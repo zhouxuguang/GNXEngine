@@ -94,11 +94,12 @@ FrameGraphResource DepthRenderer::Render(
         {
             // 创建深度纹理
             FrameGraphTexture::Desc depthDesc;
+            depthDesc.SetName("DepthTexture");
             depthDesc.extent = RenderCore::Rect2D{0, 0, (int)params.width, (int)params.height};
             depthDesc.depth = 1;
             depthDesc.format = mConfig.depthFormat;
 
-            data.depthTexture = builder.Create<FrameGraphTexture>("DepthTexture", depthDesc);
+            data.depthTexture = builder.Create<FrameGraphTexture>(depthDesc.name, depthDesc);
             builder.Write(data.depthTexture, (uint32_t)RenderCore::ResourceAccessType::DepthStencilAttachment);
             //builder.SetSideEffect();
 
