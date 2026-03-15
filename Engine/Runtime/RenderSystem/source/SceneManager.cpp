@@ -384,6 +384,15 @@ void SceneManager::UpdateCameraInfo(CameraPtr cameraPtr)
     cbPerCamera perCamera;
     perCamera.MATRIX_P = cameraPtr->GetProjectionMatrix();
     perCamera.MATRIX_V = cameraPtr->GetViewMatrix();
+    
+    Vector2i viewSize = cameraPtr->GetViewSize();
+    
+    perCamera.ScreenParams = mathutil::make_simd_float4(viewSize.x, viewSize.y,
+                                                1.0 + 1.0 / viewSize.x, 1.0 + 1.0 / viewSize.y);
+    
+    perCamera.ProjectionParams = mathutil::make_simd_float4(1.0, cameraPtr->GetNearZ(),
+                                                cameraPtr->GetFarZ(), 1.0 / cameraPtr->GetFarZ());
+    
     mCameraUBO->SetData(&perCamera, 0, sizeof(perCamera));
 }
 

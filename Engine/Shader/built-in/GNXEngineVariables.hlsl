@@ -15,7 +15,7 @@
 // }
 
 // 每一个相机的参数
-cbuffer cbPerCamera// : register(b0, space0)
+cbuffer cbPerCamera
 {
     float4x4 MATRIX_P;           //投影矩阵
     float4x4 MATRIX_INV_P;       //投影矩阵的逆矩阵
@@ -50,16 +50,10 @@ cbuffer cbPerCamera// : register(b0, space0)
     // z = x/far
     // w = 1/far
     float4 _ZBufferParams;
-
-    // x = orthographic camera's width
-    // y = orthographic camera's height
-    // z = unused
-    // w = 1.0 if camera is ortho, 0.0 if perspective
-    //float4 _OrthoParams;
 }
 
 //每一个物体的结构
-cbuffer cbPerObject// : register(b1, space0)
+cbuffer cbPerObject
 {
     float4x4 MATRIX_M;
     float4x4 MATRIX_M_INV;
@@ -67,7 +61,7 @@ cbuffer cbPerObject// : register(b1, space0)
 }
 
 //灯光的信息
-cbuffer cbLighting// : register(b2, space0)
+cbuffer cbLighting
 {
     float4 _WorldSpaceLightPos;     //方向光: (world space direction, _WorldSpaceLightPos0.w = 0). Other lights: (world space position, _WorldSpaceLightPos0.w = 1).
     float3 _Strength;                // 光的强度
@@ -77,7 +71,7 @@ cbuffer cbLighting// : register(b2, space0)
     float _SpotPower;    // spot light only
 }
 
-cbuffer cbSkinned// : register(b3, space0)
+cbuffer cbSkinned
 {
     float4x4 pose[120];
     //float4x4 invBindPose[40];

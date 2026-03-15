@@ -6,6 +6,7 @@
 
 NS_RENDERSYSTEM_BEGIN
 
+// 相机的参数信息
 struct cbPerCamera
 {
     mathutil::Matrix4x4f MATRIX_P;           //投影矩阵
@@ -16,19 +17,21 @@ struct cbPerCamera
     mathutil::Matrix4x4f MATRIX_INV_VP;
 
     // 相机世界坐标位置
-    mathutil::simd_float3 _WorldSpaceCameraPos;
+    mathutil::simd_float3 WorldSpaceCameraPos;
 
+    //投影的参数
     // x = 1 or -1 (-1 if projection is flipped)
     // y = near plane
     // z = far plane
     // w = 1/far plane
-    mathutil::simd_float4 _ProjectionParams;
+    mathutil::simd_float4 ProjectionParams;
 
+    // 视口信息
     // x = width
     // y = height
     // z = 1 + 1.0/width
     // w = 1 + 1.0/height
-    mathutil::simd_float4 _ScreenParams;
+    mathutil::simd_float4 ScreenParams;
 
     // Values used to linearize the Z buffer (http://www.humus.name/temp/Linearize%20depth.txt)
     // x = 1-far/near
@@ -40,7 +43,7 @@ struct cbPerCamera
     // y = 1
     // z = x/far
     // w = 1/far
-    mathutil::simd_float4 _ZBufferParams;
+    mathutil::simd_float4 ZBufferParams;
 };
 
 struct cbLighting

@@ -222,6 +222,8 @@ void MeshDrawUtil::DrawMeshDepthOnly(const Mesh& mesh, const RenderInfo& renderI
         renderEncoder->SetVertexUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
         renderEncoder->SetVertexUniformBuffer("cbPerObject", renderInfo.objectUBO);
         
+        renderEncoder->SetFragmentUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+        
         // 【关键优化】只绑定位置属性，跳过法线、纹理坐标等
         // GPU只读取位置数据，减少内存带宽和顶点着色器的工作量
         renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
@@ -259,6 +261,8 @@ void MeshDrawUtil::DrawSkinnedMeshDepthOnly(const SkinnedMesh& mesh, const Rende
         
         renderEncoder->SetVertexUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
         renderEncoder->SetVertexUniformBuffer("cbPerObject", renderInfo.objectUBO);
+        
+        renderEncoder->SetFragmentUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
         
         // 蒙皮网格需要绑定骨骼动画数据
         if (hasBoneData && renderInfo.skinnedMatrixUBO)

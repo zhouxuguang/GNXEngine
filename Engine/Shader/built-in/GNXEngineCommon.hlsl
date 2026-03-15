@@ -279,21 +279,41 @@ inline float DecodeFloatRG( float2 enc )
 // LinearEyeDepth: 将深度纹理采样值转换为线性视角空间深度
 // 对于 Reverse-Z: rawDepth 从 1(near) 到 0(far)
 // 对于传统 Z: rawDepth 从 0(near) 到 1(far)
-inline float LinearEyeDepth(float rawDepth)
+// inline float LinearEyeDepth(float rawDepth)
+// {
+//     // _ZBufferParams:
+//     // 传统 Z: x = 1-far/near, y = far/near, z = x/far, w = y/far
+//     // Reverse-Z: x = -1+far/near, y = 1, z = x/far, w = 1/far
+//     // 由于使用无限远平面 Reverse-Z，简化计算
+//     return 1.0 / (_ZBufferParams.z * rawDepth + _ZBufferParams.w);
+// }
+
+// Linear01Depth: 将深度纹理采样值转换为 [0,1] 范围的线性深度
+// inline float Linear01Depth(float rawDepth)
+// {
+//     // 将视角空间深度归一化到 [0,1]
+//     float eyeDepth = LinearEyeDepth(rawDepth);
+//     return eyeDepth * _ProjectionParams.w;  // 1/far
+// }
+
+// LinearEyeDepth: 将深度纹理采样值转换为线性视角空间深度
+inline float LinearEyeDepth(float depth) 
 {
-    // _ZBufferParams:
-    // 传统 Z: x = 1-far/near, y = far/near, z = x/far, w = y/far
-    // Reverse-Z: x = -1+far/near, y = 1, z = x/far, w = 1/far
-    // 由于使用无限远平面 Reverse-Z，简化计算
-    return 1.0 / (_ZBufferParams.z * rawDepth + _ZBufferParams.w);
+    depth = 2.0 * depth - 1.0;
+    float near = _ProjectionParams.y;
+    float far = _ProjectionParams.z;
+    return (2.0 * near * far) / (far + near + depth * (far - near));
 }
 
 // Linear01Depth: 将深度纹理采样值转换为 [0,1] 范围的线性深度
-inline float Linear01Depth(float rawDepth)
+inline float Linear01Depth(float depth)
 {
     // 将视角空间深度归一化到 [0,1]
-    float eyeDepth = LinearEyeDepth(rawDepth);
-    return eyeDepth * _ProjectionParams.w;  // 1/far
+    float eyeDepth = LinearEyeDepth(depth);
+
+    float near = _ProjectionParams.y;
+    float far = _ProjectionParams.z;
+    return (eyeDepth - near) / (far - near);  // 1/far
 }
 
 // 计算世界坐标位置（从深度纹理重建）
