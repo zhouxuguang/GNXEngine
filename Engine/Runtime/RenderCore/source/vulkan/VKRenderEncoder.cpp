@@ -81,29 +81,56 @@ void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInf
     if (mPassImage.depthImage && !mPassTexture.colorTextures.empty() && mPassTexture.depthTexture)
     {
         VkImageLayout currentLayout = mPassTexture.depthTexture->GetCurrentLayout();
+        
+        // 从renderInfo获取目标布局（由CreateRenderEncoder设置）
+        VkImageLayout targetLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        VkAccessFlags dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        
+        if (renderInfo.pDepthAttachment)
+        {
+            targetLayout = renderInfo.pDepthAttachment->imageLayout;
+            // 只读深度附件只需要读取访问权限
+            if (targetLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
+            {
+                dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            }
+        }
 
         VulkanBufferUtil::InsertImageMemoryBarrier(
             mCommandBuffer,
             mPassImage.depthImage,
             0,
-            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            dstAccessMask,
             currentLayout,
-            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            targetLayout,
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.depthFormat), 0, 1, 0, 1 });
 
-        mPassTexture.depthTexture->SetCurrentLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        mPassTexture.depthTexture->SetCurrentLayout(targetLayout);
     }
     else if (mPassImage.depthImage)
     {
+        // 从renderInfo获取目标布局
+        VkImageLayout targetLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        VkAccessFlags dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        
+        if (renderInfo.pDepthAttachment)
+        {
+            targetLayout = renderInfo.pDepthAttachment->imageLayout;
+            if (targetLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
+            {
+                dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            }
+        }
+        
         VulkanBufferUtil::InsertImageMemoryBarrier(
             mCommandBuffer,
             mPassImage.depthImage,
             0,
-            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            dstAccessMask,
             VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            targetLayout,
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.depthFormat), 0, 1, 0, 1 });
@@ -112,29 +139,56 @@ void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInf
     if (mPassImage.stencilImage && !mPassTexture.colorTextures.empty() && mPassTexture.stencilTexture)
     {
         VkImageLayout currentLayout = mPassTexture.stencilTexture->GetCurrentLayout();
+        
+        // 从renderInfo获取目标布局（由CreateRenderEncoder设置）
+        VkImageLayout targetLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        VkAccessFlags dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        
+        if (renderInfo.pStencilAttachment)
+        {
+            targetLayout = renderInfo.pStencilAttachment->imageLayout;
+            // 只读模板附件只需要读取访问权限
+            if (targetLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
+            {
+                dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            }
+        }
 
         VulkanBufferUtil::InsertImageMemoryBarrier(
             mCommandBuffer,
             mPassImage.stencilImage,
             0,
-            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            dstAccessMask,
             currentLayout,
-            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            targetLayout,
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.stencilFormat), 0, 1, 0, 1 });
 
-        mPassTexture.stencilTexture->SetCurrentLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+        mPassTexture.stencilTexture->SetCurrentLayout(targetLayout);
     }
     else if (mPassImage.stencilImage)
     {
+        // 从renderInfo获取目标布局
+        VkImageLayout targetLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        VkAccessFlags dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        
+        if (renderInfo.pStencilAttachment)
+        {
+            targetLayout = renderInfo.pStencilAttachment->imageLayout;
+            if (targetLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
+            {
+                dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            }
+        }
+        
         VulkanBufferUtil::InsertImageMemoryBarrier(
             mCommandBuffer,
             mPassImage.stencilImage,
             0,
-            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+            dstAccessMask,
             VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+            targetLayout,
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
             VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.stencilFormat), 0, 1, 0, 1 });
@@ -741,9 +795,16 @@ void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceNa
     
     if (vkTexture)
     {
+        // 根据纹理格式选择正确的布局
+        VkImageLayout imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        if (VulkanBufferUtil::IsDepthStencilFormat(vkTexture->GetVKFormat()))
+        {
+            imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        }
+
         ShaderImageDesc imageDesc;
         imageDesc.image = vkTexture->GetImageView()->GetHandle();
-        imageDesc.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageDesc.imageLayout = imageLayout;
         imageDesc.sampler = VK_NULL_HANDLE;
 
         shader->BindTexture(mCommandBuffer, resourceName, imageDesc, mGraphicsPipieline->GetPipelineLayout());

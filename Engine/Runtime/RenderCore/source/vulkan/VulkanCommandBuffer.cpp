@@ -177,10 +177,17 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
 			imageView = vkRenderTexture->GetRenderTargetImageView(renderPass.depthAttachment->slice)->GetHandle();
 		}
         
+        // 根据loadOp和storeOp判断是否为只读深度
+        bool isDepthReadOnly = (renderPass.depthAttachment->loadOp == ATTACHMENT_LOAD_OP_LOAD) && 
+                               (renderPass.depthAttachment->storeOp == ATTACHMENT_STORE_OP_DONT_CARE);
+        
         VkRenderingAttachmentInfoKHR depthAttachmentInfo = {};
         depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
         depthAttachmentInfo.imageView = imageView;
-        depthAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        // 只读深度使用READ_ONLY布局，读写深度使用ATTACHMENT布局
+        depthAttachmentInfo.imageLayout = isDepthReadOnly ? 
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : 
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         depthAttachmentInfo.loadOp = GetLoadOP(renderPass.depthAttachment->loadOp);
         depthAttachmentInfo.storeOp = GetStoreOP(renderPass.depthAttachment->storeOp);
         depthAttachmentInfo.clearValue.depthStencil.depth = renderPass.depthAttachment->clearDepth;
@@ -206,13 +213,20 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
 			imageView = vkRenderTexture->GetRenderTargetImageView(renderPass.depthAttachment->slice)->GetHandle();
 		}
         
+        // 根据loadOp和storeOp判断是否为只读模板
+        bool isStencilReadOnly = (renderPass.stencilAttachment->loadOp == ATTACHMENT_LOAD_OP_LOAD) && 
+                                 (renderPass.stencilAttachment->storeOp == ATTACHMENT_STORE_OP_DONT_CARE);
+        
         VkRenderingAttachmentInfoKHR stencilAttachmentInfo = {};
         stencilAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
         stencilAttachmentInfo.imageView = imageView;
-        stencilAttachmentInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        // 只读模板使用READ_ONLY布局，读写模板使用ATTACHMENT布局
+        stencilAttachmentInfo.imageLayout = isStencilReadOnly ? 
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : 
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         stencilAttachmentInfo.loadOp = GetLoadOP(renderPass.stencilAttachment->loadOp);
         stencilAttachmentInfo.storeOp = GetStoreOP(renderPass.stencilAttachment->storeOp);
-        stencilAttachmentInfo.clearValue.depthStencil.stencil = renderPass.stencilAttachment->clearStencil;;
+        stencilAttachmentInfo.clearValue.depthStencil.stencil = renderPass.stencilAttachment->clearStencil;
         stencilAttachments.push_back(stencilAttachmentInfo);
         passFormat.stencilFormat = vkRenderTexture->GetVKFormat();
         passImage.stencilImage = vkRenderTexture->GetVKImage();
@@ -481,7 +495,15 @@ void VulkanCommandBuffer::ResourceBarrier(RCTexturePtr texture, ResourceAccessTy
     }
     else if (accessType == ResourceAccessType::ShaderRead)
     {
-        targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        // 对于深度/模板纹理，使用专用的只读布局
+        if (VulkanBufferUtil::IsDepthStencilFormat(vkTexture->GetVKFormat()))
+        {
+            targetLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        }
+        else
+        {
+            targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        }
         dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         dstStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
     }

@@ -211,6 +211,7 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             data.gBufferB = builder.Read(params.gBufferB, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             data.gBufferC = builder.Read(params.gBufferC, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             data.gBufferD = builder.Read(params.gBufferD, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
+            // 深度纹理作为只读深度附件使用，需要 ShaderRead 来转换到 READ_ONLY 布局
             data.depthTexture = builder.Read(params.depthTexture, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             
             // 保存Uniform Buffers
