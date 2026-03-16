@@ -104,20 +104,18 @@ float3 ComputeLighting(GBufferData gBufferData, float3 lightDir, float3 lightCol
 float4 PS(VertexOut pin) : SV_Target0
 {
     // 1. 从G-Buffer中读取材质数据
-    float4 albedoOpacity = gGBufferA.Sample(gGBufferASam, pin.texCoord);
-    float4 normalRoughness = gGBufferB.Sample(gGBufferBSam, pin.texCoord);
-    float4 metallicAOEmissive = gGBufferC.Sample(gGBufferCSam, pin.texCoord);
-    float4 position = gGBufferD.Sample(gGBufferDSam, pin.texCoord);
+    float4 normal = gGBufferA.Sample(gGBufferASam, pin.texCoord);
+    float4 metallicSpecularRoughness = gGBufferB.Sample(gGBufferBSam, pin.texCoord);
+    float4 baseColorAO = gGBufferC.Sample(gGBufferCSam, pin.texCoord);
     
-    // 如果没有位置数据，从深度重建
-    if (position.a < 0.5)
-    {
-        float depth = gDepth.Sample(gDepthSam, pin.texCoord).r;
-        position.rgb = ReconstructWorldPosition(pin.texCoord, depth);
-    }
+    // 从深度重建顶点世界坐标
+    float depth = gDepth.Sample(gDepthSam, pin.texCoord).r;
+    float4 position;
+    position.xyz = ReconstructWorldPosition(pin.texCoord, depth);
     
     // 解包G-Buffer数据
-    GBufferData gBufferData = UnpackGBuffer(albedoOpacity, normalRoughness, metallicAOEmissive, position);
+    GBufferData gBufferData = UnpackGBuffer(float4(baseColorAO.rgb, 0.0f), float4(normal.rgb, metallicSpecularRoughness.b), 
+                            float4(metallicSpecularRoughness.r, baseColorAO.a, 0.0f, 0.0f), position);
     
     // 计算光照
     float3 lightDir = _WorldSpaceLightPos.xyz - gBufferData.position;
