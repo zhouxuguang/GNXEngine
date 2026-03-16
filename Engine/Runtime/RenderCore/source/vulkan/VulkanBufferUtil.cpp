@@ -82,6 +82,57 @@ bool VulkanBufferUtil::IsDepthStencilFormat(VkFormat format)
     return false;
 }
 
+bool VulkanBufferUtil::IsSRGBFormat(VkFormat format)
+{
+    switch (format)
+    {
+    // 基础 SRGB 格式
+    case VK_FORMAT_R8_SRGB:
+    case VK_FORMAT_R8G8_SRGB:
+    case VK_FORMAT_R8G8B8_SRGB:
+    case VK_FORMAT_B8G8R8_SRGB:
+    case VK_FORMAT_R8G8B8A8_SRGB:
+    case VK_FORMAT_B8G8R8A8_SRGB:
+    
+    // ASTC 2D SRGB 压缩格式
+    case VK_FORMAT_ASTC_4x4_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_5x4_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_5x5_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_6x5_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_6x6_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_8x5_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_8x6_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_8x8_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_10x5_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_10x6_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_10x8_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_10x10_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_12x10_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_12x12_SRGB_BLOCK:
+    
+    // BC (BCn/DXT) SRGB 压缩格式
+    case VK_FORMAT_BC1_RGB_SRGB_BLOCK:
+    case VK_FORMAT_BC1_RGBA_SRGB_BLOCK:
+    case VK_FORMAT_BC2_SRGB_BLOCK:
+    case VK_FORMAT_BC3_SRGB_BLOCK:
+    case VK_FORMAT_BC7_SRGB_BLOCK:
+    
+    // ETC2 SRGB 压缩格式
+    case VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK:
+    case VK_FORMAT_ETC2_R8G8B8A1_SRGB_BLOCK:
+    case VK_FORMAT_ETC2_R8G8B8A8_SRGB_BLOCK:
+    
+    // PVRTC SRGB 压缩格式
+    case VK_FORMAT_PVRTC1_2BPP_SRGB_BLOCK_IMG:
+    case VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG:
+    case VK_FORMAT_PVRTC2_2BPP_SRGB_BLOCK_IMG:
+    case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
+        return true;
+    default:
+        return false;
+    }
+}
+
 void VulkanBufferUtil::CreateBufferVMA(VmaAllocator vmaAllocator,
                                        StorageMode storageMode,
                                        VkDeviceSize size,
@@ -646,16 +697,30 @@ VkFormat VulkanBufferUtil::ConvertTextureFormat(TextureFormat texFormat)
  */
 VkImageUsageFlags VulkanBufferUtil::ConvertTextureUsage(TextureUsage textureUsage, VkFormat format)
 {
+    // 基础用途：采样、传输
+    VkImageUsageFlags flags = VK_IMAGE_USAGE_SAMPLED_BIT |
+                              VK_IMAGE_USAGE_TRANSFER_SRC_BIT | 
+                              VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     
-    VkImageUsageFlags flags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT |
-                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    // SRGB 格式不支持 storage image，只有非 SRGB 格式才添加 storage 用途
+    if (!IsSRGBFormat(format))
+    {
+        flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }
+    
     switch (textureUsage)
     {
         case TextureUsage::TextureUsageShaderRead:
             flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+            break;
             
         case TextureUsage::TextureUsageShaderWrite:
-            flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+            // SRGB 格式不支持 storage，跳过
+            if (!IsSRGBFormat(format))
+            {
+                flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+            }
+            break;
             
         case TextureUsage::TextureUsageRenderTarget:
             // 还要区分是深度模板还是颜色缓冲
@@ -667,6 +732,7 @@ VkImageUsageFlags VulkanBufferUtil::ConvertTextureUsage(TextureUsage textureUsag
             {
                 flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
             }
+            break;
             
         default:
             break;

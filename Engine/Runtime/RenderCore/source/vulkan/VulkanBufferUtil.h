@@ -31,6 +31,8 @@ public:
 
     static bool IsDepthStencilFormat(VkFormat format);
     
+    static bool IsSRGBFormat(VkFormat format);
+    
     /**
      @param vmaAllocator 设备句柄
      @param storageMode  访问模式
