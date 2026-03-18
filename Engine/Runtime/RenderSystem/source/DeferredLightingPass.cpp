@@ -199,7 +199,7 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
         {
             // 创建输出纹理（HDR格式）
             FrameGraphTexture::Desc outputDesc;
-            outputDesc.SetName("LightingResult");
+            outputDesc.SetName("SceneColor");
             outputDesc.extent = RenderCore::Rect2D{0, 0, (int)params.width, (int)params.height};
             outputDesc.depth = 1;
             outputDesc.format = RenderCore::kTexFormatRGBA16Float;

@@ -134,20 +134,35 @@ float4 PS(VertexOut pin) : SV_Target0
     GBufferData gBufferData = UnpackGBuffer(float4(baseColorAO.rgb, 0.0f), float4(normal.rgb, metallicSpecularRoughness.b), 
                             float4(metallicSpecularRoughness.r, baseColorAO.a, 0.0f, 0.0f), position);
     
-    // 计算光照
-    float3 lightDir = _WorldSpaceLightPos.xyz - gBufferData.position;
-    float distance = length(lightDir);
-    lightDir = normalize(lightDir);
-    
-    // 衰减
+    // 判断光源类型并计算光照方向和衰减
+    // w = 0: 方向光，xyz 是光照方向
+    // w = 1: 点光源，xyz 是光源位置
+    float3 lightDir;
     float attenuation = 1.0;
-    if (distance > _FalloffEnd)
+    
+    if (_WorldSpaceLightPos.w < 0.5)
     {
-        attenuation = 0.0;
+        // 方向光：直接使用光照方向
+        lightDir = normalize(_WorldSpaceLightPos.xyz);
+        // 方向光没有距离衰减
+        attenuation = 1.0;
     }
-    else if (distance > _FalloffStart)
+    else
     {
-        attenuation = saturate((_FalloffEnd - distance) / (_FalloffEnd - _FalloffStart));
+        // 点光源：从光源位置计算方向
+        float3 lightVec = _WorldSpaceLightPos.xyz - gBufferData.position;
+        float distance = length(lightVec);
+        lightDir = lightVec / distance;
+        
+        // 距离衰减
+        if (distance > _FalloffEnd)
+        {
+            attenuation = 0.0;
+        }
+        else if (distance > _FalloffStart)
+        {
+            attenuation = saturate((_FalloffEnd - distance) / (_FalloffEnd - _FalloffStart));
+        }
     }
     
     float3 Lo = ComputeLighting(gBufferData, lightDir, _LightColor.rgb, _Strength.x);

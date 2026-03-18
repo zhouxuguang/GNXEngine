@@ -70,7 +70,7 @@ private:
 };
 
 //点光源
-class PointLight : public Light
+class RENDERSYSTEM_API PointLight : public Light
 {
 public:
     PointLight();
@@ -85,7 +85,7 @@ private:
 };
 
 //聚光灯
-class SpotLight : public Light
+class RENDERSYSTEM_API SpotLight : public Light
 {
 public:
     SpotLight();
@@ -105,7 +105,7 @@ private:
 };
 
 //平行光
-class DirectionLight : public Light
+class RENDERSYSTEM_API DirectionLight : public Light
 {
 public:
     DirectionLight();

@@ -128,6 +128,12 @@ void LumenFrameWork::Resize(uint32_t width, uint32_t height)
 
 	cameraPtr->LookAt(mathutil::Vector3f(1059.769897f, 336.560120f, -833.207886f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
 	cameraPtr->SetLens(60, width, height, 10.0f, 10000.f);
+
+    RenderSystem::DirectionLight* dirLight = (RenderSystem::DirectionLight*)sceneManager->CreateLight("mainLight", RenderSystem::Light::DirectionLight);
+    dirLight->setColor(mathutil::Vector3f(10.0f, 10.0f, 10.0f));
+    dirLight->setDirection(mathutil::Vector3f(-0.69466f, 0.71934f, 0.0f));
+    dirLight->setPosition(mathutil::Vector3f(-0.69466f, 0.71934f, 0.0f));
+    dirLight->setStrength(mathutil::Vector3f(1.0f, 1.0f, 1.0f));
     
 }
 
