@@ -211,8 +211,8 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             data.gBufferB = builder.Read(params.gBufferB, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             data.gBufferC = builder.Read(params.gBufferC, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             data.gBufferD = builder.Read(params.gBufferD, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
-            // 深度纹理作为只读深度附件使用，需要 ShaderRead 来转换到 READ_ONLY 布局
-            data.depthTexture = builder.Read(params.depthTexture, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
+            // 深度纹理作为只读深度附件使用
+            data.depthTexture = builder.Read(params.depthTexture, (uint32_t)RenderCore::ResourceAccessType::DepthStencilReadOnly);
             
             // 保存Uniform Buffers
             data.cameraUBO = params.cameraUBO;
@@ -253,10 +253,12 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             renderPass.colorAttachments.push_back(colorAttachment);
             
             // 深度附件（从G-Buffer Pass读取，只读）
+            // storeOp 使用 STORE 以保留深度值供后续使用
             auto depthAttachment = std::make_shared<RenderPassDepthAttachment>();
             depthAttachment->texture = depthTexture.texture;
             depthAttachment->loadOp = ATTACHMENT_LOAD_OP_LOAD;
-            depthAttachment->storeOp = ATTACHMENT_STORE_OP_DONT_CARE;
+            depthAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            depthAttachment->readOnly = true;  // 只读深度，用于深度测试
             renderPass.depthAttachment = depthAttachment;
             
             // 创建RenderEncoder

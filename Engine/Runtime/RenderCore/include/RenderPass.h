@@ -72,6 +72,7 @@ struct RenderPassDepthAttachment : public RenderPassAttachment
     float clearDepth = 1.0f;  // 默认深度清除值，Reverse-Z 时应设为 0.0f
 	AttachmentLoadOp       loadOp = ATTACHMENT_LOAD_OP_CLEAR;
 	AttachmentStoreOp      storeOp = ATTACHMENT_STORE_OP_DONT_CARE;
+    bool readOnly = false;    // 是否为只读深度附件（用于深度测试，不写入）
 };
 
 typedef std::shared_ptr<RenderPassDepthAttachment> RenderPassDepthAttachmentPtr;
@@ -82,6 +83,7 @@ struct RenderPassStencilAttachment : RenderPassAttachment
     uint32_t clearStencil;
 	AttachmentLoadOp       loadOp = ATTACHMENT_LOAD_OP_CLEAR;
 	AttachmentStoreOp      storeOp = ATTACHMENT_STORE_OP_DONT_CARE;
+    bool readOnly = false;    // 是否为只读模板附件
 };
 
 typedef std::shared_ptr<RenderPassStencilAttachment> RenderPassStencilAttachmentPtr;

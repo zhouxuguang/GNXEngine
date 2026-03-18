@@ -87,6 +87,10 @@ RenderCore::ResourceAccessType FrameGraphTexture::DetermineAccessFlags(const Des
 
 	if (flags != FrameGraph::kFlagsIgnored)
 	{
+		if ((accessFlags & RenderCore::ResourceAccessType::DepthStencilReadOnly) != static_cast<RenderCore::ResourceAccessType>(0))
+		{
+			return RenderCore::ResourceAccessType::DepthStencilReadOnly;
+		}
 		if ((accessFlags & RenderCore::ResourceAccessType::DepthStencilAttachment) != static_cast<RenderCore::ResourceAccessType>(0))
 		{
 			return RenderCore::ResourceAccessType::DepthStencilAttachment;

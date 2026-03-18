@@ -177,9 +177,8 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
 			imageView = vkRenderTexture->GetRenderTargetImageView(renderPass.depthAttachment->slice)->GetHandle();
 		}
         
-        // 根据loadOp和storeOp判断是否为只读深度
-        bool isDepthReadOnly = (renderPass.depthAttachment->loadOp == ATTACHMENT_LOAD_OP_LOAD) && 
-                               (renderPass.depthAttachment->storeOp == ATTACHMENT_STORE_OP_DONT_CARE);
+        // 根据readOnly标志判断是否为只读深度
+        bool isDepthReadOnly = renderPass.depthAttachment->readOnly;
         
         VkRenderingAttachmentInfoKHR depthAttachmentInfo = {};
         depthAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
@@ -213,9 +212,8 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
 			imageView = vkRenderTexture->GetRenderTargetImageView(renderPass.depthAttachment->slice)->GetHandle();
 		}
         
-        // 根据loadOp和storeOp判断是否为只读模板
-        bool isStencilReadOnly = (renderPass.stencilAttachment->loadOp == ATTACHMENT_LOAD_OP_LOAD) && 
-                                 (renderPass.stencilAttachment->storeOp == ATTACHMENT_STORE_OP_DONT_CARE);
+        // 根据readOnly标志判断是否为只读模板
+        bool isStencilReadOnly = renderPass.stencilAttachment->readOnly;
         
         VkRenderingAttachmentInfoKHR stencilAttachmentInfo = {};
         stencilAttachmentInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
@@ -491,6 +489,12 @@ void VulkanCommandBuffer::ResourceBarrier(RCTexturePtr texture, ResourceAccessTy
     {
         targetLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+    }
+    else if (accessType == ResourceAccessType::DepthStencilReadOnly)
+    {
+        targetLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
         dstStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
     }
     else if (accessType == ResourceAccessType::ShaderRead)

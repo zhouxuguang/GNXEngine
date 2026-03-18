@@ -125,9 +125,9 @@ GBufferData GBufferRenderer::AddToFrameGraph(
             data.gbuffer.gBufferD = builder.Create<FrameGraphTexture>(gBufferDDesc.name, gBufferDDesc);
             builder.Write(data.gbuffer.gBufferD, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
-            // 使用 PreDepth Pass 的深度图，读取并作为深度附件
+            // 使用 PreDepth Pass 的深度图，读取并作为只读深度附件
             // 管线总是先执行 PreDepth Pass
-            data.gbuffer.depthTexture = builder.Read(params.preDepthTexture, (uint32_t)RenderCore::ResourceAccessType::DepthStencilAttachment);
+            data.gbuffer.depthTexture = builder.Read(params.preDepthTexture, (uint32_t)RenderCore::ResourceAccessType::DepthStencilReadOnly);
 
             // 保存渲染参数
             data.meshes = std::move(params.meshes);
@@ -196,7 +196,8 @@ GBufferData GBufferRenderer::AddToFrameGraph(
             auto depthAttachment = std::make_shared<RenderPassDepthAttachment>();
             depthAttachment->texture = depthTexture.texture;
             depthAttachment->loadOp = ATTACHMENT_LOAD_OP_LOAD;
-            depthAttachment->storeOp = ATTACHMENT_STORE_OP_DONT_CARE;
+            depthAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            depthAttachment->readOnly = true;  // 只读深度，用于深度测试
             renderPass.depthAttachment = depthAttachment;
 
             // 创建 RenderEncoder

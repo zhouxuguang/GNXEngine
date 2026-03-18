@@ -435,6 +435,7 @@ enum class ResourceAccessType : uint32_t
     DepthStencilAttachment = 1 << 4,
     TransferSrc = 1 << 5,
     TransferDst = 1 << 6,
+    DepthStencilReadOnly = 1 << 7,  // 只读深度/模板附件
 };
 
 inline ResourceAccessType operator|(ResourceAccessType a, ResourceAccessType b)
