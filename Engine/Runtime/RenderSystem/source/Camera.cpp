@@ -68,10 +68,9 @@ void Camera::SetLens(float fovY, uint32_t width, uint32_t height, float zNear, f
     float aspect = (float)width / (float)height;
     if (BuildSetting::mUseReverseZ)
     {
-        // 使用无限远平面 + Reverse-Z
         // 优势：消除远平面裁剪问题，深度精度更均匀
-        mProjection = Matrix4x4f::CreateInfiniteReverseZPerspective(fovY, aspect, zNear);
-        mFarZ = std::numeric_limits<float>::max();  // 无限远
+        mProjection = Matrix4x4f::CreateReverseZPerspective(fovY, aspect, zNear, zFar);
+        mFarZ = zFar;
     }
     else
     {
