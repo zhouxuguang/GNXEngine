@@ -52,9 +52,25 @@ SamplerState gDepthSam;
 // 从深度重建世界坐标
 float3 ReconstructWorldPosition(float2 uv, float depth)
 {
-    float4 clipPos = float4(uv * 2.0 - 1.0, depth, 1.0);
-    float4 worldPos = mul(MATRIX_INV_VP, clipPos);
-    return worldPos.xyz / worldPos.w;
+    if (depth <= 0.0001) return float3(0.0, 0.0, 0.0);
+    if (depth >= 0.9999) return float3(0.0, 0.0, 0.0);
+    // 计算NDC坐标
+    float4 clipPos = float4(
+        uv.x * 2.0f - 1.0f,   // [0,1] -> [-1,1]  XY需要转换
+        uv.y * 2.0f - 1.0f,   // [0,1] -> [-1,1]  XY需要转换
+        depth,                 // 已经是Vulkan NDC [0,1]，不需要转换！
+        1.0f
+    );
+
+    // 计算相机空间坐标
+    float4 camPos = mul(clipPos, MATRIX_INV_P);
+    camPos.xyz /= camPos.w;
+    //camPos.z *= -1;
+
+    // 计算世界空间坐标
+    float4 worldPos = mul(clipPos, MATRIX_INV_VP);
+    worldPos.xyz /= worldPos.w;
+    return worldPos.xyz;
 }
 
 // 计算单个光源的贡献
@@ -112,6 +128,7 @@ float4 PS(VertexOut pin) : SV_Target0
     float depth = gDepth.Sample(gDepthSam, pin.texCoord).r;
     float4 position;
     position.xyz = ReconstructWorldPosition(pin.texCoord, depth);
+    position.w = 1.0;
     
     // 解包G-Buffer数据
     GBufferData gBufferData = UnpackGBuffer(float4(baseColorAO.rgb, 0.0f), float4(normal.rgb, metallicSpecularRoughness.b), 
@@ -141,6 +158,5 @@ float4 PS(VertexOut pin) : SV_Target0
     
     // 自发光
     float3 finalColor = Lo + ambient + gBufferData.emissive;
-    
     return float4(finalColor, 1.0);
 }
