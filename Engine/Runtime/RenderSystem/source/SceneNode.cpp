@@ -82,7 +82,7 @@ SceneNode * SceneNode::CreateRendererNode(const std::string &name,
     pNode->AddComponent(transform);
     
     //加载模型
-    std::string modelPath = getMediaDir() + filePath;
+    std::string modelPath = filePath;
     MeshPtr mesh = std::make_shared<Mesh>();
     SkinnedMeshPtr skinnedMesh = std::make_shared<SkinnedMesh>();
     
