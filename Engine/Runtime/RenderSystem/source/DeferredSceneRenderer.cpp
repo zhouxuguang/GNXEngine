@@ -155,11 +155,6 @@ FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(
 {
     FrameGraphResource depthResource = -1;
 
-    if (meshItems.empty() && skinnedMeshItems.empty())
-    {
-        return depthResource;
-    }
-
     // 收集蒙皮网格的骨骼矩阵UBO
     UniformBufferPtr skinnedMatrixUBO = nullptr;
     if (!skinnedMeshItems.empty())
