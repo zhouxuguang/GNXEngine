@@ -187,6 +187,49 @@ VKTextureBase::~VKTextureBase()
     {
         mVulkanImageViewPtr = nullptr;
     }
+    
+    // 清理 mip level 视图缓存
+    mMipLevelViews.clear();
+}
+
+VulkanImageViewPtr VKTextureBase::GetMipLevelImageView(uint32_t mipLevel)
+{
+    // 检查 mipLevel 是否有效
+    if (mipLevel >= mMipLevels)
+    {
+        assert(false && "Invalid mip level");
+        return nullptr;
+    }
+    
+    // 检查缓存
+    auto it = mMipLevelViews.find(mipLevel);
+    if (it != mMipLevelViews.end())
+    {
+        return it->second;
+    }
+    
+    // 创建新的单 mip level 视图
+    VkImageAspectFlags imageAspectFlags = VulkanBufferUtil::GetImageAspectFlags(mFormat);
+    
+    VkImageViewCreateInfo viewCreateInfo = {};
+    viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewCreateInfo.image = mImage;
+    viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewCreateInfo.format = mFormat;
+    viewCreateInfo.subresourceRange.aspectMask = imageAspectFlags;
+    viewCreateInfo.subresourceRange.baseMipLevel = mipLevel;
+    viewCreateInfo.subresourceRange.levelCount = 1;
+    viewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    viewCreateInfo.subresourceRange.layerCount = mLayerCount;
+    
+    VkImageView imageView = VK_NULL_HANDLE;
+    VkResult result = vkCreateImageView(mContext->device, &viewCreateInfo, nullptr, &imageView);
+    assert(result == VK_SUCCESS);
+    
+    auto viewPtr = std::make_shared<VulkanImageView>(mContext->device, imageView);
+    mMipLevelViews[mipLevel] = viewPtr;
+    
+    return viewPtr;
 }
 
 void VKTextureBase::ReplaceRegion(const Rect2D& rect,

@@ -62,6 +62,14 @@ public:
         return mRenderTargetViews[targetSlice];
     }
     
+    /**
+     获取特定 mip level 的 ImageView（用于 compute shader 写入特定 level）
+     
+     @param mipLevel mip level 索引
+     @return 指向该 mip level 的 ImageView
+     */
+    VulkanImageViewPtr GetMipLevelImageView(uint32_t mipLevel);
+    
     VkFormat GetVKFormat() const
     {
         return mFormat;
@@ -94,6 +102,7 @@ private:
     uint32_t mLayerCount = 1;
     VulkanImageViewPtr mVulkanImageViewPtr = nullptr;
     std::vector<VulkanImageViewPtr> mRenderTargetViews;
+    std::unordered_map<uint32_t, VulkanImageViewPtr> mMipLevelViews;  // 缓存每个 mip level 的视图
     bool mSupportHostImageCopy = false;
     VkImageLayout mCurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 };
