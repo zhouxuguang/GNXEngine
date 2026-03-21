@@ -153,6 +153,13 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
     arguments.push_back(L"-D");
     arguments.push_back(L"TEXCOORD_FLIP");
 
+    // 根据 Reverse-Z 配置添加相应的宏定义
+    if (ShaderCompilerConfig::UseReverseZ)
+    {
+        arguments.push_back(L"-D");
+        arguments.push_back(L"USE_REVERSE_Z");
+    }
+
     if (shaderStage == ShaderStage_Fragment)
     {
         //arguments.push_back(L"-auto-binding-space 1");

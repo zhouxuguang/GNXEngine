@@ -13,6 +13,10 @@
 
 NAMESPACE_SHADERCOMPILER_BEGIN
 
+// ShaderCompilerConfig 静态成员定义
+// 注意：UseReverseZ 的值由上层 RenderSystem 的 BuildSetting 在初始化时同步
+bool ShaderCompilerConfig::UseReverseZ = true;
+
 bool startsWith(const std::string& str, const std::string& prefix)
 {
     return (str.rfind(prefix, 0) == 0);
