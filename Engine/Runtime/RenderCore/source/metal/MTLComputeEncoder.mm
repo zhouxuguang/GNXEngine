@@ -131,6 +131,86 @@ void MTLComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t mipLevel, u
     MTLComputeEncoder::SetTexture(texture, mipLevel, index);
 }
 
+void MTLComputeEncoder::SetTexture(const std::string& resourceName, RCTexturePtr texture)
+{
+    @autoreleasepool
+    {
+        if (!mMtlComputePipeline || !texture)
+        {
+            return;
+        }
+        
+        NSUInteger bindIndex = mMtlComputePipeline->GetResourceIndex(resourceName);
+        if (bindIndex == InvalidBindingIndex)
+        {
+            assert(false);
+            return;
+        }
+        
+        SetTexture(texture, bindIndex);
+    }
+}
+
+void MTLComputeEncoder::SetTexture(const std::string& resourceName, RCTexturePtr texture, uint32_t mipLevel)
+{
+    @autoreleasepool
+    {
+        if (!mMtlComputePipeline || !texture)
+        {
+            return;
+        }
+        
+        NSUInteger bindIndex = mMtlComputePipeline->GetResourceIndex(resourceName);
+        if (bindIndex == InvalidBindingIndex)
+        {
+            assert(false);
+            return;
+        }
+        
+        SetTexture(texture, mipLevel, bindIndex);
+    }
+}
+
+void MTLComputeEncoder::SetOutTexture(const std::string& resourceName, RCTexturePtr texture)
+{
+    @autoreleasepool
+    {
+        if (!mMtlComputePipeline || !texture)
+        {
+            return;
+        }
+        
+        NSUInteger bindIndex = mMtlComputePipeline->GetResourceIndex(resourceName);
+        if (bindIndex == InvalidBindingIndex)
+        {
+            assert(false);
+            return;
+        }
+        
+        SetOutTexture(texture, bindIndex);
+    }
+}
+
+void MTLComputeEncoder::SetOutTexture(const std::string& resourceName, RCTexturePtr texture, uint32_t mipLevel)
+{
+    @autoreleasepool
+    {
+        if (!mMtlComputePipeline || !texture)
+        {
+            return;
+        }
+        
+        NSUInteger bindIndex = mMtlComputePipeline->GetResourceIndex(resourceName);
+        if (bindIndex == InvalidBindingIndex)
+        {
+            assert(false);
+            return;
+        }
+        
+        SetOutTexture(texture, mipLevel, bindIndex);
+    }
+}
+
 void MTLComputeEncoder::Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
 {
     @autoreleasepool

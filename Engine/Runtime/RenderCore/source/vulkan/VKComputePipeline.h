@@ -45,7 +45,12 @@ public:
     }
     
     void CollectResource(SpvReflectShaderModule shaderModule);
-
+    
+    /**
+     * @brief 通过资源名获取绑定索引
+     * @param resourceName Shader中的资源名
+     * @return 绑定索引，如果找不到返回-1
+     */
     uint32_t GetResourceBindIndex(const std::string& resourceName) const;
     
 private:

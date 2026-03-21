@@ -32,6 +32,9 @@ public:
         return mComputePSO;
     }
     
+    /**
+     * @brief 通过资源名获取绑定索引（Metal内部使用）
+     */
     NSUInteger GetResourceIndex(const std::string& resourceName) const
     {
         auto iter = mResourceMap.find(resourceName);
@@ -40,9 +43,10 @@ public:
             return iter->second;
         }
         
-        return 0xffffffffffffffff;
+        return InvalidBindingIndex;
     }
     
+
 private:
     id<MTLComputePipelineState> mComputePSO;
     std::unordered_map<std::string, NSUInteger> mResourceMap;

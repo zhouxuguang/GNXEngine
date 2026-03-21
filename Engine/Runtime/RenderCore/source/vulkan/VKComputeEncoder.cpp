@@ -40,6 +40,7 @@ void VKComputeEncoder::SetUniformBuffer(const std::string& resourceName, Uniform
     if (!mVKPipeline)
     {
         assert(false);
+        return;
     }
 
     uint32_t bindIndex = mVKPipeline->GetResourceBindIndex(resourceName);
@@ -143,6 +144,40 @@ void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint3
     vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), imageSetOffset, 1, &writeDescriptorSet);
 }
 
+void VKComputeEncoder::SetTexture(const std::string& resourceName, RCTexturePtr texture)
+{
+    if (!mVKPipeline || !texture)
+    {
+        return;
+    }
+    
+    uint32_t bindIndex = mVKPipeline->GetResourceBindIndex(resourceName);
+    if (-1 == bindIndex)
+    {
+        assert(false);
+        return;
+    }
+    
+    SetTexture(texture, bindIndex);
+}
+
+void VKComputeEncoder::SetTexture(const std::string& resourceName, RCTexturePtr texture, uint32_t mipLevel)
+{
+    if (!mVKPipeline || !texture)
+    {
+        return;
+    }
+    
+    uint32_t bindIndex = mVKPipeline->GetResourceBindIndex(resourceName);
+    if (-1 == bindIndex)
+    {
+        assert(false);
+        return;
+    }
+    
+    SetTexture(texture, mipLevel, bindIndex);
+}
+
 void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t index)
 {
     if (!texture)
@@ -189,6 +224,40 @@ void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t mipLevel, ui
     
     uint32_t imageSetOffset = mVKPipeline->GetSetOffset(DESCRIPTOR_TYPE_STORAGE_IMAGE);
     vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), imageSetOffset, 1, &writeDescriptorSet);
+}
+
+void VKComputeEncoder::SetOutTexture(const std::string& resourceName, RCTexturePtr texture)
+{
+    if (!mVKPipeline || !texture)
+    {
+        return;
+    }
+    
+    uint32_t bindIndex = mVKPipeline->GetResourceBindIndex(resourceName);
+    if (-1 == bindIndex)
+    {
+        assert(false);
+        return;
+    }
+    
+    SetOutTexture(texture, bindIndex);
+}
+
+void VKComputeEncoder::SetOutTexture(const std::string& resourceName, RCTexturePtr texture, uint32_t mipLevel)
+{
+    if (!mVKPipeline || !texture)
+    {
+        return;
+    }
+    
+    uint32_t bindIndex = mVKPipeline->GetResourceBindIndex(resourceName);
+    if (-1 == bindIndex)
+    {
+        assert(false);
+        return;
+    }
+    
+    SetOutTexture(texture, mipLevel, bindIndex);
 }
 
 void VKComputeEncoder::Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ)
