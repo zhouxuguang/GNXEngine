@@ -19,6 +19,10 @@ MATH3D_API Vector3f RandomUnitVector3();
 
 MATH3D_API Vector2f RandomUnitVector2();
 
+MATH3D_API Vector3f UniformHemisphere();
+
+MATH3D_API Vector3f UniformCircle();
+
 NS_MATHUTIL_END
 
 #endif /* MATHUTIL_RANDOMMATH_INCLUDE_H */

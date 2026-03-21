@@ -47,6 +47,12 @@ inline const T Clamp(const T& value, const T& low, const T& high)
 }
 
 template <class T>
+inline T Mix(const T& x, const T& y, const T& a)
+{
+    return x * (1.0 - a) + y * a;
+}
+
+template <class T>
 inline const T Sign(const T& value)
 {
 	if (value > 0)

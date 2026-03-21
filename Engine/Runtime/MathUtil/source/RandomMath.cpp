@@ -32,4 +32,27 @@ Vector2f RandomUnitVector2()
     return Vector2f(x, y);
 }
 
+Vector3f UniformHemisphere()
+{
+    Vector3f result;
+    float x1 = baselib::GetRandom_0_1();
+    float x2 = baselib::GetRandom_0_1();
+    float s = sqrt(1.0f - x1 * x1);
+    result.x = cos(M_PI * 2.0f * x2) * s;
+    result.y = sin(M_PI * 2.0f * x2) * s;
+    result.z = x1;
+    return result;
+}
+
+Vector3f UniformCircle()
+{
+    Vector3f result;
+    float x = baselib::GetRandom_0_1();
+    float angle = M_PI * 2.0f * x;
+    result.x = cos(angle);
+    result.y = sin(angle);
+    result.z = 0.0f;
+    return result;
+}
+
 NS_MATHUTIL_END
