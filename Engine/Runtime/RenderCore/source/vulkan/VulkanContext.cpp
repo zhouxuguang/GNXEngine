@@ -444,6 +444,20 @@ bool CreateVirtualDevice(VulkanContext& context)
 
     // 队列优先级的属性
     std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos;
+    std::vector<uint32_t> addedQueueFamilyIndices;
+
+    // 辅助lambda：检查队列族索引是否已添加，避免重复
+    auto isQueueFamilyAdded = [&addedQueueFamilyIndices](uint32_t index) 
+    {
+        for (uint32_t addedIndex : addedQueueFamilyIndices)
+        {
+            if (addedIndex == index)
+            {
+                return true;
+            }
+        }
+        return false;
+    };
 
     // 图形队列
     VkDeviceQueueCreateInfo deviceQueueCreateInfo = {};
@@ -457,30 +471,39 @@ bool CreateVirtualDevice(VulkanContext& context)
     deviceQueueCreateInfo.queueCount = context.graphicsQueueCount;
     deviceQueueCreateInfo.pQueuePriorities = queuePriority.data();
     deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+    addedQueueFamilyIndices.push_back(context.graphicsQueueFamilyIndex);
 
-    // 传输队列
+    // 传输队列（仅当队列族索引不同时才添加）
     uint32_t transferQueueCount = context.queueFamiliesProperties[context.transferQueueFamilyIndex].queueCount;
-	deviceQueueCreateInfo.queueFamilyIndex = context.transferQueueFamilyIndex;
-	std::vector<float> transQueuePriority;
-	for (int i = 0; i < transferQueueCount; ++i)
-	{
-        transQueuePriority.push_back(0.95f);
-	}
-	deviceQueueCreateInfo.queueCount = transferQueueCount;
-	deviceQueueCreateInfo.pQueuePriorities = transQueuePriority.data();
-    deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+    if (!isQueueFamilyAdded(context.transferQueueFamilyIndex))
+    {
+        deviceQueueCreateInfo.queueFamilyIndex = context.transferQueueFamilyIndex;
+        std::vector<float> transQueuePriority;
+        for (int i = 0; i < transferQueueCount; ++i)
+        {
+            transQueuePriority.push_back(0.95f);
+        }
+        deviceQueueCreateInfo.queueCount = transferQueueCount;
+        deviceQueueCreateInfo.pQueuePriorities = transQueuePriority.data();
+        deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+        addedQueueFamilyIndices.push_back(context.transferQueueFamilyIndex);
+    }
 
-	// 计算队列
-	uint32_t computeQueueCount = context.queueFamiliesProperties[context.computeQueueFamilyIndex].queueCount;
-	deviceQueueCreateInfo.queueFamilyIndex = context.computeQueueFamilyIndex;
-	std::vector<float> computeQueuePriority;
-	for (int i = 0; i < computeQueueCount; ++i)
-	{
-        computeQueuePriority.push_back(0.99f);
-	}
-	deviceQueueCreateInfo.queueCount = computeQueueCount;
-	deviceQueueCreateInfo.pQueuePriorities = computeQueuePriority.data();
-	deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+    // 计算队列（仅当队列族索引不同时才添加）
+    uint32_t computeQueueCount = context.queueFamiliesProperties[context.computeQueueFamilyIndex].queueCount;
+    if (!isQueueFamilyAdded(context.computeQueueFamilyIndex))
+    {
+        deviceQueueCreateInfo.queueFamilyIndex = context.computeQueueFamilyIndex;
+        std::vector<float> computeQueuePriority;
+        for (int i = 0; i < computeQueueCount; ++i)
+        {
+            computeQueuePriority.push_back(0.99f);
+        }
+        deviceQueueCreateInfo.queueCount = computeQueueCount;
+        deviceQueueCreateInfo.pQueuePriorities = computeQueuePriority.data();
+        deviceQueueCreateInfos.push_back(deviceQueueCreateInfo);
+        addedQueueFamilyIndices.push_back(context.computeQueueFamilyIndex);
+    }
 
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     deviceCreateInfo.pNext = &context.features_11;
