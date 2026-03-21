@@ -32,18 +32,21 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
         cameraPtr = sceneManager->CreateCamera("MainCamera");
     }
     cameraPtr->LookAt(
-        mathutil::Vector3f(0.0f, 2.0f, 5.0f),
-        mathutil::Vector3f(0.0f, 0.0f, 0.0f),
+        mathutil::Vector3f(2.1f, 1.5f, 2.1f),
+        mathutil::Vector3f(0.0f, 1.0f, 0.0f),
         mathutil::Vector3f(0.0f, 1.0f, 0.0f)
     );
-    cameraPtr->SetLens(60, width, height, 0.1f, 100.0f);
+    
+    cameraPtr->SetLens(50, width, height, 0.3f, 100.0f);
     
     // Create a simple light
-    RenderSystem::DirectionLight* dirLight = (RenderSystem::DirectionLight*)sceneManager->CreateLight(
-        "mainLight", RenderSystem::Light::DirectionLight);
-    dirLight->setColor(mathutil::Vector3f(1.0f, 1.0f, 1.0f));
-    dirLight->setDirection(mathutil::Vector3f(-0.5f, -1.0f, -0.5f));
-    dirLight->setStrength(mathutil::Vector3f(1.0f, 1.0f, 1.0f));
+    RenderSystem::PointLight* pointLight = (RenderSystem::PointLight*)sceneManager->CreateLight(
+        "mainLight", RenderSystem::Light::PointLight);
+    pointLight->setPosition(mathutil::Vector3f(3.0f, 3.0f, 1.5f));
+    pointLight->setColor(mathutil::Vector3f(0.3f, 0.3f, 0.3f));
+    pointLight->setStrength(mathutil::Vector3f(1.0f, 1.0f, 1.0f));
+    pointLight->setFalloffStart(1.0);
+    pointLight->setFalloffEnd(10.0);
 }
 
 void SSAOFrameWork::RenderFrame()
