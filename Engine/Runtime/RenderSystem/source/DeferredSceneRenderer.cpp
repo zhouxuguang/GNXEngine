@@ -223,8 +223,7 @@ HiZOutput DeferredSceneRenderer::BuildHiZPass(
     // 初始化Hi-Z Pass（如果需要）
     if (!mHiZPass->IsInitialized())
     {
-        bool useReverseZ = BuildSetting::mUseReverseZ;
-        mHiZPass->Initialize(useReverseZ);
+        mHiZPass->Initialize();
     }
 
     // 构建Hi-Z参数

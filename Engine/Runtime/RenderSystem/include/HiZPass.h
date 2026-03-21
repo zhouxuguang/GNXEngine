@@ -72,10 +72,9 @@ public:
     
     /**
      * @brief 初始化Hi-Z Pass
-     * @param useReverseZ 是否使用Reverse-Z深度模式
      * @return 是否初始化成功
      */
-    bool Initialize(bool useReverseZ = false);
+    bool Initialize();
     
     /**
      * @brief 添加Hi-Z生成Pass到FrameGraph
@@ -93,26 +92,9 @@ public:
         const HiZParams& params);
     
     /**
-     * @brief 获取指定层级的Hi-Z纹理视图
-     * @param level 层级索引（0 = 最高分辨率）
-     * @return 纹理视图指针，如果层级无效则返回nullptr
-     */
-    RenderCore::RCTexturePtr GetHiZLevel(uint32_t level) const;
-    
-    /**
      * @brief 获取Hi-Z层级数量
      */
     uint32_t GetNumLevels() const { return mHiZLevels; }
-    
-    /**
-     * @brief 获取完整的Hi-Z纹理
-     */
-    RenderCore::RCTexturePtr GetHiZTexture() const { return mHiZTexture; }
-    
-    /**
-     * @brief 获取Hi-Z采样器（Max Reduction）
-     */
-    RenderCore::TextureSamplerPtr GetHiZSampler() const { return mHiZSampler; }
     
     /**
      * @brief 是否已初始化
@@ -131,13 +113,6 @@ private:
     void CreateHiZPipeline();
     
     /**
-     * @brief 创建Hi-Z纹理和视图
-     * @param width 基础宽度
-     * @param height 基础高度
-     */
-    void CreateHiZTexture(uint32_t width, uint32_t height);
-    
-    /**
      * @brief 计算Hi-Z层级数量
      * @param width 宽度
      * @param height 高度
@@ -147,16 +122,10 @@ private:
 
 private:
     bool mInitialized = false;
-    bool mUseReverseZ = false;
     
     // Compute Pipeline
-    RenderCore::ComputePipelinePtr mHiZPipeline;
-    RenderCore::UniformBufferPtr mHiZParas;
-    
-    // Hi-Z纹理资源
-    RenderCore::RCTexturePtr mHiZTexture;                    // 完整的Hi-Z纹理（带Mip链）
-    RenderCore::RCTexturePtr mHiZViews[kMaxHiZLevels];       // 每一层的纹理视图
-    RenderCore::TextureSamplerPtr mHiZSampler;               // Max Reduction采样器
+    RenderCore::ComputePipelinePtr mHiZPipeline = nullptr;
+    RenderCore::UniformBufferPtr mHiZParas = nullptr;
     
     // Hi-Z配置
     uint32_t mHiZLevels = 0;

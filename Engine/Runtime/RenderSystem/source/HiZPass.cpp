@@ -38,33 +38,16 @@ HiZPass::~HiZPass()
     FreeGPUResources();
 }
 
-bool HiZPass::Initialize(bool useReverseZ)
+bool HiZPass::Initialize()
 {
     if (mInitialized)
     {
         return true;
     }
     
-    mUseReverseZ = useReverseZ;
-    
     // 创建Hi-Z生成Pipeline
     CreateHiZPipeline();
     
-    // 创建Max Reduction采样器
-    SamplerDesc samplerDesc;
-    samplerDesc.filterMin = MIN_LINEAR;
-    samplerDesc.filterMag = MAG_LINEAR;
-    samplerDesc.filterMip = MIN_NEAREST_MIPMAP_NEAREST;
-    samplerDesc.wrapS = CLAMP_TO_EDGE;
-    samplerDesc.wrapT = CLAMP_TO_EDGE;
-    
-    // 关键：使用Max Reduction模式
-    // 这样采样时会自动返回邻域中的最大深度值
-    // 对于Reverse-Z，我们需要Min Reduction（但大多数API只支持Max）
-    // 解决方案：存储负深度值，或者在shader中处理
-    //samplerDesc.reductionMode = REDUCTION_MODE_MAX;
-    
-    mHiZSampler = GetRenderDevice()->CreateSamplerWithDescriptor(samplerDesc);
     mHiZParas = GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbHiZParams));
     
     mInitialized = true;
@@ -82,10 +65,12 @@ HiZOutput HiZPass::AddToFrameGraph(
     // 如果尺寸改变，重新创建Hi-Z纹理
     if (mCurrentWidth != params.width || mCurrentHeight != params.height)
     {
-        CreateHiZTexture(params.width, params.height);
         mCurrentWidth = params.width;
         mCurrentHeight = params.height;
     }
+    
+    // 计算层级数量
+    mHiZLevels = CalculateNumLevels(mCurrentWidth / 2, mCurrentHeight / 2);
     
     // 定义Pass数据
     struct HiZPassData
@@ -133,6 +118,9 @@ HiZOutput HiZPass::AddToFrameGraph(
         // Execute阶段：执行Compute Shader
         [=](const HiZPassData& passData, FrameGraphPassResources& resources, void* context) 
         {
+            float debugColor[4] = {1.0f, 1.0f, 0.0f, 1.0f};
+            SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), debugColor);
+            
             // 获取资源
             auto depthTexture = resources.Get<FrameGraphTexture>(passData.depthInput).texture;
             auto hiZTexture = resources.Get<FrameGraphTexture>(passData.hiZOutput).texture;
@@ -161,16 +149,16 @@ HiZOutput HiZPass::AddToFrameGraph(
                 if (level == 0)
                 {
                     // 第一层：从原始深度缓冲采样
-                    computeEncoder->SetTexture(depthTexture, 0);
+                    computeEncoder->SetTexture("srcDepth", depthTexture, 0);
                 }
                 else
                 {
                     // 后续层：从上一层的Hi-Z采样
-                    computeEncoder->SetTexture(mHiZViews[level - 1], 0);
+                    computeEncoder->SetTexture("srcDepth", hiZTexture, level - 1);
                 }
                 
                 // 设置输出纹理（当前层）
-                computeEncoder->SetOutTexture(mHiZViews[level], level);
+                computeEncoder->SetOutTexture("dstDepth", hiZTexture, level);
                 
                 // 设置相关参数
                 cbHiZParams hiZParams;
@@ -211,16 +199,6 @@ HiZOutput HiZPass::AddToFrameGraph(
     return output;
 }
 
-RenderCore::RCTexturePtr HiZPass::GetHiZLevel(uint32_t level) const
-{
-    if (level >= mHiZLevels)
-    {
-        return nullptr;
-    }
-    
-    return mHiZViews[level];
-}
-
 void HiZPass::CreateHiZPipeline()
 {
     // 加载Hi-Z生成Shader
@@ -232,50 +210,8 @@ void HiZPass::CreateHiZPipeline()
     );
 }
 
-void HiZPass::CreateHiZTexture(uint32_t width, uint32_t height)
-{
-    // 清理旧资源
-    for (uint32_t i = 0; i < mHiZLevels; ++i)
-    {
-        mHiZViews[i].reset();
-    }
-    mHiZTexture.reset();
-    
-    // 计算层级数量
-    mHiZLevels = CalculateNumLevels(width, height);
-    
-    // 创建Hi-Z纹理（带完整Mip链）
-    // 注意：第一层是原始深度的1/2分辨率
-    uint32_t hizWidth = width / 2;
-    uint32_t hizHeight = height / 2;
-    
-    mHiZTexture = GetRenderDevice()->CreateTexture2D(
-        RenderCore::kTexFormatR32Float,
-        TextureUsage::TextureUsageShaderRead | TextureUsage::TextureUsageShaderWrite,
-        hizWidth,
-        hizHeight,
-        mHiZLevels  // Mip层级数量
-    );
-    
-    // 创建每一层的纹理视图
-    for (uint32_t i = 0; i < mHiZLevels; ++i)
-    {
-        // 创建Mip Level视图
-        // 注意：这里需要根据RHI的具体实现来创建纹理视图
-        // 对于Vulkan: VkImageView
-        // 对于Metal: MTLTexture (with.mipmapLevel)
-        
-        // 简化实现：直接使用同一纹理的不同Mip Level
-        // 实际上，现代图形API可以直接在Shader中通过指定Lod来访问不同Mip Level
-        // 这里创建View是为了方便绑定到不同的Descriptor
-        
-        mHiZViews[i] = mHiZTexture;
-    }
-}
-
 uint32_t HiZPass::CalculateNumLevels(uint32_t width, uint32_t height) const
 {
-    return 2;
     uint32_t levels = 0;
     uint32_t w = width / 2;
     uint32_t h = height / 2;
@@ -295,14 +231,6 @@ uint32_t HiZPass::CalculateNumLevels(uint32_t width, uint32_t height) const
 void HiZPass::FreeGPUResources()
 {
     mHiZPipeline.reset();
-    mHiZTexture.reset();
-    
-    for (uint32_t i = 0; i < kMaxHiZLevels; ++i)
-    {
-        mHiZViews[i].reset();
-    }
-    
-    mHiZSampler.reset();
     
     mHiZLevels = 0;
     mInitialized = false;
