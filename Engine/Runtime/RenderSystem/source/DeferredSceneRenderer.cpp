@@ -15,6 +15,7 @@
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "FrameGraph/FrameGraphExecuteContext.h"
+#include "BuildSetting.h"
 #include <algorithm>
 #include <functional>
 
@@ -26,6 +27,7 @@ DeferredSceneRenderer::DeferredSceneRenderer()
     mGBufferRenderer = std::make_shared<GBufferRenderer>();
     mDepthRender = std::make_unique<DepthRenderer>(GetRenderDevice().get());
     mDeferredLightingPass = std::make_shared<DeferredLightingPass>();
+    mHiZPass = std::make_shared<HiZPass>();
     
     mPostProcessing = new PostProcessing(GetRenderDevice());
 }
@@ -95,13 +97,21 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     FrameGraphResource depthResource = RenderPreDepthPass(
         frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO);
 
+    // Hi-Z Pass（在PreDepth之后、BasePass之前）
+    HiZOutput hiZOutput;
+    if (depthResource != -1)
+    {
+        hiZOutput = BuildHiZPass(frameGraph, commandBuffer, depthResource);
+        mLastHiZOutput = hiZOutput;
+    }
+
     // BasePass (G-Buffer)
     GBufferData gbufferData = RenderBasePass(
         frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, depthResource);
 
     // Deferred Lighting Pass
     FrameGraphResource lightingResult = RenderDeferredLightingPass(
-        frameGraph, commandBuffer, gbufferData, depthResource, cameraUBO);
+        frameGraph, commandBuffer, gbufferData, depthResource, cameraUBO, hiZOutput);
 
     RenderPresentPass(frameGraph, commandBuffer, lightingResult);
 
@@ -205,6 +215,29 @@ GBufferData DeferredSceneRenderer::RenderBasePass(
     return mGBufferRenderer->AddToFrameGraph("BasePass", frameGraph, commandBuffer, params);
 }
 
+HiZOutput DeferredSceneRenderer::BuildHiZPass(
+    FrameGraph& frameGraph,
+    CommandBufferPtr commandBuffer,
+    FrameGraphResource depthTexture)
+{
+    // 初始化Hi-Z Pass（如果需要）
+    if (!mHiZPass->IsInitialized())
+    {
+        bool useReverseZ = BuildSetting::mUseReverseZ;
+        mHiZPass->Initialize(useReverseZ);
+    }
+
+    // 构建Hi-Z参数
+    HiZParams params;
+    params.width = mWidth;
+    params.height = mHeight;
+    params.depthTexture = depthTexture;
+    params.useReverseZ = BuildSetting::mUseReverseZ;
+
+    // 添加Hi-Z Pass到FrameGraph
+    return mHiZPass->AddToFrameGraph("HiZPass", frameGraph, commandBuffer, params);
+}
+
 void DeferredSceneRenderer::RenderPresentPass(FrameGraph& frameGraph, CommandBufferPtr commandBuffer, FrameGraphResource depthResource)
 {
     frameGraph.AddPass("PresentPass",
@@ -237,12 +270,16 @@ FrameGraphResource DeferredSceneRenderer::RenderDeferredLightingPass(
     CommandBufferPtr commandBuffer,
     const GBufferData& gbufferData,
     FrameGraphResource depthTexture,
-    UniformBufferPtr cameraUBO)
+    UniformBufferPtr cameraUBO,
+    const HiZOutput& hiZOutput)
 {
     // 初始化延迟光照Pass（如果需要）
     if (!mDeferredLightingPass->IsInitialized())
     {
         DeferredLightingConfig config;
+        config.enableSSAO = false;
+        config.enableSSR = false;
+        config.enableTiledLighting = false;
         mDeferredLightingPass->Initialize(config);
     }
 
@@ -265,6 +302,11 @@ FrameGraphResource DeferredSceneRenderer::RenderDeferredLightingPass(
     params.cameraUBO = cameraUBO;
     params.width = mWidth;
     params.height = mHeight;
+    
+    // 传递Hi-Z资源（如果可用）
+    // 注意：这里需要在DeferredLightingParams中添加hiZTexture字段
+    // 现在先预留接口，等实现SSR时使用
+    // params.hiZTexture = hiZOutput.hiZTexture;
 
     // 执行延迟光照Pass
     DeferredLightingOutput output = mDeferredLightingPass->AddToFrameGraph(

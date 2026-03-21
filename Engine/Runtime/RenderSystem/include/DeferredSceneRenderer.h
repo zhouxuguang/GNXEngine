@@ -12,6 +12,7 @@
 #include "GBufferRenderer.h"
 #include "DepthRenderer.h"
 #include "DeferredLightingPass.h"
+#include "HiZPass.h"
 #include "PostProcess/PostProcessing.h"
 #include <vector>
 
@@ -57,6 +58,14 @@ private:
     void RenderPresentPass(FrameGraph& frameGraph, CommandBufferPtr commandBuffer, FrameGraphResource depthResource);
 
     /**
+     * 执行Hi-Z生成Pass
+     */
+    HiZOutput BuildHiZPass(
+        FrameGraph& frameGraph,
+        CommandBufferPtr commandBuffer,
+        FrameGraphResource depthTexture);
+
+    /**
      * 执行延迟光照Pass
      */
     FrameGraphResource RenderDeferredLightingPass(
@@ -64,7 +73,8 @@ private:
         CommandBufferPtr commandBuffer,
         const GBufferData& gbufferData,
         FrameGraphResource depthTexture,
-        UniformBufferPtr cameraUBO);
+        UniformBufferPtr cameraUBO,
+        const HiZOutput& hiZOutput = HiZOutput());
 
     /**
      * 收集场景中的光源
@@ -102,10 +112,14 @@ private:
     GBufferRendererPtr mGBufferRenderer;
     DepthRendererUniPtr mDepthRender = nullptr;
     DeferredLightingPassPtr mDeferredLightingPass = nullptr;
+    HiZPassPtr mHiZPass = nullptr;
     PostProcessing* mPostProcessing = nullptr;
     
     uint32_t mWidth = 1;
     uint32_t mHeight = 1;
+    
+    // Hi-Z输出资源（供后续Pass使用）
+    HiZOutput mLastHiZOutput;
 };
 
 typedef std::shared_ptr<DeferredSceneRenderer> DeferredSceneRendererPtr;
