@@ -186,8 +186,8 @@ void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t index)
     }
     VKTextureBasePtr vkRenderTex = std::dynamic_pointer_cast<VKTextureBase>(texture);
 
-    // Storage image 需要使用 GENERAL layout
-    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    // Sampled image descriptor可以使用具体的layout，使用纹理的当前layout
+    VkImageLayout imageLayout = vkRenderTex->GetCurrentLayout();
 
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();
@@ -210,8 +210,8 @@ void VKComputeEncoder::SetOutTexture(RCTexturePtr texture, uint32_t mipLevel, ui
     }
     VKTextureBasePtr vkRenderTex = std::dynamic_pointer_cast<VKTextureBase>(texture);
 
-    // Storage image 需要使用 GENERAL layout
-    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+    // Sampled image descriptor可以使用具体的layout，使用纹理的当前layout
+    VkImageLayout imageLayout = vkRenderTex->GetCurrentLayout();
 
     VkDescriptorImageInfo imageInfo = {};
     // 使用特定 mip level 的 ImageView

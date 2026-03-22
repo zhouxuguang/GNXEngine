@@ -181,7 +181,7 @@ HiZOutput HiZPass::AddToFrameGraph(
                 // Vulkan: vkCmdPipelineBarrier
                 // Metal: MTLBarrier
                 
-                mCommandBuffer->ResourceBarrier(hiZTexture, RenderCore::ResourceAccessType::ShaderRead);
+                mCommandBuffer->ResourceBarrier(hiZTexture, ResourceAccessType::ComputeShaderRead | ResourceAccessType::ComputeShaderRead);
                 
                 // 准备下一层
                 levelWidth = std::max(levelWidth / 2, 1u);

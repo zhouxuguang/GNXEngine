@@ -513,7 +513,7 @@ void VulkanCommandBuffer::ResourceBarrier(RCTexturePtr texture, ResourceAccessTy
     }
     else if (accessType == ResourceAccessType::ComputeShaderRead)
     {
-        targetLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        targetLayout = VK_IMAGE_LAYOUT_GENERAL;
         dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
         dstStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
     }
