@@ -22,6 +22,18 @@ class RENDERSYSTEM_API ImageTextureUtil
 {
 public:
     static TextureDesc getTextureDescriptor(const VImage& image);
+    
+    static RCTexture2DPtr TextureFromFile(const char *filename);
+    
+    static RCTexture2DPtr CreateDiffuseTexture(float r, float g, float b);
+
+    static RCTexture2DPtr CreateMetalRoughTexture();
+
+    static RCTexture2DPtr CreateNormalTexture();
+
+    static RCTexture2DPtr CreateEmmisveTexture();
+
+    static RCTexture2DPtr CreateAOTexture();
 };
 
 RCTextureCubePtr LoadEquirectangularMap(const std::string& fileName);
