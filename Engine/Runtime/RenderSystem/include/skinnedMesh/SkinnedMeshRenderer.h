@@ -30,6 +30,11 @@ public:
     
     void AddMaterial(const MaterialPtr& material);
     
+    const std::vector<MaterialPtr>& GetMaterials() const
+    {
+        return mMaterials;
+    }
+    
     void Update(float deltaTime);
     
     void Render(RenderInfo &renderInfo, bool isCPUSkin);

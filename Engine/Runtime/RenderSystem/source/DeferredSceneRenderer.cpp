@@ -377,6 +377,7 @@ void DeferredSceneRenderer::CollectMeshesRecursive(
             DepthMeshItem item;
             item.mesh = mesh;
             item.objectUBO = node->GetOrCreateModelUBO(renderDevice);
+            item.materials = meshRenderer->GetMaterials();
             meshItems.push_back(item);
         }
     }
@@ -391,6 +392,7 @@ void DeferredSceneRenderer::CollectMeshesRecursive(
             DepthSkinnedMeshItem item;
             item.mesh = mesh;
             item.objectUBO = node->GetOrCreateModelUBO(renderDevice);
+            item.materials = skinnedMeshRenderer->GetMaterials();
             skinnedMeshItems.push_back(item);
         }
     }

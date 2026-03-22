@@ -46,6 +46,7 @@ struct DepthMeshItem
 {
     MeshPtr mesh;               // 网格指针
     UniformBufferPtr objectUBO; // 该网格的model矩阵UBO
+    std::vector<MaterialPtr> materials;  // 每个submesh对应的材质
 };
 
 /**
@@ -56,6 +57,7 @@ struct DepthSkinnedMeshItem
 {
     SkinnedMeshPtr mesh;        // 蒙皮网格指针
     UniformBufferPtr objectUBO; // 该网格的model矩阵UBO
+    std::vector<MaterialPtr> materials;  // 每个submesh对应的材质
 };
 
 /**

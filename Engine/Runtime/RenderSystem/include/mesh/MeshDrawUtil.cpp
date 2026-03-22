@@ -304,17 +304,38 @@ void MeshDrawUtil::DrawMeshBasePass(const Mesh& mesh, const RenderInfo& renderIn
 	{
 		return;
 	}
-    renderEncoder->SetGraphicsPipeline(basePassPSO);
 
 	for (int n = 0; n < mesh.GetSubMeshCount(); n++)
 	{
-		// 只设置必要的uniform
+		renderEncoder->SetGraphicsPipeline(basePassPSO);
+
+		// 设置必要的uniform
 		renderEncoder->SetVertexUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
 		renderEncoder->SetVertexUniformBuffer("cbPerObject", renderInfo.objectUBO);
 
+		renderEncoder->SetFragmentUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+
+		// 绑定顶点属性
 		renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
-        renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelNormal].offset, 1);
-        //renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTangent].offset, 2);
+		renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelNormal].offset, 1);
+		renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTangent].offset, 2);
+		renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTexCoord0].offset, 3);
+
+		// 绑定材质贴图
+		if (n < renderInfo.materials.size())
+		{
+			MaterialPtr material = renderInfo.materials[n];
+			if (material)
+			{
+				TextureSamplerPtr textureSampler = mesh.GetSampler();
+                
+                renderEncoder->SetFragmentTextureAndSampler("gDiffuseMap", material->GetTexture("diffuseTexture"), textureSampler);
+                renderEncoder->SetFragmentTextureAndSampler("gNormalMap", material->GetTexture("normalTexture"), textureSampler);
+                renderEncoder->SetFragmentTextureAndSampler("gMetalRoughMap", material->GetTexture("roughnessTexture"), textureSampler);
+                renderEncoder->SetFragmentTextureAndSampler("gEmissiveMap", material->GetTexture("emissiveTexture"), textureSampler);
+                renderEncoder->SetFragmentTextureAndSampler("gAmbientMap", material->GetTexture("ambientTexture"), textureSampler);
+			}
+		}
 
 		const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
 

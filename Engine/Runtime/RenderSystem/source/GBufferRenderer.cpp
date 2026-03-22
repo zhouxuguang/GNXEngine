@@ -215,6 +215,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
                     renderInfo.renderEncoder = renderEncoder;
                     renderInfo.cameraUBO = data.uniforms.cameraUBO;
                     renderInfo.objectUBO = meshItem.objectUBO;
+                    renderInfo.materials = meshItem.materials;
 
                     MeshDrawUtil::DrawMeshBasePass(*meshItem.mesh, renderInfo, mGBufferPipeline);
                 }
