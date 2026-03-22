@@ -2,6 +2,7 @@
 #define GNX_ENGINE_BASEPASS_HLSL
 
 #include "GNXEngineVariables.hlsl"
+#include "GBufferCommon.hlsl"
 
 // 材质贴图
 Texture2D gDiffuseMap;
@@ -77,10 +78,10 @@ FragmentOutput PS(VertexOutput input)
     // 采样法线贴图（如果有）
     float3 normalTS = gNormalMap.Sample(gNormalMapSam, input.texCoord).xyz;
     normalTS = normalTS * 2.0 - 1.0;  // [0,1] -> [-1,1]
-    normal = TransformTangentToWorld(normalTS, normal, input.tangent);
+    //normal += TransformTangentToWorld(normalTS, normal, input.tangent);
     
-    // 法线编码到 [0,1]
-    normal = normal * 0.5 + 0.5;
+    // 法线编码
+    normal = EncodeNormalOctahedron(normal);
     
     // 采样材质贴图
     float4 baseColor = gDiffuseMap.Sample(gDiffuseMapSam, input.texCoord);
