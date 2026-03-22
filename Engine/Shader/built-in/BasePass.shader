@@ -27,7 +27,7 @@ struct VertexOutput
 {
     float4 position : SV_POSITION;
     float3 normal : NORMAL;
-    float3 tangent : TANGENT;
+    float4 tangent : TANGENT;
     float2 texCoord : TEXCOORD0;
 };
 
@@ -44,8 +44,9 @@ VertexOutput VS(VertexInput input)
     float3 normal = mul(float4(input.normal.xyz, 0.0f), MATRIX_Normal).xyz;
     output.normal = normal;
     
-    float3 tangent = mul(float4(input.tangent.xyz, 0.0f), MATRIX_M).xyz;
-    output.tangent = tangent;
+    float3 tangent = mul(float4(input.tangent.xyz, 0.0f), MATRIX_Normal).xyz;
+    output.tangent.xyz = tangent;
+    output.tangent.w = input.tangent.w;
     
     output.texCoord = input.texCoord;
     
@@ -60,28 +61,15 @@ struct FragmentOutput
     float4 outRT3 : SV_TARGET3;   //BaseColor + GenericAO
 };
 
-// 切线空间法线转世界空间
-float3 TransformTangentToWorld(float3 tangentNormal, float3 vertexNormal, float3 vertexTangent)
-{
-    float3 N = normalize(vertexNormal);
-    float3 T = normalize(vertexTangent);
-    T = normalize(T - dot(T, N) * N);
-    float3 B = cross(N, T);
-    float3x3 TBN = float3x3(T, B, N);
-    return normalize(mul(tangentNormal, TBN));
-}
-
 FragmentOutput PS(VertexOutput input)
 {
     float3 normal = normalize(input.normal);
+    float4 tangent = float4(normalize(input.tangent.xyz), input.tangent.w);
     
     // 采样法线贴图（如果有）
     float3 normalTS = gNormalMap.Sample(gNormalMapSam, input.texCoord).xyz;
     normalTS = normalTS * 2.0 - 1.0;  // [0,1] -> [-1,1]
-    //normal += TransformTangentToWorld(normalTS, normal, input.tangent);
-    
-    // 法线编码
-    normal = EncodeNormalOctahedron(normal);
+    normal = NormalSampleToWorldSpace(normalTS, normal, tangent);
     
     // 采样材质贴图
     float4 baseColor = gDiffuseMap.Sample(gDiffuseMapSam, input.texCoord);
@@ -92,6 +80,8 @@ FragmentOutput PS(VertexOutput input)
 
     output.outRT0 = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
+    // 法线编码
+    normal = EncodeNormalOctahedron(normalize(normal));
     output.outRT1 = float4(normal, 0.333333f);
 
     // RT2: Metallic(0) + Specular(0.5) + Roughness(g通道) + [4 bit 0b1010 | 4 bit ShadingModel]

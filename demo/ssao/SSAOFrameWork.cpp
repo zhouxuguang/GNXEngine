@@ -149,11 +149,11 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
     // Create a simple light
     RenderSystem::PointLight* pointLight = (RenderSystem::PointLight*)sceneManager->CreateLight(
         "mainLight", RenderSystem::Light::PointLight);
-    pointLight->setPosition(mathutil::Vector3f(3.0f, 3.0f, 1.5f));
+    pointLight->setPosition(mathutil::Vector3f(4.91507435f, 4.70739937, 0.672433853));
     pointLight->setColor(mathutil::Vector3f(1.0f, 1.0f, 1.0f));
     pointLight->setStrength(mathutil::Vector3f(1.0f, 1.0f, 1.0f));
-    pointLight->setFalloffStart(10.0);
-    pointLight->setFalloffEnd(30.0);
+    pointLight->setFalloffStart(100.0);
+    pointLight->setFalloffEnd(300.0);
     
     std::string strMarryFile = GetProjectAssetDir() + "ssao/Marry.obj";
     //sceneManager->GetRootNode()->CreateRendererNode("marry", strMarryFile);
