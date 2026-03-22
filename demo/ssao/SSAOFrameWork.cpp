@@ -177,7 +177,7 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
         RenderSystem::MaterialPtr material1 = std::make_shared<RenderSystem::Material>();
         material1->SetTexture("diffuseTexture", woodImage);
         material1->SetTexture("normalTexture", normalImage);
-        material1->SetTexture("metallicTexture", metalRoughImage);
+        material1->SetTexture("roughnessTexture", metalRoughImage);
         material1->SetTexture("ambientTexture", ambientImage);
         meshRender1->AddMaterial(material1);
         
@@ -192,7 +192,7 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
         RenderSystem::MaterialPtr material1 = std::make_shared<RenderSystem::Material>();
         material1->SetTexture("diffuseTexture", brickImage);
         material1->SetTexture("normalTexture", normalImage);
-        material1->SetTexture("metallicTexture", metalRoughImage);
+        material1->SetTexture("roughnessTexture", metalRoughImage);
         material1->SetTexture("ambientTexture", ambientImage);
         meshRender1->AddMaterial(material1);
         
