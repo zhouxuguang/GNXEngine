@@ -9,6 +9,7 @@
 #include "Runtime/RenderSystem/include/mesh/MeshRenderer.h"
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 #include "Runtime/RenderSystem/include/ImageTextureUtil.h"
+#include "Runtime/RenderSystem/include/Transform.h"
 #include "Runtime/MathUtil/include/MathUtil.h"
 #include "Runtime/ImageCodec/include/VImage.h"
 #include "Runtime/ImageCodec/include/ImageDecoder.h"
@@ -161,6 +162,9 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
     RenderCore::RCTexturePtr woodImage = RenderSystem::ImageTextureUtil::TextureFromFile(
                         (GetProjectAssetDir() + "ssao/hardwood2_diffuse.jpg").c_str());
     
+    RenderCore::RCTexturePtr brickImage = RenderSystem::ImageTextureUtil::TextureFromFile(
+                        (GetProjectAssetDir() + "ssao/brick1.jpg").c_str());
+    
     RenderCore::RCTexturePtr normalImage = RenderSystem::ImageTextureUtil::CreateNormalTexture();
     RenderCore::RCTexturePtr metalRoughImage = RenderSystem::ImageTextureUtil::CreateMetalRoughTexture();
     RenderCore::RCTexturePtr ambientImage = RenderSystem::ImageTextureUtil::CreateAOTexture();
@@ -179,6 +183,31 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
         
         RenderSystem::SceneNode* floorNode = sceneManager->GetRootNode()->CreateChildSceneNode("floorNode");
         floorNode->AddComponent(meshRender1);
+    }
+    
+    {
+        RenderSystem::MeshRenderer* meshRender1 = new(std::nothrow) RenderSystem::MeshRenderer();
+        meshRender1->SetSharedMesh(mesh);
+        
+        RenderSystem::MaterialPtr material1 = std::make_shared<RenderSystem::Material>();
+        material1->SetTexture("diffuseTexture", brickImage);
+        material1->SetTexture("normalTexture", normalImage);
+        material1->SetTexture("metallicTexture", metalRoughImage);
+        material1->SetTexture("ambientTexture", ambientImage);
+        meshRender1->AddMaterial(material1);
+        
+        //model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -2));
+//        model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1, 0, 0));
+        
+        Matrix4x4f translateMatrix = Matrix4x4f::CreateTranslate(0, 0, -2);
+        Matrix4x4f rotateMatrix = Matrix4x4f::CreateRotation(1, 0, 0, 90.0f);
+        Matrix4x4f modelMatrix = rotateMatrix * translateMatrix;
+        RenderSystem::Transform transform;
+        transform.TransformFromMat4(modelMatrix);
+        
+        RenderSystem::SceneNode* wallNode = sceneManager->GetRootNode()->CreateChildSceneNode("wallNode1",
+                                            transform.position, transform.rotation, transform.scale);
+        wallNode->AddComponent(meshRender1);
     }
 }
 
