@@ -1,4 +1,4 @@
-//
+﻿//
 //  DeferredLightingPass.cpp
 //  GNXEngine
 //
@@ -115,7 +115,7 @@ void DeferredLightingPass::UpdateLightData(const DeferredLightingParams& params)
         Vector3f color = light->getColor();
         Vector3f strength = light->getStrength();
         lightData.LightColor = mathutil::make_simd_float4(color.x, color.y, color.z, 1.0f);
-        lightData.Strength = mathutil::make_simd_float3(strength.x, strength.y, strength.z);
+        lightData.Strength = mathutil::make_simd_float4(strength.x, strength.y, strength.z, 0.0f);
         lightData.FalloffStart = light->getFalloffStart();
         lightData.FalloffEnd = light->getFalloffEnd();
         lightData.SpotPower = 0.0f;
@@ -131,7 +131,7 @@ void DeferredLightingPass::UpdateLightData(const DeferredLightingParams& params)
         Vector3f color = light->getColor();
         Vector3f strength = light->getStrength();
         lightData.LightColor = mathutil::make_simd_float4(color.x, color.y, color.z, 1.0f);
-        lightData.Strength = mathutil::make_simd_float3(strength.x, strength.y, strength.z);
+        lightData.Strength = mathutil::make_simd_float4(strength.x, strength.y, strength.z, 0.0f);
         lightData.FalloffStart = light->getFalloffStart();
         lightData.FalloffEnd = light->getFalloffEnd();
         lightData.SpotPower = 0.0f;
@@ -146,7 +146,7 @@ void DeferredLightingPass::UpdateLightData(const DeferredLightingParams& params)
         Vector3f color = light->getColor();
         Vector3f strength = light->getStrength();
         lightData.LightColor = mathutil::make_simd_float4(color.x, color.y, color.z, 1.0f);
-        lightData.Strength = mathutil::make_simd_float3(strength.x, strength.y, strength.z);
+        lightData.Strength = mathutil::make_simd_float4(strength.x, strength.y, strength.z, 0.0f);
         lightData.FalloffStart = light->getFalloffStart();
         lightData.FalloffEnd = light->getFalloffEnd();
         lightData.SpotPower = light->getSpotPower();

@@ -64,7 +64,7 @@ cbuffer cbPerObject
 cbuffer cbLighting
 {
     float4 _WorldSpaceLightPos;     //方向光: (world space direction, _WorldSpaceLightPos0.w = 0). Other lights: (world space position, _WorldSpaceLightPos0.w = 1).
-    float3 _Strength;                // 光的强度
+    float4 _Strength;                // 光的强度 (xyz=strength, w=unused)
     float4 _LightColor;             // 光的颜色
     float _FalloffStart; // point/spot light only
     float _FalloffEnd;   // point/spot light only

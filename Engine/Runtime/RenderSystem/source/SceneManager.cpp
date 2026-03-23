@@ -440,7 +440,7 @@ void SceneManager::UpdateLightInfo()
         cbLighting lightInfo;
         Vector3f lightColor = pointLight->getColor();
         lightInfo.LightColor = mathutil::make_simd_float4(lightColor.x, lightColor.y, lightColor.z, 1.0);
-        lightInfo.Strength = mathutil::make_simd_float3(pointLight->getStrength());
+        lightInfo.Strength = mathutil::make_simd_float4(pointLight->getStrength().x, pointLight->getStrength().y, pointLight->getStrength().z, 0.0f);
         Vector3f lightPos = pointLight->getPosition();
         lightInfo.WorldSpaceLightPos = mathutil::make_simd_float4(lightPos.x, lightPos.y, lightPos.z, 1.0);
         lightInfo.FalloffStart = pointLight->getFalloffStart();

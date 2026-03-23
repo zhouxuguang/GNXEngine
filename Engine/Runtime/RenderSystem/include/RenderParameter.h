@@ -49,7 +49,7 @@ struct cbPerCamera
 struct cbLighting
 {
     mathutil::simd_float4 WorldSpaceLightPos;     //方向光: (world space direction, _WorldSpaceLightPos0.w = 0). Other lights: (world space position, _WorldSpaceLightPos0.w = 1).
-    mathutil::simd_float3 Strength;                // 光的强度
+    mathutil::simd_float4 Strength;                // 光的强度 (xyz=strength, w=unused padding for HLSL alignment)
     mathutil::simd_float4 LightColor;             // 光的颜色
     float FalloffStart; // point/spot light only
     float FalloffEnd;   // point/spot light only

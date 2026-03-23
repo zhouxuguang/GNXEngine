@@ -110,7 +110,7 @@ RCTexture2DPtr ImageTextureUtil::CreateDiffuseTexture(float r, float g, float b)
 RCTexture2DPtr ImageTextureUtil::CreateMetalRoughTexture()
 {
     uint8_t *pData = (uint8_t*)malloc(4);
-    pData[0] = 0;
+    pData[0] = 255;
     pData[1] = 255;
     pData[2] = 255;
     pData[3] = 255;
@@ -118,7 +118,6 @@ RCTexture2DPtr ImageTextureUtil::CreateMetalRoughTexture()
     image->SetImageInfo(FORMAT_RGBA8, 1, 1, pData, free);
     
     TextureDesc textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
-    //textureDescriptor.mipmaped = true;
     
     RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(textureDescriptor.format,
                     TextureUsage::TextureUsageShaderRead, image->GetWidth(), image->GetHeight(), 1);
