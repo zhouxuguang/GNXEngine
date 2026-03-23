@@ -10,6 +10,7 @@
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 #include "Runtime/RenderSystem/include/ImageTextureUtil.h"
 #include "Runtime/RenderSystem/include/Transform.h"
+#include "Runtime/RenderSystem/include/TextureSlot.h"
 #include "Runtime/MathUtil/include/MathUtil.h"
 #include "Runtime/ImageCodec/include/VImage.h"
 #include "Runtime/ImageCodec/include/ImageDecoder.h"
@@ -158,6 +159,13 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
     
     std::string strMarryFile = GetProjectAssetDir() + "ssao/Marry.obj";
     //sceneManager->GetRootNode()->CreateRendererNode("marry", strMarryFile);
+
+    RenderCore::SamplerDesc sampDesc = RenderCore::SamplerDesc(
+		RenderCore::MAG_LINEAR,
+		RenderCore::MIN_LINEAR,
+		RenderCore::REPEAT,
+		RenderCore::REPEAT
+	);
     
     RenderCore::RCTexturePtr woodImage = RenderSystem::ImageTextureUtil::TextureFromFile(
                         (GetProjectAssetDir() + "ssao/hardwood2_diffuse.jpg").c_str());
@@ -169,13 +177,13 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
     RenderCore::RCTexturePtr metalRoughImage = RenderSystem::ImageTextureUtil::CreateMetalRoughTexture();
     RenderCore::RCTexturePtr ambientImage = RenderSystem::ImageTextureUtil::CreateAOTexture();
     
-    RenderSystem::MeshPtr mesh = CreatePlaneMesh(10, 10, 1, 1, 1, 1);
+    RenderSystem::MeshPtr mesh = CreatePlaneMesh(10, 10, 1, 1, 10, 7);
     {
         RenderSystem::MeshRenderer* meshRender1 = new(std::nothrow) RenderSystem::MeshRenderer();
         meshRender1->SetSharedMesh(mesh);
         
         RenderSystem::MaterialPtr material1 = std::make_shared<RenderSystem::Material>();
-        material1->SetTexture("diffuseTexture", woodImage);
+        material1->SetTexture("diffuseTexture", woodImage, sampDesc);
         material1->SetTexture("normalTexture", normalImage);
         material1->SetTexture("roughnessTexture", metalRoughImage);
         material1->SetTexture("ambientTexture", ambientImage);
@@ -190,7 +198,7 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
         meshRender1->SetSharedMesh(mesh);
         
         RenderSystem::MaterialPtr material1 = std::make_shared<RenderSystem::Material>();
-        material1->SetTexture("diffuseTexture", brickImage);
+        material1->SetTexture("diffuseTexture", brickImage, sampDesc);
         material1->SetTexture("normalTexture", normalImage);
         material1->SetTexture("roughnessTexture", metalRoughImage);
         material1->SetTexture("ambientTexture", ambientImage);
@@ -212,7 +220,7 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
 		meshRender1->SetSharedMesh(mesh);
 
 		RenderSystem::MaterialPtr material1 = std::make_shared<RenderSystem::Material>();
-		material1->SetTexture("diffuseTexture", brickImage);
+		material1->SetTexture("diffuseTexture", brickImage, sampDesc);
 		material1->SetTexture("normalTexture", normalImage);
 		material1->SetTexture("roughnessTexture", metalRoughImage);
 		material1->SetTexture("ambientTexture", ambientImage);

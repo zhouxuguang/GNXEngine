@@ -138,17 +138,37 @@ bool Material::GetValue(const std::string& name, float &value)
 
 void Material::SetTexture(const std::string& name, RCTexturePtr texture)
 {
-    mTextureMapProps.emplace(name, texture);
+    mTextureSlotMap.emplace(name, TextureSlot(texture));
 }
 
 RCTexturePtr Material::GetTexture(const std::string& name)
 {
-    auto iter = mTextureMapProps.find(name);
-    if (iter != mTextureMapProps.end())
+    auto iter = mTextureSlotMap.find(name);
+    if (iter != mTextureSlotMap.end())
     {
-        return iter->second;
+        return iter->second.texture;
     }
     return nullptr;
+}
+
+void Material::SetTexture(const std::string& name, RCTexturePtr texture, const SamplerDesc& samplerDesc)
+{
+    mTextureSlotMap.emplace(name, TextureSlot(texture, samplerDesc));
+}
+
+const TextureSlot* Material::GetTextureSlot(const std::string& name) const
+{
+    auto iter = mTextureSlotMap.find(name);
+    if (iter != mTextureSlotMap.end())
+    {
+        return &iter->second;
+    }
+    return nullptr;
+}
+
+const std::unordered_map<std::string, TextureSlot>& Material::GetAllTextureSlots() const
+{
+    return mTextureSlotMap;
 }
 
 // G-Buffer相关方法实现

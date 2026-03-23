@@ -13,6 +13,7 @@
 #include "Runtime/MathUtil/include/Vector4.h"
 #include "Runtime/RenderCore/include/RCTexture.h"
 #include "Runtime/RenderCore/include/GraphicsPipeline.h"
+#include "TextureSlot.h"
 #include "ShaderAsset.h"
 #include <unordered_map>
 #include <string>
@@ -76,6 +77,15 @@ public:
     void SetTexture(const std::string& name, RCTexturePtr texture);
     RCTexturePtr GetTexture(const std::string& name);
     
+    // 设置纹理及其采样器描述
+    void SetTexture(const std::string& name, RCTexturePtr texture, const SamplerDesc& samplerDesc);
+    
+    // 获取纹理槽（纹理+采样器描述）
+    const TextureSlot* GetTextureSlot(const std::string& name) const;
+    
+    // 获取所有纹理槽
+    const std::unordered_map<std::string, TextureSlot>& GetAllTextureSlots() const;
+    
     void SetPSO(GraphicsPipelinePtr pso)
     {
         mPSO = pso;
@@ -87,8 +97,8 @@ public:
     }
     
 private:
-    typedef std::unordered_map<std::string, RCTexturePtr> TextureMap;
-    TextureMap mTextureMapProps;   //纹理信息
+    typedef std::unordered_map<std::string, TextureSlot> TextureSlotMap;
+    TextureSlotMap mTextureSlotMap;   //纹理槽信息（纹理+采样器描述）
     
     typedef std::unordered_map<std::string, float> FloatMap;
     FloatMap mFloatMapProps;     //浮点信息

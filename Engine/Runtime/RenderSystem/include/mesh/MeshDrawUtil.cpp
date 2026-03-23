@@ -11,13 +11,31 @@
 #include "ImageTextureUtil.h"
 #include "Runtime/RenderCore/include/RCTexture.h"
 #include "RenderEngine.h"
+#include <vector>
 
 RCTextureCubePtr envMap = nullptr;
 RCTextureCubePtr envMapIrradiance = nullptr;
 TextureSamplerPtr cubeSampler = nullptr;
 RCTexture2DPtr brdfMap = nullptr;
 
+// 采样器缓存 - 用于复用相同配置的采样器
+static std::vector<std::pair<SamplerDesc, TextureSamplerPtr>> gSamplerCache;
+
 NS_RENDERSYSTEM_BEGIN
+
+// 获取或创建采样器（根据SamplerDesc复用）
+static TextureSamplerPtr GetOrCreateSampler(const SamplerDesc& desc)
+{
+    for (auto& [d, sampler] : gSamplerCache)
+    {
+        if (d == desc)
+            return sampler;
+    }
+    
+    auto sampler = GetRenderDevice()->CreateSamplerWithDescriptor(desc);
+    gSamplerCache.emplace_back(desc, sampler);
+    return sampler;
+}
 
 
 void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
@@ -305,6 +323,14 @@ void MeshDrawUtil::DrawMeshBasePass(const Mesh& mesh, const RenderInfo& renderIn
 		return;
 	}
 
+	// 获取默认采样器（mesh级别的采样器作为fallback）
+	TextureSamplerPtr defaultSampler = mesh.GetSampler();
+	SamplerDesc defaultSamplerDesc;
+	if (!defaultSampler)
+	{
+		defaultSampler = GetOrCreateSampler(defaultSamplerDesc);
+	}
+
 	for (int n = 0; n < mesh.GetSubMeshCount(); n++)
 	{
 		renderEncoder->SetGraphicsPipeline(basePassPSO);
@@ -321,19 +347,20 @@ void MeshDrawUtil::DrawMeshBasePass(const Mesh& mesh, const RenderInfo& renderIn
 		renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTangent].offset, 2);
 		renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTexCoord0].offset, 3);
 
-		// 绑定材质贴图
+		// 绑定材质贴图（使用TextureSlot中的采样器配置）
 		if (n < renderInfo.materials.size())
 		{
 			MaterialPtr material = renderInfo.materials[n];
 			if (material)
 			{
-				TextureSamplerPtr textureSampler = mesh.GetSampler();
-                
-                renderEncoder->SetFragmentTextureAndSampler("gDiffuseMap", material->GetTexture("diffuseTexture"), textureSampler);
-                renderEncoder->SetFragmentTextureAndSampler("gNormalMap", material->GetTexture("normalTexture"), textureSampler);
-                renderEncoder->SetFragmentTextureAndSampler("gMetalRoughMap", material->GetTexture("roughnessTexture"), textureSampler);
-                renderEncoder->SetFragmentTextureAndSampler("gEmissiveMap", material->GetTexture("emissiveTexture"), textureSampler);
-                renderEncoder->SetFragmentTextureAndSampler("gAmbientMap", material->GetTexture("ambientTexture"), textureSampler);
+                TextureSamplerPtr textureSampler = mesh.GetSampler();
+                auto textureSlot = material->GetTextureSlot("diffuseTexture");
+
+				renderEncoder->SetFragmentTextureAndSampler("gDiffuseMap", textureSlot->texture, GetOrCreateSampler(textureSlot->samplerDesc));
+				renderEncoder->SetFragmentTextureAndSampler("gNormalMap", material->GetTexture("normalTexture"), textureSampler);
+				renderEncoder->SetFragmentTextureAndSampler("gMetalRoughMap", material->GetTexture("roughnessTexture"), textureSampler);
+				renderEncoder->SetFragmentTextureAndSampler("gEmissiveMap", material->GetTexture("emissiveTexture"), textureSampler);
+				renderEncoder->SetFragmentTextureAndSampler("gAmbientMap", material->GetTexture("ambientTexture"), textureSampler);
 			}
 		}
 
