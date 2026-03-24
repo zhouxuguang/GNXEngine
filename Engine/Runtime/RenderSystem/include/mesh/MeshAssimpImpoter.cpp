@@ -1092,7 +1092,7 @@ void MeshAssimpImpoter::processIndice()
     for (auto mesh : mSubMeshs)
     {
         // 处理顶点索引
-        uint16_t indexCount = 0;
+        uint32_t indexCount = 0;
         for(unsigned int i = 0; i < mesh->mNumFaces; i++)
         {
             const aiFace& face = mesh->mFaces[i];
