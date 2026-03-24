@@ -77,7 +77,7 @@ public:
     template<class T>
     void SetNormals(T const* data, size_t count)
     {
-		if (count > std::numeric_limits<uint16_t>::max())
+		if (count > std::numeric_limits<uint32_t>::max())
 		{
 			LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
 			return;
@@ -95,7 +95,7 @@ public:
     template<class T>
     void SetTangents(T const* data, size_t count)
     {
-		if (count > std::numeric_limits<uint16_t>::max())
+		if (count > std::numeric_limits<uint32_t>::max())
 		{
 			LOG_INFO("Mesh.vertices is too large. A mesh may not have more than 65000 vertices.");
 			return;
