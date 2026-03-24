@@ -103,50 +103,50 @@ inline half3 LinearToGammaSpace(half3 linRGB)
 //坐标和方向的转换
 
 // 将世界坐标空间中的一点转换到裁剪空间
-inline float4 WorldToClipPos( in float3 pos )
+inline float4 WorldToClipPos(in float3 pos)
 {
     return mul(MATRIX_VP, float4(pos, 1.0));
 }
 
 // 将观察坐标空间中的一点转换到裁剪空间
-inline float4 ViewToClipPos( in float3 pos )
+inline float4 ViewToClipPos(in float3 pos)
 {
     return mul(MATRIX_P, float4(pos, 1.0));
 }
 
 // 将物体空间中的一点转换到观察空间
-inline float3 ObjectToViewPos( in float3 pos )
+inline float3 ObjectToViewPos(in float3 pos)
 {
     return mul(MATRIX_V, mul(MATRIX_M, float4(pos, 1.0))).xyz;
 }
 
 // 将世界坐标中的一点转换到观察空间
-inline float3 WorldToViewPos( in float3 pos )
+inline float3 WorldToViewPos(in float3 pos)
 {
     return mul(MATRIX_V, float4(pos, 1.0)).xyz;
 }
 
 // 将模型坐标空间中的方向变换到世界空间
-inline float3 ObjectToWorldDir( in float3 dir )
+inline float3 ObjectToWorldDir(in float3 dir)
 {
     return normalize(mul((float3x3)MATRIX_M, dir));
 }
 
 // 将世界坐标空间中的方向变换到模型空间
-inline float3 WorldToObjectDir( in float3 dir )
+inline float3 WorldToObjectDir(in float3 dir)
 {
     return normalize(mul((float3x3)MATRIX_M_INV, dir));
 }
 
 // 将模型空间中的法向量变换到世界坐标空间
-inline float3 ObjectToWorldNormal( in float3 norm )
+inline float3 ObjectToWorldNormal(in float3 norm)
 {
     // mul(IT_M, norm) => mul(norm, I_M) => {dot(norm, I_M.col0), dot(norm, I_M.col1), dot(norm, I_M.col2)}
     return normalize(mul(norm, (float3x3)MATRIX_M_INV));
 }
 
 // 计算世界坐标中的点到相机的方向
-inline float3 WorldSpaceViewDir( in float3 worldPos )
+inline float3 WorldSpaceViewDir(in float3 worldPos)
 {
     return normalize(_WorldSpaceCameraPos.xyz - worldPos);
 }
@@ -187,9 +187,6 @@ float3x3 GetTangentRotation2(float3 normal, float4 tangent)
 //---------------------------------------------------------------------------------------
 float3 NormalSampleToWorldSpace(float3 normalMapSample, float3 unitNormalW, float4 tangentW)
 {
-	// Uncompress each component from [0,1] to [-1,1].
-	float3 normalT = 2.0f * normalMapSample - 1.0f;
-
 	// Build orthonormal basis.
 	float3 N = unitNormalW;
 	float3 T = normalize(tangentW.xyz - dot(tangentW.xyz, N)*N);
@@ -198,7 +195,7 @@ float3 NormalSampleToWorldSpace(float3 normalMapSample, float3 unitNormalW, floa
 	float3x3 TBN = float3x3(T, B, N);
 
 	// Transform from tangent space to world space.
-	float3 bumpedNormalW = mul(normalT, TBN);
+	float3 bumpedNormalW = mul(normalMapSample, TBN);
 
 	return bumpedNormalW;
 }
@@ -240,7 +237,7 @@ inline snorm float3 UnpackNormal(snorm float4 packednormal)
 // https://aras-p.info/blog/2009/07/30/encoding-floats-to-rgba-the-final/
 
 // Encoding/decoding [0..1) floats into 8 bit/channel RGBA. Note that 1.0 will not be encoded properly.
-inline float4 EncodeFloatRGBA( float v )
+inline float4 EncodeFloatRGBA(float v)
 {
     float4 kEncodeMul = float4(1.0, 255.0, 65025.0, 16581375.0);
     float kEncodeBit = 1.0/255.0;
@@ -249,14 +246,14 @@ inline float4 EncodeFloatRGBA( float v )
     enc -= enc.yzww * kEncodeBit;
     return enc;
 }
-inline float DecodeFloatRGBA( float4 enc )
+inline float DecodeFloatRGBA(float4 enc)
 {
     float4 kDecodeDot = float4(1.0, 1/255.0, 1/65025.0, 1/16581375.0);
     return dot( enc, kDecodeDot );
 }
 
 // Encoding/decoding [0..1) floats into 8 bit/channel RG. Note that 1.0 will not be encoded properly.
-inline float2 EncodeFloatRG( float v )
+inline float2 EncodeFloatRG(float v)
 {
     float2 kEncodeMul = float2(1.0, 255.0);
     float kEncodeBit = 1.0/255.0;
@@ -265,7 +262,8 @@ inline float2 EncodeFloatRG( float v )
     enc.x -= enc.y * kEncodeBit;
     return enc;
 }
-inline float DecodeFloatRG( float2 enc )
+
+inline float DecodeFloatRG(float2 enc)
 {
     float2 kDecodeDot = float2(1.0, 1/255.0);
     return dot( enc, kDecodeDot );
@@ -313,20 +311,28 @@ inline float Linear01Depth(float depth)
 //     return (eyeDepth - near) / (far - near);  // 1/far
 // }
 
-// 计算世界坐标位置（从深度纹理重建）
-// uv: 屏幕空间 UV 坐标
-// rawDepth: 深度纹理采样值
-inline float3 ComputeWorldSpacePos(float2 uv, float rawDepth)
+// 从深度重建世界坐标
+float3 ReconstructWorldPosition(float2 uv, float depth)
 {
-    // 从深度重建 NDC 坐标
-    float4 positionNDC = float4(uv * 2.0 - 1.0, rawDepth, 1.0);
-    
-    // 逆投影到视角空间
-    float4 positionView = mul(MATRIX_INV_P, positionNDC);
-    
-    // 逆视图到世界空间
-    float4 positionWorld = mul(MATRIX_INV_V, positionView);
-    return positionWorld.xyz / positionWorld.w;
+    // if (depth <= 0.0001) return float3(0.0, 0.0, 0.0);
+    // if (depth >= 0.9999) return float3(0.0, 0.0, 0.0);
+    // 计算NDC坐标
+    float4 clipPos = float4(
+        uv.x * 2.0f - 1.0f,   // [0,1] -> [-1,1]  XY需要转换
+        uv.y * 2.0f - 1.0f,   // [0,1] -> [-1,1]  XY需要转换
+        depth,                 // 已经是Vulkan NDC [0,1]，不需要转换！
+        1.0f
+    );
+
+    // 计算相机空间坐标
+    float4 camPos = mul(clipPos, MATRIX_INV_P);
+    camPos.xyz /= camPos.w;
+    //camPos.z *= -1;
+
+    // 计算世界空间坐标
+    float4 worldPos = mul(clipPos, MATRIX_INV_VP);
+    worldPos.xyz /= worldPos.w;
+    return worldPos.xyz;
 }
 
 float4 fsTrianglePosition(int vtx) 

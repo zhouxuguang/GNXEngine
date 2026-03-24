@@ -49,30 +49,6 @@ SamplerState gGBufferDSam;
 Texture2D gDepth;
 SamplerState gDepthSam;
 
-// 从深度重建世界坐标
-float3 ReconstructWorldPosition(float2 uv, float depth)
-{
-    if (depth <= 0.0001) return float3(0.0, 0.0, 0.0);
-    if (depth >= 0.9999) return float3(0.0, 0.0, 0.0);
-    // 计算NDC坐标
-    float4 clipPos = float4(
-        uv.x * 2.0f - 1.0f,   // [0,1] -> [-1,1]  XY需要转换
-        uv.y * 2.0f - 1.0f,   // [0,1] -> [-1,1]  XY需要转换
-        depth,                 // 已经是Vulkan NDC [0,1]，不需要转换！
-        1.0f
-    );
-
-    // 计算相机空间坐标
-    float4 camPos = mul(clipPos, MATRIX_INV_P);
-    camPos.xyz /= camPos.w;
-    //camPos.z *= -1;
-
-    // 计算世界空间坐标
-    float4 worldPos = mul(clipPos, MATRIX_INV_VP);
-    worldPos.xyz /= worldPos.w;
-    return worldPos.xyz;
-}
-
 // 计算单个光源的贡献
 float3 ComputeLighting(GBufferData gBufferData, float3 lightDir, float3 lightColor, float lightIntensity)
 {

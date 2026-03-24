@@ -110,8 +110,8 @@ RCTexture2DPtr ImageTextureUtil::CreateDiffuseTexture(float r, float g, float b)
 RCTexture2DPtr ImageTextureUtil::CreateMetalRoughTexture()
 {
     uint8_t *pData = (uint8_t*)malloc(4);
-    pData[0] = 255;
-    pData[1] = 255;
+    pData[0] = 0;
+    pData[1] = 128;
     pData[2] = 255;
     pData[3] = 255;
     imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
@@ -129,8 +129,8 @@ RCTexture2DPtr ImageTextureUtil::CreateMetalRoughTexture()
 RCTexture2DPtr ImageTextureUtil::CreateNormalTexture()
 {
     uint8_t *pData = (uint8_t*)malloc(4);
-    pData[0] = 0;
-    pData[1] = 0;
+    pData[0] = 128;
+    pData[1] = 128;
     pData[2] = 255;
     pData[3] = 0;
     imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
