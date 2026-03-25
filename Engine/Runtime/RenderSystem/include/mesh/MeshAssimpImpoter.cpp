@@ -813,13 +813,14 @@ std::vector<std::shared_ptr<Material>> MeshAssimpImpoter::processMeshVertex(cons
                 
                 mTangent.push_back(vector);
             }
+            else
+            {
+				Vector4f vector = Vector4f(1.0, 0.0, 0.0, 1.0);
+				mTangent.push_back(vector);
+            }
             
             if (mesh->HasVertexColors(0))
-            {
-                //                vector.x = mesh->mTangents[i].x;
-                //                vector.y = mesh->mTangents[i].y;
-                //                vector.z = mesh->mTangents[i].z;
-                
+            { 
             }
         }
         
