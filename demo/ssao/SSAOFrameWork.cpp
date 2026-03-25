@@ -158,8 +158,23 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
     pointLight->setFalloffStart(100.0);
     pointLight->setFalloffEnd(300.0);
     
-    std::string strMarryFile = GetProjectAssetDir() + "ssao/Marry.obj";
-    //sceneManager->GetRootNode()->CreateRendererNode("marry", strMarryFile);
+    // dragon
+    std::string strDragonFile = GetProjectAssetDir() + "ssao/dragon.obj";
+
+	Matrix4x4f translateMatrix = Matrix4x4f::CreateTranslate(0, 0.282958, 0);
+	Matrix4x4f scaleMatrix = Matrix4x4f::CreateScale(2.0f, 2.0f, 2.0f);
+	Matrix4x4f rotateMatrix = Matrix4x4f::CreateRotation(0, 1, 0, 135.0f);
+
+	Matrix4x4f modelMatrix = rotateMatrix * scaleMatrix * translateMatrix;
+	RenderSystem::Transform transform;
+	transform.TransformFromMat4(modelMatrix);
+
+    RenderSystem::SceneNode* dragonNode = sceneManager->GetRootNode()->CreateRendererNode("marry", strDragonFile, 
+        transform.position, transform.rotation, transform.scale);
+    RenderSystem::MeshRenderer * meshRender = dragonNode->QueryComponentT<RenderSystem::MeshRenderer>();
+    const std::vector<RenderSystem::MaterialPtr> materials = meshRender->GetMaterials();
+    RenderCore::RCTexturePtr dragonBaseColor = RenderSystem::ImageTextureUtil::CreateDiffuseTexture(0.9f, 0.5f, 0.2f);
+    materials[0]->SetTexture("diffuseTexture", dragonBaseColor);
 
     RenderCore::SamplerDesc sampDesc = RenderCore::SamplerDesc(
 		RenderCore::MAG_LINEAR,
