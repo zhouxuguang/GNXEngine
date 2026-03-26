@@ -182,6 +182,10 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
         FrameGraphResource gBufferD;
         FrameGraphResource depthTexture;
         
+        // SSAO纹理
+        FrameGraphResource ssaoTexture;
+        bool hasSSAO;
+        
         // Uniform Buffers
         UniformBufferPtr cameraUBO;
         UniformBufferPtr lightUBO;
@@ -204,7 +208,7 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             outputDesc.depth = 1;
             outputDesc.format = RenderCore::kTexFormatRGBA16Float;
             data.output.lightingResult = builder.Create<FrameGraphTexture>(outputDesc.name, outputDesc);
-            builder.Write(data.output.lightingResult, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
+            (void)builder.Write(data.output.lightingResult, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
             
             // 读取G-Buffer纹理
             data.gBufferA = builder.Read(params.gBufferA, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
@@ -213,6 +217,13 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             data.gBufferD = builder.Read(params.gBufferD, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             // 深度纹理作为只读深度附件使用
             data.depthTexture = builder.Read(params.depthTexture, (uint32_t)RenderCore::ResourceAccessType::DepthStencilReadOnly);
+            
+            // SSAO纹理（如果可用）
+            data.hasSSAO = (params.ssaoTexture != -1);
+            if (data.hasSSAO)
+            {
+                data.ssaoTexture = builder.Read(params.ssaoTexture, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
+            }
             
             // 保存Uniform Buffers
             data.cameraUBO = params.cameraUBO;
@@ -236,6 +247,13 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             FrameGraphTexture& gBufferD = resources.Get<FrameGraphTexture>(data.gBufferD);
             FrameGraphTexture& depthTexture = resources.Get<FrameGraphTexture>(data.depthTexture);
             FrameGraphTexture& outputTexture = resources.Get<FrameGraphTexture>(data.output.lightingResult);
+            
+            // SSAO纹理（如果可用）
+            FrameGraphTexture* ssaoTexture = nullptr;
+            if (data.hasSSAO)
+            {
+                ssaoTexture = &resources.Get<FrameGraphTexture>(data.ssaoTexture);
+            }
             
             float debugColor[4] = {1.0f, 1.0f, 0.0f, 1.0f};
             SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), debugColor);
@@ -287,6 +305,12 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             renderEncoder->SetFragmentTextureAndSampler("gGBufferD", gBufferD.texture, mGBufferSampler);
             // gDepthTexture: Position（从深度重建，这里绑定深度纹理）
             renderEncoder->SetFragmentTextureAndSampler("gDepth", depthTexture.texture, mGBufferSampler);
+            
+            // 绑定SSAO纹理（如果可用）
+            if (ssaoTexture)
+            {
+                renderEncoder->SetFragmentTextureAndSampler("gSSAO", ssaoTexture->texture, mGBufferSampler);
+            }
             
             // 绑定IBL纹理（如果启用）
             if (data.enableIBL)

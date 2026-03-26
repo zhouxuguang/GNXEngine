@@ -335,6 +335,24 @@ float3 ReconstructWorldPosition(float2 uv, float depth)
     return worldPos.xyz;
 }
 
+// 从深度重建视图空间位置
+float3 ReconstructViewPosition(float2 uv, float depth)
+{
+    // 计算NDC坐标
+    float4 clipPos = float4(
+        uv.x * 2.0f - 1.0f,     // [0,1] -> [-1,1]
+        uv.y * 2.0f - 1.0f,     // [0,1] -> [-1,1]
+        depth,                  
+        1.0f
+    );
+    
+    // 逆投影到视图空间
+    float4 viewPos = mul(clipPos, MATRIX_INV_P);
+    viewPos.xyz /= viewPos.w;
+    
+    return viewPos.xyz;
+}
+
 float4 fsTrianglePosition(int vtx) 
 {
     float x = -1.0 + float((vtx & 1) << 2);

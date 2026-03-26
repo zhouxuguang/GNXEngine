@@ -6,6 +6,7 @@
 //
 
 #include "GNXEngineCommon.hlsl"
+#include "GBufferCommon.hlsl"
 
 struct VertexOut
 {
@@ -41,34 +42,12 @@ SamplerState texNoiseSam;
 // SSAO参数
 cbuffer cbSSAOParams
 {
-    float4 samples[64];         // 采样核心
+    float4 SampleKernel[64];         // 采样核心
     float4 noiseScale;          // 噪声缩放 (width/noiseSize, height/noiseSize, 0, 0)
     float radius;               // 采样半径
     float bias;                 // 深度偏移
     int kernelSize;             // 采样核心大小
     float padding;
-}
-
-// 从深度重建视图空间位置
-float3 ReconstructViewPosition(float2 uv, float depth)
-{
-    // 计算NDC坐标
-    float4 clipPos = float4(
-        uv.x * 2.0f - 1.0f,     // [0,1] -> [-1,1]
-        uv.y * 2.0f - 1.0f,     // [0,1] -> [-1,1]
-#ifdef REVERSE_Z
-        depth,                   // Reverse-Z: 深度已经是NDC [0,1]
-#else
-        depth * 2.0f - 1.0f,    // 传统Z: [0,1] -> [-1,1]
-#endif
-        1.0f
-    );
-    
-    // 逆投影到视图空间
-    float4 viewPos = mul(MATRIX_INV_P, clipPos);
-    viewPos.xyz /= viewPos.w;
-    
-    return viewPos.xyz;
 }
 
 // 构建TBN矩阵（从法线）
@@ -88,9 +67,11 @@ float3x3 BuildTBNMatrix(float3 normal)
 // 像素着色器 - SSAO计算
 float PS(VertexOut pin) : SV_Target0
 {
-    // 从G-Buffer获取法线
-    float3 normal = gGBufferA.Sample(gGBufferASam, pin.texCoord).xyz;
-    normal = normalize(normal * 2.0f - 1.0f);   // [0,1] -> [-1,1]
+    // 从G-Buffer获取法线（octahedral编码，世界空间）
+    float3 worldNormal = DecodeNormalOctahedron(gGBufferA.Sample(gGBufferASam, pin.texCoord).xyz);
+    
+    // 将世界空间法线转换到视图空间（SSAO在视图空间计算）
+    float3 normal = normalize(mul(worldNormal, (float3x3)MATRIX_V));
     
     // 从深度重建视图空间位置
     float depth = gDepth.Sample(gDepthSam, pin.texCoord).r;
@@ -108,15 +89,29 @@ float PS(VertexOut pin) : SV_Target0
     
     for (int i = 0; i < kernelSize; ++i)
     {
+        // vec3 samplePos = camPos + Radius * (toCamSpace * SampleKernel[i]);
+
+        // // Project point
+        // vec4 p = ProjectionMatrix * vec4(samplePos,1);
+        // p *= 1.0 / p.w;
+        // p.xyz = p.xyz * 0.5 + 0.5;
+
+        // // Access camera space z-coordinate at that point
+        // float surfaceZ = texture(PositionTex, p.xy).z;
+        // float zDist = surfaceZ - camPos.z;
+        
+        // // Count points that ARE occluded
+        // if( zDist >= 0.0 && zDist <= Radius && surfaceZ > samplePos.z ) occlusionSum += 1.0;
+
         // 将采样点从切线空间变换到视图空间
-        float3 sampleVec = mul(samples[i].xyz, TBN);
+        float3 sampleVec = mul(SampleKernel[i].xyz, TBN);
         
         // 计算采样点在视图空间的位置
         float3 samplePos = viewPos + sampleVec * radius;
         
         // 将采样点投影到屏幕空间
         float4 offset = float4(samplePos, 1.0f);
-        offset = mul(MATRIX_P, offset);
+        offset = mul(offset, MATRIX_P);
         offset.xyz /= offset.w;
         offset.xy = offset.xy * 0.5f + 0.5f;    // [-1,1] -> [0,1]
         
@@ -143,7 +138,7 @@ float PS(VertexOut pin) : SV_Target0
     occlusion = 1.0f - (occlusion / (float)kernelSize);
     
     // 增强对比度
-    occlusion = pow(occlusion, 1.5f);
+    occlusion = pow(occlusion, 4.0f);
     
     return occlusion;
 }

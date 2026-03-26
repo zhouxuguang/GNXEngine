@@ -13,6 +13,7 @@
 #include "DepthRenderer.h"
 #include "DeferredLightingPass.h"
 #include "HiZPass.h"
+#include "SSAOPass.h"
 #include "PostProcess/PostProcessing.h"
 #include <vector>
 
@@ -74,7 +75,8 @@ private:
         const GBufferData& gbufferData,
         FrameGraphResource depthTexture,
         UniformBufferPtr cameraUBO,
-        const HiZOutput& hiZOutput = HiZOutput());
+        const HiZOutput& hiZOutput = HiZOutput(),
+        const SSAOOutput& ssaoOutput = SSAOOutput());
 
     /**
      * 收集场景中的光源
@@ -113,6 +115,7 @@ private:
     DepthRendererUniPtr mDepthRender = nullptr;
     DeferredLightingPassPtr mDeferredLightingPass = nullptr;
     HiZPassPtr mHiZPass = nullptr;
+    SSAOPassPtr mSSAOPass = nullptr;
     PostProcessing* mPostProcessing = nullptr;
     
     uint32_t mWidth = 1;

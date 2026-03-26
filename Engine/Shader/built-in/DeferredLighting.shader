@@ -49,6 +49,10 @@ SamplerState gGBufferDSam;
 Texture2D gDepth;
 SamplerState gDepthSam;
 
+// SSAO纹理
+Texture2D gSSAO;
+SamplerState gSSAOSam;
+
 // 计算单个光源的贡献
 float3 ComputeLighting(GBufferData gBufferData, float3 lightDir, float3 lightColor, float lightIntensity)
 {
@@ -145,7 +149,9 @@ float4 PS(VertexOut pin) : SV_Target0
     Lo *= attenuation;
     
     // 环境光
-    float3 ambient = float3(0.03, 0.03, 0.03) * gBufferData.albedo * gBufferData.ao;
+    float ssao = 1.0;
+    ssao = gSSAO.Sample(gSSAOSam, pin.texCoord).r;
+    float3 ambient = float3(0.3, 0.3, 0.3) * gBufferData.albedo * gBufferData.ao * ssao;
     
     // 自发光
     float3 finalColor = Lo + ambient + gBufferData.emissive;

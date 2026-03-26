@@ -28,6 +28,7 @@ DeferredSceneRenderer::DeferredSceneRenderer()
     mDepthRender = std::make_unique<DepthRenderer>(GetRenderDevice().get());
     mDeferredLightingPass = std::make_shared<DeferredLightingPass>();
     mHiZPass = std::make_shared<HiZPass>();
+    mSSAOPass = std::make_shared<SSAOPass>();
     
     mPostProcessing = new PostProcessing(GetRenderDevice());
 }
@@ -109,9 +110,41 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     GBufferData gbufferData = RenderBasePass(
         frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, depthResource);
 
+    // SSAO Pass（在G-Buffer之后、DeferredLighting之前）
+    SSAOOutput ssaoOutput;
+    ssaoOutput.ssaoResult = -1;
+    if (mSSAOPass && depthResource != -1 && gbufferData.gBufferA != -1)
+    {
+        if (!mSSAOPass->IsInitialized())
+        {
+            SSAOConfig ssaoConfig;
+            ssaoConfig.kernelSize = 64;
+            ssaoConfig.noiseSize = 4;
+            ssaoConfig.radius = 0.5f;
+            ssaoConfig.bias = 0.025f;
+            ssaoConfig.enableBlur = true;
+            ssaoConfig.blurRadius = 2;
+            mSSAOPass->Initialize(ssaoConfig);
+        }
+
+        SSAOParams ssaoParams;
+        ssaoParams.width = mWidth;
+        ssaoParams.height = mHeight;
+        ssaoParams.gBufferA = gbufferData.gBufferA;
+        ssaoParams.depthTexture = depthResource;
+        ssaoParams.cameraUBO = cameraUBO;
+        ssaoParams.radius = 0.5f;
+        ssaoParams.bias = 0.025f;
+        ssaoParams.kernelSize = 64;
+        ssaoParams.enableBlur = true;
+        ssaoParams.blurRadius = 2;
+
+        ssaoOutput = mSSAOPass->AddToFrameGraph("SSAOPass", frameGraph, commandBuffer, ssaoParams);
+    }
+
     // Deferred Lighting Pass
     FrameGraphResource lightingResult = RenderDeferredLightingPass(
-        frameGraph, commandBuffer, gbufferData, depthResource, cameraUBO, hiZOutput);
+        frameGraph, commandBuffer, gbufferData, depthResource, cameraUBO, hiZOutput, ssaoOutput);
 
     RenderPresentPass(frameGraph, commandBuffer, lightingResult);
 
@@ -265,13 +298,14 @@ FrameGraphResource DeferredSceneRenderer::RenderDeferredLightingPass(
     const GBufferData& gbufferData,
     FrameGraphResource depthTexture,
     UniformBufferPtr cameraUBO,
-    const HiZOutput& hiZOutput)
+    const HiZOutput& hiZOutput,
+    const SSAOOutput& ssaoOutput)
 {
     // 初始化延迟光照Pass（如果需要）
     if (!mDeferredLightingPass->IsInitialized())
     {
         DeferredLightingConfig config;
-        config.enableSSAO = false;
+        config.enableSSAO = (ssaoOutput.ssaoResult != -1);
         config.enableSSR = false;
         config.enableTiledLighting = false;
         mDeferredLightingPass->Initialize(config);
@@ -296,6 +330,7 @@ FrameGraphResource DeferredSceneRenderer::RenderDeferredLightingPass(
     params.cameraUBO = cameraUBO;
     params.width = mWidth;
     params.height = mHeight;
+    params.ssaoTexture = ssaoOutput.ssaoResult;
     
     // 传递Hi-Z资源（如果可用）
     // 注意：这里需要在DeferredLightingParams中添加hiZTexture字段

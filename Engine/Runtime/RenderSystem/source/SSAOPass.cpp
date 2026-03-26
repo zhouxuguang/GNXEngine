@@ -298,6 +298,7 @@ SSAOOutput SSAOPass::AddToFrameGraph(
         {
             SSAOOutput output;
             FrameGraphResource ssaoInput;
+            FrameGraphResource depthTexture;
         };
         
         auto& blurPassData = frameGraph.AddPass<BlurPassData>(
@@ -315,10 +316,13 @@ SSAOOutput SSAOPass::AddToFrameGraph(
                 
                 // 读取SSAO结果
                 data.ssaoInput = builder.Read(ssaoPassData.output.ssaoResult, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
+                // 读取深度纹理（用于双边模糊）
+                data.depthTexture = builder.Read(params.depthTexture, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             },
             [=](const BlurPassData& data, FrameGraphPassResources& resources, void* context)
             {
                 FrameGraphTexture& ssaoInput = resources.Get<FrameGraphTexture>(data.ssaoInput);
+                FrameGraphTexture& depthTexture = resources.Get<FrameGraphTexture>(data.depthTexture);
                 FrameGraphTexture& outputTexture = resources.Get<FrameGraphTexture>(data.output.ssaoResult);
                 
                 float debugColor[4] = {0.3f, 0.3f, 0.8f, 1.0f};
@@ -339,6 +343,8 @@ SSAOOutput SSAOPass::AddToFrameGraph(
                 
                 // 绑定SSAO纹理
                 renderEncoder->SetFragmentTextureAndSampler("texSSAO", ssaoInput.texture, mGBufferSampler);
+                // 绑定深度纹理（用于双边模糊）
+                renderEncoder->SetFragmentTextureAndSampler("gDepth", depthTexture.texture, mGBufferSampler);
                 
                 renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
                 renderEncoder->EndEncode();

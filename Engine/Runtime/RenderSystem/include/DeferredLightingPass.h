@@ -38,6 +38,8 @@ struct DeferredLightingParams
     FrameGraphResource gBufferD;
     FrameGraphResource depthTexture;   
     
+    FrameGraphResource ssaoTexture = -1;
+    
     // 光源数据
     std::vector<DirectionLight*> directionalLights;
     std::vector<PointLight*> pointLights;
