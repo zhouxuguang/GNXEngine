@@ -105,62 +105,122 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
     // The SPIR-V is now parsed, and we can perform reflection on it.
     spirv_cross::ShaderResources resources = msl.get_shader_resources();
 
-    // Get all sampled images in the shader.
+    spv::ExecutionModel model = (shaderStage == ShaderStage_Vertex)
+        ? spv::ExecutionModelVertex : spv::ExecutionModelFragment;
+
+    // 紧凑 sampled images 的 texture 和 sampler binding 到 0~N 连续索引
+    // Metal 要求 sampler 索引必须在 0~15 范围内
+    uint32_t nextTexBinding = 0;
+    uint32_t nextSamBinding = 0;
     for (auto &resource : resources.sampled_images)
     {
         unsigned set = msl.get_decoration(resource.id, spv::DecorationDescriptorSet);
         unsigned binding = msl.get_decoration(resource.id, spv::DecorationBinding);
-        printf("Image %s at set = %u, binding = %u\n", resource.name.c_str(), set, binding);
+        printf("Image %s at set = %u, binding = %u -> MSL texture=%u, sampler=%u\n",
+               resource.name.c_str(), set, binding, nextTexBinding, nextSamBinding);
 
-        // Modify the decoration to prepare it for GLSL.
-        msl.unset_decoration(resource.id, spv::DecorationDescriptorSet);
+        spirv_cross::MSLResourceBinding resBinding;
+        resBinding.stage = model;
+        resBinding.desc_set = set;
+        resBinding.binding = binding;
+        resBinding.msl_texture = nextTexBinding;
+        resBinding.msl_sampler = nextSamBinding;
+        msl.add_msl_resource_binding(resBinding);
 
-        // Some arbitrary remapping if we want.
-        msl.set_decoration(resource.id, spv::DecorationBinding, set * 16 + binding);
+        nextTexBinding++;
+        nextSamBinding++;
     }
-    
-    //修改顶点着色器中uniform——buffer的索引
+
+    // 紧凑 separate samplers 的 binding（如果有独立的 sampler 变量）
+    for (auto &resource : resources.separate_samplers)
+    {
+        unsigned set = msl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+        unsigned binding = msl.get_decoration(resource.id, spv::DecorationBinding);
+        printf("Separate sampler %s at set = %u, binding = %u -> MSL sampler=%u\n",
+               resource.name.c_str(), set, binding, nextSamBinding);
+
+        spirv_cross::MSLResourceBinding resBinding;
+        resBinding.stage = model;
+        resBinding.desc_set = set;
+        resBinding.binding = binding;
+        resBinding.msl_sampler = nextSamBinding;
+        msl.add_msl_resource_binding(resBinding);
+
+        nextSamBinding++;
+    }
+
+    // 紧凑 separate images 的 binding（如果有独立的 texture 变量）
+    for (auto &resource : resources.separate_images)
+    {
+        unsigned set = msl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+        unsigned binding = msl.get_decoration(resource.id, spv::DecorationBinding);
+        printf("Separate image %s at set = %u, binding = %u -> MSL texture=%u\n",
+               resource.name.c_str(), set, binding, nextTexBinding);
+
+        spirv_cross::MSLResourceBinding resBinding;
+        resBinding.stage = model;
+        resBinding.desc_set = set;
+        resBinding.binding = binding;
+        resBinding.msl_texture = nextTexBinding;
+        msl.add_msl_resource_binding(resBinding);
+
+        nextTexBinding++;
+    }
+
+    // 计算顶点属性占用的最大 location，用于调整 uniform buffer 起始索引
+    uint32_t maxLocation = 0;
+    int attrCount = 0;
     if (shaderStage == ShaderStage_Vertex)
     {
-        uint32_t maxIndex = 0;
-        int count = 0;
         for (auto &resource : resources.stage_inputs)
         {
-            uint32_t index1 = msl.get_decoration(resource.id, spv::DecorationLocation);
-            count ++;
-            if (index1 > maxIndex)
+            uint32_t loc = msl.get_decoration(resource.id, spv::DecorationLocation);
+            attrCount++;
+            if (loc > maxLocation)
             {
-                maxIndex = index1;
+                maxLocation = loc;
             }
-            
-//            const spirv_cross::SPIRType &type = msl.get_type(resource.type_id);
-//            msl.set_decoration(resource.id, spv::DecorationLocation, index1);
-//            index ++;
         }
-        
-        if (count > 0)
+        if (attrCount > 0)
         {
-            maxIndex += 1;
-        }
-        
-        for (auto &resource : resources.uniform_buffers)
-        {
-            uint32_t index = msl.get_decoration(resource.id, spv::DecorationBinding);
-            msl.set_decoration(resource.id, spv::DecorationBinding, index + (uint32_t)maxIndex);
+            maxLocation += 1;
         }
     }
-    
+
+    // 紧凑 uniform buffer binding
+    uint32_t nextBufBinding = 0;
+    if (shaderStage == ShaderStage_Vertex)
+    {
+        // 顶点着色器：buffer 索引从顶点属性之后开始
+        nextBufBinding = maxLocation;
+    }
+    for (auto &resource : resources.uniform_buffers)
+    {
+        unsigned set = msl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+        unsigned binding = msl.get_decoration(resource.id, spv::DecorationBinding);
+        printf("UBO %s at set = %u, binding = %u -> MSL buffer=%u\n",
+               resource.name.c_str(), set, binding, nextBufBinding);
+
+        spirv_cross::MSLResourceBinding resBinding;
+        resBinding.stage = model;
+        resBinding.desc_set = set;
+        resBinding.binding = binding;
+        resBinding.msl_buffer = nextBufBinding;
+        msl.add_msl_resource_binding(resBinding);
+
+        nextBufBinding++;
+    }
+
     spirv_cross::CompilerMSL::Options options;
 #if OS_IOS
     options.platform = spirv_cross::CompilerMSL::Options::iOS;
 #else
     options.platform = spirv_cross::CompilerMSL::Options::macOS;
 #endif
-    
-    options.enable_decoration_binding = true;
+
+    // 关键：使用 MSLResourceBinding 代替 decoration binding
+    options.enable_decoration_binding = false;
     msl.set_msl_options(options);
-//    spirv_cross::MSLResourceBinding resourceBinding;
-//    msl.add_msl_resource_binding(resourceBinding);
 
     // Compile to msl, ready to give to metal driver.
     std::string shaderSource = msl.compile();
