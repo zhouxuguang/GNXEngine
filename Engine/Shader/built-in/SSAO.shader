@@ -79,10 +79,31 @@ float PS(VertexOut pin) : SV_Target0
     
     // 获取随机旋转向量
     float2 noiseUV = pin.texCoord * noiseScale.xy;
-    float3 randomVec = texNoise.Sample(texNoiseSam, noiseUV).xyz;
+    float3 randomVec = normalize(texNoise.Sample(texNoiseSam, noiseUV).xyz);
+
+    float3 biTang = cross(normal, randomVec);
+    if (length(biTang) < 0.0001)
+    {
+        biTang = cross(normal, float3(0, 0, 1));
+    }
+    biTang = normalize(biTang);  // 必须归一化，确保TBN正交
+    float3 tang = cross(biTang, normal);
+
+    float3x3 TBN = float3x3(tang, biTang, normal);
+
+    // vec3 randDir = normalize( texture(RandTex, TexCoord.xy *
+    //         randScale).xyz );
+    //         vec3 n = normalize( texture(NormalTex, TexCoord).xyz );
+    //         vec3 biTang = cross( n, randDir );
+    //         // If n and randDir are parallel, n is in x-y plane
+    //         if( length(biTang) < 0.0001 )
+    //           biTang = cross( n, vec3(0,0,1));
+    //         biTang = normalize(biTang);
+    //         vec3 tang = cross(biTang, n);
+    //         mat3 toCamSpace = mat3(tang, biTang, n);
     
     // 构建TBN矩阵，用于将采样核心从切线空间变换到视图空间
-    float3x3 TBN = BuildTBNMatrix(normal);
+    //float3x3 TBN = BuildTBNMatrix(normal);
     
     // SSAO遮挡计算
     float occlusion = 0.0f;
@@ -104,33 +125,30 @@ float PS(VertexOut pin) : SV_Target0
         // if( zDist >= 0.0 && zDist <= Radius && surfaceZ > samplePos.z ) occlusionSum += 1.0;
 
         // 将采样点从切线空间变换到视图空间
-        float3 sampleVec = mul(SampleKernel[i].xyz, TBN);
-        
-        // 计算采样点在视图空间的位置
-        float3 samplePos = viewPos + sampleVec * radius;
+        float3 sampleVec = viewPos + radius * mul(SampleKernel[i].xyz, TBN);
         
         // 将采样点投影到屏幕空间
-        float4 offset = float4(samplePos, 1.0f);
+        float4 offset = float4(sampleVec, 1.0f);
         offset = mul(offset, MATRIX_P);
         offset.xyz /= offset.w;
         offset.xy = offset.xy * 0.5f + 0.5f;    // [-1,1] -> [0,1]
+    // #ifdef TEXCOORD_FLIP
+    //     offset.y = 1.0 - offset.y;
+    // #endif
         
         // 获取采样点的深度
-        float sampleDepth = gDepth.Sample(gDepthSam, offset.xy).r;
-        
-        // 重建采样点的视图空间位置
-        float3 sampleViewPos = ReconstructViewPosition(offset.xy, sampleDepth);
-        
-        // Range check：确保采样点在合理的范围内
-        float rangeCheck = smoothstep(0.0f, 1.0f, radius / abs(viewPos.z - sampleViewPos.z));
+        float depthZ = gDepth.Sample(gDepthSam, offset.xy).r;
+        float surfaceZ = ReconstructViewPosition(offset.xy, depthZ).z;
+        float zDist = surfaceZ - viewPos.z;
         
         // 深度比较：如果采样点被遮挡，则增加遮蔽值
-#ifdef REVERSE_Z
+        // 使用 bias 避免自遮蔽伪影
+#ifdef USE_REVERSE_Z
         // Reverse-Z: 深度值越大越近，越小越远
-        occlusion += (sampleDepth <= offset.z - bias ? 1.0f : 0.0f) * rangeCheck;
+        if (zDist >= 0.0f && zDist <= radius && surfaceZ < sampleVec.z) occlusion += 1.0;
 #else
         // 传统Z: 深度值越小越近，越大越远
-        occlusion += (sampleDepth >= offset.z + bias ? 1.0f : 0.0f) * rangeCheck;
+        if (zDist >= 0.0f && zDist <= radius && surfaceZ > sampleVec.z) occlusion += 1.0;
 #endif
     }
     

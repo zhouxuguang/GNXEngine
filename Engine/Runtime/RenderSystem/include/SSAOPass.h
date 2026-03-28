@@ -149,7 +149,7 @@ private:
     std::vector<mathutil::Vector3f> mSampleKernel;
     
     // 随机旋转纹理
-    RCTexturePtr mNoiseTexture = nullptr;
+    RCTexture2DPtr mNoiseTexture = nullptr;
     
     // SSAO参数UBO
     UniformBufferPtr mSSAOParamsUBO = nullptr;

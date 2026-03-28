@@ -129,6 +129,9 @@ void SSAOPass::GenerateRandomRotationTexture()
     mNoiseTexture = RenderCore::GetRenderDevice()->CreateTexture2D(textureDesc.format, textureDesc.usage,
                                                         textureDesc.width, textureDesc.height, 1);
     
+    RenderCore::Rect2D region{0, 0, noiseSize, noiseSize};
+    mNoiseTexture->ReplaceRegion(region, 0, (const uint8_t*)noiseData.data(), noiseSize * 16);
+    
     // 创建噪声采样器（重复模式）
     SamplerDesc samplerDesc;
     samplerDesc.filterMin = MIN_NEAREST;
