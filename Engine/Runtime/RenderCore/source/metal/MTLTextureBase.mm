@@ -6,8 +6,13 @@
 //
 
 #include "MTLTextureBase.h"
+#include <algorithm>
+#include <vector>
 
 NAMESPACE_RENDERCORE_BEGIN
+
+// Metal replaceRegion 要求 bytesPerRow 满足最小对齐约束（macOS/iOS 通常为 64 字节）
+static const NSUInteger kMinBytesPerRowAlignment = 64;
 
 MTLTextureBase::MTLTextureBase(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes) :
     RCTexture(TextureType_Unkown)
@@ -49,8 +54,35 @@ void MTLTextureBase::ReplaceRegion(const Rect2D& rect,
     }
     
     MTLRegion region = MTLRegionMake3D(rect.offsetX, rect.offsetY, 0, rect.width, rect.height, 1);
-    [mTexture replaceRegion:region mipmapLevel:level slice:slice
-                  withBytes:pixelBytes bytesPerRow:bytesPerRow bytesPerImage:bytesPerImage];
+    
+    // Metal replaceRegion 要求 bytesPerRow >= 64
+    // 只在 bytesPerRow < 64 时才需要做对齐处理
+    if (bytesPerRow >= kMinBytesPerRowAlignment)
+    {
+        // 已满足对齐要求，直接上传
+        [mTexture replaceRegion:region mipmapLevel:level slice:slice
+                      withBytes:pixelBytes bytesPerRow:bytesPerRow bytesPerImage:bytesPerImage];
+    }
+    else
+    {
+        // bytesPerRow < 64，需要逐行拷贝到对齐缓冲区
+        uint32_t height = rect.height;
+        std::vector<uint8_t> paddedBuffer(kMinBytesPerRowAlignment * height);
+        
+        for (uint32_t row = 0; row < height; ++row)
+        {
+            memcpy(paddedBuffer.data() + row * kMinBytesPerRowAlignment,
+                   pixelBytes + row * bytesPerRow,
+                   bytesPerRow);
+            // 多余部分自动被 zero-init（std::vector），不影响 GPU 采样
+        }
+        
+        NSUInteger alignedBytesPerImage = kMinBytesPerRowAlignment * height;
+        
+        [mTexture replaceRegion:region mipmapLevel:level slice:slice
+                      withBytes:paddedBuffer.data() bytesPerRow:kMinBytesPerRowAlignment
+                   bytesPerImage:alignedBytesPerImage];
+    }
 }
 
 void MTLTextureBase::ReplaceRegion(const Rect2D& rect,
