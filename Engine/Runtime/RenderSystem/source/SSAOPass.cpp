@@ -346,6 +346,12 @@ SSAOOutput SSAOPass::AddToFrameGraph(
                 // 绑定深度纹理（用于双边模糊）
                 renderEncoder->SetFragmentTextureAndSampler("gDepth", depthTexture.texture, mGBufferSampler);
                 
+                if (params.cameraUBO)
+                {
+                    renderEncoder->SetVertexUniformBuffer("cbPerCamera", params.cameraUBO);
+                    renderEncoder->SetFragmentUniformBuffer("cbPerCamera", params.cameraUBO);
+                }
+                
                 renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
                 renderEncoder->EndEncode();
             }
