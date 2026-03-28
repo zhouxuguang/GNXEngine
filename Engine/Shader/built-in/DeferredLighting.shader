@@ -151,7 +151,7 @@ float4 PS(VertexOut pin) : SV_Target0
     // 环境光
     float ssao = 1.0;
     ssao = gSSAO.Sample(gSSAOSam, pin.texCoord).r;
-    float3 ambient = float3(0.3, 0.3, 0.3) * gBufferData.albedo * gBufferData.ao * ssao;
+    float3 ambient = float3(0.1, 0.1, 0.1) * gBufferData.albedo * gBufferData.ao * ssao;
     
     // 自发光
     float3 finalColor = Lo + ambient + gBufferData.emissive;
