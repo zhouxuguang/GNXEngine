@@ -15,7 +15,7 @@ SkinnedMesh::~SkinnedMesh()
     LOG_INFO("Mesh::~Mesh()");
 }
 
-void SkinnedMesh::SetPositions(Vector4f const* data, size_t count)
+void SkinnedMesh::SetPositions(Vector3f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
@@ -32,7 +32,7 @@ void SkinnedMesh::SetPositions(Vector4f const* data, size_t count)
     strided_copy(data, data + count, GetPositionBegin());
 }
 
-void SkinnedMesh::SetNormals(Vector4f const* data, size_t count)
+void SkinnedMesh::SetNormals(Vector3f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint16_t>::max())
     {
@@ -153,11 +153,11 @@ void SkinnedMesh::CPUSkin(Skeleton& skeleton, AnimationPose& pose)
     
     StrideIterator<BoneIndexInfo> boneIndex = GetBoneIndexBegin();
     StrideIterator<Vector4f> boneWeight = GetBoneWeightBegin();
-    StrideIterator<Vector4f> position = GetPositionBegin();
-    StrideIterator<Vector4f> normal = GetNormalBegin();
+    StrideIterator<Vector3f> position = GetPositionBegin();
+    StrideIterator<Vector3f> normal = GetNormalBegin();
     
-    StrideIterator<Vector4f> skinnedPosition = mSkinnedVertexData.MakeStrideIterator<Vector4f>(kShaderChannelPosition);
-    StrideIterator<Vector4f> skinnedNormal = mSkinnedVertexData.MakeStrideIterator<Vector4f>(kShaderChannelNormal);
+    StrideIterator<Vector3f> skinnedPosition = mSkinnedVertexData.MakeStrideIterator<Vector3f>(kShaderChannelPosition);
+    StrideIterator<Vector3f> skinnedNormal = mSkinnedVertexData.MakeStrideIterator<Vector3f>(kShaderChannelNormal);
 
     for (unsigned int i = 0; i < numVerts; ++i) 
     {
@@ -175,11 +175,11 @@ void SkinnedMesh::CPUSkin(Skeleton& skeleton, AnimationPose& pose)
         //skin = Matrix4x4f::IDENTITY;
 
         Vector4f tranformedPoint = skin * Vector4f(position[i].x, position[i].y, position[i].z, 1.0);
-        skinnedPosition[i] = Vector4f(tranformedPoint.x / tranformedPoint.w,
+        skinnedPosition[i] = Vector3f(tranformedPoint.x / tranformedPoint.w,
                                               tranformedPoint.y / tranformedPoint.w,
-                                              tranformedPoint.z / tranformedPoint.w, 1.0);
+                                              tranformedPoint.z / tranformedPoint.w);
         Vector3f transformedNormal = skin * Vector3f(normal[i].x, normal[i].y, normal[i].z);
-        skinnedNormal[i] = Vector4f(transformedNormal.x, transformedNormal.y, transformedNormal.z, 1.0);
+        skinnedNormal[i] = Vector3f(transformedNormal.x, transformedNormal.y, transformedNormal.z);
     }
     
     // 更新gpu buffer

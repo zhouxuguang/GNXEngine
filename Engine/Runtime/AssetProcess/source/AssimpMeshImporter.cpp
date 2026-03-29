@@ -99,7 +99,7 @@ void AssimpMeshImporter::processMeshVertex(const aiScene* scene)
 		// 遍历submesh的每个顶点
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 		{
-			Vector4f vector;
+			Vector3f vector;
 
 			aiVector3D point = globalTransform * mesh->mVertices[i];
 			// 顶点
@@ -178,18 +178,18 @@ void AssimpMeshImporter::setupLayout(Mesh* mesh)
 	if (!mPosition.empty())
 	{
 		channels[kShaderChannelPosition].offset = offset;
-		channels[kShaderChannelPosition].format = VertexFormatFloat4;
-		channels[kShaderChannelPosition].stride = sizeof(Vector4f);
-		mVertexSize += 16;
-		offset += mPosition.size() * sizeof(Vector4f);
+		channels[kShaderChannelPosition].format = VertexFormatFloat3;
+		channels[kShaderChannelPosition].stride = sizeof(Vector3f);
+		mVertexSize += 12;
+		offset += mPosition.size() * sizeof(Vector3f);
 	}
 	if (!mNormal.empty())
 	{
 		channels[kShaderChannelNormal].offset = offset;
-		channels[kShaderChannelNormal].format = VertexFormatFloat4;
-		channels[kShaderChannelNormal].stride = sizeof(Vector4f);
-		mVertexSize += 16;
-		offset += mNormal.size() * sizeof(Vector4f);
+		channels[kShaderChannelNormal].format = VertexFormatFloat3;
+		channels[kShaderChannelNormal].stride = sizeof(Vector3f);
+		mVertexSize += 12;
+		offset += mNormal.size() * sizeof(Vector3f);
 	}
 	if (!mColor.empty())
 	{

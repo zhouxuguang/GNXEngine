@@ -18,7 +18,7 @@
 // 顶点着色器输入
 struct DepthVertexInput
 {
-    float4 position : POSITION;
+    float3 position : POSITION;
 };
 
 // 顶点着色器输出（几何着色器输入）

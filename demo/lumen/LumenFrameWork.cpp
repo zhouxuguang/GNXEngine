@@ -45,20 +45,19 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
 
     RenderSystem::VertexData& vertexData = mesh->GetVertexData();
 	uint32_t vertexCount = positionData.size() / 12;
-	vertexData.Resize(vertexCount, 48);
+	vertexData.Resize(vertexCount, 44);
 
     RenderSystem::ChannelInfo* channels = vertexData.GetChannels();
 	channels[RenderSystem::kShaderChannelPosition].offset = 0;
-	channels[RenderSystem::kShaderChannelPosition].format = VertexFormatFloat4;
-    channels[RenderSystem::kShaderChannelPosition].stride = sizeof(Vector4f);
+	channels[RenderSystem::kShaderChannelPosition].format = VertexFormatFloat3;
+	channels[RenderSystem::kShaderChannelPosition].stride = sizeof(Vector3f);
 
-    std::vector<Vector4f> position(vertexCount);
+    std::vector<Vector3f> position(vertexCount);
     for (uint32_t i = 0; i < vertexCount; i++)
     {
         position[i].x = posPtr[i].x;
         position[i].y = posPtr[i].y;
         position[i].z = posPtr[i].z;
-        position[i].w = 1;
     }
 
 	std::vector<float> attrDataFlt(attrData.size());
@@ -69,20 +68,20 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
 		attrDataFlt[i] = Clamp(value, (int8_t)-127, (int8_t)127) / 127.0f;
 	}
 
-	std::vector<simd_float4> normalData(vertexCount);
 	std::vector<simd_float4> tangentData(vertexCount);
+	std::vector<Vector3f> normalData(vertexCount);
 	for (uint32_t i = 0; i < vertexCount; i++)
 	{
 		memcpy(tangentData.data() + i, attrDataFlt.data() + i * 8, 16);
-		memcpy(normalData.data() + i, attrDataFlt.data() + 4 + (i * 8), 16);
+		memcpy(normalData.data() + i, attrDataFlt.data() + 4 + (i * 8), 12);
 	}
 
-	channels[RenderSystem::kShaderChannelTangent].offset = position.size() * 16;
+	channels[RenderSystem::kShaderChannelTangent].offset = position.size() * sizeof(Vector3f);
 	channels[RenderSystem::kShaderChannelTangent].format = VertexFormatFloat4;
 	channels[RenderSystem::kShaderChannelTangent].stride = 16;
-	channels[RenderSystem::kShaderChannelNormal].offset = position.size() * 16 + tangentData.size() * 16;
-	channels[RenderSystem::kShaderChannelNormal].format = VertexFormatFloat4;
-	channels[RenderSystem::kShaderChannelNormal].stride = 16;
+	channels[RenderSystem::kShaderChannelNormal].offset = position.size() * sizeof(Vector3f) + tangentData.size() * sizeof(Vector4f);
+	channels[RenderSystem::kShaderChannelNormal].format = VertexFormatFloat3;
+	channels[RenderSystem::kShaderChannelNormal].stride = sizeof(Vector3f);
 
     mesh->SetPositions(position.data(), vertexCount);
     mesh->SetNormals(normalData.data(), vertexCount);

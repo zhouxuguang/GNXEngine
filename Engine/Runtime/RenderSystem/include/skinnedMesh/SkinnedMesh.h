@@ -50,11 +50,11 @@ public:
     const VertexData& GetSkinnedVertexData() const { return mSkinnedVertexData; }
     VertexData& GetSkinnedVertexData() { return mSkinnedVertexData; }
     
-    StrideIterator<Vector4f> GetPositionBegin() const { return mVertexData.MakeStrideIterator<Vector4f>(kShaderChannelPosition);}
-    StrideIterator<Vector4f> GetPositionEnd() const { return mVertexData.MakeEndIterator<Vector4f>(kShaderChannelPosition); }
+    StrideIterator<Vector3f> GetPositionBegin() const { return mVertexData.MakeStrideIterator<Vector3f>(kShaderChannelPosition);}
+    StrideIterator<Vector3f> GetPositionEnd() const { return mVertexData.MakeEndIterator<Vector3f>(kShaderChannelPosition); }
 
-    StrideIterator<Vector4f> GetNormalBegin() const { return mVertexData.MakeStrideIterator<Vector4f>(kShaderChannelNormal); }
-    StrideIterator<Vector4f> GetNormalEnd() const { return mVertexData.MakeEndIterator<Vector4f>(kShaderChannelNormal); }
+    StrideIterator<Vector3f> GetNormalBegin() const { return mVertexData.MakeStrideIterator<Vector3f>(kShaderChannelNormal); }
+    StrideIterator<Vector3f> GetNormalEnd() const { return mVertexData.MakeEndIterator<Vector3f>(kShaderChannelNormal); }
 
     StrideIterator<uint32_t> GetColorBegin() const { return mVertexData.MakeStrideIterator<uint32_t>(kShaderChannelColor); }
     StrideIterator<uint32_t> GetColorEnd() const { return mVertexData.MakeEndIterator<uint32_t>(kShaderChannelColor); }
@@ -78,8 +78,8 @@ public:
     StrideIterator<Vector4f> GetBoneWeightBegin() const { return mVertexData.MakeStrideIterator<Vector4f>(kShaderChannelWeight); }
     StrideIterator<Vector4f> GetBoneWeightEnd() const { return mVertexData.MakeEndIterator<Vector4f>(kShaderChannelWeight); }
     
-    void SetPositions(Vector4f const* data, size_t count);
-    void SetNormals(Vector4f const* data, size_t count);
+    void SetPositions(Vector3f const* data, size_t count);
+    void SetNormals(Vector3f const* data, size_t count);
     void SetTangents(Vector4f const* data, size_t count);
     void SetUv(int uvIndex, Vector2f const* data, size_t count);
     void SetColors(uint32_t const* data, size_t count);
