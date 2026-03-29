@@ -19,9 +19,6 @@ v2f VS(uint vertexID : SV_VertexID)
 
     vout.position = fsTrianglePosition(vertexID);  
     vout.texcoord = fsTriangleUV(vertexID);  
-#ifdef TEXCOORD_FLIP
-    vout.texcoord.y = 1.0 - vout.texcoord.y;
-#endif
     return vout;
 }
 

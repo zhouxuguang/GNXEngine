@@ -316,6 +316,12 @@ float3 ReconstructWorldPosition(float2 uv, float depth)
 {
     // if (depth <= 0.0001) return float3(0.0, 0.0, 0.0);
     // if (depth >= 0.9999) return float3(0.0, 0.0, 0.0);
+    
+#ifdef TEXCOORD_FLIP
+    // 还原翻转，恢复真实的 NDC 方向
+    uv.y = 1.0 - uv.y;
+#endif
+    
     // 计算NDC坐标
     float4 clipPos = float4(
         uv.x * 2.0f - 1.0f,   // [0,1] -> [-1,1]  XY需要转换
@@ -338,6 +344,11 @@ float3 ReconstructWorldPosition(float2 uv, float depth)
 // 从深度重建视图空间位置
 float3 ReconstructViewPosition(float2 uv, float depth)
 {
+#ifdef TEXCOORD_FLIP
+    // 还原翻转，恢复真实的 NDC 方向
+    uv.y = 1.0 - uv.y;
+#endif
+    
     // 计算NDC坐标
     float4 clipPos = float4(
         uv.x * 2.0f - 1.0f,     // [0,1] -> [-1,1]
@@ -364,6 +375,9 @@ float2 fsTriangleUV(int vtx)
 {
     float u = (vtx == 1) ? 2.0 : 0.0;
     float v = (vtx == 2) ? 2.0 : 0.0;
+#ifdef TEXCOORD_FLIP
+    v = 1.0 - v;
+#endif
     return float2(u, v);
 }
 

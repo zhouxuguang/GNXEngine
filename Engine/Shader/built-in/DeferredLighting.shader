@@ -22,9 +22,6 @@ VertexOut VS(uint vertexID : SV_VertexID)
     
     vout.PosH = fsTrianglePosition(vertexID);  
     vout.texCoord = fsTriangleUV(vertexID);  
-#ifdef TEXCOORD_FLIP
-    vout.texCoord.y = 1.0 - vout.texCoord.y;
-#endif
     
     return vout;
 }

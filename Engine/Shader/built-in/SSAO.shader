@@ -21,9 +21,6 @@ VertexOut VS(uint vertexID : SV_VertexID)
     
     vout.PosH = fsTrianglePosition(vertexID);  
     vout.texCoord = fsTriangleUV(vertexID);  
-#ifdef TEXCOORD_FLIP
-    vout.texCoord.y = 1.0 - vout.texCoord.y;
-#endif
     
     return vout;
 }
@@ -132,9 +129,9 @@ float PS(VertexOut pin) : SV_Target0
         offset = mul(offset, MATRIX_P);
         offset.xyz /= offset.w;
         offset.xy = offset.xy * 0.5f + 0.5f;    // [-1,1] -> [0,1]
-    // #ifdef TEXCOORD_FLIP
-    //     offset.y = 1.0 - offset.y;
-    // #endif
+#ifdef TEXCOORD_FLIP
+        offset.y = 1.0 - offset.y;
+#endif
         
         // 获取采样点的深度
         float depthZ = gDepth.Sample(gDepthSam, offset.xy).r;
