@@ -18,7 +18,7 @@ VertexOut VS(appdata_tan vin)
     VertexOut vout;
     
     // Transform to world space.
-    float4 posW = mul(float4(vin.position), MATRIX_M);
+    float4 posW = mul(float4(vin.position, 1.0), MATRIX_M);
     vout.position = posW;
 
     posW = mul(posW, MATRIX_V);
@@ -38,7 +38,7 @@ VertexOut VS(appdata_tan vin)
     vout.tangent = float4(tang, vin.tangent.w);
 
     // 将视线方向和光源方向转换到视线空间
-    float4 pos = mul(float4(vin.position), MATRIX_M);   // 世界坐标的顶点 
+    float4 pos = mul(float4(vin.position, 1.0), MATRIX_M);   // 世界坐标的顶点
 
     float3 lightPos = _WorldSpaceLightPos;
     vout.lightDir = mul(float4(lightPos - pos.xyz, 1.0), MATRIX_V).xyz;

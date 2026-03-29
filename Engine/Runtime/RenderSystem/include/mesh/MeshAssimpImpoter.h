@@ -11,6 +11,7 @@
 #include "MeshImporter.h"
 #include "Runtime/RenderCore/include/RenderDefine.h"
 #include "Runtime/MathUtil/include/Vector4.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
@@ -41,8 +42,8 @@ private:
     uint32_t mVertexCount = 0;
     uint32_t mVertexSize = 0;
     std::vector<uint32_t> mSubVertexCounts;    //各个子mesh的顶点个数
-    std::vector<Vector4f> mPosition;
-    std::vector<Vector4f> mNormal;
+    std::vector<Vector3f> mPosition;
+    std::vector<Vector3f> mNormal;
     std::vector<uint32_t> mColor;
     std::vector<Vector2f> mTexCoord0;
     std::vector<Vector2f> mTexCoord1;

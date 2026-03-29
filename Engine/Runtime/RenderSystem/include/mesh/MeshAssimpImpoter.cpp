@@ -752,7 +752,7 @@ std::vector<std::shared_ptr<Material>> MeshAssimpImpoter::processMeshVertex(cons
         // 遍历submesh的每个顶点
         for(unsigned int i = 0; i < mesh->mNumVertices; i++)
         {
-            Vector4f vector;
+            Vector3f vector;
             
             aiVector3D point = globalTransform * mesh->mVertices[i];
             // 顶点
@@ -893,16 +893,16 @@ void MeshAssimpImpoter::setupLayout(Mesh* mesh)
     if (!mPosition.empty())
     {
         channels[kShaderChannelPosition].offset = offset;
-        channels[kShaderChannelPosition].format = VertexFormatFloat4;
-        mVertexSize += 16;
-        offset += mPosition.size() * sizeof(Vector4f);
+        channels[kShaderChannelPosition].format = VertexFormatFloat3;
+        mVertexSize += 12;
+        offset += mPosition.size() * sizeof(Vector3f);
     }
     if (!mNormal.empty())
     {
         channels[kShaderChannelNormal].offset = offset;
-        channels[kShaderChannelNormal].format = VertexFormatFloat4;
-        mVertexSize += 16;
-        offset += mNormal.size() * sizeof(Vector4f);
+        channels[kShaderChannelNormal].format = VertexFormatFloat3;
+        mVertexSize += 12;
+        offset += mNormal.size() * sizeof(Vector3f);
     }
     if (!mColor.empty())
     {
@@ -933,8 +933,8 @@ void MeshAssimpImpoter::setupLayout(Mesh* mesh)
         offset += mTangent.size() * sizeof(Vector4f);
     }
     
-    channels[kShaderChannelPosition].stride = sizeof(Vector4f);
-    channels[kShaderChannelNormal].stride = sizeof(Vector4f);
+    channels[kShaderChannelPosition].stride = sizeof(Vector3f);
+    channels[kShaderChannelNormal].stride = sizeof(Vector3f);
     channels[kShaderChannelColor].stride = 0;
     channels[kShaderChannelTexCoord0].stride = sizeof(Vector2f);
     channels[kShaderChannelTexCoord1].stride = sizeof(Vector2f);
@@ -950,16 +950,16 @@ void MeshAssimpImpoter::setupSkinnedMeshLayout(SkinnedMesh* skinnedMesh)
         if (!mPosition.empty())
         {
             channels[kShaderChannelPosition].offset = offset;
-            channels[kShaderChannelPosition].format = VertexFormatFloat4;
-            mVertexSize += 16;
-            offset += mPosition.size() * sizeof(Vector4f);
+            channels[kShaderChannelPosition].format = VertexFormatFloat3;
+            mVertexSize += 12;
+            offset += mPosition.size() * sizeof(Vector3f);
         }
         if (!mNormal.empty())
         {
             channels[kShaderChannelNormal].offset = offset;
-            channels[kShaderChannelNormal].format = VertexFormatFloat4;
-            mVertexSize += 16;
-            offset += mNormal.size() * sizeof(Vector4f);
+            channels[kShaderChannelNormal].format = VertexFormatFloat3;
+            mVertexSize += 12;
+            offset += mNormal.size() * sizeof(Vector3f);
         }
         if (!mColor.empty())
         {
@@ -1004,8 +1004,8 @@ void MeshAssimpImpoter::setupSkinnedMeshLayout(SkinnedMesh* skinnedMesh)
             offset += mBoneWeight.size() * sizeof(Vector4f);
         }
         
-        channels[kShaderChannelPosition].stride = sizeof(Vector4f);
-        channels[kShaderChannelNormal].stride = sizeof(Vector4f);
+        channels[kShaderChannelPosition].stride = sizeof(Vector3f);
+        channels[kShaderChannelNormal].stride = sizeof(Vector3f);
         channels[kShaderChannelColor].stride = 0;
         channels[kShaderChannelTexCoord0].stride = sizeof(Vector2f);
         channels[kShaderChannelTexCoord1].stride = sizeof(Vector2f);
@@ -1021,16 +1021,16 @@ void MeshAssimpImpoter::setupSkinnedMeshLayout(SkinnedMesh* skinnedMesh)
         if (!mPosition.empty())
         {
             channels[kShaderChannelPosition].offset = offset;
-            channels[kShaderChannelPosition].format = VertexFormatFloat4;
-            mVertexSize += 16;
-            offset += mPosition.size() * sizeof(Vector4f);
+            channels[kShaderChannelPosition].format = VertexFormatFloat3;
+            mVertexSize += 12;
+            offset += mPosition.size() * sizeof(Vector3f);
         }
         if (!mNormal.empty())
         {
             channels[kShaderChannelNormal].offset = offset;
-            channels[kShaderChannelNormal].format = VertexFormatFloat4;
-            mVertexSize += 16;
-            offset += mNormal.size() * sizeof(Vector4f);
+            channels[kShaderChannelNormal].format = VertexFormatFloat3;
+            mVertexSize += 12;
+            offset += mNormal.size() * sizeof(Vector3f);
         }
         if (!mColor.empty())
         {
@@ -1075,8 +1075,8 @@ void MeshAssimpImpoter::setupSkinnedMeshLayout(SkinnedMesh* skinnedMesh)
             offset += mBoneWeight.size() * sizeof(Vector4f);
         }
         
-        channels[kShaderChannelPosition].stride = sizeof(Vector4f);
-        channels[kShaderChannelNormal].stride = sizeof(Vector4f);
+        channels[kShaderChannelPosition].stride = sizeof(Vector3f);
+        channels[kShaderChannelNormal].stride = sizeof(Vector3f);
         channels[kShaderChannelColor].stride = 0;
         channels[kShaderChannelTexCoord0].stride = sizeof(Vector2f);
         channels[kShaderChannelTexCoord1].stride = sizeof(Vector2f);

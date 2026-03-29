@@ -8,6 +8,7 @@
 #include <assimp/material.h>
 #include <assimp/cimport.h>
 #include "Runtime/RenderSystem/include/mesh/Mesh.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 
 USING_NS_RENDERSYSTEM
 
@@ -40,8 +41,8 @@ private:
 	std::vector<aiMesh*> mSubMeshs;
 
 	//顶点信息
-	std::vector<Vector4f> mPosition;
-	std::vector<Vector4f> mNormal;
+	std::vector<Vector3f> mPosition;
+	std::vector<Vector3f> mNormal;
 	std::vector<uint32_t> mColor;
 	std::vector<Vector2f> mTexCoord0;
 	std::vector<Vector2f> mTexCoord1;

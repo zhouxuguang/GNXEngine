@@ -155,13 +155,7 @@ VertexDesc GetMetalReflectionInfo(const spirv_cross::CompilerMSL& msl, const spi
         vertextAttributesDescritptor.format = getVertexFormat(type);
         vertexDescriptor.attributes.push_back(vertextAttributesDescritptor);
         
-        //metal的特殊处理
-        int count = type.vecsize;
-        if (count == 3)
-        {
-            count = 4;
-        }
-        vertexBufferLayoutDescriptor.stride = count * type.width / 8;
+        vertexBufferLayoutDescriptor.stride = type.vecsize * type.width / 8;
         vertexDescriptor.layouts.push_back(vertexBufferLayoutDescriptor);
         
     }

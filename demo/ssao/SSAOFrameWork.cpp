@@ -18,8 +18,8 @@
 RenderSystem::MeshPtr CreatePlaneMesh(float xsize, float zsize, int xdivs, int zdivs, float smax, float tmax)
 {
     int nPoints = (xdivs + 1) * (zdivs + 1);
-    std::vector<float> p(4 * nPoints);
-    std::vector<float> n(4 * nPoints);
+    std::vector<float> p(3 * nPoints);
+    std::vector<float> n(3 * nPoints);
     std::vector<float> tex(2 * nPoints);
     std::vector<float> tang(4 * nPoints);
     std::vector<uint32_t> el(6 * xdivs * zdivs);
@@ -41,16 +41,14 @@ RenderSystem::MeshPtr CreatePlaneMesh(float xsize, float zsize, int xdivs, int z
             p[vidx] = x;
             p[vidx+1] = 0.0f;
             p[vidx+2] = z;
-            p[vidx+3] = 1.0;
             n[vidx] = 0.0f;
             n[vidx+1] = 1.0f;
-            n[vidx+2] = 0.0f;
             n[vidx+2] = 0.0f;
 
             tex[tidx] = j * texi;
             tex[tidx+1] = (zdivs - i) * texj;
 
-            vidx += 4;
+            vidx += 3;
             tidx += 2;
         }
     }
@@ -85,24 +83,24 @@ RenderSystem::MeshPtr CreatePlaneMesh(float xsize, float zsize, int xdivs, int z
 
     RenderSystem::VertexData& vertexData = mesh->GetVertexData();
     uint32_t vertexCount = nPoints;
-    vertexData.Resize(vertexCount, 56);
+    vertexData.Resize(vertexCount, 48);
 
     RenderSystem::ChannelInfo* channels = vertexData.GetChannels();
     channels[RenderSystem::kShaderChannelPosition].offset = 0;
-    channels[RenderSystem::kShaderChannelPosition].format = VertexFormatFloat4;
-    channels[RenderSystem::kShaderChannelPosition].stride = sizeof(Vector4f);
-    channels[RenderSystem::kShaderChannelTangent].offset = p.size() * 4;
+    channels[RenderSystem::kShaderChannelPosition].format = VertexFormatFloat3;
+    channels[RenderSystem::kShaderChannelPosition].stride = sizeof(Vector3f);
+    channels[RenderSystem::kShaderChannelTangent].offset = p.size() * sizeof(float);
     channels[RenderSystem::kShaderChannelTangent].format = VertexFormatFloat4;
     channels[RenderSystem::kShaderChannelTangent].stride = 16;
-    channels[RenderSystem::kShaderChannelNormal].offset = p.size() * 4 + n.size() * 4;
-    channels[RenderSystem::kShaderChannelNormal].format = VertexFormatFloat4;
-    channels[RenderSystem::kShaderChannelNormal].stride = 16;
-    channels[RenderSystem::kShaderChannelTexCoord0].offset = p.size() * 4 + n.size() * 4 + tang.size() * 4;
+    channels[RenderSystem::kShaderChannelNormal].offset = p.size() * sizeof(float) + n.size() * sizeof(float);
+    channels[RenderSystem::kShaderChannelNormal].format = VertexFormatFloat3;
+    channels[RenderSystem::kShaderChannelNormal].stride = 12;
+    channels[RenderSystem::kShaderChannelTexCoord0].offset = p.size() * sizeof(float) + n.size() * sizeof(float) + tang.size() * sizeof(float);
     channels[RenderSystem::kShaderChannelTexCoord0].format = VertexFormatFloat2;
     channels[RenderSystem::kShaderChannelTexCoord0].stride = 8;
 
-    mesh->SetPositions((const Vector4f*)(p.data()), vertexCount);
-    mesh->SetNormals((const Vector4f*)(n.data()), vertexCount);
+    mesh->SetPositions((const Vector3f*)(p.data()), vertexCount);
+    mesh->SetNormals((const Vector3f*)(n.data()), vertexCount);
     mesh->SetTangents((const Vector4f*)(tang.data()), vertexCount);
     mesh->SetUv(0, (const Vector2f*)(tex.data()), vertexCount);
     mesh->SetIndices(el.data(), el.size());

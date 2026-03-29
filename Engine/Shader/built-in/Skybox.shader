@@ -33,7 +33,7 @@ struct SkyVertexOut
 
 struct appdata_skybox
 {
-    float4 position : POSITION;
+    float3 position : POSITION;
 };
 
 SkyVertexOut VS(appdata_skybox vin)
@@ -41,7 +41,7 @@ SkyVertexOut VS(appdata_skybox vin)
     SkyVertexOut vout;
 
     // Use local vertex position as cubemap lookup vector.
-    vout.PosL = vin.position.xyz;
+    vout.PosL = vin.position;
 
     //MATRIX_V 只获取旋转的部分，去掉位移
     float4x4 viewMatrix = float4x4(MATRIX_V[0].x, MATRIX_V[0].y, MATRIX_V[0].z, 0.0,
@@ -51,7 +51,7 @@ SkyVertexOut VS(appdata_skybox vin)
     //float4x4 viewMatrix = float4x4(float3x3(MATRIX_V));
     
     // Transform to world space.
-    float4 posW = mul(vin.position, viewMatrix);
+    float4 posW = mul(float4(vin.position, 1.0), viewMatrix);
     posW = mul(posW, MATRIX_P);
     vout.PosH = posW.xyww;
 

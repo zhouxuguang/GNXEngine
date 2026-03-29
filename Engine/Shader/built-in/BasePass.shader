@@ -17,8 +17,8 @@ SamplerState gAmbientMapSam;
 // 顶点着色器输入
 struct VertexInput
 {
-    float4 position : POSITION;
-    float4 normal : NORMAL;
+    float3 position : POSITION;
+    float3 normal : NORMAL;
     float4 tangent : TANGENT;
     float2 texCoord : TEXCOORD0;
 };

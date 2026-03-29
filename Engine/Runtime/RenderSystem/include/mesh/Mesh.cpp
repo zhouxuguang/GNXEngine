@@ -20,7 +20,7 @@ Mesh::~Mesh()
     LOG_INFO("Mesh::~Mesh()");
 }
 
-void Mesh::SetPositions(Vector4f const* data, size_t count)
+void Mesh::SetPositions(Vector3f const* data, size_t count)
 {
     if (count > std::numeric_limits<uint32_t>::max())
     {

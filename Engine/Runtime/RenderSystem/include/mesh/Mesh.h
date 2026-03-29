@@ -47,8 +47,8 @@ public:
     const VertexData& GetVertexData() const { return mVertexData; }
     VertexData& GetVertexData() { return mVertexData; }
     
-    StrideIterator<Vector4f> GetPositionBegin() const { return mVertexData.MakeStrideIterator<Vector4f>(kShaderChannelPosition);}
-    StrideIterator<Vector4f> GetPositionEnd() const { return mVertexData.MakeEndIterator<Vector4f>(kShaderChannelPosition); }
+    StrideIterator<Vector3f> GetPositionBegin() const { return mVertexData.MakeStrideIterator<Vector3f>(kShaderChannelPosition);}
+    StrideIterator<Vector3f> GetPositionEnd() const { return mVertexData.MakeEndIterator<Vector3f>(kShaderChannelPosition); }
 
     template<class T>
     StrideIterator<T> GetNormalBegin() const { return mVertexData.MakeStrideIterator<T>(kShaderChannelNormal); }
@@ -72,7 +72,7 @@ public:
     template<class T>
     StrideIterator<T> GetTangentEnd() const { return mVertexData.MakeEndIterator<T>(kShaderChannelTangent); }
     
-    void SetPositions(Vector4f const* data, size_t count);
+    void SetPositions(Vector3f const* data, size_t count);
 
     template<class T>
     void SetNormals(T const* data, size_t count)
