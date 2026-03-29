@@ -117,24 +117,7 @@ void MTLComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint
     {
         MTLTextureBasePtr mtlTexture = std::dynamic_pointer_cast<MTLTextureBase>(texture);
         assert(mtlTexture);
-        
-        if (mipLevel > 0)
-        {
-            NSRange levelRange = NSMakeRange(mipLevel, 1);
-            NSRange sliceRange = NSMakeRange(0, 1);
-                
-            id<MTLTexture> view = [mtlTexture->getMTLTexture() newTextureViewWithPixelFormat:mtlTexture->getMTLTexture().pixelFormat
-                                                                   textureType:MTLTextureType2D
-                                                                        levels:levelRange
-                                                                        slices:sliceRange];
-            
-            [mComputeEncoder setTexture:view atIndex:index];
-        }
-        
-        else
-        {
-            [mComputeEncoder setTexture:mtlTexture->getMTLTexture() atIndex:index];
-        }
+        [mComputeEncoder setTexture:mtlTexture->getMTLTextureView(mipLevel, 0) atIndex:index];
     }
 }
 

@@ -10,6 +10,7 @@
 
 #include "MTLRenderDefine.h"
 #include "RCTexture.h"
+#include <unordered_map>
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -67,11 +68,42 @@ public:
     virtual void SetName(const char* name);
     
     id<MTLTexture> getMTLTexture() {return mTexture;};
+
+    /**
+     获取指定 mipLevel + slice 的 texture view，自动缓存
+     mipLevel=0 且 slice=0 时直接返回原始纹理，不创建 view
+     */
+    id<MTLTexture> getMTLTextureView(uint32_t mipLevel, uint32_t slice);
     
 private:
     id<MTLTexture> mTexture;
     id<MTLCommandQueue> mCommandQueue;
     id<MTLDevice> mDevice;
+
+    /// texture view 的缓存 key
+    struct TextureViewKey
+    {
+        uint32_t mipLevel;
+        uint32_t slice;
+
+        bool operator==(const TextureViewKey& other) const
+        {
+            return mipLevel == other.mipLevel && slice == other.slice;
+        }
+    };
+
+    /// TextureViewKey 的 hash functor
+    struct TextureViewKeyHash
+    {
+        std::size_t operator()(const TextureViewKey& key) const
+        {
+            std::size_t h = std::hash<uint32_t>()(key.mipLevel);
+            h ^= std::hash<uint32_t>()(key.slice) << 1;
+            return h;
+        }
+    };
+
+    std::unordered_map<TextureViewKey, id<MTLTexture>, TextureViewKeyHash> mTextureViews;
 };
 
 using MTLTextureBasePtr = std::shared_ptr<MTLTextureBase>;

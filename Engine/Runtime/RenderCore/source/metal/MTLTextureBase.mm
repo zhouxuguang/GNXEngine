@@ -129,6 +129,33 @@ void MTLTextureBase::SetName(const char* name)
     }
 }
 
+id<MTLTexture> MTLTextureBase::getMTLTextureView(uint32_t mipLevel, uint32_t slice)
+{
+    // mipLevel=0 且 slice=0 直接返回原始纹理，无需创建 view
+    if ((mipLevel == 0 && slice == 0) || mTexture == nil)
+    {
+        return mTexture;
+    }
+
+    // 查找缓存
+    TextureViewKey key = { mipLevel, slice };
+    auto it = mTextureViews.find(key);
+    if (it != mTextureViews.end())
+    {
+        return it->second;
+    }
+
+    // 创建新 view 并缓存
+    NSRange levelRange = NSMakeRange(mipLevel, 1);
+    NSRange sliceRange = NSMakeRange(slice, 1);
+    id<MTLTexture> view = [mTexture newTextureViewWithPixelFormat:mTexture.pixelFormat
+                                                      textureType:MTLTextureType2D
+                                                           levels:levelRange
+                                                           slices:sliceRange];
+    mTextureViews[key] = view;
+    return view;
+}
+
 #pragma mark MTLRCTexture2D
 
 MTLRCTexture2D::MTLRCTexture2D(id<MTLDevice> device, id<MTLCommandQueue> commandQueue, MTLTextureDescriptor *textureDes)
