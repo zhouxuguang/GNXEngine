@@ -246,6 +246,26 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
 
     if (mSupportHostImageCopy)
     {
+        // 从驱动返回的pCopyDstLayouts中选择一个合适的layout作为Host Image Copy的中间layout
+        // 优先选择TRANSFER_DST_OPTIMAL，其次GENERAL，最后取列表中第一个
+        VkImageLayout hostCopyDstLayout = VK_IMAGE_LAYOUT_GENERAL;
+        for (VkImageLayout layout : mContext->hostImageCopyDstLayouts)
+        {
+            if (layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+            {
+                hostCopyDstLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+                break;
+            }
+            if (layout == VK_IMAGE_LAYOUT_GENERAL)
+            {
+                hostCopyDstLayout = VK_IMAGE_LAYOUT_GENERAL;
+            }
+            else if (hostCopyDstLayout == VK_IMAGE_LAYOUT_GENERAL)
+            {
+                hostCopyDstLayout = layout;
+            }
+        }
+
         // 图像layout转换
         VkImageSubresourceRange subresourceRange = {};
         subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -254,14 +274,12 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
         subresourceRange.baseArrayLayer = slice;
         subresourceRange.layerCount = 1;
 
-        // VK_EXT_host_image_copy also introduces a simplified way of doing the required image transition on the host
-        // This no longer requires a dedicated command buffer to submit the barrier
-        // We also no longer need multiple transitions, and only have to do one for the final layout
+        // Step 1: Host端layout转换，newLayout必须是驱动pCopyDstLayouts中支持的layout
         VkHostImageLayoutTransitionInfoEXT hostImageLayoutTransitionInfo = {};
         hostImageLayoutTransitionInfo.sType = VK_STRUCTURE_TYPE_HOST_IMAGE_LAYOUT_TRANSITION_INFO_EXT;
         hostImageLayoutTransitionInfo.image = mImage;
         hostImageLayoutTransitionInfo.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        hostImageLayoutTransitionInfo.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        hostImageLayoutTransitionInfo.newLayout = hostCopyDstLayout;
         hostImageLayoutTransitionInfo.subresourceRange = subresourceRange;
 
         // Get the function pointers required host image copies
@@ -272,9 +290,8 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
 
         vkTransitionImageLayoutEXT(mContext->device, 1, &hostImageLayoutTransitionInfo);
 
-        // Setup host to image copy
+        // Step 2: 使用Host端copy上传纹理数据，dstImageLayout必须与上面的newLayout一致
         VkMemoryToImageCopyEXT memoryToImageCopy = {};
-
         memoryToImageCopy.sType = VK_STRUCTURE_TYPE_MEMORY_TO_IMAGE_COPY_EXT;
         memoryToImageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         memoryToImageCopy.imageSubresource.mipLevel = level;
@@ -288,16 +305,27 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
         memoryToImageCopy.imageExtent.depth = 1;
         memoryToImageCopy.pHostPointer = pixelBytes;
 
-        // With the image in the correct layout and copy information for all mip levels setup, we can now issue the copy to our taget image from the host
-        // The implementation will then convert this to an implementation specific optimal tiling layout
         VkCopyMemoryToImageInfoEXT copyMemoryInfo = {};
         copyMemoryInfo.sType = VK_STRUCTURE_TYPE_COPY_MEMORY_TO_IMAGE_INFO_EXT;
         copyMemoryInfo.dstImage = mImage;
-        copyMemoryInfo.dstImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        copyMemoryInfo.dstImageLayout = hostCopyDstLayout;
         copyMemoryInfo.regionCount = 1;
         copyMemoryInfo.pRegions = &memoryToImageCopy;
 
         vkCopyMemoryToImageEXT(mContext->device, &copyMemoryInfo);
+
+        // Step 3: 通过command buffer barrier将layout转换到SHADER_READ_ONLY_OPTIMAL
+        if (hostCopyDstLayout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            VkCommandPool cmdPool = mContext->GetTransferCommandPool();
+            VkCommandBuffer cmdBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, cmdPool);
+            VulkanBufferUtil::SetImageLayout(cmdBuffer, mImage,
+                hostCopyDstLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                subresourceRange);
+            VulkanBufferUtil::EndSingleTimeCommand(*mContext, mContext->graphicsQueue, cmdPool, cmdBuffer);
+        }
+
+        mCurrentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
     else
     {

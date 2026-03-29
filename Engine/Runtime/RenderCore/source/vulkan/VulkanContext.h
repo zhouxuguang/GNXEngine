@@ -72,6 +72,9 @@ struct VulkanContext
 #endif
     VkDebugUtilsMessengerEXT debugUtilsMessenger = VK_NULL_HANDLE;
 
+    // Host Image Copy 支持的 copy destination layouts
+    std::vector<VkImageLayout> hostImageCopyDstLayouts;
+
     VulkanFencePool fencePool;
     UpLoadThreadPool upLoadPool;
     std::shared_ptr<VulkanGarbageCollector> garbageCollector;  // 资源垃圾收集器

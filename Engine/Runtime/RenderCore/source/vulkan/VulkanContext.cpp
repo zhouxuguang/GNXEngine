@@ -436,6 +436,14 @@ bool CreateVirtualDevice(VulkanContext& context)
     }
 
     vkGetPhysicalDeviceProperties2(context.physicalDevice, &deviceProperties);
+
+    // 缓存Host Image Copy支持的copy destination layouts
+    if (context.vulkanExtension.enableHostImageCopy)
+    {
+        context.hostImageCopyDstLayouts.assign(
+            hostImageCopyDstLayoutsStorage.begin(),
+            hostImageCopyDstLayoutsStorage.begin() + hostImageCopyProperties.copyDstLayoutCount);
+    }
     
     if (context.vulkanExtension.enablePortabilitySubset)
     {

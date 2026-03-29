@@ -77,6 +77,37 @@ RCTexture2DPtr ImageTextureUtil::TextureFromFile(const char *filename)
         return nullptr;
     }
     
+    // RGB8/SRGB8 不支持 Vulkan OPTIMAL tiling，需要提前转换为 RGBA8/SRGBA8
+    ImagePixelFormat srcFormat = image->GetFormat();
+    if (srcFormat == imagecodec::FORMAT_RGB8 || srcFormat == imagecodec::FORMAT_SRGB8)
+    {
+        uint32_t width = image->GetWidth();
+        uint32_t height = image->GetHeight();
+        const uint8_t* srcData = image->GetImageData();
+        uint32_t srcBytesPerRow = image->GetBytesPerRow();
+
+        uint32_t dstBytesPerRow = width * 4;
+        uint32_t dstSize = dstBytesPerRow * height;
+        uint8_t* dstData = (uint8_t*)malloc(dstSize);
+
+        for (uint32_t y = 0; y < height; ++y)
+        {
+            const uint8_t* srcRow = srcData + y * srcBytesPerRow;
+            uint8_t* dstRow = dstData + y * dstBytesPerRow;
+            for (uint32_t x = 0; x < width; ++x)
+            {
+                dstRow[x * 4 + 0] = srcRow[x * 3 + 0];
+                dstRow[x * 4 + 1] = srcRow[x * 3 + 1];
+                dstRow[x * 4 + 2] = srcRow[x * 3 + 2];
+                dstRow[x * 4 + 3] = 255;
+            }
+        }
+
+        ImagePixelFormat dstFormat = (srcFormat == imagecodec::FORMAT_SRGB8)
+            ? imagecodec::FORMAT_SRGB8_ALPHA8 : imagecodec::FORMAT_RGBA8;
+        image->SetImageInfo(dstFormat, width, height, dstData, free);
+    }
+    
     TextureDesc textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
     textureDescriptor.mipmaped = true;
     
