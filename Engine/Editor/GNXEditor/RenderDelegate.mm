@@ -99,7 +99,7 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
     //初始化相机
     CameraPtr cameraPtr = sceneManager->CreateCamera("MainCamera");
     cameraPtr->LookAt(mathutil::Vector3f(0, 0, 5), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
-    cameraPtr->SetLens(60, float(width) / height, 0.1f, 100.f);
+    cameraPtr->SetLens(60, width, height, 0.1f, 100.f);
 
     //初始化灯光信息
     Light * pointLight = sceneManager->CreateLight("mainLight", Light::LightType::PointLight);
