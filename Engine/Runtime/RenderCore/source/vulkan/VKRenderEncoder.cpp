@@ -52,12 +52,19 @@ VkPrimitiveTopology ConvertToVulkanPrimitiveTopology(PrimitiveMode mode)
 void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInfo)
 {
     // 动态渲染没有子流程依赖，所以需要插入图像内存屏障
+    // 注意：FrameGraph 的 preWrite 已经处理了大部分布局转换，这里只处理未转换的情况
     for (size_t i = 0; i < mPassImage.colorImages.size(); ++i)
     {
         VkImageLayout currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         if (!mPassTexture.colorTextures.empty() && i < mPassTexture.colorTextures.size() && mPassTexture.colorTextures[i])
         {
             currentLayout = mPassTexture.colorTextures[i]->GetCurrentLayout();
+        }
+
+        // 如果布局已经是 COLOR_ATTACHMENT_OPTIMAL，跳过 barrier
+        if (currentLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+        {
+            continue;
         }
 
         VulkanBufferUtil::InsertImageMemoryBarrier(
@@ -96,18 +103,22 @@ void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInf
             }
         }
 
-        VulkanBufferUtil::InsertImageMemoryBarrier(
-            mCommandBuffer,
-            mPassImage.depthImage,
-            0,
-            dstAccessMask,
-            currentLayout,
-            targetLayout,
-            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.depthFormat), 0, 1, 0, 1 });
+        // 如果布局已经是目标布局，跳过 barrier
+        if (currentLayout != targetLayout)
+        {
+            VulkanBufferUtil::InsertImageMemoryBarrier(
+                mCommandBuffer,
+                mPassImage.depthImage,
+                0,
+                dstAccessMask,
+                currentLayout,
+                targetLayout,
+                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.depthFormat), 0, 1, 0, 1 });
 
-        mPassTexture.depthTexture->SetCurrentLayout(targetLayout);
+            mPassTexture.depthTexture->SetCurrentLayout(targetLayout);
+        }
     }
     else if (mPassImage.depthImage)
     {
@@ -154,18 +165,22 @@ void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInf
             }
         }
 
-        VulkanBufferUtil::InsertImageMemoryBarrier(
-            mCommandBuffer,
-            mPassImage.stencilImage,
-            0,
-            dstAccessMask,
-            currentLayout,
-            targetLayout,
-            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
-            VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.stencilFormat), 0, 1, 0, 1 });
+        // 如果布局已经是目标布局，跳过 barrier
+        if (currentLayout != targetLayout)
+        {
+            VulkanBufferUtil::InsertImageMemoryBarrier(
+                mCommandBuffer,
+                mPassImage.stencilImage,
+                0,
+                dstAccessMask,
+                currentLayout,
+                targetLayout,
+                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                VkImageSubresourceRange{ VulkanBufferUtil::GetImageAspectFlags(mPassFormat.stencilFormat), 0, 1, 0, 1 });
 
-        mPassTexture.stencilTexture->SetCurrentLayout(targetLayout);
+            mPassTexture.stencilTexture->SetCurrentLayout(targetLayout);
+        }
     }
     else if (mPassImage.stencilImage)
     {
