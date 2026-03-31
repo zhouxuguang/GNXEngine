@@ -79,6 +79,7 @@ private:
     RenderPassTexture mPassTexture;
     VulkanContextPtr mContext = nullptr;
     uint32_t mCurrentFrameIndex = 0;
+    bool mIsEncoding = true;  // 跟踪 render pass 是否活跃，析构时自动结束
     
     void BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInfo);
     void EndDynamicRenderPass();

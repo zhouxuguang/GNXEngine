@@ -317,7 +317,7 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
         // Step 3: 通过command buffer barrier将layout转换到SHADER_READ_ONLY_OPTIMAL
         if (hostCopyDstLayout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         {
-            VkCommandPool cmdPool = mContext->GetTransferCommandPool();
+            VkCommandPool cmdPool = mContext->GetCommandPool();
             VkCommandBuffer cmdBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, cmdPool);
             VulkanBufferUtil::SetImageLayout(cmdBuffer, mImage,
                 hostCopyDstLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,

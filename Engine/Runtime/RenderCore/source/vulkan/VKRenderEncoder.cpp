@@ -340,15 +340,26 @@ VKRenderEncoder::VKRenderEncoder(VulkanContextPtr context,
 
 VKRenderEncoder::~VKRenderEncoder()
 {
+    // 如果 render pass 仍然活跃，自动结束它
+    // 这可以防止在 render pass 内部调用 vkCmdPipelineBarrier 导致的验证错误
+    if (mIsEncoding)
+    {
+        EndEncode();
+    }
+    
     vkDestroyFramebuffer(mContext->device, mFrameBuffer, nullptr);
 }
 
 void VKRenderEncoder::EndEncode()
 {
-    if (mContext->vulkanExtension.enableDebugUtils)
+    if (!mIsEncoding)
     {
-        vkCmdEndDebugUtilsLabelEXT(mCommandBuffer);
+        return;  // 已经结束，避免重复调用
     }
+    
+    mIsEncoding = false;
+    
+    // 注意：不再调用 vkCmdEndDebugUtilsLabelEXT，因为 debug label 由外部管理
     if (mContext->vulkanExtension.enabledDynamicRendering)
     {
         EndDynamicRenderPass();

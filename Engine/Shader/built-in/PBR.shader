@@ -53,20 +53,20 @@ VertexOut VS(appdata_tan vin)
 
 
 // 纹理和采样器
-Texture2D gDiffuseMap : register(t0);
-SamplerState gDiffuseMapSam  : register(s0);
+Texture2D gDiffuseMap;
+SamplerState gDiffuseMapSam;
 
-Texture2D gNormalMap : register(t1);
-SamplerState gNormalMapSam  : register(s1);
+Texture2D gNormalMap;
+SamplerState gNormalMapSam;
 
-Texture2D gMetalRoughMap : register(t2);
-SamplerState gMetalRoughMapSam  : register(s2);
+Texture2D gMetalRoughMap;
+SamplerState gMetalRoughMapSam;
 
-Texture2D gEmissiveMap : register(t3);
-SamplerState gEmissiveMapSam  : register(s3);
+Texture2D gEmissiveMap;
+SamplerState gEmissiveMapSam;
 
-Texture2D gAmbientMap : register(t4);
-SamplerState gAmbientMapSam  : register(s4);
+Texture2D gAmbientMap;
+SamplerState gAmbientMapSam;
 
 float4 PS(VertexOut pin) : SV_Target
 {
