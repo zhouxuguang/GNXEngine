@@ -402,19 +402,15 @@ void SceneManager::UpdateCameraInfo(CameraPtr cameraPtr)
     perCamera.ProjectionParams = mathutil::make_simd_float4(1.0, nearPlane, farPlane, 1.0 / farPlane);
     
     // Values used to linearize the Z buffer (http://www.humus.name/temp/Linearize%20depth.txt)
-    // x = 1-far/near
-    // y = far/near
-    // z = x/far
-    // w = y/far
-    // or in case of a reversed depth buffer (UNITY_REVERSED_Z is 1)
-    // x = -1+far/near
-    // y = 1
-    // z = x/far
-    // w = 1/far
+    // 传统 Z: x = 1-far/near, y = far/near, z = x/far, w = y/far
+    // 无限远 Reverse-Z: 线性深度 = near / depth, 即 1 / (depth/near)
+    // 所以 _ZBufferParams.z = 1/near, _ZBufferParams.w = 0
+    // LinearEyeDepth = 1.0 / (_ZBufferParams.z * depth + _ZBufferParams.w) = near / depth
     if (BuildSetting::mUseReverseZ)
     {
-        perCamera.ZBufferParams = mathutil::make_simd_float4(-1.0 + (farPlane / nearPlane), 1.0,
-                                                             (-1.0 + (farPlane / nearPlane)) / farPlane, 1.0 / farPlane);
+        perCamera.ZBufferParams = mathutil::make_simd_float4(
+            -1.0 + (farPlane / nearPlane), 1.0,
+            1.0 / nearPlane, 0.0);
     }
     else
     {

@@ -16,7 +16,7 @@ class BuildSetting
 {
 public:
     static const bool mCPUSkinning = false;
-    static const bool mUseReverseZ = false;  // 是否使用 Reverse-Z 深度模式
+    static const bool mUseReverseZ = true;  // 是否使用 Reverse-Z 深度模式
 };
 
 NS_RENDERSYSTEM_END

@@ -37,9 +37,12 @@ Camera::Camera(RenderDeviceType renderType, const std::string& name)
     
     // Reverse-Z 模式下，需要调整 mAdjust 矩阵
     // 传统 Z: 从 [-1,1] 映射到 [0,1]，使用 z' = 0.5*z + 0.5
-    // Reverse-Z: 投影矩阵已处理，但仍需从 [-1,1] 映射到 [0,1]
-    // 无限远 Reverse-Z 的投影矩阵输出 [-1, 0] 范围，需要映射到 [0, 1]
-    // 当前 mAdjust 矩阵已经正确处理了这种映射
+    // 无限远 Reverse-Z: 投影矩阵直接输出 Vulkan [0,1] NDC，不需要 mAdjust
+    // 有限远 Reverse-Z: 投影矩阵输出 [-1,1]，仍需 mAdjust 映射到 [0,1]
+    if (BuildSetting::mUseReverseZ)
+    {
+        mAdjust = mathutil::Matrix4x4f::IDENTITY;
+    }
 }
 
 Camera::~Camera()
@@ -68,9 +71,9 @@ void Camera::SetLens(float fovY, uint32_t width, uint32_t height, float zNear, f
     float aspect = (float)width / (float)height;
     if (BuildSetting::mUseReverseZ)
     {
-        // 优势：消除远平面裁剪问题，深度精度更均匀
-        mProjection = Matrix4x4f::CreateReverseZPerspective(fovY, aspect, zNear, zFar);
-        mFarZ = zFar;
+        // 使用无限远平面 Reverse-Z，深度精度更均匀，无远平面裁剪问题
+        mProjection = Matrix4x4f::CreateInfiniteReverseZPerspective(fovY, aspect, zNear);
+        mFarZ = FLT_MAX;
     }
     else
     {
