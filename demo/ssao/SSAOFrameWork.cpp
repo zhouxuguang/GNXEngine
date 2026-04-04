@@ -92,7 +92,7 @@ RenderSystem::MeshPtr CreatePlaneMesh(float xsize, float zsize, int xdivs, int z
     channels[RenderSystem::kShaderChannelTangent].offset = p.size() * sizeof(float);
     channels[RenderSystem::kShaderChannelTangent].format = VertexFormatFloat4;
     channels[RenderSystem::kShaderChannelTangent].stride = 16;
-    channels[RenderSystem::kShaderChannelNormal].offset = p.size() * sizeof(float) + n.size() * sizeof(float);
+    channels[RenderSystem::kShaderChannelNormal].offset = p.size() * sizeof(float) + tang.size() * sizeof(float);
     channels[RenderSystem::kShaderChannelNormal].format = VertexFormatFloat3;
     channels[RenderSystem::kShaderChannelNormal].stride = 12;
     channels[RenderSystem::kShaderChannelTexCoord0].offset = p.size() * sizeof(float) + n.size() * sizeof(float) + tang.size() * sizeof(float);
