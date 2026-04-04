@@ -1,7 +1,7 @@
 #ifndef GNX_ENGINE__EVENT_INCLUDE_SFJKSJJHJHSDFHDS
 #define GNX_ENGINE__EVENT_INCLUDE_SFJKSJJHJHSDFHDS
 
-#include "PreDefine.h"
+#include "../PreDefine.h"
 #include <functional>
 
 NAMESPACE_GNXENGINE_BEGIN

@@ -14,10 +14,16 @@
 #include "Camera.h"
 #include "Light.h"
 #include "ArcballManipulate.h"
+#include "FPSCameraController.h"
+#include "EditorCameraController.h"
 #include "mesh/MeshDrawUtil.h"
 #include "PostProcess/PostProcessing.h"
 #include "SceneRenderer.h"
 #include <memory>
+
+NAMESPACE_GNXENGINE_BEGIN
+class Event;
+NAMESPACE_GNXENGINE_END
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -104,6 +110,24 @@ public:
     //更新函数, deltaTime 秒
     void Update(float deltaTime);
 
+    // Enable FPS camera controller for first-person roaming (WASD + mouse)
+    // Call this once in demo Resize() after creating the camera.
+    // The demo should forward events via OnEvent: SceneManager::GetInstance()->OnEvent(e);
+    void EnableFPSCameraController();
+
+    // Get the FPS camera controller (nullptr if not enabled)
+    FPSCameraController* GetFPSCameraController() const { return mFPSCameraController; }
+
+    // Enable Editor camera controller (orbit: right-drag rotate, middle-drag pan, scroll zoom)
+    // If no controller is explicitly enabled, this is the default.
+    void EnableEditorCameraController();
+
+    // Get the editor camera controller (nullptr if not enabled)
+    EditorCameraController* GetEditorCameraController() const { return mEditorCameraController; }
+
+    // Forward an event to the active camera controller(s)
+    void OnEvent(GNXEngine::Event& e);
+
     // 清空场景（删除所有节点和灯光）
     void ClearScene();
 
@@ -132,6 +156,8 @@ private:
     PostProcessing *mPostProcessing = nullptr;
     
     ArcballManipulate* mCameraMani = nullptr;
+    FPSCameraController* mFPSCameraController = nullptr;
+    EditorCameraController* mEditorCameraController = nullptr;
     
     UniformBufferPtr mCameraUBO = nullptr;
     UniformBufferPtr mLightUBO = nullptr;

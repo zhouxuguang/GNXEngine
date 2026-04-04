@@ -14,6 +14,9 @@
 #include "animation/SkeletonAnimation.h"
 #include "SkyBoxNode.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "Runtime/GNXEngine/include/Events/Event.h"
+#include "Runtime/GNXEngine/include/Events/KeyEvent.h"
+#include "Runtime/GNXEngine/include/Events/MouseEvent.h"
 #include <algorithm>
 #include <mutex>
 
@@ -63,6 +66,20 @@ SceneManager::~SceneManager()
     {
         delete mCameraMani;
         mCameraMani = nullptr;
+    }
+
+    // 释放FPS相机控制器
+    if (mFPSCameraController)
+    {
+        delete mFPSCameraController;
+        mFPSCameraController = nullptr;
+    }
+
+    // 释放编辑器相机控制器
+    if (mEditorCameraController)
+    {
+        delete mEditorCameraController;
+        mEditorCameraController = nullptr;
     }
 
     // 释放后处理
@@ -224,14 +241,25 @@ CameraPtr SceneManager::CreateCamera(const std::string &name)
 {
     CameraPtr camera = std::make_shared<Camera>(GetRenderDevice()->GetRenderDeviceType(), name);
 
-    // 释放旧的相机操作器，避免内存泄漏
+    // Release old controllers, avoid memory leak
     if (mCameraMani)
     {
         delete mCameraMani;
         mCameraMani = nullptr;
     }
+    if (mFPSCameraController)
+    {
+        delete mFPSCameraController;
+        mFPSCameraController = nullptr;
+    }
+    if (mEditorCameraController)
+    {
+        delete mEditorCameraController;
+        mEditorCameraController = nullptr;
+    }
 
-    mCameraMani = new ArcballManipulate(camera);
+    // Default to EditorCameraController for orbit editing
+    mEditorCameraController = new EditorCameraController(camera);
 
     mCameras.push_back(camera);
     return camera;
@@ -295,6 +323,18 @@ void SceneManager::Update(float deltaTime)
     if (mCameraMani)
     {
         //mCameraMani->Update();
+    }
+
+    // FPS camera controller update
+    if (mFPSCameraController)
+    {
+        mFPSCameraController->Update(deltaTime);
+    }
+
+    // Editor camera controller update
+    if (mEditorCameraController)
+    {
+        mEditorCameraController->Update(deltaTime);
     }
     
     //更新相机 - 支持当前激活的相机
@@ -443,6 +483,66 @@ void SceneManager::UpdateLightInfo()
         lightInfo.FalloffEnd = pointLight->getFalloffEnd();
 
         mLightUBO->SetData(&lightInfo, 0, sizeof(cbLighting));
+    }
+}
+
+void SceneManager::EnableFPSCameraController()
+{
+    // Find the active camera
+    CameraPtr cameraPtr = GetCamera("MainCamera");
+    if (!cameraPtr && !mCameras.empty())
+    {
+        cameraPtr = mCameras[0];
+    }
+
+    if (!cameraPtr)
+    {
+        return;
+    }
+
+    // Release old FPS controller if any
+    if (mFPSCameraController)
+    {
+        delete mFPSCameraController;
+        mFPSCameraController = nullptr;
+    }
+
+    mFPSCameraController = new FPSCameraController(cameraPtr);
+}
+
+void SceneManager::EnableEditorCameraController()
+{
+    // Find the active camera
+    CameraPtr cameraPtr = GetCamera("MainCamera");
+    if (!cameraPtr && !mCameras.empty())
+    {
+        cameraPtr = mCameras[0];
+    }
+
+    if (!cameraPtr)
+    {
+        return;
+    }
+
+    // Release old editor controller if any
+    if (mEditorCameraController)
+    {
+        delete mEditorCameraController;
+        mEditorCameraController = nullptr;
+    }
+
+    mEditorCameraController = new EditorCameraController(cameraPtr);
+}
+
+void SceneManager::OnEvent(GNXEngine::Event& e)
+{
+    if (mFPSCameraController)
+    {
+        mFPSCameraController->OnEvent(e);
+    }
+    if (mEditorCameraController)
+    {
+        mEditorCameraController->OnEvent(e);
     }
 }
 

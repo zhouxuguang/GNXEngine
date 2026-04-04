@@ -146,6 +146,9 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
     
     cameraPtr->SetLens(50, width, height, 0.3f, 100.0f);
     
+    // Enable FPS camera controller (one line to enable WASD + mouse roaming)
+    //sceneManager->EnableFPSCameraController();
+    
     // Create a simple light
     RenderSystem::PointLight* pointLight = (RenderSystem::PointLight*)sceneManager->CreateLight(
         "mainLight", RenderSystem::Light::PointLight);
@@ -273,6 +276,7 @@ void SSAOFrameWork::RenderFrame()
 void SSAOFrameWork::OnEvent(GNXEngine::Event& e)
 {
     GNXEngine::AppFrameWork::OnEvent(e);
+    RenderSystem::SceneManager::GetInstance()->OnEvent(e);
 }
 
 bool SSAOFrameWork::OnKeyUp(GNXEngine::KeyReleasedEvent& e)
