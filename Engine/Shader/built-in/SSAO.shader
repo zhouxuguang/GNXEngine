@@ -139,14 +139,11 @@ float PS(VertexOut pin) : SV_Target0
         float zDist = surfaceZ - viewPos.z;
         
         // 深度比较：如果采样点被遮挡，则增加遮蔽值
-        // 使用 bias 避免自遮蔽伪影
-#ifdef USE_REVERSE_Z
-        // Reverse-Z: 深度值越大越近，越小越远
-        if (zDist >= 0.0f && zDist <= radius && surfaceZ < sampleVec.z) occlusion += 1.0;
-#else
-        // 传统Z: 深度值越小越近，越大越远
-        if (zDist >= 0.0f && zDist <= radius && surfaceZ > sampleVec.z) occlusion += 1.0;
-#endif
+        // surfaceZ 和 sampleVec.z 都是视图空间Z值，与深度缓冲区布局(Reverse-Z/传统Z)无关
+        // 视图空间: 相机沿-Z看，Z值越大(负得越少)越近
+        // 如果实际表面比采样点更靠近相机(surfaceZ > sampleVec.z)，则采样点被遮挡
+        float rangeCheck = smoothstep(0.0f, 1.0f, radius / zDist);
+        if (zDist >= bias && surfaceZ > sampleVec.z) occlusion += rangeCheck;
     }
     
     // 归一化遮蔽值

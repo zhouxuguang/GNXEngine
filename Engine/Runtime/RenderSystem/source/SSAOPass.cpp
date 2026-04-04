@@ -105,7 +105,7 @@ void SSAOPass::GenerateRandomRotationTexture()
     
     // 创建随机旋转向量数据
     std::vector<float> noiseData;
-    noiseData.reserve(noiseCount * 3);
+    noiseData.reserve(noiseCount * 4);
     
     for (int i = 0; i < noiseCount; ++i)
     {
