@@ -61,13 +61,6 @@ SceneManager::SceneManager()
 
 SceneManager::~SceneManager()
 {
-    // 释放相机操作器
-    if (mCameraMani)
-    {
-        delete mCameraMani;
-        mCameraMani = nullptr;
-    }
-
     // 释放FPS相机控制器
     if (mFPSCameraController)
     {
@@ -242,11 +235,6 @@ CameraPtr SceneManager::CreateCamera(const std::string &name)
     CameraPtr camera = std::make_shared<Camera>(GetRenderDevice()->GetRenderDeviceType(), name);
 
     // Release old controllers, avoid memory leak
-    if (mCameraMani)
-    {
-        delete mCameraMani;
-        mCameraMani = nullptr;
-    }
     if (mFPSCameraController)
     {
         delete mFPSCameraController;
@@ -319,12 +307,6 @@ void SceneManager::Render(RenderEncoderPtr renderEncoder)
 
 void SceneManager::Update(float deltaTime)
 {
-    //相机操作器更新
-    if (mCameraMani)
-    {
-        //mCameraMani->Update();
-    }
-
     // FPS camera controller update
     if (mFPSCameraController)
     {

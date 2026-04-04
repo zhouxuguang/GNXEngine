@@ -13,7 +13,6 @@
 #include "SceneNode.h"
 #include "Camera.h"
 #include "Light.h"
-#include "ArcballManipulate.h"
 #include "FPSCameraController.h"
 #include "EditorCameraController.h"
 #include "mesh/MeshDrawUtil.h"
@@ -155,7 +154,6 @@ private:
     SkyBoxNode* mSkyBoxNode = nullptr;   //天空盒的特殊节点
     PostProcessing *mPostProcessing = nullptr;
     
-    ArcballManipulate* mCameraMani = nullptr;
     FPSCameraController* mFPSCameraController = nullptr;
     EditorCameraController* mEditorCameraController = nullptr;
     
