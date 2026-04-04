@@ -139,6 +139,11 @@ HiZOutput HiZPass::AddToFrameGraph(
             
             computeEncoder->SetComputePipeline(mHiZPipeline);
             
+            uint32_t groupSizeX;
+            uint32_t groupSizeY;
+            uint32_t groupSizeZ;
+            mHiZPipeline->GetThreadGroupSizes(groupSizeX, groupSizeY, groupSizeZ);
+            
             // 生成每一层Hi-Z
             uint32_t levelWidth = params.width / 2;
             uint32_t levelHeight = params.height / 2;
@@ -169,9 +174,9 @@ HiZOutput HiZPass::AddToFrameGraph(
                 mHiZParas->SetData(&hiZParams, 0, sizeof(hiZParams));
                 computeEncoder->SetUniformBuffer("HiZParams", mHiZParas);
                 
-                // 计算Dispatch大小（8x8线程组）
-                uint32_t groupX = (levelWidth + 7) / 8;
-                uint32_t groupY = (levelHeight + 7) / 8;
+                // 计算Dispatch大小
+                uint32_t groupX = (levelWidth + groupSizeX - 1) / groupSizeX;
+                uint32_t groupY = (levelHeight + groupSizeY - 1) / groupSizeY;
                 
                 // 执行Compute Shader
                 computeEncoder->Dispatch(groupX, groupY, 1);
