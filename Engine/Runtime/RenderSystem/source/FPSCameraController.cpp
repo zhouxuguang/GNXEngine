@@ -50,10 +50,12 @@ void FPSCameraController::Update(float deltaTime)
     }
 
     // Get forward and right vectors projected onto XZ plane
+    // Note: in our coordinate system, looking along +Z means +X is to the LEFT,
+    // so the right vector is the negation of the naive cross product.
     mathutil::Vector3f forward = mathutil::Vector3f(
         std::sin(mYaw), 0.0f, std::cos(mYaw)).Normalize();
     mathutil::Vector3f right = mathutil::Vector3f(
-        std::cos(mYaw), 0.0f, -std::sin(mYaw)).Normalize();
+        -std::cos(mYaw), 0.0f, std::sin(mYaw)).Normalize();
 
     mathutil::Vector3f position = mCamera->GetPosition();
 
