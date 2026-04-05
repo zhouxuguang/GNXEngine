@@ -9,9 +9,7 @@
 #ifndef FPSCameraController_INCLUDE_H
 #define FPSCameraController_INCLUDE_H
 
-#include "RSDefine.h"
-#include "Camera.h"
-#include "Runtime/GNXEngine/include/Events/Event.h"
+#include "CameraController.h"
 #include "Runtime/GNXEngine/include/Events/KeyEvent.h"
 #include "Runtime/GNXEngine/include/Events/MouseEvent.h"
 #include <unordered_map>
@@ -20,18 +18,23 @@ NS_RENDERSYSTEM_BEGIN
 
 // First-person camera controller
 // Supports WASD movement, mouse look, Shift for sprint, Space for up, Ctrl for down
-class RENDERSYSTEM_API FPSCameraController
+class RENDERSYSTEM_API FPSCameraController : public CameraController
 {
 public:
     FPSCameraController(CameraPtr camera);
 
-    ~FPSCameraController();
+    ~FPSCameraController() override;
 
     // Call each frame with deltaTime in seconds
-    void Update(float deltaTime);
+    void Update(float deltaTime) override;
 
     // Feed events from the application event system
-    void OnEvent(GNXEngine::Event& e);
+    void OnEvent(GNXEngine::Event& e) override;
+
+    // Sync internal state from camera (base class interface)
+    void SyncFromCamera() override;
+
+    bool IsSynced() const override { return mSynced; }
 
     // Getters
     float GetMoveSpeed() const { return mMoveSpeed; }
@@ -53,8 +56,6 @@ private:
 
     // Rebuild direction vectors from yaw/pitch angles
     void UpdateDirectionVectors();
-
-    CameraPtr mCamera;
 
     // Euler angles (radians)
     float mYaw = 0.0f;    // rotation around Y axis
@@ -78,6 +79,8 @@ private:
     float mFov = 0.0f;
     float mMinFov = 10.0f;
     float mMaxFov = 120.0f;
+
+    bool mSynced = false;
 };
 
 NS_RENDERSYSTEM_END

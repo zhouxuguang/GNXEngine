@@ -17,19 +17,24 @@ using namespace GNXEngine;
 static constexpr float PITCH_LIMIT = 1.57079632679f; // PI / 2
 
 FPSCameraController::FPSCameraController(CameraPtr camera)
-    : mCamera(camera)
+    : CameraController(camera)
 {
-    if (!mCamera) return;
-
-    // Initialize yaw/pitch from current camera orientation
-    mathutil::Vector3f direction = mCamera->GetViewDirection();
-    mYaw = std::atan2(direction.x, direction.z);
-    mPitch = std::asin(std::clamp(direction.y, -1.0f, 1.0f));
-    UpdateDirectionVectors();
+    // Don't read camera state here — the camera may not be set up yet by the demo.
+    // SyncFromCamera() will be called on the first Update() frame.
 }
 
 FPSCameraController::~FPSCameraController()
 {
+}
+
+void FPSCameraController::SyncFromCamera()
+{
+    if (!mCamera) return;
+
+    mathutil::Vector3f direction = mCamera->GetViewDirection();
+    mYaw   = std::atan2(direction.x, direction.z);
+    mPitch = std::asin(std::clamp(direction.y, -1.0f, 1.0f));
+    mSynced = true;
 }
 
 void FPSCameraController::Update(float deltaTime)

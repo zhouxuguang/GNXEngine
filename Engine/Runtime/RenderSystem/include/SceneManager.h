@@ -12,9 +12,8 @@
 #include "Runtime/MathUtil/include/Vector3.h"
 #include "SceneNode.h"
 #include "Camera.h"
+#include "CameraController.h"
 #include "Light.h"
-#include "FPSCameraController.h"
-#include "EditorCameraController.h"
 #include "mesh/MeshDrawUtil.h"
 #include "PostProcess/PostProcessing.h"
 #include "SceneRenderer.h"
@@ -109,22 +108,23 @@ public:
     //更新函数, deltaTime 秒
     void Update(float deltaTime);
 
-    // Enable FPS camera controller for first-person roaming (WASD + mouse)
-    // Call this once in demo Resize() after creating the camera.
-    // The demo should forward events via OnEvent: SceneManager::GetInstance()->OnEvent(e);
-    void EnableFPSCameraController();
+    /**
+     * 设置相机控制器类型，默认是 Editor (轨道相机)
+     * 如果当前没有相机则什么都不做，等下次有相机时使用
+     */
+    void SetCameraControllerType(CameraControllerType type);
 
-    // Get the FPS camera controller (nullptr if not enabled)
-    FPSCameraController* GetFPSCameraController() const { return mFPSCameraController; }
+    /**
+     * 获取当前相机控制器类型
+     */
+    CameraControllerType GetCameraControllerType() const { return mControllerType; }
 
-    // Enable Editor camera controller (orbit: right-drag rotate, middle-drag pan, scroll zoom)
-    // If no controller is explicitly enabled, this is the default.
-    void EnableEditorCameraController();
+    /**
+     * 获取当前相机控制器（可能为 nullptr）
+     */
+    CameraController* GetCameraController() const { return mActiveController; }
 
-    // Get the editor camera controller (nullptr if not enabled)
-    EditorCameraController* GetEditorCameraController() const { return mEditorCameraController; }
-
-    // Forward an event to the active camera controller(s)
+    // Forward an event to the active camera controller
     void OnEvent(GNXEngine::Event& e);
 
     // 清空场景（删除所有节点和灯光）
@@ -146,6 +146,9 @@ private:
     // 更新灯光信息
     void UpdateLightInfo();
 
+    // 创建指定类型的控制器
+    void CreateController(CameraPtr camera, CameraControllerType type);
+
 private:
     SceneNode *mRootSceneNode = nullptr;       //根节点
     std::vector<Light*> mLights;              //灯光的列表
@@ -154,8 +157,8 @@ private:
     SkyBoxNode* mSkyBoxNode = nullptr;   //天空盒的特殊节点
     PostProcessing *mPostProcessing = nullptr;
     
-    FPSCameraController* mFPSCameraController = nullptr;
-    EditorCameraController* mEditorCameraController = nullptr;
+    CameraController* mActiveController = nullptr;  // active camera controller (polymorphic)
+    CameraControllerType mControllerType = CameraControllerType::Editor;  // desired type
     
     UniformBufferPtr mCameraUBO = nullptr;
     UniformBufferPtr mLightUBO = nullptr;

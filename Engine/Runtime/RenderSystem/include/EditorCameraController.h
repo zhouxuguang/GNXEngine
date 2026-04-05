@@ -8,9 +8,7 @@
 #ifndef EditorCameraController_INCLUDE_H
 #define EditorCameraController_INCLUDE_H
 
-#include "RSDefine.h"
-#include "Camera.h"
-#include "Runtime/GNXEngine/include/Events/Event.h"
+#include "CameraController.h"
 #include "Runtime/GNXEngine/include/Events/KeyEvent.h"
 #include "Runtime/GNXEngine/include/Events/MouseEvent.h"
 
@@ -20,17 +18,22 @@ NS_RENDERSYSTEM_BEGIN
 //   Left/Right-click drag  -> orbit rotate (yaw/pitch around focus point)
 //   Middle-click drag      -> pan (translate focus + camera)
 //   Scroll wheel           -> zoom (change distance to focus)
-class RENDERSYSTEM_API EditorCameraController
+class RENDERSYSTEM_API EditorCameraController : public CameraController
 {
 public:
     EditorCameraController(CameraPtr camera);
-    ~EditorCameraController();
+    ~EditorCameraController() override;
 
     // Call each frame with deltaTime in seconds
-    void Update(float deltaTime);
+    void Update(float deltaTime) override;
 
     // Feed events from the application event system
-    void OnEvent(GNXEngine::Event& e);
+    void OnEvent(GNXEngine::Event& e) override;
+
+    // Re-derive orbit parameters from the camera's current state
+    void SyncFromCamera() override;
+
+    bool IsSynced() const override { return mSynced; }
 
     // --- Tuning parameters ---
     float GetRotateSpeed() const    { return mRotateSpeed; }
@@ -49,12 +52,6 @@ public:
     mathutil::Vector3f GetFocusPoint() const { return mFocusPoint; }
     void SetFocusPoint(const mathutil::Vector3f& focus);
 
-    // Re-derive orbit parameters from the camera's current state.
-    // Called automatically on the first Update() frame.
-    void SyncFromCamera();
-
-    bool IsSynced() const { return mSynced; }
-
 private:
     bool OnMouseMoved(GNXEngine::MouseMovedEvent& e);
     bool OnMouseButtonPressed(GNXEngine::MouseButtonPressedEvent& e);
@@ -63,8 +60,6 @@ private:
 
     // Rebuild camera LookAt from focus + yaw/pitch/distance
     void ApplyTransform();
-
-    CameraPtr mCamera;
 
     // Orbit state
     mathutil::Vector3f mFocusPoint;   // the point the camera orbits around
@@ -79,8 +74,6 @@ private:
     bool  mRightDragging  = false;
     bool  mMiddleDragging = false;
 
-    bool  mSynced = false;         // whether orbit params have been synced from camera
-
     // Speeds
     float mRotateSpeed = 0.001f;
     float mPanSpeed    = 0.01f;
@@ -89,6 +82,8 @@ private:
     // Distance limits
     float mMinDistance = 0.1f;
     float mMaxDistance = 1000000.0f;
+
+    bool  mSynced = false;
 };
 
 NS_RENDERSYSTEM_END

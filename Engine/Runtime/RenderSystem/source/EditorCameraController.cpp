@@ -16,7 +16,7 @@ using namespace GNXEngine;
 static constexpr float PITCH_LIMIT = 1.5533f; // ~89 degrees, slightly less than PI/2 to avoid gimbal lock
 
 EditorCameraController::EditorCameraController(CameraPtr camera)
-    : mCamera(camera)
+    : CameraController(camera)
 {
     // Don't read camera state here — the camera may not be set up yet by the demo.
     // SyncFromCamera() will be called on the first Update() frame.

@@ -17,6 +17,8 @@
 #include "Runtime/GNXEngine/include/Events/Event.h"
 #include "Runtime/GNXEngine/include/Events/KeyEvent.h"
 #include "Runtime/GNXEngine/include/Events/MouseEvent.h"
+#include "FPSCameraController.h"
+#include "EditorCameraController.h"
 #include <algorithm>
 #include <mutex>
 
@@ -61,18 +63,11 @@ SceneManager::SceneManager()
 
 SceneManager::~SceneManager()
 {
-    // 释放FPS相机控制器
-    if (mFPSCameraController)
+    // 释放相机控制器
+    if (mActiveController)
     {
-        delete mFPSCameraController;
-        mFPSCameraController = nullptr;
-    }
-
-    // 释放编辑器相机控制器
-    if (mEditorCameraController)
-    {
-        delete mEditorCameraController;
-        mEditorCameraController = nullptr;
+        delete mActiveController;
+        mActiveController = nullptr;
     }
 
     // 释放后处理
@@ -230,24 +225,33 @@ void SceneManager::ResetScene()
     mCameras.clear();
 }
 
+void SceneManager::CreateController(CameraPtr camera, CameraControllerType type)
+{
+    if (mActiveController)
+    {
+        delete mActiveController;
+        mActiveController = nullptr;
+    }
+
+    switch (type)
+    {
+    case CameraControllerType::FPS:
+        mActiveController = new FPSCameraController(camera);
+        break;
+    case CameraControllerType::Editor:
+    default:
+        mActiveController = new EditorCameraController(camera);
+        break;
+    }
+
+    mControllerType = type;
+}
+
 CameraPtr SceneManager::CreateCamera(const std::string &name)
 {
     CameraPtr camera = std::make_shared<Camera>(GetRenderDevice()->GetRenderDeviceType(), name);
 
-    // Release old controllers, avoid memory leak
-    if (mFPSCameraController)
-    {
-        delete mFPSCameraController;
-        mFPSCameraController = nullptr;
-    }
-    if (mEditorCameraController)
-    {
-        delete mEditorCameraController;
-        mEditorCameraController = nullptr;
-    }
-
-    // Default to EditorCameraController for orbit editing
-    mEditorCameraController = new EditorCameraController(camera);
+    CreateController(camera, mControllerType);
 
     mCameras.push_back(camera);
     return camera;
@@ -307,20 +311,14 @@ void SceneManager::Render(RenderEncoderPtr renderEncoder)
 
 void SceneManager::Update(float deltaTime)
 {
-    // FPS camera controller update
-    if (mFPSCameraController)
+    // Sync & update camera controller
+    if (mActiveController)
     {
-        mFPSCameraController->Update(deltaTime);
-    }
-
-    // Editor camera controller: sync orbit params on first frame (after demo has set up the camera)
-    if (mEditorCameraController)
-    {
-        if (!mEditorCameraController->IsSynced())
+        if (!mActiveController->IsSynced())
         {
-            mEditorCameraController->SyncFromCamera();
+            mActiveController->SyncFromCamera();
         }
-        mEditorCameraController->Update(deltaTime);
+        mActiveController->Update(deltaTime);
     }
     
     //更新相机 - 支持当前激活的相机
@@ -472,8 +470,10 @@ void SceneManager::UpdateLightInfo()
     }
 }
 
-void SceneManager::EnableFPSCameraController()
+void SceneManager::SetCameraControllerType(CameraControllerType type)
 {
+    mControllerType = type;
+
     // Find the active camera
     CameraPtr cameraPtr = GetCamera("MainCamera");
     if (!cameraPtr && !mCameras.empty())
@@ -486,49 +486,14 @@ void SceneManager::EnableFPSCameraController()
         return;
     }
 
-    // Release old FPS controller if any
-    if (mFPSCameraController)
-    {
-        delete mFPSCameraController;
-        mFPSCameraController = nullptr;
-    }
-
-    mFPSCameraController = new FPSCameraController(cameraPtr);
-}
-
-void SceneManager::EnableEditorCameraController()
-{
-    // Find the active camera
-    CameraPtr cameraPtr = GetCamera("MainCamera");
-    if (!cameraPtr && !mCameras.empty())
-    {
-        cameraPtr = mCameras[0];
-    }
-
-    if (!cameraPtr)
-    {
-        return;
-    }
-
-    // Release old editor controller if any
-    if (mEditorCameraController)
-    {
-        delete mEditorCameraController;
-        mEditorCameraController = nullptr;
-    }
-
-    mEditorCameraController = new EditorCameraController(cameraPtr);
+    CreateController(cameraPtr, type);
 }
 
 void SceneManager::OnEvent(GNXEngine::Event& e)
 {
-    if (mFPSCameraController)
+    if (mActiveController)
     {
-        mFPSCameraController->OnEvent(e);
-    }
-    if (mEditorCameraController)
-    {
-        mEditorCameraController->OnEvent(e);
+        mActiveController->OnEvent(e);
     }
 }
 
