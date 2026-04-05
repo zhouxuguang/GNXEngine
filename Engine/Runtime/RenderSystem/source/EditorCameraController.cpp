@@ -13,39 +13,39 @@ NS_RENDERSYSTEM_BEGIN
 
 using namespace GNXEngine;
 
-static constexpr float PITCH_LIMIT = 1.57079632679f; // PI/2
+static constexpr float PITCH_LIMIT = 1.5533f; // ~89 degrees, slightly less than PI/2 to avoid gimbal lock
 
 EditorCameraController::EditorCameraController(CameraPtr camera)
     : mCamera(camera)
 {
-    if (!mCamera) return;
-
-    // Derive orbit parameters from the camera's current LookAt state
-    mathutil::Vector3f position = mCamera->GetPosition();
-    mathutil::Vector3f direction = mCamera->GetViewDirection();
-
-    mDistance = direction.Length();
-    if (mDistance < 1e-6f) mDistance = 10.0f;
-
-    // Focus = camera position minus the forward vector (i.e. the target point)
-    mFocusPoint = position + direction;
-
-    // Extract yaw/pitch from direction
-    mathutil::Vector3f normDir = direction.Normalize();
-    mYaw   = std::atan2(normDir.x, normDir.z);
-    mPitch = std::asin(std::clamp(normDir.y, -1.0f, 1.0f));
-
-    ApplyTransform();
+    // Don't read camera state here — the camera may not be set up yet by the demo.
+    // SyncFromCamera() will be called on the first Update() frame.
 }
 
 EditorCameraController::~EditorCameraController()
 {
 }
 
-void EditorCameraController::SetFocusPoint(const mathutil::Vector3f& focus)
+void EditorCameraController::SyncFromCamera()
 {
-    mFocusPoint = focus;
-    ApplyTransform();
+    if (!mCamera) return;
+
+    mathutil::Vector3f position = mCamera->GetPosition();
+    mathutil::Vector3f target   = mCamera->GetTarget();
+
+    mathutil::Vector3f toTarget = target - position;
+    mDistance = toTarget.Length();
+    if (mDistance < 1e-6f) mDistance = 10.0f;
+
+    mFocusPoint = target;
+
+    // Extract yaw/pitch from the vector FROM target TO camera (matches ApplyTransform convention)
+    mathutil::Vector3f offset = position - target;
+    mathutil::Vector3f normDir = offset.Normalize();
+    mYaw   = std::atan2(normDir.x, normDir.z);
+    mPitch = std::asin(std::clamp(normDir.y, -1.0f, 1.0f));
+
+    mSynced = true;
 }
 
 void EditorCameraController::Update(float deltaTime)
@@ -64,6 +64,11 @@ void EditorCameraController::OnEvent(Event& e)
 
 bool EditorCameraController::OnMouseButtonPressed(MouseButtonPressedEvent& e)
 {
+    if (e.GetMouseButton() == ButtonLeft)
+    {
+        mLeftDragging = true;
+        return true;
+    }
     if (e.GetMouseButton() == ButtonRight)
     {
         mRightDragging = true;
@@ -79,6 +84,11 @@ bool EditorCameraController::OnMouseButtonPressed(MouseButtonPressedEvent& e)
 
 bool EditorCameraController::OnMouseButtonReleased(MouseButtonReleasedEvent& e)
 {
+    if (e.GetMouseButton() == ButtonLeft)
+    {
+        mLeftDragging = false;
+        return true;
+    }
     if (e.GetMouseButton() == ButtonRight)
     {
         mRightDragging = false;
@@ -104,11 +114,11 @@ bool EditorCameraController::OnMouseMoved(MouseMovedEvent& e)
     mLastMouseX = mouseX;
     mLastMouseY = mouseY;
 
-    if (mRightDragging)
+    if (mRightDragging || mLeftDragging)
     {
         // --- Orbit rotate ---
         mYaw   -= dx * mRotateSpeed;
-        mPitch -= dy * mRotateSpeed;
+        mPitch += dy * mRotateSpeed;
         mPitch  = std::clamp(mPitch, -PITCH_LIMIT, PITCH_LIMIT);
 
         ApplyTransform();

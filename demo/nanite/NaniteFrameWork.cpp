@@ -482,6 +482,7 @@ void NaniteFrameWork::RenderFrame()
 void NaniteFrameWork::OnEvent(GNXEngine::Event& e)
 {
     GNXEngine::AppFrameWork::OnEvent(e);
+    RenderSystem::SceneManager::GetInstance()->OnEvent(e);
     
     GNXEngine::EventDispatcher dispatcher(e);
     dispatcher.Dispatch<GNXEngine::KeyReleasedEvent>(GNX_BIND_EVENT_FN(OnKeyUp));

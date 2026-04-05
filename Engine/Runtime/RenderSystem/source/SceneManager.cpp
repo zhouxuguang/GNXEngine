@@ -313,9 +313,13 @@ void SceneManager::Update(float deltaTime)
         mFPSCameraController->Update(deltaTime);
     }
 
-    // Editor camera controller update
+    // Editor camera controller: sync orbit params on first frame (after demo has set up the camera)
     if (mEditorCameraController)
     {
+        if (!mEditorCameraController->IsSynced())
+        {
+            mEditorCameraController->SyncFromCamera();
+        }
         mEditorCameraController->Update(deltaTime);
     }
     

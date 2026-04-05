@@ -17,9 +17,9 @@
 NS_RENDERSYSTEM_BEGIN
 
 // Editor-style orbit camera controller
-//   Right-click drag  -> orbit rotate (yaw/pitch around focus point)
-//   Middle-click drag -> pan (translate focus + camera)
-//   Scroll wheel      -> zoom (change distance to focus)
+//   Left/Right-click drag  -> orbit rotate (yaw/pitch around focus point)
+//   Middle-click drag      -> pan (translate focus + camera)
+//   Scroll wheel           -> zoom (change distance to focus)
 class RENDERSYSTEM_API EditorCameraController
 {
 public:
@@ -49,6 +49,12 @@ public:
     mathutil::Vector3f GetFocusPoint() const { return mFocusPoint; }
     void SetFocusPoint(const mathutil::Vector3f& focus);
 
+    // Re-derive orbit parameters from the camera's current state.
+    // Called automatically on the first Update() frame.
+    void SyncFromCamera();
+
+    bool IsSynced() const { return mSynced; }
+
 private:
     bool OnMouseMoved(GNXEngine::MouseMovedEvent& e);
     bool OnMouseButtonPressed(GNXEngine::MouseButtonPressedEvent& e);
@@ -69,13 +75,16 @@ private:
     // Mouse tracking
     float mLastMouseX = 0.0f;
     float mLastMouseY = 0.0f;
+    bool  mLeftDragging   = false;
     bool  mRightDragging  = false;
     bool  mMiddleDragging = false;
 
+    bool  mSynced = false;         // whether orbit params have been synced from camera
+
     // Speeds
-    float mRotateSpeed = 0.005f;
+    float mRotateSpeed = 0.001f;
     float mPanSpeed    = 0.01f;
-    float mZoomSpeed   = 1.0f;
+    float mZoomSpeed   = 0.0001f;
 
     // Distance limits
     float mMinDistance = 0.1f;

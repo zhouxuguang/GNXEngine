@@ -153,6 +153,7 @@ void LumenFrameWork::RenderFrame()
 void LumenFrameWork::OnEvent(GNXEngine::Event& e)
 {
     GNXEngine::AppFrameWork::OnEvent(e);
+    RenderSystem::SceneManager::GetInstance()->OnEvent(e);
 }
 
 bool LumenFrameWork::OnKeyUp(GNXEngine::KeyReleasedEvent& e)
