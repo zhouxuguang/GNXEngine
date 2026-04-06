@@ -13,7 +13,7 @@ void MTLBufferBase::createPrivateBuffer(id<MTLDevice> device, id<MTLCommandQueue
 {
     @autoreleasepool
     {
-        mBuffer = [device newBufferWithLength: [sharedBuffer length] options: MTLStorageModePrivate | MTLResourceHazardTrackingModeUntracked];
+        mBuffer = [device newBufferWithLength: [sharedBuffer length] options: MTLResourceStorageModePrivate | MTLResourceHazardTrackingModeUntracked];
         id<MTLCommandBuffer> cmd_buffer = [commandQueue commandBuffer];
         id<MTLBlitCommandEncoder> blit_encoder = [cmd_buffer blitCommandEncoder];
         [blit_encoder copyFromBuffer:sharedBuffer
@@ -35,12 +35,12 @@ MTLBufferBase::MTLBufferBase(id<MTLDevice> device, size_t len, StorageMode type)
         {
             if (type == StorageModeShared)
             {
-                mBuffer = [device newBufferWithLength:len options:MTLStorageModeShared];
+                mBuffer = [device newBufferWithLength:len options:MTLResourceStorageModeShared];
             }
             else
             {
                 mBuffer = [device newBufferWithLength: len options: 
-                           MTLStorageModePrivate | MTLResourceHazardTrackingModeUntracked];
+                           MTLResourceStorageModePrivate | MTLResourceHazardTrackingModeUntracked];
             }
         }
     }
@@ -54,12 +54,12 @@ MTLBufferBase::MTLBufferBase(id<MTLDevice> device, id<MTLCommandQueue> commandQu
         {
             if (type == StorageModeShared)
             {
-                mBuffer = [device newBufferWithBytes:buffer length:size options:MTLStorageModeShared];
+                mBuffer = [device newBufferWithBytes:buffer length:size options:MTLResourceStorageModeShared];
             }
             else
             {
                 id<MTLBuffer> bufferShared = [device newBufferWithBytes:buffer length:size options:
-                                              MTLStorageModeShared];
+                                              MTLResourceStorageModeShared];
                 createPrivateBuffer(device, commandQueue, bufferShared);
             }
         }

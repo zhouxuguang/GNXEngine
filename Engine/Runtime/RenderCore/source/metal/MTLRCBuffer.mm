@@ -38,11 +38,11 @@ void MTLRCBuffer::CreateBuffer(id<MTLDevice> device, const RCBufferDesc& desc)
     
     if (mtlStorageMode == MTLStorageModeShared)
     {
-        options |= MTLStorageModeShared;
+        options |= MTLResourceStorageModeShared;
     }
     else
     {
-        options |= MTLStorageModePrivate;
+        options |= MTLResourceStorageModePrivate;
     }
     
     @autoreleasepool
@@ -65,18 +65,17 @@ void MTLRCBuffer::CreateBufferWithData(id<MTLDevice> device, id<MTLCommandQueue>
         if (mtlStorageMode == MTLStorageModeShared)
         {
             // Shared memory - directly create with data
-            MTLResourceOptions options = MTLResourceCPUCacheModeDefaultCache | MTLStorageModeShared;
+            MTLResourceOptions options = MTLResourceCPUCacheModeDefaultCache | MTLResourceStorageModeShared;
             mBuffer = [device newBufferWithBytes:data length:desc.size options:options];
         }
         else
         {
             // Private memory - create staging buffer and copy
-            // First create with shared storage
-            MTLResourceOptions sharedOptions = MTLResourceCPUCacheModeDefaultCache | MTLStorageModeShared;
+            MTLResourceOptions sharedOptions = MTLResourceCPUCacheModeDefaultCache | MTLResourceStorageModeShared;
             id<MTLBuffer> sharedBuffer = [device newBufferWithBytes:data length:desc.size options:sharedOptions];
             
             // Create private buffer
-            MTLResourceOptions privateOptions = MTLResourceCPUCacheModeDefaultCache | MTLStorageModePrivate;
+            MTLResourceOptions privateOptions = MTLResourceCPUCacheModeDefaultCache | MTLResourceStorageModePrivate;
             mBuffer = [device newBufferWithLength:desc.size options:privateOptions];
             
             // Copy using blit encoder
