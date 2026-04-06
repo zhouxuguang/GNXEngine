@@ -122,7 +122,8 @@ float PS(VertexOut pin) : SV_Target0
         // if( zDist >= 0.0 && zDist <= Radius && surfaceZ > samplePos.z ) occlusionSum += 1.0;
 
         // 将采样点从切线空间变换到视图空间
-        float3 sampleVec = viewPos + radius * mul(SampleKernel[i].xyz, TBN);
+        // 沿法线方向添加bias偏移，防止自遮挡
+        float3 sampleVec = viewPos + radius * mul(SampleKernel[i].xyz, TBN) + normal * bias;
         
         // 将采样点投影到屏幕空间
         float4 offset = float4(sampleVec, 1.0f);
