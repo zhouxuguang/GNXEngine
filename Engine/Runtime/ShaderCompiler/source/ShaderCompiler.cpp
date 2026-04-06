@@ -105,8 +105,14 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
     // The SPIR-V is now parsed, and we can perform reflection on it.
     spirv_cross::ShaderResources resources = msl.get_shader_resources();
 
-    spv::ExecutionModel model = (shaderStage == ShaderStage_Vertex)
-        ? spv::ExecutionModelVertex : spv::ExecutionModelFragment;
+    spv::ExecutionModel model;
+    switch (shaderStage)
+    {
+        case ShaderStage_Vertex:  model = spv::ExecutionModelVertex; break;
+        case ShaderStage_Fragment:model = spv::ExecutionModelFragment; break;
+        case ShaderStage_Compute: model = spv::ExecutionModelGLCompute; break;
+        default: model = spv::ExecutionModelVertex; break;
+    }
 
     // 紧凑 sampled images 的 texture 和 sampler binding 到 0~N 连续索引
     // Metal 要求 sampler 索引必须在 0~15 范围内
@@ -167,6 +173,24 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
         nextTexBinding++;
     }
 
+    // 紧凑 storage images 的 binding（RWTexture2D 等读写纹理，接续 sampled/separate images 的索引）
+    for (auto &resource : resources.storage_images)
+    {
+        unsigned set = msl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+        unsigned binding = msl.get_decoration(resource.id, spv::DecorationBinding);
+        printf("Storage image %s at set = %u, binding = %u -> MSL texture=%u\n",
+               resource.name.c_str(), set, binding, nextTexBinding);
+
+        spirv_cross::MSLResourceBinding resBinding;
+        resBinding.stage = model;
+        resBinding.desc_set = set;
+        resBinding.binding = binding;
+        resBinding.msl_texture = nextTexBinding;
+        msl.add_msl_resource_binding(resBinding);
+
+        nextTexBinding++;
+    }
+
     // 计算顶点属性占用的最大 location，用于调整 uniform buffer 起始索引
     uint32_t maxLocation = 0;
     int attrCount = 0;
@@ -199,6 +223,24 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
         unsigned set = msl.get_decoration(resource.id, spv::DecorationDescriptorSet);
         unsigned binding = msl.get_decoration(resource.id, spv::DecorationBinding);
         printf("UBO %s at set = %u, binding = %u -> MSL buffer=%u\n",
+               resource.name.c_str(), set, binding, nextBufBinding);
+
+        spirv_cross::MSLResourceBinding resBinding;
+        resBinding.stage = model;
+        resBinding.desc_set = set;
+        resBinding.binding = binding;
+        resBinding.msl_buffer = nextBufBinding;
+        msl.add_msl_resource_binding(resBinding);
+
+        nextBufBinding++;
+    }
+
+    // 紧凑 storage buffer binding（接续 uniform buffer 的索引）
+    for (auto &resource : resources.storage_buffers)
+    {
+        unsigned set = msl.get_decoration(resource.id, spv::DecorationDescriptorSet);
+        unsigned binding = msl.get_decoration(resource.id, spv::DecorationBinding);
+        printf("SSBO %s at set = %u, binding = %u -> MSL buffer=%u\n",
                resource.name.c_str(), set, binding, nextBufBinding);
 
         spirv_cross::MSLResourceBinding resBinding;
