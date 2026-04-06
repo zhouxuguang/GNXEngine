@@ -28,6 +28,10 @@ struct VulkanExtension
     bool enableDeviceFault = false;
     bool enablePortabilitySubset = false;
     
+    // Mesh Shader 扩展支持
+    bool enableMeshShaderEXT = false;
+    bool enableMeshShaderNV = false;
+    
     std::vector<VkExtensionProperties> mDeviceExtensions;
     
     void Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties physicalDeviceProperties);

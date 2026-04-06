@@ -392,6 +392,21 @@ bool CreateVirtualDevice(VulkanContext& context)
     {
         deviceExtensionNames.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     }
+    
+    // Mesh Shader 扩展
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT = {};
+    if (context.vulkanExtension.enableMeshShaderEXT)
+    {
+        deviceExtensionNames.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+        meshShaderFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+        meshShaderFeaturesEXT.taskShader = VK_TRUE;
+        meshShaderFeaturesEXT.meshShader = VK_TRUE;
+        AppendToPNextChain(deviceCreateNextChain, &meshShaderFeaturesEXT);
+    }
+    else if (context.vulkanExtension.enableMeshShaderNV)
+    {
+        deviceExtensionNames.push_back(VK_NV_MESH_SHADER_EXTENSION_NAME);
+    }
 
 	VkPhysicalDeviceProperties2 deviceProperties = {};
 	deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;

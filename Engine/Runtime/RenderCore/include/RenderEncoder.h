@@ -172,6 +172,26 @@ public:
      * @param sampler 采样器句柄
      */
     virtual void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler) = 0;
+    
+    // ==================== Mesh Shader 绘制接口 ====================
+    
+    /**
+     * @brief 绘制 Mesh Tasks
+     * @param groupCountX mesh task group 数量 X
+     * @param groupCountY mesh task group 数量 Y
+     * @param groupCountZ mesh task group 数量 Z
+     */
+    virtual void DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
+    
+    /**
+     * @brief 间接绘制 Mesh Tasks
+     * @param buffer 包含 DrawMeshTasksIndirectCommand 数组的 buffer
+     * @param offset buffer 偏移量（字节）
+     * @param drawCount 绘制次数
+     * @param stride 每次绘制的步长（字节）
+     */
+    virtual void DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset,
+                                       uint32_t drawCount, uint32_t stride) = 0;
 };
 
 typedef std::shared_ptr<RenderEncoder> RenderEncoderPtr;

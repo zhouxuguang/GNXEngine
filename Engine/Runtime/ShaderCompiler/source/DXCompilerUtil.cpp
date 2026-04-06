@@ -77,6 +77,14 @@ LPCWSTR GetEntryPoint(ShaderStage stage)
             return L"CS";
             break;
             
+        case ShaderStage_Task:
+            return L"AS";
+            break;
+            
+        case ShaderStage_Mesh:
+            return L"MS";
+            break;
+            
         default:
             break;
     }
@@ -98,6 +106,14 @@ LPCWSTR GetTargetProfile(ShaderStage stage)
             
         case ShaderStage_Compute:
             return L"cs_6_7";
+            break;
+            
+        case ShaderStage_Task:
+            return L"as_6_6";
+            break;
+            
+        case ShaderStage_Mesh:
+            return L"ms_6_6";
             break;
             
         default:

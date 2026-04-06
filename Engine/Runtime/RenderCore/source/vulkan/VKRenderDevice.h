@@ -15,6 +15,7 @@
 #include "VKDepthStencilBuffer.h"
 #include "VulkanGarbageCollector.h"
 #include "VKCommandQueue.h"
+#include "VKDeviceExtension.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -29,7 +30,7 @@ public:
     
     virtual DeviceExtensionPtr GetDeviceExtension() const
     {
-        return nullptr;
+        return mDeviceExtension;
     }
     
     virtual RenderDeviceType GetRenderDeviceType() const
@@ -97,6 +98,7 @@ public:
 private:
     VulkanContextPtr mVulkanContext = nullptr;
     VulkanSwapChainPtr mSwapChain = nullptr;
+    VKDeviceExtensionPtr mDeviceExtension = nullptr;
     
     
     std::vector<VkCommandBuffer> mCommandBuffers;         //用于渲染的commandbuffer

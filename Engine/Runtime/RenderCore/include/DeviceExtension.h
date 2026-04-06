@@ -126,6 +126,12 @@ public:
     
     //获得最大的纹理单元个数
     virtual int getMaxTextureUnits() const = 0;
+    
+    /// 是否支持 Mesh Shader（Mesh + Fragment）
+    virtual bool isSupportsMeshShader() const = 0;
+    
+    /// 是否支持 Task Shader（Vulkan Task / Metal Object Shader）
+    virtual bool isSupportsTaskShader() const = 0;
 };
 
 typedef std::shared_ptr<DeviceExtension> DeviceExtensionPtr;

@@ -842,4 +842,42 @@ void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceNa
     }
 }
 
+void VKRenderEncoder::DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+    if (mContext->vulkanExtension.enableMeshShaderEXT)
+    {
+        //vkCmdDrawMeshTasksEXT(mCommandBuffer, groupCountX, groupCountY, groupCountZ);
+    }
+    else if (mContext->vulkanExtension.enableMeshShaderNV)
+    {
+        // NV 变体：扁平化为单一维度的 taskCount
+        uint32_t taskCount = groupCountX * groupCountY * groupCountZ;
+        vkCmdDrawMeshTasksNV(mCommandBuffer, taskCount, 0);
+    }
+}
+
+void VKRenderEncoder::DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset,
+                                            uint32_t drawCount, uint32_t stride)
+{
+    if (!buffer)
+    {
+        return;
+    }
+    
+    VKRCBufferPtr vkBuffer = std::dynamic_pointer_cast<VKRCBuffer>(buffer);
+    if (!vkBuffer || !vkBuffer->GetVkBuffer())
+    {
+        return;
+    }
+    
+    if (mContext->vulkanExtension.enableMeshShaderEXT)
+    {
+        //vkCmdDrawMeshTasksIndirectEXT(mCommandBuffer, vkBuffer->GetVkBuffer(), offset, drawCount, stride);
+    }
+    else if (mContext->vulkanExtension.enableMeshShaderNV)
+    {
+        vkCmdDrawMeshTasksIndirectNV(mCommandBuffer, vkBuffer->GetVkBuffer(), offset, drawCount, stride);
+    }
+}
+
 NAMESPACE_RENDERCORE_END

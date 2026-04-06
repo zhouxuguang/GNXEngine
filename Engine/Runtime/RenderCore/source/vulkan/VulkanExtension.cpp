@@ -26,6 +26,10 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
         enableFormatFeatureFlags2 && enableCopyCommands2/* && mPhysicalDeviceProperties.deviceID != 0x1C81*/;
     
     enableDeviceFault = ExtensionSupported(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
+    
+    // Mesh Shader 扩展检测，优先 EXT，回退到 NV
+    enableMeshShaderEXT = ExtensionSupported(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    enableMeshShaderNV = !enableMeshShaderEXT && ExtensionSupported(VK_NV_MESH_SHADER_EXTENSION_NAME);
 }
 
 void VulkanExtension::InitExtendedDynamicState(VkPhysicalDevice physicalDevice)

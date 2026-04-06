@@ -65,6 +65,9 @@ public:
 
     virtual void AttachGraphicsShader(GraphicsShaderPtr graphicsShader);
     
+    virtual void AttachTaskShader(ShaderFunctionPtr shaderFunction) override;
+    virtual void AttachMeshShader(ShaderFunctionPtr shaderFunction) override;
+    
     VkPipeline GetPipeline() const
     {
         return mPipeline;
@@ -154,6 +157,10 @@ private:
     bool mGenerated = false;
     
     std::vector<VKShaderFunctionPtr> mShaders;
+    
+    // Mesh shader 相关
+    VKShaderFunctionPtr mTaskShader = nullptr;
+    VKShaderFunctionPtr mMeshShader = nullptr;
     
     uint32_t mStageSetOffsets[ShaderStage_Max][DESCRIPTOR_TYPE_MAX];
     std::vector<VkDescriptorSet> mDescriptorSets;

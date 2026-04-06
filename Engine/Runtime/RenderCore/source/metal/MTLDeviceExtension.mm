@@ -174,6 +174,32 @@ bool MTLDeviceExtension::isSupportBinaryShader() const
     return true;
 }
 
+bool MTLDeviceExtension::isSupportsMeshShader() const
+{
+    // Metal mesh pipeline 需要 macOS 14.0+ 或 iOS 17.0+ (Apple3+ GPU family)
+    // MTLMeshRenderPipelineDescriptor 从 macOS 14.0 / iOS 17.0 开始可用
+#if defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000
+    if (@available(macOS 14.0, *))
+    {
+        return true;
+    }
+#endif
+#if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 170000
+    if (@available(iOS 17.0, *))
+    {
+        return true;
+    }
+#endif
+    return false;
+}
+
+bool MTLDeviceExtension::isSupportsTaskShader() const
+{
+    // Metal object function (Task Shader) 与 mesh shader 共享同一支持条件
+    // macOS 14.0+ / iOS 17.0+ 的 MTLMeshRenderPipelineDescriptor.objectFunction
+    return isSupportsMeshShader();
+}
+
 //获得最大的纹理单元个数
 int MTLDeviceExtension::getMaxTextureUnits() const
 {

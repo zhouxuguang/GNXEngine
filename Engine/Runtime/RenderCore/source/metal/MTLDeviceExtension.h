@@ -124,7 +124,15 @@ public:
     virtual bool isSupportAnisotropic() const;
     
     virtual bool isSupportBinaryShader() const;
-    
+
+    // ===== Mesh Shader 支持 =====
+
+    /// 是否支持 Mesh Shader（Mesh Pipeline，Metal 需要 macOS 14.0+ / iOS 17.0+）
+    virtual bool isSupportsMeshShader() const override;
+
+    /// 是否支持 Task Shader（Metal Object Shader，Metal 需要 macOS 14.0+ / iOS 17.0+）
+    virtual bool isSupportsTaskShader() const override;
+
     //获得最大的纹理单元个数
     virtual int getMaxTextureUnits() const;
 };

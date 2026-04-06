@@ -27,9 +27,19 @@ public:
     
     virtual void AttachGraphicsShader(GraphicsShaderPtr graphicsShader);
     
+    virtual void AttachTaskShader(ShaderFunctionPtr shaderFunction) override;
+    virtual void AttachMeshShader(ShaderFunctionPtr shaderFunction) override;
+    
     void Generate(const FrameBufferFormat& frameBufferFormat);
     
     id<MTLRenderPipelineState> getRenderPipelineState() const;
+    
+    /**
+     * @brief 获取 Mesh Pipeline State（仅 Mesh 模式有效）
+     */
+    id<MTLRenderPipelineState> getMeshPipelineState() const { return mMeshPipelineState; }
+    
+    bool IsMeshPipeline() const { return mDesc.pipelineType == PipelineType::Mesh; }
     
     id<MTLDepthStencilState> GetDepthStencilState() const
     {
@@ -53,6 +63,10 @@ private:
     id<MTLRenderPipelineState> mRenderPipelineState = nil;
     MTLRenderPipelineDescriptor* mRenderPipelineDes = nil;
     id<MTLDepthStencilState> mDepthStencilState = nil;
+    
+    // Mesh Pipeline 相关（与传统 Pipeline 互斥）
+    MTLMeshRenderPipelineDescriptor* mMeshPipelineDes = nil;
+    id<MTLRenderPipelineState> mMeshPipelineState = nil;
     
     uint32_t mVertexUniformOffset = 0;
     

@@ -260,8 +260,40 @@ static MTLRenderPipelineDescriptor* convertToMTLRenderPiplineDescriptor(const Gr
 MTLGraphicsPipeline::MTLGraphicsPipeline(id<MTLDevice> device, const GraphicsPipelineDesc& des) : GraphicsPipeline(des)
 {
     mDevice = device;
-    mRenderPipelineDes = convertToMTLRenderPiplineDescriptor(des);
     mDepthStencilState = convertToMTLDSDes(device, des.depthStencilDescriptor);
+    
+    if (des.pipelineType == PipelineType::Mesh)
+    {
+        // Mesh Pipeline 模式
+        mMeshPipelineDes = [MTLMeshRenderPipelineDescriptor new];
+        mMeshPipelineDes.objectFunction = nil;
+        mMeshPipelineDes.meshFunction = nil;
+        mMeshPipelineDes.fragmentFunction = nil;
+        
+        // 设置颜色附件
+        for (uint32_t i = 0; i < des.renderTargetCount; i ++)
+        {
+            mMeshPipelineDes.colorAttachments[i].blendingEnabled = des.colorAttachmentDescriptors[i].blendingEnabled;
+            mMeshPipelineDes.colorAttachments[i].sourceRGBBlendFactor = (MTLBlendFactor)des.colorAttachmentDescriptors[i].sourceRGBBlendFactor;
+            mMeshPipelineDes.colorAttachments[i].destinationRGBBlendFactor = (MTLBlendFactor)des.colorAttachmentDescriptors[i].destinationRGBBlendFactor;
+            mMeshPipelineDes.colorAttachments[i].rgbBlendOperation = (MTLBlendOperation)des.colorAttachmentDescriptors[i].rgbBlendOperation;
+            mMeshPipelineDes.colorAttachments[i].sourceAlphaBlendFactor = (MTLBlendFactor)des.colorAttachmentDescriptors[i].sourceAlphaBlendFactor;
+            mMeshPipelineDes.colorAttachments[i].destinationAlphaBlendFactor = (MTLBlendFactor)des.colorAttachmentDescriptors[i].destinationAplhaBlendFactor;
+            mMeshPipelineDes.colorAttachments[i].alphaBlendOperation = (MTLBlendOperation)des.colorAttachmentDescriptors[i].aplhaBlendOperation;
+            mMeshPipelineDes.colorAttachments[i].writeMask = (MTLColorWriteMask)des.colorAttachmentDescriptors[i].writeMask;
+        }
+        
+        // 设置 Metal mesh pipeline 特有属性
+        if (des.maxObjectPayloadMeshlets > 0)
+        {
+            mMeshPipelineDes.maxTotalThreadgroupsPerMeshGrid = des.maxObjectPayloadMeshlets;
+        }
+    }
+    else
+    {
+        // 传统 Graphics Pipeline 模式
+        mRenderPipelineDes = convertToMTLRenderPiplineDescriptor(des);
+    }
 }
 
 MTLGraphicsPipeline::~MTLGraphicsPipeline()
@@ -299,10 +331,41 @@ void MTLGraphicsPipeline::AttachGraphicsShader(GraphicsShaderPtr graphicsShader)
     }
     
     MTLGraphicsShaderPtr shaderPtr = std::dynamic_pointer_cast<MTLGraphicsShader>(graphicsShader);
-    mRenderPipelineDes.vertexFunction = shaderPtr->GetVertexFunction();
-    mRenderPipelineDes.fragmentFunction = shaderPtr->GetFragmentFunction();
-    
     mShader = shaderPtr;
+    
+    if (mDesc.pipelineType == PipelineType::Mesh)
+    {
+        // Mesh 模式只使用 fragment shader
+        mMeshPipelineDes.fragmentFunction = shaderPtr->GetFragmentFunction();
+    }
+    else
+    {
+        mRenderPipelineDes.vertexFunction = shaderPtr->GetVertexFunction();
+        mRenderPipelineDes.fragmentFunction = shaderPtr->GetFragmentFunction();
+    }
+}
+
+void MTLGraphicsPipeline::AttachTaskShader(ShaderFunctionPtr shaderFunction)
+{
+    if (!shaderFunction || !mMeshPipelineDes)
+    {
+        return;
+    }
+    
+    MTLShaderFunctionPtr shaderPtr = std::dynamic_pointer_cast<MTLShaderFunction>(shaderFunction);
+    // Metal: Task Shader 对应 Object Shader
+    mMeshPipelineDes.objectFunction = shaderPtr->GetShaderFunction();
+}
+
+void MTLGraphicsPipeline::AttachMeshShader(ShaderFunctionPtr shaderFunction)
+{
+    if (!shaderFunction || !mMeshPipelineDes)
+    {
+        return;
+    }
+    
+    MTLShaderFunctionPtr shaderPtr = std::dynamic_pointer_cast<MTLShaderFunction>(shaderFunction);
+    mMeshPipelineDes.meshFunction = shaderPtr->GetShaderFunction();
 }
 
 static void GetShaderReflectionInfo(MTLRenderPipelineReflection* reflectionObj)
@@ -378,78 +441,110 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
     {
         return;
     }
-    if (mRenderPipelineDes)
+    
+    if (mDesc.pipelineType == PipelineType::Mesh)
     {
-        NSError *error = nil;
-        
-        //这里再设置renderpass传递过来的frame buffer的格式
-        int index = 0;
-        for (const auto &iter : frameBufferFormat.colorFormats)
+        // ============ Mesh Pipeline 分支 ============
+        if (mMeshPipelineDes)
         {
-            mRenderPipelineDes.colorAttachments[index++].pixelFormat = iter;
-        }
-        mRenderPipelineDes.depthAttachmentPixelFormat = frameBufferFormat.depthFormat;
-        mRenderPipelineDes.stencilAttachmentPixelFormat = frameBufferFormat.stencilFormat;
-        
-        //创建带反射信息的PSO
-        MTLRenderPipelineReflection* reflectionObj = nil;
-        MTLPipelineOption option = MTLPipelineOptionBufferTypeInfo | MTLPipelineOptionArgumentInfo;
-        mRenderPipelineState = [mDevice newRenderPipelineStateWithDescriptor:mRenderPipelineDes options:option reflection:&reflectionObj error:&error];
-        
-        GetShaderReflectionInfo(reflectionObj);
-        
-        if (mShader)
-        {
-            mShader->GenerateRefectionInfo(reflectionObj);
-        }
-        
-        //
-        uint32_t maxVertexIndex = 0;
-        int vertexCount = 0;
-        for (MTLArgument *arg in reflectionObj.vertexArguments)
-        {
-            NSLog(@"Found arg: %@\n", arg.name);
-            
-            MTLArgumentType argType = arg.type;
-            int index = arg.index;
-            MTLArgumentAccess access = arg.access;
-            int bufferAlignment = arg.bufferAlignment;
-            MTLDataType dataType = arg.bufferDataType;
-            int dataSize = arg.bufferDataSize;
-            BOOL isActive = arg.isActive;
-            
-            MTLPointerType * pointerType = arg.bufferPointerType;
-            
-//            MTLArgumentType type = arg.type;
-//            MTLArgumentAccess access = arg.access;
-            
-            if (arg.bufferStructType.members.count == 0)
+            // 设置 framebuffer 格式
+            int index = 0;
+            for (const auto &iter : frameBufferFormat.colorFormats)
             {
-                vertexCount ++;
-                if (maxVertexIndex < index)
+                mMeshPipelineDes.colorAttachments[index++].pixelFormat = iter;
+            }
+            mMeshPipelineDes.depthAttachmentPixelFormat = frameBufferFormat.depthFormat;
+            mMeshPipelineDes.stencilAttachmentPixelFormat = frameBufferFormat.stencilFormat;
+            
+            NSError *error = nil;
+            MTLAutoreleasedRenderPipelineReflection* reflectionObj = nil;
+            MTLPipelineOption option = MTLPipelineOptionBufferTypeInfo | MTLPipelineOptionArgumentInfo;
+            mMeshPipelineState = [mDevice newRenderPipelineStateWithMeshDescriptor:mMeshPipelineDes options:option
+                                                                        reflection:reflectionObj error:&error];
+            
+            if (!mMeshPipelineState)
+            {
+                NSLog(@"创建 Metal Mesh Pipeline 失败: %@", error);
+            }
+        }
+    }
+    else
+    {
+        // ============ 传统 Graphics Pipeline 分支 ============
+        if (mRenderPipelineDes)
+        {
+            NSError *error = nil;
+            
+            //这里再设置renderpass传递过来的frame buffer的格式
+            int index = 0;
+            for (const auto &iter : frameBufferFormat.colorFormats)
+            {
+                mRenderPipelineDes.colorAttachments[index++].pixelFormat = iter;
+            }
+            mRenderPipelineDes.depthAttachmentPixelFormat = frameBufferFormat.depthFormat;
+            mRenderPipelineDes.stencilAttachmentPixelFormat = frameBufferFormat.stencilFormat;
+            
+            //创建带反射信息的PSO
+            MTLRenderPipelineReflection* reflectionObj = nil;
+            MTLPipelineOption option = MTLPipelineOptionBufferTypeInfo | MTLPipelineOptionArgumentInfo;
+            mRenderPipelineState = [mDevice newRenderPipelineStateWithDescriptor:mRenderPipelineDes options:option reflection:&reflectionObj error:&error];
+            
+            GetShaderReflectionInfo(reflectionObj);
+            
+            if (mShader)
+            {
+                mShader->GenerateRefectionInfo(reflectionObj);
+            }
+            
+            //
+            uint32_t maxVertexIndex = 0;
+            int vertexCount = 0;
+            for (MTLArgument *arg in reflectionObj.vertexArguments)
+            {
+                NSLog(@"Found arg: %@\n", arg.name);
+                
+                MTLArgumentType argType = arg.type;
+                int index = arg.index;
+                MTLArgumentAccess access = arg.access;
+                int bufferAlignment = arg.bufferAlignment;
+                MTLDataType dataType = arg.bufferDataType;
+                int dataSize = arg.bufferDataSize;
+                BOOL isActive = arg.isActive;
+                
+                MTLPointerType * pointerType = arg.bufferPointerType;
+                
+//                MTLArgumentType type = arg.type;
+//                MTLArgumentAccess access = arg.access;
+                
+                if (arg.bufferStructType.members.count == 0)
                 {
-                    maxVertexIndex = index;
+                    vertexCount ++;
+                    if (maxVertexIndex < index)
+                    {
+                        maxVertexIndex = index;
+                    }
+                }
+
+                for (MTLStructMember* uniform in arg.bufferStructType.members)
+                {
+                    NSLog(@"uniform: %@ type:%lu, location: %lu", uniform.name, (unsigned long)uniform.dataType, (unsigned long)uniform.offset);
                 }
             }
-
-            for (MTLStructMember* uniform in arg.bufferStructType.members)
+            
+            mVertexUniformOffset = maxVertexIndex;
+            if (vertexCount > 0)
             {
-                NSLog(@"uniform: %@ type:%lu, location: %lu", uniform.name, (unsigned long)uniform.dataType, (unsigned long)uniform.offset);
+                mVertexUniformOffset += 1;
+            }
+            
+            if (!mRenderPipelineState)
+            {
+                NSLog(@"创建metal渲染管线失败: %@", error);
             }
         }
-        
-        mVertexUniformOffset = maxVertexIndex;
-        if (vertexCount > 0)
-        {
-            mVertexUniformOffset += 1;
-        }
-        
-        if (!mRenderPipelineState)
-        {
-            NSLog(@"创建metal渲染管线失败: %@", error);
-        }
-        mGenerated = true;
     }
+    
+    mGenerated = true;
 }
 
 id<MTLRenderPipelineState> MTLGraphicsPipeline::getRenderPipelineState() const

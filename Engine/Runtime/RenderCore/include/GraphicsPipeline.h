@@ -25,6 +25,29 @@ public:
     virtual void AttachFragmentShader(ShaderFunctionPtr shaderFunction) = 0;
 
     virtual void AttachGraphicsShader(GraphicsShaderPtr graphicsShader) = 0;
+    
+    // ===== Mesh Shader 接口（传统模式下调用为 no-op）=====
+    
+    /**
+     * 绑定 Task Shader（可选，仅 Mesh Pipeline 使用）
+     * Vulkan: Task Shader / Metal: Object Shader
+     */
+    virtual void AttachTaskShader(ShaderFunctionPtr shaderFunction) = 0;
+    
+    /**
+     * 绑定 Mesh Shader（仅 Mesh Pipeline 使用）
+     */
+    virtual void AttachMeshShader(ShaderFunctionPtr shaderFunction) = 0;
+    
+    /**
+     * 查询 pipeline 类型
+     */
+    PipelineType GetPipelineType() const { return mDesc.pipelineType; }
+    
+    const GraphicsPipelineDesc& GetDesc() const { return mDesc; }
+
+protected:
+    GraphicsPipelineDesc mDesc;
 };
 
 typedef std::shared_ptr<GraphicsPipeline> GraphicsPipelinePtr;

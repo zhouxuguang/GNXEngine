@@ -88,6 +88,9 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
         return;
     }
     
+    // 初始化设备扩展（需要在 CreateVirtualDevice 之后，因为扩展需要 device 信息）
+    mDeviceExtension = std::make_shared<VKDeviceExtension>(mVulkanContext);
+    
     CreateVMA(*mVulkanContext);
     
     // 创建垃圾收集器

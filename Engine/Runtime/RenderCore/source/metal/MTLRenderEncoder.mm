@@ -45,9 +45,23 @@ void MTLRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     mtlGraphicsPipeline->Generate(mFrameBufferFormat);
     mMtlGraphicsPipeline = mtlGraphicsPipeline;
     
-    id<MTLRenderPipelineState> mtlPipeline = mtlGraphicsPipeline->getRenderPipelineState();
-    [mRenderEncoder setRenderPipelineState:mtlPipeline];
+    if (mtlGraphicsPipeline->IsMeshPipeline())
+    {
+        // Mesh Pipeline 模式
+        id<MTLRenderPipelineState> meshState = mtlGraphicsPipeline->getMeshPipelineState();
+        if (meshState)
+        {
+            [mRenderEncoder setRenderPipelineState:meshState];
+        }
+    }
+    else
+    {
+        // 传统 Graphics Pipeline 模式
+        id<MTLRenderPipelineState> mtlPipeline = mtlGraphicsPipeline->getRenderPipelineState();
+        [mRenderEncoder setRenderPipelineState:mtlPipeline];
+    }
     
+    // depth stencil state 两种模式共用
     id<MTLDepthStencilState> mtlDepthStencil = mtlGraphicsPipeline->GetDepthStencilState();
     [mRenderEncoder setDepthStencilState:mtlDepthStencil];
 }
@@ -444,6 +458,81 @@ void MTLRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBuffe
     }
     
     // 还未实现
+}
+
+// ===== Mesh Shader 绘制实现 =====
+
+void MTLRenderEncoder::DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+{
+    if (!mMtlGraphicsPipeline || !mMtlGraphicsPipeline->IsMeshPipeline())
+    {
+        return;
+    }
+    
+    MTLSize threadgroupsPerGrid = MTLSizeMake(groupCountX, groupCountY, groupCountZ);
+    
+    // threadsPerObjectThreadgroup 从 pipeline descriptor 中获取
+    // Metal mesh shader 的线程组大小由 pipeline 创建时确定
+    MTLGraphicsPipeline* pipeline = mMtlGraphicsPipeline.get();
+    uint32_t threadsX = pipeline->GetDesc().meshThreadgroupSizeX;
+    uint32_t threadsY = pipeline->GetDesc().meshThreadgroupSizeY;
+    uint32_t threadsZ = pipeline->GetDesc().meshThreadgroupSizeZ;
+    MTLSize threadsPerObjectThreadgroup = MTLSizeMake(
+        threadsX > 0 ? threadsX : 1,
+        threadsY > 0 ? threadsY : 1,
+        threadsZ > 0 ? threadsZ : 1
+    );
+    
+//    [mRenderEncoder drawMeshThreadgroups:threadgroupsPerGrid
+//             threadsPerObjectThreadgroup:threadsPerObjectThreadgroup];
+}
+
+void MTLRenderEncoder::DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset,
+                                              uint32_t drawCount, uint32_t stride)
+{
+    if (!buffer || !mMtlGraphicsPipeline || !mMtlGraphicsPipeline->IsMeshPipeline())
+    {
+        return;
+    }
+    
+    MTLRCBufferPtr mtlBufferPtr = std::dynamic_pointer_cast<MTLRCBuffer>(buffer);
+    if (!mtlBufferPtr)
+    {
+        return;
+    }
+    
+    id<MTLBuffer> mtlBuffer = mtlBufferPtr->GetMTLBuffer();
+    if (!mtlBuffer)
+    {
+        return;
+    }
+    
+    MTLGraphicsPipeline* pipeline = mMtlGraphicsPipeline.get();
+    uint32_t threadsX = pipeline->GetDesc().meshThreadgroupSizeX;
+    uint32_t threadsY = pipeline->GetDesc().meshThreadgroupSizeY;
+    uint32_t threadsZ = pipeline->GetDesc().meshThreadgroupSizeZ;
+    MTLSize threadsPerObjectThreadgroup = MTLSizeMake(
+        threadsX > 0 ? threadsX : 1,
+        threadsY > 0 ? threadsY : 1,
+        threadsZ > 0 ? threadsZ : 1
+    );
+    
+    // 注意：Metal 的 MTLDrawMeshThreadgroupsIndirectArguments 结构体与 Vulkan 的 DrawMeshTasksIndirectCommand 不同
+    // Metal 结构体: { uint32_t threadgroupsPerGrid[3]; }
+    // Vulkan 结构体: { uint32_t groupCountX; uint32_t groupCountY; uint32_t groupCountZ; }
+    // 实际上两者的内存布局完全一致，都是 3 个连续的 uint32_t
+    
+    uint32_t currentOffset = offset;
+    for (uint32_t i = 0; i < drawCount; i++)
+    {
+        if (@available(macOS 14.0, iOS 17.0, *))
+        {
+//            [mRenderEncoder drawMeshThreadgroupsWithIndirectBuffer:mtlBuffer
+//                                               indirectBufferOffset:currentOffset
+//                                        threadsPerObjectThreadgroup:threadsPerObjectThreadgroup];
+        }
+        currentOffset += stride;
+    }
 }
 
 void MTLRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)

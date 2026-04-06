@@ -53,13 +53,22 @@ typedef enum RenderDeviceType
     VULKAN,
 } RenderDeviceType;
 
+// 管线类型
+enum class PipelineType : uint8_t
+{
+    Graphics = 0,    // 传统 VS + FS（现有逻辑不变）
+    Mesh = 1,        // Task(可选) + Mesh + FS
+};
+
 //shader阶段的枚举
 enum ShaderStage
 {
     ShaderStage_Vertex = 0,
     ShaderStage_Fragment = 1,
     ShaderStage_Compute = 2,
-    ShaderStage_Max = 3,
+    ShaderStage_Task = 3,       // Vulkan Task Shader / Metal Object Shader
+    ShaderStage_Mesh = 4,       // Mesh Shader
+    ShaderStage_Max = 5,
 };
 
 //清除缓冲区的模式

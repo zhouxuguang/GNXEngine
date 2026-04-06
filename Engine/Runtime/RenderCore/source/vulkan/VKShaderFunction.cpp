@@ -225,6 +225,14 @@ std::shared_ptr<VKShaderFunction> VKShaderFunction::initWithShaderSourceInner(co
             mVKShaderStage = VK_SHADER_STAGE_COMPUTE_BIT;
             break;
             
+        case ShaderStage_Task:
+            mVKShaderStage = VK_SHADER_STAGE_TASK_BIT_EXT;
+            break;
+            
+        case ShaderStage_Mesh:
+            mVKShaderStage = VK_SHADER_STAGE_MESH_BIT_EXT;
+            break;
+            
         default:
             break;
     }
