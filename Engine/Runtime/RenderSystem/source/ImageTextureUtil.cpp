@@ -6,7 +6,6 @@
 //
 
 #include "ImageTextureUtil.h"
-#include "UtilsCubemap.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -223,39 +222,6 @@ int getNumMipMapLevels2D(int w, int h)
     while ((w | h) >> levels)
         levels += 1;
     return levels;
-}
-
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-
-RCTextureCubePtr LoadEquirectangularMap(const std::string& fileName)
-{
-    int w, h, comp;
-    float* img = stbi_loadf(fileName.c_str(), &w, &h, &comp, 4);
-    assert(img);
-    Bitmap in(w, h, 4, eBitmapFormat_Float, img);
-    const bool isEquirectangular = w == 2 * h;
-    Bitmap out = isEquirectangular ? convertEquirectangularMapToVerticalCross(in) : in;
-    stbi_image_free(img);
-    Bitmap cubemap = convertVerticalCrossToCubeMapFaces(out);
-    
-    RCTextureCubePtr cubeMapPtr = GetRenderDevice()->CreateTextureCube(kTexFormatRGBA32Float,
-                                                TextureUsage::TextureUsageShaderRead, cubemap.w_, cubemap.h_, 1);
-    
-    const uint8_t* data = cubemap.data_.data();
-
-    for (int i = 0; i != 6; ++i)
-    {
-        int imageSize = cubemap.w_ * cubemap.h_ * cubemap.comp_ * Bitmap::getBytesPerComponent(cubemap.fmt_);
-        
-        int face = (int)kCubeFacePX + i;
-        Rect2D rect(0, 0, cubemap.w_, cubemap.h_);
-        cubeMapPtr->ReplaceRegion(rect, 0, face, data,
-                                  cubemap.w_ * cubemap.comp_ * Bitmap::getBytesPerComponent(cubemap.fmt_), 0);
-        data += cubemap.w_ * cubemap.h_ * cubemap.comp_ * Bitmap::getBytesPerComponent(cubemap.fmt_);
-    }
-    
-    return cubeMapPtr;
 }
 
 NS_RENDERSYSTEM_END

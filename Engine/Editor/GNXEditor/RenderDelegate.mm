@@ -18,7 +18,6 @@
 #include "TestTransform.hpp"
 #include "Runtime/RenderSystem/include/SceneManager.h"
 #include "Runtime/RenderSystem/include/SceneNode.h"
-#include "Runtime/RenderSystem/include/ArcballManipulate.h"
 #include "Runtime/MathUtil/include/Vector3.h"
 #include "Runtime/RenderSystem/include/SkyBoxNode.h"
 #include "Runtime/ImageCodec/include/ImageDecoder.h"

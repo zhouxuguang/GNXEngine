@@ -36,8 +36,6 @@ public:
     static RCTexture2DPtr CreateAOTexture();
 };
 
-RCTextureCubePtr LoadEquirectangularMap(const std::string& fileName);
-
 NS_RENDERSYSTEM_END
 
 #endif /* GNX_ENGINE_IMAGE_TEXTURE_UTIL_INCLUDE_JKFNNN */

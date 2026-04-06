@@ -130,10 +130,6 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
         desArray.push_back(textureDescriptor);
     }
     
-    std::string pathSplit = std::string(1, PATHSPLIT);
-    mTextureCube = LoadEquirectangularMap(getMediaDir() + "IBL" + pathSplit + "piazza_bologni_1k.hdr");
-    mTextureCube->SetName("CubeMap");
-    
     SamplerDesc samplerDescriptor;
     mTextureSampler = renderDevice->CreateSamplerWithDescriptor(samplerDescriptor);
     
@@ -143,17 +139,6 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     
     ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
     ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
-    
-    //        FILE* fp1 = fopen("/Users/zhouxuguang/work/skybok.vert", "wb");
-    //        fwrite(vertexShader, 1, strlen(vertexShader), fp1);
-    //        fclose(fp1);
-    //
-    //        FILE* fp2 = fopen("/Users/zhouxuguang/work/skybok.frag", "wb");
-    //        fwrite(fragmentShader, 1, strlen(fragmentShader), fp2);
-    //        fclose(fp2);
-    
-    /*ShaderFunctionPtr vertShader = renderDevice->createShaderFunction(*vertexShader, ShaderStage_Vertex);
-    ShaderFunctionPtr fragShader = renderDevice->createShaderFunction(*fragmentShader, ShaderStage_Fragment);*/
 
     GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
 
@@ -164,8 +149,6 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     
     mPipeline = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);
     mPipeline->AttachGraphicsShader(shader);
-    /*mPipeline->attachVertexShader(vertShader);
-    mPipeline->attachFragmentShader(fragShader);*/
     
     mRenderDevice = renderDevice;
     

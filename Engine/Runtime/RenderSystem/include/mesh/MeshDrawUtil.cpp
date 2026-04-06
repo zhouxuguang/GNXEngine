@@ -39,35 +39,13 @@ static TextureSamplerPtr GetOrCreateSampler(const SamplerDesc& desc)
 
 
 void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
-{
-    std::string pathSplit = std::string(1, PATHSPLIT);
-    if (!envMap)
-    {
-        envMap = LoadEquirectangularMap(getMediaDir() + "IBL" + pathSplit + "piazza_bologni_1k.hdr");
-    }
-    
-    if (!envMapIrradiance)
-    {
-        envMapIrradiance = LoadEquirectangularMap(getMediaDir() + "IBL" + pathSplit + "piazza_bologni_1k_irradiance.hdr");
-    }
-    
+{    
     if (!cubeSampler)
     {
         SamplerDesc sampleDes;
         sampleDes.filterMip = MIN_LINEAR_MIPMAP_LINEAR;
         sampleDes.maxLod = 8;
         cubeSampler = GetRenderDevice()->CreateSamplerWithDescriptor(sampleDes);
-    }
-    
-    if (!brdfMap) 
-    {
-        VImage image;
-        imagecodec::ImageDecoder::DecodeFile((getMediaDir() + "IBL" + pathSplit + "brdfLUT.ktx").c_str(), &image);
-        TextureDesc des = ImageTextureUtil::getTextureDescriptor(image);
-        brdfMap = GetRenderDevice()->CreateTexture2D(des.format, TextureUsage::TextureUsageShaderRead,
-                                                     image.GetWidth(), image.GetHeight(), 1);
-        Rect2D rect = Rect2D(0, 0, image.GetWidth(), image.GetHeight());
-        brdfMap->ReplaceRegion(rect, 0, image.GetImageData(), image.GetBytesPerRow());
     }
     
     RenderEncoderPtr renderEncoder = renderInfo.renderEncoder;
@@ -118,34 +96,12 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
 
 void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& renderInfo, bool isCPUSkin)
 {
-    std::string pathSplit = std::string(1, PATHSPLIT);
-    if (!envMap)
-    {
-        envMap = LoadEquirectangularMap(getMediaDir() + "IBL" + pathSplit + "piazza_bologni_1k.hdr");
-    }
-    
-    if (!envMapIrradiance)
-    {
-        envMapIrradiance = LoadEquirectangularMap(getMediaDir() + "IBL" + pathSplit + "piazza_bologni_1k_irradiance.hdr");
-    }
-    
     if (!cubeSampler)
     {
         SamplerDesc sampleDes;
         sampleDes.filterMip = MIN_LINEAR_MIPMAP_LINEAR;
         sampleDes.maxLod = 8;
         cubeSampler = GetRenderDevice()->CreateSamplerWithDescriptor(sampleDes);
-    }
-    
-    if (!brdfMap) 
-    {
-        VImage image;
-        imagecodec::ImageDecoder::DecodeFile((getMediaDir() + "IBL" + pathSplit + "brdfLUT.ktx").c_str(), &image);
-        TextureDesc des = ImageTextureUtil::getTextureDescriptor(image);
-        brdfMap = GetRenderDevice()->CreateTexture2D(des.format, TextureUsage::TextureUsageShaderRead,
-                                                     image.GetWidth(), image.GetHeight(), 1);
-        Rect2D rect = Rect2D(0, 0, image.GetWidth(), image.GetHeight());
-        brdfMap->ReplaceRegion(rect, 0, image.GetImageData(), image.GetBytesPerRow());
     }
     
     RenderEncoderPtr renderEncoder = renderInfo.renderEncoder;
