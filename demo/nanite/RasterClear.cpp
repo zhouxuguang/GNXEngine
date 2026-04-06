@@ -23,9 +23,9 @@ void ExecuteRasterClearPass(RenderCore::CommandBufferPtr commandBuffer,
     RenderCore::ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
     computeEncoder->SetComputePipeline(sPSO);
     computeEncoder->SetOutTexture(visBuffer64, 0);
-    computeEncoder->SetStorageBuffer(queueState, 1);
-    computeEncoder->SetStorageBuffer(workArgs0, 2);
-    computeEncoder->SetStorageBuffer(workArgs1, 3);
+    computeEncoder->SetStorageBuffer("QueueState", queueState);
+    computeEncoder->SetStorageBuffer("WorkArg0", workArgs0);
+    computeEncoder->SetStorageBuffer("WorkArg1", workArgs1);
     
     uint32_t x, y ,z;
     sPSO->GetThreadGroupSizes(x, y, z);

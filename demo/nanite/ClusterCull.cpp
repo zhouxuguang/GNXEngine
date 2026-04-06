@@ -31,10 +31,10 @@ void ExecuteClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
     
     ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
     computeEncoder->SetComputePipeline(sPSO);
-    computeEncoder->SetStorageBuffer(mainAndPostNodeAndClusterBatches, 0);
-    computeEncoder->SetStorageBuffer(clusterPageData, 1);
-    computeEncoder->SetStorageBuffer(workArgs, 2);
-    computeEncoder->SetStorageBuffer(outVisibleClustersSWHW, 3);
+    computeEncoder->SetStorageBuffer("MainAndPostNodeAndClusterBatches", mainAndPostNodeAndClusterBatches);
+    computeEncoder->SetStorageBuffer("ClusterPageData", clusterPageData);
+    computeEncoder->SetStorageBuffer("WorkArg", workArgs);
+    computeEncoder->SetStorageBuffer("OutVisibleClustersSWHW", outVisibleClustersSWHW);
 
     computeEncoder->SetUniformBuffer("GlobalData", globalBuffer);
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();

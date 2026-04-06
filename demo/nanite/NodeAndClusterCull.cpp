@@ -48,11 +48,11 @@ void ExecuteNodeAndClusterCullPass(RenderCore::CommandBufferPtr commandBuffer,
     
     ComputeEncoderPtr computeEncoder = commandBuffer->CreateComputeEncoder();
     computeEncoder->SetComputePipeline(sPSO);
-    computeEncoder->SetStorageBuffer(hierarchyBuffer, 0);
-    computeEncoder->SetStorageBuffer(inWorkArgs, 1);
-    computeEncoder->SetStorageBuffer(outResult, 2);
-    computeEncoder->SetStorageBuffer(queueState, 3);
-    computeEncoder->SetStorageBuffer(mainAndPostNodeAndClusterBatches, 4);
+    computeEncoder->SetStorageBuffer("HierarchyBuffer", hierarchyBuffer);
+    computeEncoder->SetStorageBuffer("CurrentIndirectArgs", inWorkArgs);
+    computeEncoder->SetStorageBuffer("OutResult", outResult);
+    computeEncoder->SetStorageBuffer("QueueState", queueState);
+    computeEncoder->SetStorageBuffer("OutMainAndPostNodeAndClusterBatches", mainAndPostNodeAndClusterBatches);
     computeEncoder->SetUniformBuffer("GlobalData", globalBuffer);
     
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
