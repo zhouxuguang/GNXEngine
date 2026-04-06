@@ -162,6 +162,11 @@ private:
     
     UniformBufferPtr mCameraUBO = nullptr;
     UniformBufferPtr mLightUBO = nullptr;
+
+    // 缓存上一帧的 VP 矩阵，用于 Motion Vector 生成
+    mathutil::Matrix4x4f mPreviousFrameVP;
+    mathutil::Matrix4x4f mPreviousFrameInvVP;
+    bool mHasPreviousFrameVP = false;
     
     RenderPath mRenderPath = RenderPath::Deferred;  // 默认使用延迟渲染
     SceneRendererUniPtr mSceneRenderer = nullptr;

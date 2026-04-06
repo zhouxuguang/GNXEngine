@@ -15,6 +15,8 @@ struct cbPerCamera
     mathutil::Matrix4x4f MATRIX_INV_V;       //视图矩阵的逆矩阵
     mathutil::Matrix4x4f MATRIX_VP;          //视图投影矩阵
     mathutil::Matrix4x4f MATRIX_INV_VP;
+    mathutil::Matrix4x4f MATRIX_PrevVP;      //上一帧的视图投影矩阵（用于Motion Vector）
+    mathutil::Matrix4x4f MATRIX_PrevInvVP;   //上一帧的逆视图投影矩阵（用于重投影）
 
     // 相机世界坐标位置
     mathutil::simd_float3 WorldSpaceCameraPos;

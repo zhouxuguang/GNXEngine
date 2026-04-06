@@ -23,6 +23,8 @@ cbuffer cbPerCamera
     float4x4 MATRIX_INV_V;       //视图矩阵的逆矩阵
     float4x4 MATRIX_VP;          //视图投影矩阵
     float4x4 MATRIX_INV_VP;
+    float4x4 MATRIX_PrevVP;      //上一帧的视图投影矩阵（用于Motion Vector）
+    float4x4 MATRIX_PrevInvVP;   //上一帧的逆视图投影矩阵（用于重投影）
 
     // 相机世界坐标位置
     float3 _WorldSpaceCameraPos;

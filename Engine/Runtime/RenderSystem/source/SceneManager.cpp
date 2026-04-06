@@ -414,6 +414,18 @@ void SceneManager::UpdateCameraInfo(CameraPtr cameraPtr)
     perCamera.MATRIX_VP = perCamera.MATRIX_P * perCamera.MATRIX_V;
     perCamera.MATRIX_INV_VP = perCamera.MATRIX_VP.Inverse();
     
+    // 写入上一帧的 VP 矩阵（第一帧为零矩阵，Motion Vector 输出为零）
+    if (mHasPreviousFrameVP)
+    {
+        perCamera.MATRIX_PrevVP = mPreviousFrameVP;
+        perCamera.MATRIX_PrevInvVP = mPreviousFrameInvVP;
+    }
+    else
+    {
+        perCamera.MATRIX_PrevVP = mathutil::Matrix4x4f::ZERO;
+        perCamera.MATRIX_PrevInvVP = mathutil::Matrix4x4f::ZERO;
+    }
+    
     perCamera.WorldSpaceCameraPos = mathutil::make_simd_float3(cameraPtr->GetPosition());
     
     Vector2i viewSize = cameraPtr->GetViewSize();
@@ -443,6 +455,11 @@ void SceneManager::UpdateCameraInfo(CameraPtr cameraPtr)
     }
     
     mCameraUBO->SetData(&perCamera, 0, sizeof(perCamera));
+    
+    // 缓存当前帧的 VP 矩阵供下一帧使用（Motion Vector）
+    mPreviousFrameVP = perCamera.MATRIX_VP;
+    mPreviousFrameInvVP = perCamera.MATRIX_INV_VP;
+    mHasPreviousFrameVP = true;
 }
 
 void SceneManager::UpdateLightInfo()

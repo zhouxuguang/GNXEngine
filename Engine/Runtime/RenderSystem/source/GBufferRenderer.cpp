@@ -116,12 +116,12 @@ GBufferData GBufferRenderer::AddToFrameGraph(
             data.gbuffer.gBufferC = builder.Create<FrameGraphTexture>(gBufferCDesc.name, gBufferCDesc);
             builder.Write(data.gbuffer.gBufferC, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 
-            // 创建 GBufferD
+            // 创建 GBufferD (Motion Vector，需要浮点精度)
             FrameGraphTexture::Desc gBufferDDesc;
             gBufferDDesc.SetName("GBufferD");
             gBufferDDesc.extent = RenderCore::Rect2D{0, 0, (int)mWidth, (int)mHeight};
             gBufferDDesc.depth = 1;
-            gBufferDDesc.format = RenderCore::kTexFormatRGBA8;
+            gBufferDDesc.format = RenderCore::kTexFormatRGBA16Float;
             data.gbuffer.gBufferD = builder.Create<FrameGraphTexture>(gBufferDDesc.name, gBufferDDesc);
             builder.Write(data.gbuffer.gBufferD, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
 

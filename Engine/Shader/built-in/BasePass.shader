@@ -25,10 +25,11 @@ struct VertexInput
 
 struct VertexOutput
 {
-    float4 position : SV_POSITION;
-    float3 normal : NORMAL;
-    float4 tangent : TANGENT;
-    float2 texCoord : TEXCOORD0;
+    float4 position    : SV_POSITION;
+    float3 normal      : NORMAL;
+    float4 tangent     : TANGENT;
+    float2 texCoord    : TEXCOORD0;
+    float4 prevClipPos : TEXCOORD1;  // 上一帧的裁剪坐标（用于Motion Vector）
 };
 
 VertexOutput VS(VertexInput input)
@@ -36,10 +37,14 @@ VertexOutput VS(VertexInput input)
     VertexOutput output;
     
     // 将顶点位置从模型空间变换到裁剪空间
-    // lightSpaceMatrix * model * position
     float4 worldPos = mul(float4(input.position.xyz, 1.0), MATRIX_M);
     output.position = mul(worldPos, MATRIX_V);
     output.position = mul(output.position, MATRIX_P);
+
+    // 计算上一帧的裁剪坐标（用于 Motion Vector）
+    // 当前假设物体是静态的（PrevM = M），动态物体需要传入 MATRIX_PrevM
+    float4 prevWorldPos = worldPos;
+    output.prevClipPos = mul(prevWorldPos, MATRIX_PrevVP);
 
     float3 normal = mul(float4(input.normal.xyz, 0.0f), MATRIX_Normal).xyz;
     output.normal = normal;
@@ -53,12 +58,13 @@ VertexOutput VS(VertexInput input)
     return output;
 }
 
-struct FragmentOutput 
+struct FragmentOutput
 {
     float4 outRT0 : SV_TARGET0;   //scene color
     float4 outRT1 : SV_TARGET1;   //Normal + 0.33333f
     float4 outRT2 : SV_TARGET2;   //Metallic + Specular + Roughness + [4 bit 0b1010 | 4 bit ShadingModel]
     float4 outRT3 : SV_TARGET3;   //BaseColor + GenericAO
+    float4 outRT4 : SV_TARGET4;   //Motion Vector (NDC空间偏移，RG通道)
 };
 
 FragmentOutput PS(VertexOutput input)
@@ -90,6 +96,18 @@ FragmentOutput PS(VertexOutput input)
 
     // RT3: BaseColor + AO
     output.outRT3 = float4(baseColor.rgb, ao);
+
+    // RT4: Motion Vector（NDC 空间偏移）
+    // 当前帧NDC减去上一帧NDC，存储为屏幕空间速度
+    float2 motionVector = float2(0.0, 0.0);
+    // 如果上一帧VP不是零矩阵（非第一帧），计算运动矢量
+    if (input.prevClipPos.w != 0.0)
+    {
+        float2 curNDC = input.position.xy / input.position.w;
+        float2 prevNDC = input.prevClipPos.xy / input.prevClipPos.w;
+        motionVector = curNDC - prevNDC;
+    }
+    output.outRT4 = float4(motionVector, 0.0, 0.0);
 
     return output;
 }
