@@ -371,10 +371,9 @@ void VKRenderEncoder::EndEncode()
     {
         return;  // 已经结束，避免重复调用
     }
-    
+
     mIsEncoding = false;
-    
-    // 注意：不再调用 vkCmdEndDebugUtilsLabelEXT，因为 debug label 由外部管理
+
     if (mContext->vulkanExtension.enabledDynamicRendering)
     {
         EndDynamicRenderPass();
@@ -382,6 +381,12 @@ void VKRenderEncoder::EndEncode()
     else
     {
         EndRenderPass();
+    }
+
+    // 结束构造函数中开始的 "RenderPass" debug marker
+    if (mContext->vulkanExtension.enableDebugUtils)
+    {
+        vkCmdEndDebugUtilsLabelEXT(mCommandBuffer);
     }
 }
 
