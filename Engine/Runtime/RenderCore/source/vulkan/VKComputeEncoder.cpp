@@ -95,6 +95,23 @@ void VKComputeEncoder::SetStorageBuffer(RCBufferPtr buffer, uint32_t index)
     vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, mVKPipeline->GetPipelineLayout(), bufSetOffset, 1, &writeDescriptorSet);
 }
 
+void VKComputeEncoder::SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer)
+{
+    if (!mVKPipeline || !buffer)
+    {
+        return;
+    }
+    
+    uint32_t bindIndex = mVKPipeline->GetResourceBindIndex(resourceName);
+    if (-1 == bindIndex)
+    {
+        assert(false);
+        return;
+    }
+    
+    SetStorageBuffer(buffer, bindIndex);
+}
+
 void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t index)
 {
     if (!texture)

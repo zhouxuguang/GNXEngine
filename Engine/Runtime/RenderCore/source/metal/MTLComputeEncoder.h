@@ -38,6 +38,8 @@ public:
     // RCBuffer接口
     virtual void SetStorageBuffer(RCBufferPtr buffer, uint32_t index);
     
+    virtual void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer);
+    
     // SetTexture - 通过索引
     virtual void SetTexture(RCTexturePtr texture, uint32_t index);
     

@@ -101,6 +101,29 @@ void MTLComputeEncoder::SetStorageBuffer(RCBufferPtr buffer, uint32_t index)
     }
 }
 
+void MTLComputeEncoder::SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer)
+{
+    @autoreleasepool
+    {
+        if (!mMtlComputePipeline)
+        {
+            assert(false);
+            return;
+        }
+        
+        NSUInteger realIndex = mMtlComputePipeline->GetResourceIndex(resourceName);
+        if (realIndex == InvalidBindingIndex)
+        {
+            assert(false);
+            return;
+        }
+        
+        MTLRCBufferPtr mtlBuffer = std::dynamic_pointer_cast<MTLRCBuffer>(buffer);
+        assert(mtlBuffer);
+        [mComputeEncoder setBuffer:mtlBuffer->GetMTLBuffer() offset:0 atIndex:realIndex];
+    }
+}
+
 void MTLComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t index)
 {
     @autoreleasepool 

@@ -40,6 +40,13 @@ public:
     virtual void SetStorageBuffer(RCBufferPtr buffer, uint32_t index) = 0;
     
     /**
+     * @brief 通过资源名设置存储缓冲区（SSBO）- 推荐使用
+     * @param resourceName Shader中的资源名（如 "QueueState"）
+     * @param buffer RCBuffer指针
+     */
+    virtual void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer) = 0;
+    
+    /**
      * @brief 通过索引设置纹理（用于采样）
      * @param texture 纹理指针
      * @param index 绑定索引
