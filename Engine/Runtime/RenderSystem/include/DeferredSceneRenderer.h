@@ -14,6 +14,7 @@
 #include "DeferredLightingPass.h"
 #include "HiZPass.h"
 #include "SSAOPass.h"
+#include "MotionBlurPass.h"
 #include "PostProcess/PostProcessing.h"
 #include <vector>
 
@@ -116,6 +117,7 @@ private:
     DeferredLightingPassPtr mDeferredLightingPass = nullptr;
     HiZPassPtr mHiZPass = nullptr;
     SSAOPassPtr mSSAOPass = nullptr;
+    MotionBlurPassPtr mMotionBlurPass = nullptr;
     PostProcessing* mPostProcessing = nullptr;
     
     uint32_t mWidth = 1;

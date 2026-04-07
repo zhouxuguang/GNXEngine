@@ -29,6 +29,7 @@ DeferredSceneRenderer::DeferredSceneRenderer()
     mDeferredLightingPass = std::make_shared<DeferredLightingPass>();
     mHiZPass = std::make_shared<HiZPass>();
     mSSAOPass = std::make_shared<SSAOPass>();
+    mMotionBlurPass = std::make_shared<MotionBlurPass>();
     
     mPostProcessing = new PostProcessing(GetRenderDevice());
 }
@@ -146,7 +147,29 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     FrameGraphResource lightingResult = RenderDeferredLightingPass(
         frameGraph, commandBuffer, gbufferData, depthResource, cameraUBO, hiZOutput, ssaoOutput);
 
-    RenderPresentPass(frameGraph, commandBuffer, lightingResult);
+    // Motion Blur Pass（在Deferred Lighting之后、Present之前）
+    FrameGraphResource finalResult = lightingResult;
+    if (mMotionBlurPass && depthResource != -1)
+    {
+        if (!mMotionBlurPass->IsInitialized())
+        {
+            MotionBlurConfig motionBlurConfig;
+            mMotionBlurPass->Initialize(motionBlurConfig);
+        }
+
+        MotionBlurParams motionBlurParams;
+        motionBlurParams.width = mWidth;
+        motionBlurParams.height = mHeight;
+        motionBlurParams.colorTexture = lightingResult;
+        motionBlurParams.depthTexture = depthResource;
+        motionBlurParams.cameraUBO = cameraUBO;
+
+        MotionBlurOutput motionBlurOutput = mMotionBlurPass->AddToFrameGraph(
+            "MotionBlurPass", frameGraph, commandBuffer, motionBlurParams);
+        finalResult = motionBlurOutput.result;
+    }
+
+    RenderPresentPass(frameGraph, commandBuffer, finalResult);
 
     frameGraph.Compile();
     // 执行FrameGraph，RHI层会自动处理资源状态转换
