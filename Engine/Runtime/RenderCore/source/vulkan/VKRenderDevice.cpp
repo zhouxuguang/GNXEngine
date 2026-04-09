@@ -93,7 +93,10 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     
     CreateVMA(*mVulkanContext);
     
-    // 创建垃圾收集器
+    // Initialize Pipeline Cache (must be after VkDevice creation)
+    InitializePipelineCache(*mVulkanContext);
+    
+    // Create garbage collector
     CreateGarbageCollector(*mVulkanContext);
     
     mVulkanContext->GetCommandPool();
@@ -125,8 +128,11 @@ VKRenderDevice::~VKRenderDevice()
         return;
     }
     
-    // 等待设备空闲
+    // Wait for device idle
     vkDeviceWaitIdle(mVulkanContext->device);
+
+    // Save pipeline cache to disk before destroying the device
+    SaveAndDestroyPipelineCache(*mVulkanContext);
     
     // 销毁异步计算信号量
     if (mVulkanContext->asyncComputeSemaphore != VK_NULL_HANDLE)
@@ -666,6 +672,15 @@ void VKRenderDevice::UpdateCurrentIndex()
 		mVulkanContext->garbageCollector->AdvanceFrame();
 		mVulkanContext->garbageCollector->Cleanup();
 	}
+}
+
+void VKRenderDevice::FlushPipelineCache()
+{
+    if (!mVulkanContext || mVulkanContext->pipelineCache == VK_NULL_HANDLE)
+        return;
+
+    vkDeviceWaitIdle(mVulkanContext->device);
+    SavePipelineCache(*mVulkanContext);
 }
 
 NAMESPACE_RENDERCORE_END

@@ -388,7 +388,7 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     }
     mPipeCreateInfo.pNext = renderingCreateInfos.data();
     
-    VkResult result = vkCreateGraphicsPipelines(mContext->device, VK_NULL_HANDLE, 1, &mPipeCreateInfo, nullptr, &mPipeline);
+    VkResult result = vkCreateGraphicsPipelines(mContext->device, mContext->pipelineCache, 1, &mPipeCreateInfo, nullptr, &mPipeline);
     assert(result == VK_SUCCESS);
 }
 

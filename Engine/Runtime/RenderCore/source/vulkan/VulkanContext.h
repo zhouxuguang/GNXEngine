@@ -72,6 +72,9 @@ struct VulkanContext
 #endif
     VkDebugUtilsMessengerEXT debugUtilsMessenger = VK_NULL_HANDLE;
 
+    // Pipeline Cache for caching compiled pipeline data
+    VkPipelineCache pipelineCache = VK_NULL_HANDLE;
+
     // Host Image Copy 支持的 copy destination layouts
     std::vector<VkImageLayout> hostImageCopyDstLayouts;
 
@@ -108,6 +111,15 @@ void CreateComputeDescriptorPool(VulkanContext& context);
 
 // 创建垃圾收集器
 void CreateGarbageCollector(VulkanContext& context);
+
+// 初始化 Pipeline Cache（在 VkDevice 创建后调用）
+bool InitializePipelineCache(VulkanContext& context);
+
+// 仅保存 Pipeline Cache 到磁盘（不销毁 VkPipelineCache，可多次调用）
+void SavePipelineCache(VulkanContext& context);
+
+// 保存 Pipeline Cache 到磁盘并销毁
+void SaveAndDestroyPipelineCache(VulkanContext& context);
 
 // 清理垃圾收集器中的资源
 void CleanupGarbageCollector(VulkanContext& context);

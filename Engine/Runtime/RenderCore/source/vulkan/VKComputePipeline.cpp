@@ -100,7 +100,7 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
     pipelineInfo.layout = mPipelineLayout;
     pipelineInfo.stage = computeShaderStageInfo;
 
-    if (vkCreateComputePipelines(mContext->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &mPipeline) != VK_SUCCESS)
+    if (vkCreateComputePipelines(mContext->device, mContext->pipelineCache, 1, &pipelineInfo, nullptr, &mPipeline) != VK_SUCCESS)
     {
         LOG_INFO("failed to create compute pipeline!\n");
         baselib::DebugBreak();

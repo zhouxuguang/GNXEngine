@@ -199,6 +199,12 @@ public:
      * @return 返回该类型队列的数量
      */
     virtual uint32_t GetCommandQueueCount(QueueType type) const = 0;
+
+    /**
+     * @brief Flush pipeline cache to disk (e.g., before shutdown)
+     * Default implementation does nothing (non-Vulkan backends may ignore this)
+     */
+    virtual void FlushPipelineCache() {}
 };
 
 typedef std::shared_ptr<RenderDevice> RenderDevicePtr;

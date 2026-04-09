@@ -26,6 +26,14 @@ void AppFrameWork::RunLoop()
         mRenderWindow->OnUpdate();
         RenderFrame();
     }
+
+    // Flush pipeline cache to disk before RenderWindow is destroyed
+    // (VKRenderDevice's destructor may not be called in time due to static shared_ptr)
+    RenderCore::RenderDevicePtr renderDevice = RenderCore::GetRenderDevice();
+    if (renderDevice)
+    {
+        renderDevice->FlushPipelineCache();
+    }
 }
 
 void AppFrameWork::Initlize()

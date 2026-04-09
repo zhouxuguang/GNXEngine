@@ -8,6 +8,7 @@
 #include "VulkanContext.h"
 #include "VulkanGarbageCollector.h"
 #include "VulkanDeviceUtil.h"
+#include "VulkanPipelineCache.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "VKUtil.h"
 #include <optional>
@@ -826,6 +827,127 @@ void CleanupGarbageCollector(VulkanContext& context)
         // 推进帧并清理
         context.garbageCollector->AdvanceFrame();
         context.garbageCollector->Cleanup();
+    }
+}
+
+bool InitializePipelineCache(VulkanContext& context)
+{
+    VulkanPipelineCache cache;
+    bool success = cache.Initialize(context);
+    if (success && cache.IsValid())
+    {
+        context.pipelineCache = cache.GetHandle();
+    }
+    return success;
+}
+
+void SavePipelineCache(VulkanContext& context)
+{
+    if (context.pipelineCache != VK_NULL_HANDLE)
+    {
+        // Temporarily wrap existing handle in a stack object for Save()
+        VulkanPipelineCache cacheWrapper;
+        // Manually set the handle to use existing pipeline cache
+        // We need a way to set the handle... Let's reuse the save logic directly.
+        // Actually, we can't easily set mPipelineCache on VulkanPipelineCache from outside.
+        // Instead, let's duplicate the save logic here (similar to SaveAndDestroy but without destroy).
+
+        size_t dataSize = 0;
+        VkResult result = vkGetPipelineCacheData(context.device,
+                                                  context.pipelineCache,
+                                                  &dataSize, nullptr);
+
+        if (result == VK_SUCCESS && dataSize > 0)
+        {
+            std::vector<uint8_t> cacheData(dataSize);
+            result = vkGetPipelineCacheData(context.device,
+                                            context.pipelineCache,
+                                            &dataSize, cacheData.data());
+
+            if (result == VK_SUCCESS)
+            {
+                PipelineCachePrefixHeader header = {};
+                header.magic = VulkanPipelineCache::kMagic;
+                header.dataSize = static_cast<uint32_t>(dataSize);
+                header.dataHash = VulkanPipelineCache::ComputeHash(cacheData.data(), dataSize);
+                header.vendorID = context.physicalDeviceProperties.vendorID;
+                header.deviceID = context.physicalDeviceProperties.deviceID;
+                header.driverVersion = context.physicalDeviceProperties.driverVersion;
+                header.driverABI = sizeof(void*);
+                memcpy(header.uuid, context.physicalDeviceProperties.pipelineCacheUUID,
+                       VK_UUID_SIZE);
+
+                std::vector<uint8_t> outputData(sizeof(PipelineCachePrefixHeader) + dataSize);
+                memcpy(outputData.data(), &header, sizeof(PipelineCachePrefixHeader));
+                memcpy(outputData.data() + sizeof(PipelineCachePrefixHeader),
+                       cacheData.data(), dataSize);
+
+                std::string path = std::string("") +
+                                   std::string(VulkanPipelineCache::kCacheFileName);
+
+                if (VulkanPipelineCache::WriteBufferToFile(path, outputData.data(),
+                                                            outputData.size()))
+                {
+                    LOG_INFO("PipelineCache: saved %u bytes to disk", header.dataSize);
+                }
+            }
+        }
+    }
+}
+
+void SaveAndDestroyPipelineCache(VulkanContext& context)
+{
+    if (context.pipelineCache != VK_NULL_HANDLE)
+    {
+        // Temporarily set the cache handle on a stack object for SaveAndDestroy
+        VulkanPipelineCache cache;
+        cache.Initialize(context);
+        // The above will create a new empty cache; we need to use our existing one.
+        // Instead, let's directly use the save logic with the existing handle.
+
+        size_t dataSize = 0;
+        VkResult result = vkGetPipelineCacheData(context.device,
+                                                  context.pipelineCache,
+                                                  &dataSize, nullptr);
+
+        if (result == VK_SUCCESS && dataSize > 0)
+        {
+            std::vector<uint8_t> cacheData(dataSize);
+            result = vkGetPipelineCacheData(context.device,
+                                            context.pipelineCache,
+                                            &dataSize, cacheData.data());
+
+            if (result == VK_SUCCESS)
+            {
+                PipelineCachePrefixHeader header = {};
+                header.magic = VulkanPipelineCache::kMagic;
+                header.dataSize = static_cast<uint32_t>(dataSize);
+                header.dataHash = VulkanPipelineCache::ComputeHash(cacheData.data(), dataSize);
+                header.vendorID = context.physicalDeviceProperties.vendorID;
+                header.deviceID = context.physicalDeviceProperties.deviceID;
+                header.driverVersion = context.physicalDeviceProperties.driverVersion;
+                header.driverABI = sizeof(void*);
+                memcpy(header.uuid, context.physicalDeviceProperties.pipelineCacheUUID,
+                       VK_UUID_SIZE);
+
+                std::vector<uint8_t> outputData(sizeof(PipelineCachePrefixHeader) + dataSize);
+                memcpy(outputData.data(), &header, sizeof(PipelineCachePrefixHeader));
+                memcpy(outputData.data() + sizeof(PipelineCachePrefixHeader),
+                       cacheData.data(), dataSize);
+
+                std::string path = std::string("cache/") +
+                                   std::string(VulkanPipelineCache::kCacheFileName);
+
+                if (VulkanPipelineCache::WriteBufferToFile(path, outputData.data(),
+                                                            outputData.size()))
+                {
+                    LOG_INFO("PipelineCache: saved %u bytes to disk", header.dataSize);
+                }
+            }
+        }
+
+        vkDestroyPipelineCache(context.device, context.pipelineCache, nullptr);
+        context.pipelineCache = VK_NULL_HANDLE;
     }
 }
 

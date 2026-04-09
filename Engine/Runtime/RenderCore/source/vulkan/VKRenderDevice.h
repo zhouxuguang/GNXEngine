@@ -95,6 +95,10 @@ public:
 
     void UpdateCurrentIndex();
     
+    // Flush pipeline cache to disk (can be called at any time, e.g., before shutdown)
+    // Does NOT destroy the Vulkan pipeline cache, just persists data to disk
+    void FlushPipelineCache();
+    
 private:
     VulkanContextPtr mVulkanContext = nullptr;
     VulkanSwapChainPtr mSwapChain = nullptr;
