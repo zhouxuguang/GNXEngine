@@ -62,6 +62,20 @@ void VulkanExtension::InitExtendedDynamicState(VkPhysicalDevice physicalDevice)
         extendedDynamicState3FeaturesEXT.extendedDynamicState3ColorBlendEquation;
 }
 
+bool VulkanExtension::IsExtensionSupported(const char* name) const
+{
+    uint32_t count = (uint32_t)mDeviceExtensions.size();
+    for (uint32_t k = 0; k < count; ++k)
+    {
+        if (!strcmp(mDeviceExtensions[k].extensionName, name))
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
 bool VulkanExtension::ExtensionSupported(const char* name)
 {
     uint32_t count = (uint32_t)mDeviceExtensions.size();

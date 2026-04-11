@@ -15,7 +15,7 @@
 #include "VKDepthStencilBuffer.h"
 #include "VulkanGarbageCollector.h"
 #include "VKCommandQueue.h"
-#include "VKDeviceExtension.h"
+#include "RenderDeviceFeatures.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -28,9 +28,9 @@ public:
     
     virtual void Resize(uint32_t width, uint32_t height);
     
-    virtual DeviceExtensionPtr GetDeviceExtension() const
+    virtual const RenderDeviceFeatures& GetFeatures() const override
     {
-        return mDeviceExtension;
+        return mFeatures;
     }
     
     virtual RenderDeviceType GetRenderDeviceType() const
@@ -98,11 +98,16 @@ public:
     // Flush pipeline cache to disk (can be called at any time, e.g., before shutdown)
     // Does NOT destroy the Vulkan pipeline cache, just persists data to disk
     void FlushPipelineCache();
+
+    // 从 VkPhysicalDevice 填充 RenderDeviceFeatures（在构造函数中调用一次）
+    void InitializeFeatures();
     
 private:
     VulkanContextPtr mVulkanContext = nullptr;
     VulkanSwapChainPtr mSwapChain = nullptr;
-    VKDeviceExtensionPtr mDeviceExtension = nullptr;
+    
+    // 结构化设备特性（在构造时从 VkPhysicalDevice 填充）
+    RenderDeviceFeatures mFeatures;
     
     
     std::vector<VkCommandBuffer> mCommandBuffers;         //用于渲染的commandbuffer

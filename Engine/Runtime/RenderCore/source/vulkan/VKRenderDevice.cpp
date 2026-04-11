@@ -88,8 +88,9 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
         return;
     }
     
-    // 初始化设备扩展（需要在 CreateVirtualDevice 之后，因为扩展需要 device 信息）
-    mDeviceExtension = std::make_shared<VKDeviceExtension>(mVulkanContext);
+    // 填充结构化设备特性
+    InitializeFeatures();
+    
     
     CreateVMA(*mVulkanContext);
     
@@ -119,6 +120,107 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     void * p = (void*)vkCmdBeginRenderingKHR;
     void *p2 = (void*)vkCmdPushDescriptorSetKHR;
     void* p3 = (void*)vkCmdTraceRaysKHR;
+}
+
+void VKRenderDevice::InitializeFeatures()
+{
+    if (!mVulkanContext || !mVulkanContext->physicalDevice)
+        return;
+
+    const auto& ctx = *mVulkanContext;
+    const auto& props = ctx.physicalDeviceProperties;
+    const auto& features = ctx.physicalDeviceFeatures;
+    const auto& features2 = ctx.features2.features;
+    const auto& f12 = ctx.features_12;
+    const auto& ext = ctx.vulkanExtension;
+
+    // ---- DeviceInfo ----
+    mFeatures.deviceInfo.deviceName   = props.deviceName;
+    mFeatures.deviceInfo.apiVersion   = ctx.apiVersion;
+
+    switch (props.deviceType)
+    {
+        case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+            mFeatures.deviceInfo.deviceType = RenderDeviceFeatures::DeviceInfo::DeviceType::Integrated;
+            break;
+        case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+            mFeatures.deviceInfo.deviceType = RenderDeviceFeatures::DeviceInfo::DeviceType::Discrete;
+            break;
+        case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+            mFeatures.deviceInfo.deviceType = RenderDeviceFeatures::DeviceInfo::DeviceType::VirtualGPU;
+            break;
+        default:
+            mFeatures.deviceInfo.deviceType = RenderDeviceFeatures::DeviceInfo::DeviceType::Unknown;
+            break;
+    }
+
+    // 从 PCI Vendor ID 推断供应商名称（仅用于展示，不影响逻辑）
+    switch (props.vendorID)
+    {
+        case 0x10DE: mFeatures.deviceInfo.vendorName = "NVIDIA";  break;
+        case 0x1002: mFeatures.deviceInfo.vendorName = "AMD";      break;
+        case 0x8086: mFeatures.deviceInfo.vendorName = "Intel";    break;
+        case 0x13B5: mFeatures.deviceInfo.vendorName = "ARM";      break;
+        default:     mFeatures.deviceInfo.vendorName = "Unknown";  break;
+    }
+
+    // ---- Limits ----
+    auto& L = mFeatures.limits;
+    L.maxTextureSize2D                 = props.limits.maxImageDimension2D;
+    L.maxTextureSize3D                 = props.limits.maxImageDimension3D;
+    L.maxTextureArrayLayers            = props.limits.maxImageArrayLayers;
+    L.maxCubeMapSize                   = props.limits.maxImageDimensionCube;
+    L.maxColorAttachments              = props.limits.maxColorAttachments;
+    L.maxVertexBufferBindings          = props.limits.maxVertexInputBindings;
+    L.maxVertexInputAttributes         = props.limits.maxVertexInputAttributes;
+    L.maxSamplerAnisotropy             = props.limits.maxSamplerAnisotropy;
+    L.minUniformBufferOffsetAlignment  = props.limits.minUniformBufferOffsetAlignment;
+    L.minStorageBufferOffsetAlignment  = props.limits.minStorageBufferOffsetAlignment;
+    L.maxUniformBufferRange            = props.limits.maxUniformBufferRange;
+    L.maxStorageBufferRange            = props.limits.maxStorageBufferRange;
+    L.maxComputeSharedMemorySize       = props.limits.maxComputeSharedMemorySize;
+    L.maxComputeWorkGroupInvocations   = props.limits.maxComputeWorkGroupInvocations;
+    L.maxComputeWorkGroupSize[0]       = props.limits.maxComputeWorkGroupSize[0];
+    L.maxComputeWorkGroupSize[1]       = props.limits.maxComputeWorkGroupSize[1];
+    L.maxComputeWorkGroupSize[2]       = props.limits.maxComputeWorkGroupSize[2];
+    L.maxComputeWorkGroupCount[0]      = props.limits.maxComputeWorkGroupCount[0];
+    L.maxComputeWorkGroupCount[1]      = props.limits.maxComputeWorkGroupCount[1];
+    L.maxComputeWorkGroupCount[2]      = props.limits.maxComputeWorkGroupCount[2];
+    L.maxFramebufferWidth              = props.limits.maxFramebufferWidth;
+    L.maxFramebufferHeight             = props.limits.maxFramebufferHeight;
+    L.maxFramebufferLayers             = props.limits.maxFramebufferLayers;
+    L.timestampPeriod                  = props.limits.timestampPeriod;
+
+    L.maxSampleCountMaskBits = 0;
+    if (props.limits.framebufferColorSampleCounts & VK_SAMPLE_COUNT_64_BIT)  L.maxSampleCountMaskBits |= (1u << 5);
+    if (props.limits.framebufferColorSampleCounts & VK_SAMPLE_COUNT_32_BIT)  L.maxSampleCountMaskBits |= (1u << 4);
+    if (props.limits.framebufferColorSampleCounts & VK_SAMPLE_COUNT_16_BIT)  L.maxSampleCountMaskBits |= (1u << 3);
+    if (props.limits.framebufferColorSampleCounts & VK_SAMPLE_COUNT_8_BIT)   L.maxSampleCountMaskBits |= (1u << 2);
+    if (props.limits.framebufferColorSampleCounts & VK_SAMPLE_COUNT_4_BIT)   L.maxSampleCountMaskBits |= (1u << 1);
+    if (props.limits.framebufferColorSampleCounts & VK_SAMPLE_COUNT_2_BIT)   L.maxSampleCountMaskBits |= (1u << 0);
+
+    // ---- Shader capabilities ----
+    mFeatures.shader.meshShader         = ext.enableMeshShaderEXT || ext.enableMeshShaderNV;
+    mFeatures.shader.taskShader         = ext.enableMeshShaderEXT;
+    mFeatures.shader.waveIntrinsics     = true;   // Vulkan 1.1+ 必须支持 subgroup
+    mFeatures.shader.int64Atomics       = f12.shaderBufferInt64Atomics || f12.shaderSharedInt64Atomics;
+    mFeatures.shader.float16            = f12.shaderFloat16;
+    mFeatures.shader.int8               = f12.shaderInt8;
+    mFeatures.shader.float64            = features2.shaderFloat64;
+
+    // ---- Resource capabilities ----
+    mFeatures.resource.textureCompressionBC    = true;
+    mFeatures.resource.textureCompressionASTC  = ext.IsExtensionSupported(VK_EXT_TEXTURE_COMPRESSION_ASTC_HDR_EXTENSION_NAME);
+    mFeatures.resource.textureCompressionETC2  = true;
+    mFeatures.resource.textureCompressionPVRTC = false;
+    mFeatures.resource.bindlessResources       = f12.descriptorIndexing || ext.IsExtensionSupported(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    mFeatures.resource.sparseTextures          = features.sparseBinding;
+    mFeatures.resource.formatBGRA8             = true;
+
+    // ---- Advanced capabilities ----
+    mFeatures.advanced.variableRateShading = ext.IsExtensionSupported(VK_EXT_FRAGMENT_DENSITY_MAP_EXTENSION_NAME);
+    mFeatures.advanced.asyncCompute        = (ctx.computeQueueFamilyIndex != ctx.graphicsQueueFamilyIndex);
+    mFeatures.advanced.multiview           = ext.IsExtensionSupported(VK_KHR_MULTIVIEW_EXTENSION_NAME);
 }
 
 VKRenderDevice::~VKRenderDevice()

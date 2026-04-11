@@ -13,7 +13,7 @@
 #include "VertexBuffer.h"
 #include "UniformBuffer.h"
 #include "GraphicsPipeline.h"
-#include "DeviceExtension.h"
+#include "RenderDeviceFeatures.h"
 #include "CommandBuffer.h"
 #include "RenderPass.h"
 #include "RCBuffer.h"
@@ -31,7 +31,15 @@ public:
     
     virtual void Resize(uint32_t width, uint32_t height) = 0;
     
-    virtual DeviceExtensionPtr GetDeviceExtension() const = 0;
+    /**
+     * @brief 获取设备硬件特性与能力集合（结构化查询，推荐使用）
+     *
+     * 返回的 RenderDeviceFeatures 在设备创建时一次性填充，
+     * 包含 Limits / Shader / Resource / Sync / Advanced 五大类信息。
+     *
+     * @return const reference to device features
+     */
+    virtual const RenderDeviceFeatures& GetFeatures() const = 0;
     
     virtual RenderDeviceType GetRenderDeviceType() const = 0;
     

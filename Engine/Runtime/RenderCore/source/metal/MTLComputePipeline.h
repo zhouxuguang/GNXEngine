@@ -10,7 +10,6 @@
 
 #include "MTLRenderDefine.h"
 #include "GraphicsPipeline.h"
-#include "MTLDeviceExtension.h"
 #include "MTLShaderFunction.h"
 
 NAMESPACE_RENDERCORE_BEGIN

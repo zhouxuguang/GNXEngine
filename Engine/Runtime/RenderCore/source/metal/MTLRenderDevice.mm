@@ -25,7 +25,8 @@ MTLRenderDevice::MTLRenderDevice(CAMetalLayer *metalLayer)
     mMetalLayer = metalLayer;
     mMetalCommandQueue = [mMetalLayer.device newCommandQueue];
 
-    mMTLDeviceExtension = std::make_shared<MTLDeviceExtension>();
+    // 填充结构化设备特性
+    InitializeFeatures();
 
     // 初始化队列管理（Metal的CommandQueue支持所有类型命令）
     // 创建图形队列（默认队列，用于渲染）
@@ -75,10 +76,6 @@ void MTLRenderDevice::Resize(uint32_t width, uint32_t height)
                                 mMetalLayer.drawableSize.width, mMetalLayer.drawableSize.height);
 }
 
-DeviceExtensionPtr MTLRenderDevice::GetDeviceExtension() const
-{
-    return mMTLDeviceExtension;
-}
 
 RenderDeviceType MTLRenderDevice::GetRenderDeviceType() const
 {
@@ -447,6 +444,81 @@ uint32_t MTLRenderDevice::GetCommandQueueCount(QueueType type) const
         default:
             return 0;
     }
+}
+
+void MTLRenderDevice::InitializeFeatures()
+{
+    if (!mMetalLayer.device)
+        return;
+
+    id<MTLDevice> device = mMetalLayer.device;
+
+    // ---- DeviceInfo ----
+    mFeatures.deviceInfo.deviceName   = [device.name UTF8String];
+    mFeatures.deviceInfo.vendorName   = "Apple";
+
+    // Apple Silicon 全是 SoC 集成 GPU
+    mFeatures.deviceInfo.deviceType = RenderDeviceFeatures::DeviceInfo::DeviceType::Integrated;
+
+    // ---- Limits ----
+    auto& L = mFeatures.limits;
+    L.maxTextureSize2D                 = 16384;
+    L.maxTextureSize3D                 = 2048;
+    L.maxTextureArrayLayers            = 2048;
+    L.maxCubeMapSize                   = 16384;
+    L.maxColorAttachments              = 8;
+    L.maxVertexBufferBindings          = 31;     // Metal maxBufferBindings
+    L.maxVertexInputAttributes         = 31;
+    L.maxSamplerAnisotropy             = 16.0f;
+    L.minUniformBufferOffsetAlignment  = 4;
+    L.minStorageBufferOffsetAlignment  = 4;
+    L.maxComputeSharedMemorySize       = device.maxThreadgroupMemoryLength;
+    L.maxComputeWorkGroupInvocations   = 1024;
+    L.maxComputeWorkGroupSize[0]       = 1024;
+    L.maxComputeWorkGroupSize[1]       = 1024;
+    L.maxComputeWorkGroupSize[2]       = 1024;
+    L.maxComputeWorkGroupCount[0]      = UINT32_MAX;
+    L.maxComputeWorkGroupCount[1]      = UINT32_MAX;
+    L.maxComputeWorkGroupCount[2]      = UINT32_MAX;
+    L.maxFramebufferWidth             = 16384;
+    L.maxFramebufferHeight            = 16384;
+    L.maxFramebufferLayers            = 1;
+    L.timestampPeriod                 = 1;
+    L.maxSampleCountMaskBits          = (1u << 5) | (1u << 4) | (1u << 3) | (1u << 2) | (1u << 1) | (1u << 0);
+
+    // ---- Shader capabilities ----
+    mFeatures.shader.waveIntrinsics     = true;   // SIMD-group operations universal on Apple GPUs
+    mFeatures.shader.float16            = true;   // Apple GPU native half precision
+
+    // Mesh Pipeline: macOS 14+ / iOS 17+
+#if defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000
+    if (@available(macOS 14.0, *))
+    {
+        mFeatures.shader.meshShader = true;
+        mFeatures.shader.taskShader = true;
+    }
+#endif
+#if defined(__IPHONE_OS_VERSION_MAX_ALLOWED) && __IPHONE_OS_VERSION_MAX_ALLOWED >= 170000
+    if (@available(iOS 17.0, *))
+    {
+        mFeatures.shader.meshShader = true;
+        mFeatures.shader.taskShader = true;
+    }
+#endif
+
+    // ---- Resource capabilities ----
+    mFeatures.resource.textureCompressionBC    = false;  // BC 需软件解压
+    mFeatures.resource.textureCompressionASTC  = true;   // Apple GPU native ASTC
+    mFeatures.resource.textureCompressionETC2  = true;
+    mFeatures.resource.textureCompressionPVRTC = true;
+    mFeatures.resource.bindlessResources       = false;  // Metal uses Argument Buffer, not traditional bindless indexing
+    mFeatures.resource.sparseTextures          = false;  // Metal 无 sparse texture
+    mFeatures.resource.formatBGRA8             = true;
+
+    // ---- Advanced capabilities ----
+    mFeatures.advanced.variableRateShading = false;
+    mFeatures.advanced.asyncCompute        = false;  // Metal unified queue
+    mFeatures.advanced.multiview           = true;   // Metal instanced + layered rendering
 }
 
 NAMESPACE_RENDERCORE_END

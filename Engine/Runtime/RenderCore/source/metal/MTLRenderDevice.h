@@ -10,8 +10,8 @@
 
 #include "MTLRenderDefine.h"
 #include "RenderDevice.h"
-#include "MTLDeviceExtension.h"
 #include "MTLCommandQueue.h"
+#include "RenderDeviceFeatures.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -24,9 +24,12 @@ public:
     
     virtual void Resize(uint32_t width, uint32_t height);
     
-    virtual DeviceExtensionPtr GetDeviceExtension() const;
-    
     virtual RenderDeviceType GetRenderDeviceType() const;
+    
+    virtual const RenderDeviceFeatures& GetFeatures() const override
+    {
+        return mFeatures;
+    }
     
     /**
      以指定长度创建buffer
@@ -128,6 +131,9 @@ public:
     // 友元声明，允许MTLCommandQueue访问私有成员
     friend class MTLCommandQueue;
 
+    // 从 MTLDevice 填充 RenderDeviceFeatures（在构造函数中调用一次）
+    void InitializeFeatures();
+
 private:
     CAMetalLayer *mMetalLayer;
     id<MTLCommandQueue> mMetalCommandQueue;
@@ -136,7 +142,8 @@ private:
     id<MTLTexture> mStencilTexture;
     id<MTLTexture> mDepthStencilTexture;
 
-    MTLDeviceExtensionPtr mMTLDeviceExtension = nullptr;
+    // 结构化设备特性（在构造时从 MTLDevice 填充）
+    RenderDeviceFeatures mFeatures;
 
     // 队列管理（Metal的CommandQueue支持所有类型命令，这里做逻辑区分）
     std::vector<MTLCommandQueuePtr> mGraphicsQueues;  // 图形队列列表

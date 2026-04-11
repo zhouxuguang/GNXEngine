@@ -28,10 +28,6 @@ RenderDevice::RenderDevice() {}
 
 RenderDevice::~RenderDevice() {}
 
-DeviceExtension::DeviceExtension(){}
-
-DeviceExtension::~DeviceExtension(){}
-
 VertexBuffer::VertexBuffer(){}
 
 VertexBuffer::~VertexBuffer(){}
