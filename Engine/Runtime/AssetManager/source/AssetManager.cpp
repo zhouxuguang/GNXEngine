@@ -6,10 +6,10 @@
 
 NS_ASSETMANAGER_BEGIN
 
-AssetManager* AssetManager::s_instance = nullptr;
+AssetManager* AssetManager::sInstance = nullptr;
 
 AssetManager::AssetManager()
-	: m_initialized(false)
+	: mInitialized(false)
 {
 }
 
@@ -20,42 +20,42 @@ AssetManager::~AssetManager()
 
 AssetManager* AssetManager::GetInstance()
 {
-	return s_instance;
+	return sInstance;
 }
 
 bool AssetManager::Initialize(const std::string& rootPath)
 {
-	if (s_instance)
+	if (sInstance)
 	{
 		return true; // 已初始化
 	}
 
-	s_instance = new AssetManager();
-	s_instance->m_rootPath = rootPath;
+	sInstance = new AssetManager();
+	sInstance->mRootPath = rootPath;
 
 	// 确保根目录存在
 	if (!baselib::FileUtil::IsDir(rootPath))
 	{
 		std::cerr << "AssetManager: Root directory does not exist: " << rootPath << std::endl;
-		delete s_instance;
-		s_instance = nullptr;
+		delete sInstance;
+		sInstance = nullptr;
 		return false;
 	}
 
 	std::cout << "AssetManager initialized with root: " << rootPath << std::endl;
-	s_instance->m_initialized = true;
+	sInstance->mInitialized = true;
 	return true;
 }
 
 void AssetManager::Shutdown()
 {
-	if (!s_instance)
+	if (!sInstance)
 	{
 		return;
 	}
 
-	delete s_instance;
-	s_instance = nullptr;
+	delete sInstance;
+	sInstance = nullptr;
 }
 
 TextureAsset* AssetManager::LoadTexture(const std::string& path)
@@ -81,7 +81,7 @@ void AssetManager::LoadTextureAsync(const std::string& path,
 
 TextureAsset* AssetManager::LoadTextureInternal(const std::string& path, bool async)
 {
-	if (!m_initialized)
+	if (!mInitialized)
 	{
 		std::cerr << "AssetManager not initialized!" << std::endl;
 		return nullptr;
@@ -93,7 +93,7 @@ TextureAsset* AssetManager::LoadTextureInternal(const std::string& path, bool as
 	{
 		texturePath = path + ".texture";
 	}
-	std::string fullPath = m_rootPath + "/" + texturePath;
+	std::string fullPath = mRootPath + "/" + texturePath;
 
 	// 检查是否已加载（使用hash作为key）
 	std::string hashKey = path;
@@ -128,8 +128,8 @@ TextureAsset* AssetManager::LoadTextureInternal(const std::string& path, bool as
 
 Asset* AssetManager::FindAsset(const std::string& guid)
 {
-	auto it = m_assets.find(guid);
-	if (it != m_assets.end())
+	auto it = mAssets.find(guid);
+	if (it != mAssets.end())
 	{
 		return it->second;
 	}
@@ -139,8 +139,8 @@ Asset* AssetManager::FindAsset(const std::string& guid)
 TextureAsset* AssetManager::FindTexture(const std::string& name)
 {
 	// 先直接查找
-	auto it = m_textures.find(name);
-	if (it != m_textures.end())
+	auto it = mTextures.find(name);
+	if (it != mTextures.end())
 	{
 		return it->second;
 	}
@@ -152,8 +152,8 @@ TextureAsset* AssetManager::FindTexture(const std::string& name)
 	{
 		nameNoExt = nameNoExt.substr(0, extPos);
 	}
-	it = m_textures.find(nameNoExt);
-	if (it != m_textures.end())
+	it = mTextures.find(nameNoExt);
+	if (it != mTextures.end())
 	{
 		return it->second;
 	}
@@ -166,9 +166,9 @@ TextureAsset* AssetManager::FindTexture(const std::string& name)
 std::vector<TextureAsset*> AssetManager::GetAllTextures() const
 {
 	std::vector<TextureAsset*> textures;
-	textures.reserve(m_textures.size());
+	textures.reserve(mTextures.size());
 
-	for (const auto& pair : m_textures)
+	for (const auto& pair : mTextures)
 	{
 		textures.push_back(pair.second);
 	}
@@ -194,12 +194,12 @@ void AssetManager::UnloadAsset(Asset* asset)
 
 	// 从缓存中移除
 	std::string guid = asset->GetGUID();
-	m_assets.erase(guid);
+	mAssets.erase(guid);
 
 	if (asset->GetType() == AssetType::Texture)
 	{
 		TextureAsset* texture = static_cast<TextureAsset*>(asset);
-		m_textures.erase(texture->GetName());
+		mTextures.erase(texture->GetName());
 	}
 
 	// 从GPU释放并卸载
@@ -214,7 +214,7 @@ void AssetManager::UnloadUnusedAssets()
 	std::vector<std::string> toUnload;
 
 	// 收集未使用的资源
-	for (const auto& pair : m_assets)
+	for (const auto& pair : mAssets)
 	{
 		if (pair.second->GetRefCount() == 0)
 		{
@@ -225,7 +225,7 @@ void AssetManager::UnloadUnusedAssets()
 	// 卸载未使用的资源
 	for (const std::string& guid : toUnload)
 	{
-		Asset* asset = m_assets[guid];
+		Asset* asset = mAssets[guid];
 		UnloadAsset(asset);
 	}
 
@@ -239,9 +239,9 @@ void AssetManager::UnloadAllAssets()
 {
 	// 复制资源列表（避免在迭代时修改）
 	std::vector<std::string> guids;
-	guids.reserve(m_assets.size());
+	guids.reserve(mAssets.size());
 
-	for (const auto& pair : m_assets)
+	for (const auto& pair : mAssets)
 	{
 		guids.push_back(pair.first);
 	}
@@ -249,12 +249,12 @@ void AssetManager::UnloadAllAssets()
 	// 卸载所有资源
 	for (const std::string& guid : guids)
 	{
-		Asset* asset = m_assets[guid];
+		Asset* asset = mAssets[guid];
 		UnloadAsset(asset);
 	}
 
-	m_assets.clear();
-	m_textures.clear();
+	mAssets.clear();
+	mTextures.clear();
 
 	std::cout << "Unloaded all assets" << std::endl;
 }
@@ -283,7 +283,7 @@ uint64_t AssetManager::GetTotalMemoryUsage() const
 {
 	uint64_t totalMemory = 0;
 
-	for (const auto& pair : m_assets)
+	for (const auto& pair : mAssets)
 	{
 		totalMemory += pair.second->GetMemorySize();
 	}
@@ -295,7 +295,7 @@ uint64_t AssetManager::GetGPUMemoryUsage() const
 {
 	uint64_t gpuMemory = 0;
 
-	for (const auto& pair : m_assets)
+	for (const auto& pair : mAssets)
 	{
 		if (pair.second->IsOnGPU())
 		{
@@ -308,14 +308,14 @@ uint64_t AssetManager::GetGPUMemoryUsage() const
 
 uint32_t AssetManager::GetLoadedAssetCount() const
 {
-	return static_cast<uint32_t>(m_assets.size());
+	return static_cast<uint32_t>(mAssets.size());
 }
 
 void AssetManager::GetAssetCountByType(std::unordered_map<AssetType, uint32_t>& counts) const
 {
 	counts.clear();
 
-	for (const auto& pair : m_assets)
+	for (const auto& pair : mAssets)
 	{
 		AssetType type = pair.second->GetType();
 		counts[type]++;
@@ -325,7 +325,7 @@ void AssetManager::GetAssetCountByType(std::unordered_map<AssetType, uint32_t>& 
 void AssetManager::PrintStatistics() const
 {
 	std::cout << "=== Asset Manager Statistics ===" << std::endl;
-	std::cout << "Total Assets: " << m_assets.size() << std::endl;
+	std::cout << "Total Assets: " << mAssets.size() << std::endl;
 
 	std::unordered_map<AssetType, uint32_t> counts;
 	GetAssetCountByType(counts);
@@ -344,26 +344,26 @@ template<typename T>
 void AssetManager::AddToCache(const std::string& guid, T* asset)
 {
 	// 添加到主资源映射
-	m_assets[guid] = asset;
+	mAssets[guid] = asset;
 
 	// 根据类型添加到特定映射
 	if (asset->GetType() == AssetType::Texture)
 	{
 		TextureAsset* texture = static_cast<TextureAsset*>(asset);
-		m_textures[texture->GetName()] = texture;
+		mTextures[texture->GetName()] = texture;
 	}
 }
 
 TextureAsset* AssetManager::LoadTextureByHash(uint64_t hash)
 {
-	if (!m_initialized)
+	if (!mInitialized)
 	{
 		std::cerr << "AssetManager not initialized!" << std::endl;
 		return nullptr;
 	}
 
 	// 构建.texture文件路径（在.gnx目录中）
-	std::string textureFilePath = m_rootPath + "/" + std::to_string(hash) + ".texture";
+	std::string textureFilePath = mRootPath + "/" + std::to_string(hash) + ".texture";
 	std::string guid = std::to_string(hash);
 
 	// 检查是否已加载

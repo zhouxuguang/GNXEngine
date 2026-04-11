@@ -19,22 +19,22 @@ public:
 	ResourceNode& operator=(const ResourceNode&) = delete;
 	ResourceNode& operator=(ResourceNode&&) noexcept = delete;
 
-	[[nodiscard]] auto getResourceId() const { return m_resourceId; }
-	[[nodiscard]] auto getVersion() const { return m_version; }
+	[[nodiscard]] auto getResourceId() const { return mResourceId; }
+	[[nodiscard]] auto getVersion() const { return mVersion; }
 
 private:
 	ResourceNode(const std::string_view name, uint32_t nodeId, uint32_t resourceId, uint32_t version)
-		: GraphNode{ name, nodeId }, m_resourceId{ resourceId }, m_version{ version } 
+		: GraphNode{ name, nodeId }, mResourceId{ resourceId }, mVersion{ version } 
 	{
 	}
 
 private:
-	// Index to virtual resource (FrameGraph::m_resourceRegistry).
-	const uint32_t m_resourceId;
-	const uint32_t m_version;
+	// Index to virtual resource (FrameGraph::mResourceRegistry).
+	const uint32_t mResourceId;
+	const uint32_t mVersion;
 
-	PassNode* m_producer = nullptr;
-	PassNode* m_last = nullptr;
+	PassNode* mProducer = nullptr;
+	PassNode* mLast = nullptr;
 };
 
 NS_RENDERSYSTEM_END

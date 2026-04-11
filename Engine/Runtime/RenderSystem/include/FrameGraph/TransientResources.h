@@ -44,13 +44,13 @@ public:
 private:
     RenderCore::RenderDevicePtr mRenderDevice;
 
-	std::vector<RenderCore::RCTexturePtr> m_textures;
-	std::vector<RenderCore::RCBufferPtr> m_buffers;
+	std::vector<RenderCore::RCTexturePtr> mTextures;
+	std::vector<RenderCore::RCBufferPtr> mBuffers;
 
     template<typename T> using ResourcePool = std::vector<ResourceEntry<T>>;
 
-	std::unordered_map<std::size_t, ResourcePool<RenderCore::RCTexturePtr>> m_texturePools;
-	std::unordered_map<std::size_t, ResourcePool<RenderCore::RCBufferPtr>> m_bufferPools;
+	std::unordered_map<std::size_t, ResourcePool<RenderCore::RCTexturePtr>> mTexturePools;
+	std::unordered_map<std::size_t, ResourcePool<RenderCore::RCBufferPtr>> mBufferPools;
 };
 
 NS_RENDERSYSTEM_END

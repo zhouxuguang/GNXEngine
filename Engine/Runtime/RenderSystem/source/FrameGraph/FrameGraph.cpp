@@ -11,9 +11,9 @@ NS_RENDERSYSTEM_BEGIN
 
 void FrameGraph::Reserve(uint32_t numPasses, uint32_t numResources)
 {
-	m_passNodes.reserve(numPasses);
-	m_resourceNodes.reserve(numResources);
-	m_resourceRegistry.reserve(numResources);
+	mPassNodes.reserve(numPasses);
+	mResourceNodes.reserve(numResources);
+	mResourceRegistry.reserve(numResources);
 }
 
 bool FrameGraph::IsValid(FrameGraphResource id) const
@@ -24,81 +24,81 @@ bool FrameGraph::IsValid(FrameGraphResource id) const
 
 void FrameGraph::Compile()
 {
-	for (auto& pass : m_passNodes)
+	for (auto& pass : mPassNodes)
 	{
-		pass.m_refCount = static_cast<int32_t>(pass.m_writes.size());
-		for (const auto [id, _] : pass.m_reads)
+		pass.mRefCount = static_cast<int32_t>(pass.mWrites.size());
+		for (const auto [id, _] : pass.mReads)
 		{
-			auto& consumed = m_resourceNodes[id];
-			consumed.m_refCount++;
+			auto& consumed = mResourceNodes[id];
+			consumed.mRefCount++;
 		}
-		for (const auto [id, _] : pass.m_writes)
+		for (const auto [id, _] : pass.mWrites)
 		{
-			auto& written = m_resourceNodes[id];
-			written.m_producer = &pass;
+			auto& written = mResourceNodes[id];
+			written.mProducer = &pass;
 		}
 	}
 
 	// -- Culling:
 
 	std::stack<ResourceNode*> unreferencedResources;
-	for (auto& node : m_resourceNodes)
+	for (auto& node : mResourceNodes)
 	{
-		if (node.m_refCount == 0) unreferencedResources.push(&node);
+		if (node.mRefCount == 0) unreferencedResources.push(&node);
 	}
 	while (!unreferencedResources.empty())
 	{
 		auto* unreferencedResource = unreferencedResources.top();
 		unreferencedResources.pop();
-		PassNode* producer{ unreferencedResource->m_producer };
+		PassNode* producer{ unreferencedResource->mProducer };
 		if (producer == nullptr || producer->hasSideEffect()) continue;
 
-		assert(producer->m_refCount >= 1);
-		if (--producer->m_refCount == 0)
+		assert(producer->mRefCount >= 1);
+		if (--producer->mRefCount == 0)
 		{
-			for (const auto [id, _] : producer->m_reads)
+			for (const auto [id, _] : producer->mReads)
 			{
-				auto& node = m_resourceNodes[id];
-				if (--node.m_refCount == 0) unreferencedResources.push(&node);
+				auto& node = mResourceNodes[id];
+				if (--node.mRefCount == 0) unreferencedResources.push(&node);
 			}
 		}
 	}
 
 	// -- Calculate resources lifetime:
 
-	for (auto& pass : m_passNodes)
+	for (auto& pass : mPassNodes)
 	{
-		if (pass.m_refCount == 0) continue;
+		if (pass.mRefCount == 0) continue;
 
-		for (const auto id : pass.m_creates)
-			_getResourceEntry(id).m_producer = &pass;
-		for (const auto [id, _] : pass.m_writes)
-			_getResourceEntry(id).m_last = &pass;
-		for (const auto [id, _] : pass.m_reads)
-			_getResourceEntry(id).m_last = &pass;
+		for (const auto id : pass.mCreates)
+			_getResourceEntry(id).mProducer = &pass;
+		for (const auto [id, _] : pass.mWrites)
+			_getResourceEntry(id).mLast = &pass;
+		for (const auto [id, _] : pass.mReads)
+			_getResourceEntry(id).mLast = &pass;
 	}
 }
 
 void FrameGraph::Execute(void* context, void* allocator)
 {
-	for (const auto& pass : m_passNodes)
+	for (const auto& pass : mPassNodes)
 	{
 		if (!pass.canExecute()) continue;
 
-		for (const auto id : pass.m_creates)
+		for (const auto id : pass.mCreates)
 		{
 			_getResourceEntry(id).create(allocator);
 		}
 
 		// 资源状态转换
-		for (const auto [id, flags] : pass.m_reads)
+		for (const auto [id, flags] : pass.mReads)
 		{
 			if (flags != kFlagsIgnored)
 			{
 				_getResourceEntry(id).preRead(flags, context);
 			}
 		}
-		for (const auto [id, flags] : pass.m_writes)
+		for (const auto [id, flags] : pass.mWrites)
 		{
 			if (flags != kFlagsIgnored)
 			{
@@ -107,11 +107,11 @@ void FrameGraph::Execute(void* context, void* allocator)
 		}
 
 		FrameGraphPassResources resources{ *this, pass };
-		std::invoke(*pass.m_exec, resources, context);
+		std::invoke(*pass.mExec, resources, context);
 
-		for (auto& entry : m_resourceRegistry)
+		for (auto& entry : mResourceRegistry)
 		{
-			if (entry.m_last == &pass && entry.isTransient())
+			if (entry.mLast == &pass && entry.isTransient())
 			{
 				entry.destroy(allocator);
 			}
@@ -125,21 +125,21 @@ void FrameGraph::Execute(void* context, void* allocator)
 
 PassNode& FrameGraph::_createPassNode(const std::string_view name, std::unique_ptr<FrameGraphPassConcept>&& base)
 {
-	const auto id = static_cast<uint32_t>(m_passNodes.size());
-	return m_passNodes.emplace_back(PassNode{name, id, std::move(base)});
+	const auto id = static_cast<uint32_t>(mPassNodes.size());
+	return mPassNodes.emplace_back(PassNode{name, id, std::move(base)});
 }
 
 ResourceNode& FrameGraph::_createResourceNode(const std::string_view name, uint32_t resourceId, uint32_t version)
 {
-	const auto id = static_cast<uint32_t>(m_resourceNodes.size());
-	return m_resourceNodes.emplace_back(ResourceNode{name, id, resourceId, version});
+	const auto id = static_cast<uint32_t>(mResourceNodes.size());
+	return mResourceNodes.emplace_back(ResourceNode{name, id, resourceId, version});
 }
 
 FrameGraphResource FrameGraph::_clone(FrameGraphResource id)
 {
 	const auto& node = _getResourceNode(id);
 	auto& entry = _getResourceEntry(node);
-	entry.m_version++;
+	entry.mVersion++;
 
 	const auto& clone = _createResourceNode(node.getName(), node.getResourceId(), entry.getVersion());
 	return clone.getId();
@@ -147,8 +147,8 @@ FrameGraphResource FrameGraph::_clone(FrameGraphResource id)
 
 const ResourceNode& FrameGraph::_getResourceNode(FrameGraphResource id) const
 {
-	assert(id < m_resourceNodes.size());
-	return m_resourceNodes[id];
+	assert(id < mResourceNodes.size());
+	return mResourceNodes[id];
 }
 
 const ResourceEntry& FrameGraph::_getResourceEntry(FrameGraphResource id) const
@@ -158,8 +158,8 @@ const ResourceEntry& FrameGraph::_getResourceEntry(FrameGraphResource id) const
 
 const ResourceEntry& FrameGraph::_getResourceEntry(const ResourceNode& node) const
 {
-	assert(node.m_resourceId < m_resourceRegistry.size());
-	return m_resourceRegistry[node.m_resourceId];
+	assert(node.mResourceId < mResourceRegistry.size());
+	return mResourceRegistry[node.mResourceId];
 }
 
 // 导出图表文件，本质是文本文件，方便检查，可视化，在线可视化工具如下：
@@ -175,21 +175,21 @@ RENDERSYSTEM_API std::ostream& operator<<(std::ostream& os, const FrameGraph& fg
 
 FrameGraphResource FrameGraph::Builder::Read(FrameGraphResource id, uint32_t flags)
 {
-	assert(m_frameGraph.IsValid(id));
-	return m_passNode._read(id, flags);
+	assert(mFrameGraph.IsValid(id));
+	return mPassNode._read(id, flags);
 }
 
 FrameGraphResource FrameGraph::Builder::Write(FrameGraphResource id, uint32_t flags)
 {
-	assert(m_frameGraph.IsValid(id));
-    if (m_frameGraph._getResourceEntry(id).isImported()) 
+	assert(mFrameGraph.IsValid(id));
+    if (mFrameGraph._getResourceEntry(id).isImported()) 
     {
         SetSideEffect();
     }
 
-	if (m_passNode.creates(id))
+	if (mPassNode.creates(id))
 	{
-		return m_passNode._write(id, flags);
+		return mPassNode._write(id, flags);
 	}
 	else
 	{
@@ -198,8 +198,8 @@ FrameGraphResource FrameGraph::Builder::Write(FrameGraphResource id, uint32_t fl
 		// undefined order (when same resource is written by different passes).
 		// Renaming resources enforces a specific execution order of the render
 		// passes.
-		m_passNode._read(id, kFlagsIgnored);
-		return m_passNode._write(m_frameGraph._clone(id), flags);
+		mPassNode._read(id, kFlagsIgnored);
+		return mPassNode._write(mFrameGraph._clone(id), flags);
 	}
 }
 

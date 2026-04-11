@@ -88,7 +88,7 @@ TransientResources::TransientResources(RenderCore::RenderDevicePtr renderDevice)
 TransientResources::~TransientResources()
 {
 	// 清理纹理
-	for (auto &texture : m_textures)
+	for (auto &texture : mTextures)
     {
         if (texture)
         {
@@ -98,7 +98,7 @@ TransientResources::~TransientResources()
     }
 
 	// 清理 Buffer
-	for (auto &buffer : m_buffers)
+	for (auto &buffer : mBuffers)
     {
         if (buffer)
         {
@@ -108,11 +108,11 @@ TransientResources::~TransientResources()
     }
 
 	// 清理池
-	m_texturePools.clear();
-	m_bufferPools.clear();
+	mTexturePools.clear();
+	mBufferPools.clear();
 
-	m_textures.clear();
-	m_buffers.clear();
+	mTextures.clear();
+	mBuffers.clear();
 
 	// 清理名称缓存
 	//m_resourceNameCache.clear();
@@ -120,14 +120,14 @@ TransientResources::~TransientResources()
 
 void TransientResources::Update(float deltaTime)
 {
-    HeartBeat(m_textures, m_texturePools, deltaTime);
-    HeartBeat(m_buffers, m_bufferPools, deltaTime);
+    HeartBeat(mTextures, mTexturePools, deltaTime);
+    HeartBeat(mBuffers, mBufferPools, deltaTime);
 }
 
 RenderCore::RCTexturePtr TransientResources::acquireTexture(const FrameGraphTexture::Desc &desc)
 {
     const auto h = std::hash<FrameGraphTexture::Desc>{}(desc);
-    auto &pool = m_texturePools[h];
+    auto &pool = mTexturePools[h];
     if (pool.empty())
     {
         RenderCore::RCTexturePtr texture = nullptr;
@@ -147,8 +147,8 @@ RenderCore::RCTexturePtr TransientResources::acquireTexture(const FrameGraphText
         // 设置调试名称
         SetDebugName(texture, desc.name);
 
-        m_textures.push_back(texture);
-        auto ptr = m_textures.back();
+        mTextures.push_back(texture);
+        auto ptr = mTextures.back();
         return ptr;
     }
     else
@@ -163,7 +163,7 @@ RenderCore::RCTexturePtr TransientResources::acquireTexture(const FrameGraphText
             texture = mRenderDevice->CreateTexture2D(desc.format,
                                             RenderCore::TextureUsage::TextureUsageShaderRead | RenderCore::TextureUsage::TextureUsageRenderTarget,
                                             desc.extent.width, desc.extent.height, desc.numMipLevels);
-            m_textures.push_back(texture);
+            mTextures.push_back(texture);
         }
 
         // 从资源池复用时也要更新名称
@@ -176,13 +176,13 @@ RenderCore::RCTexturePtr TransientResources::acquireTexture(const FrameGraphText
 void TransientResources::releaseTexture(const FrameGraphTexture::Desc &desc, RenderCore::RCTexturePtr texture)
 {
     const auto h = std::hash<FrameGraphTexture::Desc>{}(desc);
-    m_texturePools[h].push_back({texture, 0.0f});
+    mTexturePools[h].push_back({texture, 0.0f});
 }
 
 RenderCore::RCBufferPtr TransientResources::acquireBuffer(const FrameGraphBuffer::Desc &desc)
 {
     const auto h = std::hash<FrameGraphBuffer::Desc>{}(desc);
-    auto &pool = m_bufferPools[h];
+    auto &pool = mBufferPools[h];
     if (pool.empty())
     {
         auto buffer = mRenderDevice->CreateBuffer(
@@ -193,8 +193,8 @@ RenderCore::RCBufferPtr TransientResources::acquireBuffer(const FrameGraphBuffer
         // 设置调试名称
         SetDebugName(buffer, desc.name);
 
-        m_buffers.push_back(buffer);
-        auto ptr = m_buffers.back();
+        mBuffers.push_back(buffer);
+        auto ptr = mBuffers.back();
         return ptr;
     }
     else
@@ -212,7 +212,7 @@ RenderCore::RCBufferPtr TransientResources::acquireBuffer(const FrameGraphBuffer
 void TransientResources::releaseBuffer(const FrameGraphBuffer::Desc &desc, RenderCore::RCBufferPtr buffer)
 {
     const auto h = std::hash<FrameGraphBuffer::Desc>{}(desc);
-    m_bufferPools[h].push_back({buffer, 0.0f});
+    mBufferPools[h].push_back({buffer, 0.0f});
 }
 
 void TransientResources::SetDebugName(RenderCore::RCTexturePtr texture, const std::string& name)

@@ -34,26 +34,26 @@ public:
 	template <typename T> [[nodiscard]] bool Has() const;
 
 private:
-	std::unordered_map<std::type_index, std::any> m_storage;
+	std::unordered_map<std::type_index, std::any> mStorage;
 };
 
 template <typename T, typename... Args>
 inline T& FrameGraphBlackboard::Add(Args &&...args)
 {
 	assert(!Has<T>());
-	return m_storage[typeid(T)].emplace<T>(T{ std::forward<Args>(args)... });
+	return mStorage[typeid(T)].emplace<T>(T{ std::forward<Args>(args)... });
 }
 
 template <typename T> const T& FrameGraphBlackboard::Get() const
 {
 	assert(Has<T>());
-	return std::any_cast<const T&>(m_storage.at(typeid(T)));
+	return std::any_cast<const T&>(mStorage.at(typeid(T)));
 }
 
 template <typename T> const T* FrameGraphBlackboard::TryGet() const
 {
-	auto it = m_storage.find(typeid(T));
-	return it != m_storage.cend() ? std::any_cast<const T>(&it->second) : nullptr;
+	auto it = mStorage.find(typeid(T));
+	return it != mStorage.cend() ? std::any_cast<const T>(&it->second) : nullptr;
 }
 
 template <typename T> inline T& FrameGraphBlackboard::Get()
@@ -69,9 +69,9 @@ template <typename T> inline T* FrameGraphBlackboard::TryGet()
 template <typename T> inline bool FrameGraphBlackboard::Has() const
 {
 #if __cplusplus >= 202002L
-    return m_storage.contains(typeid(T));
+    return mStorage.contains(typeid(T));
 #else
-    return m_storage.find(typeid(T)) != m_storage.cend();
+    return mStorage.find(typeid(T)) != mStorage.cend();
 #endif
 }
 

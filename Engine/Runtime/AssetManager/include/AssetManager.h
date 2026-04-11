@@ -161,13 +161,13 @@ private:
 	template<typename T>
 	void AddToCache(const std::string& guid, T* asset);
 
-	std::string m_rootPath;                              // 资根目录
+	std::string mRootPath;                              // 资根目录
 
-	std::unordered_map<std::string, Asset*> m_assets;        // GUID到资源的映射
-	std::unordered_map<std::string, TextureAsset*> m_textures;  // 名称到纹理的映射
+	std::unordered_map<std::string, Asset*> mAssets;        // GUID到资源的映射
+	std::unordered_map<std::string, TextureAsset*> mTextures;  // 名称到纹理的映射
 
-	static AssetManager* s_instance;
-	bool m_initialized;
+	static AssetManager* sInstance;
+	bool mInitialized;
 };
 
 NS_ASSETMANAGER_END

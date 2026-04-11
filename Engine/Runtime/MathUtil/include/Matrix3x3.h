@@ -47,26 +47,26 @@ public:
 
 	inline T* operator [](size_t nIndex)
 	{
-		return m_Values[nIndex];
+		return mValues[nIndex];
 	}
 
 	inline const T* operator [](size_t nIndex) const
 	{
-		return m_Values[nIndex];
+		return mValues[nIndex];
 	}
 
 	Vector3<T> col(size_t nIndex)
 	{
 		size_t startIndex = nIndex;
-		return Vector3<T>(m_adfValues[startIndex + 0], m_adfValues[startIndex + 3],
-			m_adfValues[startIndex + 6]);
+		return Vector3<T>(mAdfValues[startIndex + 0], mAdfValues[startIndex + 3],
+			mAdfValues[startIndex + 6]);
 	}
 
 	const Vector3<T> col(size_t nIndex) const
 	{
 		size_t startIndex = nIndex;
-		return Vector3<T>(m_adfValues[startIndex + 0], m_adfValues[startIndex + 3],
-			m_adfValues[startIndex + 6]);
+		return Vector3<T>(mAdfValues[startIndex + 0], mAdfValues[startIndex + 3],
+			mAdfValues[startIndex + 6]);
 	}
 
 	//重载两个矩阵之间的操作符
@@ -94,8 +94,8 @@ public:
 private:
 	union		//矩阵元素
 	{
-		T m_adfValues[9];
-		T m_Values[3][3];
+		T mAdfValues[9];
+		T mValues[3][3];
 	};
 public:
     static const Matrix3x3 IDENTITY;

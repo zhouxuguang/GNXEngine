@@ -83,17 +83,17 @@ AssetType TextureAsset::GetType() const
 
 const std::string& TextureAsset::GetGUID() const
 {
-	return m_guid;
+	return mGuid;
 }
 
 const std::string& TextureAsset::GetName() const
 {
-	return m_name;
+	return mName;
 }
 
 const std::string& TextureAsset::GetFilePath() const
 {
-	return m_filePath;
+	return mFilePath;
 }
 
 bool TextureAsset::Load()

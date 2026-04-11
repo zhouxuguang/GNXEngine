@@ -4,74 +4,74 @@
 NS_ASSETMANAGER_BEGIN
 
 Asset::Asset()
-	: m_refCount(0)
-	, m_state(AssetState::Unloaded)
-	, m_fileSize(0)
-	, m_memorySize(0)
-	, m_lastModified(0)
+	: mRefCount(0)
+	, mState(AssetState::Unloaded)
+	, mFileSize(0)
+	, mMemorySize(0)
+	, mLastModified(0)
 {
 }
 
 Asset::~Asset()
 {
 	// 确保资源已被正确卸载
-	assert(m_refCount == 0 && "Asset destroyed with non-zero reference count!");
+	assert(mRefCount == 0 && "Asset destroyed with non-zero reference count!");
 }
 
 void Asset::AddRef()
 {
-	++m_refCount;
+	++mRefCount;
 }
 
 void Asset::Release()
 {
-	assert(m_refCount > 0 && "Asset reference count underflow!");
-	--m_refCount;
+	assert(mRefCount > 0 && "Asset reference count underflow!");
+	--mRefCount;
 }
 
 int Asset::GetRefCount() const
 {
-	return m_refCount.load();
+	return mRefCount.load();
 }
 
 AssetState Asset::GetState() const
 {
-	return m_state;
+	return mState;
 }
 
 void Asset::SetState(AssetState state)
 {
-	m_state = state;
+	mState = state;
 }
 
 uint64_t Asset::GetFileSize() const
 {
-	return m_fileSize;
+	return mFileSize;
 }
 
 void Asset::SetFileSize(uint64_t size)
 {
-	m_fileSize = size;
+	mFileSize = size;
 }
 
 uint64_t Asset::GetMemorySize() const
 {
-	return m_memorySize;
+	return mMemorySize;
 }
 
 void Asset::SetMemorySize(uint64_t size)
 {
-	m_memorySize = size;
+	mMemorySize = size;
 }
 
 int64_t Asset::GetLastModified() const
 {
-	return m_lastModified;
+	return mLastModified;
 }
 
 void Asset::SetLastModified(int64_t timestamp)
 {
-	m_lastModified = timestamp;
+	mLastModified = timestamp;
 }
 
 NS_ASSETMANAGER_END

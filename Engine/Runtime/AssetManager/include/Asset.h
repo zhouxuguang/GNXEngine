@@ -143,15 +143,15 @@ public:
 	void SetLastModified(int64_t timestamp);
 
 protected:
-	std::string m_guid;
-	std::string m_name;
-	std::string m_filePath;
-	std::atomic<int> m_refCount;
-	AssetState m_state;
+	std::string mGuid;
+	std::string mName;
+	std::string mFilePath;
+	std::atomic<int> mRefCount;
+	AssetState mState;
 
-	uint64_t m_fileSize;
-	uint64_t m_memorySize;
-	int64_t m_lastModified;
+	uint64_t mFileSize;
+	uint64_t mMemorySize;
+	int64_t mLastModified;
 };
 
 NS_ASSETMANAGER_END

@@ -25,20 +25,20 @@ public:
 	GraphNode& operator=(const GraphNode&) = delete;
 	GraphNode& operator=(GraphNode&&) noexcept = delete;
 
-	[[nodiscard]] auto getId() const { return m_id; }
-	[[nodiscard]] const std::string& getName() const { return m_name; }
-	[[nodiscard]] auto getRefCount() const { return m_refCount; }
+	[[nodiscard]] auto getId() const { return mId; }
+	[[nodiscard]] const std::string& getName() const { return mName; }
+	[[nodiscard]] auto getRefCount() const { return mRefCount; }
 
 protected:
-	GraphNode(const std::string_view name, uint32_t id) : m_name(name), m_id(id)
+	GraphNode(const std::string_view name, uint32_t id) : mName(name), mId(id)
 	{
 	}
 
 private:
-	std::string m_name;
+	std::string mName;
 	// Unique id, matches an array index in FrameGraph.
-	const uint32_t m_id;
-	int32_t m_refCount = 0;
+	const uint32_t mId;
+	int32_t mRefCount = 0;
 };
 
 NS_RENDERSYSTEM_END

@@ -50,15 +50,15 @@ public:
     inline const Vector4<T> col(size_t nIndex) const
     {
         size_t startIndex = nIndex;
-        return Vector4<T>(m_adfValues[startIndex + 0], m_adfValues[startIndex + 4],
-            m_adfValues[startIndex + 8], m_adfValues[startIndex + 12]);
+        return Vector4<T>(mAdfValues[startIndex + 0], mAdfValues[startIndex + 4],
+            mAdfValues[startIndex + 8], mAdfValues[startIndex + 12]);
     }
 
     inline Vector4<T> col(size_t nIndex)
     {
         size_t startIndex = nIndex;
-        return Vector4<T>(m_adfValues[startIndex + 0], m_adfValues[startIndex + 4],
-            m_adfValues[startIndex + 8], m_adfValues[startIndex + 12]);
+        return Vector4<T>(mAdfValues[startIndex + 0], mAdfValues[startIndex + 4],
+            mAdfValues[startIndex + 8], mAdfValues[startIndex + 12]);
     }
 
     //操作符重载
@@ -194,7 +194,7 @@ private:
     //矩阵元素
     union
     {
-        T m_adfValues[16];
+        T mAdfValues[16];
         Vector4<T> mVecArray[4];
     };
 

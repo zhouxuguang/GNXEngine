@@ -25,19 +25,19 @@ const Matrix4x4<T> Matrix4x4<T>::ZERO = Matrix4x4<T>(
 template <typename T>
 Matrix4x4<T>::Matrix4x4(void)
 {
-	memcpy(m_adfValues, Matrix4x4::IDENTITY.m_adfValues, 16 * sizeof(T));
+	memcpy(mAdfValues, Matrix4x4::IDENTITY.mAdfValues, 16 * sizeof(T));
 }
 
 template <typename T>
 Matrix4x4<T>::~Matrix4x4(void)
 {
-	memset(m_adfValues, 0, MATRIX4_SIZE);
+	memset(mAdfValues, 0, MATRIX4_SIZE);
 }
 
 template <typename T>
 Matrix4x4<T>::Matrix4x4(T* pfMatValues)
 {
-	memcpy(m_adfValues, pfMatValues, MATRIX4_SIZE);
+	memcpy(mAdfValues, pfMatValues, MATRIX4_SIZE);
 }
 
 template <typename T>
@@ -45,7 +45,7 @@ Matrix4x4<T>::Matrix4x4(const Matrix4x4<T>& rtMat)
 {
 	for (int i = 0; i < 16; i++)
 	{
-		m_adfValues[i] = rtMat.m_adfValues[i];
+		mAdfValues[i] = rtMat.mAdfValues[i];
 	}
 }
 
@@ -75,7 +75,7 @@ Matrix4x4<T>& Matrix4x4<T>::operator =(const Matrix4x4<T>& rhs)
 {
 	for (int i = 0; i < 16; i++)
 	{
-		m_adfValues[i] = rhs[i / 4][i % 4];
+		mAdfValues[i] = rhs[i / 4][i % 4];
 	}
 	return *this;
 }
@@ -207,7 +207,7 @@ Matrix4x4<T>& Matrix4x4<T>::operator *=(const Matrix4x4<T>& other)
 		}
 	}
 
-	memcpy((void*)m_adfValues, adfResult, MATRIX4_SIZE);
+	memcpy((void*)mAdfValues, adfResult, MATRIX4_SIZE);
 
 	return *this;
 }
@@ -245,7 +245,7 @@ Matrix4x4<T> Matrix4x4<T>::operator /(T fValue)
 template <typename T>
 void Matrix4x4<T>::MakeIdentity()
 {
-	memcpy(m_adfValues, &Matrix4x4::IDENTITY, MATRIX4_SIZE);
+	memcpy(mAdfValues, &Matrix4x4::IDENTITY, MATRIX4_SIZE);
 }
 
 template <typename T>
@@ -386,16 +386,16 @@ Matrix4x4<T> Matrix4x4<T>::CreateReverseZPerspective(T fieldOfView, T aspectRati
 	// 对于 OpenGL 风格的投影矩阵（NDC z 范围 [-1, 1]），Reverse-Z 需要：
 	// z_n = (n-f)/(f-n) + 2nf/(n-f)/z = n/(n-f) - fn/(n-f)/z
 	// 简化后：
-	dst.m_adfValues[0] = 1.0 / (dbTan * aspectRatio);
-	dst.m_adfValues[5] = 1.0 / dbTan;
+	dst.mAdfValues[0] = 1.0 / (dbTan * aspectRatio);
+	dst.mAdfValues[5] = 1.0 / dbTan;
 	
 	// Reverse-Z 的关键：交换 near 和 far 的映射
 	// 传统：z_n = -(f+n)/(f-n) - 2fn/(f-n)/z  => [near: -1, far: 1]
 	// Reverse: z_n = n/(n-f) - fn/(n-f)/z     => [near: 1, far: -1]
 	// 注意：这里保持 OpenGL 风格的 [-1, 1] NDC，后续由 mAdjust 矩阵映射到 [0, 1]
-	dst.m_adfValues[10] = zNearPlane / (zNearPlane - zFarPlane);
-	dst.m_adfValues[11] = zNearPlane * zFarPlane / (zNearPlane - zFarPlane);
-	dst.m_adfValues[14] = -1;
+	dst.mAdfValues[10] = zNearPlane / (zNearPlane - zFarPlane);
+	dst.mAdfValues[11] = zNearPlane * zFarPlane / (zNearPlane - zFarPlane);
+	dst.mAdfValues[14] = -1;
 
 	return dst;
 }
@@ -411,15 +411,15 @@ Matrix4x4<T> Matrix4x4<T>::CreateInfiniteReverseZPerspective(T fieldOfView, T as
 	Matrix4x4<T> dst;
 	memset(&dst, 0, MATRIX4_SIZE);
 
-	dst.m_adfValues[0] = 1.0 / (dbTan * aspectRatio);
-	dst.m_adfValues[5] = 1.0 / dbTan;
+	dst.mAdfValues[0] = 1.0 / (dbTan * aspectRatio);
+	dst.mAdfValues[5] = 1.0 / dbTan;
 	
 	// 无限远时，令 zFar -> infinity
 	// z_n = n/(n-f) - fn/(n-f)/z -> -1 - n/z (far -> 0)
 	// 对于 Metal/Vulkan 的 [0,1] NDC，配合 mAdjust 矩阵使用
-	dst.m_adfValues[10] = 0.0;    // 无限远
-	dst.m_adfValues[11] = zNearPlane;
-	dst.m_adfValues[14] = -1;
+	dst.mAdfValues[10] = 0.0;    // 无限远
+	dst.mAdfValues[11] = zNearPlane;
+	dst.mAdfValues[14] = -1;
 
 	return dst;
 }
@@ -430,16 +430,16 @@ Matrix4x4<T> Matrix4x4<T>::CreateFrustum(T left, T right, T bottom, T top, T zNe
 	Matrix4x4<T> dst;
 	memset(&dst, 0, MATRIX4_SIZE);
 
-	dst.m_adfValues[0] = 2 * zNearPlane / (right - left);
-	dst.m_adfValues[2] = (right + left) / (right - left);
+	dst.mAdfValues[0] = 2 * zNearPlane / (right - left);
+	dst.mAdfValues[2] = (right + left) / (right - left);
 
-	dst.m_adfValues[5] = 2 * zNearPlane / (top - bottom);
-	dst.m_adfValues[6] = (top + bottom) / (top - bottom);
+	dst.mAdfValues[5] = 2 * zNearPlane / (top - bottom);
+	dst.mAdfValues[6] = (top + bottom) / (top - bottom);
 
-	dst.m_adfValues[10] = -(zFarPlane + zNearPlane) / (zFarPlane - zNearPlane);
-	dst.m_adfValues[11] = -2 * zNearPlane * zFarPlane / (zFarPlane - zNearPlane);
+	dst.mAdfValues[10] = -(zFarPlane + zNearPlane) / (zFarPlane - zNearPlane);
+	dst.mAdfValues[11] = -2 * zNearPlane * zFarPlane / (zFarPlane - zNearPlane);
 
-	dst.m_adfValues[14] = -1;
+	dst.mAdfValues[14] = -1;
 
 	return dst;
 }
@@ -471,9 +471,9 @@ Matrix4x4<T> Matrix4x4<T>::CreateScale(const Vector3<T>& scale)
 	Matrix4x4<T> dst;
 	memcpy(&dst, &Matrix4x4::IDENTITY, MATRIX4_SIZE);
 
-	dst.m_adfValues[0] = scale.x;
-	dst.m_adfValues[5] = scale.y;
-	dst.m_adfValues[10] = scale.z;
+	dst.mAdfValues[0] = scale.x;
+	dst.mAdfValues[5] = scale.y;
+	dst.mAdfValues[10] = scale.z;
 
 	return dst;
 }
@@ -484,9 +484,9 @@ Matrix4x4<T> Matrix4x4<T>::CreateScale(T xScale, T yScale, T zScale)
 	Matrix4x4<T> dst;
 	memcpy(&dst, &Matrix4x4<T>::IDENTITY, MATRIX4_SIZE);
 
-	dst.m_adfValues[0] = xScale;
-	dst.m_adfValues[5] = yScale;
-	dst.m_adfValues[10] = zScale;
+	dst.mAdfValues[0] = xScale;
+	dst.mAdfValues[5] = yScale;
+	dst.mAdfValues[10] = zScale;
 
 	return dst;
 }
@@ -501,7 +501,7 @@ template <typename T>
 Matrix4x4<T> Matrix4x4<T>::CreateRotationX(T angle)
 {
 	Matrix4x4<T> dst;
-	T* values = dst.m_adfValues;
+	T* values = dst.mAdfValues;
 	memset(values, 0, MATRIX4_SIZE);
 
 	values[0] = 1;
@@ -522,7 +522,7 @@ template <typename T>
 Matrix4x4<T> Matrix4x4<T>::CreateRotationY(T angle)
 {
 	Matrix4x4<T> dst;
-	T* values = dst.m_adfValues;
+	T* values = dst.mAdfValues;
 	memset(values, 0, MATRIX4_SIZE);
 
 	values[5] = 1;
@@ -543,7 +543,7 @@ template <typename T>
 Matrix4x4<T> Matrix4x4<T>::CreateRotationZ(T angle)
 {
 	Matrix4x4<T> dst;
-	T* values = dst.m_adfValues;
+	T* values = dst.mAdfValues;
 	memset(values, 0, MATRIX4_SIZE);
 
 	values[10] = 1;
@@ -564,8 +564,8 @@ template <typename T>
 Matrix4x4<T> Matrix4x4<T>::CreateRotation(T x, T y, T z, T angle)
 {
 	Matrix4x4<T> dst;
-	memset(dst.m_adfValues, 0, MATRIX4_SIZE);
-	dst.m_adfValues[15] = 1;
+	memset(dst.mAdfValues, 0, MATRIX4_SIZE);
+	dst.mAdfValues[15] = 1;
 
 	//
 	double dbLen = sqrt(x * x + y * y + z * z);
@@ -580,17 +580,17 @@ Matrix4x4<T> Matrix4x4<T>::CreateRotation(T x, T y, T z, T angle)
 	double dbCosTheta = cos(angle);
 
 	//
-	dst.m_adfValues[0] = x * x * db1costheta + dbCosTheta;
-	dst.m_adfValues[1] = x * y * db1costheta - z * dbSinTheta;
-	dst.m_adfValues[2] = x * z * db1costheta + y * dbSinTheta;
+	dst.mAdfValues[0] = x * x * db1costheta + dbCosTheta;
+	dst.mAdfValues[1] = x * y * db1costheta - z * dbSinTheta;
+	dst.mAdfValues[2] = x * z * db1costheta + y * dbSinTheta;
 
-	dst.m_adfValues[4] = x * y * db1costheta + z * dbSinTheta;
-	dst.m_adfValues[5] = y * y * db1costheta + dbCosTheta;
-	dst.m_adfValues[6] = y * z * db1costheta - x * dbSinTheta;
+	dst.mAdfValues[4] = x * y * db1costheta + z * dbSinTheta;
+	dst.mAdfValues[5] = y * y * db1costheta + dbCosTheta;
+	dst.mAdfValues[6] = y * z * db1costheta - x * dbSinTheta;
 
-	dst.m_adfValues[8] = x * z * db1costheta - y * dbSinTheta;
-	dst.m_adfValues[9] = y * z * db1costheta + x * dbSinTheta;
-	dst.m_adfValues[10] = z * z * db1costheta + dbCosTheta;
+	dst.mAdfValues[8] = x * z * db1costheta - y * dbSinTheta;
+	dst.mAdfValues[9] = y * z * db1costheta + x * dbSinTheta;
+	dst.mAdfValues[10] = z * z * db1costheta + dbCosTheta;
 
 	return dst;
 }
@@ -607,14 +607,14 @@ Matrix4x4<T> Matrix4x4<T>::CreateTranslate(T x, T y, T z)
 	Matrix4x4<T> dst;
 	memset(&dst, 0, MATRIX4_SIZE);
 
-	dst.m_adfValues[0] = 1;
-	dst.m_adfValues[5] = 1;
-	dst.m_adfValues[10] = 1;
-	dst.m_adfValues[15] = 1;
+	dst.mAdfValues[0] = 1;
+	dst.mAdfValues[5] = 1;
+	dst.mAdfValues[10] = 1;
+	dst.mAdfValues[15] = 1;
 
-	dst.m_adfValues[3] = x;
-	dst.m_adfValues[7] = y;
-	dst.m_adfValues[11] = z;
+	dst.mAdfValues[3] = x;
+	dst.mAdfValues[7] = y;
+	dst.mAdfValues[11] = z;
 
 	return dst;
 }
@@ -653,7 +653,7 @@ Matrix4x4<T> Matrix4x4<T>::CreateLookAt(T eyePositionX, T eyePositionY, T eyePos
 	dVy = (dNz * dUx - dNx * dUz);
 	dVz = (dNx * dUy - dNy * dUx);
 
-	T* dbViewMatrix = dst.m_adfValues;
+	T* dbViewMatrix = dst.mAdfValues;
 	memset(dbViewMatrix, 0, sizeof(T) * 16);
 	dbViewMatrix[0] = dUx;
 	dbViewMatrix[1] = dUy;

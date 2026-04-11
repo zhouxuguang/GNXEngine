@@ -24,24 +24,24 @@ public:
 
 	static constexpr auto kInitialVersion{ 1u };
 
-	[[nodiscard]] auto toString() const { return m_concept->toString(); }
+	[[nodiscard]] auto toString() const { return mConcept->toString(); }
 
 	void create(void* allocator);
 	void destroy(void* allocator);
 
 	void preRead(uint32_t flags, void* context) 
 	{
-		m_concept->preRead(flags, context);
+		mConcept->preRead(flags, context);
 	}
 	void preWrite(uint32_t flags, void* context) 
 	{
-		m_concept->preWrite(flags, context);
+		mConcept->preWrite(flags, context);
 	}
 
-	[[nodiscard]] auto getId() const { return m_id; }
-	[[nodiscard]] auto getVersion() const { return m_version; }
-	[[nodiscard]] auto isImported() const { return m_type == Type::Imported; }
-	[[nodiscard]] auto isTransient() const { return m_type == Type::Transient; }
+	[[nodiscard]] auto getId() const { return mId; }
+	[[nodiscard]] auto getVersion() const { return mVersion; }
+	[[nodiscard]] auto isImported() const { return mType == Type::Imported; }
+	[[nodiscard]] auto isTransient() const { return mType == Type::Transient; }
 
 	template <typename T> [[nodiscard]] T& get();
 	template <typename T>
@@ -106,25 +106,25 @@ private:
 	template <typename T> [[nodiscard]] auto* _getModel() const;
 
 private:
-	const Type m_type;
-	const uint32_t m_id;
-	uint32_t m_version; // Incremented on each (unique) write declaration.
-	std::unique_ptr<Concept> m_concept;
+	const Type mType;
+	const uint32_t mId;
+	uint32_t mVersion; // Incremented on each (unique) write declaration.
+	std::unique_ptr<Concept> mConcept;
 
-	PassNode* m_producer = nullptr;
-	PassNode* m_last = nullptr;
+	PassNode* mProducer = nullptr;
+	PassNode* mLast = nullptr;
 };
 
 inline void ResourceEntry::create(void* allocator) 
 {
 	assert(isTransient());
-	m_concept->create(allocator);
+	mConcept->create(allocator);
 }
 
 inline void ResourceEntry::destroy(void* allocator) 
 {
 	assert(isTransient());
-	m_concept->destroy(allocator);
+	mConcept->destroy(allocator);
 }
 
 template <typename T> inline T& ResourceEntry::get() 
@@ -144,14 +144,14 @@ inline const typename T::Desc& ResourceEntry::getDescriptor() const
 
 template <typename T>
 inline ResourceEntry::ResourceEntry(const Type type, uint32_t id, const typename T::Desc& desc, T&& obj)
-	: m_type(type), m_id(id), m_version(kInitialVersion),
-	m_concept(std::make_unique<Model<T>>(desc, std::forward<T>(obj)))
+	: mType(type), mId(id), mVersion(kInitialVersion),
+	mConcept(std::make_unique<Model<T>>(desc, std::forward<T>(obj)))
 {
 }
 
 template <typename T> inline auto* ResourceEntry::_getModel() const 
 {
-	auto* model = dynamic_cast<Model<T> *>(m_concept.get());
+	auto* model = dynamic_cast<Model<T> *>(mConcept.get());
 	assert(model && "Invalid type");
 	return model;
 }

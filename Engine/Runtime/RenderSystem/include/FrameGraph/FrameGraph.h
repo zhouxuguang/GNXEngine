@@ -53,24 +53,24 @@ public:
         /** 确保在编译阶段不被剔除掉 */
         Builder& SetSideEffect() 
         {
-            m_passNode.mHasSideEffect = true;
+            mPassNode.mHasSideEffect = true;
             return *this;
         }
         
         Builder& EnableAsyncCompute(bool enableAsyncCompute)
         {
-            m_passNode.mEnableAsyncCompute = enableAsyncCompute;
+            mPassNode.mEnableAsyncCompute = enableAsyncCompute;
             return *this;
         }
 
     private:
-        Builder(FrameGraph& fg, PassNode& node) : m_frameGraph(fg), m_passNode(node)
+        Builder(FrameGraph& fg, PassNode& node) : mFrameGraph(fg), mPassNode(node)
         {
         }
 
     private:
-        FrameGraph& m_frameGraph;
-        PassNode& m_passNode;
+        FrameGraph& mFrameGraph;
+        PassNode& mPassNode;
     };
 
     void Reserve(uint32_t numPasses, uint32_t numResources);
@@ -156,9 +156,9 @@ private:
     }
 
 private:
-    std::vector<PassNode> m_passNodes;
-    std::vector<ResourceNode> m_resourceNodes;
-    std::vector<ResourceEntry> m_resourceRegistry;
+    std::vector<PassNode> mPassNodes;
+    std::vector<ResourceNode> mResourceNodes;
+    std::vector<ResourceEntry> mResourceRegistry;
 };
 
 /**
@@ -191,17 +191,17 @@ public:
     // 获得当前pass的名字
     [[nodiscard]] std::string GetPassName() const
     {
-        return m_passNode.getName();
+        return mPassNode.getName();
     }
 
 private:
-    FrameGraphPassResources(FrameGraph& fg, const PassNode& node) : m_frameGraph(fg), m_passNode(node)
+    FrameGraphPassResources(FrameGraph& fg, const PassNode& node) : mFrameGraph(fg), mPassNode(node)
     {
     }
 
 private:
-    FrameGraph& m_frameGraph;
-    const PassNode& m_passNode;
+    FrameGraph& mFrameGraph;
+    const PassNode& mPassNode;
 };
 
 
@@ -216,13 +216,13 @@ inline FrameGraphResource FrameGraph::Import(const std::string_view name, const 
 template <typename Writer>
 inline std::ostream& FrameGraph::DebugOutput(std::ostream& os, Writer&& writer) const
 {
-    for (const auto& node : m_passNodes)
+    for (const auto& node : mPassNodes)
     {
-        writer(node, m_resourceNodes);
+        writer(node, mResourceNodes);
     }
-    for (const auto& node : m_resourceNodes)
+    for (const auto& node : mResourceNodes)
     {
-        writer(node, m_resourceRegistry[node.m_resourceId], m_passNodes);
+        writer(node, mResourceRegistry[node.mResourceId], mPassNodes);
     }
     writer.flush(os);
     return os;
@@ -236,8 +236,8 @@ template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
 inline FrameGraphResource
 FrameGraph::_create(const ResourceEntry::Type type, const std::string_view name, const typename T::Desc& desc, T&& resource)
 {
-    const auto resourceId = static_cast<uint32_t>(m_resourceRegistry.size());
-    m_resourceRegistry.emplace_back(
+    const auto resourceId = static_cast<uint32_t>(mResourceRegistry.size());
+    mResourceRegistry.emplace_back(
         ResourceEntry{ type, resourceId, desc, std::forward<T>(resource) });
     return _createResourceNode(name, resourceId).getId();
 }
@@ -250,8 +250,8 @@ template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
 inline FrameGraphResource
 FrameGraph::Builder::Create(const std::string_view name, const typename T::Desc& desc)
 {
-    const auto id = m_frameGraph._create<T>(ResourceEntry::Type::Transient, name, desc, T{});
-    m_passNode.m_creates.emplace_back(id);
+    const auto id = mFrameGraph._create<T>(ResourceEntry::Type::Transient, name, desc, T{});
+    mPassNode.mCreates.emplace_back(id);
     return id;
 }
 
@@ -262,16 +262,16 @@ FrameGraph::Builder::Create(const std::string_view name, const typename T::Desc&
 template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
 inline T& FrameGraphPassResources::Get(FrameGraphResource id)
 {
-    assert(m_passNode.reads(id) || m_passNode.creates(id) || m_passNode.writes(id));
-    return m_frameGraph._getResourceEntry(id).get<T>();
+    assert(mPassNode.reads(id) || mPassNode.creates(id) || mPassNode.writes(id));
+    return mFrameGraph._getResourceEntry(id).get<T>();
 }
 
 template <_VIRTUALIZABLE_CONCEPT_IMPL(T)>
 inline const typename T::Desc&
 FrameGraphPassResources::GetDescriptor(FrameGraphResource id) const
 {
-    assert(m_passNode.reads(id) || m_passNode.creates(id) || m_passNode.writes(id));
-    return m_frameGraph.GetDescriptor<T>(id);
+    assert(mPassNode.reads(id) || mPassNode.creates(id) || mPassNode.writes(id));
+    return mFrameGraph.GetDescriptor<T>(id);
 }
 
 NS_RENDERSYSTEM_END

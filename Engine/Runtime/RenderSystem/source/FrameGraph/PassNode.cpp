@@ -39,13 +39,13 @@ namespace
 
 bool PassNode::creates(FrameGraphResource id) const
 {
-    return hasId(m_creates, id);
+    return hasId(mCreates, id);
 }
 
-bool PassNode::reads(FrameGraphResource id) const { return hasId(m_reads, id); }
+bool PassNode::reads(FrameGraphResource id) const { return hasId(mReads, id); }
 bool PassNode::writes(FrameGraphResource id) const
 {
-	return hasId(m_writes, id);
+	return hasId(mWrites, id);
 }
 
 //
@@ -54,26 +54,26 @@ bool PassNode::writes(FrameGraphResource id) const
 
 PassNode::PassNode(const std::string_view name, uint32_t nodeId,
 	std::unique_ptr<FrameGraphPassConcept>&& exec)
-	: GraphNode{ name, nodeId }, m_exec{ std::move(exec) }
+	: GraphNode{ name, nodeId }, mExec{ std::move(exec) }
 {
-	m_creates.reserve(10);
-	m_reads.reserve(10);
-	m_writes.reserve(10);
+	mCreates.reserve(10);
+	mReads.reserve(10);
+	mWrites.reserve(10);
 }
 
 FrameGraphResource PassNode::_read(FrameGraphResource id, uint32_t flags)
 {
 	assert(!creates(id) && !writes(id));
-	return contains(m_reads, { id, flags })
+	return contains(mReads, { id, flags })
 		? id
-		: m_reads.emplace_back(AccessDeclaration{ id, flags }).id;
+		: mReads.emplace_back(AccessDeclaration{ id, flags }).id;
 }
 
 FrameGraphResource PassNode::_write(FrameGraphResource id, uint32_t flags)
 {
-	return contains(m_writes, { id, flags })
+	return contains(mWrites, { id, flags })
 		? id
-		: m_writes.emplace_back(AccessDeclaration{ id, flags }).id;
+		: mWrites.emplace_back(AccessDeclaration{ id, flags }).id;
 }
 
 NS_RENDERSYSTEM_END

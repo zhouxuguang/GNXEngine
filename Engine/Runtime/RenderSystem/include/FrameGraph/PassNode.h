@@ -70,11 +70,11 @@ public:
 	}
 
 	struct Create {};
-	[[nodiscard]] decltype(auto) each(const Create) const { return m_creates; }
+	[[nodiscard]] decltype(auto) each(const Create) const { return mCreates; }
 	struct Read {};
-	[[nodiscard]] decltype(auto) each(const Read) const { return m_reads; }
+	[[nodiscard]] decltype(auto) each(const Read) const { return mReads; }
 	struct Write {};
-	[[nodiscard]] decltype(auto) each(const Write) const { return m_writes; }
+	[[nodiscard]] decltype(auto) each(const Write) const { return mWrites; }
 
 private:
 	PassNode(const std::string_view name, uint32_t nodeId, std::unique_ptr<FrameGraphPassConcept>&&);
@@ -83,11 +83,11 @@ private:
 	[[nodiscard]] FrameGraphResource _write(FrameGraphResource id, uint32_t flags);
 
 private:
-	std::unique_ptr<FrameGraphPassConcept> m_exec;
+	std::unique_ptr<FrameGraphPassConcept> mExec;
 
-	std::vector<FrameGraphResource> m_creates;
-	std::vector<AccessDeclaration> m_reads;
-	std::vector<AccessDeclaration> m_writes;
+	std::vector<FrameGraphResource> mCreates;
+	std::vector<AccessDeclaration> mReads;
+	std::vector<AccessDeclaration> mWrites;
 
 	bool mHasSideEffect = false;
     bool mEnableAsyncCompute = false;
