@@ -102,6 +102,7 @@ enum
     //浮点格式纹理
     kTexFormatRGBA16Float = 80,
     kTexFormatRGBA32Float = 81,
+    kTexFormatRG16Float = 82,
 
     kTexFormatR32Float = 100,
 

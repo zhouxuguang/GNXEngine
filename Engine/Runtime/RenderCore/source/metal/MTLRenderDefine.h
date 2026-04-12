@@ -86,6 +86,9 @@ inline MTLPixelFormat ConvertTextureFormatToMetal(uint32_t textureFormat)
         case kTexFormatRGBA16Float:
             return MTLPixelFormatRGBA16Float;
             
+        case kTexFormatRG16Float:
+            return MTLPixelFormatRG16Float;
+            
         case kTexFormatRGBA32Float:
             return MTLPixelFormatRGBA32Float;
             

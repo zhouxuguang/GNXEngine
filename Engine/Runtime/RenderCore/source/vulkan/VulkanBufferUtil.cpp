@@ -635,6 +635,10 @@ VkFormat VulkanBufferUtil::ConvertTextureFormat(TextureFormat texFormat)
         case kTexFormatRGBA16Float:
             format = VK_FORMAT_R16G16B16A16_SFLOAT;
             break;
+
+        case kTexFormatRG16Float:
+            format = VK_FORMAT_R16G16_SFLOAT;
+            break;
             
         case kTexFormatRGBA32Float:
             format = VK_FORMAT_R32G32B32A32_SFLOAT;
