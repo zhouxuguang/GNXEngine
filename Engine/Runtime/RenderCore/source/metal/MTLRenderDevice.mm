@@ -732,11 +732,15 @@ void MTLRenderDevice::InitializeFeatures()
     if (@available(macOS 11.0, *))
     {
         // Mac2 中非 Apple Silicon 的设备（Intel AMD NVIDIA GPU）通常支持 BC 硬件解码
-        if (![device supportsFamily:MTLGPUFamilyMac2] ||
-            ![device.name containsString:@"Apple"])
+        if ([device supportsFamily:MTLGPUFamilyMac2] || device.supportsBCTextureCompression)
         {
             mFeatures.resource.textureCompressionBC = true;
         }
+    }
+#elif TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
+    if ([device supportsFamily:MTLGPUFamilyApple9] || device.supportsBCTextureCompression)
+    {
+        mFeatures.resource.textureCompressionBC = true;
     }
 #endif
 
