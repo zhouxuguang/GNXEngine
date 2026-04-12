@@ -16,6 +16,7 @@
 #include "SSAOPass.h"
 #include "MotionBlurPass.h"
 #include "PostProcess/PostProcessing.h"
+#include "SkyBoxNode.h"
 #include <vector>
 
 NS_RENDERSYSTEM_BEGIN
@@ -101,6 +102,18 @@ private:
      * 执行前向渲染Pass（用于半透明物体）
      */
     void RenderForwardPass();
+
+    /**
+     * 执行天空盒Pass（在延迟光照之后、后处理之前）
+     * 通过深度测试 LEQUAL 只填充远平面区域
+     */
+    FrameGraphResource RenderSkyboxPass(
+        FrameGraph& frameGraph,
+        CommandBufferPtr commandBuffer,
+        FrameGraphResource colorTexture,
+        FrameGraphResource depthTexture,
+        UniformBufferPtr cameraUBO,
+        SkyBoxNode* skyBoxNode);
 
     /**
      * 递归收集场景中的所有网格

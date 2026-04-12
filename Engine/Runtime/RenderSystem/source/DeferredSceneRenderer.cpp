@@ -156,8 +156,19 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     FrameGraphResource lightingResult = RenderDeferredLightingPass(
         frameGraph, commandBuffer, gbufferData, depthResource, cameraUBO, hiZOutput, ssaoOutput);
 
-    // Motion Blur Pass（在Deferred Lighting之后、Present之前）
-    FrameGraphResource finalResult = lightingResult;
+    // Skybox Pass（在 Deferred Lighting 之后、MotionBlur 之前）
+    // 天空盒通过深度测试 LEQUAL 只填充远平面区域（无几何体覆盖的部分）
+    FrameGraphResource skyboxResult = lightingResult;
+    {
+        SkyBoxNode* skyBoxNode = sceneManager->GetSkyBox();
+        if (skyBoxNode)
+        {
+            skyboxResult = RenderSkyboxPass(frameGraph, commandBuffer, lightingResult, depthResource, cameraUBO, skyBoxNode);
+        }
+    }
+
+    // Motion Blur Pass（在 Skybox 之后、Present之前）
+    FrameGraphResource finalResult = skyboxResult;
     if (mMotionBlurPass && depthResource != -1)
     {
         if (!mMotionBlurPass->IsInitialized())
@@ -384,6 +395,92 @@ FrameGraphResource DeferredSceneRenderer::RenderDeferredLightingPass(
         "DeferredLightingPass", frameGraph, commandBuffer, params);
 
     return output.lightingResult;
+}
+
+FrameGraphResource DeferredSceneRenderer::RenderSkyboxPass(
+    FrameGraph& frameGraph,
+    CommandBufferPtr commandBuffer,
+    FrameGraphResource colorTexture,
+    FrameGraphResource depthTexture,
+    UniformBufferPtr cameraUBO,
+    SkyBoxNode* skyBoxNode)
+{
+    // 定义 Skybox Pass 数据结构
+    struct SkyboxPassData
+    {
+        FrameGraphResource outputResult;
+        FrameGraphResource inputColor;
+        FrameGraphResource inputDepth;
+        UniformBufferPtr cameraUBO;
+    };
+
+    auto& passData = frameGraph.AddPass<SkyboxPassData>(
+        "Skybox_Pass",
+        [=](FrameGraph::Builder& builder, SkyboxPassData& data)
+        {
+            // 创建输出纹理（与输入颜色相同规格）
+            FrameGraphTexture::Desc outputDesc;
+            outputDesc.SetName("Skybox_Output");
+            outputDesc.extent = Rect2D{0, 0, (int)mWidth, (int)mHeight};
+            outputDesc.depth = 1;
+            outputDesc.format = kTexFormatBGRA32;
+            data.outputResult = builder.Create<FrameGraphTexture>(outputDesc.name, outputDesc);
+            builder.Write(data.outputResult, (uint32_t)ResourceAccessType::ColorAttachment);
+
+            // 读取延迟光照结果（颜色）和深度（用于深度测试）
+            data.inputColor = builder.Read(colorTexture, (uint32_t)ResourceAccessType::ShaderRead);
+            data.inputDepth = builder.Read(depthTexture, (uint32_t)ResourceAccessType::ShaderRead);
+
+            data.cameraUBO = cameraUBO;
+        },
+        [this, commandBuffer, skyBoxNode](const SkyboxPassData& data, FrameGraphPassResources& resources, void* ctx)
+        {
+            FrameGraphTexture& outputTexture = resources.Get<FrameGraphTexture>(data.outputResult);
+            FrameGraphTexture& inputColor = resources.Get<FrameGraphTexture>(data.inputColor);
+            FrameGraphTexture& depthTex = resources.Get<FrameGraphTexture>(data.inputDepth);
+
+            float debugColor[4] = {0.2f, 0.6f, 1.0f, 1.0f};
+            SCOPED_DEBUGMARKER_EVENT(commandBuffer, "Skybox Pass", debugColor);
+
+            // 创建 RenderPass：颜色附件 LOAD（保留光照结果），深度只读
+            RenderPass renderPass;
+            renderPass.renderRegion = Rect2D(0, 0, (int)mWidth, (int)mHeight);
+
+            // 颜色附件：加载已有内容（延迟光照结果），不清除
+            // 天空盒会通过深度测试只绘制远平面区域
+            auto colorAttachment = std::make_shared<RenderPassColorAttachment>();
+            colorAttachment->texture = outputTexture.texture;
+            colorAttachment->clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+            colorAttachment->loadOp = ATTACHMENT_LOAD_OP_LOAD;  // 加载已有内容
+            colorAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            renderPass.colorAttachments.push_back(colorAttachment);
+
+            // 深度附件：从 G-Buffer 继承，只读（用于深度测试）
+            auto depthAttachment = std::make_shared<RenderPassDepthAttachment>();
+            depthAttachment->texture = depthTex.texture;
+            depthAttachment->loadOp = ATTACHMENT_LOAD_OP_LOAD;
+            depthAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            depthAttachment->readOnly = true;  // 只读深度，天空盒用 LEQUAL 测试
+            renderPass.depthAttachment = depthAttachment;
+
+            // 创建 RenderEncoder 并绘制天空盒
+            RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);
+
+            // 绑定相机 UBO（天空盒 Shader 需要视图/投影矩阵）
+            if (data.cameraUBO)
+            {
+                renderEncoder->SetVertexUniformBuffer("cbPerCamera", data.cameraUBO);
+                renderEncoder->SetFragmentUniformBuffer("cbPerCamera", data.cameraUBO);
+            }
+
+            // 绘制天空盒（SkyBox 内部管理自己的 Pipeline/VB/Shader/CubeMap）
+            skyBoxNode->Render(renderEncoder);
+
+            renderEncoder->EndEncode();
+        }
+    );
+
+    return passData.outputResult;
 }
 
 void DeferredSceneRenderer::CollectLights(
