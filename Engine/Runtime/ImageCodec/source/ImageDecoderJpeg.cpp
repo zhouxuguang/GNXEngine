@@ -57,12 +57,12 @@ static uint8_t* DecodeJPEGData(const uint8_t* pJPEGData, size_t dataLen, uint32_
         {
             if (cInfo.num_components == 4)
             {
-                pixelFormat = FORMAT_SRGB8_ALPHA8;
+                pixelFormat = FORMAT_RGBA8;
             }
             
             else if (cInfo.num_components == 3)
             {
-                pixelFormat = FORMAT_SRGB8;
+                pixelFormat = FORMAT_RGB8;
             }
         }
         
