@@ -29,3 +29,10 @@ add_executable(TestHDR2Cubemap TestHDR2Cubemap.cpp)
 target_link_libraries(TestHDR2Cubemap PRIVATE GNXEngine)
 
 set_property(TARGET TestHDR2Cubemap PROPERTY FOLDER "test")
+
+# BRDF LUT 离线生成工具（输出 KTX 格式）
+add_executable(TestBRDFLUT TestBRDFLUT.cpp)
+
+target_link_libraries(TestBRDFLUT PRIVATE GNXEngine ktx)
+
+set_property(TARGET TestBRDFLUT PROPERTY FOLDER "test")

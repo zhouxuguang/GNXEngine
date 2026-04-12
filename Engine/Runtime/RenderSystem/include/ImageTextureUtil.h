@@ -42,6 +42,14 @@ public:
      * @return RG16Float 格式的 2D 纹理（R=scale, G=bias）
      */
     static RCTexture2DPtr CreateBRDFLUTTexture(uint32_t imageSize = 512, uint32_t samples = 1024);
+
+    /**
+     * @brief 从 KTX 文件加载 2D 纹理
+     * 支持 RG16F、RGBA8、RGBA32F 等常见格式，用于离线预计算资源的运行时加载
+     * @param filename KTX 文件路径
+     * @return GPU 纹理指针，失败返回 nullptr
+     */
+    static RCTexture2DPtr LoadKTXTexture(const char* filename);
 };
 
 NS_RENDERSYSTEM_END

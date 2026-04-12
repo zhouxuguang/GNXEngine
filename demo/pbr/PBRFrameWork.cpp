@@ -362,17 +362,31 @@ void PBRFrameWork::Resize(uint32_t width, uint32_t height)
     RenderCore::SamplerDesc sampDesc = DefaultSamplerDesc();
     
     // ============================================================
-    // BRDF LUT 预计算（Split-Sum 近似预积分表）
-    // 只需在初始化时计算一次，后续所有帧复用
+    // BRDF LUT（Split-Sum 近似预积分表）
+    // 优先从离线生成的 .ktx 文件加载，文件缺失时回退到运行时生成
     // ============================================================
-    mBRDFLUT = RenderSystem::ImageTextureUtil::CreateBRDFLUTTexture(512, 1024);
-    if (!mBRDFLUT)
+    std::string ktxPath = GetProjectAssetDir() + "pbr/brdfLUT.ktx";
+    mBRDFLUT = RenderSystem::ImageTextureUtil::LoadKTXTexture(ktxPath.c_str());
+    if (mBRDFLUT)
     {
-        LOG_ERROR("Failed to create BRDF LUT texture, IBL specular will be disabled");
+        LOG_INFO("BRDF LUT loaded from KTX: %s", ktxPath.c_str());
     }
     else
     {
-        // 将 BRDF LUT 注册到延迟渲染管线
+        LOG_WARN("KTX file not found: %s, falling back to runtime generation", ktxPath.c_str());
+        mBRDFLUT = RenderSystem::ImageTextureUtil::CreateBRDFLUTTexture(512, 1024);
+        if (!mBRDFLUT)
+        {
+            LOG_ERROR("Failed to create BRDF LUT texture, IBL specular will be disabled");
+        }
+        else
+        {
+            LOG_INFO("BRDF LUT generated at runtime (fallback)");
+        }
+    }
+
+    if (mBRDFLUT)
+    {
         RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
         sceneManager->SetIBLTextures(/*irradiance=*/nullptr, /*prefiltered=*/nullptr, mBRDFLUT);
     }
