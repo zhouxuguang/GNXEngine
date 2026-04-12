@@ -851,7 +851,7 @@ void VKRenderEncoder::DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY, 
 {
     if (mContext->vulkanExtension.enableMeshShaderEXT)
     {
-        //vkCmdDrawMeshTasksEXT(mCommandBuffer, groupCountX, groupCountY, groupCountZ);
+        vkCmdDrawMeshTasksEXT(mCommandBuffer, groupCountX, groupCountY, groupCountZ);
     }
     else if (mContext->vulkanExtension.enableMeshShaderNV)
     {
@@ -877,7 +877,7 @@ void VKRenderEncoder::DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset,
     
     if (mContext->vulkanExtension.enableMeshShaderEXT)
     {
-        //vkCmdDrawMeshTasksIndirectEXT(mCommandBuffer, vkBuffer->GetVkBuffer(), offset, drawCount, stride);
+        vkCmdDrawMeshTasksIndirectEXT(mCommandBuffer, vkBuffer->GetVkBuffer(), offset, drawCount, stride);
     }
     else if (mContext->vulkanExtension.enableMeshShaderNV)
     {

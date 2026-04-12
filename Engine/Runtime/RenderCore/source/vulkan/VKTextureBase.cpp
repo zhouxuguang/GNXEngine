@@ -282,12 +282,6 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
         hostImageLayoutTransitionInfo.newLayout = hostCopyDstLayout;
         hostImageLayoutTransitionInfo.subresourceRange = subresourceRange;
 
-        // Get the function pointers required host image copies
-        PFN_vkCopyMemoryToImageEXT vkCopyMemoryToImageEXT = 
-                (PFN_vkCopyMemoryToImageEXT)vkGetDeviceProcAddr(mContext->device, "vkCopyMemoryToImageEXT");
-        PFN_vkTransitionImageLayoutEXT vkTransitionImageLayoutEXT = 
-                (PFN_vkTransitionImageLayoutEXT)vkGetDeviceProcAddr(mContext->device, "vkTransitionImageLayoutEXT");
-
         vkTransitionImageLayoutEXT(mContext->device, 1, &hostImageLayoutTransitionInfo);
 
         // Step 2: 使用Host端copy上传纹理数据，dstImageLayout必须与上面的newLayout一致
