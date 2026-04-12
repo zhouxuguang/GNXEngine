@@ -13,6 +13,8 @@ Texture2D gMetalRoughMap;
 SamplerState gMetalRoughMapSam;
 Texture2D gAmbientMap;
 SamplerState gAmbientMapSam;
+Texture2D gEmissiveMap;
+SamplerState gEmissiveMapSam;
 
 // 顶点着色器输入
 struct VertexInput
@@ -81,10 +83,12 @@ FragmentOutput PS(VertexOutput input)
     float4 baseColor = gDiffuseMap.Sample(gDiffuseMapSam, input.texCoord);
     float4 metalRough = gMetalRoughMap.Sample(gMetalRoughMapSam, input.texCoord);
     float ao = gAmbientMap.Sample(gAmbientMapSam, input.texCoord).r;
+    float3 emissive = gEmissiveMap.Sample(gEmissiveMapSam, input.texCoord).rgb;
     
     FragmentOutput output;
 
-    output.outRT0 = float4(0.0f, 0.0f, 0.0f, 0.0f);
+    // RT0: Scene Color (写入自发光颜色，延迟渲染阶段会叠加光照)
+    output.outRT0 = float4(emissive.rgb, 1.0f);
 
     // 法线编码
     normal = EncodeNormalOctahedron(normalize(normal));
