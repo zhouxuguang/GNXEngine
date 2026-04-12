@@ -14,7 +14,8 @@
 
 NS_RENDERSYSTEM_BEGIN
 
-static RCTexture2DPtr TextureFromFile(const char *filename)
+// isSRGB: true=颜色贴图（baseColor/emissive），false=数据贴图（normal/metalRough/AO）
+static RCTexture2DPtr TextureFromFile(const char *filename, bool isSRGB)
 {
     if (filename == nullptr)
     {
@@ -25,6 +26,24 @@ static RCTexture2DPtr TextureFromFile(const char *filename)
     if (!imagecodec::ImageDecoder::DecodeFile(filename, image.get()))
     {
         return nullptr;
+    }
+
+    // 数据贴图强制覆盖为 Linear 格式
+    if (isSRGB)
+    {
+        auto fmt = image->GetFormat();
+        if (fmt == imagecodec::FORMAT_RGB8)
+        {
+            image->SetImageInfo(imagecodec::FORMAT_SRGB8,
+                                image->GetWidth(), image->GetHeight(),
+                                image->GetImageData(), nullptr);
+        } 
+        else if (fmt == imagecodec::FORMAT_RGBA8)
+        {
+            image->SetImageInfo(imagecodec::FORMAT_SRGB8_ALPHA8,
+                                image->GetWidth(), image->GetHeight(),
+                                image->GetImageData(), nullptr);
+        }
     }
     
     TextureDesc textureDescriptor = RenderSystem::ImageTextureUtil::getTextureDescriptor(*image);
@@ -565,7 +584,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     aiString diffuseMap;
     material->GetTexture(aiTextureType_DIFFUSE, 0, &diffuseMap);
     //Texture2DPtr diffuseTexture = TextureFromFile((mDirectory + "Woman.png").c_str());
-    RCTexture2DPtr diffuseTexture = TextureFromFile((mDirectory + diffuseMap.C_Str()).c_str());
+    RCTexture2DPtr diffuseTexture = TextureFromFile((mDirectory + diffuseMap.C_Str()).c_str(), true);
     if (diffuseTexture)
     {
         mat->SetTexture("diffuseTexture", diffuseTexture);
@@ -575,7 +594,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     
     aiString normalMap;
     material->Get(AI_MATKEY_TEXTURE_NORMALS(0), normalMap);
-    RCTexture2DPtr normalTexture = TextureFromFile((mDirectory + normalMap.C_Str()).c_str());
+    RCTexture2DPtr normalTexture = TextureFromFile((mDirectory + normalMap.C_Str()).c_str(), false);
     if (normalTexture)
     {
         mat->SetTexture("normalTexture", normalTexture);
@@ -584,7 +603,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     
     aiString specularMap;
     material->Get(AI_MATKEY_TEXTURE_SPECULAR(0), specularMap);
-    RCTexture2DPtr specularTexture = TextureFromFile((mDirectory + specularMap.C_Str()).c_str());
+    RCTexture2DPtr specularTexture = TextureFromFile((mDirectory + specularMap.C_Str()).c_str(), true);
     if (specularTexture)
     {
         mat->SetTexture("specularTexture", specularTexture);
@@ -593,7 +612,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     
     aiString baseColorMap;
     material->GetTexture(AI_MATKEY_BASE_COLOR_TEXTURE, &baseColorMap);
-    RCTexture2DPtr baseColorTexture = TextureFromFile((mDirectory + baseColorMap.C_Str()).c_str());
+    RCTexture2DPtr baseColorTexture = TextureFromFile((mDirectory + baseColorMap.C_Str()).c_str(), true);
     if (baseColorTexture)
     {
         mat->SetTexture("diffuseTexture", baseColorTexture);
@@ -603,7 +622,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     //加载metallic贴图
     aiString metallicMap;
     material->GetTexture(AI_MATKEY_METALLIC_TEXTURE, &metallicMap);
-    RCTexture2DPtr metallicTexture = TextureFromFile((mDirectory + metallicMap.C_Str()).c_str());
+    RCTexture2DPtr metallicTexture = TextureFromFile((mDirectory + metallicMap.C_Str()).c_str(), false);
     if (metallicTexture)
     {
         mat->SetTexture("metallicTexture", metallicTexture);
@@ -613,7 +632,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     //加载roughness贴图
     aiString roughnessMap;
     material->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &roughnessMap);
-    RCTexture2DPtr roughnessTexture = TextureFromFile((mDirectory + roughnessMap.C_Str()).c_str());
+    RCTexture2DPtr roughnessTexture = TextureFromFile((mDirectory + roughnessMap.C_Str()).c_str(), false);
     if (roughnessTexture)
     {
         mat->SetTexture("roughnessTexture", roughnessTexture);
@@ -629,7 +648,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     //加载自发光材质贴图
     aiString emissiveMap;
     material->GetTexture(aiTextureType_EMISSIVE, 0, &emissiveMap);
-    RCTexture2DPtr emissiveTexture = TextureFromFile((mDirectory + emissiveMap.C_Str()).c_str());
+    RCTexture2DPtr emissiveTexture = TextureFromFile((mDirectory + emissiveMap.C_Str()).c_str(), true);
     if (emissiveTexture)
     {
         mat->SetTexture("emissiveTexture", emissiveTexture);
@@ -639,7 +658,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     // 加载AO贴图
     aiString aoMap;
     material->GetTexture(aiTextureType_AMBIENT_OCCLUSION, 0, &aoMap);
-    RCTexture2DPtr ambientTexture = TextureFromFile((mDirectory + aoMap.C_Str()).c_str());
+    RCTexture2DPtr ambientTexture = TextureFromFile((mDirectory + aoMap.C_Str()).c_str(), false);
     if (ambientTexture)
     {
         mat->SetTexture("ambientTexture", ambientTexture);
