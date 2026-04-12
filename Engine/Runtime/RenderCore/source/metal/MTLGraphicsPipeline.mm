@@ -7,6 +7,7 @@
 
 #include "MTLGraphicsPipeline.h"
 #include "MTLShaderFunction.h"
+#include "MTLPipelineCache.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -257,9 +258,11 @@ static MTLRenderPipelineDescriptor* convertToMTLRenderPiplineDescriptor(const Gr
     return mtlPiplineDes;
 }
 
-MTLGraphicsPipeline::MTLGraphicsPipeline(id<MTLDevice> device, const GraphicsPipelineDesc& des) : GraphicsPipeline(des)
+MTLGraphicsPipeline::MTLGraphicsPipeline(id<MTLDevice> device, const GraphicsPipelineDesc& des,
+                                           const std::shared_ptr<MTLPipelineCache>& pipelineCache) : GraphicsPipeline(des)
 {
     mDevice = device;
+    mPipelineCache = pipelineCache;
     mDepthStencilState = convertToMTLDSDes(device, des.depthStencilDescriptor);
     
     if (des.pipelineType == PipelineType::Mesh)
@@ -455,7 +458,12 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
             }
             mMeshPipelineDes.depthAttachmentPixelFormat = frameBufferFormat.depthFormat;
             mMeshPipelineDes.stencilAttachmentPixelFormat = frameBufferFormat.stencilFormat;
-            
+
+            // Note: MTLMeshRenderPipelineDescriptor.binaryArchives is NOT available
+            // in macOS 14.0 SDK. Binary Archive hint for Mesh Pipeline will be
+            // supported in future SDK versions when Apple adds the property.
+            // For now, Mesh Pipeline PSOs are created without cache acceleration.
+
             NSError *error = nil;
             MTLAutoreleasedRenderPipelineReflection* reflectionObj = nil;
             MTLPipelineOption option = MTLPipelineOptionBufferTypeInfo | MTLPipelineOptionArgumentInfo;
@@ -465,6 +473,11 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
             if (!mMeshPipelineState)
             {
                 NSLog(@"创建 Metal Mesh Pipeline 失败: %@", error);
+            }
+            else if (mPipelineCache)
+            {
+                // Capture mode：注册到归档
+                mPipelineCache->AddRenderPipelineState(mMeshPipelineState);
             }
         }
     }
@@ -483,6 +496,19 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
             }
             mRenderPipelineDes.depthAttachmentPixelFormat = frameBufferFormat.depthFormat;
             mRenderPipelineDes.stencilAttachmentPixelFormat = frameBufferFormat.stencilFormat;
+
+            // 附加 Binary Archive hint（Use mode: 加速 PSO 创建）
+            // MTLRenderPipelineDescriptor.binaryArchives requires macOS 12.0+
+#ifdef SUPPORTED_BINARY_ARCHIVE
+            if (mPipelineCache && mPipelineCache->HasValidArchive())
+            {
+                id<MTLBinaryArchive> archive = mPipelineCache->GetBinaryArchive();
+                if (archive)
+                {
+                    mRenderPipelineDes.binaryArchives = @[archive];
+                }
+            }
+#endif
             
             //创建带反射信息的PSO
             MTLRenderPipelineReflection* reflectionObj = nil;
@@ -540,6 +566,11 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
             if (!mRenderPipelineState)
             {
                 NSLog(@"创建metal渲染管线失败: %@", error);
+            }
+            else if (mPipelineCache)
+            {
+                // Capture mode：注册到归档
+                mPipelineCache->AddRenderPipelineState(mRenderPipelineState);
             }
         }
     }

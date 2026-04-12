@@ -12,6 +12,7 @@
 #include "RenderDevice.h"
 #include "MTLCommandQueue.h"
 #include "RenderDeviceFeatures.h"
+#include "MTLPipelineCache.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -134,6 +135,11 @@ public:
     // 从 MTLDevice 填充 RenderDeviceFeatures（在构造函数中调用一次）
     void InitializeFeatures();
 
+    // Pipeline Cache (Metal Binary Archive)
+    void InitializePipelineCache();
+    void ShutdownPipelineCache();
+    MTLPipelineCachePtr GetPipelineCache() const { return mPipelineCache; }
+
 private:
     CAMetalLayer *mMetalLayer;
     id<MTLCommandQueue> mMetalCommandQueue;
@@ -149,6 +155,9 @@ private:
     std::vector<MTLCommandQueuePtr> mGraphicsQueues;  // 图形队列列表
     std::vector<MTLCommandQueuePtr> mComputeQueues;   // 计算队列列表
     std::vector<MTLCommandQueuePtr> mTransferQueues; // 传输队列列表
+
+    // Metal Binary Archive Pipeline Cache
+    MTLPipelineCachePtr mPipelineCache;
 };
 
 typedef std::shared_ptr<MTLRenderDevice> MTLRenderDevicePtr;

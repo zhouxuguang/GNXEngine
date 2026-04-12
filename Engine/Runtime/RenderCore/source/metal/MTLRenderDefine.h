@@ -174,6 +174,23 @@ struct FrameBufferFormat
     #endif
 #endif
 
+// ============================================================================
+// Metal Binary Archive (.metalar) support
+//   Requires: macOS 11+ (Big Sur) or iOS 14+
+//   SDK header: API_AVAILABLE(macos(11.0), ios(14.0))
+//   Note: Even when SDK supports it, the actual runtime availability is checked
+//   via @available() at call sites.
+// ============================================================================
+#if OS_MACOS
+    #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 110000
+        #define SUPPORTED_BINARY_ARCHIVE 1
+    #endif
+#elif OS_IOS
+    #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_14_0
+        #define SUPPORTED_BINARY_ARCHIVE 1
+    #endif
+#endif
+
 NAMESPACE_RENDERCORE_END
 
 #endif /* GNX_ENGINE_RENDERDEFINE_INCLUDE_H */

@@ -14,10 +14,14 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+// Forward declaration (to avoid circular include)
+class MTLPipelineCache;
+
 class MTLGraphicsPipeline : public GraphicsPipeline
 {
 public:
-    MTLGraphicsPipeline(id<MTLDevice> device, const GraphicsPipelineDesc& des);
+    MTLGraphicsPipeline(id<MTLDevice> device, const GraphicsPipelineDesc& des,
+                        const std::shared_ptr<MTLPipelineCache>& pipelineCache = nullptr);
     
     ~MTLGraphicsPipeline();
     
@@ -71,6 +75,8 @@ private:
     uint32_t mVertexUniformOffset = 0;
     
     MTLGraphicsShaderPtr mShader = nullptr;
+    
+    std::shared_ptr<MTLPipelineCache> mPipelineCache;
     
     bool mGenerated = false;
 };

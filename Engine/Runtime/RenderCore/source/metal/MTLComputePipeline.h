@@ -14,10 +14,14 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+// Forward declaration (to avoid circular include)
+class MTLPipelineCache;
+
 class MTLComputePipeline : public ComputePipeline
 {
 public:
-    MTLComputePipeline(id<MTLDevice> device, ShaderFunctionPtr kernelFunction);
+    MTLComputePipeline(id<MTLDevice> device, ShaderFunctionPtr kernelFunction,
+                       const std::shared_ptr<MTLPipelineCache>& pipelineCache = nullptr);
     
     ~MTLComputePipeline()
     {
@@ -49,6 +53,7 @@ public:
 private:
     id<MTLComputePipelineState> mComputePSO;
     std::unordered_map<std::string, NSUInteger> mResourceMap;
+    std::shared_ptr<MTLPipelineCache> mPipelineCache;
 };
 
 NAMESPACE_RENDERCORE_END

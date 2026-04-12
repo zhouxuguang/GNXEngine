@@ -17,8 +17,12 @@
 #include "MTLTextureBase.h"
 #include "MTLCommandQueue.h"
 #include "MTLRCBuffer.h"
+#include "MTLPipelineCache.h"
+#include "Runtime/BaseLib/include/LogService.h"
 
 NAMESPACE_RENDERCORE_BEGIN
+
+USING_NS_BASELIB
 
 MTLRenderDevice::MTLRenderDevice(CAMetalLayer *metalLayer)
 {
@@ -58,11 +62,14 @@ MTLRenderDevice::MTLRenderDevice(CAMetalLayer *metalLayer)
         0
     );
     mTransferQueues.push_back(transferQueue);
+
+    // 初始化 Metal Pipeline Cache (Binary Archive)
+    InitializePipelineCache();
 }
 
 MTLRenderDevice::~MTLRenderDevice()
 {
-    //
+    ShutdownPipelineCache();
 }
 
 void MTLRenderDevice::Resize(uint32_t width, uint32_t height)
@@ -173,13 +180,13 @@ GraphicsShaderPtr MTLRenderDevice::CreateGraphicsShader(const ShaderCode& vertex
  */
 GraphicsPipelinePtr MTLRenderDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc& des) const
 {
-    return std::make_shared<MTLGraphicsPipeline>(mMetalLayer.device, des);
+    return std::make_shared<MTLGraphicsPipeline>(mMetalLayer.device, des, mPipelineCache);
 }
 
 ComputePipelinePtr MTLRenderDevice::CreateComputePipeline(const ShaderCode& shaderSource) const
 {
     ShaderFunctionPtr shaderFunction = CreateShaderFunction(shaderSource, ShaderStage_Compute);
-    return std::make_shared<MTLComputePipeline>(mMetalLayer.device, shaderFunction);
+    return std::make_shared<MTLComputePipeline>(mMetalLayer.device, shaderFunction, mPipelineCache);
 }
 
 CommandBufferPtr MTLRenderDevice::CreateCommandBuffer()
@@ -788,6 +795,29 @@ void MTLRenderDevice::InitializeFeatures()
     // Multiview: Metal 通过 [[render_target_array_index]] + instanced rendering 实现
     //   在 macOS 10.13+ / iOS 11+ 全平台可用
     mFeatures.advanced.multiview = true;
+}
+
+void MTLRenderDevice::InitializePipelineCache()
+{
+    if (!mMetalLayer.device)
+        return;
+
+    mPipelineCache = std::make_shared<MTLPipelineCache>();
+    if (!mPipelineCache->Initialize(mMetalLayer.device))
+    {
+        // Initialize 返回 false 说明 Binary Archive 不可用（旧系统或创建失败）
+        // 但对象本身仍然有效（HasValidArchive() == false），所有调用会安全地 no-op
+        LOG_INFO("MTLRenderDevice: pipeline cache unavailable (OS version or device limitation)");
+    }
+}
+
+void MTLRenderDevice::ShutdownPipelineCache()
+{
+    if (mPipelineCache)
+    {
+        mPipelineCache->SaveAndDestroy();
+        mPipelineCache.reset();
+    }
 }
 
 NAMESPACE_RENDERCORE_END
