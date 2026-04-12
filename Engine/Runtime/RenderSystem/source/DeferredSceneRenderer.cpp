@@ -342,6 +342,7 @@ FrameGraphResource DeferredSceneRenderer::RenderDeferredLightingPass(
 
     // 构建延迟光照参数
     DeferredLightingParams params;
+    params.gSceneColor = gbufferData.sceneColor;
     params.gBufferA = gbufferData.gBufferA;
     params.gBufferB = gbufferData.gBufferB;
     params.gBufferC = gbufferData.gBufferC;

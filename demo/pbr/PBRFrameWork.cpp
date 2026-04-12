@@ -264,10 +264,10 @@ void PBRFrameWork::Resize(uint32_t width, uint32_t height)
     }
     cameraPtr->LookAt(
         Vector3f(0.0f, 2.5f, 6.0f),
-        Vector3f(0.0f, 1.0f, 0.0f),
+        Vector3f(0.0f, 0.0f, 0.0f),
         Vector3f(0.0f, 1.0f, 0.0f)
     );
-    cameraPtr->SetLens(50, width, height, 0.1f, 100.0f);
+    cameraPtr->SetLens(60, width, height, 0.1f, 100.0f);
     
     // ---- Lighting Setup ----
     
@@ -297,7 +297,7 @@ void PBRFrameWork::Resize(uint32_t width, uint32_t height)
         Matrix4x4f translateMatrix = Matrix4x4f::CreateTranslate(0.0f, 1.3f, -2.0f);
         Matrix4x4f scaleMatrix     = Matrix4x4f::CreateScale(1.8f, 1.8f, 1.8f);
         Matrix4x4f rotateMatrix   = Matrix4x4f::CreateRotation(0, 1, 0, -45.0f);
-        Matrix4x4f modelMatrix    = rotateMatrix * scaleMatrix * translateMatrix;
+        Matrix4x4f modelMatrix    = scaleMatrix;
         
         RenderSystem::Transform transform;
         transform.TransformFromMat4(modelMatrix);

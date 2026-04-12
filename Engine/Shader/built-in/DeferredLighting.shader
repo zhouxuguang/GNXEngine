@@ -101,13 +101,16 @@ float4 PS(VertexOut pin) : SV_Target0
     float4 metallicSpecularRoughness = gGBufferB.Sample(gGBufferBSam, pin.texCoord);
     float4 baseColorAO = gGBufferC.Sample(gGBufferCSam, pin.texCoord);
     
+    // 从RT0读取自发光颜色（BasePass写入）
+    float3 emissive = gGBufferSceneColor.Sample(gGBufferSceneColorSam, pin.texCoord).rgb;
+    
     // 从深度重建顶点世界坐标
     float depth = gDepth.Sample(gDepthSam, pin.texCoord).r;
     float4 position;
     position.xyz = ReconstructWorldPosition(pin.texCoord, depth);
     position.w = 1.0;
     
-    // 解包G-Buffer数据
+    // 解包G-Buffer数据（法线、albedo、metallic、roughness、ao）
     GBufferData gBufferData = UnpackGBuffer(float4(baseColorAO.rgb, 0.0f), float4(normal.rgb, metallicSpecularRoughness.b), 
                             float4(metallicSpecularRoughness.r, baseColorAO.a, 0.0f, 0.0f), position);
     
@@ -150,7 +153,7 @@ float4 PS(VertexOut pin) : SV_Target0
     ssao = gSSAO.Sample(gSSAOSam, pin.texCoord).r;
     float3 ambient = float3(0.1, 0.1, 0.1) * gBufferData.albedo * gBufferData.ao * ssao;
     
-    // 自发光
-    float3 finalColor = Lo + ambient + gBufferData.emissive;
+    // 最终颜色 = 直接光 + 环境光 + 自发光（来自RT0）
+    float3 finalColor = Lo + ambient + emissive;
     return float4(finalColor, 1.0);
 }

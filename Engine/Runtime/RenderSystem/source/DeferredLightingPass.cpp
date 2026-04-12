@@ -210,7 +210,8 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             data.output.lightingResult = builder.Create<FrameGraphTexture>(outputDesc.name, outputDesc);
             (void)builder.Write(data.output.lightingResult, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
             
-            // 读取G-Buffer纹理
+            // 读取G-Buffer纹理（包含RT0 SceneColor/Emissive）
+            data.gSceneColor = builder.Read(params.gSceneColor, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             data.gBufferA = builder.Read(params.gBufferA, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             data.gBufferB = builder.Read(params.gBufferB, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             data.gBufferC = builder.Read(params.gBufferC, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
@@ -241,6 +242,7 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             UpdateLightData(params);
             
             // 获取纹理资源
+            FrameGraphTexture& gSceneColor = resources.Get<FrameGraphTexture>(data.gSceneColor);
             FrameGraphTexture& gBufferA = resources.Get<FrameGraphTexture>(data.gBufferA);
             FrameGraphTexture& gBufferB = resources.Get<FrameGraphTexture>(data.gBufferB);
             FrameGraphTexture& gBufferC = resources.Get<FrameGraphTexture>(data.gBufferC);
@@ -298,7 +300,8 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
                 renderEncoder->SetFragmentUniformBuffer("cbLighting", data.lightUBO);
             }
             
-            // 绑定G-Buffer纹理
+            // 绑定G-Buffer纹理（RT0: Emissive from BasePass）
+            renderEncoder->SetFragmentTextureAndSampler("gGBufferSceneColor", gSceneColor.texture, mGBufferSampler);
             renderEncoder->SetFragmentTextureAndSampler("gGBufferA", gBufferA.texture, mGBufferSampler);
             renderEncoder->SetFragmentTextureAndSampler("gGBufferB", gBufferB.texture, mGBufferSampler);
             renderEncoder->SetFragmentTextureAndSampler("gGBufferC", gBufferC.texture, mGBufferSampler);
