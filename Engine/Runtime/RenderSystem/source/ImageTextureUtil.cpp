@@ -6,6 +6,8 @@
 //
 
 #include "ImageTextureUtil.h"
+#include "Runtime/BaseLib/include/LogService.h"
+#include "Runtime/AssetProcess/source/IBLBaker/PBRBase.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -222,6 +224,36 @@ int getNumMipMapLevels2D(int w, int h)
     while ((w | h) >> levels)
         levels += 1;
     return levels;
+}
+
+//=============================================================================
+// 运行时生成 BRDF LUT 纹理（Split-Sum 近似预积分表）
+// 输出 RG16Half 格式，R=scale G=bias
+//=============================================================================
+
+RCTexture2DPtr ImageTextureUtil::CreateBRDFLUTTexture(uint32_t imageSize, uint32_t samples)
+{
+    // 1. 调用 AssetProcess 的 BRDF LUT 生成器（输出 FORMAT_RG16Float 内存数据）
+    imagecodec::VImagePtr brdfImage = AssetProcess::GenerateBRDFLUT(imageSize, samples);
+    if (!brdfImage || !brdfImage->GetImageData())
+    {
+        LOG_ERROR("BRDF LUT generation failed");
+        return nullptr;
+    }
+
+    // 2. 直接使用生成器的 RG16Half 数据，无需格式转换
+    const uint8_t* imageData = brdfImage->GetImageData();
+    uint32_t bytesPerRow = imageSize * 2 * sizeof(uint16_t); // RG × 2 bytes
+
+    // 3. 创建 GPU 纹理（RG16Float 格式，无需 mipmap）
+    RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(kTexFormatRG16Float,
+                    TextureUsage::TextureUsageShaderRead, imageSize, imageSize, 1);
+
+    Rect2D rect(0, 0, imageSize, imageSize);
+    texture->ReplaceRegion(rect, 0, imageData, bytesPerRow);
+
+    LOG_INFO("BRDF LUT texture created: %ux%u (%u samples), format=RG16Float", imageSize, imageSize, samples);
+    return texture;
 }
 
 NS_RENDERSYSTEM_END

@@ -15,6 +15,7 @@
 #include "Runtime/RenderSystem/include/SceneManager.h"
 #include "Runtime/GNXEngine/include/Events/KeyEvent.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "Runtime/RenderCore/include/RCTexture.h"
 
 class PBRFrameWork : public GNXEngine::AppFrameWork
 {
@@ -28,6 +29,9 @@ public:
     
 private:
     bool OnKeyUp(GNXEngine::KeyReleasedEvent& e);
+    
+    // IBL 资源（BRDF LUT 在启动时预计算一次）
+    RenderCore::RCTexturePtr mBRDFLUT = nullptr;
 };
 
 #endif /* PBRFrameWork_h */

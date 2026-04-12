@@ -133,6 +133,16 @@ public:
     // 重置场景到初始状态
     void ResetScene();
 
+    /**
+     * 设置 IBL 环境光照贴图资源
+     * @param irradianceMap 漫反射辐照度贴图（CubeMap）
+     * @param prefilteredMap 预过滤高光贴图（CubeMap + Mipmap）
+     * @param brdfLUT BRDF 分割求和预积分表（2D Texture）
+     */
+    void SetIBLTextures(RenderCore::RCTexturePtr irradianceMap,
+                        RenderCore::RCTexturePtr prefilteredMap,
+                        RenderCore::RCTexturePtr brdfLUT);
+
 private:
     // 递归渲染节点，支持父子关系变换计算
     void RenderNodeRecursive(SceneNode* node, const RenderInfo& renderInfo);

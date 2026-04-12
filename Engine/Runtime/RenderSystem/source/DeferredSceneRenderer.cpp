@@ -43,6 +43,15 @@ void DeferredSceneRenderer::SetGBufferConfig(const GBufferRenderer::GBufferConfi
     mGBufferRenderer->SetConfig(config);
 }
 
+void DeferredSceneRenderer::SetIBLTextures(RCTexturePtr irradianceMap,
+                                           RCTexturePtr prefilteredMap,
+                                           RCTexturePtr brdfLUT)
+{
+    mIBLIrradianceMap = irradianceMap;
+    mIBLPrefilteredMap = prefilteredMap;
+    mIBLBRDFLUT = brdfLUT;
+}
+
 const GBufferRenderer::GBufferConfig& DeferredSceneRenderer::GetGBufferConfig() const
 {
     return mGBufferRenderer->GetConfig();
@@ -355,6 +364,15 @@ FrameGraphResource DeferredSceneRenderer::RenderDeferredLightingPass(
     params.width = mWidth;
     params.height = mHeight;
     params.ssaoTexture = ssaoOutput.ssaoResult;
+    
+    // 传递 IBL 资源到延迟光照 Pass
+    if (mIBLBRDFLUT || mIBLIrradianceMap || mIBLPrefilteredMap)
+    {
+        params.enableIBL = true;
+        params.brdfLUT = mIBLBRDFLUT;
+        params.irradianceMap = mIBLIrradianceMap;
+        params.prefilteredMap = mIBLPrefilteredMap;
+    }
     
     // 传递Hi-Z资源（如果可用）
     // 注意：这里需要在DeferredLightingParams中添加hiZTexture字段

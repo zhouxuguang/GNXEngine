@@ -281,6 +281,22 @@ void PBRFrameWork::Resize(uint32_t width, uint32_t height)
     // ---- Common PBR textures (default fallbacks) ----
     RenderCore::SamplerDesc sampDesc = DefaultSamplerDesc();
     
+    // ============================================================
+    // BRDF LUT 预计算（Split-Sum 近似预积分表）
+    // 只需在初始化时计算一次，后续所有帧复用
+    // ============================================================
+    mBRDFLUT = RenderSystem::ImageTextureUtil::CreateBRDFLUTTexture(512, 1024);
+    if (!mBRDFLUT)
+    {
+        LOG_ERROR("Failed to create BRDF LUT texture, IBL specular will be disabled");
+    }
+    else
+    {
+        // 将 BRDF LUT 注册到延迟渲染管线
+        RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
+        sceneManager->SetIBLTextures(/*irradiance=*/nullptr, /*prefiltered=*/nullptr, mBRDFLUT);
+    }
+    
     RenderCore::RCTexturePtr defaultAlbedo      = RenderSystem::ImageTextureUtil::CreateDiffuseTexture(0.8f, 0.8f, 0.8f);
     RenderCore::RCTexturePtr defaultNormal       = RenderSystem::ImageTextureUtil::CreateNormalTexture();
     RenderCore::RCTexturePtr defaultMetalRough   = RenderSystem::ImageTextureUtil::CreateMetalRoughTexture();

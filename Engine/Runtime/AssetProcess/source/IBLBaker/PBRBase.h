@@ -8,7 +8,7 @@
 #ifndef GNX_ENGINE_PBR_BASE_INCLUDE
 #define GNX_ENGINE_PBR_BASE_INCLUDE
 
-#include "AssetProcessDefine.h"
+#include "Runtime/AssetProcess/include/AssetProcessDefine.h"
 #include "Runtime/ImageCodec/include/VImage.h"
 
 NS_ASSETPROCESS_BEGIN

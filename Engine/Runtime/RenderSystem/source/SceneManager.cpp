@@ -225,6 +225,21 @@ void SceneManager::ResetScene()
     mCameras.clear();
 }
 
+void SceneManager::SetIBLTextures(RCTexturePtr irradianceMap,
+                                   RCTexturePtr prefilteredMap,
+                                   RCTexturePtr brdfLUT)
+{
+    if (mSceneRenderer)
+    {
+        // 透传到 DeferredSceneRenderer
+        auto* deferredRenderer = dynamic_cast<DeferredSceneRenderer*>(mSceneRenderer.get());
+        if (deferredRenderer)
+        {
+            deferredRenderer->SetIBLTextures(irradianceMap, prefilteredMap, brdfLUT);
+        }
+    }
+}
+
 void SceneManager::CreateController(CameraPtr camera, CameraControllerType type)
 {
     if (mActiveController)

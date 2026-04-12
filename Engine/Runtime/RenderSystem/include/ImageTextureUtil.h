@@ -34,6 +34,14 @@ public:
     static RCTexture2DPtr CreateEmmisveTexture();
 
     static RCTexture2DPtr CreateAOTexture();
+
+    /**
+     * @brief 运行时生成 BRDF LUT 纹理（Split-Sum 近似预积分表）
+     * @param imageSize LUT 分辨率（通常 256 或 512，必须是 2 的幂）
+     * @param samples Monte Carlo 采样数（建议 1024）
+     * @return RG16Float 格式的 2D 纹理（R=scale, G=bias）
+     */
+    static RCTexture2DPtr CreateBRDFLUTTexture(uint32_t imageSize = 512, uint32_t samples = 1024);
 };
 
 NS_RENDERSYSTEM_END

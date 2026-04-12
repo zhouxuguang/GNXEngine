@@ -41,6 +41,16 @@ public:
     void SetGBufferConfig(const GBufferRenderer::GBufferConfig& config);
     const GBufferRenderer::GBufferConfig& GetGBufferConfig() const;
 
+    /**
+     * 设置 IBL 环境贴图资源（由 Demo/场景层在初始化时调用）
+     * @param irradianceMap  漫反射辐照度贴图 (CubeMap, 可为 nullptr 暂时禁用)
+     * @param prefilteredMap 预过滤高光贴图 (CubeMap + Mipmap, 可为 nullptr)
+     * @param brdfLUT        BRDF 分割求和预积分表 (2D Texture, 可为 nullptr)
+     */
+    void SetIBLTextures(RCTexturePtr irradianceMap,
+                        RCTexturePtr prefilteredMap,
+                        RCTexturePtr brdfLUT);
+
 private:
     FrameGraphResource RenderPreDepthPass(
         FrameGraph& frameGraph,
@@ -125,6 +135,11 @@ private:
     
     // Hi-Z输出资源（供后续Pass使用）
     HiZOutput mLastHiZOutput;
+
+    // IBL 资源（由外部设置，每帧传递给延迟光照Pass）
+    RCTexturePtr mIBLIrradianceMap = nullptr;     // 漫反射辐照度
+    RCTexturePtr mIBLPrefilteredMap = nullptr;    // 预过滤高光
+    RCTexturePtr mIBLBRDFLUT = nullptr;           // BRDF 预积分表
 };
 
 typedef std::shared_ptr<DeferredSceneRenderer> DeferredSceneRendererPtr;
