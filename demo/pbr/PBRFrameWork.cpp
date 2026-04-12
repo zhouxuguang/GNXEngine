@@ -17,6 +17,10 @@
 #include "Runtime/MathUtil/include/MathUtil.h"
 #include "Runtime/ImageCodec/include/VImage.h"
 #include "Runtime/ImageCodec/include/ImageDecoder.h"
+#include "Runtime/RenderSystem/include/SkyBox.h"
+#include "Runtime/RenderSystem/include/SkyBoxNode.h"
+#include <algorithm>
+#include <cmath>
 
 using namespace mathutil;
 
@@ -237,6 +241,82 @@ static RenderCore::RCTexturePtr LoadTextureOrFallback(const char* filePath, floa
 }
 
 // ============================================================
+// Helper: Create a default gradient skybox (no external assets needed)
+// Generates 6 faces with a subtle blue-to-horizon gradient
+// ============================================================
+static RenderSystem::SkyBox* CreateDefaultSkybox()
+{
+    using namespace imagecodec;
+    
+    const uint32_t faceSize = 256; // 每面分辨率（天空盒不需要太高）
+    auto renderDevice = RenderCore::GetRenderDevice();
+    
+    // 为6个面生成渐变图像
+    std::vector<VImagePtr> faceImages(6);
+    
+    for (int face = 0; face < 6; ++face)
+    {
+        uint8_t* data = (uint8_t*)malloc(faceSize * faceSize * 4); // RGBA8
+        
+        for (uint32_t y = 0; y < faceSize; ++y)
+        {
+            for (uint32_t x = 0; x < faceSize; ++x)
+            {
+                float u = (float)x / (float)(faceSize - 1);
+                float v = (float)y / (float)(faceSize - 1);
+                
+                // 根据面的不同计算不同的渐变
+                // +X(0), -X(1), +Y(2=top), -Y(3=bottom), +Z(4), -Z(5)
+                Vector3f color;
+                
+                if (face == 2) // top: 天顶偏蓝
+                {
+                    color = Vector3f(0.15f, 0.35f, 0.75f) * (1.0f - v) + Vector3f(0.45f, 0.60f, 0.85f) * v;
+                }
+                else if (face == 3) // bottom: 地平线暗色
+                {
+                    color = Vector3f(0.10f, 0.12f, 0.18f);
+                }
+                else // 四周: 地平线到天际的垂直渐变
+                {
+                    // 垂直方向：底部暗 → 中间亮蓝 → 顶部深蓝
+                    float t = v;
+                    if (t < 0.5f)
+                    {
+                        float s = t * 2.0f;
+                        color = Vector3f(0.08f, 0.10f, 0.16f) * (1.0f - s) + Vector3f(0.35f, 0.50f, 0.72f) * s;
+                    }
+                    else
+                    {
+                        float s = (t - 0.5f) * 2.0f;
+                        color = Vector3f(0.35f, 0.50f, 0.72f) * (1.0f - s) + Vector3f(0.12f, 0.25f, 0.55f) * s;
+                    }
+                    
+                    // 水平方向加微妙变化
+                    float hGrad = fabs(u - 0.5f) * 2.0f;
+                    color = color * (1.0f - hGrad * 0.08f);
+                }
+                
+                uint32_t idx = (y * faceSize + x) * 4;
+                data[idx + 0] = (uint8_t)(std::min(std::max(color.x, 0.0f), 1.0f) * 255.0f); // R
+                data[idx + 1] = (uint8_t)(std::min(std::max(color.y, 0.0f), 1.0f) * 255.0f); // G
+                data[idx + 2] = (uint8_t)(std::min(std::max(color.z, 0.0f), 1.0f) * 255.0f); // B
+                data[idx + 3] = 255; // A
+            }
+        }
+        
+        faceImages[face] = std::make_shared<VImage>();
+        faceImages[face]->SetImageInfo(FORMAT_RGBA8, faceSize, faceSize, data, free);
+    }
+    
+    // 使用 VImagePtr 版本的 create 工厂方法
+    return RenderSystem::SkyBox::create(renderDevice,
+        faceImages[0], faceImages[1], // +X, -X
+        faceImages[2], faceImages[3], // +Y (top), -Y (bottom)
+        faceImages[4], faceImages[5]); // +Z, -Z
+}
+
+// ============================================================
 // Implementation
 // ============================================================
 
@@ -295,6 +375,17 @@ void PBRFrameWork::Resize(uint32_t width, uint32_t height)
         // 将 BRDF LUT 注册到延迟渲染管线
         RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
         sceneManager->SetIBLTextures(/*irradiance=*/nullptr, /*prefiltered=*/nullptr, mBRDFLUT);
+    }
+    
+    // ==================================================
+    // Skybox: 创建默认渐变天空盒（无外部资源依赖）
+    // 后续可替换为真实 HDR 环境贴图
+    // ==================================================
+    mSkyBox = CreateDefaultSkybox();
+    if (mSkyBox)
+    {
+        sceneManager->GetSkyBox()->AttachSkyBoxObject(mSkyBox);
+        LOG_INFO("Default skybox created and attached");
     }
     
     RenderCore::RCTexturePtr defaultAlbedo      = RenderSystem::ImageTextureUtil::CreateDiffuseTexture(0.8f, 0.8f, 0.8f);
