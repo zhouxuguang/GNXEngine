@@ -571,7 +571,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
         mat->SetTexture("diffuseTexture", diffuseTexture);
     }
     
-    printf("diffuse texname = %s\n", diffuseMap.C_Str());
+    LOG_INFO("diffuseMap texname = %s\n", diffuseMap.C_Str());
     
     aiString normalMap;
     material->Get(AI_MATKEY_TEXTURE_NORMALS(0), normalMap);
@@ -580,6 +580,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     {
         mat->SetTexture("normalTexture", normalTexture);
     }
+    LOG_INFO("normalMap texname = %s\n", normalMap.C_Str());
     
     aiString specularMap;
     material->Get(AI_MATKEY_TEXTURE_SPECULAR(0), specularMap);
@@ -588,6 +589,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     {
         mat->SetTexture("specularTexture", specularTexture);
     }
+    LOG_INFO("specularMap texname = %s\n", specularMap.C_Str());
     
     aiString baseColorMap;
     material->GetTexture(AI_MATKEY_BASE_COLOR_TEXTURE, &baseColorMap);
@@ -596,6 +598,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     {
         mat->SetTexture("diffuseTexture", baseColorTexture);
     }
+    LOG_INFO("baseColorMap texname = %s\n", baseColorMap.C_Str());
     
     //加载metallic贴图
     aiString metallicMap;
@@ -605,6 +608,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     {
         mat->SetTexture("metallicTexture", metallicTexture);
     }
+    LOG_INFO("metallicMap texname = %s\n", metallicMap.C_Str());
     
     //加载roughness贴图
     aiString roughnessMap;
@@ -614,6 +618,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     {
         mat->SetTexture("roughnessTexture", roughnessTexture);
     }
+    LOG_INFO("roughnessMap texname = %s\n", roughnessMap.C_Str());
     assert(roughnessMap == metallicMap);
     
     if (roughnessMap == metallicMap)
@@ -629,6 +634,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     {
         mat->SetTexture("emissiveTexture", emissiveTexture);
     }
+    LOG_INFO("emissiveMap texname = %s\n", emissiveMap.C_Str());
     
     // 加载AO贴图
     aiString aoMap;
@@ -638,6 +644,7 @@ void MeshAssimpImpoter::ProcessMatTexture(MaterialPtr mat, aiMaterial *const mat
     {
         mat->SetTexture("ambientTexture", ambientTexture);
     }
+    LOG_INFO("aoMap texname = %s\n", aoMap.C_Str());
     
     //针对没有pbr纹理的模型，创建默认的纹理
     if (baseColorTexture == nullptr && diffuseTexture == nullptr)

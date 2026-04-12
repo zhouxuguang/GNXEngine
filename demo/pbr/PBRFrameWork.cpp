@@ -274,8 +274,9 @@ void PBRFrameWork::Resize(uint32_t width, uint32_t height)
     // Primary directional light (sun/key light)
     RenderSystem::DirectionLight* dirLight = static_cast<RenderSystem::DirectionLight*>(
         sceneManager->CreateLight("sun", RenderSystem::Light::DirectionLight));
-    dirLight->setColor(Vector3f(1.0f, 0.95f, 0.9f) * 3.0f);   // warm white, bright key light
+    dirLight->setColor(Vector3f(1.0f, 0.95f, 0.9f));       // warm white key light
     dirLight->setDirection(Vector3f(-0.6f, -0.7f, -0.4f).Normalize());
+    dirLight->setStrength(Vector3f(3.0f, 3.0f, 3.0f));      // 光源强度
     
     // ---- Common PBR textures (default fallbacks) ----
     RenderCore::SamplerDesc sampDesc = DefaultSamplerDesc();
