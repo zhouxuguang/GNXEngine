@@ -47,7 +47,8 @@ add_library(RenderCore OBJECT ${SOURCE_FILES})
 source_group(TREE ${rendercore_dir} PREFIX source FILES ${RENDERCORE_SOURCES})
 source_group(TREE ${rendercore_include_dir} PREFIX include FILES ${RENDERCORE_INCLUDES})
 
-target_include_directories(RenderCore PRIVATE ${rendercore_include_dir})
+target_include_directories(RenderCore PRIVATE ${rendercore_include_dir}
+                                               ${PROJECT_SOURCE_DIR}/ThirdParty/vulkan-headers)
 target_compile_definitions(RenderCore PRIVATE RENDERCORE_EXPORTS)
 target_link_libraries(RenderCore PRIVATE MathUtil spirv_reflect)
 
