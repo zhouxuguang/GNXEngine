@@ -85,7 +85,9 @@ public:
 
     //拷贝buffer到图像
     static void CopyBufferToImage(VkDevice device, VkCommandBuffer commandBuffer,
-                           VkBuffer buffer, VkImage image, int32_t offsetX, int32_t offsetY, uint32_t width, uint32_t height, uint32_t mipLevel);
+                           VkBuffer buffer, VkImage image, int32_t offsetX, int32_t offsetY,
+                           uint32_t width, uint32_t height, uint32_t mipLevel,
+                           uint32_t baseArrayLayer = 0);
 
     //buffer之间的拷贝
     static void CopyBuffer(VulkanContext& context, VkQueue queue, VkCommandPool cmdPool,

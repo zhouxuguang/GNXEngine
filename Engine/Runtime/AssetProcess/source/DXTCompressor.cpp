@@ -50,4 +50,21 @@ void CompressBC7(uint8_t* result, const uint8_t* input, uint32_t width, uint32_t
 	free(fillboderData.ptr);
 }
 
+void CompressBC6H(uint8_t* result, const uint8_t* input, uint32_t width, uint32_t height, uint32_t stride)
+{
+	rgba_surface srcData;
+	srcData.width = width;
+	srcData.height = height;
+	srcData.stride = stride;
+	srcData.ptr = (uint8_t*)input;
+
+	rgba_surface fillboderData;
+	fill_borders(&fillboderData, &srcData, 4, 4, 64);  // BC6H: 64 bpp (RGBA16F)
+
+	bc6h_enc_settings settings;
+	GetProfile_bc6h_fast(&settings);
+	CompressBlocksBC6H(&fillboderData, result, &settings);
+	free(fillboderData.ptr);
+}
+
 NS_ASSETPROCESS_END

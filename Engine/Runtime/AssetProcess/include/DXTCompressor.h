@@ -13,6 +13,9 @@ void ASSET_PROCESS_API CompressDXT1(uint8_t* result, const uint8_t* input, uint3
 // BC7数据压缩
 void ASSET_PROCESS_API CompressBC7(uint8_t* result, const uint8_t* input, uint32_t width, uint32_t height, uint32_t stride);
 
+// BC6H HDR数据压缩，input需要是RGBA16Half格式的数据（8字节/像素）
+void ASSET_PROCESS_API CompressBC6H(uint8_t* result, const uint8_t* input, uint32_t width, uint32_t height, uint32_t stride);
+
 NS_ASSETPROCESS_END
 
 #endif // !GNX_ENGINE_TEXYURE_DXTC_COMPRESSOR_INCLUDE_JDJ

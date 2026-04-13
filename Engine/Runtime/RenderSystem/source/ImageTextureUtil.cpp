@@ -454,13 +454,26 @@ RCTextureCubePtr ImageTextureUtil::LoadKTXCubemapTexture(const char* filename)
     }
 
     // 6. 上传各面各 mipmap 层数据到 GPU
+    bool isCompressed = IsAnyCompressedTextureFormat(engineFormat);
     for (uint32_t level = 0; level < mipLevels; ++level)
     {
         ktx_size_t imageSize = ktxTexture_GetImageSize(ktx, level);
         uint32_t mipWidth  = std::max(1u, width >> level);
         uint32_t mipHeight = std::max(1u, height >> level);
-        uint32_t bytesPerRow = static_cast<uint32_t>(imageSize) / mipHeight;
-        if (bytesPerRow == 0) bytesPerRow = static_cast<uint32_t>(imageSize);
+
+        // 对于压缩格式（BC等），数据按4x4块组织，bytesPerRow需要按块行计算
+        uint32_t bytesPerRow;
+        if (isCompressed)
+        {
+            uint32_t blockRows = (mipHeight + 3) / 4;
+            bytesPerRow = static_cast<uint32_t>(imageSize) / blockRows;
+            if (bytesPerRow == 0) bytesPerRow = static_cast<uint32_t>(imageSize);
+        }
+        else
+        {
+            bytesPerRow = static_cast<uint32_t>(imageSize) / mipHeight;
+            if (bytesPerRow == 0) bytesPerRow = static_cast<uint32_t>(imageSize);
+        }
 
         for (uint32_t face = 0; face < 6; ++face)
         {

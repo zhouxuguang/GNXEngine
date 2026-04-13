@@ -164,9 +164,15 @@ inline bool IsCompressedASTCTextureFormat(TextureFormat format)
 	return format >= kTexFormatASTC_RGB_4x4 && format <= kTexFormatASTC_RGBA_12x12;
 }
 
+inline bool IsCompressedBCTextureFormat(TextureFormat format)
+{
+	return format >= kTexFormatBC6H && format <= kTexFormatBC7_SRGB;
+}
+
 inline bool IsAnyCompressedTextureFormat(TextureFormat format)
 {
-	return IsCompressedDXTTextureFormat(format) || IsCompressedPVRTCTextureFormat(format)
+	return IsCompressedDXTTextureFormat(format) || IsCompressedBCTextureFormat(format)
+			|| IsCompressedPVRTCTextureFormat(format)
 			|| IsCompressedETCTextureFormat(format) || IsCompressedATCTextureFormat(format)
             || IsCompressedEACTextureFormat(format)
 			|| IsCompressedETC2TextureFormat(format) || IsCompressedASTCTextureFormat(format) || kTexFormatETC1_RGB == format;

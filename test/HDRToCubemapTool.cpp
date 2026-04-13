@@ -245,39 +245,13 @@ int main(int argc, char* argv[])
     }
     std::cout << "  Face size: " << faces[0]->GetWidth() << "x" << faces[0]->GetHeight() << std::endl;
 
-    // 将 RGB32Float 面转换为 RGBA32Float，因为 BC6H 压缩器尚不可用
-    // RGBA32Float 是未压缩格式，KTX 数据可以正确生成
-    for (size_t i = 0; i < faces.size(); ++i)
-    {
-        if (faces[i]->GetFormat() == imagecodec::FORMAT_RGB32Float)
-        {
-            uint32_t w = faces[i]->GetWidth();
-            uint32_t h = faces[i]->GetHeight();
-            const float* pSrc = (const float*)faces[i]->GetImageData();
-
-            imagecodec::VImagePtr rgbaImage = std::make_shared<imagecodec::VImage>();
-            rgbaImage->SetImageInfo(imagecodec::FORMAT_RGBA32Float, w, h);
-            rgbaImage->AllocPixels();
-            float* pDst = (float*)rgbaImage->GetImageData();
-
-            for (uint32_t p = 0; p < w * h; ++p)
-            {
-                pDst[p * 4 + 0] = pSrc[p * 3 + 0];
-                pDst[p * 4 + 1] = pSrc[p * 3 + 1];
-                pDst[p * 4 + 2] = pSrc[p * 3 + 2];
-                pDst[p * 4 + 3] = 1.0f;
-            }
-            faces[i] = rgbaImage;
-        }
-    }
-
     // ========== Step 4: Save cubemap as KTX ==========
-    std::cout << "\n[4/5] Saving cubemap KTX..." << std::endl;
+    std::cout << "\n[4/5] Saving cubemap KTX (BC6H compressed)..." << std::endl;
 
     {
         AssetProcess::TextureImporter textureImporter;
         AssetProcess::TextureImportSettings importSettings;
-        importSettings.mipmapMode = AssetProcess::MipmapMode::Auto;
+        importSettings.mipmapMode = AssetProcess::MipmapMode::None;
 
         std::vector<uint8_t> ktxData = textureImporter.GenerateKTXCubemapData(faces, importSettings);
         if (ktxData.empty())

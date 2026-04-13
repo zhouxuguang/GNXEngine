@@ -69,7 +69,8 @@ void UpLoadTask::Run()
 		subresourceRange);
 
 	VulkanBufferUtil::CopyBufferToImage(mContext->device, commandBuffer, stageBuffer, mImage,
-		rect.offsetX, rect.offsetY, rect.width, rect.height, subresourceRange.baseMipLevel);
+		rect.offsetX, rect.offsetY, rect.width, rect.height, subresourceRange.baseMipLevel,
+		subresourceRange.baseArrayLayer);
 
 	// Change texture image layout to shader read after all faces have been copied
 	VulkanBufferUtil::SetImageLayout(

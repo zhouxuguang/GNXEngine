@@ -12,6 +12,7 @@
 #include "AssetFileHeader.h"
 #include "Runtime/BaseLib/include/AlignedMalloc.h"
 #include "Runtime/BaseLib/include/LogService.h"
+#include "Runtime/MathUtil/include/HalfFloat.h"
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -509,6 +510,27 @@ static void CompressTextureInner(const uint8_t* imageData, uint32_t width, uint3
     else if (vkFormat == VK_FORMAT_BC7_UNORM_BLOCK || vkFormat == VK_FORMAT_BC7_SRGB_BLOCK)
     {
         CompressBC7(pDest, imageData, width, height, width * 4);
+    }
+    else if (vkFormat == VK_FORMAT_BC6H_UFLOAT_BLOCK)
+    {
+        // BC6H 输入需要 RGBA16F 格式（8字节/像素）
+        // 源数据是 RGB32Float（12字节/像素），需要转换
+        uint32_t pixelCount = width * height;
+        uint8_t* pData = new uint8_t[pixelCount * 8]; // RGBA16F = 8 bytes/pixel
+        const float* pSrc = (const float*)imageData;
+        uint16_t* pDst = (uint16_t*)pData;
+
+        for (uint32_t i = 0; i < pixelCount; i++)
+        {
+            pDst[i * 4 + 0] = mathutil::float_to_half(pSrc[i * 3 + 0]);
+            pDst[i * 4 + 1] = mathutil::float_to_half(pSrc[i * 3 + 1]);
+            pDst[i * 4 + 2] = mathutil::float_to_half(pSrc[i * 3 + 2]);
+            pDst[i * 4 + 3] = mathutil::float_to_half(1.0f);
+        }
+
+        CompressBC6H(pDest, pData, width, height, width * 8);
+
+        delete [] pData;
     }
     else if (vkFormat == VK_FORMAT_PVRTC1_4BPP_UNORM_BLOCK_IMG || vkFormat == VK_FORMAT_PVRTC1_4BPP_SRGB_BLOCK_IMG)
     {

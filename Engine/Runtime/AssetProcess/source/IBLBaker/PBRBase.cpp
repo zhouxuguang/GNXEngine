@@ -521,44 +521,6 @@ static imagecodec::VImagePtr PrefilterEnvMapFace(
 
 // ==================== 保存为 KTX 文件的便捷函数 ====================
 
-/**
- * 将 RGB32Float 图像面转换为 RGBA32Float（BC6H 压缩器尚不可用，
- * 使用 RGBA32Float 未压缩格式来正确生成 KTX 文件）
- */
-static std::vector<imagecodec::VImagePtr> ConvertFacesRGB32ToRGBA32(
-    const std::vector<imagecodec::VImagePtr>& faces)
-{
-    std::vector<imagecodec::VImagePtr> result;
-    for (size_t i = 0; i < faces.size(); ++i)
-    {
-        if (faces[i]->GetFormat() == imagecodec::FORMAT_RGB32Float)
-        {
-            uint32_t w = faces[i]->GetWidth();
-            uint32_t h = faces[i]->GetHeight();
-            const float* pSrc = (const float*)faces[i]->GetImageData();
-
-            imagecodec::VImagePtr rgbaImage = std::make_shared<imagecodec::VImage>();
-            rgbaImage->SetImageInfo(imagecodec::FORMAT_RGBA32Float, w, h);
-            rgbaImage->AllocPixels();
-            float* pDst = (float*)rgbaImage->GetImageData();
-
-            for (uint32_t p = 0; p < w * h; ++p)
-            {
-                pDst[p * 4 + 0] = pSrc[p * 3 + 0];
-                pDst[p * 4 + 1] = pSrc[p * 3 + 1];
-                pDst[p * 4 + 2] = pSrc[p * 3 + 2];
-                pDst[p * 4 + 3] = 1.0f;
-            }
-            result.push_back(rgbaImage);
-        }
-        else
-        {
-            result.push_back(faces[i]);
-        }
-    }
-    return result;
-}
-
 void GenerateIrradianceMap_Texture(
     const std::string& fileName,
     const std::vector<imagecodec::VImagePtr>& faces,
@@ -566,9 +528,6 @@ void GenerateIrradianceMap_Texture(
 {
     std::vector<imagecodec::VImagePtr> irradianceFaces = GenerateIrradianceMap(faces, imageSize, samples);
     if (irradianceFaces.empty()) return;
-
-    // 转换为 RGBA32Float 以兼容 KTX 写入（BC6H 压缩器尚不可用）
-    irradianceFaces = ConvertFacesRGB32ToRGBA32(irradianceFaces);
 
     TextureImporter textureImporter;
     TextureImportSettings textureImportSettings;
@@ -605,9 +564,6 @@ void GeneratePrefilteredEnvMap_Texture(
     {
         prefilteredFaces.push_back(PrefilterEnvMapFace(faces, 0.0f, face, imageSize, samples));
     }
-
-    // 转换为 RGBA32Float 以兼容 KTX 写入（BC6H 压缩器尚不可用）
-    prefilteredFaces = ConvertFacesRGB32ToRGBA32(prefilteredFaces);
 
     TextureImporter textureImporter;
     TextureImportSettings textureImportSettings;

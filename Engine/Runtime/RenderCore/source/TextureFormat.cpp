@@ -69,6 +69,8 @@ bool IsValidTextureFormat (TextureFormat format)
 	if ((format >= kTexFormatAlpha8 && format <= kTexFormatRGBA4444) ||
 		format == kTexFormatSRGB8 || format == kTexFormatSRGB8_ALPHA8 ||
 		format == kTexR10G10B10A2 ||
+		IsCompressedDXTTextureFormat(format) ||
+		IsCompressedBCTextureFormat(format) ||
 		IsCompressedPVRTCTextureFormat(format) ||
 		IsCompressedETCTextureFormat(format) ||
 		IsCompressedATCTextureFormat(format) ||

@@ -249,21 +249,22 @@ VkResult VulkanBufferUtil::CreateImageGeneral(VmaAllocator vmaAllocator,
 
 void VulkanBufferUtil::CopyBufferToImage(VkDevice device, VkCommandBuffer commandBuffer,
                                      VkBuffer buffer, VkImage image, int32_t offsetX,
-                                     int32_t offsetY, uint32_t width, uint32_t height, uint32_t mipLevel)
+                                     int32_t offsetY, uint32_t width, uint32_t height,
+                                     uint32_t mipLevel, uint32_t baseArrayLayer)
 {
     VkBufferImageCopy region = {};
     region.bufferOffset = 0;
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
-    
+
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region.imageSubresource.mipLevel = mipLevel;
-    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.baseArrayLayer = baseArrayLayer;
     region.imageSubresource.layerCount = 1;
-    
+
     region.imageOffset = {offsetX, offsetY, 0};
     region.imageExtent = {width, height, 1};
-    
+
     vkCmdCopyBufferToImage(
                            commandBuffer,
                            buffer,
@@ -670,6 +671,34 @@ VkFormat VulkanBufferUtil::ConvertTextureFormat(TextureFormat texFormat)
             
         case kTexFormatDXT1_SRGB:
             format = VK_FORMAT_BC1_RGB_SRGB_BLOCK;
+            break;
+
+        case kTexFormatDXT3_RGB:
+            format = VK_FORMAT_BC2_UNORM_BLOCK;
+            break;
+
+        case kTexFormatDXT3_SRGB:
+            format = VK_FORMAT_BC2_SRGB_BLOCK;
+            break;
+
+        case kTexFormatDXT5_RGB:
+            format = VK_FORMAT_BC3_UNORM_BLOCK;
+            break;
+
+        case kTexFormatDXT5_SRGB:
+            format = VK_FORMAT_BC3_SRGB_BLOCK;
+            break;
+
+        case kTexFormatBC6H:
+            format = VK_FORMAT_BC6H_UFLOAT_BLOCK;
+            break;
+
+        case kTexFormatBC7_RGB:
+            format = VK_FORMAT_BC7_UNORM_BLOCK;
+            break;
+
+        case kTexFormatBC7_SRGB:
+            format = VK_FORMAT_BC7_SRGB_BLOCK;
             break;
 
         case kTexFormatR32Float:
