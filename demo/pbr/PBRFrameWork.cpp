@@ -392,14 +392,26 @@ void PBRFrameWork::Resize(uint32_t width, uint32_t height)
     }
     
     // ==================================================
-    // Skybox: 创建默认渐变天空盒（无外部资源依赖）
-    // 后续可替换为真实 HDR 环境贴图
+    // Skybox: 从 KTX Cubemap 纹理加载 HDR 天空盒
+    // 如果 KTX 文件不存在，则回退到默认渐变天空盒
     // ==================================================
-    mSkyBox = CreateDefaultSkybox();
+    {
+        std::string cubemapPath = GetProjectAssetDir() + "pbr/DamagedHelmet/1_cubemap.ktx";
+        RenderCore::RCTextureCubePtr cubemapTexture = RenderSystem::ImageTextureUtil::LoadKTXCubemapTexture(cubemapPath.c_str());
+        if (cubemapTexture)
+        {
+            mSkyBox = RenderSystem::SkyBox::createFromTexture(RenderCore::GetRenderDevice(), cubemapTexture);
+            LOG_INFO("Skybox loaded from KTX cubemap: %s", cubemapPath.c_str());
+        }
+        else
+        {
+            mSkyBox = CreateDefaultSkybox();
+            LOG_INFO("KTX cubemap not found, using default gradient skybox");
+        }
+    }
     if (mSkyBox)
     {
         sceneManager->GetSkyBox()->AttachSkyBoxObject(mSkyBox);
-        LOG_INFO("Default skybox created and attached");
     }
     
     RenderCore::RCTexturePtr defaultAlbedo      = RenderSystem::ImageTextureUtil::CreateDiffuseTexture(0.8f, 0.8f, 0.8f);

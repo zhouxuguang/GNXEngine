@@ -270,6 +270,11 @@ static const uint32_t KTX_GL_RGBA8   = 0x8058;
 static const uint32_t KTX_GL_RGBA32F = 0x8814;
 static const uint32_t KTX_GL_R32F    = 0x822E;
 static const uint32_t KTX_GL_RG32F   = 0x8230;
+static const uint32_t KTX_GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT = 0x8E8F;
+static const uint32_t KTX_GL_COMPRESSED_RGBA_BPTC_UNORM         = 0x8E8C;
+static const uint32_t KTX_GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM   = 0x8E8D;
+static const uint32_t KTX_GL_COMPRESSED_RGB_S3TC_DXT1_EXT       = 0x83F0;
+static const uint32_t KTX_GL_COMPRESSED_SRGB_S3TC_DXT1_EXT      = 0x8C4C;
 
 // GL 内部格式 → 引擎 TextureFormat 映射
 static TextureFormat ConvertGLInternalFormatToEngine(uint32_t glFormat)
@@ -281,6 +286,11 @@ static TextureFormat ConvertGLInternalFormatToEngine(uint32_t glFormat)
         case KTX_GL_RGBA32F: return kTexFormatRGBA32Float;
         case KTX_GL_R32F:    return kTexFormatR32Float;
         case KTX_GL_RG32F:   return kTexFormatRG32Float;
+        case KTX_GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT: return kTexFormatBC6H;
+        case KTX_GL_COMPRESSED_RGBA_BPTC_UNORM:         return kTexFormatBC7_RGB;
+        case KTX_GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM:   return kTexFormatBC7_SRGB;
+        case KTX_GL_COMPRESSED_RGB_S3TC_DXT1_EXT:       return kTexFormatDXT1_RGB;
+        case KTX_GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:      return kTexFormatDXT1_SRGB;
         default:
             break;
     }
@@ -378,6 +388,99 @@ RCTexture2DPtr ImageTextureUtil::LoadKTXTexture(const char* filename)
     ktxTexture_Destroy(ktx);
 
     LOG_INFO("KTX texture loaded: %s -> %dx%d (%d mips)", filename, width, height, mipLevels);
+    return texture;
+}
+
+RCTextureCubePtr ImageTextureUtil::LoadKTXCubemapTexture(const char* filename)
+{
+    if (!filename) return nullptr;
+
+    // 1. 用 ktx 库从文件创建纹理对象
+    ktxTexture* ktx = nullptr;
+    KTX_error_code result = ktxTexture_CreateFromNamedFile(filename, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktx);
+    if (result != KTX_SUCCESS || !ktx)
+    {
+        LOG_ERROR("Failed to load KTX cubemap file: %s (error %d)", filename, (int)result);
+        return nullptr;
+    }
+
+    // 2. 检查是否为 Cubemap
+    if (ktx->numDimensions != 2 || ktx->numFaces != 6 || ktx->isArray != 0)
+    {
+        LOG_ERROR("LoadKTXCubemapTexture only supports cubemap (numFaces=6, 2D, non-array): %s (faces=%d)", filename, ktx->numFaces);
+        ktxTexture_Destroy(ktx);
+        return nullptr;
+    }
+
+    uint32_t width     = ktx->baseWidth;
+    uint32_t height    = ktx->baseHeight;
+    uint32_t mipLevels = ktx->numLevels;
+
+    // 3. 获取 GL 内部格式
+    uint32_t glInternalFormat = 0;
+    if (ktx->classId == ktxTexture1_c)
+    {
+        ktxTexture1* ktx1 = reinterpret_cast<ktxTexture1*>(ktx);
+        glInternalFormat = ktx1->glInternalformat;
+    }
+    else
+    {
+        LOG_ERROR("KTX v2 format not yet supported for cubemap: %s", filename);
+        ktxTexture_Destroy(ktx);
+        return nullptr;
+    }
+
+    // 4. 转换格式
+    TextureFormat engineFormat = ConvertGLInternalFormatToEngine(glInternalFormat);
+    if (engineFormat == kTexFormatInvalid)
+    {
+        LOG_ERROR("Unsupported KTX cubemap internal format: 0x%X in file: %s", glInternalFormat, filename);
+        ktxTexture_Destroy(ktx);
+        return nullptr;
+    }
+
+    LOG_INFO("Loading KTX cubemap: %s (%ux%u, %d mips, format=0x%X)",
+             filename, width, height, mipLevels, glInternalFormat);
+
+    // 5. 创建 GPU Cubemap 纹理
+    RCTextureCubePtr texture = GetRenderDevice()->CreateTextureCube(
+        engineFormat, TextureUsage::TextureUsageShaderRead, width, height, mipLevels);
+
+    if (!texture)
+    {
+        LOG_ERROR("Failed to create GPU cubemap texture for KTX file: %s", filename);
+        ktxTexture_Destroy(ktx);
+        return nullptr;
+    }
+
+    // 6. 上传各面各 mipmap 层数据到 GPU
+    for (uint32_t level = 0; level < mipLevels; ++level)
+    {
+        ktx_size_t imageSize = ktxTexture_GetImageSize(ktx, level);
+        uint32_t mipWidth  = std::max(1u, width >> level);
+        uint32_t mipHeight = std::max(1u, height >> level);
+        uint32_t bytesPerRow = static_cast<uint32_t>(imageSize) / mipHeight;
+        if (bytesPerRow == 0) bytesPerRow = static_cast<uint32_t>(imageSize);
+
+        for (uint32_t face = 0; face < 6; ++face)
+        {
+            ktx_size_t offset = 0;
+            result = ktxTexture_GetImageOffset(ktx, level, 0, face, &offset);
+            if (result != KTX_SUCCESS)
+            {
+                LOG_ERROR("Failed to get image offset for mip %d face %d in KTX: %s", level, face, filename);
+                continue;
+            }
+
+            const uint8_t* imageData = ktxTexture_GetData(ktx) + offset;
+            texture->ReplaceRegion(Rect2D(0, 0, mipWidth, mipHeight), level, face,
+                                   imageData, bytesPerRow, static_cast<uint32_t>(imageSize));
+        }
+    }
+
+    ktxTexture_Destroy(ktx);
+
+    LOG_INFO("KTX cubemap loaded: %s -> %dx%d (%d mips, 6 faces)", filename, width, height, mipLevels);
     return texture;
 }
 

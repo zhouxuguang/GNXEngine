@@ -611,6 +611,114 @@ std::vector<uint8_t> TextureImporter::GenerateKTXData(imagecodec::VImagePtr imag
     return std::move(resultData);
 }
 
+std::vector<uint8_t> TextureImporter::GenerateKTXCubemapData(
+    const std::vector<imagecodec::VImagePtr>& faces,
+    const TextureImportSettings& textureImportSettings)
+{
+    if (faces.size() != 6)
+    {
+        LOG_ERROR("GenerateKTXCubemapData requires exactly 6 faces, got %zu", faces.size());
+        return {};
+    }
+
+    bool generateMipmap = textureImportSettings.mipmapMode != MipmapMode::None;
+    KTXFormat ktxFormat = CreateKTXFormat(faces[0]->GetFormat());
+
+    uint32_t width = faces[0]->GetWidth();
+    uint32_t height = faces[0]->GetHeight();
+
+    uint32_t numMipLevels = 1;
+    if (generateMipmap)
+    {
+        numMipLevels = imagecodec::ImageUtil::CalcNumMipLevels(width, height);
+    }
+
+    // 创建 KTX1 Cubemap 纹理对象
+    ktxTextureCreateInfo createInfoKTX = {};
+    createInfoKTX.glInternalformat = ktxFormat.glInternalformat;
+    createInfoKTX.vkFormat = ktxFormat.vkFormat;
+    createInfoKTX.baseWidth = width;
+    createInfoKTX.baseHeight = height;
+    createInfoKTX.baseDepth = 1u;
+    createInfoKTX.numDimensions = 2u;
+    createInfoKTX.numLevels = numMipLevels;
+    createInfoKTX.numLayers = 1u;
+    createInfoKTX.numFaces = 6u;   // Cubemap: 6 面
+    createInfoKTX.isArray = KTX_FALSE;
+    createInfoKTX.generateMipmaps = KTX_FALSE;
+
+    ktxTexture1* textureKTX1 = nullptr;
+    KTX_error_code ktxResult = ktxTexture1_Create(&createInfoKTX, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &textureKTX1);
+    if (ktxResult != KTX_SUCCESS || !textureKTX1)
+    {
+        LOG_ERROR("Failed to create KTX cubemap texture object (error %d)", (int)ktxResult);
+        return {};
+    }
+
+    // 为 mipmap 降采样分配临时缓冲区
+    uint32_t maxBytesPerImage = width * height * faces[0]->GetBytesPerPixels() * 2;
+    uint8_t* pTmpData = (uint8_t*)baselib::AlignedMalloc(maxBytesPerImage, 64);
+
+    // 写入每个面每个 mip level 的数据
+    for (uint32_t face = 0; face < 6; ++face)
+    {
+        uint32_t w = width;
+        uint32_t h = height;
+
+        // Base level (level 0): 直接压缩源图像数据
+        {
+            size_t offset = 0;
+            ktxTexture_GetImageOffset(ktxTexture(textureKTX1), 0, 0, face, &offset);
+
+            uint32_t bytesForImage = w * h * faces[face]->GetBytesPerPixels();
+            CompressTextureInner(faces[face]->GetImageData(), w, h,
+                                 ktxTexture_GetData(ktxTexture(textureKTX1)) + offset,
+                                 ktxFormat.vkFormat, bytesForImage);
+
+            h = h > 1 ? h >> 1 : 1;
+            w = w > 1 ? w >> 1 : 1;
+        }
+
+        // 后续 mip levels: 降采样后压缩
+        for (uint32_t level = 1; level < numMipLevels; ++level)
+        {
+            size_t offset = 0;
+            ktxTexture_GetImageOffset(ktxTexture(textureKTX1), level, 0, face, &offset);
+
+            stbir_resize((const unsigned char*)faces[face]->GetImageData(), width, height, 0,
+                         pTmpData, w, h, 0,
+                         ktxFormat.stbLayout, ktxFormat.stbDatatype,
+                         ktxFormat.stbEdge, ktxFormat.stbFilter);
+
+            uint32_t bytesForImage = w * h * faces[face]->GetBytesPerPixels();
+            CompressTextureInner(pTmpData, w, h,
+                                 ktxTexture_GetData(ktxTexture(textureKTX1)) + offset,
+                                 ktxFormat.vkFormat, bytesForImage);
+
+            h = h > 1 ? h >> 1 : 1;
+            w = w > 1 ? w >> 1 : 1;
+        }
+    }
+
+    baselib::AlignedFree(pTmpData);
+
+    // 序列化为 KTX 二进制数据
+    ktx_uint8_t* ktxData = nullptr;
+    ktx_size_t ktxDataSize = 0;
+    ktxTexture_WriteToMemory(ktxTexture(textureKTX1), &ktxData, &ktxDataSize);
+
+    std::vector<uint8_t> resultData;
+    resultData.resize(ktxDataSize);
+    memcpy(resultData.data(), ktxData, ktxDataSize);
+
+    free(ktxData);
+    ktxTexture_Destroy(ktxTexture(textureKTX1));
+
+    LOG_INFO("Generated KTX cubemap data: %ux%u, %d mips, %zu bytes", width, height, numMipLevels, ktxDataSize);
+
+    return std::move(resultData);
+}
+
 bool TextureImporter::SaveTextureFile(const std::string& textureFilePath,
                                     const std::vector<uint8_t>& ktxData,
                                     const std::string& originalFileName)

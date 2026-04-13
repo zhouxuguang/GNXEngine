@@ -50,6 +50,14 @@ public:
      * @return GPU 纹理指针，失败返回 nullptr
      */
     static RCTexture2DPtr LoadKTXTexture(const char* filename);
+
+    /**
+     * @brief 从 KTX 文件加载 Cubemap 纹理
+     * 支持 6 面 Cubemap（numFaces=6），自动上传到 GPU
+     * @param filename KTX 文件路径
+     * @return GPU Cubemap 纹理指针，失败返回 nullptr
+     */
+    static RCTextureCubePtr LoadKTXCubemapTexture(const char* filename);
 };
 
 NS_RENDERSYSTEM_END

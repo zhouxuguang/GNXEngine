@@ -1,4 +1,4 @@
-﻿
+
 
 add_executable(TestMeshImport TestMeshImport.cpp)
 
@@ -36,3 +36,10 @@ add_executable(TestBRDFLUT TestBRDFLUT.cpp)
 target_link_libraries(TestBRDFLUT PRIVATE GNXEngine ktx)
 
 set_property(TARGET TestBRDFLUT PROPERTY FOLDER "test")
+
+# HDR 转 Cubemap 集成工具（HDR → Cubemap KTX + IBL 生成）
+add_executable(HDRToCubemapTool HDRToCubemapTool.cpp)
+
+target_link_libraries(HDRToCubemapTool PRIVATE GNXEngine ktx)
+
+set_property(TARGET HDRToCubemapTool PROPERTY FOLDER "test")

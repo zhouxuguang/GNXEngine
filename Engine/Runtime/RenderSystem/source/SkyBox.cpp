@@ -100,6 +100,23 @@ SkyBox* SkyBox::create(RenderDevicePtr renderDevice, VImagePtr positive_x, VImag
     return skybox;
 }
 
+SkyBox* SkyBox::createFromTexture(RenderDevicePtr renderDevice, RCTextureCubePtr textureCube)
+{
+    if (!renderDevice || !textureCube)
+    {
+        return nullptr;
+    }
+
+    SkyBox* skybox = new(std::nothrow)SkyBox();
+    if (!skybox->initFromTexture(renderDevice, textureCube))
+    {
+        delete skybox;
+        return nullptr;
+    }
+
+    return skybox;
+}
+
 void SkyBox::destroy(SkyBox* skybox)
 {
     delete skybox;
@@ -167,7 +184,41 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     mPipeline->AttachGraphicsShader(shader);
     
     mRenderDevice = renderDevice;
-    
+
+    return true;
+}
+
+bool SkyBox::initFromTexture(RenderDevicePtr renderDevice, RCTextureCubePtr textureCube)
+{
+    if (!renderDevice || !textureCube)
+    {
+        return false;
+    }
+
+    mTextureCube = textureCube;
+
+    SamplerDesc samplerDescriptor;
+    mTextureSampler = renderDevice->CreateSamplerWithDescriptor(samplerDescriptor);
+
+    initBuffers(renderDevice);
+
+    ShaderAssetString shaderAssetString = LoadShaderAsset("Skybox");
+
+    ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
+    ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
+
+    GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
+
+    GraphicsPipelineDesc graphicsPipelineDescriptor;
+    graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
+    graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetSkyboxDepthCompareFunc();
+    graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = false;
+
+    mPipeline = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);
+    mPipeline->AttachGraphicsShader(shader);
+
+    mRenderDevice = renderDevice;
+
     return true;
 }
 

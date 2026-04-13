@@ -30,7 +30,14 @@ public:
     
     static SkyBox* create(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr negative_x, VImagePtr positive_y,
                           VImagePtr negative_y, VImagePtr positive_z, VImagePtr negative_z);
-    
+
+    /**
+     * @brief 从已加载的 KTX Cubemap 纹理创建天空盒
+     * @param renderDevice 渲染设备
+     * @param textureCube 已加载的 Cubemap 纹理（如通过 ImageTextureUtil::LoadKTXCubemapTexture 加载）
+     */
+    static SkyBox* createFromTexture(RenderDevicePtr renderDevice, RCTextureCubePtr textureCube);
+
     static void destroy(SkyBox* skybox);
     
     void Render(const RenderEncoderPtr &renderEncoder, UniformBufferPtr cameraUBO);
@@ -38,7 +45,9 @@ public:
 private:
     bool init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr negative_x, VImagePtr positive_y,
               VImagePtr negative_y, VImagePtr positive_z, VImagePtr negative_z);
-    
+
+    bool initFromTexture(RenderDevicePtr renderDevice, RCTextureCubePtr textureCube);
+
     void initBuffers(RenderDevicePtr renderDevice);
     
     RCTextureCubePtr mTextureCube = nullptr;

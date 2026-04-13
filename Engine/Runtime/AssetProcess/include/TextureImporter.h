@@ -115,6 +115,15 @@ public:
      */
     std::vector<uint8_t> GenerateKTXData(imagecodec::VImagePtr image, const TextureImportSettings& textureImportSettings);
 
+    /**
+     * 生成 KTX Cubemap 数据（6 面）
+     * @param faces 6 个 Cubemap 面图像（顺序: +X, -X, +Y, -Y, +Z, -Z）
+     * @param textureImportSettings 纹理导入设置（控制 mipmap 生成等）
+     * @return KTX 文件格式的二进制数据
+     */
+    std::vector<uint8_t> GenerateKTXCubemapData(const std::vector<imagecodec::VImagePtr>& faces,
+                                                 const TextureImportSettings& textureImportSettings);
+
 private:
 	// ==================== 导入流程内部方法 ====================
 
