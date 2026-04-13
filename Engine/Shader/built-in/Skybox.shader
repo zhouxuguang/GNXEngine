@@ -53,7 +53,15 @@ SkyVertexOut VS(appdata_skybox vin)
     // Transform to world space.
     float4 posW = mul(float4(vin.position, 1.0), viewMatrix);
     posW = mul(posW, MATRIX_P);
+
+    // 天空盒应始终在远平面：
+    // Reverse-Z: NDC z=0 是远平面，z=1 是近平面 → 设 z=0
+    // 传统 Z:   NDC z=1 是远平面，z=0 是近平面 → 设 z=w (z/w=1)
+#ifdef USE_REVERSE_Z
+    vout.PosH = float4(posW.x, posW.y, 0.0, posW.w);
+#else
     vout.PosH = posW.xyww;
+#endif
 
     // Always center sky about camera.
 //    posW.xyz += gEyePosW;
@@ -64,9 +72,9 @@ SkyVertexOut VS(appdata_skybox vin)
     return vout;
 }
 
-TextureCube gCubeMap;// : register(t0, space1);
+TextureCube gCubeMap;
 
-SamplerState gCubeMapSam;// : register(s0, space2);
+SamplerState gCubeMapSam;
 
 float4 PS(SkyVertexOut pin) : SV_Target
 {

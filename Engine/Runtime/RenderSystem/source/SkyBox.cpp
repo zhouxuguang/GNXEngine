@@ -132,7 +132,23 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     
     SamplerDesc samplerDescriptor;
     mTextureSampler = renderDevice->CreateSamplerWithDescriptor(samplerDescriptor);
-    
+
+    // 创建 Cubemap 纹理并上传 6 个面的数据
+    TextureDesc& firstDesc = desArray[0];
+    mTextureCube = renderDevice->CreateTextureCube(
+        firstDesc.format, TextureUsage::TextureUsageShaderRead,
+        firstDesc.width, firstDesc.height, 1);
+
+    for (int i = 0; i < 6; ++i)
+    {
+        mTextureCube->ReplaceRegion(
+            Rect2D(0, 0, desArray[i].width, desArray[i].height),
+            0, i,
+            (const uint8_t*)images[i]->GetImageData(),
+            desArray[i].width * 4,
+            desArray[i].width * desArray[i].height * 4);
+    }
+
     initBuffers(renderDevice);
     
     ShaderAssetString shaderAssetString = LoadShaderAsset("Skybox");
@@ -145,7 +161,7 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     GraphicsPipelineDesc graphicsPipelineDescriptor;
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
     graphicsPipelineDescriptor.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetSkyboxDepthCompareFunc();
-    graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = true;
+    graphicsPipelineDescriptor.depthStencilDescriptor.depthWriteEnabled = false;
     
     mPipeline = renderDevice->CreateGraphicsPipeline(graphicsPipelineDescriptor);
     mPipeline->AttachGraphicsShader(shader);
@@ -175,48 +191,48 @@ void SkyBox::initBuffers(RenderDevicePtr renderDevice)
 {
     // init vertex buffer object
     float skyboxVertices[] = {
-        // positions
-        -1.0f,  1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f, -1.0f, 1.0f,
-         1.0f, -1.0f, -1.0f, 1.0f,
-         1.0f, -1.0f, -1.0f, 1.0f,
-         1.0f,  1.0f, -1.0f, 1.0f,
-        -1.0f,  1.0f, -1.0f, 1.0f,
+        // positions (float3, shader uses float3 position : POSITION)
+        -1.0f,  1.0f, -1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
 
-        -1.0f, -1.0f,  1.0f, 1.0f,
-        -1.0f, -1.0f, -1.0f, 1.0f,
-        -1.0f,  1.0f, -1.0f, 1.0f,
-        -1.0f,  1.0f, -1.0f, 1.0f,
-        -1.0f,  1.0f,  1.0f, 1.0f,
-        -1.0f, -1.0f,  1.0f, 1.0f,
+        -1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
 
-         1.0f, -1.0f, -1.0f, 1.0f,
-         1.0f, -1.0f,  1.0f, 1.0f,
-         1.0f,  1.0f,  1.0f, 1.0f,
-         1.0f,  1.0f,  1.0f, 1.0f,
-         1.0f,  1.0f, -1.0f, 1.0f,
-         1.0f, -1.0f, -1.0f, 1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
 
-        -1.0f, -1.0f,  1.0f, 1.0f,
-        -1.0f,  1.0f,  1.0f, 1.0f,
-         1.0f,  1.0f,  1.0f, 1.0f,
-         1.0f,  1.0f,  1.0f, 1.0f,
-         1.0f, -1.0f,  1.0f, 1.0f,
-        -1.0f, -1.0f,  1.0f, 1.0f,
+        -1.0f, -1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+        -1.0f, -1.0f,  1.0f,
 
-        -1.0f,  1.0f, -1.0f, 1.0f,
-         1.0f,  1.0f, -1.0f, 1.0f,
-         1.0f,  1.0f,  1.0f, 1.0f,
-         1.0f,  1.0f,  1.0f, 1.0f,
-        -1.0f,  1.0f,  1.0f, 1.0f,
-        -1.0f,  1.0f, -1.0f, 1.0f,
+        -1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+         1.0f,  1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f, -1.0f,
 
-        -1.0f, -1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f,  1.0f, 1.0f,
-         1.0f, -1.0f, -1.0f, 1.0f,
-         1.0f, -1.0f, -1.0f, 1.0f,
-        -1.0f, -1.0f,  1.0f, 1.0f,
-         1.0f, -1.0f,  1.0f, 1.0f
+        -1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f
     };
     mVertexBuffer = renderDevice->CreateVertexBufferWithBytes(skyboxVertices, sizeof(skyboxVertices), StorageModePrivate);
 }

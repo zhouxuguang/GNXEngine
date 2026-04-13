@@ -180,7 +180,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
         MotionBlurParams motionBlurParams;
         motionBlurParams.width = mWidth;
         motionBlurParams.height = mHeight;
-        motionBlurParams.colorTexture = lightingResult;
+        motionBlurParams.colorTexture = skyboxResult;
         motionBlurParams.depthTexture = depthResource;
         motionBlurParams.cameraUBO = cameraUBO;
 
@@ -424,11 +424,11 @@ FrameGraphResource DeferredSceneRenderer::RenderSkyboxPass(
             outputDesc.extent = Rect2D{0, 0, (int)mWidth, (int)mHeight};
             outputDesc.depth = 1;
             outputDesc.format = kTexFormatBGRA32;
-            data.outputResult = builder.Create<FrameGraphTexture>(outputDesc.name, outputDesc);
-            builder.Write(data.outputResult, (uint32_t)ResourceAccessType::ColorAttachment);
+            //data.inputColor = builder.Read(colorTexture, (uint32_t)ResourceAccessType::ShaderRead);
+            data.outputResult = builder.Write(colorTexture, (uint32_t)ResourceAccessType::ColorAttachment);
 
             // 读取延迟光照结果（颜色）和深度（用于深度测试）
-            data.inputColor = builder.Read(colorTexture, (uint32_t)ResourceAccessType::ShaderRead);
+            
             data.inputDepth = builder.Read(depthTexture, (uint32_t)ResourceAccessType::ShaderRead);
 
             data.cameraUBO = cameraUBO;
@@ -465,13 +465,6 @@ FrameGraphResource DeferredSceneRenderer::RenderSkyboxPass(
 
             // 创建 RenderEncoder 并绘制天空盒
             RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);
-
-            // 绑定相机 UBO（天空盒 Shader 需要视图/投影矩阵）
-            if (data.cameraUBO)
-            {
-                renderEncoder->SetVertexUniformBuffer("cbPerCamera", data.cameraUBO);
-                renderEncoder->SetFragmentUniformBuffer("cbPerCamera", data.cameraUBO);
-            }
 
             // 绘制天空盒（SkyBox 内部管理自己的 Pipeline/VB/Shader/CubeMap）
             skyBoxNode->Render(renderEncoder);
