@@ -258,7 +258,7 @@ void Quaternion<T>::FromToRotation(const Vector3<T>& from, const Vector3<T>& to)
 template <typename T>
 T Quaternion<T>::Norm() const
 {
-    return x * x + y * y + z * z;
+    return w * w + x * x + y * y + z * z;
 }
 
 template <typename T>
