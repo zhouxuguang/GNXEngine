@@ -83,8 +83,14 @@ bool Semaphore::tryWait()
 bool Semaphore::timedWait(unsigned int s, unsigned int ms)
 {
     struct timespec abstime;
+    clock_gettime(CLOCK_REALTIME, &abstime);
     abstime.tv_sec += s;
     abstime.tv_nsec += ((long)ms) * 1000 * 1000;
+    if (abstime.tv_nsec >= 1000000000L)
+    {
+        abstime.tv_sec += abstime.tv_nsec / 1000000000L;
+        abstime.tv_nsec %= 1000000000L;
+    }
     return 0 == ::sem_timedwait(&m_sem, &abstime);
 }
 
