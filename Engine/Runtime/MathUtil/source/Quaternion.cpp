@@ -173,9 +173,9 @@ void Quaternion<T>::FromAngleAxis(const T fAngle, const Vector3<T>& vecAxis)
     T sinThetaOver2 = sin(thetaOver2);
 
     w = cos(thetaOver2);
-    x = vecAxis.x * sinThetaOver2;
-    y = vecAxis.y * sinThetaOver2;
-    z = vecAxis.z * sinThetaOver2;
+    x = axis.x * sinThetaOver2;
+    y = axis.y * sinThetaOver2;
+    z = axis.z * sinThetaOver2;
 }
 
 template <typename T>
