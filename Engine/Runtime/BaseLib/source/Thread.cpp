@@ -158,6 +158,7 @@ void Thread::Stop()
         return;
     }
 	CloseHandle((HANDLE)pThreadData->threadHandle);
+	delete pThreadData;
 	m_Handle = NULL;
 }
 
