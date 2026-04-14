@@ -244,6 +244,7 @@ void Quaternion<T>::FromToRotation(const Vector3<T>& from, const Vector3<T>& to)
         y = axis.y;
         z = axis.z;
         w = 0;
+        return;
     }
  
     Vector3<T> half = (p0 + p1).Normalize();

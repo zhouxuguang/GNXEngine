@@ -193,7 +193,7 @@ Matrix4x4<T> Matrix4x4<T>::operator*(const Matrix4x4<T>& other) const
 template <typename T>
 Matrix4x4<T>& Matrix4x4<T>::operator *=(const Matrix4x4<T>& other)
 {
-	Real adfResult[16] = { 0 };
+	T adfResult[16] = { 0 };
 
 	for (int i = 0; i < 4; i++)
 	{
