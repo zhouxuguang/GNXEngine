@@ -31,7 +31,6 @@ Matrix4x4<T>::Matrix4x4(void)
 template <typename T>
 Matrix4x4<T>::~Matrix4x4(void)
 {
-	memset(mAdfValues, 0, MATRIX4_SIZE);
 }
 
 template <typename T>

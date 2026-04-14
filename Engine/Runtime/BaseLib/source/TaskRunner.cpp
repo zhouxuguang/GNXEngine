@@ -25,7 +25,7 @@ void TaskRunner::Exit()
 	mIsPendingExit = true;
 }
 
-bool TaskRunner::IsPendingExit() const volatile
+bool TaskRunner::IsPendingExit() const
 {
 	return mIsPendingExit;
 }

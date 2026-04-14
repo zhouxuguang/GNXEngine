@@ -121,13 +121,13 @@ public:
     
     inline const T& operator [](size_t nIndex) const
     {
-        assert(nIndex < 4);
+        assert(nIndex < 3);
         return *(&x + nIndex);
     }
     
     inline T& operator [](size_t nIndex)
     {
-        assert(nIndex < 4);
+        assert(nIndex < 3);
         return *(&x + nIndex);
     }
 

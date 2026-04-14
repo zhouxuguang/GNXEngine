@@ -4,6 +4,7 @@
 
 #include "PreCompile.h"
 #include "Thread.h"
+#include <atomic>
 
 NS_BASELIB_BEGIN
 
@@ -27,7 +28,7 @@ public:
 	//退出，只是设置状态
 	virtual void Exit();
 
-	virtual bool IsPendingExit() const volatile;
+	virtual bool IsPendingExit() const;
 
 	//实际运行函数
 	virtual void Run() = 0;
@@ -47,7 +48,7 @@ public:
 protected:
 	size_t mTaskId;		//task id
 	int mPriority;		//优先级，数值越小，优先级越高
-	volatile bool mIsPendingExit;
+	std::atomic<bool> mIsPendingExit;
     bool mCancel;       //是否取消
 };
 

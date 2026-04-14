@@ -1,4 +1,5 @@
 #include "SpinLock.h"
+#include <thread>
 
 NS_BASELIB_BEGIN
 
@@ -96,11 +97,19 @@ SpinLock::~SpinLock(void)
 
 void SpinLock::Lock()
 {
-    while (!TryLock())
+    for (unsigned int k = 0; !TryLock(); ++k)
     {
-        
+        if (k < 32)
+        {
+            __asm__ __volatile__("pause");
+        }
+        else
+        {
+            std::this_thread::yield();
+            k = 0;
+        }
     }
-    
+
 }
 
 bool SpinLock::TryLock()
