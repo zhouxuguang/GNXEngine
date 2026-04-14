@@ -33,10 +33,20 @@ ThreadPoolIMPL::~ThreadPoolIMPL()
 void ThreadPoolIMPL::ShutDown()
 {
     mShutDown = true;
-    size_t nThreads = mThreads.size();
-    for (size_t i = 0; i < nThreads; i ++)
+
+    //唤醒所有等待在空队列条件变量上的工作线程，使其退出循环
     {
-        mThreads[i].detach();
+        AutoLock lockGuard(mLock);
+        m_bEmptyQueue = false;
+        mEmptyCondition.NotifyAll();
+    }
+
+    for (size_t i = 0; i < mThreads.size(); i++)
+    {
+        if (mThreads[i].joinable())
+        {
+            mThreads[i].join();
+        }
     }
     mThreads.clear();
 }
@@ -61,37 +71,31 @@ int ThreadPoolIMPL::GetTaskCount()
 void ThreadPoolIMPL::CancelAllTasks()
 {
     AutoLock lock_guard(mLock);
-    printf("还没完成的任务个数 = %d\n", (int)mTaskList.size());
     mTaskList.clear();
 }
 
 void ThreadPoolIMPL::Execute(const TaskRunnerPtr &task, ThreadPool::TaskStrategy strategy)
 {
-    mLock.Lock();
+    AutoLock lockGuard(mLock);
     uint32_t nTaskCount = (uint32_t)mTaskList.size();
-    mLock.UnLock();
     
     //如果超过最大任务数量，根据不同策略做不同的操作
     if (nTaskCount >= mMaxTasks)
     {
         if (strategy == ThreadPool::REMOVE_LAST)
         {
-            AutoLock lockGuard(mLock);
             mTaskList.pop_back();
             mTaskList.push_back(task);
         }
         
         else if (strategy == ThreadPool::REMOVE_FIRST)
         {
-            AutoLock lockGuard(mLock);
             mTaskList.pop_front();
             mTaskList.push_back(task);
         }
         
         else if (strategy == ThreadPool::NO_REMOVE)
         {
-            AutoLock lockGuard(mLock);
-            
             while (m_bFullQueue)
             {
                 mFullCondition.Wait();
@@ -105,7 +109,6 @@ void ThreadPoolIMPL::Execute(const TaskRunnerPtr &task, ThreadPool::TaskStrategy
     //正常插入
     else if (nTaskCount < mMaxTasks)
     {
-        AutoLock lockGuard(mLock);
         mTaskList.push_back(task);
         
         m_bEmptyQueue = false;
@@ -149,7 +152,7 @@ void* ThreadPoolIMPL::WorkFunc(std::weak_ptr<ThreadPoolIMPL> weakThreadPool)
             //表示队列里面没有数据了，线程阻塞
 
             threadPool->mLock.Lock();
-            while (threadPool->m_bEmptyQueue)
+            while (threadPool->m_bEmptyQueue && threadPool->IsRunning())
             {
                 threadPool->mEmptyCondition.Wait();
             }
