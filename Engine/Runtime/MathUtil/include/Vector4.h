@@ -22,13 +22,15 @@ public:
 
 	~Vector4(void);
 
-	Vector4 &operator +(T fValue);
+	inline Vector4 operator + (T fValue) const
+	{
+		return Vector4(x + fValue, y + fValue, z + fValue, w + fValue);
+	}
 
-	Vector4 &operator -(T fValue);
-
-	Vector4 &operator *(T fValue);
-
-	Vector4 &operator /(T fValue);
+	inline Vector4 operator - (T fValue) const
+	{
+		return Vector4(x - fValue, y - fValue, z - fValue, w - fValue);
+	}
 
 	inline const T& operator [](size_t nIndex) const
 	{

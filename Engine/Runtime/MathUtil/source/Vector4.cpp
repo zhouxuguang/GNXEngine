@@ -40,50 +40,6 @@ Vector4<T>::~Vector4(void)
 }
 
 template <typename T>
-Vector4<T>& Vector4<T>::operator +(T fValue)
-{
-	x += fValue;
-	y += fValue;
-	z += fValue;
-	w += fValue;
-
-	return *this;
-}
-
-template <typename T>
-Vector4<T>& Vector4<T>::operator -(T fValue)
-{
-	x -= fValue;
-	y -= fValue;
-	z -= fValue;
-	w -= fValue;
-
-	return *this;
-}
-
-template <typename T>
-Vector4<T>& Vector4<T>::operator *(T fValue)
-{
-	x *= fValue;
-	y *= fValue;
-	z *= fValue;
-	w *= fValue;
-
-	return *this;
-}
-
-template <typename T>
-Vector4<T>& Vector4<T>::operator /(T fValue)
-{
-	x /= fValue;
-	y /= fValue;
-	z /= fValue;
-	w /= fValue;
-
-	return *this;
-}
-
-template <typename T>
 Vector4<T>& Vector4<T>::operator=(const Vector4& rkVector)
 {
 	x = rkVector.x;
