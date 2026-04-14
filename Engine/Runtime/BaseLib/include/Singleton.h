@@ -35,8 +35,7 @@ public:
     }
     static T* GetInstancePtr( void )
     {
-        static T sInstance;
-        return &sInstance;
+        return &GetInstance();
     }
 };
 
