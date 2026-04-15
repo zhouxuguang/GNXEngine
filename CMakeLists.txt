@@ -35,9 +35,12 @@ message("ISPC: ${CMAKE_ISPC_COMPILER}")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Engine)
 
+enable_testing()
+
 add_subdirectory(Engine/Runtime)
 add_subdirectory(Engine/Editor)
 add_subdirectory(ThirdParty)
 add_subdirectory(test)
+add_subdirectory(unittest)
 add_subdirectory(demo)
 
