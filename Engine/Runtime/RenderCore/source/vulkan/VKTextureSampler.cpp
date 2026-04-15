@@ -26,7 +26,7 @@ VKTextureSampler::~VKTextureSampler()
 {
     if (mSampler)
     {
-        vkDestroySampler(mContext->device, mSampler, nullptr);
+        SafeDestroySampler(*mContext, mSampler);
         mSampler = VK_NULL_HANDLE;
     }
 }

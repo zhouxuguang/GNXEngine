@@ -76,10 +76,9 @@ VKVertexBuffer::~VKVertexBuffer()
 
     if (mBuffer != VK_NULL_HANDLE)
     {
-        vmaDestroyBuffer(mContext->vmaAllocator, mBuffer, mAllocation);
+        SafeDestroyBuffer(*mContext, mBuffer, mAllocation);
         mBuffer = VK_NULL_HANDLE;
     }
-    //vmaDestroyBuffer(mContext->vmaAllocator, mBuffer, mAllocation);
 }
 
 uint32_t VKVertexBuffer::GetBufferLength() const

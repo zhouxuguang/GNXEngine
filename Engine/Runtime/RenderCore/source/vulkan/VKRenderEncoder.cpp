@@ -362,7 +362,7 @@ VKRenderEncoder::~VKRenderEncoder()
         EndEncode();
     }
     
-    vkDestroyFramebuffer(mContext->device, mFrameBuffer, nullptr);
+    SafeDestroyFramebuffer(*mContext, mFrameBuffer);
 }
 
 void VKRenderEncoder::EndEncode()

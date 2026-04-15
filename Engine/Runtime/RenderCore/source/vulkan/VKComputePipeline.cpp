@@ -117,7 +117,7 @@ VKComputePipeline::~VKComputePipeline()
 {
     if (mPipeline)
     {
-        vkDestroyPipeline(mContext->device, mPipeline, nullptr);
+        SafeDestroyPipeline(*mContext, mPipeline);
         mPipeline = VK_NULL_HANDLE;
     }
 }

@@ -27,7 +27,7 @@ VKRCBuffer::~VKRCBuffer()
 {
     if (mContext && mContext->device != VK_NULL_HANDLE && mBuffer != VK_NULL_HANDLE)
     {
-        vmaDestroyBuffer(mContext->vmaAllocator, mBuffer, mAllocation);
+        SafeDestroyBuffer(*mContext, mBuffer, mAllocation);
         mBuffer = VK_NULL_HANDLE;
         mAllocation = VK_NULL_HANDLE;
     }
