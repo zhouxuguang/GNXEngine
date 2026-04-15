@@ -195,6 +195,8 @@ if (YAML_CPP_FORMAT_SOURCE AND YAML_CPP_CLANG_FORMAT_EXE)
     COMMAND_EXPAND_LISTS
     COMMENT "Running clang-format"
     VERBATIM)
+
+  set_property(TARGET format PROPERTY FOLDER "ThirdParty")
 endif()
 
 # uninstall target
