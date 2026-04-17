@@ -95,10 +95,10 @@ static uint8_t* DecodePngData(const uint8_t* pPngData, size_t dataLen, uint32_t*
         //        {
         //            png_set_tRNS_to_alpha(png_ptr);
         //        }
-        // reduce images with 16-bit samples to 8 bits
+        // 16-bit samples: swap to native little-endian
         if (bit_depth == 16)
         {
-            png_set_strip_16(png_ptr);
+            png_set_swap(png_ptr);
         }
         
         // Expanded earlier for grayscale, now take care of palette and rgb
@@ -154,7 +154,7 @@ static uint8_t* DecodePngData(const uint8_t* pPngData, size_t dataLen, uint32_t*
         //解析像素格式
         if (color_type == PNG_COLOR_TYPE_GRAY)
         {
-            pixelFormat = FORMAT_GRAY8;
+            pixelFormat = (bit_depth == 16) ? FORMAT_GRAY16 : FORMAT_GRAY8;
             *uChannelCount = 1;
         }
         
@@ -166,20 +166,26 @@ static uint8_t* DecodePngData(const uint8_t* pPngData, size_t dataLen, uint32_t*
         
         else if (color_type == PNG_COLOR_TYPE_RGB)
         {
-            pixelFormat = FORMAT_RGB8;
-            if (isSRGB)
+            if (bit_depth == 16)
             {
-                pixelFormat = FORMAT_SRGB8;
+                pixelFormat = FORMAT_RGB16;
+            }
+            else
+            {
+                pixelFormat = isSRGB ? FORMAT_SRGB8 : FORMAT_RGB8;
             }
             *uChannelCount = 3;
         }
         
         else if (color_type == PNG_COLOR_TYPE_RGB_ALPHA)
         {
-            pixelFormat = FORMAT_RGBA8;
-            if (isSRGB)
+            if (bit_depth == 16)
             {
-                pixelFormat = FORMAT_SRGB8_ALPHA8;
+                pixelFormat = FORMAT_RGBA16;
+            }
+            else
+            {
+                pixelFormat = isSRGB ? FORMAT_SRGB8_ALPHA8 : FORMAT_RGBA8;
             }
             *uChannelCount = 4;
         }

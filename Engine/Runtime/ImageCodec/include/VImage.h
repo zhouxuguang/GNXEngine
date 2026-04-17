@@ -32,6 +32,9 @@ enum
 	FORMAT_RGB32Float = 10,             //RGB float
     FORMAT_RG16Float = 11,             //RG half float
     FORMAT_RG32Float = 12,             //RG float
+    FORMAT_GRAY16 = 13,               //16-bit grayscale (2 bytes/pixel)
+    FORMAT_RGB16 = 14,                 //16-bit RGB (6 bytes/pixel)
+    FORMAT_RGBA16 = 15,                //16-bit RGBA (8 bytes/pixel)
 };
 
 //图像的存储格式  bmp/png等
