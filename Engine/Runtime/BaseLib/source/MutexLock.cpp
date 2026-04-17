@@ -140,6 +140,7 @@ bool MutexLock::TryLock(unsigned long msecs)
 		if (dTimeEnd - dTimeStart >= msecs)
 		{
 			bRet = false;
+			break;
 		}
 	}
 

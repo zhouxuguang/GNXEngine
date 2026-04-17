@@ -40,17 +40,6 @@ void TaskRunner::SetTaskPriority(int nPriority)
 	mPriority = nPriority;
 }
 
-static void* ThreadCallbackFunc(void* pPara)
-{
-	TaskRunner* pThis = (TaskRunner*)pPara;
-	if (pThis != NULL)
-	{
-		pThis->Run();
-	}
-
-	return pThis;
-}
-
 bool TaskRunner::IsCancel() const
 {
     return mCancel;

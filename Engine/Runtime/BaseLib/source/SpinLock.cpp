@@ -23,9 +23,16 @@ void SpinLock::Lock()
 {
     for (unsigned int k = 0; !TryLock(); ++k)
     {
-        Sleep(0);
+        if (k < 32)
+        {
+            _mm_pause();
+        }
+        else
+        {
+            Sleep(0);
+            k = 0;
+        }
     }
-	
 }
 
 void SpinLock::UnLock()
@@ -54,8 +61,7 @@ SpinLock::SpinLock(void)
 
 SpinLock::~SpinLock(void)
 {
-    assert(1);
-    //不需要实现
+    //os_unfair_lock无需显式销毁
 }
 
 void SpinLock::Lock()

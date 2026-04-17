@@ -195,7 +195,7 @@ static void WINAPI destroy_condvar_using_event( condition_variable_with_event* c
 		LeaveCriticalSection( &cv_event->mutex );
 
 		//直到等待者的个数等于0
-		while( cv_event->n_waiters == 0 ){}
+		while( cv_event->n_waiters > 0 ){}
 		// make sure the last thread completes its access to cv
 		EnterCriticalSection( &cv_event->mutex );
 	}

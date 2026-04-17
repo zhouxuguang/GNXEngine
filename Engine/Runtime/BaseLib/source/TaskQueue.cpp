@@ -16,72 +16,55 @@ TaskQueue::~TaskQueue(void)
 
 bool TaskQueue::AddTask(const TaskRunnerPtr &task, ThreadPool::TaskStrategy strategy)
 {
+    AutoLock lock_guard(mLock);
+
     //如果超过最大任务数量，根据不同策略做不同的操作
-    if(mTaskList.size() >= mMaxTaskCount)
+    if(mTaskList.size() >= (size_t)mMaxTaskCount)
     {
         if (strategy == ThreadPool::REMOVE_LAST)
         {
-            mLock.Lock();
             mTaskList.pop_back();
             mTaskList.push_back(task);
-            mLock.UnLock();
-            //mFullCondition.notifyAll();
         }
-        
+
         else if (strategy == ThreadPool::REMOVE_FIRST)
         {
-            mLock.Lock();
             mTaskList.pop_front();
             mTaskList.push_back(task);
-            mLock.UnLock();
-            //mFullCondition.notifyAll();
         }
-        
+
         else if (strategy == ThreadPool::NO_REMOVE)
         {
-            mLock.Lock();
-            
-            if (mTaskList.size() == mMaxTaskCount)
+            while (mTaskList.size() >= (size_t)mMaxTaskCount)
             {
-                while (m_bFullQueue)
-                {
-                    mFullCondition.Wait();
-                }
-                
-                m_bFullQueue = true;
-			}
-            mLock.UnLock();
-            
+                mFullCondition.Wait();
+            }
+
+            mTaskList.push_back(task);
         }
-    }
-    
-    //如果在最大值范围内，则唤醒等待条件为空的线程
-    else if (mTaskList.size() < mMaxTaskCount)
-    {
-		bool bNeedNotify = mTaskList.empty();
-        mLock.Lock();
-        mTaskList.push_back(task);
-        
+
         m_bEmptyQueue = false;
-        
-		if (bNeedNotify)
-		{
-			//mEmptyCondition.NotifyAll();
-		}
-        
-        mLock.UnLock();
+        mEmptyCondition.NotifyAll();
     }
-    
+
+    //如果在最大值范围内，则唤醒等待条件为空的线程
+    else
+    {
+        mTaskList.push_back(task);
+
+        m_bEmptyQueue = false;
+        mEmptyCondition.NotifyAll();
+    }
+
     return true;
 }
 
 bool TaskQueue::RemoveTask(const TaskRunnerPtr &task)
 {
     AutoLock lock_guard(mLock);
-    
-    //todo  这里面也需要处理条件变量
+
     TaskList::iterator iter = mTaskList.begin();
-    TaskList::iterator iterEnd = mTaskList.begin();
+    TaskList::iterator iterEnd = mTaskList.end();
     for (; iter != iterEnd; )
     {
         //找到一个返回
@@ -91,36 +74,27 @@ bool TaskQueue::RemoveTask(const TaskRunnerPtr &task)
             return true;
         }
         else
-            iter ++;
+            iter++;
     }
-    
+
     return false;
 }
 
 TaskRunnerPtr TaskQueue::GetHeadTask()
 {
-	mLock.Lock();
-	bool bEmpty = mTaskList.empty();
-	mLock.UnLock();
+    AutoLock lock_guard(mLock);
 
-    if (bEmpty)
+    if (mTaskList.empty())
     {
-        return NULL;
+        return nullptr;
     }
-	
-    else
-    {
-        mLock.Lock();
-        TaskRunnerPtr task = mTaskList.front();
-        mTaskList.pop_front();
-        m_bFullQueue = false;
-        mFullCondition.NotifyAll();
-        mLock.UnLock();
-        
-        return task;
-    }
-    
-    return NULL;
+
+    TaskRunnerPtr task = mTaskList.front();
+    mTaskList.pop_front();
+    m_bFullQueue = false;
+    mFullCondition.NotifyAll();
+
+    return task;
 }
 
 bool TaskQueue::IsEmpty() const

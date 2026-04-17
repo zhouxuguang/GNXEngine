@@ -115,7 +115,7 @@ typedef std::basic_string<char32_t> utf32String;
 typedef uint32_t DECLARE_ALIGNED(4) AlignedUint32;
 typedef int32_t DECLARE_ALIGNED(4) AlignedInt32;
 typedef uint64_t DECLARE_ALIGNED(8) AlignedUint64;
-typedef uint64_t DECLARE_ALIGNED(8) AlignedInt64;
+typedef int64_t DECLARE_ALIGNED(8) AlignedInt64;
 
 typedef std::vector<uint8_t> ByteVector;
 typedef std::shared_ptr<ByteVector> ByteVectorPtr;

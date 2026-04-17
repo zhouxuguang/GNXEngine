@@ -77,40 +77,44 @@ void ThreadPoolIMPL::CancelAllTasks()
 void ThreadPoolIMPL::Execute(const TaskRunnerPtr &task, ThreadPool::TaskStrategy strategy)
 {
     AutoLock lockGuard(mLock);
-    uint32_t nTaskCount = (uint32_t)mTaskList.size();
-    
+
     //如果超过最大任务数量，根据不同策略做不同的操作
-    if (nTaskCount >= mMaxTasks)
+    if (mTaskList.size() >= mMaxTasks)
     {
         if (strategy == ThreadPool::REMOVE_LAST)
         {
             mTaskList.pop_back();
             mTaskList.push_back(task);
         }
-        
+
         else if (strategy == ThreadPool::REMOVE_FIRST)
         {
             mTaskList.pop_front();
             mTaskList.push_back(task);
         }
-        
+
         else if (strategy == ThreadPool::NO_REMOVE)
         {
-            while (m_bFullQueue)
+            while (mTaskList.size() >= mMaxTasks && !mShutDown)
             {
                 mFullCondition.Wait();
             }
-            
-            m_bFullQueue = true;
-            
+
+            if (!mShutDown)
+            {
+                mTaskList.push_back(task);
+            }
         }
+
+        m_bEmptyQueue = false;
+        mEmptyCondition.NotifyAll();
     }
-    
+
     //正常插入
-    else if (nTaskCount < mMaxTasks)
+    else
     {
         mTaskList.push_back(task);
-        
+
         m_bEmptyQueue = false;
         mEmptyCondition.NotifyAll();
     }
@@ -119,21 +123,22 @@ void ThreadPoolIMPL::Execute(const TaskRunnerPtr &task, ThreadPool::TaskStrategy
 TaskRunnerPtr ThreadPoolIMPL::GetHeadTask()
 {
     AutoLock lockGuard(mLock);
-    
+
     if (mTaskList.empty())
     {
-        return NULL;
+        return nullptr;
     }
-    
-    else
+
+    TaskRunnerPtr task = mTaskList.front();
+    mTaskList.pop_front();
+    mFullCondition.NotifyAll();
+
+    if (mTaskList.empty())
     {
-        TaskRunnerPtr task = mTaskList.front();
-        mTaskList.pop_front();
-        m_bFullQueue = false;
-        mFullCondition.NotifyAll();
-        
-        return task;
+        m_bEmptyQueue = true;
     }
+
+    return task;
 }
 
 void* ThreadPoolIMPL::WorkFunc(std::weak_ptr<ThreadPoolIMPL> weakThreadPool)
@@ -147,27 +152,19 @@ void* ThreadPoolIMPL::WorkFunc(std::weak_ptr<ThreadPoolIMPL> weakThreadPool)
     while ((threadPool = weakThreadPool.lock()) && threadPool->IsRunning())
     {
         TaskRunnerPtr pTask = threadPool->GetHeadTask();
-        if (NULL == pTask)
+        if (nullptr == pTask)
         {
             //表示队列里面没有数据了，线程阻塞
-
-            threadPool->mLock.Lock();
+            AutoLock lockGuard(threadPool->mLock);
             while (threadPool->m_bEmptyQueue && threadPool->IsRunning())
             {
                 threadPool->mEmptyCondition.Wait();
             }
-
-            threadPool->m_bEmptyQueue = true;
-            threadPool->mLock.UnLock();
         }
-
         else
         {
-            assert(pTask != NULL);
             pTask->Run();
-            //printf("Task ID = %d\n",pTask->GetTaskId());
         }
-
     }
 
     return nullptr;

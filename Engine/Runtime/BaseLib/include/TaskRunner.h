@@ -49,7 +49,7 @@ protected:
 	size_t mTaskId;		//task id
 	int mPriority;		//优先级，数值越小，优先级越高
 	std::atomic<bool> mIsPendingExit;
-    bool mCancel;       //是否取消
+    std::atomic<bool> mCancel;       //是否取消
 };
 
 typedef std::shared_ptr<TaskRunner> TaskRunnerPtr;

@@ -157,9 +157,11 @@ void Thread::Stop()
     {
         return;
     }
-	CloseHandle((HANDLE)pThreadData->threadHandle);
-	delete pThreadData;
-	m_Handle = NULL;
+    // 先等待线程执行完毕，避免线程还在运行时释放资源
+    WaitForSingleObject((HANDLE)pThreadData->threadHandle, INFINITE);
+    CloseHandle((HANDLE)pThreadData->threadHandle);
+    delete pThreadData;
+    m_Handle = NULL;
 }
 
 void Thread::Resume()
@@ -395,12 +397,8 @@ void Thread::Stop()
     {
         return;
     }
-#ifdef __ANDROID__
-    //android has no pthread_cancel
-	pthread_kill(pThreadData->threadID, SIGUSR1);
-#else
-	pthread_cancel(pThreadData->threadID);
-#endif
+    // 等待线程正常结束，避免强杀导致资源泄漏
+    pthread_join(pThreadData->threadID, nullptr);
 }
 
 void Thread::Resume()

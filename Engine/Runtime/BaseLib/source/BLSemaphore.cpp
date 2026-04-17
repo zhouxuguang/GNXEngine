@@ -124,11 +124,8 @@ bool Semaphore::tryWait()
 
 bool Semaphore::timedWait(unsigned int s, unsigned int ms)
 {
-    struct timespec abstime;
-    abstime.tv_sec += s;
-    abstime.tv_nsec += ((long)ms) * 1000 * 1000;
-    
-    return dispatch_semaphore_wait(m_sem,s * 1000 + ms);
+    dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, (s * 1000 + ms) * NSEC_PER_MSEC);
+    return 0 == dispatch_semaphore_wait(m_sem, timeout);
 }
 
 #endif
