@@ -98,9 +98,9 @@ static RenderSystem::SkyBox* CreateDefaultSkybox()
 // Terrain configuration
 //=============================================================================
 
-static const uint32_t kTerrainResolution = 256;
+static const uint32_t kTerrainResolution = 512;
 static const float   kTerrainWorldSize  = 512.0f;
-static const float   kTerrainHeightScale = 1.0f;
+static const float   kTerrainHeightScale = 80.0f;
 
 //=============================================================================
 // Implementation
@@ -138,9 +138,9 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
     // ---- Directional Light (sun) ----
     RenderSystem::DirectionLight* dirLight = static_cast<RenderSystem::DirectionLight*>(
         sceneManager->CreateLight("sun", RenderSystem::Light::DirectionLight));
-    dirLight->setColor(Vector3f(1.0f, 0.95f, 0.88f));
-    dirLight->setDirection(Vector3f(-0.5f, -0.8f, -0.3f).Normalize());
-    dirLight->setStrength(Vector3f(4.0f, 4.0f, 4.0f));
+    dirLight->setColor(Vector3f(1.0f, 1.0f, 1.f));
+    dirLight->setDirection(Vector3f(0.0f, 1.0f, -0.0f).Normalize());
+    dirLight->setStrength(Vector3f(2.0f, 2.0f, 2.0f));
 
     // ---- Skybox ----
     mSkyBox = CreateDefaultSkybox();
@@ -150,15 +150,32 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
     }
 
     // ---- Terrain ----
-    LOG_INFO("Generating terrain mesh (%ux%u, worldSize=%.0f, heightScale=%.1f)...",
+    std::string heightmapPath = GetProjectAssetDir() + "terrain/ps_height_16k.png";
+    std::string texturePath   = GetProjectAssetDir() + "terrain/ps_texture_16k.png";
+
+    LOG_INFO("Generating terrain mesh from heightmap (%ux%u, worldSize=%.0f, heightScale=%.1f)...",
              kTerrainResolution, kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale);
 
-    RenderSystem::MeshPtr terrainMesh = RenderSystem::TerrainGenerator::GenerateMesh(
-        kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale);
+    RenderSystem::MeshPtr terrainMesh = RenderSystem::TerrainGenerator::GenerateMeshFromHeightMap(
+        heightmapPath.c_str(), kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale);
 
-    // Generate height-based diffuse texture
-    RenderCore::RCTexture2DPtr diffuseTexture = RenderSystem::TerrainGenerator::GenerateDiffuseTexture(
-        kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale);
+    if (!terrainMesh)
+    {
+        LOG_WARN("Failed to load heightmap, falling back to procedural terrain");
+        terrainMesh = RenderSystem::TerrainGenerator::GenerateMesh(
+            kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale);
+    }
+
+    // Load diffuse texture from image, or generate procedural one as fallback
+    RenderCore::RCTexture2DPtr diffuseTexture = RenderSystem::TerrainGenerator::LoadDiffuseTexture(
+        texturePath.c_str());
+
+    if (!diffuseTexture)
+    {
+        LOG_WARN("Failed to load terrain texture, falling back to procedural coloring");
+        diffuseTexture = RenderSystem::TerrainGenerator::GenerateDiffuseTexture(
+            kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale);
+    }
 
     // Create default PBR textures
     RenderCore::RCTexturePtr normalTexture   = RenderSystem::ImageTextureUtil::CreateNormalTexture();
