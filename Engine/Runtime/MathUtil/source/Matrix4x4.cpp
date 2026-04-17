@@ -80,7 +80,7 @@ Matrix4x4<T>& Matrix4x4<T>::operator =(const Matrix4x4<T>& rhs)
 }
 
 template <typename T>
-Matrix4x4<T> Matrix4x4<T>::operator +(T fValue)
+Matrix4x4<T> Matrix4x4<T>::operator +(T fValue) const
 {
 	Matrix4x4<T> mtRes;
 	int i = 0;
@@ -96,7 +96,7 @@ Matrix4x4<T> Matrix4x4<T>::operator +(T fValue)
 }
 
 template <typename T>
-Matrix4x4<T> Matrix4x4<T>::operator -(T fValue)
+Matrix4x4<T> Matrix4x4<T>::operator -(T fValue) const
 {
 	Matrix4x4 mtRes;
 	int i = 0;
@@ -112,7 +112,7 @@ Matrix4x4<T> Matrix4x4<T>::operator -(T fValue)
 }
 
 template <typename T>
-Matrix4x4<T> Matrix4x4<T>::operator *(T fValue)
+Matrix4x4<T> Matrix4x4<T>::operator *(T fValue) const
 {
 	Matrix4x4<T> mtRes;
 	int i = 0;
@@ -150,25 +150,6 @@ Vector4<T> Matrix4x4<T>::operator*(const Vector4<T>& v) const
 		mVecArray[2][0] * v[0] + mVecArray[2][1] * v[1] + mVecArray[2][2] * v[2] + mVecArray[2][3] * v[3],
 		mVecArray[3][0] * v[0] + mVecArray[3][1] * v[1] + mVecArray[3][2] * v[2] + mVecArray[3][3] * v[3]
 	);
-}
-
-template <typename T>
-Matrix4x4<T> Matrix4x4<T>::operator*(const Matrix4x4<T>& other)
-{
-	T adfResult[16] = { 0 };
-
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			for (int k = 0; k < 4; k++)
-			{
-				adfResult[i * 4 + j] += mVecArray[i][k] * other[k][j];
-			}
-		}
-	}
-
-	return Matrix4x4<T>(adfResult);
 }
 
 template <typename T>
@@ -227,7 +208,7 @@ Matrix4x4<T> Matrix4x4<T>::operator + (const Matrix4x4<T>& other) const
 }
 
 template <typename T>
-Matrix4x4<T> Matrix4x4<T>::operator /(T fValue)
+Matrix4x4<T> Matrix4x4<T>::operator /(T fValue) const
 {
 	Matrix4x4<T> mtRes;
 	for (int i = 0; i < 4; i++)
@@ -250,10 +231,10 @@ void Matrix4x4<T>::MakeIdentity()
 template <typename T>
 bool Matrix4x4<T>::IsIdentity() const
 {
-	return mVecArray[0][0] == 1.0 && mVecArray[0][1] == 0.0 && mVecArray[0][2] == 0.0 && mVecArray[0][3] == 0.0 &&
-		mVecArray[1][0] == 0.0 && mVecArray[1][1] == 1.0 && mVecArray[1][2] == 0.0 && mVecArray[1][3] == 0.0 &&
-		mVecArray[2][0] == 0.0 && mVecArray[2][1] == 0.0 && mVecArray[2][2] == 1.0 && mVecArray[2][3] == 0.0 &&
-		mVecArray[3][0] == 0.0 && mVecArray[3][1] == 0.0 && mVecArray[3][2] == 0.0 && mVecArray[3][3] == 1.0;
+    return ApproxEqual(mVecArray[0][0], T(1)) && ApproxEqual(mVecArray[0][1], T(0)) && ApproxEqual(mVecArray[0][2], T(0)) && ApproxEqual(mVecArray[0][3], T(0)) &&
+        ApproxEqual(mVecArray[1][0], T(0)) && ApproxEqual(mVecArray[1][1], T(1)) && ApproxEqual(mVecArray[1][2], T(0)) && ApproxEqual(mVecArray[1][3], T(0)) &&
+        ApproxEqual(mVecArray[2][0], T(0)) && ApproxEqual(mVecArray[2][1], T(0)) && ApproxEqual(mVecArray[2][2], T(1)) && ApproxEqual(mVecArray[2][3], T(0)) &&
+        ApproxEqual(mVecArray[3][0], T(0)) && ApproxEqual(mVecArray[3][1], T(0)) && ApproxEqual(mVecArray[3][2], T(0)) && ApproxEqual(mVecArray[3][3], T(1));
 }
 
 template <typename T>

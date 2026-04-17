@@ -50,9 +50,9 @@ public:
         return *this;
     }
 
-    bool operator ==(const Vector3 &a) const 
+    bool operator ==(const Vector3 &a) const
     {
-        return fabs(x - a.x) < Epsilon14 && fabs(y - a.y) < Epsilon14 && fabs(z - a.z) < Epsilon14;
+        return ApproxEqual(x, a.x) && ApproxEqual(y, a.y) && ApproxEqual(z, a.z);
     }
 
     bool operator !=(const Vector3 &a) const 
@@ -136,9 +136,7 @@ public:
     Vector3 Abs() const;
 
     //求向量的模
-    const T Length() const;
-
-    T Length();
+    T Length() const;
 
     //模的平方
     T LengthSq() const;

@@ -64,7 +64,7 @@ public:
     
     Vector3<T> operator* (const Vector3<T>& v) const;
     
-    Quaternion operator* (float scale) const;
+    Quaternion operator* (T scale) const;
     
     bool operator==(const Quaternion& right) const;
 

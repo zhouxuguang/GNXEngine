@@ -4,7 +4,7 @@ NS_MATHUTIL_BEGIN
 
 
 template <typename T>
-Vector2<T>::Vector2()
+Vector2<T>::Vector2() : x(0), y(0)
 {
 
 }

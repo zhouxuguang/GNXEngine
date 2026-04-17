@@ -29,13 +29,13 @@ public:
 
     Matrix4x4& operator = (const Matrix4x4& rhs);
 
-    Matrix4x4 operator +(T fValue);
+    Matrix4x4 operator +(T fValue) const;
 
-    Matrix4x4 operator -(T fValue);
+    Matrix4x4 operator -(T fValue) const;
 
-    Matrix4x4 operator *(T fValue);
+    Matrix4x4 operator *(T fValue) const;
 
-    Matrix4x4 operator /(T fValue);
+    Matrix4x4 operator /(T fValue) const;
 
     inline const Vector4<T>& operator [](size_t nIndex) const
     {
@@ -64,8 +64,6 @@ public:
     //操作符重载
     Vector3<T> operator * (const Vector3<T>& v) const;
     Vector4<T> operator * (const Vector4<T>& other) const;
-
-    Matrix4x4 operator * (const Matrix4x4& other);
 
     Matrix4x4 operator * (const Matrix4x4& other) const;
 

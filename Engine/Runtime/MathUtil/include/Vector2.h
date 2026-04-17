@@ -106,7 +106,7 @@ public:
 
     inline Vector2 operator / ( const Real fScalar ) const
     {
-        assert( fScalar != 0.0 );
+        assert( !ApproxEqual(fScalar, Real(0)) );
 
         Real fInv = 1.0f / fScalar;
 
@@ -225,7 +225,7 @@ public:
 
     inline Vector2& operator /= ( const Real fScalar )
     {
-        assert( fScalar != 0.0 );
+        assert( !ApproxEqual(fScalar, Real(0)) );
 
         Real fInv = 1.0f / fScalar;
 

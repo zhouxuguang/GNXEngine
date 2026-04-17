@@ -41,7 +41,7 @@ public:
 
 	Matrix3x3 operator /(T fValue) const;
 
-	Vector3<T> operator *(const Vector3<T>& vec);
+	Vector3<T> operator *(const Vector3<T>& vec) const;
 
 	Matrix3x3 operator -() const;
 

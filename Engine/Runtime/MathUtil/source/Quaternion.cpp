@@ -10,8 +10,6 @@
 
 NS_MATHUTIL_BEGIN
 
-#define QUAT_EPSILON 0.0000001f
-
 //template <typename T>
 //const Quaternion<T> Quaternion<T>::IDENTITY(1, 0, 0, 0);
 
@@ -93,10 +91,6 @@ Vector3<T> Quaternion<T>::operator* (const Vector3<T>& v) const
 template <typename T>
 Quaternion<T>::~Quaternion()
 {
-    w = 1;
-    x = 0;
-    y = 0;
-    z = 0;
 }
 
 template <typename T>
@@ -164,7 +158,7 @@ void Quaternion<T>::FromAngleAxis(const T fAngle, const Vector3<T>& vecAxis)
     T fAng = fAngle * DEGTORAD;
     
     Vector3<T> axis = vecAxis;
-    if (fabs(vecAxis.Length() - 1.0) >= QUAT_EPSILON)   //不是单位向量，需要做单位化
+    if (!ApproxEqual(vecAxis.Length(), T(1.0), MathEpsilonLow<T>()))   //不是单位向量，需要做单位化
     {
         axis.Normalize();
     }
@@ -266,7 +260,7 @@ template <typename T>
 Quaternion<T> Quaternion<T>::Normalized() const
 {
     T lenSq = w * w + x * x + y * y + z * z;
-    if (lenSq < QUAT_EPSILON)
+    if (lenSq < MathEpsilonHigh<T>())
     {
         return Quaternion<T>();
     }
@@ -339,7 +333,7 @@ Quaternion<T> &Quaternion<T>::operator *=(const Quaternion<T> &a)
 }
 
 template <typename T>
-Quaternion<T> Quaternion<T>::operator* (float scale) const
+Quaternion<T> Quaternion<T>::operator* (T scale) const
 {
     return Quaternion(
             w * scale,
@@ -352,10 +346,10 @@ Quaternion<T> Quaternion<T>::operator* (float scale) const
 template <typename T>
 bool Quaternion<T>::operator==(const Quaternion& right) const
 {
-    return (fabs(w - right.w) <= QUAT_EPSILON &&
-            fabs(x - right.x) <= QUAT_EPSILON &&
-            fabs(y - right.y) <= QUAT_EPSILON &&
-            fabs(z - right.z) <= QUAT_EPSILON);
+    return (ApproxEqual(w, right.w, MathEpsilonHigh<T>()) &&
+            ApproxEqual(x, right.x, MathEpsilonHigh<T>()) &&
+            ApproxEqual(y, right.y, MathEpsilonHigh<T>()) &&
+            ApproxEqual(z, right.z, MathEpsilonHigh<T>()));
 }
 
 template <typename T>
@@ -370,7 +364,7 @@ Quaternion<T> Quaternion<T>::Inverse(const Quaternion<T>& rotation)
     Quaternion<T> result;
     T n = rotation.x * rotation.x + rotation.y * rotation.y +
         rotation.z * rotation.z + rotation.w * rotation.w;
-    if (n == 1.0)
+    if (ApproxEqual(n, T(1.0), MathEpsilonLow<T>()))
     {
         result.x = -rotation.x;
         result.y = -rotation.y;
@@ -460,7 +454,7 @@ Quaternion<T> Quaternion<T>::Conjugate(const Quaternion<T> &q)
 template <typename T>
 Quaternion<T> Quaternion<T>::Pow(const Quaternion<T> &q, T fExponent)
 {
-    if (fabs(q.w) > 0.9999)
+    if (q.w > T(1.0) - MathEpsilonHigh<T>())
     {
         return q;
     }

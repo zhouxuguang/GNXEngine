@@ -19,13 +19,7 @@ NS_MATHUTIL_BEGIN
 //const Vector3<T> Vector3<T>::UNIT_Z(0, 0, 1);
 
 template <typename T>
-const T Vector3<T>::Length() const
-{
-    return sqrt(x * x + y * y + z * z);
-}
-
-template <typename T>
-T Vector3<T>::Length()
+T Vector3<T>::Length() const
 {
     return sqrt(x * x + y * y + z * z);
 }

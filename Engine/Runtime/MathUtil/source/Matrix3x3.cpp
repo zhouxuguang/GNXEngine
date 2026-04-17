@@ -18,7 +18,7 @@ const Matrix3x3<T> Matrix3x3<T>::ZERO = Matrix3x3<T>(
 template <typename T>
 Matrix3x3<T>::Matrix3x3(void)
 {
-	memset(mAdfValues,0,sizeof(T) * 9);
+    MakeIdentity();
 }
 
 template <typename T>
@@ -164,7 +164,7 @@ Matrix3x3<T> Matrix3x3<T>::operator /(T fValue) const
 }
 
 template <typename T>
-Vector3<T> Matrix3x3<T>::operator*(const Vector3<T> &v)
+Vector3<T> Matrix3x3<T>::operator*(const Vector3<T> &v) const
 {
     return Vector3<T>(
                    mValues[0][0] * v[0] + mValues[0][1] * v[1] + mValues[0][2] * v[2],

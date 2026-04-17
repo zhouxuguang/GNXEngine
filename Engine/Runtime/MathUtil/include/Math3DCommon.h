@@ -20,6 +20,7 @@
 #include <string>
 #include <list>
 #include <complex>
+#include <limits>
 
 //基本平台的宏
 #if defined WIN32 || defined _WIN64
@@ -74,6 +75,29 @@
 #define DEGTORAD	0.0174532925199432958
 
 #define Epsilon14 1e-14
+
+// 类型感知的机器epsilon，用于浮点数比较
+// std::numeric_limits<T>::epsilon() 返回当前类型的最小可表示差
+//   float:  ~1.19e-07
+//   double: ~2.22e-16
+// 实际比较中通常需要放大倍数，以下提供常用倍数
+template <typename T>
+inline constexpr T MathEpsilon() { return std::numeric_limits<T>::epsilon(); }
+
+// 宽松容差，适合经过多次运算后的近似比较（如变换链、投影等）
+template <typename T>
+inline constexpr T MathEpsilonLow() { return std::numeric_limits<T>::epsilon() * 100; }
+
+// 严格容差，适合单次运算后的比较
+template <typename T>
+inline constexpr T MathEpsilonHigh() { return std::numeric_limits<T>::epsilon() * 10; }
+
+// 浮点数近似相等比较
+template <typename T>
+inline bool ApproxEqual(T a, T b, T tolerance = MathEpsilonLow<T>())
+{
+    return fabs(a - b) <= tolerance;
+}
 
 //释放内存的宏
 #define FREEPTR(x)  if(x != NULL) \
