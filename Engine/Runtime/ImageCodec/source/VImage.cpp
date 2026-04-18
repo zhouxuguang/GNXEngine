@@ -4,6 +4,7 @@
 
 #include "VImage.h"
 #include "Runtime/BaseLib/include/AlignedMalloc.h"
+#include "Runtime/MathUtil/include/HalfFloat.h"
 #include <stddef.h>
 
 NAMESPACE_IMAGECODEC_BEGIN
@@ -232,25 +233,241 @@ uint8_t* VImage::GetImageData() const
 
 mathutil::Vector4f VImage::GetPixel(uint32_t x, uint32_t y) const
 {
-    float* pData = (float*)mData;
-    uint32_t offset = (y * mWidth + x) * 3;
-    float r = pData[offset];
-    float g = pData[offset + 1];
-    float b = pData[offset + 2];
-    //float a = pData[offset + 3];
+    if (!mData || x >= mWidth || y >= mHeight)
+    {
+        return mathutil::Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
+    }
 
-    return mathutil::Vector4f(r, g, b, 1.0);
+    const uint8_t* row = (const uint8_t*)mData + y * mBytesPerRow;
+    const uint8_t* pixel = row + x * mBytesPerPixels;
+
+    switch (mFormat)
+    {
+    case FORMAT_GRAY8:
+    {
+        float v = (float)pixel[0];
+        return mathutil::Vector4f(v, v, v, 0.0f);
+    }
+    case FORMAT_GRAY16:
+    {
+        float v = (float)(*(const uint16_t*)pixel);
+        return mathutil::Vector4f(v, v, v, 0.0f);
+    }
+    case FORMAT_GRAY8_ALPHA8:
+    {
+        float v = (float)pixel[0];
+        float a = (float)pixel[1];
+        return mathutil::Vector4f(v, v, v, a);
+    }
+    case FORMAT_RGB8:
+    case FORMAT_SRGB8:
+    {
+        float r = (float)pixel[0];
+        float g = (float)pixel[1];
+        float b = (float)pixel[2];
+        return mathutil::Vector4f(r, g, b, 0.0f);
+    }
+    case FORMAT_RGBA8:
+    case FORMAT_SRGB8_ALPHA8:
+    {
+        float r = (float)pixel[0];
+        float g = (float)pixel[1];
+        float b = (float)pixel[2];
+        float a = (float)pixel[3];
+        return mathutil::Vector4f(r, g, b, a);
+    }
+    case FORMAT_RGB16:
+    {
+        const uint16_t* p = (const uint16_t*)pixel;
+        float r = (float)p[0];
+        float g = (float)p[1];
+        float b = (float)p[2];
+        return mathutil::Vector4f(r, g, b, 0.0f);
+    }
+    case FORMAT_RGBA16:
+    {
+        const uint16_t* p = (const uint16_t*)pixel;
+        float r = (float)p[0];
+        float g = (float)p[1];
+        float b = (float)p[2];
+        float a = (float)p[3];
+        return mathutil::Vector4f(r, g, b, a);
+    }
+    case FORMAT_RGB32Float:
+    {
+        const float* p = (const float*)pixel;
+        return mathutil::Vector4f(p[0], p[1], p[2], 0.0f);
+    }
+    case FORMAT_RGBA32Float:
+    {
+        const float* p = (const float*)pixel;
+        return mathutil::Vector4f(p[0], p[1], p[2], p[3]);
+    }
+    case FORMAT_RG32Float:
+    {
+        const float* p = (const float*)pixel;
+        return mathutil::Vector4f(p[0], p[1], 0.0f, 0.0f);
+    }
+    case FORMAT_RG16Float:
+    {
+        const uint16_t* p = (const uint16_t*)pixel;
+        float r = mathutil::half_to_float(p[0]);
+        float g = mathutil::half_to_float(p[1]);
+        return mathutil::Vector4f(r, g, 0.0f, 0.0f);
+    }
+    case FORMAT_R5G6B5:
+    {
+        uint16_t val = *(const uint16_t*)pixel;
+        float r = (float)((val >> 11) & 0x1F);
+        float g = (float)((val >> 5) & 0x3F);
+        float b = (float)(val & 0x1F);
+        return mathutil::Vector4f(r, g, b, 0.0f);
+    }
+    case FORMAT_RGBA4444:
+    {
+        uint16_t val = *(const uint16_t*)pixel;
+        float r = (float)((val >> 12) & 0xF);
+        float g = (float)((val >> 8) & 0xF);
+        float b = (float)((val >> 4) & 0xF);
+        float a = (float)(val & 0xF);
+        return mathutil::Vector4f(r, g, b, a);
+    }
+    case FORMAT_RGB5A1:
+    {
+        uint16_t val = *(const uint16_t*)pixel;
+        float r = (float)((val >> 11) & 0x1F);
+        float g = (float)((val >> 6) & 0x1F);
+        float b = (float)((val >> 1) & 0x1F);
+        float a = (val & 0x1) ? 1.0f : 0.0f;
+        return mathutil::Vector4f(r, g, b, a);
+    }
+    default:
+        return mathutil::Vector4f(0.0f, 0.0f, 0.0f, 0.0f);
+    }
 }
 
 void VImage::SetPixel(uint32_t x, uint32_t y, const mathutil::Vector4f& color)
 {
-    float* pData = (float*)mData;
-	uint32_t offset = (y * mWidth + x) * 3;
+    if (!mData || x >= mWidth || y >= mHeight)
+    {
+        return;
+    }
 
-    pData[offset + 0] = color.x;
-    pData[offset + 1] = color.y;
-    pData[offset + 2] = color.z;
-    //pData[offset + 3] = color.w;
+    uint8_t* row = (uint8_t*)mData + y * mBytesPerRow;
+    uint8_t* pixel = row + x * mBytesPerPixels;
+
+    switch (mFormat)
+    {
+    case FORMAT_GRAY8:
+    {
+        pixel[0] = (uint8_t)color.x;
+        break;
+    }
+    case FORMAT_GRAY16:
+    {
+        *(uint16_t*)pixel = (uint16_t)color.x;
+        break;
+    }
+    case FORMAT_GRAY8_ALPHA8:
+    {
+        pixel[0] = (uint8_t)color.x;
+        pixel[1] = (uint8_t)color.w;
+        break;
+    }
+    case FORMAT_RGB8:
+    case FORMAT_SRGB8:
+    {
+        pixel[0] = (uint8_t)color.x;
+        pixel[1] = (uint8_t)color.y;
+        pixel[2] = (uint8_t)color.z;
+        break;
+    }
+    case FORMAT_RGBA8:
+    case FORMAT_SRGB8_ALPHA8:
+    {
+        pixel[0] = (uint8_t)color.x;
+        pixel[1] = (uint8_t)color.y;
+        pixel[2] = (uint8_t)color.z;
+        pixel[3] = (uint8_t)color.w;
+        break;
+    }
+    case FORMAT_RGB16:
+    {
+        uint16_t* p = (uint16_t*)pixel;
+        p[0] = (uint16_t)color.x;
+        p[1] = (uint16_t)color.y;
+        p[2] = (uint16_t)color.z;
+        break;
+    }
+    case FORMAT_RGBA16:
+    {
+        uint16_t* p = (uint16_t*)pixel;
+        p[0] = (uint16_t)color.x;
+        p[1] = (uint16_t)color.y;
+        p[2] = (uint16_t)color.z;
+        p[3] = (uint16_t)color.w;
+        break;
+    }
+    case FORMAT_RGB32Float:
+    {
+        float* p = (float*)pixel;
+        p[0] = color.x;
+        p[1] = color.y;
+        p[2] = color.z;
+        break;
+    }
+    case FORMAT_RGBA32Float:
+    {
+        float* p = (float*)pixel;
+        p[0] = color.x;
+        p[1] = color.y;
+        p[2] = color.z;
+        p[3] = color.w;
+        break;
+    }
+    case FORMAT_RG32Float:
+    {
+        float* p = (float*)pixel;
+        p[0] = color.x;
+        p[1] = color.y;
+        break;
+    }
+    case FORMAT_RG16Float:
+    {
+        uint16_t* p = (uint16_t*)pixel;
+        p[0] = mathutil::float_to_half(color.x);
+        p[1] = mathutil::float_to_half(color.y);
+        break;
+    }
+    case FORMAT_R5G6B5:
+    {
+        uint16_t r = (uint16_t)color.x;
+        uint16_t g = (uint16_t)color.y;
+        uint16_t b = (uint16_t)color.z;
+        *(uint16_t*)pixel = (r << 11) | (g << 5) | b;
+        break;
+    }
+    case FORMAT_RGBA4444:
+    {
+        uint16_t r = (uint16_t)color.x;
+        uint16_t g = (uint16_t)color.y;
+        uint16_t b = (uint16_t)color.z;
+        uint16_t a = (uint16_t)color.w;
+        *(uint16_t*)pixel = (r << 12) | (g << 8) | (b << 4) | a;
+        break;
+    }
+    case FORMAT_RGB5A1:
+    {
+        uint16_t r = (uint16_t)color.x;
+        uint16_t g = (uint16_t)color.y;
+        uint16_t b = (uint16_t)color.z;
+        uint16_t a = color.w > 0.5f ? 1 : 0;
+        *(uint16_t*)pixel = (r << 11) | (g << 6) | (b << 1) | a;
+        break;
+    }
+    default:
+        break;
+    }
 }
 
 bool VImage::HasPremultipliedAlpha() const
