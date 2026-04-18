@@ -50,7 +50,32 @@ void EditorCameraController::SyncFromCamera()
 
 void EditorCameraController::Update(float deltaTime)
 {
-    // No per-frame logic needed — all input is event-driven
+    if (!mCamera) return;
+
+    // WASD fly movement
+    mathutil::Vector3f moveDir(0.0f, 0.0f, 0.0f);
+
+    // Camera forward direction (from camera toward focus point, projected onto XZ plane for horizontal)
+    mathutil::Vector3f forward(-std::sin(mYaw), 0.0f, -std::cos(mYaw));
+    mathutil::Vector3f right(std::cos(mYaw), 0.0f, -std::sin(mYaw));
+    mathutil::Vector3f up(0.0f, 1.0f, 0.0f);
+
+    if (mKeyW) moveDir += forward;
+    if (mKeyS) moveDir -= forward;
+    if (mKeyD) moveDir += right;
+    if (mKeyA) moveDir -= right;
+    if (mKeyE) moveDir += up;
+    if (mKeyQ) moveDir -= up;
+
+    float len = moveDir.Length();
+    if (len > 1e-6f)
+    {
+        float speed = mMoveSpeed * (mKeyShift ? mFastMoveMultiplier : 1.0f);
+        mathutil::Vector3f displacement = moveDir * (speed * deltaTime / len);
+
+        mFocusPoint += displacement;
+        ApplyTransform();
+    }
 }
 
 void EditorCameraController::OnEvent(Event& e)
@@ -60,6 +85,8 @@ void EditorCameraController::OnEvent(Event& e)
     dispatcher.Dispatch<MouseButtonPressedEvent>([this](MouseButtonPressedEvent& ev) { return OnMouseButtonPressed(ev); });
     dispatcher.Dispatch<MouseButtonReleasedEvent>([this](MouseButtonReleasedEvent& ev) { return OnMouseButtonReleased(ev); });
     dispatcher.Dispatch<MouseScrolledEvent>([this](MouseScrolledEvent& ev) { return OnMouseScrolled(ev); });
+    dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent& ev) { return OnKeyPressed(ev); });
+    dispatcher.Dispatch<KeyReleasedEvent>([this](KeyReleasedEvent& ev) { return OnKeyReleased(ev); });
 }
 
 bool EditorCameraController::OnMouseButtonPressed(MouseButtonPressedEvent& e)
@@ -153,6 +180,40 @@ bool EditorCameraController::OnMouseScrolled(MouseScrolledEvent& e)
     mDistance  = std::clamp(mDistance, mMinDistance, mMaxDistance);
 
     ApplyTransform();
+    return true;
+}
+
+bool EditorCameraController::OnKeyPressed(KeyPressedEvent& e)
+{
+    switch (e.GetKeyCode())
+    {
+    case W:          mKeyW = true; break;
+    case A:          mKeyA = true; break;
+    case S:          mKeyS = true; break;
+    case D:          mKeyD = true; break;
+    case Q:          mKeyQ = true; break;
+    case E:          mKeyE = true; break;
+    case LeftShift:
+    case RightShift: mKeyShift = true; break;
+    default: return false;
+    }
+    return true;
+}
+
+bool EditorCameraController::OnKeyReleased(KeyReleasedEvent& e)
+{
+    switch (e.GetKeyCode())
+    {
+    case W:          mKeyW = false; break;
+    case A:          mKeyA = false; break;
+    case S:          mKeyS = false; break;
+    case D:          mKeyD = false; break;
+    case Q:          mKeyQ = false; break;
+    case E:          mKeyE = false; break;
+    case LeftShift:
+    case RightShift: mKeyShift = false; break;
+    default: return false;
+    }
     return true;
 }
 

@@ -18,6 +18,9 @@ NS_RENDERSYSTEM_BEGIN
 //   Left/Right-click drag  -> orbit rotate (yaw/pitch around focus point)
 //   Middle-click drag      -> pan (translate focus + camera)
 //   Scroll wheel           -> zoom (change distance to focus)
+//   W/A/S/D                -> fly move (forward/left/backward/right relative to camera)
+//   Q/E                    -> fly move (down/up)
+//   Hold Shift             -> move faster
 class RENDERSYSTEM_API EditorCameraController : public CameraController
 {
 public:
@@ -41,12 +44,16 @@ public:
     float GetZoomSpeed() const      { return mZoomSpeed; }
     float GetMinDistance() const     { return mMinDistance; }
     float GetMaxDistance() const     { return mMaxDistance; }
+    float GetMoveSpeed() const      { return mMoveSpeed; }
+    float GetFastMoveMultiplier() const { return mFastMoveMultiplier; }
 
     void SetRotateSpeed(float v)     { mRotateSpeed = v; }
     void SetPanSpeed(float v)        { mPanSpeed = v; }
     void SetZoomSpeed(float v)       { mZoomSpeed = v; }
     void SetMinDistance(float v)     { mMinDistance = v; }
     void SetMaxDistance(float v)     { mMaxDistance = v; }
+    void SetMoveSpeed(float v)       { mMoveSpeed = v; }
+    void SetFastMoveMultiplier(float v) { mFastMoveMultiplier = v; }
 
     // Focus point accessors
     mathutil::Vector3f GetFocusPoint() const { return mFocusPoint; }
@@ -57,6 +64,8 @@ private:
     bool OnMouseButtonPressed(GNXEngine::MouseButtonPressedEvent& e);
     bool OnMouseButtonReleased(GNXEngine::MouseButtonReleasedEvent& e);
     bool OnMouseScrolled(GNXEngine::MouseScrolledEvent& e);
+    bool OnKeyPressed(GNXEngine::KeyPressedEvent& e);
+    bool OnKeyReleased(GNXEngine::KeyReleasedEvent& e);
 
     // Rebuild camera LookAt from focus + yaw/pitch/distance
     void ApplyTransform();
@@ -78,10 +87,21 @@ private:
     float mRotateSpeed = 0.001f;
     float mPanSpeed    = 0.01f;
     float mZoomSpeed   = 0.0001f;
+    float mMoveSpeed   = 10.0f;            // WASD base speed (units/second)
+    float mFastMoveMultiplier = 3.0f;      // Shift multiplier
 
     // Distance limits
     float mMinDistance = 0.1f;
     float mMaxDistance = 1000000.0f;
+
+    // Keyboard state for WASD movement
+    bool mKeyW = false;
+    bool mKeyA = false;
+    bool mKeyS = false;
+    bool mKeyD = false;
+    bool mKeyQ = false;
+    bool mKeyE = false;
+    bool mKeyShift = false;
 
     bool  mSynced = false;
 };
