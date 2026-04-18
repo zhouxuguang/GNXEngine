@@ -331,7 +331,7 @@ MeshPtr TerrainGenerator::GenerateMeshFromHeightMap(const char* heightmapPath,
     std::vector<Vector2f>  texcoords(vertexCount);
     std::vector<uint32_t>  indices(indexCount);
 
-    // ---- Generate vertices by sampling heightmap ----
+    // ?????????
     for (uint32_t iz = 0; iz < resolution; ++iz)
     {
         for (uint32_t ix = 0; ix < resolution; ++ix)
@@ -341,7 +341,7 @@ MeshPtr TerrainGenerator::GenerateMeshFromHeightMap(const char* heightmapPath,
             float v = (float)iz / (float)(resolution - 1);
             float x = -halfSize + (float)ix * step;
             float z = -halfSize + (float)iz * step;
-            float y = SampleHeightBilinear(heightmapImage, u, v) * heightScale;
+            float y = heightmapImage.GetPixel(ix, iz).x * heightScale;
 
             positions[idx]  = Vector3f(x, y, z);
             texcoords[idx]  = Vector2f(u, v);

@@ -99,8 +99,8 @@ static RenderSystem::SkyBox* CreateDefaultSkybox()
 //=============================================================================
 
 static const uint32_t kTerrainResolution = 512;
-static const float   kTerrainWorldSize  = 512.0f;
-static const float   kTerrainHeightScale = 80.0f;
+static const float   kTerrainWorldSize  = 163840.0f;
+static const float   kTerrainHeightScale = 0.5f;
 
 //=============================================================================
 // Implementation
@@ -129,7 +129,7 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
         camera = sceneManager->CreateCamera("MainCamera");
     }
     camera->LookAt(
-        Vector3f(0.0f, 120.0f, 350.0f),
+        Vector3f(0.0f, 70000.0f, 90000.0f),
         Vector3f(0.0f, 0.0f, 0.0f),
         Vector3f(0.0f, 1.0f, 0.0f)
     );
