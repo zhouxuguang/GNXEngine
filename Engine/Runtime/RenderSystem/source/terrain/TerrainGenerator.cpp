@@ -292,7 +292,6 @@ static float SampleHeightBilinear(const imagecodec::VImage& img, float u, float 
 //=============================================================================
 
 MeshPtr TerrainGenerator::GenerateMeshFromHeightMap(const char* heightmapPath,
-                                                     uint32_t resolution,
                                                      float worldSizeXZ,
                                                      float heightScale)
 {
@@ -316,6 +315,8 @@ MeshPtr TerrainGenerator::GenerateMeshFromHeightMap(const char* heightmapPath,
     LOG_INFO("Heightmap loaded: %s (%ux%u, format=%s)",
              heightmapPath, heightmapImage.GetWidth(), heightmapImage.GetHeight(),
              heightmapImage.GetFormat() == FORMAT_GRAY16 ? "GRAY16" : "GRAY8");
+
+    uint32_t resolution = heightmapImage.GetWidth();
 
     // ---- Generate mesh ----
     uint32_t vertexCount = resolution * resolution;

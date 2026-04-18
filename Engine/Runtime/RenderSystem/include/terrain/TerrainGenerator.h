@@ -43,15 +43,14 @@ public:
     /**
      * Generate a terrain mesh from a heightmap image file.
      * Supports both 8-bit (GRAY8) and 16-bit (GRAY16) grayscale PNGs.
-     * The heightmap is sampled at the target resolution using bilinear interpolation.
+     * The mesh grid resolution is determined by the heightmap image dimensions
+     * (one vertex per pixel, no resampling).
      * @param heightmapPath Path to the heightmap image (PNG, grayscale)
-     * @param resolution    Grid resolution (resolution x resolution vertices)
      * @param worldSizeXZ   Total world-space size of the terrain in XZ plane
      * @param heightScale   Multiplier applied to normalized height values [0,1]
      * @return Shared pointer to the constructed Mesh (GPU buffers uploaded)
      */
     static MeshPtr GenerateMeshFromHeightMap(const char* heightmapPath,
-                                             uint32_t resolution = 512,
                                              float worldSizeXZ = 512.0f,
                                              float heightScale = 80.0f);
 

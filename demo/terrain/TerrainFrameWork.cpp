@@ -150,14 +150,14 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
     }
 
     // ---- Terrain ----
-    std::string heightmapPath = GetProjectAssetDir() + "terrain/ps_height_16k.png";
-    std::string texturePath   = GetProjectAssetDir() + "terrain/ps_texture_16k.png";
+    std::string heightmapPath = GetProjectAssetDir() + "terrain/ps_height_1k.png";
+    std::string texturePath   = GetProjectAssetDir() + "terrain/ps_texture_1k.png";
 
     LOG_INFO("Generating terrain mesh from heightmap (%ux%u, worldSize=%.0f, heightScale=%.1f)...",
              kTerrainResolution, kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale);
 
     RenderSystem::MeshPtr terrainMesh = RenderSystem::TerrainGenerator::GenerateMeshFromHeightMap(
-        heightmapPath.c_str(), kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale);
+        heightmapPath.c_str(), kTerrainWorldSize, kTerrainHeightScale);
 
     if (!terrainMesh)
     {
