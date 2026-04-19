@@ -28,6 +28,11 @@ public:
      设置图形管线
      */
     virtual void SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline);
+
+    /**
+     设置多边形填充模式（实心/线框）
+     */
+    virtual void SetFillMode(FillMode fillMode);
     
     /**
      Description

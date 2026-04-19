@@ -64,6 +64,17 @@ void MTLRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     // depth stencil state 两种模式共用
     id<MTLDepthStencilState> mtlDepthStencil = mtlGraphicsPipeline->GetDepthStencilState();
     [mRenderEncoder setDepthStencilState:mtlDepthStencil];
+    
+    // 设置填充模式（从 pipeline descriptor 中读取）
+    FillMode fillMode = mtlGraphicsPipeline->GetDesc().fillMode;
+    MTLTriangleFillMode mtlFillMode = (fillMode == FillModeWireframe) ? MTLTriangleFillModeLines : MTLTriangleFillModeFill;
+    [mRenderEncoder setTriangleFillMode:mtlFillMode];
+}
+
+void MTLRenderEncoder::SetFillMode(FillMode fillMode)
+{
+    MTLTriangleFillMode mtlFillMode = (fillMode == FillModeWireframe) ? MTLTriangleFillModeLines : MTLTriangleFillModeFill;
+    [mRenderEncoder setTriangleFillMode:mtlFillMode];
 }
 
 /**

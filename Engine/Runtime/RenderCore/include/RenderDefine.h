@@ -296,6 +296,13 @@ enum CullMode
     CullModeBack = 2,
 };
 
+//多边形填充模式
+enum FillMode
+{
+    FillModeSolid = 0,      //实心填充
+    FillModeWireframe = 1,  //线框模式
+};
+
 //=========================================
 
 enum VertexFormat

@@ -313,7 +313,7 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     rasterInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterInfo.depthClampEnable = VK_FALSE;
     rasterInfo.rasterizerDiscardEnable = VK_FALSE;
-    rasterInfo.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterInfo.polygonMode = (mGraphicsPipelineDes.fillMode == FillModeWireframe) ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
     rasterInfo.cullMode = VK_CULL_MODE_NONE;
     rasterInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;   //注意这里设置为逆时针
     rasterInfo.depthBiasEnable = VK_TRUE;
@@ -359,6 +359,10 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     if (mContext->vulkanExtension.enabledExtendedDynamicState)
     {
         dynamicStates.push_back(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT);
+    }
+    if (mContext->vulkanExtension.enabledExtendedDynamicState3)
+    {
+        dynamicStates.push_back(VK_DYNAMIC_STATE_POLYGON_MODE_EXT);
     }
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {};
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;

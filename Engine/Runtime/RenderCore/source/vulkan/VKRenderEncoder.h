@@ -35,6 +35,8 @@ public:
     
     virtual void SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline);
     
+    virtual void SetFillMode(FillMode fillMode);
+    
     virtual void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index);
     
     // RCBuffer接口

@@ -35,6 +35,11 @@ public:
     virtual void SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline) = 0;
     
     /**
+     设置多边形填充模式（实心/线框），可在运行时动态切换
+     */
+    virtual void SetFillMode(FillMode fillMode) = 0;
+    
+    /**
      Description
      
      @param buffer buffer对象

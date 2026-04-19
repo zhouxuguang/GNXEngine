@@ -326,6 +326,7 @@ struct GraphicsPipelineDesc
     uint32_t renderTargetCount = 1;
     ColorAttachmentDesc colorAttachmentDescriptors[MAX_COLOR_ATTACHMENT_COUNT];   //颜色相关描述
     DepthStencilDesc depthStencilDescriptor;                                      //深度模板测试状态
+    FillMode fillMode = FillModeSolid;                                            //多边形填充模式
 public:
     bool operator == (const GraphicsPipelineDesc& des) const
     {
@@ -349,6 +350,10 @@ public:
             }
         }
         if (depthStencilDescriptor != des.depthStencilDescriptor)
+        {
+            return false;
+        }
+        if (fillMode != des.fillMode)
         {
             return false;
         }

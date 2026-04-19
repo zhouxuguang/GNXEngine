@@ -446,6 +446,24 @@ void VKRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     }
     
     BindPipeline();
+
+    // 当 VK_DYNAMIC_STATE_POLYGON_MODE_EXT 被启用时，静态 polygonMode 被忽略，
+    // 必须在绑定管线后动态设置，否则后续绘制会使用未定义的填充模式
+    if (mContext->vulkanExtension.enabledExtendedDynamicState3)
+    {
+        VkPolygonMode polygonMode = (mGraphicsPipieline->GetDesc().fillMode == FillModeWireframe)
+            ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
+        vkCmdSetPolygonModeEXT(mCommandBuffer, polygonMode);
+    }
+}
+
+void VKRenderEncoder::SetFillMode(FillMode fillMode)
+{
+    if (mContext->vulkanExtension.enabledExtendedDynamicState3)
+    {
+        VkPolygonMode polygonMode = (fillMode == FillModeWireframe) ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
+        vkCmdSetPolygonModeEXT(mCommandBuffer, polygonMode);
+    }
 }
 
 void VKRenderEncoder::SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index)
