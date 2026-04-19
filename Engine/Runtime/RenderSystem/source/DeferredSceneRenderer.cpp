@@ -53,6 +53,16 @@ void DeferredSceneRenderer::SetIBLTextures(RCTexturePtr irradianceMap,
     mIBLBRDFLUT = brdfLUT;
 }
 
+void DeferredSceneRenderer::SetMotionBlurEnabled(bool enabled)
+{
+    mEnableMotionBlur = enabled;
+}
+
+bool DeferredSceneRenderer::IsMotionBlurEnabled() const
+{
+    return mEnableMotionBlur;
+}
+
 const GBufferRenderer::GBufferConfig& DeferredSceneRenderer::GetGBufferConfig() const
 {
     return mGBufferRenderer->GetConfig();
@@ -182,7 +192,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // Motion Blur Pass（在 Skybox 之后、Present之前）
     FrameGraphResource finalResult = skyboxResult;
-    if (mMotionBlurPass && depthResource != -1)
+    if (mEnableMotionBlur && mMotionBlurPass && depthResource != -1)
     {
         if (!mMotionBlurPass->IsInitialized())
         {

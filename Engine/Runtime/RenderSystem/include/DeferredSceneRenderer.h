@@ -53,6 +53,12 @@ public:
                         RCTexturePtr prefilteredMap,
                         RCTexturePtr brdfLUT);
 
+    /**
+     * 设置运动模糊开关（默认关闭）
+     */
+    void SetMotionBlurEnabled(bool enabled);
+    bool IsMotionBlurEnabled() const;
+
 private:
     FrameGraphResource RenderPreDepthPass(
         FrameGraph& frameGraph,
@@ -149,6 +155,7 @@ private:
     SSAOPassPtr mSSAOPass = nullptr;
     MotionBlurPassPtr mMotionBlurPass = nullptr;
     PostProcessing* mPostProcessing = nullptr;
+    bool mEnableMotionBlur = false;
     
     uint32_t mWidth = 1;
     uint32_t mHeight = 1;
