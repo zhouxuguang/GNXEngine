@@ -84,11 +84,12 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     // ========== 统一收集场景数据（只收集一次）==========
     std::vector<DepthMeshItem> meshItems;
     std::vector<DepthSkinnedMeshItem> skinnedMeshItems;
-    
+    std::vector<TerrainComponent*> terrainItems;
+
     SceneNode* rootNode = sceneManager->GetRootNode();
     if (rootNode)
     {
-        CollectMeshesRecursive(rootNode, meshItems, skinnedMeshItems);
+        CollectMeshesRecursive(rootNode, meshItems, skinnedMeshItems, terrainItems);
     }
 
     // 获取相机UBO
@@ -106,7 +107,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     
     // PreZPass
     FrameGraphResource depthResource = RenderPreDepthPass(
-        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO);
+        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, terrainItems);
 
     // Hi-Z Pass（在PreDepth之后、BasePass之前）
     HiZOutput hiZOutput;
@@ -118,7 +119,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // BasePass (G-Buffer)
     GBufferData gbufferData = RenderBasePass(
-        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, depthResource);
+        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, depthResource, terrainItems);
 
     // SSAO Pass（在G-Buffer之后、DeferredLighting之前）
     SSAOOutput ssaoOutput;
@@ -227,7 +228,8 @@ FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(
     CommandBufferPtr commandBuffer,
     const std::vector<DepthMeshItem>& meshItems,
     const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
-    UniformBufferPtr cameraUBO)
+    UniformBufferPtr cameraUBO,
+    const std::vector<TerrainComponent*>& terrainItems)
 {
     FrameGraphResource depthResource = -1;
 
@@ -244,6 +246,7 @@ FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(
     params.height = mHeight;
     params.meshes.staticMeshes = meshItems;
     params.meshes.skinnedMeshes = skinnedMeshItems;
+    params.meshes.terrainItems = terrainItems;
     params.uniforms.cameraUBO = cameraUBO;
     params.uniforms.skinnedMatrixUBO = skinnedMatrixUBO;
 
@@ -259,7 +262,8 @@ GBufferData DeferredSceneRenderer::RenderBasePass(
     const std::vector<DepthMeshItem>& meshItems,
     const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
     UniformBufferPtr cameraUBO,
-    FrameGraphResource preDepthTexture)
+    FrameGraphResource preDepthTexture,
+    const std::vector<TerrainComponent*>& terrainItems)
 {
     // 收集蒙皮网格的骨骼矩阵UBO
     UniformBufferPtr skinnedMatrixUBO = nullptr;
@@ -272,6 +276,7 @@ GBufferData DeferredSceneRenderer::RenderBasePass(
     GBufferRenderParams params;
     params.meshes.staticMeshes = meshItems;
     params.meshes.skinnedMeshes = skinnedMeshItems;
+    params.meshes.terrainItems = terrainItems;
     params.uniforms.cameraUBO = cameraUBO;
     params.uniforms.skinnedMatrixUBO = skinnedMatrixUBO;
     params.preDepthTexture = preDepthTexture;  // 传递 PreDepth 深度图
@@ -525,7 +530,8 @@ void DeferredSceneRenderer::RenderForwardPass()
 void DeferredSceneRenderer::CollectMeshesRecursive(
     SceneNode* node,
     std::vector<DepthMeshItem>& meshItems,
-    std::vector<DepthSkinnedMeshItem>& skinnedMeshItems)
+    std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
+    std::vector<TerrainComponent*>& terrainItems)
 {
     if (!node || !node->IsVisible())
     {
@@ -564,11 +570,18 @@ void DeferredSceneRenderer::CollectMeshesRecursive(
         }
     }
 
+    // 查询TerrainComponent组件（地形 - 专属渲染路径）
+    TerrainComponent* terrain = node->QueryComponentT<TerrainComponent>();
+    if (terrain && terrain->IsInitialized())
+    {
+        terrainItems.push_back(terrain);
+    }
+
     // 递归处理子节点
     const auto& children = node->GetAllNodes();
     for (SceneNode* child : children)
     {
-        CollectMeshesRecursive(child, meshItems, skinnedMeshItems);
+        CollectMeshesRecursive(child, meshItems, skinnedMeshItems, terrainItems);
     }
 }
 

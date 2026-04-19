@@ -6,6 +6,7 @@
 //
 
 #include "DepthRenderer.h"
+#include "SceneNode.h"
 #include <cmath>
 #include <algorithm>
 #include <limits>
@@ -156,6 +157,23 @@ FrameGraphResource DepthRenderer::Render(
                     renderInfo.skinnedMatrixUBO = data.uniforms.skinnedMatrixUBO;
 
                     MeshDrawUtil::DrawSkinnedMeshDepthOnly(*meshItem.mesh, renderInfo, mSkinnedDepthOnlyPipeline);
+                }
+            }
+
+            // 渲染地形深度（专属渲染路径）
+            if (!data.meshes.terrainItems.empty() && mDepthOnlyPipeline)
+            {
+                for (TerrainComponent* terrain : data.meshes.terrainItems)
+                {
+                    if (!terrain || !terrain->IsInitialized())
+                        continue;
+
+                    UniformBufferPtr objectUBO = nullptr;
+                    SceneNode* terrainNode = terrain->GetSceneNode();
+                    if (terrainNode)
+                        objectUBO = terrainNode->GetOrCreateModelUBO(RenderCore::GetRenderDevice());
+
+                    terrain->RenderDepthOnly(renderEncoder.get(), data.uniforms.cameraUBO, objectUBO, mDepthOnlyPipeline);
                 }
             }
             renderEncoder->EndEncode();

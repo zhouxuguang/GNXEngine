@@ -17,6 +17,7 @@
 #include "MotionBlurPass.h"
 #include "PostProcess/PostProcessing.h"
 #include "SkyBoxNode.h"
+#include "terrain/TerrainComponent.h"
 #include <vector>
 
 NS_RENDERSYSTEM_BEGIN
@@ -58,7 +59,8 @@ private:
         CommandBufferPtr commandBuffer,
         const std::vector<DepthMeshItem>& meshItems,
         const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
-        UniformBufferPtr cameraUBO);
+        UniformBufferPtr cameraUBO,
+        const std::vector<TerrainComponent*>& terrainItems = {});
 
     GBufferData RenderBasePass(
         FrameGraph& frameGraph,
@@ -66,7 +68,8 @@ private:
         const std::vector<DepthMeshItem>& meshItems,
         const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
         UniformBufferPtr cameraUBO,
-        FrameGraphResource preDepthTexture = -1);
+        FrameGraphResource preDepthTexture = -1,
+        const std::vector<TerrainComponent*>& terrainItems = {});
 
     void RenderPresentPass(FrameGraph& frameGraph, CommandBufferPtr commandBuffer, FrameGraphResource depthResource);
 
@@ -120,11 +123,13 @@ private:
      * @param node 场景节点
      * @param meshItems 静态网格列表
      * @param skinnedMeshItems 蒙皮网格列表
+     * @param terrainItems 地形组件列表
      */
     void CollectMeshesRecursive(
         SceneNode* node,
         std::vector<DepthMeshItem>& meshItems,
-        std::vector<DepthSkinnedMeshItem>& skinnedMeshItems);
+        std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
+        std::vector<TerrainComponent*>& terrainItems);
 
     /**
      * 渲染场景（延迟渲染路径）

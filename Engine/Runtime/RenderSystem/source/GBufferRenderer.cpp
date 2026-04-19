@@ -8,6 +8,7 @@
 #include "GBufferRenderer.h"
 #include "Material.h"
 #include "SceneRenderer.h"
+#include "SceneNode.h"
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/FrameGraphTexture.h"
 #include "ShaderAssetLoader.h"
@@ -218,6 +219,29 @@ GBufferData GBufferRenderer::AddToFrameGraph(
                     renderInfo.materials = meshItem.materials;
 
                     MeshDrawUtil::DrawMeshBasePass(*meshItem.mesh, renderInfo, mGBufferPipeline);
+                }
+            }
+
+            // 渲染地形（专属渲染路径）
+            if (!data.meshes.terrainItems.empty() && mGBufferPipeline)
+            {
+                for (TerrainComponent* terrain : data.meshes.terrainItems)
+                {
+                    if (!terrain)
+                        continue;
+
+                    // 获取地形的object UBO
+                    UniformBufferPtr objectUBO = nullptr;
+                    SceneNode* terrainNode = terrain->GetSceneNode();
+                    if (terrainNode)
+                    {
+                        objectUBO = terrainNode->GetOrCreateModelUBO(RenderCore::GetRenderDevice());
+                    }
+
+                    terrain->Render(renderEncoder.get(),
+                                    data.uniforms.cameraUBO,
+                                    objectUBO,
+                                    mGBufferPipeline);
                 }
             }
 

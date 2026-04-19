@@ -13,6 +13,7 @@
 #include "Runtime/RenderCore/include/GraphicsPipeline.h"
 #include "FrameGraph/GraphNode.h"
 #include "DepthRenderer.h"
+#include "terrain/TerrainComponent.h"
 #include <memory>
 #include <vector>
 
@@ -38,6 +39,7 @@ struct GBufferMeshData
 {
     std::vector<DepthMeshItem> staticMeshes;
     std::vector<DepthSkinnedMeshItem> skinnedMeshes;
+    std::vector<TerrainComponent*> terrainItems;
 };
 
 // G-Buffer 渲染的 UBO 数据

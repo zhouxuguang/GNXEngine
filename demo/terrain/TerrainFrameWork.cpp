@@ -17,6 +17,7 @@
 #include "Runtime/RenderSystem/include/SkyBoxNode.h"
 #include "Runtime/RenderSystem/include/Material.h"
 #include "Runtime/RenderSystem/include/terrain/TerrainGenerator.h"
+#include "Runtime/RenderSystem/include/terrain/TerrainComponent.h"
 #include "Runtime/ImageCodec/include/VImage.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include <cmath>
@@ -148,24 +149,24 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
         sceneManager->GetSkyBox()->AttachSkyBoxObject(mSkyBox);
     }
 
-    // ---- Terrain (GeoMipMapping with LOD) ----
+    // ---- Terrain (GeoMipMapping with LOD, TerrainComponent) ----
     std::string heightmapPath = GetProjectAssetDir() + "terrain/ps_height_1k.png";
     std::string texturePath   = GetProjectAssetDir() + "terrain/ps_texture_1k.png";
 
     LOG_INFO("Generating GeoMipMapping terrain (worldSize=%.0f, heightScale=%.1f, patchSize=%u)...",
              kTerrainWorldSize, kTerrainHeightScale, kPatchSize);
 
-    mGeoMipTerrain = RenderSystem::GeoMipTerrain::CreateFromHeightMap(
+    // Create TerrainComponent and initialize from heightmap
+    mTerrainComponent = new RenderSystem::TerrainComponent();
+    mTerrainComponent->InitFromHeightMap(
         heightmapPath.c_str(), kTerrainWorldSize, kTerrainHeightScale, kPatchSize);
 
-    if (!mGeoMipTerrain)
+    if (!mTerrainComponent->IsInitialized())
     {
         LOG_WARN("Failed to load heightmap, falling back to procedural terrain");
-        mGeoMipTerrain = RenderSystem::GeoMipTerrain::Create(
+        mTerrainComponent->InitProcedural(
             kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale, kPatchSize);
     }
-
-    RenderSystem::MeshPtr terrainMesh = mGeoMipTerrain->GetMesh();
 
     // Load diffuse texture from image, or generate procedural one as fallback
     RenderCore::RCTexture2DPtr diffuseTexture = RenderSystem::TerrainGenerator::LoadDiffuseTexture(
@@ -185,7 +186,6 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
     RenderCore::RCTexturePtr aoTexture        = RenderSystem::ImageTextureUtil::CreateAOTexture();
 
     // Create PBR material and bind textures
-    // Material-side names: MeshDrawUtil maps these to shader-side names (gDiffuseMap, gNormalMap, etc.)
     RenderSystem::MaterialPtr material = std::make_shared<RenderSystem::Material>();
     material->SetMaterialType(RenderSystem::Material::MaterialType::PBR);
     material->SetTexture("diffuseTexture", diffuseTexture);
@@ -194,15 +194,14 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
     material->SetTexture("emissiveTexture", emissiveTexture);
     material->SetTexture("ambientTexture", aoTexture);
 
-    // Create MeshRenderer, attach mesh + material, add to scene
-    auto* meshRenderer = new RenderSystem::MeshRenderer();
-    meshRenderer->SetSharedMesh(terrainMesh);
-    meshRenderer->AddMaterial(material);
+    // Assign material to TerrainComponent
+    mTerrainComponent->SetMaterial(material);
 
+    // Add TerrainComponent to scene (NOT MeshRenderer)
     auto* terrainNode = sceneManager->GetRootNode()->CreateChildSceneNode("Terrain");
-    terrainNode->AddComponent(meshRenderer);
+    terrainNode->AddComponent(mTerrainComponent);
 
-    LOG_INFO("Terrain scene setup complete.");
+    LOG_INFO("Terrain scene setup complete (TerrainComponent).");
 }
 
 void TerrainFrameWork::RenderFrame()
@@ -215,13 +214,13 @@ void TerrainFrameWork::RenderFrame()
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
 
     // Update terrain LOD based on camera position
-    if (mGeoMipTerrain)
+    if (mTerrainComponent && mTerrainComponent->IsInitialized())
     {
         RenderSystem::CameraPtr camera = sceneManager->GetCamera("MainCamera");
         if (camera)
         {
             mathutil::Vector3f camPos = camera->GetPosition();
-            mGeoMipTerrain->UpdateLOD(camPos);
+            mTerrainComponent->GetGeoMipTerrain()->UpdateLOD(camPos);
         }
     }
 

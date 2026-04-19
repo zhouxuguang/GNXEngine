@@ -22,6 +22,7 @@
 #include "mesh/Mesh.h"
 #include "skinnedMesh/SkinnedMesh.h"
 #include "mesh/MeshDrawUtil.h"
+#include "terrain/TerrainComponent.h"
 #include <memory>
 #include <vector>
 #include <limits>
@@ -71,6 +72,9 @@ struct DepthMeshData
     
     /** 蒙皮网格列表（每个mesh带自己的objectUBO） */
     std::vector<DepthSkinnedMeshItem> skinnedMeshes;
+
+    /** 地形组件列表（专属渲染路径） */
+    std::vector<TerrainComponent*> terrainItems;
     
     /** 获取总网格数量 */
     size_t GetTotalMeshCount() const
@@ -78,13 +82,14 @@ struct DepthMeshData
         size_t count = 0;
         count += staticMeshes.size();
         count += skinnedMeshes.size();
+        count += terrainItems.size();
         return count;
     }
     
     /** 是否有网格数据 */
     bool HasMeshes() const
     {
-        return (!staticMeshes.empty() || !skinnedMeshes.empty());
+        return (!staticMeshes.empty() || !skinnedMeshes.empty() || !terrainItems.empty());
     }
 };
 

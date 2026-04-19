@@ -33,6 +33,11 @@ public:
     {
         mSceneNode = sceneNode;
     }
+
+    SceneNode* GetSceneNode() const
+    {
+        return mSceneNode;
+    }
     
 protected:
     SceneNode* mSceneNode = nullptr;

@@ -14,7 +14,7 @@
 #include "Runtime/GNXEngine/include/Events/KeyEvent.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 #include "Runtime/RenderCore/include/RCTexture.h"
-#include "Runtime/RenderSystem/include/terrain/GeoMipTerrain.h"
+#include "Runtime/RenderSystem/include/terrain/TerrainComponent.h"
 
 NS_RENDERSYSTEM_BEGIN
 class SkyBox;
@@ -32,7 +32,7 @@ public:
 
 private:
     RenderSystem::SkyBox* mSkyBox = nullptr;
-    RenderSystem::GeoMipTerrainPtr mGeoMipTerrain;
+    RenderSystem::TerrainComponent* mTerrainComponent = nullptr;
 };
 
 #endif /* TERRAIN_FRAMEWORK_H */
