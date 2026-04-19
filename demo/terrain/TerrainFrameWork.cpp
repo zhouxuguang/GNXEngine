@@ -34,6 +34,29 @@ static RenderSystem::SkyBox* CreateDefaultSkybox()
     const uint32_t faceSize = 256;
     auto renderDevice = RenderCore::GetRenderDevice();
 
+    // 根据 3D 方向向量计算天空颜色，所有面统一使用此函数
+    // elevation = dir.y: -1(正下方) → 0(地平线) → +1(天顶)
+    auto skyColor = [](Vector3f dir) -> Vector3f
+    {
+        dir.Normalize();
+        float elevation = dir.y;
+
+        if (elevation < 0.0f)
+        {
+            // 地平线以下：暗色地面
+            float t = -elevation;
+            return Vector3f(0.15f, 0.17f, 0.22f) * (1.0f - t)
+                 + Vector3f(0.10f, 0.12f, 0.18f) * t;
+        }
+        else
+        {
+            // 地平线到天顶：亮蓝 → 深蓝
+            float t = elevation;
+            return Vector3f(0.70f, 0.82f, 0.95f) * (1.0f - t)
+                 + Vector3f(0.25f, 0.45f, 0.80f) * t;
+        }
+    };
+
     std::vector<VImagePtr> faceImages(6);
 
     for (int face = 0; face < 6; ++face)
@@ -44,36 +67,22 @@ static RenderSystem::SkyBox* CreateDefaultSkybox()
         {
             for (uint32_t x = 0; x < faceSize; ++x)
             {
-                float u = (float)x / (float)(faceSize - 1);
-                float v = (float)y / (float)(faceSize - 1);
+                float su = 2.0f * (float)x / (float)(faceSize - 1) - 1.0f;
+                float sv = 2.0f * (float)y / (float)(faceSize - 1) - 1.0f;
 
-                Vector3f color;
+                // Cubemap (face, u, v) → 3D 方向向量
+                Vector3f dir;
+                switch (face)
+                {
+                case 0: dir = Vector3f( 1, -sv, -su); break;  // +X
+                case 1: dir = Vector3f(-1, -sv,  su); break;  // -X
+                case 2: dir = Vector3f( su, 1,  -sv); break;  // +Y (top)
+                case 3: dir = Vector3f( su, -1,  sv); break;  // -Y (bottom)
+                case 4: dir = Vector3f( su, -sv,  1); break;  // +Z
+                case 5: dir = Vector3f(-su, -sv, -1); break;  // -Z
+                }
 
-                if (face == 2) // top
-                {
-                    color = Vector3f(0.40f, 0.60f, 0.90f) * (1.0f - v)
-                          + Vector3f(0.55f, 0.72f, 0.92f) * v;
-                }
-                else if (face == 3) // bottom
-                {
-                    color = Vector3f(0.15f, 0.17f, 0.22f);
-                }
-                else // four sides
-                {
-                    float t = v;
-                    if (t < 0.5f)
-                    {
-                        float s = t * 2.0f;
-                        color = Vector3f(0.50f, 0.65f, 0.85f) * (1.0f - s)
-                              + Vector3f(0.70f, 0.82f, 0.95f) * s;
-                    }
-                    else
-                    {
-                        float s = (t - 0.5f) * 2.0f;
-                        color = Vector3f(0.70f, 0.82f, 0.95f) * (1.0f - s)
-                              + Vector3f(0.45f, 0.62f, 0.88f) * s;
-                    }
-                }
+                Vector3f color = skyColor(dir);
 
                 uint32_t idx = (y * faceSize + x) * 4;
                 data[idx + 0] = (uint8_t)(std::min(std::max(color.x, 0.0f), 1.0f) * 255.0f);
@@ -196,6 +205,7 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
 
     // Assign material to TerrainComponent
     mTerrainComponent->SetMaterial(material);
+    mTerrainComponent->SetWireframe(true);
 
     // Add TerrainComponent to scene (NOT MeshRenderer)
     auto* terrainNode = sceneManager->GetRootNode()->CreateChildSceneNode("Terrain");

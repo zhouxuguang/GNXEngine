@@ -107,9 +107,18 @@ public:
 
     bool IsInitialized() const { return mGeoMipTerrain != nullptr; }
 
+    /**
+     * 切换线框模式，用于观察 LOD 变换。
+     * wireframe=true 时用线框渲染，=false 时恢复实心填充。
+     */
+    void SetWireframe(bool wireframe);
+
+    bool IsWireframe() const { return mWireframe; }
+
 private:
     GeoMipTerrainPtr mGeoMipTerrain;
     MaterialPtr      mMaterial;
+    bool             mWireframe = false;
 };
 
 typedef std::shared_ptr<TerrainComponent> TerrainComponentPtr;

@@ -111,6 +111,12 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
     // ---- Bind PSO and shared state ONCE for all patches ----
     renderEncoder->SetGraphicsPipeline(basePassPSO);
 
+    // 应用线框模式
+    if (mWireframe)
+    {
+        renderEncoder->SetFillMode(FillModeWireframe);
+    }
+
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
     renderEncoder->SetVertexUniformBuffer("cbPerObject", objectUBO);
     renderEncoder->SetFragmentUniformBuffer("cbPerCamera", cameraUBO);
@@ -192,6 +198,12 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
     // ---- Bind depth PSO and shared state ONCE ----
     renderEncoder->SetGraphicsPipeline(depthPSO);
 
+    // 应用线框模式
+    if (mWireframe)
+    {
+        renderEncoder->SetFillMode(FillModeWireframe);
+    }
+
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
     renderEncoder->SetVertexUniformBuffer("cbPerObject", objectUBO);
     renderEncoder->SetFragmentUniformBuffer("cbPerCamera", cameraUBO);
@@ -232,6 +244,11 @@ void TerrainComponent::SetLODDistances(const std::vector<float>& distances)
     {
         mGeoMipTerrain->SetLODDistances(distances);
     }
+}
+
+void TerrainComponent::SetWireframe(bool wireframe)
+{
+    mWireframe = wireframe;
 }
 
 NS_RENDERSYSTEM_END
