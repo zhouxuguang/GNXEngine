@@ -96,4 +96,22 @@ void Mesh::SetUpBuffer()
     mTextureSampler = GetRenderDevice()->CreateSamplerWithDescriptor(samplerDescriptor);
 }
 
+void Mesh::UpdateIndices(const uint32_t* data, size_t count)
+{
+    mIndices.assign(data, data + count);
+
+    // Update first SubMeshInfo
+    if (!mSubMeshInfos.empty())
+    {
+        mSubMeshInfos[0].indexCount = (uint32_t)count;
+    }
+
+    // Recreate GPU index buffer (old buffer is released via shared_ptr,
+    // VulkanGarbageCollector handles deferred destruction)
+    mIndexBuffer = GetRenderDevice()->CreateIndexBufferWithBytes(
+        mIndices.data(),
+        (uint32_t)mIndices.size() * sizeof(uint32_t),
+        IndexType_UInt);
+}
+
 NS_RENDERSYSTEM_END

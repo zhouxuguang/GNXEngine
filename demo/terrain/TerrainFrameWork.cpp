@@ -22,8 +22,6 @@
 #include <cmath>
 #include <algorithm>
 
-using namespace mathutil;
-
 //=============================================================================
 // Helper: Create a default gradient skybox
 //=============================================================================
@@ -101,6 +99,7 @@ static RenderSystem::SkyBox* CreateDefaultSkybox()
 static const uint32_t kTerrainResolution = 512;
 static const float   kTerrainWorldSize  = 163840.0f;
 static const float   kTerrainHeightScale = 0.5f;
+static const uint32_t kPatchSize = 33;
 
 //=============================================================================
 // Implementation
@@ -149,22 +148,24 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
         sceneManager->GetSkyBox()->AttachSkyBoxObject(mSkyBox);
     }
 
-    // ---- Terrain ----
+    // ---- Terrain (GeoMipMapping with LOD) ----
     std::string heightmapPath = GetProjectAssetDir() + "terrain/ps_height_1k.png";
     std::string texturePath   = GetProjectAssetDir() + "terrain/ps_texture_1k.png";
 
-    LOG_INFO("Generating terrain mesh from heightmap (%ux%u, worldSize=%.0f, heightScale=%.1f)...",
-             kTerrainResolution, kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale);
+    LOG_INFO("Generating GeoMipMapping terrain (worldSize=%.0f, heightScale=%.1f, patchSize=%u)...",
+             kTerrainWorldSize, kTerrainHeightScale, kPatchSize);
 
-    RenderSystem::MeshPtr terrainMesh = RenderSystem::TerrainGenerator::GenerateMeshFromHeightMap(
-        heightmapPath.c_str(), kTerrainWorldSize, kTerrainHeightScale);
+    mGeoMipTerrain = RenderSystem::GeoMipTerrain::CreateFromHeightMap(
+        heightmapPath.c_str(), kTerrainWorldSize, kTerrainHeightScale, kPatchSize);
 
-    if (!terrainMesh)
+    if (!mGeoMipTerrain)
     {
         LOG_WARN("Failed to load heightmap, falling back to procedural terrain");
-        terrainMesh = RenderSystem::TerrainGenerator::GenerateMesh(
-            kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale);
+        mGeoMipTerrain = RenderSystem::GeoMipTerrain::Create(
+            kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale, kPatchSize);
     }
+
+    RenderSystem::MeshPtr terrainMesh = mGeoMipTerrain->GetMesh();
 
     // Load diffuse texture from image, or generate procedural one as fallback
     RenderCore::RCTexture2DPtr diffuseTexture = RenderSystem::TerrainGenerator::LoadDiffuseTexture(
@@ -212,6 +213,18 @@ void TerrainFrameWork::RenderFrame()
     lastTime = thisTime;
 
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
+
+    // Update terrain LOD based on camera position
+    if (mGeoMipTerrain)
+    {
+        RenderSystem::CameraPtr camera = sceneManager->GetCamera("MainCamera");
+        if (camera)
+        {
+            mathutil::Vector3f camPos = camera->GetPosition();
+            mGeoMipTerrain->UpdateLOD(camPos);
+        }
+    }
+
     sceneManager->Update(deltaTime);
 
     // Render via deferred pipeline (G-Buffer -> Deferred Lighting)

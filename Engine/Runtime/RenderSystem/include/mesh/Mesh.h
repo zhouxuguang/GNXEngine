@@ -128,7 +128,12 @@ public:
     }
     
     void SetUpBuffer();
-    
+
+    // Update index buffer (for dynamic LOD terrain, etc.)
+    // Replaces the index data and recreates the GPU index buffer.
+    // Also updates the first SubMeshInfo's indexCount.
+    void UpdateIndices(const uint32_t* data, size_t count);
+
     VertexBufferPtr GetVertexBuffer() const
     {
         return mVertexBuffer;
