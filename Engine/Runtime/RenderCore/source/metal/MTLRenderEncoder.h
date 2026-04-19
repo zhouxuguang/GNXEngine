@@ -101,7 +101,7 @@ public:
      @param buffer buffer description
      @param offset offset description
      */
-    virtual void DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset);
+    virtual void DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, int baseVertex = 0);
     
     /**
      draw function with index instance

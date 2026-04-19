@@ -686,7 +686,7 @@ void VKRenderEncoder::DrawInstancePrimitves(PrimitiveMode mode, int offset, int 
 	vkCmdDraw(mCommandBuffer, size, instanceCount, offset, firstInstance);
 }
 
-void VKRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset)
+void VKRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, int baseVertex)
 {
     VKIndexBuffer *indexBuffer = (VKIndexBuffer*)buffer.get();
     if (!indexBuffer)
@@ -737,7 +737,7 @@ void VKRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexB
     }
     //BindPipeline();
     
-    vkCmdDrawIndexed(mCommandBuffer, size, 1, offset, 0, 0);
+    vkCmdDrawIndexed(mCommandBuffer, size, 1, offset, baseVertex, 0);
 }
 
 void VKRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, uint32_t firstInstance, uint32_t instanceCount)

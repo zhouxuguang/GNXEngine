@@ -350,7 +350,7 @@ void MTLRenderEncoder::DrawInstancePrimitves(PrimitiveMode mode, int offset, int
  @param buffer buffer description
  @param offset offset description
  */
-void MTLRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset)
+void MTLRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, int baseVertex)
 {
     if (!buffer)
     {
@@ -375,7 +375,8 @@ void MTLRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, Index
     
     //注意：indexBufferOffset是字节的偏移量
     [mRenderEncoder drawIndexedPrimitives:(MTLPrimitiveType)ConvertPrimitiveType(mode) indexCount : size
-                                                         indexType : (MTLIndexType)type indexBuffer : mtlBuffer indexBufferOffset : byteOffset];
+                                                         indexType : (MTLIndexType)type indexBuffer : mtlBuffer indexBufferOffset : byteOffset
+                                                      instanceCount : 1 baseVertex : baseVertex baseInstance : 0];
 }
 
 void MTLRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,

@@ -148,8 +148,9 @@ public:
      @param size size description
      @param buffer buffer description
      @param offset offset description
+     @param baseVertex 顶点偏移量，默认为0
      */
-    virtual void DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset) = 0;
+    virtual void DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, int baseVertex = 0) = 0;
 
     /**
      draw function with index instance
