@@ -24,6 +24,7 @@ struct PatchInfo
     float centerX = 0.0f;
     float centerZ = 0.0f;
     mathutil::AxisAlignedBoxf worldBounds;  // world-space AABB for frustum culling
+    std::vector<float> maxGeoError;         // per-LOD max geometric error (world units)
 };
 
 class RENDERSYSTEM_API GeoMipTerrain
@@ -45,8 +46,12 @@ public:
         float heightScale = 80.0f,
         uint32_t patchSize = 33);
 
-    // Rebuild index buffer based on camera position (call once per frame)
-    void UpdateLOD(const mathutil::Vector3f& cameraPos);
+    // Update per-patch LOD based on camera (call once per frame)
+    // Uses screen-space error (SSE) metric when fovY > 0 and screenHeight > 0,
+    // otherwise falls back to distance-based LOD selection.
+    void UpdateLOD(const mathutil::Vector3f& cameraPos,
+                   float fovY = 0.0f,
+                   float screenHeight = 0.0f);
 
     // Get the mesh (for use with MeshRenderer / scene system)
     MeshPtr GetMesh() const { return mMesh; }
@@ -78,12 +83,20 @@ private:
     void GenerateLODIndexTemplates();
 
     // Two-pass LOD update (Terrain7 algorithm)
-    void UpdateLODMapPass1(const mathutil::Vector3f& cameraPos);
+    void UpdateLODMapPass1(const mathutil::Vector3f& cameraPos,
+                           float fovY, float screenHeight);
     void UpdateLODMapPass2();
-    uint32_t DistanceToLOD(float distance) const;
 
-    // Per-patch LOD selection (simple, for fallback)
-    uint32_t SelectLOD(const mathutil::Vector3f& cameraPos, uint32_t patchIdx) const;
+    // LOD selection methods
+    uint32_t DistanceToLOD(float distance) const;
+    uint32_t SSEToLOD(float distance, uint32_t patchIdx) const;
+
+    // Pre-compute per-patch max geometric error for each LOD level
+    void ComputePatchMaxGeoError();
+
+    // Clamp LOD gradient so adjacent patches differ by at most 1 level
+    // (required for crack-fixing which only handles 1-level differences)
+    void ClampLODGradient();
 
     // Procedural height function (same as TerrainGenerator)
     static float ComputeHeight(float x, float z);
@@ -146,6 +159,11 @@ private:
     // LOD configuration
     std::vector<float> mLODDistances;
     uint32_t mMaxLOD = 0;
+
+    // SSE configuration
+    float mSSEThreshold = 4.0f;    // max allowable screen-space error in pixels
+    float mTanHalfFovY = 0.0f;     // cached tan(fovY/2) for SSE computation
+    float mScreenHeight = 0.0f;    // cached screen height in pixels
 };
 
 typedef std::shared_ptr<GeoMipTerrain> GeoMipTerrainPtr;

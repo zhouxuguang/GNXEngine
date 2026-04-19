@@ -197,6 +197,7 @@ GeoMipTerrainPtr GeoMipTerrain::CreateFromHeightMap(
 
     terrain->InitVertexData(positions, normals, tangents, uvs);
     terrain->GenerateLODIndexTemplates();
+    terrain->ComputePatchMaxGeoError();
 
     // Set default LOD distances
     float patchWorldSize = worldSizeXZ / (float)numPatches;
@@ -307,6 +308,7 @@ GeoMipTerrainPtr GeoMipTerrain::Create(
 
     terrain->InitVertexData(positions, normals, tangents, uvs);
     terrain->GenerateLODIndexTemplates();
+    terrain->ComputePatchMaxGeoError();
 
     // Set default LOD distances
     float patchWorldSize = worldSizeXZ / (float)numPatches;
@@ -629,6 +631,148 @@ void GeoMipTerrain::GenerateLODIndexTemplates()
 }
 
 //=============================================================================
+// ComputePatchMaxGeoError - pre-compute per-patch max geometric error for
+// each LOD level. The geometric error is the maximum height deviation between
+// the full-detail heightmap and the simplified LOD mesh.
+//
+// For LOD N, the mesh samples vertices at every 2^(N+1) grid step (FanStep).
+// For each "skipped" vertex (not sampled at this LOD), we compute the
+// bilinear interpolation of the 4 nearest sampled vertices and compare
+// with the actual heightmap value. The maximum difference across all
+// skipped vertices is the maxGeoError for that LOD level.
+//=============================================================================
+
+void GeoMipTerrain::ComputePatchMaxGeoError()
+{
+    for (uint32_t pz = 0; pz < mPatchesPerSide; ++pz)
+    {
+        for (uint32_t px = 0; px < mPatchesPerSide; ++px)
+        {
+            uint32_t patchIdx = pz * mPatchesPerSide + px;
+            PatchInfo& patch = mPatches[patchIdx];
+
+            patch.maxGeoError.resize(mMaxLOD + 1, 0.0f);
+
+            uint32_t patchStride = mPatchSize - 1;
+
+            for (uint32_t lod = 0; lod <= mMaxLOD; ++lod)
+            {
+                uint32_t fanStep = PowInt(2, lod + 1);   // same as in GenerateLODIndexTemplates
+                float maxError = 0.0f;
+
+                // Walk all interior grid points that are NOT on the fanStep grid
+                // A point (ix, iz) is on the fanStep grid if both ix and iz are
+                // multiples of fanStep (relative to patch origin).
+                // But the LOD mesh also uses midpoints between fanStep samples
+                // (the center vertex of each fan cell at offset fanStep/2).
+                // We need to check all vertices that the LOD mesh does NOT sample.
+
+                // For LOD N with FanStep = 2^(N+1):
+                // Sampled positions: (sx, sz) where sx, sz are multiples of fanStep
+                //   from 0 to patchStride, inclusive.
+                // We check ALL grid points in the patch and for each non-sampled
+                // point, compute the interpolated height from the sampled points
+                // and compare with the actual height.
+
+                for (uint32_t iz = 0; iz <= patchStride; ++iz)
+                {
+                    for (uint32_t ix = 0; ix <= patchStride; ++ix)
+                    {
+                        // Skip if this vertex is sampled at this LOD
+                        // A vertex is sampled if it lies on the fanStep grid
+                        bool onGridX = (ix % fanStep == 0);
+                        bool onGridZ = (iz % fanStep == 0);
+
+                        // If both coordinates are on the fanStep grid, this vertex
+                        // is directly sampled by the LOD mesh → no error
+                        if (onGridX && onGridZ)
+                            continue;
+
+                        // Global grid coordinates
+                        uint32_t gx = patch.startX + ix;
+                        uint32_t gz = patch.startZ + iz;
+
+                        // Clamp to grid bounds
+                        if (gx >= mGridSize || gz >= mGridSize)
+                            continue;
+
+                        float actualHeight = mHeightMap[gz * mGridSize + gx];
+
+                        // Find the 4 nearest sampled vertices for bilinear interpolation
+                        uint32_t sx0 = (ix / fanStep) * fanStep;
+                        uint32_t sz0 = (iz / fanStep) * fanStep;
+                        uint32_t sx1 = std::min(sx0 + fanStep, patchStride);
+                        uint32_t sz1 = std::min(sz0 + fanStep, patchStride);
+
+                        uint32_t gx0 = patch.startX + sx0;
+                        uint32_t gz0 = patch.startZ + sz0;
+                        uint32_t gx1 = patch.startX + sx1;
+                        uint32_t gz1 = patch.startZ + sz1;
+
+                        // Clamp to grid bounds
+                        gx1 = std::min(gx1, mGridSize - 1);
+                        gz1 = std::min(gz1, mGridSize - 1);
+
+                        // Bilinear interpolation weights
+                        float fracX = (fanStep > 0) ? (float)(ix - sx0) / (float)fanStep : 0.0f;
+                        float fracZ = (fanStep > 0) ? (float)(iz - sz0) / (float)fanStep : 0.0f;
+
+                        float h00 = mHeightMap[gz0 * mGridSize + gx0];
+                        float h10 = mHeightMap[gz0 * mGridSize + gx1];
+                        float h01 = mHeightMap[gz1 * mGridSize + gx0];
+                        float h11 = mHeightMap[gz1 * mGridSize + gx1];
+
+                        float interpHeight = h00 * (1.0f - fracX) * (1.0f - fracZ)
+                                           + h10 * fracX * (1.0f - fracZ)
+                                           + h01 * (1.0f - fracX) * fracZ
+                                           + h11 * fracX * fracZ;
+
+                        float error = std::abs(actualHeight - interpHeight);
+                        maxError = std::max(maxError, error);
+                    }
+                }
+
+                patch.maxGeoError[lod] = maxError;
+            }
+        }
+    }
+}
+
+//=============================================================================
+// SSEToLOD - select the coarsest LOD where screen-space error <= threshold
+//
+// SSE = maxGeoError * screenHeight / (distance * 2 * tan(fovY/2))
+//
+// We iterate from coarsest to finest, and pick the first (coarsest) LOD
+// where the SSE is within the threshold. If no LOD satisfies the threshold,
+// we use LOD 0 (finest).
+//=============================================================================
+
+uint32_t GeoMipTerrain::SSEToLOD(float distance, uint32_t patchIdx) const
+{
+    // Avoid division by zero: if camera is very close, use finest LOD
+    if (distance < 1.0f)
+        return 0;
+
+    const PatchInfo& patch = mPatches[patchIdx];
+
+    // Denominator: distance * 2 * tan(fovY/2)
+    // SSE = maxGeoError * screenHeight / denominator
+    float denominator = distance * mTanHalfFovY * 2.0f;
+
+    // Iterate from coarsest to finest, pick the coarsest acceptable LOD
+    for (uint32_t lod = mMaxLOD; lod > 0; --lod)
+    {
+        float geoError = patch.maxGeoError[lod];
+        float sse = geoError * mScreenHeight / denominator;
+        if (sse <= mSSEThreshold)
+            return lod;
+    }
+
+    return 0;  // finest LOD
+}
+
+//=============================================================================
 // DistanceToLOD - map a distance value to a LOD level
 //=============================================================================
 
@@ -648,8 +792,11 @@ uint32_t GeoMipTerrain::DistanceToLOD(float distance) const
 // UpdateLODMapPass1 - compute Core LOD for each patch from camera distance
 //=============================================================================
 
-void GeoMipTerrain::UpdateLODMapPass1(const Vector3f& cameraPos)
+void GeoMipTerrain::UpdateLODMapPass1(const Vector3f& cameraPos,
+                                       float fovY, float screenHeight)
 {
+    bool useSSE = (fovY > 0.0f && screenHeight > 0.0f && mTanHalfFovY > 0.0f);
+
     for (uint32_t pz = 0; pz < mPatchesPerSide; ++pz)
     {
         for (uint32_t px = 0; px < mPatchesPerSide; ++px)
@@ -659,9 +806,17 @@ void GeoMipTerrain::UpdateLODMapPass1(const Vector3f& cameraPos)
 
             float dx = cameraPos.x - patch.centerX;
             float dz = cameraPos.z - patch.centerZ;
-            float distance = sqrtf(dx * dx + dz * dz);
+            float dy = cameraPos.y - patch.worldBounds.center.y;
+            float distance = sqrtf(dx * dx + dy * dy + dz * dz);
 
-            mPatchLods[patchIdx].core = DistanceToLOD(distance);
+            if (useSSE)
+            {
+                mPatchLods[patchIdx].core = SSEToLOD(distance, patchIdx);
+            }
+            else
+            {
+                mPatchLods[patchIdx].core = DistanceToLOD(distance);
+            }
         }
     }
 }
@@ -729,6 +884,80 @@ void GeoMipTerrain::UpdateLODMapPass2()
 }
 
 //=============================================================================
+// ClampLODGradient - ensure adjacent patches differ by at most 1 LOD level.
+//
+// SSE-based LOD selection can produce large LOD differences between adjacent
+// patches (e.g., a flat patch at LOD 4 next to a steep patch at LOD 0).
+// The crack-fixing system (binary PatchLod flags) only handles 1-level
+// differences. This function coarsens finer patches to reduce the gap.
+//
+// Algorithm: iterative propagation. In each pass, if a neighbor's LOD is
+// more than 1 above mine, raise mine to (neighbor - 1). Repeat until
+// no changes occur. Convergence is guaranteed because LOD values only
+// increase (get coarser) and are bounded by mMaxLOD.
+//=============================================================================
+
+void GeoMipTerrain::ClampLODGradient()
+{
+    bool changed = true;
+    while (changed)
+    {
+        changed = false;
+        for (uint32_t pz = 0; pz < mPatchesPerSide; ++pz)
+        {
+            for (uint32_t px = 0; px < mPatchesPerSide; ++px)
+            {
+                uint32_t idx = pz * mPatchesPerSide + px;
+                uint32_t myLod = mPatchLods[idx].core;
+
+                // Left neighbor
+                if (px > 0)
+                {
+                    uint32_t neighborLod = mPatchLods[pz * mPatchesPerSide + (px - 1)].core;
+                    if (neighborLod > myLod + 1)
+                    {
+                        myLod = neighborLod - 1;
+                        changed = true;
+                    }
+                }
+                // Right neighbor
+                if (px < mPatchesPerSide - 1)
+                {
+                    uint32_t neighborLod = mPatchLods[pz * mPatchesPerSide + (px + 1)].core;
+                    if (neighborLod > myLod + 1)
+                    {
+                        myLod = neighborLod - 1;
+                        changed = true;
+                    }
+                }
+                // Bottom neighbor (z-1)
+                if (pz > 0)
+                {
+                    uint32_t neighborLod = mPatchLods[(pz - 1) * mPatchesPerSide + px].core;
+                    if (neighborLod > myLod + 1)
+                    {
+                        myLod = neighborLod - 1;
+                        changed = true;
+                    }
+                }
+                // Top neighbor (z+1)
+                if (pz < mPatchesPerSide - 1)
+                {
+                    uint32_t neighborLod = mPatchLods[(pz + 1) * mPatchesPerSide + px].core;
+                    if (neighborLod > myLod + 1)
+                    {
+                        myLod = neighborLod - 1;
+                        changed = true;
+                    }
+                }
+
+                mPatchLods[idx].core = myLod;
+            }
+        }
+    }
+}
+
+//=============================================================================
 // UpdateLOD - update per-patch SubMeshInfo entries based on camera position.
 //
 // Uses the two-pass LOD algorithm to compute per-patch Core LOD and
@@ -742,12 +971,33 @@ void GeoMipTerrain::UpdateLODMapPass2()
 // rebuild or GPU upload. Only the SubMeshInfo list is updated (CPU-only).
 //=============================================================================
 
-void GeoMipTerrain::UpdateLOD(const Vector3f& cameraPos)
+void GeoMipTerrain::UpdateLOD(const Vector3f& cameraPos,
+                               float fovY,
+                               float screenHeight)
 {
     if (!mMesh || mPatches.empty()) return;
 
-    // Two-pass LOD update
-    UpdateLODMapPass1(cameraPos);
+    // Cache camera parameters for SSE computation
+    // fovY is in degrees (same as Camera::GetFOV())
+    if (fovY > 0.0f)
+    {
+        const float DEG2RAD = 0.0174532925199432958f;
+        float fovYRad = fovY * DEG2RAD;
+        mTanHalfFovY = tanf(fovYRad * 0.5f);
+    }
+    if (screenHeight > 0.0f)
+    {
+        mScreenHeight = screenHeight;
+    }
+
+    bool useSSE = (fovY > 0.0f && screenHeight > 0.0f && mTanHalfFovY > 0.0f);
+
+    // Two-pass LOD update (with gradient clamping for SSE mode)
+    UpdateLODMapPass1(cameraPos, fovY, screenHeight);
+    if (useSSE)
+    {
+        ClampLODGradient();
+    }
     UpdateLODMapPass2();
 
     // Rebuild SubMeshInfo list: one per patch
@@ -776,30 +1026,6 @@ void GeoMipTerrain::UpdateLOD(const Vector3f& cameraPos)
 
         mMesh->AddSubMeshInfo(subMeshInfo);
     }
-}
-
-//=============================================================================
-// SelectLOD - simple per-patch LOD selection (fallback, not used with crack fixing)
-//=============================================================================
-
-uint32_t GeoMipTerrain::SelectLOD(const Vector3f& cameraPos, uint32_t patchIdx) const
-{
-    const PatchInfo& patch = mPatches[patchIdx];
-
-    float dx = cameraPos.x - patch.centerX;
-    float dz = cameraPos.z - patch.centerZ;
-    float distSq = dx * dx + dz * dz;
-
-    for (uint32_t lod = 0; lod < mLODDistances.size() && lod <= mMaxLOD; ++lod)
-    {
-        float threshold = mLODDistances[lod];
-        if (distSq < threshold * threshold)
-        {
-            return lod;
-        }
-    }
-
-    return mMaxLOD;
 }
 
 //=============================================================================
