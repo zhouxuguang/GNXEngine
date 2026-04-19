@@ -82,15 +82,23 @@ void Mesh::AddSubMeshInfo(const SubMeshInfo& subMeshInfo)
     mSubMeshInfos.push_back(subMeshInfo);
 }
 
+void Mesh::ClearSubMeshInfos()
+{
+    mSubMeshInfos.clear();
+}
+
 void Mesh::SetUpBuffer()
 {
     mVertexBuffer = GetRenderDevice()->CreateVertexBufferWithBytes(mVertexData.GetDataPtr(),
             (uint32_t)mVertexData.GetDataSize(), StorageModePrivate);
-    
-    mIndexBuffer = GetRenderDevice()->CreateIndexBufferWithBytes(mIndices.data(),
-            (uint32_t)mIndices.size() * sizeof(uint32_t), IndexType_UInt);
+
+    if (!mIndices.empty())
+    {
+        mIndexBuffer = GetRenderDevice()->CreateIndexBufferWithBytes(mIndices.data(),
+                (uint32_t)mIndices.size() * sizeof(uint32_t), IndexType_UInt);
+    }
     //mIndiceCount = (uint32_t)mIndices.size();
-    
+
     SamplerDesc samplerDescriptor;
     samplerDescriptor.filterMip = MIN_LINEAR_MIPMAP_LINEAR;
     mTextureSampler = GetRenderDevice()->CreateSamplerWithDescriptor(samplerDescriptor);

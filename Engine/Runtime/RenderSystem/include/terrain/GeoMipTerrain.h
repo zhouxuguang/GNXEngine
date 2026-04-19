@@ -2,7 +2,7 @@
 //  GeoMipTerrain.h
 //  GNXEngine
 //
-//  GeoMipMapping terrain with LOD support.
+//  GeoMipMapping terrain with LOD support and crack fixing.
 //  Generates a Mesh that can be used with MeshRenderer,
 //  and provides per-patch LOD selection via UpdateLOD().
 //
@@ -64,10 +64,30 @@ private:
         const std::vector<mathutil::Vector2f>& uvs);
 
     void GenerateLODIndexTemplates();
+
+    // Two-pass LOD update (Terrain7 algorithm)
+    void UpdateLODMapPass1(const mathutil::Vector3f& cameraPos);
+    void UpdateLODMapPass2();
+    uint32_t DistanceToLOD(float distance) const;
+
+    // Per-patch LOD selection (simple, for fallback)
     uint32_t SelectLOD(const mathutil::Vector3f& cameraPos, uint32_t patchIdx) const;
 
     // Procedural height function (same as TerrainGenerator)
     static float ComputeHeight(float x, float z);
+
+    // Integer power helper
+    static uint32_t PowInt(uint32_t base, uint32_t exp);
+
+    // Crack-fixing triangle fan for a single LOD cell
+    // stride = global grid width (mGridSize), used as row stride in index computation.
+    // Indices are patch-local in position but use global row stride so that
+    // baseVertex (patchStartZ * gridSize + patchStartX) correctly offsets them.
+    static void CreateTriangleFan(
+        std::vector<uint32_t>& indices,
+        uint32_t lodCore, uint32_t lodLeft, uint32_t lodRight,
+        uint32_t lodTop, uint32_t lodBottom,
+        uint32_t x, uint32_t z, uint32_t stride);
 
     // Height data (world-space Y, i.e. already scaled)
     std::vector<float> mHeightMap;
@@ -80,12 +100,22 @@ private:
     // GPU resources
     MeshPtr mMesh;
 
-    // Per-LOD index templates (local indices within a patch, 0-based)
-    // mLODIndexTemplates[lod] = flat array of local vertex indices
-    std::vector<std::vector<uint32_t>> mLODIndexTemplates;
+    // Per-LOD, per-neighbor-permutation index info
+    // The master index buffer is built once at init time and NEVER changes.
+    // Each permutation stores its {start, count} range within the master buffer.
+    // At render time, per-patch SubMeshInfo entries reference these ranges
+    // and use baseVertex to offset into the vertex buffer.
+    struct SinglePermutationInfo
+    {
+        uint32_t start = 0;  // first index in the master index buffer
+        uint32_t count = 0;  // number of indices
+    };
 
-    // Per-LOD index count (number of indices per patch at this LOD)
-    std::vector<uint32_t> mLODIndexCount;
+    struct LODPermutationInfo
+    {
+        SinglePermutationInfo info[2][2][2][2]; // [left][right][top][bottom]
+    };
+    std::vector<LODPermutationInfo> mLODPermutationInfo; // indexed by [lod]
 
     // Patch metadata
     struct PatchInfo
@@ -96,6 +126,17 @@ private:
         float centerZ = 0.0f;
     };
     std::vector<PatchInfo> mPatches;
+
+    // Per-patch LOD info (updated each frame by two-pass algorithm)
+    struct PatchLod
+    {
+        uint32_t core = 0;
+        uint32_t left = 0;   // 0 = neighbor same/lower LOD, 1 = neighbor one LOD coarser
+        uint32_t right = 0;
+        uint32_t top = 0;
+        uint32_t bottom = 0;
+    };
+    std::vector<PatchLod> mPatchLods;
 
     // LOD configuration
     std::vector<float> mLODDistances;

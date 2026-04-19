@@ -49,6 +49,7 @@ struct SubMeshInfo
     uint32_t indexCount;    //索引的个数，即绘制顶点的个数
     PrimitiveMode topology;
     uint32_t vertexCount;   //顶点的个数
+    int32_t  baseVertex = 0; //顶点偏移量，用于DrawIndexedPrimitives的baseVertex参数
 };
 
 //顶点数据的通道信息

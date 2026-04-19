@@ -2,9 +2,12 @@
 //  GeoMipTerrain.cpp
 //  GNXEngine
 //
-//  GeoMipMapping terrain with LOD support.
-//  Generates a Mesh for use with the deferred rendering pipeline,
-//  and provides per-patch LOD selection via UpdateLOD().
+//  GeoMipMapping terrain with LOD support and crack fixing.
+//  Uses a static master index buffer with per-patch baseVertex draws,
+//  matching the ogldev Terrain7 approach.
+//  The index buffer is built once at init time and NEVER changes.
+//  UpdateLOD only updates per-patch SubMeshInfo entries (firstIndex,
+//  indexCount, baseVertex) — no per-frame GPU index buffer upload.
 //
 
 #include "terrain/GeoMipTerrain.h"
@@ -33,6 +36,18 @@ float GeoMipTerrain::ComputeHeight(float x, float z)
     h += sinf(x * 0.07f + 5.3f) * cosf(z * 0.061f + 3.1f) * 10.0f;
     h += sinf(x * 0.13f + 1.7f) * cosf(z * 0.17f + 4.2f) * 5.0f;
     return h;
+}
+
+//=============================================================================
+// Integer power helper
+//=============================================================================
+
+uint32_t GeoMipTerrain::PowInt(uint32_t base, uint32_t exp)
+{
+    uint32_t result = 1;
+    for (uint32_t i = 0; i < exp; ++i)
+        result *= base;
+    return result;
 }
 
 //=============================================================================
@@ -183,7 +198,7 @@ GeoMipTerrainPtr GeoMipTerrain::CreateFromHeightMap(
     terrain->InitVertexData(positions, normals, tangents, uvs);
     terrain->GenerateLODIndexTemplates();
 
-    // Set default LOD distances (doubling per level)
+    // Set default LOD distances
     float patchWorldSize = worldSizeXZ / (float)numPatches;
     std::vector<float> defaultDistances;
     for (uint32_t lod = 0; lod <= terrain->mMaxLOD; ++lod)
@@ -357,49 +372,133 @@ void GeoMipTerrain::InitVertexData(
     mMesh->SetNormals(normals.data(), vertexCount);
     mMesh->SetUv(0, uvs.data(), vertexCount);
 
-    // Placeholder indices (will be replaced by UpdateLOD)
-    // Use full-detail indices as the initial state
-    uint32_t indexCount = (mGridSize - 1) * (mGridSize - 1) * 6;
-    std::vector<uint32_t> indices(indexCount);
-    uint32_t iidx = 0;
-    for (uint32_t iz = 0; iz < mGridSize - 1; ++iz)
-    {
-        for (uint32_t ix = 0; ix < mGridSize - 1; ++ix)
-        {
-            uint32_t v00 = iz * mGridSize + ix;
-            uint32_t v10 = v00 + 1;
-            uint32_t v01 = v00 + mGridSize;
-            uint32_t v11 = v01 + 1;
-
-            indices[iidx++] = v00;
-            indices[iidx++] = v10;
-            indices[iidx++] = v01;
-            indices[iidx++] = v10;
-            indices[iidx++] = v11;
-            indices[iidx++] = v01;
-        }
-    }
-    mMesh->SetIndices(indices.data(), indexCount);
-
-    SubMeshInfo subMeshInfo;
-    subMeshInfo.firstIndex  = 0;
-    subMeshInfo.indexCount  = indexCount;
-    subMeshInfo.vertexCount = vertexCount;
-    subMeshInfo.topology    = PrimitiveMode_TRIANGLES;
-    mMesh->AddSubMeshInfo(subMeshInfo);
-
+    // Vertex buffer is created here; index buffer will be created
+    // by GenerateLODIndexTemplates() since it's a static master buffer.
     mMesh->SetUpBuffer();
 }
 
 //=============================================================================
-// Generate LOD index templates (local indices within a patch)
+// CreateTriangleFan - generate triangles for a single LOD cell with
+// crack fixing based on neighbor LOD levels.
+//
+// Generates 4-8 triangles centered on the cell's center vertex.
+// Each of the 4 sectors (up/right/down/left) has:
+//   - A "first" triangle (always generated)
+//   - A "second" triangle (only if that neighbor's LOD == core LOD)
+// When a neighbor is coarser (lodNeighbor > lodCore), we use the
+// neighbor's larger step and skip the second triangle to avoid T-junctions.
+//
+// All indices use the global row stride (gridSize) so that baseVertex
+// (patchStartZ * gridSize + patchStartX) correctly offsets them to
+// the right vertex in the vertex buffer.
+//=============================================================================
+
+void GeoMipTerrain::CreateTriangleFan(
+    std::vector<uint32_t>& indices,
+    uint32_t lodCore,
+    uint32_t lodLeft,
+    uint32_t lodRight,
+    uint32_t lodTop,
+    uint32_t lodBottom,
+    uint32_t x,
+    uint32_t z,
+    uint32_t stride)
+{
+    uint32_t StepLeft   = PowInt(2, lodLeft);
+    uint32_t StepRight  = PowInt(2, lodRight);
+    uint32_t StepTop    = PowInt(2, lodTop);
+    uint32_t StepBottom = PowInt(2, lodBottom);
+    uint32_t StepCenter = PowInt(2, lodCore);
+
+    uint32_t IndexCenter = (z + StepCenter) * stride + x + StepCenter;
+
+    // first up (left edge of top sector)
+    uint32_t IndexTemp1 = z * stride + x;
+    uint32_t IndexTemp2 = (z + StepLeft) * stride + x;
+    indices.push_back(IndexCenter);
+    indices.push_back(IndexTemp1);
+    indices.push_back(IndexTemp2);
+
+    // second up (only if left neighbor has same LOD as core)
+    if (lodLeft == lodCore)
+    {
+        IndexTemp1 = IndexTemp2;
+        IndexTemp2 += StepLeft * stride;
+        indices.push_back(IndexCenter);
+        indices.push_back(IndexTemp1);
+        indices.push_back(IndexTemp2);
+    }
+
+    // first right (top edge of right sector)
+    IndexTemp1 = IndexTemp2;
+    IndexTemp2 += StepTop;
+    indices.push_back(IndexCenter);
+    indices.push_back(IndexTemp1);
+    indices.push_back(IndexTemp2);
+
+    // second right (only if top neighbor has same LOD as core)
+    if (lodTop == lodCore)
+    {
+        IndexTemp1 = IndexTemp2;
+        IndexTemp2 += StepTop;
+        indices.push_back(IndexCenter);
+        indices.push_back(IndexTemp1);
+        indices.push_back(IndexTemp2);
+    }
+
+    // first down (right edge of bottom sector)
+    IndexTemp1 = IndexTemp2;
+    IndexTemp2 -= StepRight * stride;
+    indices.push_back(IndexCenter);
+    indices.push_back(IndexTemp1);
+    indices.push_back(IndexTemp2);
+
+    // second down (only if right neighbor has same LOD as core)
+    if (lodRight == lodCore)
+    {
+        IndexTemp1 = IndexTemp2;
+        IndexTemp2 -= StepRight * stride;
+        indices.push_back(IndexCenter);
+        indices.push_back(IndexTemp1);
+        indices.push_back(IndexTemp2);
+    }
+
+    // first left (bottom edge of left sector)
+    IndexTemp1 = IndexTemp2;
+    IndexTemp2 -= StepBottom;
+    indices.push_back(IndexCenter);
+    indices.push_back(IndexTemp1);
+    indices.push_back(IndexTemp2);
+
+    // second left (only if bottom neighbor has same LOD as core)
+    if (lodBottom == lodCore)
+    {
+        IndexTemp1 = IndexTemp2;
+        IndexTemp2 -= StepBottom;
+        indices.push_back(IndexCenter);
+        indices.push_back(IndexTemp1);
+        indices.push_back(IndexTemp2);
+    }
+}
+
+//=============================================================================
+// Generate LOD index templates and build the static master index buffer.
+//
+// Builds one large GPU index buffer containing all 16 permutations for
+// all LOD levels. The buffer is created once and NEVER changes.
+// Each permutation's {start, count} is recorded in mLODPermutationInfo
+// so UpdateLOD can reference them by index offset + baseVertex.
+//
+// All indices use the global row stride (gridSize) for row offsets,
+// so that baseVertex = patchStartZ * gridSize + patchStartX correctly
+// maps them to the right vertices in the global vertex buffer.
 //=============================================================================
 
 void GeoMipTerrain::GenerateLODIndexTemplates()
 {
     uint32_t patchStride = mPatchSize - 1;
 
-    // Calculate max LOD: log2(patchStride)
+    // Calculate max LOD: log2(patchStride) - 1
     mMaxLOD = 0;
     uint32_t temp = patchStride;
     while (temp > 1)
@@ -407,12 +506,16 @@ void GeoMipTerrain::GenerateLODIndexTemplates()
         temp >>= 1;
         mMaxLOD++;
     }
+    // ogldev convention: coarsest LOD still has at least 2x2 cells per patch
+    if (mMaxLOD > 0) mMaxLOD--;
 
     // Build patch metadata
     float step     = mWorldSize / (float)(mGridSize - 1);
     float halfSize = mWorldSize * 0.5f;
 
     mPatches.resize(mPatchesPerSide * mPatchesPerSide);
+    mPatchLods.resize(mPatchesPerSide * mPatchesPerSide);
+
     for (uint32_t pz = 0; pz < mPatchesPerSide; ++pz)
     {
         for (uint32_t px = 0; px < mPatchesPerSide; ++px)
@@ -430,87 +533,231 @@ void GeoMipTerrain::GenerateLODIndexTemplates()
         }
     }
 
-    // Generate index templates for each LOD level
-    // Template indices are LOCAL to the patch: localIdx = lz * patchSize + lx
-    mLODIndexTemplates.resize(mMaxLOD + 1);
-    mLODIndexCount.resize(mMaxLOD + 1);
+    // Build the master index buffer: all 16 permutations for all LOD levels
+    // Indices are LOCAL within the patch (0-based, relative to patch origin)
+    mLODPermutationInfo.resize(mMaxLOD + 1);
+
+    std::vector<uint32_t> masterIndices;
 
     for (uint32_t lod = 0; lod <= mMaxLOD; ++lod)
     {
-        uint32_t lodStep = 1u << lod;
-        std::vector<uint32_t>& tmpl = mLODIndexTemplates[lod];
+        uint32_t FanStep = PowInt(2, lod + 1);   // lod=0 -> 2, lod=1 -> 4, lod=2 -> 8
+        uint32_t EndPos  = mPatchSize - 1 - FanStep;
 
-        for (uint32_t lz = 0; lz < patchStride; lz += lodStep)
+        for (uint32_t l = 0; l < 2; ++l)
         {
-            for (uint32_t lx = 0; lx < patchStride; lx += lodStep)
+            for (uint32_t r = 0; r < 2; ++r)
             {
-                uint32_t v00 = lz * mPatchSize + lx;
-                uint32_t v10 = lz * mPatchSize + (lx + lodStep);
-                uint32_t v01 = (lz + lodStep) * mPatchSize + lx;
-                uint32_t v11 = (lz + lodStep) * mPatchSize + (lx + lodStep);
+                for (uint32_t t = 0; t < 2; ++t)
+                {
+                    for (uint32_t b = 0; b < 2; ++b)
+                    {
+                        uint32_t lodLeft   = lod + l;
+                        uint32_t lodRight  = lod + r;
+                        uint32_t lodTop    = lod + t;
+                        uint32_t lodBottom = lod + b;
 
-                tmpl.push_back(v00);
-                tmpl.push_back(v10);
-                tmpl.push_back(v01);
-                tmpl.push_back(v10);
-                tmpl.push_back(v11);
-                tmpl.push_back(v01);
+                        // Record where this permutation starts in the master buffer
+                        uint32_t startIdx = (uint32_t)masterIndices.size();
+                        mLODPermutationInfo[lod].info[l][r][t][b].start = startIdx;
+
+                        // Generate indices for this permutation
+                        for (uint32_t z = 0; z <= EndPos; z += FanStep)
+                        {
+                            for (uint32_t x = 0; x <= EndPos; x += FanStep)
+                            {
+                                // Edge detection: only boundary cells use neighbor LOD
+                                uint32_t lLeft   = (x == 0)      ? lodLeft   : lod;
+                                uint32_t lRight  = (x == EndPos) ? lodRight  : lod;
+                                uint32_t lBottom = (z == 0)      ? lodBottom : lod;
+                                uint32_t lTop    = (z == EndPos) ? lodTop    : lod;
+
+                                CreateTriangleFan(masterIndices, lod, lLeft, lRight, lTop, lBottom, x, z, mGridSize);
+                            }
+                        }
+
+                        // Record count
+                        uint32_t endIdx = (uint32_t)masterIndices.size();
+                        mLODPermutationInfo[lod].info[l][r][t][b].count = endIdx - startIdx;
+                    }
+                }
             }
         }
 
-        mLODIndexCount[lod] = (uint32_t)tmpl.size();
+        LOG_INFO("GeoMipTerrain: LOD %u - FanStep=%u, 16 permutations generated", lod, FanStep);
+    }
 
-        LOG_INFO("GeoMipTerrain: LOD %u - step=%u, indices/patch=%u",
-                 lod, lodStep, mLODIndexCount[lod]);
+    // Create the static GPU index buffer (never changes after this)
+    mMesh->SetIndices(masterIndices.data(), (uint32_t)masterIndices.size());
+    auto indexBuffer = GetRenderDevice()->CreateIndexBufferWithBytes(
+        masterIndices.data(),
+        (uint32_t)masterIndices.size() * sizeof(uint32_t),
+        IndexType_UInt);
+
+    // Replace the index buffer created by SetUpBuffer with our master buffer
+    // We access the mesh's private member through the setter pattern
+    // Since Mesh doesn't have SetIndexBuffer, we use the fact that
+    // UpdateIndices creates a new index buffer from mIndices.
+    // But we already called SetIndices + SetUpBuffer, so we need to
+    // recreate the index buffer with the master data.
+    // The simplest approach: use UpdateIndices to create the GPU buffer.
+    mMesh->UpdateIndices(masterIndices.data(), masterIndices.size());
+
+    LOG_INFO("GeoMipTerrain: Master index buffer created, %u total indices", (uint32_t)masterIndices.size());
+}
+
+//=============================================================================
+// DistanceToLOD - map a distance value to a LOD level
+//=============================================================================
+
+uint32_t GeoMipTerrain::DistanceToLOD(float distance) const
+{
+    for (uint32_t lod = 0; lod <= mMaxLOD; ++lod)
+    {
+        if (distance < mLODDistances[lod])
+        {
+            return lod;
+        }
+    }
+    return mMaxLOD;
+}
+
+//=============================================================================
+// UpdateLODMapPass1 - compute Core LOD for each patch from camera distance
+//=============================================================================
+
+void GeoMipTerrain::UpdateLODMapPass1(const Vector3f& cameraPos)
+{
+    for (uint32_t pz = 0; pz < mPatchesPerSide; ++pz)
+    {
+        for (uint32_t px = 0; px < mPatchesPerSide; ++px)
+        {
+            uint32_t patchIdx = pz * mPatchesPerSide + px;
+            const PatchInfo& patch = mPatches[patchIdx];
+
+            float dx = cameraPos.x - patch.centerX;
+            float dz = cameraPos.z - patch.centerZ;
+            float distance = sqrtf(dx * dx + dz * dz);
+
+            mPatchLods[patchIdx].core = DistanceToLOD(distance);
+        }
     }
 }
 
 //=============================================================================
-// UpdateLOD - rebuild the Mesh index buffer based on camera position
+// UpdateLODMapPass2 - compare each patch's Core LOD with its neighbors.
+// If a neighbor has a strictly higher (coarser) LOD, set the flag to 1
+// indicating crack fixing is needed on that edge.
+//=============================================================================
+
+void GeoMipTerrain::UpdateLODMapPass2()
+{
+    for (uint32_t pz = 0; pz < mPatchesPerSide; ++pz)
+    {
+        for (uint32_t px = 0; px < mPatchesPerSide; ++px)
+        {
+            uint32_t patchIdx = pz * mPatchesPerSide + px;
+            uint32_t coreLod  = mPatchLods[patchIdx].core;
+
+            // Left neighbor
+            if (px > 0)
+            {
+                uint32_t leftCore = mPatchLods[pz * mPatchesPerSide + (px - 1)].core;
+                mPatchLods[patchIdx].left = (leftCore > coreLod) ? 1 : 0;
+            }
+            else
+            {
+                mPatchLods[patchIdx].left = 0;
+            }
+
+            // Right neighbor
+            if (px < mPatchesPerSide - 1)
+            {
+                uint32_t rightCore = mPatchLods[pz * mPatchesPerSide + (px + 1)].core;
+                mPatchLods[patchIdx].right = (rightCore > coreLod) ? 1 : 0;
+            }
+            else
+            {
+                mPatchLods[patchIdx].right = 0;
+            }
+
+            // Bottom neighbor (z-1)
+            if (pz > 0)
+            {
+                uint32_t bottomCore = mPatchLods[(pz - 1) * mPatchesPerSide + px].core;
+                mPatchLods[patchIdx].bottom = (bottomCore > coreLod) ? 1 : 0;
+            }
+            else
+            {
+                mPatchLods[patchIdx].bottom = 0;
+            }
+
+            // Top neighbor (z+1)
+            if (pz < mPatchesPerSide - 1)
+            {
+                uint32_t topCore = mPatchLods[(pz + 1) * mPatchesPerSide + px].core;
+                mPatchLods[patchIdx].top = (topCore > coreLod) ? 1 : 0;
+            }
+            else
+            {
+                mPatchLods[patchIdx].top = 0;
+            }
+        }
+    }
+}
+
+//=============================================================================
+// UpdateLOD - update per-patch SubMeshInfo entries based on camera position.
+//
+// Uses the two-pass LOD algorithm to compute per-patch Core LOD and
+// neighbor flags, then creates one SubMeshInfo per patch referencing
+// the appropriate range in the static master index buffer.
+//
+// The baseVertex parameter offsets local patch indices (0-based) to
+// the correct global vertex position: baseVertex = startZ * gridSize + startX
+//
+// This is much cheaper than the old approach: no per-frame index buffer
+// rebuild or GPU upload. Only the SubMeshInfo list is updated (CPU-only).
 //=============================================================================
 
 void GeoMipTerrain::UpdateLOD(const Vector3f& cameraPos)
 {
     if (!mMesh || mPatches.empty()) return;
 
-    uint32_t patchStride = mPatchSize - 1;
-    uint32_t patchCount  = (uint32_t)mPatches.size();
+    // Two-pass LOD update
+    UpdateLODMapPass1(cameraPos);
+    UpdateLODMapPass2();
 
-    // Estimate total index count (use max possible for reserve)
-    uint32_t maxTotalIndices = 0;
+    // Rebuild SubMeshInfo list: one per patch
+    mMesh->ClearSubMeshInfos();
+
+    uint32_t patchCount = (uint32_t)mPatches.size();
+
     for (uint32_t i = 0; i < patchCount; ++i)
     {
-        maxTotalIndices += mLODIndexCount[0]; // LOD 0 has the most indices
+        uint32_t core = mPatchLods[i].core;
+        uint32_t l    = mPatchLods[i].left;
+        uint32_t r    = mPatchLods[i].right;
+        uint32_t t    = mPatchLods[i].top;
+        uint32_t b    = mPatchLods[i].bottom;
+
+        const PatchInfo& patch = mPatches[i];
+        const SinglePermutationInfo& permInfo = mLODPermutationInfo[core].info[l][r][t][b];
+
+        SubMeshInfo subMeshInfo;
+        subMeshInfo.firstIndex  = permInfo.start;
+        subMeshInfo.indexCount  = permInfo.count;
+        subMeshInfo.topology    = PrimitiveMode_TRIANGLES;
+        subMeshInfo.vertexCount = mPatchSize * mPatchSize;
+        // baseVertex offsets local patch indices to global vertex positions
+        subMeshInfo.baseVertex  = (int32_t)(patch.startZ * mGridSize + patch.startX);
+
+        mMesh->AddSubMeshInfo(subMeshInfo);
     }
-    std::vector<uint32_t> combinedIndices;
-    combinedIndices.reserve(maxTotalIndices);
-
-    // Build combined index buffer
-    for (uint32_t i = 0; i < patchCount; ++i)
-    {
-        uint32_t lod = SelectLOD(cameraPos, i);
-        const PatchInfo& patch       = mPatches[i];
-        const std::vector<uint32_t>& tmpl = mLODIndexTemplates[lod];
-
-        // Convert local indices to global indices
-        uint32_t baseX = patch.startX;
-        uint32_t baseZ = patch.startZ;
-
-        for (uint32_t localIdx : tmpl)
-        {
-            uint32_t lx = localIdx % mPatchSize;
-            uint32_t lz = localIdx / mPatchSize;
-            uint32_t globalIdx = (baseZ + lz) * mGridSize + (baseX + lx);
-            combinedIndices.push_back(globalIdx);
-        }
-    }
-
-    // Update the mesh's index buffer
-    mMesh->UpdateIndices(combinedIndices.data(), combinedIndices.size());
 }
 
 //=============================================================================
-// LOD selection based on camera distance
+// SelectLOD - simple per-patch LOD selection (fallback, not used with crack fixing)
 //=============================================================================
 
 uint32_t GeoMipTerrain::SelectLOD(const Vector3f& cameraPos, uint32_t patchIdx) const

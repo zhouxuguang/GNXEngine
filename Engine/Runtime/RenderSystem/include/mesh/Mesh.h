@@ -121,6 +121,8 @@ public:
     }
     
     void AddSubMeshInfo(const SubMeshInfo& subMeshInfo);
+
+    void ClearSubMeshInfos();
     
     const SubMeshInfo& GetSubMeshInfo(int index) const
     {

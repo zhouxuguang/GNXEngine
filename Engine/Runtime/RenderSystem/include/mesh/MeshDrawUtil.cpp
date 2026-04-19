@@ -57,7 +57,9 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
     
     for (int n = 0; n < mesh.GetSubMeshCount(); n ++)
     {
-        renderEncoder->SetGraphicsPipeline(renderInfo.materials[n]->GetPSO());
+        // 当只有一个材质但有多个submesh时（如地形LOD），所有submesh共用该材质
+        int matIdx = (renderInfo.materials.size() == 1) ? 0 : n;
+        renderEncoder->SetGraphicsPipeline(renderInfo.materials[matIdx]->GetPSO());
         
         renderEncoder->SetVertexUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
         renderEncoder->SetVertexUniformBuffer("cbPerObject", renderInfo.objectUBO);
@@ -71,7 +73,7 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
         renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTangent].offset, 2);
         renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTexCoord0].offset, 3);
         
-        MaterialPtr material = renderInfo.materials[n];
+        MaterialPtr material = renderInfo.materials[matIdx];
         assert(material);
         
         TextureSamplerPtr textureSampler = mesh.GetSampler();
@@ -89,7 +91,7 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
         
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
         
-        renderEncoder->DrawIndexedPrimitives(PrimitiveMode_TRIANGLES, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex);
+        renderEncoder->DrawIndexedPrimitives(PrimitiveMode_TRIANGLES, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
         
     }
 }
@@ -162,7 +164,7 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
         
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
         
-        renderEncoder->DrawIndexedPrimitives(PrimitiveMode_TRIANGLES, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex);
+        renderEncoder->DrawIndexedPrimitives(PrimitiveMode_TRIANGLES, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
         
     }
 }
@@ -205,7 +207,7 @@ void MeshDrawUtil::DrawMeshDepthOnly(const Mesh& mesh, const RenderInfo& renderI
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
         
         // 绘制
-        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex);
+        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
     }
 }
 
@@ -259,7 +261,7 @@ void MeshDrawUtil::DrawSkinnedMeshDepthOnly(const SkinnedMesh& mesh, const Rende
         
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
         
-        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex);
+        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
     }
 }
 
@@ -304,9 +306,11 @@ void MeshDrawUtil::DrawMeshBasePass(const Mesh& mesh, const RenderInfo& renderIn
 		renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTexCoord0].offset, 3);
 
 		// 绑定材质贴图（使用TextureSlot中的采样器配置）
-		if (n < renderInfo.materials.size())
+		// 当只有一个材质但有多个submesh时（如地形LOD），所有submesh共用该材质
+		int matIdx = (renderInfo.materials.size() == 1) ? 0 : n;
+		if (matIdx < (int)renderInfo.materials.size())
 		{
-			MaterialPtr material = renderInfo.materials[n];
+			MaterialPtr material = renderInfo.materials[matIdx];
 			if (material)
 			{
                 TextureSamplerPtr textureSampler = mesh.GetSampler();
@@ -323,7 +327,7 @@ void MeshDrawUtil::DrawMeshBasePass(const Mesh& mesh, const RenderInfo& renderIn
 		const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
 
 		// 绘制
-		renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex);
+		renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
 	}
 }
 
