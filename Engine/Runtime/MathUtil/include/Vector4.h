@@ -94,7 +94,7 @@ public:
 
 	inline Vector4 operator / ( const T fScalar ) const
 	{
-		assert( !ApproxEqual(fScalar, T(0)) );
+		assert(!ApproxEqual(fScalar, T(0), MathEpsilon<T>()));
 
 		T fInv = 1.0 / fScalar;
 

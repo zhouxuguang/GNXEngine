@@ -142,7 +142,9 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
         Vector3f(0.0f, 0.0f, 0.0f),
         Vector3f(0.0f, 1.0f, 0.0f)
     );
-    camera->SetLens(60.0f, width, height, 1.0f, 2000.0f);
+    // 远平面需要覆盖整个地形范围（对角线距离 + 相机高度余量）
+    // 地形大小 163840，对角线约 231700，加上相机位置偏移，设为 300000
+    camera->SetLens(60.0f, width, height, 1.0f, 300000.0f);
 
     // ---- Directional Light (sun) ----
     RenderSystem::DirectionLight* dirLight = static_cast<RenderSystem::DirectionLight*>(

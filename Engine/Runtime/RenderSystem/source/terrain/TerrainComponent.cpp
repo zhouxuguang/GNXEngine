@@ -167,7 +167,6 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
         }
 
         const SubMeshInfo& subInfo = mesh->GetSubMeshInfo(n);
-
         renderEncoder->DrawIndexedPrimitives(
             subInfo.topology,
             (int)subInfo.indexCount,
