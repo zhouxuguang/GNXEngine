@@ -121,15 +121,18 @@ struct DepthRenderParams
 {
     /** 渲染目标宽度 */
     uint32_t width = 1024;
-    
+
     /** 渲染目标高度 */
     uint32_t height = 1024;
-    
+
     /** 网格数据 */
     DepthMeshData meshes;
-    
+
     /** UBO 数据 */
     DepthUniformData uniforms;
+
+    /** 视锥体 (用于地形逐patch剔除) */
+    mathutil::Frustumf frustum;
     
     /**
      * 便捷构造函数（仅静态网格）

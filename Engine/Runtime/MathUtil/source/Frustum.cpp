@@ -22,8 +22,9 @@ Frustum<T>::~Frustum()
 }
 
 template<typename T>
-bool Frustum<T>::InitFrustum(const Matrix4x4<T>& comboMatrix)
+bool Frustum<T>::InitFrustum(const Matrix4x4<T>& comboMatrix, bool ndcZeroToOne)
 {
+	mNdcZeroToOne = ndcZeroToOne;
 	createPlane(comboMatrix);
 	return true;
 }
@@ -93,17 +94,47 @@ int FrustumAABBIntersect(const Plane<T>* planes, const Vector3<T>& mins, const V
 }
 
 template<typename T>
-static inline void GetFrustumCorners(const Matrix4x4<T> viewProj, Vector4<T>* points)
+static inline void GetFrustumCorners(const Matrix4x4<T> viewProj, Vector4<T>* points, bool ndcZeroToOne)
 {
-	const Vector4<T> corners[] = { Vector4<T>(-1, -1, -1, 1), Vector4<T>(1, -1, -1, 1), Vector4<T>(1, 1, -1, 1), Vector4<T>(-1, 1, -1, 1),
-							 Vector4<T>(-1, -1, 1, 1),  Vector4<T>(1, -1, 1, 1),  Vector4<T>(1, 1, 1, 1),  Vector4<T>(-1, 1, 1, 1) };
+	// NDC corner points depend on the depth convention:
+	//   OpenGL: z ∈ [-1, 1]  → near z = -1, far z = 1
+	//   Reverse-Z (Vulkan/Metal): z ∈ [0, 1]  → near z = 1, far z = 0
+	//
+	// For infinite far plane projections, z_ndc=0 (reverse-Z) or z_ndc=1 (OpenGL)
+	// maps to z = infinity, causing w = 0 after inverse projection.
+	// Use a small ε instead to get a "very far but finite" corner, avoiding w = 0.
+	const T FAR_EPSILON = T(0.001);
+
+	const Vector4<T> cornersGL[] = {
+		Vector4<T>(-1, -1, -1, 1), Vector4<T>(1, -1, -1, 1),
+		Vector4<T>(1, 1, -1, 1),   Vector4<T>(-1, 1, -1, 1),
+		Vector4<T>(-1, -1, 1 - FAR_EPSILON, 1),  Vector4<T>(1, -1, 1 - FAR_EPSILON, 1),
+		Vector4<T>(1, 1, 1 - FAR_EPSILON, 1),    Vector4<T>(-1, 1, 1 - FAR_EPSILON, 1)
+	};
+	const Vector4<T> cornersRZ[] = {
+		Vector4<T>(-1, -1, 1, 1),  Vector4<T>(1, -1, 1, 1),
+		Vector4<T>(1, 1, 1, 1),    Vector4<T>(-1, 1, 1, 1),
+		Vector4<T>(-1, -1, FAR_EPSILON, 1),  Vector4<T>(1, -1, FAR_EPSILON, 1),
+		Vector4<T>(1, 1, FAR_EPSILON, 1),    Vector4<T>(-1, 1, FAR_EPSILON, 1)
+	};
+	const Vector4<T>* corners = ndcZeroToOne ? cornersRZ : cornersGL;
 
 	const Matrix4x4<T> invViewProj = viewProj.Inverse();
 
 	for (int i = 0; i != 8; i++)
 	{
-		const Vector4<T> q = invViewProj * corners[i];
-		points[i] = q / q.w;
+		Vector4<T> q = invViewProj * corners[i];
+		if (std::abs(q.w) < T(1e-7))
+		{
+			// Fallback: project direction to a large finite distance
+			q = q * (T(1e6) / std::max(std::abs(q.x) + std::abs(q.y) + std::abs(q.z), T(1)));
+			q.w = T(1);
+		}
+		else
+		{
+			q = q / q.w;
+		}
+		points[i] = q;
 	}
 }
 
@@ -166,12 +197,26 @@ static inline bool IsBoxInFrustumIMPL(const Vector4<T>* frustumPlanes, const Vec
 template<typename T>
 bool Frustum<T>::IsBoxInFrustum(const AxisAlignedBox<T>& aabb) const
 {
-#if 1
-    return IsBoxInFrustumIMPL(mPlanes, mFrustumCorners, aabb);
-#else
-    int ret = FrustumAABBIntersect(mPlane, aabb.minimum, aabb.maximum);
-    return ret == OUTSIDE;
-#endif
+    // p-vertex test: for each frustum plane, test the AABB corner that is
+    // MOST aligned with the plane normal (the "positive vertex").
+    // Since frustum plane normals point inward (toward the frustum interior),
+    // the p-vertex maximizes the plane dot product. If even the p-vertex is
+    // on the negative side of the plane, ALL 8 corners must be outside,
+    // and the box can be safely culled.
+    for (int i = 0; i < kPlaneFrustumNum; i++)
+    {
+        const Vector4<T>& p = mPlanes[i];
+
+        // Select the AABB corner farthest in the plane-normal direction.
+        // This is the corner most likely to be inside the frustum.
+        T px = (p.x > 0) ? aabb.maximum.x : aabb.minimum.x;
+        T py = (p.y > 0) ? aabb.maximum.y : aabb.minimum.y;
+        T pz = (p.z > 0) ? aabb.maximum.z : aabb.minimum.z;
+
+        if (p.x * px + p.y * py + p.z * pz + p.w < 0.0)
+            return false;
+    }
+    return true;
 }
 
 template<typename T>
@@ -233,19 +278,36 @@ void Frustum<T>::createPlane(const Matrix4x4<T>& comboMatrix)
     //Fast Extraction of Viewing Frustum Planes from WorldView-Projection Matrix
 
     // 提取平面方程的系数
+    // Left/right/bottom/top 对任何深度约定都一样
     mPlanes[kPlaneFrustumLeft]    = (comboMatrix[3] + comboMatrix[0]);   // left
     mPlanes[kPlaneFrustumRight]   = (comboMatrix[3] - comboMatrix[0]);   // right
     mPlanes[kPlaneFrustumBottom]  = (comboMatrix[3] + comboMatrix[1]);   // bottom
     mPlanes[kPlaneFrustumTop]     = (comboMatrix[3] - comboMatrix[1]);   // top
-    mPlanes[kPlaneFrustumNear]    = (comboMatrix[3] + comboMatrix[2]);   // near
-    mPlanes[kPlaneFrustumFar]     = (comboMatrix[3] - comboMatrix[2]);   // far
+
+    if (mNdcZeroToOne)
+    {
+        // NDC z ∈ [0, 1] (Vulkan/Metal)
+        // 两个z平面为 VP[2] 和 VP[3]-VP[2]
+        // 无论是否Reverse-Z，平面集相同，仅near/far含义互换
+        // Reverse-Z: near = VP[3]-VP[2] (z_ndc=1), far = VP[2] (z_ndc=0)
+        // Standard-Z: near = VP[2] (z_ndc=0), far = VP[3]-VP[2] (z_ndc=1)
+        // 对剔除来说只需6个平面都正确，哪个叫near哪个叫far不影响结果
+        mPlanes[kPlaneFrustumNear] = (comboMatrix[3] - comboMatrix[2]);   // one z-plane
+        mPlanes[kPlaneFrustumFar]  = comboMatrix[2];                       // other z-plane
+    }
+    else
+    {
+        // OpenGL: NDC z ∈ [-1, 1]
+        mPlanes[kPlaneFrustumNear] = (comboMatrix[3] + comboMatrix[2]);   // near
+        mPlanes[kPlaneFrustumFar]  = (comboMatrix[3] - comboMatrix[2]);   // far
+    }
 
     for (int i = 0; i < kPlaneFrustumNum; i ++)
     {
         NormalizePlane(mPlanes[i]);
     }
 
-	GetFrustumCorners(comboMatrix, mFrustumCorners);
+	GetFrustumCorners(comboMatrix, mFrustumCorners, mNdcZeroToOne);
 }
 
 template class Frustum<float>;

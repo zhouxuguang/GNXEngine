@@ -530,6 +530,28 @@ void GeoMipTerrain::GenerateLODIndexTemplates()
             float centerGridZ = (float)(patch.startZ + patchStride * 0.5f);
             patch.centerX = -halfSize + centerGridX * step;
             patch.centerZ = -halfSize + centerGridZ * step;
+
+            // Compute world-space AABB for frustum culling
+            float worldMinX = -halfSize + (float)patch.startX * step;
+            float worldMaxX = -halfSize + (float)(patch.startX + patchStride) * step;
+            float worldMinZ = -halfSize + (float)patch.startZ * step;
+            float worldMaxZ = -halfSize + (float)(patch.startZ + patchStride) * step;
+
+            float minY = std::numeric_limits<float>::max();
+            float maxY = -std::numeric_limits<float>::max();
+            for (uint32_t iz = patch.startZ; iz <= patch.startZ + patchStride && iz < mGridSize; ++iz)
+            {
+                for (uint32_t ix = patch.startX; ix <= patch.startX + patchStride && ix < mGridSize; ++ix)
+                {
+                    float h = mHeightMap[iz * mGridSize + ix];
+                    minY = std::min(minY, h);
+                    maxY = std::max(maxY, h);
+                }
+            }
+
+            patch.worldBounds = AxisAlignedBoxf(
+                Vector3f(worldMinX, minY, worldMinZ),
+                Vector3f(worldMaxX, maxY, worldMaxZ));
         }
     }
 

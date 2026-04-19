@@ -11,6 +11,9 @@
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/RenderCore/include/RenderEncoder.h"
 #include "Runtime/BaseLib/include/LogService.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
+
+USING_NS_MATHUTIL
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -86,7 +89,8 @@ void TerrainComponent::Update(float deltaTime)
 void TerrainComponent::Render(RenderEncoder* renderEncoder,
                                UniformBufferPtr cameraUBO,
                                UniformBufferPtr objectUBO,
-                               GraphicsPipelinePtr basePassPSO)
+                               GraphicsPipelinePtr basePassPSO,
+                               const Frustumf* frustum)
 {
     if (!mGeoMipTerrain || !mMaterial || !renderEncoder)
     {
@@ -150,12 +154,19 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
 
     // ---- Draw all visible patches ----
     int subMeshCount = mesh->GetSubMeshCount();
+    GeoMipTerrainPtr terrain = mGeoMipTerrain;
+
     for (int n = 0; n < subMeshCount; n++)
     {
-        const SubMeshInfo& subInfo = mesh->GetSubMeshInfo(n);
+        // Per-patch frustum culling
+        if (frustum && terrain && n < (int)terrain->GetPatches().size())
+        {
+            const auto& bounds = terrain->GetPatches()[n].worldBounds;
+            if (!frustum->IsBoxInFrustum(bounds))
+                continue;
+        }
 
-        // TODO: per-patch frustum culling here
-        // if (!IsPatchVisible(subInfo, frustum)) continue;
+        const SubMeshInfo& subInfo = mesh->GetSubMeshInfo(n);
 
         renderEncoder->DrawIndexedPrimitives(
             subInfo.topology,
@@ -167,13 +178,14 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
 }
 
 //=============================================================================
-// Accessors
+// Depth-only rendering
 //=============================================================================
 
 void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
                                         UniformBufferPtr cameraUBO,
                                         UniformBufferPtr objectUBO,
-                                        GraphicsPipelinePtr depthPSO)
+                                        GraphicsPipelinePtr depthPSO,
+                                        const Frustumf* frustum)
 {
     if (!mGeoMipTerrain || !renderEncoder || !depthPSO)
     {
@@ -211,10 +223,20 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
     // ---- Only bind position vertex buffer ----
     renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
 
-    // ---- Draw all patches ----
+    // ---- Draw all visible patches ----
     int subMeshCount = mesh->GetSubMeshCount();
+    GeoMipTerrainPtr terrain = mGeoMipTerrain;
+
     for (int n = 0; n < subMeshCount; n++)
     {
+        // Per-patch frustum culling
+        if (frustum && terrain && n < (int)terrain->GetPatches().size())
+        {
+            const auto& bounds = terrain->GetPatches()[n].worldBounds;
+            if (!frustum->IsBoxInFrustum(bounds))
+                continue;
+        }
+
         const SubMeshInfo& subInfo = mesh->GetSubMeshInfo(n);
         renderEncoder->DrawIndexedPrimitives(
             subInfo.topology,
@@ -226,7 +248,7 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
 }
 
 //=============================================================================
-// Accessors (continued)
+// Accessors
 //=============================================================================
 
 float TerrainComponent::GetHeight(float worldX, float worldZ) const

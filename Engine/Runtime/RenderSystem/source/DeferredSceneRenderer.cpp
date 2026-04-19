@@ -10,6 +10,7 @@
 #include "SceneNode.h"
 #include "mesh/MeshRenderer.h"
 #include "skinnedMesh/SkinnedMeshRenderer.h"
+#include "terrain/TerrainComponent.h"
 #include "SkyBoxNode.h"
 #include "RenderParameter.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
@@ -96,6 +97,17 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     RenderInfo renderInfo = sceneManager->GetRenderInfo();
     UniformBufferPtr cameraUBO = renderInfo.cameraUBO;
 
+    // 计算视锥体（用于地形逐patch剔除）
+    // 引擎使用Vulkan/Metal后端，VP矩阵的NDC z范围始终为[0,1]
+    // （Reverse-Z投影本身输出[0,1]；标准投影经mAdjust重映射后也是[0,1]）
+    mathutil::Frustumf frustum;
+    CameraPtr camera = sceneManager->GetCamera("MainCamera");
+    if (camera)
+    {
+        mathutil::Matrix4x4f vp = camera->GetProjectionMatrix() * camera->GetViewMatrix();
+        frustum.InitFrustum(vp, true);  // ndcZeroToOne = true
+    }
+
     // 收集蒙皮网格的骨骼矩阵UBO
     UniformBufferPtr skinnedMatrixUBO = nullptr;
     if (!skinnedMeshItems.empty())
@@ -107,7 +119,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     
     // PreZPass
     FrameGraphResource depthResource = RenderPreDepthPass(
-        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, terrainItems);
+        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, terrainItems, frustum);
 
     // Hi-Z Pass（在PreDepth之后、BasePass之前）
     HiZOutput hiZOutput;
@@ -119,7 +131,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // BasePass (G-Buffer)
     GBufferData gbufferData = RenderBasePass(
-        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, depthResource, terrainItems);
+        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, depthResource, terrainItems, frustum);
 
     // SSAO Pass（在G-Buffer之后、DeferredLighting之前）
     SSAOOutput ssaoOutput;
@@ -229,7 +241,8 @@ FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(
     const std::vector<DepthMeshItem>& meshItems,
     const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
     UniformBufferPtr cameraUBO,
-    const std::vector<TerrainComponent*>& terrainItems)
+    const std::vector<TerrainComponent*>& terrainItems,
+    const mathutil::Frustumf& frustum)
 {
     FrameGraphResource depthResource = -1;
 
@@ -249,10 +262,11 @@ FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(
     params.meshes.terrainItems = terrainItems;
     params.uniforms.cameraUBO = cameraUBO;
     params.uniforms.skinnedMatrixUBO = skinnedMatrixUBO;
+    params.frustum = frustum;
 
     // 使用FrameGraph渲染深度图
     depthResource = mDepthRender->Render("DepthPass", frameGraph, commandBuffer, params);
-    
+
     return depthResource;
 }
 
@@ -263,7 +277,8 @@ GBufferData DeferredSceneRenderer::RenderBasePass(
     const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
     UniformBufferPtr cameraUBO,
     FrameGraphResource preDepthTexture,
-    const std::vector<TerrainComponent*>& terrainItems)
+    const std::vector<TerrainComponent*>& terrainItems,
+    const mathutil::Frustumf& frustum)
 {
     // 收集蒙皮网格的骨骼矩阵UBO
     UniformBufferPtr skinnedMatrixUBO = nullptr;
@@ -280,6 +295,7 @@ GBufferData DeferredSceneRenderer::RenderBasePass(
     params.uniforms.cameraUBO = cameraUBO;
     params.uniforms.skinnedMatrixUBO = skinnedMatrixUBO;
     params.preDepthTexture = preDepthTexture;  // 传递 PreDepth 深度图
+    params.frustum = frustum;
 
     // 初始化 GBufferRenderer（如果需要）
     if (!mGBufferRenderer->IsInitialized())

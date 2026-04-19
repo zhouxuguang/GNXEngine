@@ -60,7 +60,8 @@ private:
         const std::vector<DepthMeshItem>& meshItems,
         const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
         UniformBufferPtr cameraUBO,
-        const std::vector<TerrainComponent*>& terrainItems = {});
+        const std::vector<TerrainComponent*>& terrainItems = {},
+        const mathutil::Frustumf& frustum = mathutil::Frustumf());
 
     GBufferData RenderBasePass(
         FrameGraph& frameGraph,
@@ -69,7 +70,8 @@ private:
         const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
         UniformBufferPtr cameraUBO,
         FrameGraphResource preDepthTexture = -1,
-        const std::vector<TerrainComponent*>& terrainItems = {});
+        const std::vector<TerrainComponent*>& terrainItems = {},
+        const mathutil::Frustumf& frustum = mathutil::Frustumf());
 
     void RenderPresentPass(FrameGraph& frameGraph, CommandBufferPtr commandBuffer, FrameGraphResource depthResource);
 

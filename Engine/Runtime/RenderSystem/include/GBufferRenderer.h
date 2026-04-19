@@ -59,6 +59,9 @@ struct GBufferRenderParams
     // BasePass 使用该深度图进行深度测试（关闭深度写入）
     FrameGraphResource preDepthTexture;
 
+    /** 视锥体 (用于地形逐patch剔除) */
+    mathutil::Frustumf frustum;
+
     static GBufferRenderParams Create(
         const std::vector<DepthMeshItem>& staticMeshItems,
         UniformBufferPtr cameraUBO,

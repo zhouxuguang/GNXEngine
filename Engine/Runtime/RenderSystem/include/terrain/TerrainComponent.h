@@ -15,8 +15,13 @@
 #include "../Component.h"
 #include "../Material.h"
 #include "GeoMipTerrain.h"
+#include "Runtime/MathUtil/include/Frustum.h"
 
 NS_RENDERSYSTEM_BEGIN
+
+//=============================================================================
+// PatchInfo — moved here from GeoMipTerrain for public access
+//=============================================================================
 
 struct RenderInfo;
 
@@ -77,11 +82,13 @@ public:
      * @param cameraUBO      Camera uniform buffer
      * @param objectUBO      Object (model matrix) uniform buffer
      * @param basePassPSO    The G-Buffer graphics pipeline state object
+     * @param frustum        Camera frustum for per-patch culling (nullptr = draw all)
      */
     void Render(class RenderEncoder* renderEncoder,
                 UniformBufferPtr cameraUBO,
                 UniformBufferPtr objectUBO,
-                GraphicsPipelinePtr basePassPSO);
+                GraphicsPipelinePtr basePassPSO,
+                const mathutil::Frustumf* frustum = nullptr);
 
     /**
      * Render terrain depth only (for PreDepth pass).
@@ -91,11 +98,13 @@ public:
      * @param cameraUBO      Camera uniform buffer
      * @param objectUBO      Object (model matrix) uniform buffer
      * @param depthPSO       Depth-only graphics pipeline state object
+     * @param frustum        Camera frustum for per-patch culling (nullptr = draw all)
      */
     void RenderDepthOnly(class RenderEncoder* renderEncoder,
                          UniformBufferPtr cameraUBO,
                          UniformBufferPtr objectUBO,
-                         GraphicsPipelinePtr depthPSO);
+                         GraphicsPipelinePtr depthPSO,
+                         const mathutil::Frustumf* frustum = nullptr);
 
     // ---- Accessors ----
 

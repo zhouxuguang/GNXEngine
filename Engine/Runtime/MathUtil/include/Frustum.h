@@ -39,8 +39,13 @@ public:
 
     /**
      * 从矩阵创建视锥体
+     * @param comboMatrix  VP矩阵 (clipPos = VP * worldPos)
+     * @param ndcZeroToOne NDC z范围是否为[0,1](Vulkan/Metal)，
+     *                     默认true。仅当OpenGL标准投影(z∈[-1,1])时传false。
+     *                     注意：Vulkan/Metal下即使不用Reverse-Z，
+     *                     mAdjust也会将z映射到[0,1]，此参数仍应为true。
      */
-    bool InitFrustum(const Matrix4x4<T>& comboMatrix);
+    bool InitFrustum(const Matrix4x4<T>& comboMatrix, bool ndcZeroToOne = true);
 
     /**
      * 判断AABB和视锥体的关系，判断AABB是否在Frustum内
@@ -65,6 +70,7 @@ private:
 
     Vector4<T> mPlanes[kPlaneFrustumNum];             // 裁剪平面, left, right, bottom, top，near, far
     Vector4<T> mFrustumCorners[8];
+    bool mNdcZeroToOne = true;                        // NDC z∈[0,1] (Vulkan/Metal)
 };
 
 typedef Frustum<float> Frustumf;

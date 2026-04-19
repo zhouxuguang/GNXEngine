@@ -86,6 +86,7 @@ FrameGraphResource DepthRenderer::Render(
         FrameGraphResource depthTexture;
         DepthMeshData meshes;
         DepthUniformData uniforms;
+        mathutil::Frustumf frustum;
     };
 
     // 添加深度渲染 Pass
@@ -106,6 +107,7 @@ FrameGraphResource DepthRenderer::Render(
             // 保存引用
             data.meshes = std::move(params.meshes);
             data.uniforms = std::move(params.uniforms);
+            data.frustum = params.frustum;
         },
         [=](const DepthPassData& data, FrameGraphPassResources& resources, void* context)
         {
@@ -173,7 +175,7 @@ FrameGraphResource DepthRenderer::Render(
                     if (terrainNode)
                         objectUBO = terrainNode->GetOrCreateModelUBO(RenderCore::GetRenderDevice());
 
-                    terrain->RenderDepthOnly(renderEncoder.get(), data.uniforms.cameraUBO, objectUBO, mDepthOnlyPipeline);
+                    terrain->RenderDepthOnly(renderEncoder.get(), data.uniforms.cameraUBO, objectUBO, mDepthOnlyPipeline, &data.frustum);
                 }
             }
             renderEncoder->EndEncode();

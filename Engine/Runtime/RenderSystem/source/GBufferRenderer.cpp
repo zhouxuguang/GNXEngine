@@ -75,6 +75,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
         GBufferData gbuffer;
         GBufferMeshData meshes;
         GBufferUniformData uniforms;
+        mathutil::Frustumf frustum;
     };
 
     auto& passData = frameGraph.AddPass<GBufferPassData>(
@@ -133,6 +134,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
             // 保存渲染参数
             data.meshes = std::move(params.meshes);
             data.uniforms = std::move(params.uniforms);
+            data.frustum = params.frustum;
             
         },
         [=](const GBufferPassData& data, FrameGraphPassResources& resources, void* context)
@@ -241,7 +243,8 @@ GBufferData GBufferRenderer::AddToFrameGraph(
                     terrain->Render(renderEncoder.get(),
                                     data.uniforms.cameraUBO,
                                     objectUBO,
-                                    mGBufferPipeline);
+                                    mGBufferPipeline,
+                                    &data.frustum);
                 }
             }
 

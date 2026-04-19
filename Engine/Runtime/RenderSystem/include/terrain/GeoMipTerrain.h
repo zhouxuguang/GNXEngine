@@ -12,8 +12,19 @@
 
 #include "../RSDefine.h"
 #include "../mesh/Mesh.h"
+#include "Runtime/MathUtil/include/AABB.h"
 
 NS_RENDERSYSTEM_BEGIN
+
+// Patch metadata (public for frustum culling access)
+struct PatchInfo
+{
+    uint32_t startX = 0;
+    uint32_t startZ = 0;
+    float centerX = 0.0f;
+    float centerZ = 0.0f;
+    mathutil::AxisAlignedBoxf worldBounds;  // world-space AABB for frustum culling
+};
 
 class RENDERSYSTEM_API GeoMipTerrain
 {
@@ -50,6 +61,7 @@ public:
     uint32_t GetMaxLOD() const { return mMaxLOD; }
     uint32_t GetPatchCount() const { return (uint32_t)mPatches.size(); }
     uint32_t GetPatchesPerSide() const { return mPatchesPerSide; }
+    const std::vector<PatchInfo>& GetPatches() const { return mPatches; }
     float GetWorldSize() const { return mWorldSize; }
     float GetHeightScale() const { return mHeightScale; }
     uint32_t GetGridSize() const { return mGridSize; }
@@ -118,13 +130,6 @@ private:
     std::vector<LODPermutationInfo> mLODPermutationInfo; // indexed by [lod]
 
     // Patch metadata
-    struct PatchInfo
-    {
-        uint32_t startX = 0;
-        uint32_t startZ = 0;
-        float centerX = 0.0f;
-        float centerZ = 0.0f;
-    };
     std::vector<PatchInfo> mPatches;
 
     // Per-patch LOD info (updated each frame by two-pass algorithm)
