@@ -3,7 +3,7 @@
 //  GNXEngine
 //
 //  Terrain rendering component with dedicated rendering path.
-//  Binds PSO/material once and draws all visible patches in a loop,
+//  Binds PSO/material once and draws all visible leaf nodes,
 //  avoiding the per-submesh PSO rebind overhead of MeshDrawUtil.
 //
 
@@ -31,15 +31,15 @@ TerrainComponent::~TerrainComponent() = default;
 void TerrainComponent::InitFromHeightMap(const char* heightmapPath,
                                           float worldSizeXZ,
                                           float heightScale,
-                                          uint32_t patchSize)
+                                          uint32_t maxLevel)
 {
-    mGeoMipTerrain = GeoMipTerrain::CreateFromHeightMap(
-        heightmapPath, worldSizeXZ, heightScale, patchSize);
+    mQuadTreeTerrain = QuadTreeTerrain::CreateFromHeightMap(
+        heightmapPath, worldSizeXZ, heightScale, maxLevel);
 
-    if (mGeoMipTerrain)
+    if (mQuadTreeTerrain)
     {
-        LOG_INFO("TerrainComponent: Initialized from heightmap '%s', %u patches, %u LOD levels",
-                 heightmapPath, mGeoMipTerrain->GetPatchCount(), mGeoMipTerrain->GetMaxLOD() + 1);
+        LOG_INFO("TerrainComponent: Initialized from heightmap '%s', maxLevel=%u",
+                 heightmapPath, mQuadTreeTerrain->GetMaxLevel());
     }
     else
     {
@@ -50,15 +50,15 @@ void TerrainComponent::InitFromHeightMap(const char* heightmapPath,
 void TerrainComponent::InitProcedural(uint32_t gridSize,
                                        float worldSizeXZ,
                                        float heightScale,
-                                       uint32_t patchSize)
+                                       uint32_t maxLevel)
 {
-    mGeoMipTerrain = GeoMipTerrain::Create(
-        gridSize, worldSizeXZ, heightScale, patchSize);
+    mQuadTreeTerrain = QuadTreeTerrain::Create(
+        gridSize, worldSizeXZ, heightScale, maxLevel);
 
-    if (mGeoMipTerrain)
+    if (mQuadTreeTerrain)
     {
-        LOG_INFO("TerrainComponent: Initialized procedural terrain, %u patches, %u LOD levels",
-                 mGeoMipTerrain->GetPatchCount(), mGeoMipTerrain->GetMaxLOD() + 1);
+        LOG_INFO("TerrainComponent: Initialized procedural terrain, maxLevel=%u",
+                 mQuadTreeTerrain->GetMaxLevel());
     }
 }
 
@@ -78,7 +78,7 @@ void TerrainComponent::SetMaterial(const MaterialPtr& material)
 void TerrainComponent::Update(float deltaTime)
 {
     // LOD update is driven by camera position; the scene system or demo
-    // should call UpdateLOD explicitly when the camera moves.
+    // should call QuadTreeTerrain::Update explicitly when the camera moves.
     // This Update hook is reserved for future use (e.g., vegetation animation).
 }
 
@@ -92,12 +92,12 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
                                GraphicsPipelinePtr basePassPSO,
                                const Frustumf* frustum)
 {
-    if (!mGeoMipTerrain || !mMaterial || !renderEncoder)
+    if (!mQuadTreeTerrain || !mMaterial || !renderEncoder)
     {
         return;
     }
 
-    MeshPtr mesh = mGeoMipTerrain->GetMesh();
+    MeshPtr mesh = mQuadTreeTerrain->GetMesh();
     if (!mesh)
     {
         return;
@@ -112,10 +112,9 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
         return;
     }
 
-    // ---- Bind PSO and shared state ONCE for all patches ----
+    // ---- Bind PSO and shared state ONCE for all leaf nodes ----
     renderEncoder->SetGraphicsPipeline(basePassPSO);
 
-    // 应用线框模式
     if (mWireframe)
     {
         renderEncoder->SetFillMode(FillModeWireframe);
@@ -152,17 +151,16 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
     renderEncoder->SetFragmentTextureAndSampler("gEmissiveMap",   mMaterial->GetTexture("emissiveTexture"),  textureSampler);
     renderEncoder->SetFragmentTextureAndSampler("gAmbientMap",    mMaterial->GetTexture("ambientTexture"),   textureSampler);
 
-    // ---- Draw all visible patches ----
+    // ---- Draw all visible leaf nodes ----
     int subMeshCount = mesh->GetSubMeshCount();
-    GeoMipTerrainPtr terrain = mGeoMipTerrain;
+    const auto& leafBounds = mQuadTreeTerrain->GetLeafBounds();
 
     for (int n = 0; n < subMeshCount; n++)
     {
-        // Per-patch frustum culling
-        if (frustum && terrain && n < (int)terrain->GetPatches().size())
+        // Per-leaf frustum culling
+        if (frustum && n < (int)leafBounds.size())
         {
-            const auto& bounds = terrain->GetPatches()[n].worldBounds;
-            if (!frustum->IsBoxInFrustum(bounds))
+            if (!frustum->IsBoxInFrustum(leafBounds[n]))
                 continue;
         }
 
@@ -186,12 +184,12 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
                                         GraphicsPipelinePtr depthPSO,
                                         const Frustumf* frustum)
 {
-    if (!mGeoMipTerrain || !renderEncoder || !depthPSO)
+    if (!mQuadTreeTerrain || !renderEncoder || !depthPSO)
     {
         return;
     }
 
-    MeshPtr mesh = mGeoMipTerrain->GetMesh();
+    MeshPtr mesh = mQuadTreeTerrain->GetMesh();
     if (!mesh || !mesh->HasChannel(kShaderChannelPosition))
     {
         return;
@@ -209,7 +207,6 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
     // ---- Bind depth PSO and shared state ONCE ----
     renderEncoder->SetGraphicsPipeline(depthPSO);
 
-    // 应用线框模式
     if (mWireframe)
     {
         renderEncoder->SetFillMode(FillModeWireframe);
@@ -222,17 +219,16 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
     // ---- Only bind position vertex buffer ----
     renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
 
-    // ---- Draw all visible patches ----
+    // ---- Draw all visible leaf nodes ----
     int subMeshCount = mesh->GetSubMeshCount();
-    GeoMipTerrainPtr terrain = mGeoMipTerrain;
+    const auto& leafBounds = mQuadTreeTerrain->GetLeafBounds();
 
     for (int n = 0; n < subMeshCount; n++)
     {
-        // Per-patch frustum culling
-        if (frustum && terrain && n < (int)terrain->GetPatches().size())
+        // Per-leaf frustum culling
+        if (frustum && n < (int)leafBounds.size())
         {
-            const auto& bounds = terrain->GetPatches()[n].worldBounds;
-            if (!frustum->IsBoxInFrustum(bounds))
+            if (!frustum->IsBoxInFrustum(leafBounds[n]))
                 continue;
         }
 
@@ -252,18 +248,26 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
 
 float TerrainComponent::GetHeight(float worldX, float worldZ) const
 {
-    if (!mGeoMipTerrain)
+    if (!mQuadTreeTerrain)
     {
         return 0.0f;
     }
-    return mGeoMipTerrain->GetHeight(worldX, worldZ);
+    return mQuadTreeTerrain->GetHeight(worldX, worldZ);
 }
 
-void TerrainComponent::SetLODDistances(const std::vector<float>& distances)
+void TerrainComponent::SetLODDistanceFactor(float factor)
 {
-    if (mGeoMipTerrain)
+    if (mQuadTreeTerrain)
     {
-        mGeoMipTerrain->SetLODDistances(distances);
+        mQuadTreeTerrain->SetLODDistanceFactor(factor);
+    }
+}
+
+void TerrainComponent::SetSSEThreshold(float threshold)
+{
+    if (mQuadTreeTerrain)
+    {
+        mQuadTreeTerrain->SetSSEThreshold(threshold);
     }
 }
 

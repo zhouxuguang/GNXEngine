@@ -109,7 +109,7 @@ static RenderSystem::SkyBox* CreateDefaultSkybox()
 static const uint32_t kTerrainResolution = 512;
 static const float   kTerrainWorldSize  = 163840.0f;
 static const float   kTerrainHeightScale = 0.5f;
-static const uint32_t kPatchSize = 33;
+static const uint32_t kMaxQuadTreeLevel = 10;
 
 //=============================================================================
 // Implementation
@@ -160,23 +160,23 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
         sceneManager->GetSkyBox()->AttachSkyBoxObject(mSkyBox);
     }
 
-    // ---- Terrain (GeoMipMapping with LOD, TerrainComponent) ----
+    // ---- Terrain (QuadTree with adaptive LOD, TerrainComponent) ----
     std::string heightmapPath = GetProjectAssetDir() + "terrain/ps_height_1k.png";
     std::string texturePath   = GetProjectAssetDir() + "terrain/ps_texture_1k.png";
 
-    LOG_INFO("Generating GeoMipMapping terrain (worldSize=%.0f, heightScale=%.1f, patchSize=%u)...",
-             kTerrainWorldSize, kTerrainHeightScale, kPatchSize);
+    LOG_INFO("Generating QuadTree terrain (worldSize=%.0f, heightScale=%.1f, maxLevel=%u)...",
+             kTerrainWorldSize, kTerrainHeightScale, kMaxQuadTreeLevel);
 
     // Create TerrainComponent and initialize from heightmap
     mTerrainComponent = new RenderSystem::TerrainComponent();
     mTerrainComponent->InitFromHeightMap(
-        heightmapPath.c_str(), kTerrainWorldSize, kTerrainHeightScale, kPatchSize);
+        heightmapPath.c_str(), kTerrainWorldSize, kTerrainHeightScale, kMaxQuadTreeLevel);
 
     if (!mTerrainComponent->IsInitialized())
     {
         LOG_WARN("Failed to load heightmap, falling back to procedural terrain");
         mTerrainComponent->InitProcedural(
-            kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale, kPatchSize);
+            kTerrainResolution, kTerrainWorldSize, kTerrainHeightScale, kMaxQuadTreeLevel);
     }
 
     // Load diffuse texture from image, or generate procedural one as fallback
@@ -225,14 +225,16 @@ void TerrainFrameWork::RenderFrame()
 
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
 
-    // Update terrain LOD based on camera position
+    // Update terrain LOD based on camera position and screen-space error
     if (mTerrainComponent && mTerrainComponent->IsInitialized())
     {
         RenderSystem::CameraPtr camera = sceneManager->GetCamera("MainCamera");
         if (camera)
         {
             mathutil::Vector3f camPos = camera->GetPosition();
-            mTerrainComponent->GetGeoMipTerrain()->UpdateLOD(camPos);
+            float fovY = camera->GetFOV();
+            mathutil::Vector2i viewSize = camera->GetViewSize();
+            mTerrainComponent->GetQuadTreeTerrain()->Update(camPos, fovY, (float)viewSize.y);
         }
     }
 
