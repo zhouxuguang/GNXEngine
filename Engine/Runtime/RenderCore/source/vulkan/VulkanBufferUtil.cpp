@@ -148,14 +148,15 @@ void VulkanBufferUtil::CreateBufferVMA(VmaAllocator vmaAllocator,
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VmaAllocationCreateInfo allocInfo = {};
+    allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     if (storageMode == StorageModePrivate)
     {
-        allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+        allocInfo.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     }
     else
     {
-        allocInfo.usage = VMA_MEMORY_USAGE_CPU_ONLY;
-        allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+        allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT
+                        | VMA_ALLOCATION_CREATE_MAPPED_BIT;
     }
     allocInfo.requiredFlags = properties;
 
@@ -190,7 +191,7 @@ void VulkanBufferUtil::CreateImage2DVMA(VmaAllocator vmaAllocator,
     imageInfo.flags = 0;
 
     VmaAllocationCreateInfo imageAllocCreateInfo = {};
-    imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
     imageAllocCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     if (usage & VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT)
     {
@@ -229,7 +230,7 @@ void VulkanBufferUtil::CreateImageCube(VmaAllocator vmaAllocator,
     imageCreateInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
     
     VmaAllocationCreateInfo imageAllocCreateInfo = {};
-    imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
     imageAllocCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     
     vmaCreateImage(vmaAllocator, &imageCreateInfo, &imageAllocCreateInfo, &image, &allocation, nullptr);
@@ -241,7 +242,7 @@ VkResult VulkanBufferUtil::CreateImageGeneral(VmaAllocator vmaAllocator,
                             VmaAllocation& allocation)
 {
     VmaAllocationCreateInfo imageAllocCreateInfo = {};
-    imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
     imageAllocCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     
     return vmaCreateImage(vmaAllocator, &imageCreateInfo, &imageAllocCreateInfo, &image, &allocation, nullptr);

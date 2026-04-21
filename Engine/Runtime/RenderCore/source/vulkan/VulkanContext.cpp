@@ -726,7 +726,7 @@ void CreateVMA(VulkanContext& context)
     vmaAllocatorCreateInfo.pDeviceMemoryCallbacks = nullptr;
     vmaAllocatorCreateInfo.preferredLargeHeapBlockSize = 128 * 1024 * 1024;
     vmaAllocatorCreateInfo.pHeapSizeLimit = nullptr;
-    vmaAllocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_0;
+    vmaAllocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_1;
     VmaVulkanFunctions vmaVulkanFunctions;
     GetVulkanFunctions(context.device, vmaVulkanFunctions);
     vmaAllocatorCreateInfo.pVulkanFunctions = &vmaVulkanFunctions;
