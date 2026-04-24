@@ -289,7 +289,7 @@ SSAOOutput SSAOPass::AddToFrameGraph(
             renderEncoder->SetFragmentTextureAndSampler("gDepth", depthTexture.texture, mGBufferSampler);
             renderEncoder->SetFragmentTextureAndSampler("texNoise", data.noiseTexture, mNoiseSampler);
             
-            renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
+            renderEncoder->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
             renderEncoder->EndEncode();
         }
     );
@@ -355,7 +355,7 @@ SSAOOutput SSAOPass::AddToFrameGraph(
                     renderEncoder->SetFragmentUniformBuffer("cbPerCamera", params.cameraUBO);
                 }
                 
-                renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
+                renderEncoder->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
                 renderEncoder->EndEncode();
             }
         );

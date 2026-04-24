@@ -1,4 +1,4 @@
-﻿//
+//
 //  DeferredLightingPass.cpp
 //  GNXEngine
 //
@@ -334,7 +334,7 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             
             // 绘制全屏三角形（3个顶点）
             // Shader中使用SV_VertexID生成顶点，不需要顶点缓冲区
-            renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
+            renderEncoder->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
             
             renderEncoder->EndEncode();
         }

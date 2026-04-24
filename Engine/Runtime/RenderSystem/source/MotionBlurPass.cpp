@@ -130,7 +130,7 @@ MotionBlurOutput MotionBlurPass::AddToFrameGraph(
             renderEncoder->SetFragmentTextureAndSampler("gColorTexture", colorTexture.texture, mColorSampler);
             renderEncoder->SetFragmentTextureAndSampler("gDepthTexture", depthTexture.texture, mDepthSampler);
             
-            renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
+            renderEncoder->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
             renderEncoder->EndEncode();
         }
     );

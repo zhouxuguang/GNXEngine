@@ -63,6 +63,6 @@ void ExecuteHWRasterizePass(RenderCore::CommandBufferPtr commandBuffer,
     renderEncoder->SetStorageBuffer("ClusterPageData", clusterPageData, RenderCore::ShaderStage::ShaderStage_Vertex);
     renderEncoder->SetStorageBuffer("MainAndPostNodeAndClusterBatches", mainAndPostNodeAndClusterBatches, RenderCore::ShaderStage::ShaderStage_Vertex);
     
-    renderEncoder->DrawPrimitvesIndirect(PrimitiveMode_TRIANGLES, drawArgs, 0, 1, sizeof(DrawIndirectCommand));
+    renderEncoder->DrawPrimitivesIndirect(PrimitiveMode_TRIANGLES, drawArgs, 0, 1, sizeof(DrawIndirectCommand));
     renderEncoder->EndEncode();
 }

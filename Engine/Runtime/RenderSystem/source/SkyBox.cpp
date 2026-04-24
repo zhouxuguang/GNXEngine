@@ -235,7 +235,7 @@ void SkyBox::Render(const RenderEncoderPtr &renderEncoder, UniformBufferPtr came
     renderEncoder->SetFragmentTextureAndSampler("gCubeMap", mTextureCube, mTextureSampler);
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
     
-    renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 36);
+    renderEncoder->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 36);
 }
 
 void SkyBox::initBuffers(RenderDevicePtr renderDevice)

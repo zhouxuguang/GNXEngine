@@ -47,7 +47,7 @@ public:
     
     virtual void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer, ShaderStage stage);
     
-    virtual void DrawPrimitvesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
+    virtual void DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
         uint32_t drawCount, uint32_t stride);
 
     virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
@@ -94,9 +94,9 @@ public:
      @param offset offset description
      @param size size description
      */
-    virtual void DrawPrimitves(PrimitiveMode mode, int offset, int size);
+    virtual void DrawPrimitives(PrimitiveMode mode, int offset, int size);
     
-    virtual void DrawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount);
+    virtual void DrawInstancePrimitives(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount);
     
     /**
      draw funton with index

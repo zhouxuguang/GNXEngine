@@ -73,7 +73,7 @@ public:
      * @param drawCount 绘制次数
      * @param stride 步长
      */
-    virtual void DrawPrimitvesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset, 
+    virtual void DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset, 
             uint32_t drawCount, uint32_t stride) = 0;
 
     /**
@@ -133,7 +133,7 @@ public:
      @param offset offset description
      @param size size description
      */
-    virtual void DrawPrimitves(PrimitiveMode mode, int offset, int size) = 0;
+    virtual void DrawPrimitives(PrimitiveMode mode, int offset, int size) = 0;
 
     /**
      draw function with instance
@@ -144,7 +144,7 @@ public:
      @param firstInstance 第一个实例的索引
      @param instanceCount 实例的个数
      */
-    virtual void DrawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount) = 0;
+    virtual void DrawInstancePrimitives(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount) = 0;
     
     /**
      draw function with index

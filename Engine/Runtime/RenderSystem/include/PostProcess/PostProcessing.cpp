@@ -48,7 +48,7 @@ void PostProcessing::Process(const RenderEncoderPtr &renderEncoder)
     renderEncoder->SetGraphicsPipeline(mPipeline);
     renderEncoder->SetFragmentTextureAndSampler("texImage", mTexture, mTextureSampler);
     
-    renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
+    renderEncoder->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
 }
 
 NS_RENDERSYSTEM_END

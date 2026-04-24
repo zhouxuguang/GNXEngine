@@ -33,5 +33,5 @@ void ExecuteSwapChainPass(RenderCore::CommandBufferPtr commandBuffer,
 	SCOPED_DEBUGMARKER_EVENT(commandBuffer, "SwapChain", color);
 	renderEncoder->SetGraphicsPipeline(sPSO);
     renderEncoder->SetFragmentTextureAndSampler("texImage", visBuffer, sSam);
-	renderEncoder->DrawPrimitves(PrimitiveMode_TRIANGLES, 0, 3);
+	renderEncoder->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
 }

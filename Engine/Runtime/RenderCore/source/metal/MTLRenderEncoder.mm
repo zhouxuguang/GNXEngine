@@ -341,13 +341,13 @@ static MTLPrimitiveType ConvertPrimitiveType(const PrimitiveMode mode)
  @param offset offset description
  @param size size description
  */
-void MTLRenderEncoder::DrawPrimitves(PrimitiveMode mode, int offset, int size)
+void MTLRenderEncoder::DrawPrimitives(PrimitiveMode mode, int offset, int size)
 {
     [mRenderEncoder drawPrimitives: ConvertPrimitiveType(mode)
                                                  vertexStart:offset vertexCount:size];
 }
 
-void MTLRenderEncoder::DrawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount)
+void MTLRenderEncoder::DrawInstancePrimitives(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount)
 {
     [mRenderEncoder drawPrimitives: ConvertPrimitiveType(mode) vertexStart : offset vertexCount : size
                     instanceCount : instanceCount baseInstance : firstInstance];
@@ -421,7 +421,7 @@ void MTLRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int siz
 }
 
 // RCBuffer版本的间接绘制
-void MTLRenderEncoder::DrawPrimitvesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
+void MTLRenderEncoder::DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
         uint32_t drawCount, uint32_t stride)
 {
     if (!buffer)

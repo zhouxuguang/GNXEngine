@@ -642,7 +642,7 @@ void VKRenderEncoder::SetFragmentUniformBuffer(const std::string& resourceName, 
 	shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
 }
 
-void VKRenderEncoder::DrawPrimitves(PrimitiveMode mode, int offset, int size)
+void VKRenderEncoder::DrawPrimitives(PrimitiveMode mode, int offset, int size)
 {
     //设置图元拓扑类型，需要使用扩展动态状态
 #if 0
@@ -679,7 +679,7 @@ void VKRenderEncoder::DrawPrimitves(PrimitiveMode mode, int offset, int size)
     vkCmdDraw(mCommandBuffer, size, 1, offset, 0);
 }
 
-void VKRenderEncoder::DrawInstancePrimitves(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount)
+void VKRenderEncoder::DrawInstancePrimitives(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount)
 {
 	//设置图元拓扑类型，需要使用扩展动态状态
 	if (mContext->vulkanExtension.enabledExtendedDynamicState)
@@ -803,7 +803,7 @@ void VKRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size
 }
 
 // RCBuffer版本的间接绘制
-void VKRenderEncoder::DrawPrimitvesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
+void VKRenderEncoder::DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
 {
     VKRCBufferPtr vkBuffer = std::dynamic_pointer_cast<VKRCBuffer>(buffer);
     if (!vkBuffer || !vkBuffer->GetVkBuffer())
