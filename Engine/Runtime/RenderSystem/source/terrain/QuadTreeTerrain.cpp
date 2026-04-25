@@ -584,6 +584,45 @@ void QuadTreeTerrain::GenerateLeafMesh()
 }
 
 //=============================================================================
+// BuildPatchInstances - build instance data for GPU instanced rendering.
+//
+// For each visible leaf that passes frustum culling, emits a PatchInstanceData
+// entry containing {baseVertex, indexStart}. The shader uses this
+// with SV_InstanceID to perform manual vertex fetch from SSBOs.
+//
+// NOTE: indexCount is NOT included — the shader uses the uniform dummy IB size
+//       (mUniformPatchIndexCount) as the per-instance vertex count via SV_VertexID.
+//       This struct layout MUST match the HLSL PatchInstanceData exactly.
+//=============================================================================
+
+void QuadTreeTerrain::BuildPatchInstances(const Frustumf* frustum)
+{
+    mPatchInstances.clear();
+
+    if (!mMesh) return;
+
+    int subMeshCount = mMesh->GetSubMeshCount();
+    const auto& leafBounds = GetLeafBounds();
+
+    for (int n = 0; n < subMeshCount; ++n)
+    {
+        // Per-leaf frustum culling (same logic as TerrainComponent::Render)
+        if (frustum && n < (int)leafBounds.size())
+        {
+            if (!frustum->IsBoxInFrustum(leafBounds[n]))
+                continue;
+        }
+
+        const SubMeshInfo& subInfo = mMesh->GetSubMeshInfo(n);
+
+        PatchInstanceData patch;
+        patch.baseVertex  = subInfo.baseVertex;
+        patch.indexStart  = subInfo.firstIndex;
+        mPatchInstances.push_back(patch);
+    }
+}
+
+//=============================================================================
 // CreateTriangleFanLocal - generate triangles for a single fan-cell with crack fixing.
 //
 // Outputs SEMI-LOCAL indices: uses GLOBAL row stride (mGridSize) but LEAF-LOCAL
@@ -705,6 +744,7 @@ void QuadTreeTerrain::BuildStaticIndexPool()
 
     uint32_t fanCellsPerSide = minNodeCells / 2;  // always 8
 
+    // ---- Phase 1: Generate all index entries ----
     for (uint32_t level = 0; level <= maxStrideLevel; ++level)
     {
         uint32_t stride = 1u << level;
@@ -754,6 +794,54 @@ void QuadTreeTerrain::BuildStaticIndexPool()
                  level, stride, leafSizeCells);
     }
 
+    // ---- Phase 2: Pad all entries to UNIFORM index count ----
+    //
+    // CRITICAL for GPU instanced rendering: DrawIndexedInstancePrimitives uses a
+    // SINGLE index count for ALL instances. If patches have different index counts
+    // (which they do — coarser neighbors mean fewer triangles per edge), then
+    // shorter patches would read out-of-bounds into neighboring entries' data.
+    //
+    // Fix: pad every entry to the maximum count by appending degenerate triangles
+    // (repeating the last valid index creates zero-area triangles → no fragments).
+    {
+        uint32_t maxCount = 0;
+        for (uint32_t level = 0; level < numLevels; ++level)
+            for (uint32_t perm = 0; perm < 16; ++perm)
+                if (mIndexPool[level][perm].count > maxCount)
+                    maxCount = mIndexPool[level][perm].count;
+
+        if (maxCount > 0)
+        {
+            mUniformPatchIndexCount = maxCount;
+
+            for (uint32_t level = 0; level < numLevels; ++level)
+            {
+                for (uint32_t perm = 0; perm < 16; ++perm)
+                {
+                    IndexPoolEntry& entry = mIndexPool[level][perm];
+                    if (entry.count >= maxCount)
+                        continue;  // already at max size
+
+                    // Pad with degenerate triangles: repeat last index
+                    uint32_t lastIdx = mMasterIndices[entry.start + entry.count - 1];
+                    uint32_t padCount = maxCount - entry.count;
+                    // Ensure 3-index alignment for complete degenerate triangles
+                    while ((entry.count + padCount) % 3 != 0) { ++padCount; }
+                    // Actually just pad to exact maxCount — driver handles partial primitives
+                    padCount = maxCount - entry.count;
+
+                    for (uint32_t p = 0; p < padCount; ++p)
+                        mMasterIndices.push_back(lastIdx);
+
+                    entry.count = maxCount;  // update to padded size
+                }
+            }
+
+            LOG_INFO("QuadTreeTerrain: Padded all index pool entries to uniform count: %u indices/patch",
+                     maxCount);
+        }
+    }
+
     // Upload master index buffer to GPU — ONCE
     if (!mMasterIndices.empty())
     {
@@ -761,9 +849,10 @@ void QuadTreeTerrain::BuildStaticIndexPool()
     }
 
     LOG_INFO("QuadTreeTerrain: Static index pool complete: %u levels x 16 perms = %u entries, "
-             "%u total indices (%.1f KB)",
+             "%u total indices (%.1f KB), uniform count=%u",
              numLevels, numLevels * 16, (uint32_t)mMasterIndices.size(),
-             (uint32_t)mMasterIndices.size() * sizeof(uint32_t) / 1024.0f);
+             (uint32_t)mMasterIndices.size() * sizeof(uint32_t) / 1024.0f,
+             mUniformPatchIndexCount);
 }
 
 //=============================================================================
