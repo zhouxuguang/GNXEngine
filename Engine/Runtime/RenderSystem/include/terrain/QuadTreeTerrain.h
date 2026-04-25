@@ -98,8 +98,25 @@ private:
     uint32_t GetMaxNeighborLevel(const Node* node, int direction) const;
     void EnforceNeighborConstraint();
 
+    // Per-leaf neighbor LOD info for crack-fixing triangle fan
+    struct LeafNeighborInfo 
+    {
+        uint8_t leftCoarser   = 0;  // 1 if left  neighbor (-X) is coarser (lower level)
+        uint8_t rightCoarser  = 0;  // 1 if right neighbor (+X) is coarser
+        uint8_t topCoarser    = 0;  // 1 if top   neighbor (-Z) is coarser
+        uint8_t bottomCoarser = 0;  // 1 if bottom neighbor (+Z) is coarser
+    };
+
     // Build index buffer and SubMeshInfo list from current leaf nodes
     void GenerateLeafMesh();
+
+    // Generate triangle-fan indices for a single fan-cell (crack-fixing aware)
+    // (fcx, fcz) = fan-cell top-left origin, stride = half fan-cell size
+    void CreateTriangleFan(std::vector<uint32_t>& indices,
+                           uint32_t fcx, uint32_t fcz,
+                           uint32_t stride, uint32_t gridSize,
+                           bool leftCoarser, bool rightCoarser,
+                           bool topCoarser, bool bottomCoarser);
 
     // Procedural height function
     static float ComputeHeight(float x, float z);
@@ -116,6 +133,7 @@ private:
     Node mRoot;
     std::vector<Node*> mLeafNodes;   // collected each frame for rendering
     std::vector<mathutil::AxisAlignedBoxf> mLeafBounds; // AABB per leaf, for frustum culling
+    std::vector<LeafNeighborInfo> mLeafNeighborInfo;     // neighbor LOD info per leaf
 
     // GPU resources
     MeshPtr mMesh;

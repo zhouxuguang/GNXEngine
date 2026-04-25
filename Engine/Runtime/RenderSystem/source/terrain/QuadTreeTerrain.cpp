@@ -526,6 +526,7 @@ void QuadTreeTerrain::CollectLeaves(Node* node)
 
 //=============================================================================
 // GenerateLeafMesh - build index buffer and SubMeshInfo from leaf nodes
+// Uses triangle-fan-per-cell with crack fixing (like GeoMipTerrain).
 //=============================================================================
 
 void QuadTreeTerrain::GenerateLeafMesh()
@@ -538,8 +539,11 @@ void QuadTreeTerrain::GenerateLeafMesh()
     mLeafBounds.clear();
     mLeafBounds.reserve(mLeafNodes.size());
 
-    for (Node* leaf : mLeafNodes)
+    for (size_t idx = 0; idx < mLeafNodes.size(); ++idx)
     {
+        Node* leaf = mLeafNodes[idx];
+        const LeafNeighborInfo& nbrInfo = mLeafNeighborInfo[idx];
+
         // Compute stride for this leaf's LOD level.
         // Each leaf renders kLeafVerticesPerSide vertices per side.
         // stride = leaf->size / (kLeafVerticesPerSide - 1)
@@ -549,25 +553,38 @@ void QuadTreeTerrain::GenerateLeafMesh()
 
         uint32_t indexStart = (uint32_t)indices.size();
 
-        // Generate triangle indices for a regular grid
-        for (uint32_t j = 0; j < vps - 1; ++j)
+        // Generate triangle-fan indices for each fan-cell in this leaf's grid.
+        //
+        // Each leaf renders kLeafVerticesPerSide=17 vertices per side → 16×16 quads.
+        // We group quads into 2×2 blocks to form "fan-cells": 8×8 fan-cells per leaf.
+        // Each fan-cell is 2*stride × 2*stride grid units, with the fan center at
+        // (origin + stride, origin + stride) — a real vertex on the heightmap grid.
+        //
+        // This matches GeoMipTerrain's approach where FanStep = 2 * StepCenter.
+        uint32_t fanCellsPerSide = (kLeafVerticesPerSide - 1) / 2; // = 8
+
+        for (uint32_t fj = 0; fj < fanCellsPerSide; ++fj)
         {
-            for (uint32_t i = 0; i < vps - 1; ++i)
+            for (uint32_t fi = 0; fi < fanCellsPerSide; ++fi)
             {
-                // Absolute vertex indices in the shared vertex buffer
-                uint32_t v00 = (leaf->z + j * stride) * mGridSize + (leaf->x + i * stride);
-                uint32_t v10 = (leaf->z + j * stride) * mGridSize + (leaf->x + (i + 1) * stride);
-                uint32_t v01 = (leaf->z + (j + 1) * stride) * mGridSize + (leaf->x + i * stride);
-                uint32_t v11 = (leaf->z + (j + 1) * stride) * mGridSize + (leaf->x + (i + 1) * stride);
+                // Fan-cell origin (top-left corner in absolute grid coords)
+                uint32_t fcx = leaf->x + fi * 2 * stride;
+                uint32_t fcz = leaf->z + fj * 2 * stride;
 
-                // Two triangles per quad
-                indices.push_back(v00);
-                indices.push_back(v01);
-                indices.push_back(v10);
+                // Determine if this fan-cell touches a leaf boundary
+                bool onLeftEdge   = (fi == 0);
+                bool onRightEdge  = (fi == fanCellsPerSide - 1);
+                bool onBottomEdge = (fj == 0);
+                bool onTopEdge    = (fj == fanCellsPerSide - 1);
 
-                indices.push_back(v10);
-                indices.push_back(v01);
-                indices.push_back(v11);
+                // Coarser flags: only active when on the corresponding edge
+                bool leftC   = onLeftEdge   && (nbrInfo.leftCoarser   != 0);
+                bool rightC  = onRightEdge  && (nbrInfo.rightCoarser  != 0);
+                bool topC    = onTopEdge    && (nbrInfo.topCoarser    != 0);
+                bool bottomC = onBottomEdge && (nbrInfo.bottomCoarser != 0);
+
+                CreateTriangleFan(indices, fcx, fcz, stride, mGridSize,
+                                  leftC, rightC, topC, bottomC);
             }
         }
 
@@ -586,6 +603,125 @@ void QuadTreeTerrain::GenerateLeafMesh()
     {
         mMesh->UpdateIndices(indices.data(), indices.size());
     }
+}
+
+//=============================================================================
+// CreateTriangleFan - generate triangles for a single fan-cell with crack fixing.
+//
+// Each fan-cell covers a 2*stride × 2*stride grid region with its center at
+// (fcx + stride, fcz + stride) — a real vertex on the heightmap grid.
+//
+// Generates 4-8 triangles centered on the fan-cell's center vertex.
+// Each of the 4 sectors (up/right/down/left) has:
+//   - A "first" triangle (always generated)
+//   - A "second" triangle (only if that neighbor is NOT coarser)
+//
+// When a neighbor is coarser, we use 2*stride (= full fan-cell edge) on that
+// edge and skip the second triangle. This avoids T-junctions because the
+// coarser neighbor doesn't have vertices at the mid-edge positions.
+//
+// This matches GeoMipTerrain::CreateTriangleFan where:
+//   our (fcx,fcz,stride) ↔ their (x, z, StepCenter)
+//   our fan-cell size (2*stride) ↔ their FanStep (2*StepCenter)
+//
+// All indices are ABSOLUTE into the global terrain vertex buffer.
+//=============================================================================
+
+void QuadTreeTerrain::CreateTriangleFan(
+    std::vector<uint32_t>& indices,
+    uint32_t fcx, uint32_t fcz,      // fan-cell origin: top-left corner (absolute grid coords)
+    uint32_t stride,                 // half of fan-cell size; center = origin + stride
+    uint32_t gridSize,
+    bool leftCoarser,               // left  neighbor (-X) is coarser?
+    bool rightCoarser,              // right neighbor (+X) is coarser?
+    bool topCoarser,                // top   neighbor (-Z) is coarser?
+    bool bottomCoarser)             // bottom neighbor (+Z) is coarser?
+{
+    // Effective step per direction: double stride when neighbor is coarser.
+    // Normal step = stride (half fan-cell). Coarser step = 2*stride (full fan-cell),
+    // which skips the mid-edge vertex that the coarser neighbor lacks.
+    uint32_t sLeft   = leftCoarser   ? 2 * stride : stride;
+    uint32_t sRight  = rightCoarser  ? 2 * stride : stride;
+    uint32_t sTop    = topCoarser    ? 2 * stride : stride;
+    uint32_t sBottom = bottomCoarser ? 2 * stride : stride;
+
+    // Fan center: real vertex at (origin + stride, origin + stride)
+    uint32_t idxCenter = (fcz + stride) * gridSize + (fcx + stride);
+
+    // ---- Sector 1: UP — left edge of fan-cell, traversing downward ----
+    // first up: from top-left corner, one step down along left edge
+    uint32_t t1 = fcz * gridSize + fcx;                  // TL corner
+    uint32_t t2 = (fcz + sLeft) * gridSize + fcx;       // down-left
+    indices.push_back(idxCenter);
+    indices.push_back(t1);
+    indices.push_back(t2);
+
+    // second up: continue another step down (skip if left neighbor is coarser)
+    if (!leftCoarser)
+    {
+        t1 = t2;
+        t2 += sLeft * gridSize;
+        indices.push_back(idxCenter);
+        indices.push_back(t1);
+        indices.push_back(t2);
+    }
+    // After sector 1: t2 is at BL corner (or mid-left if coarser)
+
+    // ---- Sector 2: RIGHT — top edge of fan-cell, traversing rightward ----
+    // first right: continue from end of sector 1, one step right along top
+    t1 = t2;
+    t2 += sTop;
+    indices.push_back(idxCenter);
+    indices.push_back(t1);
+    indices.push_back(t2);
+
+    // second right: continue another step right (skip if top neighbor is coarser)
+    if (!topCoarser)
+    {
+        t1 = t2;
+        t2 += sTop;
+        indices.push_back(idxCenter);
+        indices.push_back(t1);
+        indices.push_back(t2);
+    }
+    // After sector 2: t2 is at TR or BR area
+
+    // ---- Sector 3: DOWN — right edge of fan-cell, traversing upward ----
+    // first right-down: continue, one step UP along right edge
+    t1 = t2;
+    t2 -= sRight * gridSize;
+    indices.push_back(idxCenter);
+    indices.push_back(t1);
+    indices.push_back(t2);
+
+    // second down: continue another step up (skip if right neighbor is coarser)
+    if (!rightCoarser)
+    {
+        t1 = t2;
+        t2 -= sRight * gridSize;
+        indices.push_back(idxCenter);
+        indices.push_back(t1);
+        indices.push_back(t2);
+    }
+
+    // ---- Sector 4: LEFT — bottom edge of fan-cell, traversing leftward ----
+    // first left: continue, one step left along bottom edge
+    t1 = t2;
+    t2 -= sBottom;
+    indices.push_back(idxCenter);
+    indices.push_back(t1);
+    indices.push_back(t2);
+
+    // second left: continue another step left (skip if bottom neighbor is coarser)
+    if (!bottomCoarser)
+    {
+        t1 = t2;
+        t2 -= sBottom;
+        indices.push_back(idxCenter);
+        indices.push_back(t1);
+        indices.push_back(t2);
+    }
+    // After sector 4: t2 should loop back to (or past) TL corner — chain complete
 }
 
 //=============================================================================
@@ -802,6 +938,26 @@ void QuadTreeTerrain::Update(const Vector3f& cameraPos,
     // Collect all leaf nodes
     mLeafNodes.clear();
     CollectLeaves(&mRoot);
+
+    // Compute neighbor LOD info for each leaf (for crack-fixing fan)
+    mLeafNeighborInfo.resize(mLeafNodes.size());
+    for (size_t i = 0; i < mLeafNodes.size(); ++i)
+    {
+        Node* leaf = mLeafNodes[i];
+        LeafNeighborInfo& info = mLeafNeighborInfo[i];
+
+        // direction: 0=left(-X), 1=right(+X), 2=bottom(+Z), 3=top(-Z)
+        uint32_t nbrLeft   = GetMaxNeighborLevel(leaf, 0);
+        uint32_t nbrRight  = GetMaxNeighborLevel(leaf, 1);
+        uint32_t nbrBottom = GetMaxNeighborLevel(leaf, 2);
+        uint32_t nbrTop    = GetMaxNeighborLevel(leaf, 3);
+
+        // Neighbor is coarser if its level is LOWER than ours
+        info.leftCoarser   = (nbrLeft   < leaf->level) ? 1 : 0;
+        info.rightCoarser  = (nbrRight  < leaf->level) ? 1 : 0;
+        info.topCoarser    = (nbrTop    < leaf->level) ? 1 : 0;
+        info.bottomCoarser = (nbrBottom < leaf->level) ? 1 : 0;
+    }
 
     // Build mesh from leaves
     GenerateLeafMesh();
