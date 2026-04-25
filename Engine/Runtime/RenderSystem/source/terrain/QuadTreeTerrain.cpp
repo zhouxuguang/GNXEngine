@@ -616,7 +616,7 @@ void QuadTreeTerrain::CreateTriangleFanLocal(
     // Fan center in semi-local coords (global row stride, leaf-local offsets)
     uint32_t idxCenter = (fcz + stride) * globalGridSize + (fcx + stride);
 
-    // ---- Sector 1: UP — left edge, traversing downward ----
+    // ---- Sector 1: LEFT edge (from TL to BL), traversing downward ----
     uint32_t t1 = fcz * globalGridSize + fcx;
     uint32_t t2 = (fcz + sLeft) * globalGridSize + fcx;
     indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
@@ -627,18 +627,20 @@ void QuadTreeTerrain::CreateTriangleFanLocal(
         indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
     }
 
-    // ---- Sector 2: RIGHT — top edge, traversing rightward ----
-    t1 = t2; t2 += sTop;
+    // ---- Sector 2: BOTTOM edge (from BL to BR), traversing rightward ----
+    // Continue from Sector 1's end
+    t1 = t2; t2 = t1 + sBottom;
     indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
 
-    if (!topCoarser)
+    if (!bottomCoarser)
     {
-        t1 = t2; t2 += sTop;
+        t1 = t2; t2 += sBottom;
         indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
     }
 
-    // ---- Sector 3: DOWN — right edge, traversing upward ----
-    t1 = t2; t2 -= sRight * globalGridSize;
+    // ---- Sector 3: RIGHT edge (from BR to TR), traversing upward ----
+    // Continue from Sector 2's end
+    t1 = t2; t2 = t1 - sRight * globalGridSize;
     indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
 
     if (!rightCoarser)
@@ -647,13 +649,14 @@ void QuadTreeTerrain::CreateTriangleFanLocal(
         indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
     }
 
-    // ---- Sector 4: LEFT — bottom edge, traversing leftward ----
-    t1 = t2; t2 -= sBottom;
+    // ---- Sector 4: TOP edge (from TR to TL), traversing leftward ----
+    // Continue from Sector 3's end
+    t1 = t2; t2 = t1 - sTop;
     indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
 
-    if (!bottomCoarser)
+    if (!topCoarser)
     {
-        t1 = t2; t2 -= sBottom;
+        t1 = t2; t2 -= sTop;
         indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
     }
 }
@@ -726,10 +729,12 @@ void QuadTreeTerrain::BuildStaticIndexPool()
                     uint32_t fcz = fj * 2 * stride;
 
                     // Edge detection within the leaf's fan-cell grid
+                    // fj=0 → fcz=0 → smallest Z → TOP edge (-Z)
+                    // fj=max → largest Z → BOTTOM edge (+Z)
                     bool onLeftEdge   = (fi == 0);
                     bool onRightEdge  = (fi == fanCellsPerSide - 1);
-                    bool onBottomEdge = (fj == 0);
-                    bool onTopEdge    = (fj == fanCellsPerSide - 1);
+                    bool onTopEdge    = (fj == 0);
+                    bool onBottomEdge = (fj == fanCellsPerSide - 1);
 
                     bool lC = onLeftEdge   && leftC;
                     bool rC = onRightEdge  && rightC;
