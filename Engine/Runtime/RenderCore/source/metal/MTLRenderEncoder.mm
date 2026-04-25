@@ -486,17 +486,25 @@ void MTLRenderEncoder::DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY,
     // threadsPerObjectThreadgroup 从 pipeline descriptor 中获取
     // Metal mesh shader 的线程组大小由 pipeline 创建时确定
     MTLGraphicsPipeline* pipeline = mMtlGraphicsPipeline.get();
-    uint32_t threadsX = pipeline->GetDesc().meshThreadgroupSizeX;
-    uint32_t threadsY = pipeline->GetDesc().meshThreadgroupSizeY;
-    uint32_t threadsZ = pipeline->GetDesc().meshThreadgroupSizeZ;
-    MTLSize threadsPerObjectThreadgroup = MTLSizeMake(
-        threadsX > 0 ? threadsX : 1,
-        threadsY > 0 ? threadsY : 1,
-        threadsZ > 0 ? threadsZ : 1
+    uint32_t meshThreadsX = pipeline->GetDesc().meshThreadgroupSizeX;
+    uint32_t meshThreadsY = pipeline->GetDesc().meshThreadgroupSizeY;
+    uint32_t meshThreadsZ = pipeline->GetDesc().meshThreadgroupSizeZ;
+    MTLSize threadsPerMeshThreadgroup = MTLSizeMake(
+        meshThreadsX > 0 ? meshThreadsX : 1,
+        meshThreadsY > 0 ? meshThreadsY : 1,
+        meshThreadsZ > 0 ? meshThreadsZ : 1
     );
-    
-//    [mRenderEncoder drawMeshThreadgroups:threadgroupsPerGrid
-//             threadsPerObjectThreadgroup:threadsPerObjectThreadgroup];
+
+    // Object Shader (Task Shader) threadgroup size
+    // 如果没有 object shader，threadsPerObjectThreadgroup 会被忽略
+    MTLSize threadsPerObjectThreadgroup = MTLSizeMake(1, 1, 1);
+
+    if (@available(macOS 13.0, iOS 16.0, *))
+    {
+        [mRenderEncoder drawMeshThreadgroups:threadgroupsPerGrid
+                 threadsPerObjectThreadgroup:threadsPerObjectThreadgroup
+                   threadsPerMeshThreadgroup:threadsPerMeshThreadgroup];
+    }
 }
 
 void MTLRenderEncoder::DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset,
@@ -520,14 +528,17 @@ void MTLRenderEncoder::DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset
     }
     
     MTLGraphicsPipeline* pipeline = mMtlGraphicsPipeline.get();
-    uint32_t threadsX = pipeline->GetDesc().meshThreadgroupSizeX;
-    uint32_t threadsY = pipeline->GetDesc().meshThreadgroupSizeY;
-    uint32_t threadsZ = pipeline->GetDesc().meshThreadgroupSizeZ;
-    MTLSize threadsPerObjectThreadgroup = MTLSizeMake(
-        threadsX > 0 ? threadsX : 1,
-        threadsY > 0 ? threadsY : 1,
-        threadsZ > 0 ? threadsZ : 1
+    uint32_t meshThreadsX = pipeline->GetDesc().meshThreadgroupSizeX;
+    uint32_t meshThreadsY = pipeline->GetDesc().meshThreadgroupSizeY;
+    uint32_t meshThreadsZ = pipeline->GetDesc().meshThreadgroupSizeZ;
+    MTLSize threadsPerMeshThreadgroup = MTLSizeMake(
+        meshThreadsX > 0 ? meshThreadsX : 1,
+        meshThreadsY > 0 ? meshThreadsY : 1,
+        meshThreadsZ > 0 ? meshThreadsZ : 1
     );
+
+    // Object Shader (Task Shader) threadgroup size
+    MTLSize threadsPerObjectThreadgroup = MTLSizeMake(1, 1, 1);
     
     // 注意：Metal 的 MTLDrawMeshThreadgroupsIndirectArguments 结构体与 Vulkan 的 DrawMeshTasksIndirectCommand 不同
     // Metal 结构体: { uint32_t threadgroupsPerGrid[3]; }
@@ -537,11 +548,12 @@ void MTLRenderEncoder::DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset
     uint32_t currentOffset = offset;
     for (uint32_t i = 0; i < drawCount; i++)
     {
-        if (@available(macOS 14.0, iOS 17.0, *))
+        if (@available(macOS 13.0, iOS 16.0, *))
         {
-//            [mRenderEncoder drawMeshThreadgroupsWithIndirectBuffer:mtlBuffer
-//                                               indirectBufferOffset:currentOffset
-//                                        threadsPerObjectThreadgroup:threadsPerObjectThreadgroup];
+            [mRenderEncoder drawMeshThreadgroupsWithIndirectBuffer:mtlBuffer
+                                               indirectBufferOffset:currentOffset
+                                        threadsPerObjectThreadgroup:threadsPerObjectThreadgroup
+                                          threadsPerMeshThreadgroup:threadsPerMeshThreadgroup];
         }
         currentOffset += stride;
     }
