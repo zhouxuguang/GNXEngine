@@ -99,7 +99,7 @@ private:
     void EnforceNeighborConstraint();
 
     // Per-leaf neighbor LOD info for crack-fixing triangle fan
-    struct LeafNeighborInfo 
+    struct LeafNeighborInfo
     {
         uint8_t leftCoarser   = 0;  // 1 if left  neighbor (-X) is coarser (lower level)
         uint8_t rightCoarser  = 0;  // 1 if right neighbor (+X) is coarser
@@ -107,16 +107,30 @@ private:
         uint8_t bottomCoarser = 0;  // 1 if bottom neighbor (+Z) is coarser
     };
 
-    // Build index buffer and SubMeshInfo list from current leaf nodes
+    // Static index pool: pre-computed index buffers for all (stride, permutation) combos.
+    // Built once at init time, never changed after. Eliminates per-frame IB upload.
+    struct IndexPoolEntry
+    {
+        uint32_t start = 0;   // offset into mMasterIndices
+        uint32_t count = 0;   // number of indices for this entry
+    };
+
+    // Build the static index pool (call once after InitVertexData)
+    void BuildStaticIndexPool();
+
+    // Build SubMeshInfo list from current leaf nodes (lookup into static pool)
     void GenerateLeafMesh();
 
-    // Generate triangle-fan indices for a single fan-cell (crack-fixing aware)
-    // (fcx, fcz) = fan-cell top-left origin, stride = half fan-cell size
-    void CreateTriangleFan(std::vector<uint32_t>& indices,
-                           uint32_t fcx, uint32_t fcz,
-                           uint32_t stride, uint32_t gridSize,
-                           bool leftCoarser, bool rightCoarser,
-                           bool topCoarser, bool bottomCoarser);
+    // Generate triangle-fan indices for a single fan-cell (SEMI-LOCAL coordinates).
+    // Uses mGridSize as row stride so baseVertex correctly offsets to global VB.
+    void CreateTriangleFanLocal(std::vector<uint32_t>& indices,
+                                uint32_t fcx, uint32_t fcz,
+                                uint32_t stride, uint32_t globalGridSize,
+                                bool leftCoarser, bool rightCoarser,
+                                bool topCoarser, bool bottomCoarser);
+
+    // Map stride value → stride level index (log2)
+    uint32_t GetStrideLevel(uint32_t stride) const;
 
     // Procedural height function
     static float ComputeHeight(float x, float z);
@@ -134,6 +148,10 @@ private:
     std::vector<Node*> mLeafNodes;   // collected each frame for rendering
     std::vector<mathutil::AxisAlignedBoxf> mLeafBounds; // AABB per leaf, for frustum culling
     std::vector<LeafNeighborInfo> mLeafNeighborInfo;     // neighbor LOD info per leaf
+
+    // Static index pool (built once at init, read-only at runtime)
+    std::vector<std::vector<IndexPoolEntry>> mIndexPool;  // [strideLevel][16 permutations]
+    std::vector<uint32_t> mMasterIndices;                  // contiguous master index buffer
 
     // GPU resources
     MeshPtr mMesh;

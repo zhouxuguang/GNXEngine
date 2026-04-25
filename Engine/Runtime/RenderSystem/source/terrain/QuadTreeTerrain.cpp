@@ -191,7 +191,11 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
     // Build quadtree
     terrain->BuildNode(&terrain->mRoot);
 
-    // Initial update
+    // Build static index pool BEFORE first Update()
+    // (Update→GenerateLeafMesh reads from mIndexPool, must be populated)
+    terrain->BuildStaticIndexPool();
+
+    // Initial update (now safe — pool is ready)
     terrain->Update(Vector3f(0, 0, 0));
 
     LOG_INFO("QuadTreeTerrain: Created from heightmap, grid=%u, maxLevel=%u",
@@ -300,7 +304,10 @@ QuadTreeTerrainPtr QuadTreeTerrain::Create(
     // Build quadtree
     terrain->BuildNode(&terrain->mRoot);
 
-    // Initial update
+    // Build static index pool BEFORE first Update()
+    terrain->BuildStaticIndexPool();
+
+    // Initial update (now safe — pool is ready)
     terrain->Update(Vector3f(0, 0, 0));
 
     LOG_INFO("QuadTreeTerrain: Created procedural, grid=%u, maxLevel=%u",
@@ -525,16 +532,18 @@ void QuadTreeTerrain::CollectLeaves(Node* node)
 }
 
 //=============================================================================
-// GenerateLeafMesh - build index buffer and SubMeshInfo from leaf nodes
-// Uses triangle-fan-per-cell with crack fixing (like GeoMipTerrain).
+// GenerateLeafMesh - build SubMeshInfo list from current leaf nodes.
+//
+// Looks up pre-computed index buffers from the static pool (built by
+// BuildStaticIndexPool). No index generation, no GPU upload — O(1) per leaf.
+//
+// All indices in the static pool are LEAF-LOCAL. We set baseVertex per
+// leaf to offset them into the global terrain vertex buffer.
 //=============================================================================
 
 void QuadTreeTerrain::GenerateLeafMesh()
 {
-    std::vector<uint32_t> indices;
-
-    // Clear SubMeshInfos BEFORE UpdateIndices (so UpdateIndices doesn't
-    // overwrite our SubMeshInfo entries)
+    // Clear previous frame's SubMeshInfos
     mMesh->ClearSubMeshInfos();
     mLeafBounds.clear();
     mLeafBounds.reserve(mLeafNodes.size());
@@ -544,184 +553,212 @@ void QuadTreeTerrain::GenerateLeafMesh()
         Node* leaf = mLeafNodes[idx];
         const LeafNeighborInfo& nbrInfo = mLeafNeighborInfo[idx];
 
-        // Compute stride for this leaf's LOD level.
-        // Each leaf renders kLeafVerticesPerSide vertices per side.
-        // stride = leaf->size / (kLeafVerticesPerSide - 1)
-        uint32_t cellsPerSide = kLeafVerticesPerSide - 1;
+        // Compute stride for this leaf's LOD level
+        uint32_t cellsPerSide = kLeafVerticesPerSide - 1;  // 16
         uint32_t stride = leaf->size / cellsPerSide;
-        uint32_t vps = leaf->size / stride + 1;  // should equal kLeafVerticesPerSide
 
-        uint32_t indexStart = (uint32_t)indices.size();
+        // Map stride → level index into the static pool
+        uint32_t strideLevel = GetStrideLevel(stride);
 
-        // Generate triangle-fan indices for each fan-cell in this leaf's grid.
-        //
-        // Each leaf renders kLeafVerticesPerSide=17 vertices per side → 16×16 quads.
-        // We group quads into 2×2 blocks to form "fan-cells": 8×8 fan-cells per leaf.
-        // Each fan-cell is 2*stride × 2*stride grid units, with the fan center at
-        // (origin + stride, origin + stride) — a real vertex on the heightmap grid.
-        //
-        // This matches GeoMipTerrain's approach where FanStep = 2 * StepCenter.
-        uint32_t fanCellsPerSide = (kLeafVerticesPerSide - 1) / 2; // = 8
+        // Encode 4 neighbor coarser flags as a permutation index [0..15]
+        uint32_t perm = (nbrInfo.leftCoarser   ? 1u : 0u)
+                      | (nbrInfo.rightCoarser  ? 2u : 0u)
+                      | (nbrInfo.topCoarser    ? 4u : 0u)
+                      | (nbrInfo.bottomCoarser ? 8u : 0u);
 
-        for (uint32_t fj = 0; fj < fanCellsPerSide; ++fj)
-        {
-            for (uint32_t fi = 0; fi < fanCellsPerSide; ++fi)
-            {
-                // Fan-cell origin (top-left corner in absolute grid coords)
-                uint32_t fcx = leaf->x + fi * 2 * stride;
-                uint32_t fcz = leaf->z + fj * 2 * stride;
-
-                // Determine if this fan-cell touches a leaf boundary
-                bool onLeftEdge   = (fi == 0);
-                bool onRightEdge  = (fi == fanCellsPerSide - 1);
-                bool onBottomEdge = (fj == 0);
-                bool onTopEdge    = (fj == fanCellsPerSide - 1);
-
-                // Coarser flags: only active when on the corresponding edge
-                bool leftC   = onLeftEdge   && (nbrInfo.leftCoarser   != 0);
-                bool rightC  = onRightEdge  && (nbrInfo.rightCoarser  != 0);
-                bool topC    = onTopEdge    && (nbrInfo.topCoarser    != 0);
-                bool bottomC = onBottomEdge && (nbrInfo.bottomCoarser != 0);
-
-                CreateTriangleFan(indices, fcx, fcz, stride, mGridSize,
-                                  leftC, rightC, topC, bottomC);
-            }
-        }
+        // Look up pre-computed indices from the static pool
+        const IndexPoolEntry& entry = mIndexPool[strideLevel][perm];
 
         SubMeshInfo subMeshInfo;
-        subMeshInfo.firstIndex = indexStart;
-        subMeshInfo.indexCount = (uint32_t)indices.size() - indexStart;
+        subMeshInfo.firstIndex = entry.start;
+        subMeshInfo.indexCount = entry.count;
         subMeshInfo.topology   = PrimitiveMode_TRIANGLES;
         subMeshInfo.vertexCount = mGridSize * mGridSize;
-        subMeshInfo.baseVertex = 0;  // indices are already absolute
+        // baseVertex offsets leaf-local indices to absolute positions in global VB
+        subMeshInfo.baseVertex = leaf->z * mGridSize + leaf->x;
         mMesh->AddSubMeshInfo(subMeshInfo);
         mLeafBounds.push_back(leaf->bounds);
     }
 
-    // Upload new index buffer to GPU
-    if (!indices.empty())
-    {
-        mMesh->UpdateIndices(indices.data(), indices.size());
-    }
+    // NO UpdateIndices call — buffer is static, built once at init time
 }
 
 //=============================================================================
-// CreateTriangleFan - generate triangles for a single fan-cell with crack fixing.
+// CreateTriangleFanLocal - generate triangles for a single fan-cell with crack fixing.
 //
-// Each fan-cell covers a 2*stride × 2*stride grid region with its center at
-// (fcx + stride, fcz + stride) — a real vertex on the heightmap grid.
+// Outputs SEMI-LOCAL indices: uses GLOBAL row stride (mGridSize) but LEAF-LOCAL
+// coordinates. This allows baseVertex to correctly offset into the global VB:
 //
-// Generates 4-8 triangles centered on the fan-cell's center vertex.
-// Each of the 4 sectors (up/right/down/left) has:
-//   - A "first" triangle (always generated)
-//   - A "second" triangle (only if that neighbor is NOT coarser)
+//   finalIndex = poolIndex + baseVertex
+//             = (local_z * mGridSize + local_x) + (leaf->z * mGridSize + leaf->x)
+//             = (leaf->z + local_z) * mGridSize + (leaf->x + local_x)  ✓
 //
-// When a neighbor is coarser, we use 2*stride (= full fan-cell edge) on that
-// edge and skip the second triangle. This avoids T-junctions because the
-// coarser neighbor doesn't have vertices at the mid-edge positions.
-//
-// This matches GeoMipTerrain::CreateTriangleFan where:
-//   our (fcx,fcz,stride) ↔ their (x, z, StepCenter)
-//   our fan-cell size (2*stride) ↔ their FanStep (2*StepCenter)
-//
-// All indices are ABSOLUTE into the global terrain vertex buffer.
+// (fcx, fcz): fan-cell origin in LEAF-LOCAL grid coordinates
+// globalGridSize: mGridSize (global terrain vertices per side)
 //=============================================================================
 
-void QuadTreeTerrain::CreateTriangleFan(
+void QuadTreeTerrain::CreateTriangleFanLocal(
     std::vector<uint32_t>& indices,
-    uint32_t fcx, uint32_t fcz,      // fan-cell origin: top-left corner (absolute grid coords)
+    uint32_t fcx, uint32_t fcz,      // fan-cell origin (leaf-local grid coords)
     uint32_t stride,                 // half of fan-cell size; center = origin + stride
-    uint32_t gridSize,
+    uint32_t globalGridSize,         // MUST be mGridSize — global row stride
     bool leftCoarser,               // left  neighbor (-X) is coarser?
     bool rightCoarser,              // right neighbor (+X) is coarser?
     bool topCoarser,                // top   neighbor (-Z) is coarser?
     bool bottomCoarser)             // bottom neighbor (+Z) is coarser?
 {
     // Effective step per direction: double stride when neighbor is coarser.
-    // Normal step = stride (half fan-cell). Coarser step = 2*stride (full fan-cell),
-    // which skips the mid-edge vertex that the coarser neighbor lacks.
     uint32_t sLeft   = leftCoarser   ? 2 * stride : stride;
     uint32_t sRight  = rightCoarser  ? 2 * stride : stride;
     uint32_t sTop    = topCoarser    ? 2 * stride : stride;
     uint32_t sBottom = bottomCoarser ? 2 * stride : stride;
 
-    // Fan center: real vertex at (origin + stride, origin + stride)
-    uint32_t idxCenter = (fcz + stride) * gridSize + (fcx + stride);
+    // Fan center in semi-local coords (global row stride, leaf-local offsets)
+    uint32_t idxCenter = (fcz + stride) * globalGridSize + (fcx + stride);
 
-    // ---- Sector 1: UP — left edge of fan-cell, traversing downward ----
-    // first up: from top-left corner, one step down along left edge
-    uint32_t t1 = fcz * gridSize + fcx;                  // TL corner
-    uint32_t t2 = (fcz + sLeft) * gridSize + fcx;       // down-left
-    indices.push_back(idxCenter);
-    indices.push_back(t1);
-    indices.push_back(t2);
+    // ---- Sector 1: UP — left edge, traversing downward ----
+    uint32_t t1 = fcz * globalGridSize + fcx;
+    uint32_t t2 = (fcz + sLeft) * globalGridSize + fcx;
+    indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
 
-    // second up: continue another step down (skip if left neighbor is coarser)
     if (!leftCoarser)
     {
-        t1 = t2;
-        t2 += sLeft * gridSize;
-        indices.push_back(idxCenter);
-        indices.push_back(t1);
-        indices.push_back(t2);
+        t1 = t2; t2 += sLeft * globalGridSize;
+        indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
     }
-    // After sector 1: t2 is at BL corner (or mid-left if coarser)
 
-    // ---- Sector 2: RIGHT — top edge of fan-cell, traversing rightward ----
-    // first right: continue from end of sector 1, one step right along top
-    t1 = t2;
-    t2 += sTop;
-    indices.push_back(idxCenter);
-    indices.push_back(t1);
-    indices.push_back(t2);
+    // ---- Sector 2: RIGHT — top edge, traversing rightward ----
+    t1 = t2; t2 += sTop;
+    indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
 
-    // second right: continue another step right (skip if top neighbor is coarser)
     if (!topCoarser)
     {
-        t1 = t2;
-        t2 += sTop;
-        indices.push_back(idxCenter);
-        indices.push_back(t1);
-        indices.push_back(t2);
+        t1 = t2; t2 += sTop;
+        indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
     }
-    // After sector 2: t2 is at TR or BR area
 
-    // ---- Sector 3: DOWN — right edge of fan-cell, traversing upward ----
-    // first right-down: continue, one step UP along right edge
-    t1 = t2;
-    t2 -= sRight * gridSize;
-    indices.push_back(idxCenter);
-    indices.push_back(t1);
-    indices.push_back(t2);
+    // ---- Sector 3: DOWN — right edge, traversing upward ----
+    t1 = t2; t2 -= sRight * globalGridSize;
+    indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
 
-    // second down: continue another step up (skip if right neighbor is coarser)
     if (!rightCoarser)
     {
-        t1 = t2;
-        t2 -= sRight * gridSize;
-        indices.push_back(idxCenter);
-        indices.push_back(t1);
-        indices.push_back(t2);
+        t1 = t2; t2 -= sRight * globalGridSize;
+        indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
     }
 
-    // ---- Sector 4: LEFT — bottom edge of fan-cell, traversing leftward ----
-    // first left: continue, one step left along bottom edge
-    t1 = t2;
-    t2 -= sBottom;
-    indices.push_back(idxCenter);
-    indices.push_back(t1);
-    indices.push_back(t2);
+    // ---- Sector 4: LEFT — bottom edge, traversing leftward ----
+    t1 = t2; t2 -= sBottom;
+    indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
 
-    // second left: continue another step left (skip if bottom neighbor is coarser)
     if (!bottomCoarser)
     {
-        t1 = t2;
-        t2 -= sBottom;
-        indices.push_back(idxCenter);
-        indices.push_back(t1);
-        indices.push_back(t2);
+        t1 = t2; t2 -= sBottom;
+        indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
     }
-    // After sector 4: t2 should loop back to (or past) TL corner — chain complete
+}
+
+//=============================================================================
+// GetStrideLevel - map stride value to level index (log2).
+// stride must be a power of 2: returns 0 for stride=1, 1 for stride=2, etc.
+//=============================================================================
+
+uint32_t QuadTreeTerrain::GetStrideLevel(uint32_t stride) const
+{
+    uint32_t level = 0;
+    while (stride > 1) { stride >>= 1; ++level; }
+    return level;
+}
+
+//=============================================================================
+// BuildStaticIndexPool - pre-compute all index permutations for static IB.
+//
+// For each possible stride level (1, 2, 4, ..., maxStride), generates all 16
+// neighbor-coarser permutations. Each entry contains the complete index buffer
+// for one leaf configuration (64 fan-cells × 4~8 triangles each).
+//
+// All indices are LEAF-LOCAL. At runtime, GenerateLeafMesh() looks up the
+// correct entry and sets baseVertex to offset into the global VB.
+//
+// Called once during terrain creation. After this, UpdateIndices() is never
+// called again — zero per-frame GPU upload.
+//=============================================================================
+
+void QuadTreeTerrain::BuildStaticIndexPool()
+{
+    uint32_t minNodeCells = kLeafVerticesPerSide - 1;  // 16
+    uint32_t maxStride = mGridSizeCells / minNodeCells;
+
+    // Compute max stride level (log2 of maxStride)
+    uint32_t maxStrideLevel = 0;
+    { uint32_t tmp = maxStride; while (tmp > 1) { tmp >>= 1; ++maxStrideLevel; } }
+
+    uint32_t numLevels = maxStrideLevel + 1;
+    mIndexPool.resize(numLevels);
+    for (auto& v : mIndexPool) v.resize(16);
+
+    mMasterIndices.clear();
+    mMasterIndices.reserve(numLevels * 16 * 1200);  // ~1200 indices per entry (estimate)
+
+    uint32_t fanCellsPerSide = minNodeCells / 2;  // always 8
+
+    for (uint32_t level = 0; level <= maxStrideLevel; ++level)
+    {
+        uint32_t stride = 1u << level;
+        uint32_t leafSizeCells = stride * minNodeCells;  // 16 << level
+
+        for (uint32_t perm = 0; perm < 16; ++perm)
+        {
+            bool leftC   = (perm & 1)  != 0;
+            bool rightC  = (perm & 2)  != 0;
+            bool topC    = (perm & 4)  != 0;
+            bool bottomC = (perm & 8)  != 0;
+
+            uint32_t startIdx = (uint32_t)mMasterIndices.size();
+
+            // Generate all 64 fan-cells for this leaf configuration
+            for (uint32_t fj = 0; fj < fanCellsPerSide; ++fj)
+            {
+                for (uint32_t fi = 0; fi < fanCellsPerSide; ++fi)
+                {
+                    // Fan-cell origin in LEAF-LOCAL coordinates
+                    uint32_t fcx = fi * 2 * stride;
+                    uint32_t fcz = fj * 2 * stride;
+
+                    // Edge detection within the leaf's fan-cell grid
+                    bool onLeftEdge   = (fi == 0);
+                    bool onRightEdge  = (fi == fanCellsPerSide - 1);
+                    bool onBottomEdge = (fj == 0);
+                    bool onTopEdge    = (fj == fanCellsPerSide - 1);
+
+                    bool lC = onLeftEdge   && leftC;
+                    bool rC = onRightEdge  && rightC;
+                    bool tC = onTopEdge    && topC;
+                    bool bC = onBottomEdge && bottomC;
+
+                    CreateTriangleFanLocal(mMasterIndices, fcx, fcz, stride,
+                                           mGridSize, lC, rC, tC, bC);
+                }
+            }
+
+            mIndexPool[level][perm].start = startIdx;
+            mIndexPool[level][perm].count = (uint32_t)mMasterIndices.size() - startIdx;
+        }
+
+        LOG_INFO("QuadTreeTerrain: IndexPool level %u (stride=%u, leafCells=%u) built",
+                 level, stride, leafSizeCells);
+    }
+
+    // Upload master index buffer to GPU — ONCE
+    if (!mMasterIndices.empty())
+    {
+        mMesh->UpdateIndices(mMasterIndices.data(), (uint32_t)mMasterIndices.size());
+    }
+
+    LOG_INFO("QuadTreeTerrain: Static index pool complete: %u levels x 16 perms = %u entries, "
+             "%u total indices (%.1f KB)",
+             numLevels, numLevels * 16, (uint32_t)mMasterIndices.size(),
+             (uint32_t)mMasterIndices.size() * sizeof(uint32_t) / 1024.0f);
 }
 
 //=============================================================================
