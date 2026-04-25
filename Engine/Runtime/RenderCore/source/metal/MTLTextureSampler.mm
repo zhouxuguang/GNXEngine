@@ -49,14 +49,6 @@ MTLSamplerDescriptor* MTLTextureSampler::transToMTLSamplerDescriptor(const Sampl
             break;
     }
     
-    // TODO : 这里还有问题需要解决，命名还需要规范化
-//    enum SamplerMipFilter
-//    {
-//        MIN_NEAREST_MIPMAP_NEAREST = 0,
-//        MIN_LINEAR_MIPMAP_NEAREST = 1,
-//        MIN_NEAREST_MIPMAP_LINEAR = 2,
-//        MIN_LINEAR_MIPMAP_LINEAR = 3
-//    };
     switch (des.filterMip)
     {
         case SamplerMipFilter::MIN_NEAREST_MIPMAP_NEAREST:
@@ -66,6 +58,7 @@ MTLSamplerDescriptor* MTLTextureSampler::transToMTLSamplerDescriptor(const Sampl
         case SamplerMipFilter::MIN_LINEAR_MIPMAP_LINEAR:
         case SamplerMipFilter::MIN_LINEAR_MIPMAP_NEAREST:
             samplerDescriptor.mipFilter = MTLSamplerMipFilterLinear;
+            break;
         default:
             break;
     }
@@ -73,13 +66,29 @@ MTLSamplerDescriptor* MTLTextureSampler::transToMTLSamplerDescriptor(const Sampl
     samplerDescriptor.rAddressMode = transToMTLAdressMode(des.wrapR);
     samplerDescriptor.tAddressMode = transToMTLAdressMode(des.wrapT);
     samplerDescriptor.sAddressMode = transToMTLAdressMode(des.wrapS);
-    //samplerDescriptor.compareFunction = (MTLCompareFunction)des.compareFunc;
+    
+    // 深度比较函数（阴影映射、PCF 过滤等）
+    if (des.compareMode == SamplerCompareMode::COMPARE_TO_TEXTURE)
+    {
+        samplerDescriptor.compareFunction = (MTLCompareFunction)des.compareFunc;
+    }
+    
+    // 各向异性过滤
+    if (des.anisotropyLog2 > 0)
+    {
+        samplerDescriptor.maxAnisotropy = 1 << des.anisotropyLog2;
+    }
+    
+    // LOD 钳制
+    samplerDescriptor.lodMinClamp = (float)des.minLod;
+    samplerDescriptor.lodMaxClamp = (float)des.maxLod;
+    
     return samplerDescriptor;
 }
 
 MTLSamplerAddressMode MTLTextureSampler::transToMTLAdressMode(SamplerWrapMode mode) noexcept
 {
-    MTLSamplerAddressMode adressMode;
+    MTLSamplerAddressMode adressMode = MTLSamplerAddressModeClampToEdge;
     switch (mode)
     {
         case SamplerWrapMode::CLAMP_TO_EDGE:

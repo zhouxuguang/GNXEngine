@@ -819,9 +819,24 @@ void VKRenderEncoder::DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buf
     vkCmdDrawIndirect(mCommandBuffer, vkBuffer->GetVkBuffer(), offset, drawCount, stride);
 }
 
-void VKRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset, uint32_t drawCount, uint32_t stride)
+void VKRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+    int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
+    uint32_t drawCount, uint32_t stride)
 {
-    VKRCBufferPtr vkBuffer = std::dynamic_pointer_cast<VKRCBuffer>(buffer);
+    // Vulkan: index buffer 通过 vkCmdBindIndexBuffer 绑定
+    if (indexBuffer)
+    {
+        VKIndexBufferPtr vkIndexBuffer = std::dynamic_pointer_cast<VKIndexBuffer>(indexBuffer);
+        if (vkIndexBuffer && vkIndexBuffer->GetBuffer())
+        {
+            IndexType type = vkIndexBuffer->getIndexType();
+            VkIndexType vkIndexType = (type == IndexType_UInt) ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
+            int byteOffset = indexBufferOffset * ((type == IndexType_UInt) ? sizeof(uint32_t) : sizeof(uint16_t));
+            vkCmdBindIndexBuffer(mCommandBuffer, vkIndexBuffer->GetBuffer(), byteOffset, vkIndexType);
+        }
+    }
+
+    VKRCBufferPtr vkBuffer = std::dynamic_pointer_cast<VKRCBuffer>(indirectBuffer);
     if (!vkBuffer || !vkBuffer->GetVkBuffer())
     {
         return;
@@ -832,7 +847,7 @@ void VKRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBuffer
         vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
     }
 
-    vkCmdDrawIndexedIndirect(mCommandBuffer, vkBuffer->GetVkBuffer(), offset, drawCount, stride);
+    vkCmdDrawIndexedIndirect(mCommandBuffer, vkBuffer->GetVkBuffer(), indirectBufferOffset, drawCount, stride);
 }
 
 void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
@@ -901,6 +916,29 @@ void VKRenderEncoder::DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset,
     {
         vkCmdDrawMeshTasksIndirectNV(mCommandBuffer, vkBuffer->GetVkBuffer(), offset, drawCount, stride);
     }
+}
+
+// ===== 动态渲染状态实现 =====
+
+void VKRenderEncoder::SetScissorRect(int x, int y, uint32_t width, uint32_t height)
+{
+    VkRect2D scissor;
+    scissor.offset.x = x;
+    scissor.offset.y = y;
+    scissor.extent.width = width;
+    scissor.extent.height = height;
+    vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
+}
+
+void VKRenderEncoder::SetDepthBias(float bias, float slopeScale, float clamp)
+{
+    vkCmdSetDepthBias(mCommandBuffer, bias, clamp, slopeScale);
+}
+
+void VKRenderEncoder::SetStencilReference(uint32_t frontRef, uint32_t backRef)
+{
+    vkCmdSetStencilReference(mCommandBuffer, VK_STENCIL_FACE_FRONT_BIT, frontRef);
+    vkCmdSetStencilReference(mCommandBuffer, VK_STENCIL_FACE_BACK_BIT, backRef);
 }
 
 NAMESPACE_RENDERCORE_END

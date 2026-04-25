@@ -15,12 +15,8 @@ static id<MTLDepthStencilState> convertToMTLDSDes(id<MTLDevice> device, const De
 {
     MTLDepthStencilDescriptor* mtlDescriptor = [MTLDepthStencilDescriptor new];
     MTLCompareFunction compareFunc = (MTLCompareFunction)depthStencilDescriptor.depthCompareFunction;
-    //只有不为always时设置对应字段
-    if (compareFunc != MTLCompareFunctionAlways)
-    {
-        mtlDescriptor.depthCompareFunction = compareFunc;
-        mtlDescriptor.depthWriteEnabled = depthStencilDescriptor.depthWriteEnabled;
-    }
+    mtlDescriptor.depthCompareFunction = compareFunc;
+    mtlDescriptor.depthWriteEnabled = depthStencilDescriptor.depthWriteEnabled;
     
     
     MTLStencilDescriptor * stencilDescriptor = nil;

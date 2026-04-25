@@ -69,6 +69,10 @@ void MTLRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     FillMode fillMode = mtlGraphicsPipeline->GetDesc().fillMode;
     MTLTriangleFillMode mtlFillMode = (fillMode == FillModeWireframe) ? MTLTriangleFillModeLines : MTLTriangleFillModeFill;
     [mRenderEncoder setTriangleFillMode:mtlFillMode];
+    
+    // 设置默认的剔除模式（与 Vulkan VK_CULL_MODE_NONE 一致）和正面方向
+    [mRenderEncoder setCullMode:MTLCullModeNone];
+    [mRenderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
 }
 
 void MTLRenderEncoder::SetFillMode(FillMode fillMode)
@@ -377,6 +381,7 @@ void MTLRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, Index
     }
     
     IndexType type = mtlBufferPtr->getIndexType();
+    MTLIndexType mtlIndexType = (MTLIndexType)type;
     
     int byteOffset = offset * sizeof(uint16_t);
     if (type == IndexType_UInt)
@@ -386,7 +391,7 @@ void MTLRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, Index
     
     //注意：indexBufferOffset是字节的偏移量
     [mRenderEncoder drawIndexedPrimitives:(MTLPrimitiveType)ConvertPrimitiveType(mode) indexCount : size
-                                                         indexType : (MTLIndexType)type indexBuffer : mtlBuffer indexBufferOffset : byteOffset
+                                                         indexType : mtlIndexType indexBuffer : mtlBuffer indexBufferOffset : byteOffset
                                                       instanceCount : 1 baseVertex : baseVertex baseInstance : 0];
 }
 
@@ -407,6 +412,7 @@ void MTLRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int siz
     }
     
     IndexType type = mtlBufferPtr->getIndexType();
+    MTLIndexType mtlIndexType = (MTLIndexType)type;
     
     int byteOffset = offset * sizeof(uint16_t);
     if (type == IndexType_UInt)
@@ -416,7 +422,7 @@ void MTLRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int siz
     
     //注意：indexBufferOffset是字节的偏移量
     [mRenderEncoder drawIndexedPrimitives:(MTLPrimitiveType)ConvertPrimitiveType(mode) indexCount : size
-                               indexType : (MTLIndexType)type indexBuffer : mtlBuffer indexBufferOffset : byteOffset
+                               indexType : mtlIndexType indexBuffer : mtlBuffer indexBufferOffset : byteOffset
                             instanceCount: instanceCount baseVertex : 0 baseInstance : firstInstance];
 }
 
@@ -449,27 +455,59 @@ void MTLRenderEncoder::DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr bu
     }
 }
 
-void MTLRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
-        uint32_t drawCount, uint32_t stride)
+void MTLRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+    int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
+    uint32_t drawCount, uint32_t stride)
 {
-    if (!buffer)
+    if (!indexBuffer || !indirectBuffer)
     {
         return;
     }
 
-    MTLRCBufferPtr mtlBufferPtr = std::dynamic_pointer_cast<MTLRCBuffer>(buffer);
-    if (!mtlBufferPtr)
+    MTLIndexBufferPtr mtlIndexBufferPtr = std::dynamic_pointer_cast<MTLIndexBuffer>(indexBuffer);
+    if (!mtlIndexBufferPtr)
     {
         return;
     }
 
-    id<MTLBuffer> mtlBuffer = mtlBufferPtr->GetMTLBuffer();
-    if (!mtlBuffer)
+    id<MTLBuffer> mtlIdxBuffer = mtlIndexBufferPtr->getMTLBuffer();
+    if (!mtlIdxBuffer)
     {
         return;
     }
-    
-    // 还未实现
+
+    MTLRCBufferPtr mtlIndirectBufferPtr = std::dynamic_pointer_cast<MTLRCBuffer>(indirectBuffer);
+    if (!mtlIndirectBufferPtr)
+    {
+        return;
+    }
+
+    id<MTLBuffer> mtlIndirectBuf = mtlIndirectBufferPtr->GetMTLBuffer();
+    if (!mtlIndirectBuf)
+    {
+        return;
+    }
+
+    IndexType type = mtlIndexBufferPtr->getIndexType();
+    MTLIndexType mtlIndexType = (MTLIndexType)type;
+
+    int byteOffset = indexBufferOffset * sizeof(uint16_t);
+    if (type == IndexType_UInt)
+    {
+        byteOffset = indexBufferOffset * sizeof(uint32_t);
+    }
+
+    uint32_t currentOffset = indirectBufferOffset;
+    for (uint32_t i = 0; i < drawCount; i++)
+    {
+        [mRenderEncoder drawIndexedPrimitives:ConvertPrimitiveType(mode)
+                                   indexType:mtlIndexType
+                                 indexBuffer:mtlIdxBuffer
+                           indexBufferOffset:byteOffset
+                              indirectBuffer:mtlIndirectBuf
+                        indirectBufferOffset:currentOffset];
+        currentOffset += stride;
+    }
 }
 
 // ===== Mesh Shader 绘制实现 =====
@@ -597,6 +635,28 @@ void MTLRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceN
         id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
         [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];
     }
+}
+
+// ===== 动态渲染状态实现 =====
+
+void MTLRenderEncoder::SetScissorRect(int x, int y, uint32_t width, uint32_t height)
+{
+    MTLScissorRect scissorRect;
+    scissorRect.x = x;
+    scissorRect.y = y;
+    scissorRect.width = width;
+    scissorRect.height = height;
+    [mRenderEncoder setScissorRect:scissorRect];
+}
+
+void MTLRenderEncoder::SetDepthBias(float bias, float slopeScale, float clamp)
+{
+    [mRenderEncoder setDepthBias:bias slopeScale:slopeScale clamp:clamp];
+}
+
+void MTLRenderEncoder::SetStencilReference(uint32_t frontRef, uint32_t backRef)
+{
+    [mRenderEncoder setStencilFrontReferenceValue:frontRef backReferenceValue:backRef];
 }
 
 NAMESPACE_RENDERCORE_END

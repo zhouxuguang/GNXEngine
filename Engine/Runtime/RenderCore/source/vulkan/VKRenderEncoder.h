@@ -47,7 +47,8 @@ public:
     virtual void DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
         uint32_t drawCount, uint32_t stride);
 
-    virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
+    virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+        int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
         uint32_t drawCount, uint32_t stride);
     
     virtual void SetVertexUniformBuffer(UniformBufferPtr buffer, int index);
@@ -75,6 +76,11 @@ public:
     virtual void DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
     virtual void DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset,
                                        uint32_t drawCount, uint32_t stride);
+
+    // ===== 动态渲染状态接口 =====
+    virtual void SetScissorRect(int x, int y, uint32_t width, uint32_t height);
+    virtual void SetDepthBias(float bias, float slopeScale, float clamp);
+    virtual void SetStencilReference(uint32_t frontRef, uint32_t backRef);
     
 private:
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;

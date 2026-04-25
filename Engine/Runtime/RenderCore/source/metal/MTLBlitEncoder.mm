@@ -296,15 +296,15 @@ void MTLBlitEncoder::CopyBufferToTexture(VertexBufferPtr source,
         MTLOrigin origin = MTLOriginMake(destinationOffset.offsetX, destinationOffset.offsetY, 0);
         MTLSize size = MTLSizeMake(destinationSize.width, destinationSize.height, 1);
         
-//        [mBlitEncoder copyFromBuffer:sourceBuffer
-//                        sourceOffset:sourceOffset
-//                   sourceBytesPerRow:sourceBytesPerRow
-//                 sourceBytesPerImage:sourceBytesPerImage
-//                          toTexture:destTexture
-//                   destinationSlice:destinationSlice
-//                   destinationLevel:destinationMipLevel
-//                  destinationOrigin:origin
-//                    destinationSize:size];
+        [mBlitEncoder copyFromBuffer:sourceBuffer
+                        sourceOffset:sourceOffset
+                   sourceBytesPerRow:sourceBytesPerRow
+                 sourceBytesPerImage:sourceBytesPerImage
+                         sourceSize:size
+                          toTexture:destTexture
+                   destinationSlice:destinationSlice
+                   destinationLevel:destinationMipLevel
+                  destinationOrigin:origin];
     }
 }
 
