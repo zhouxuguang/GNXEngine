@@ -128,7 +128,8 @@ bool DecodeAppleImage(const void *buffer, size_t size, VImage *bitmap)
     return true;
 }
 
-static void ParserImageFormat(CGImageRef imageRef, CGColorSpaceRef colorSpace, ImagePixelFormat &pixelFormat, bool& bPreMultyAlpha)
+static void ParserImageFormat(CGImageRef imageRef, CGColorSpaceRef colorSpace, int bytesPerpixel, 
+                              ImagePixelFormat &pixelFormat, bool& bPreMultyAlpha)
 {
     bPreMultyAlpha = false;
     CGImageAlphaInfo alphaInfo = CGImageGetAlphaInfo(imageRef);
@@ -141,22 +142,24 @@ static void ParserImageFormat(CGImageRef imageRef, CGColorSpaceRef colorSpace, I
     switch (CGColorSpaceGetModel(colorSpace))
     {
         case kCGColorSpaceModelMonochrome:
-            pixelFormat = hasAlpha ? FORMAT_GRAY8_ALPHA8 : FORMAT_GRAY8;
+            switch (bytesPerpixel)
+            {
+                case 1:
+                    pixelFormat = hasAlpha ? FORMAT_GRAY8_ALPHA8 : FORMAT_GRAY8;
+                    break;
+                    
+                case 2:
+                    pixelFormat = FORMAT_GRAY16;
+                    break;
+                    
+                default:
+                    break;
+            }
+            
             break;
             
         case kCGColorSpaceModelRGB:
         {
-            CGColorSpaceRef dstSpace = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
-            CGColorSpaceRef srcSpace = CGImageGetColorSpace(imageRef);
-
-            // 是sRGB颜色空间
-            if (CFEqual(srcSpace, dstSpace))
-            {
-//                CGColorSpaceRelease(dstSpace);
-//                pixelFormat = hasAlpha ? FORMAT_SRGB8_ALPHA8 : FORMAT_SRGB8;
-//                break;
-            }
-            
             pixelFormat = hasAlpha ? FORMAT_RGBA8 : FORMAT_RGB8;
             
             break;
@@ -213,10 +216,6 @@ uint8_t* DecodeImageData_APPLE(const uint8_t* pImageData,
         
         //处理16位的图片，渲染的时候不支持，必须转换为8位的
         size_t nBitsPerComponent = CGImageGetBitsPerComponent(imageRef);
-        if (nBitsPerComponent > 8) 
-        {
-            unSupportedColorSpace = YES;
-        }
         if (colorModel == kCGColorSpaceModelMonochrome) 
         {
             geneRGBImage = NO;
@@ -268,7 +267,7 @@ uint8_t* DecodeImageData_APPLE(const uint8_t* pImageData,
             CGContextDrawImage(context, CGRectMake(0, 0, *uiWidth, *uiHeight), imageRef);
             imageRef = CGBitmapContextCreateImage(context);
             
-            ParserImageFormat(imageRef, colorSpace, pixelFormat, bPreMultyAlpha);
+            ParserImageFormat(imageRef, colorSpace, 1, pixelFormat, bPreMultyAlpha);
             
             // 释放资源
             CGContextRelease(context);
@@ -321,7 +320,7 @@ uint8_t* DecodeImageData_APPLE(const uint8_t* pImageData,
                 CFRelease(rawData);
             }
             
-            ParserImageFormat(imageRef, colorSpace, pixelFormat, bPreMultyAlpha);
+            ParserImageFormat(imageRef, colorSpace, CGImageGetBitsPerPixel(imageRef) / 8, pixelFormat, bPreMultyAlpha);
         }
     }
     
