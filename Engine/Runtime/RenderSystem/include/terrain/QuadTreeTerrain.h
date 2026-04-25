@@ -15,7 +15,6 @@
 #include "../RSDefine.h"
 #include "../mesh/Mesh.h"
 #include "Runtime/MathUtil/include/AABB.h"
-#include "Runtime/MathUtil/include/Frustum.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -59,36 +58,6 @@ public:
     float GetWorldSize() const { return mWorldSize; }
     float GetHeightScale() const { return mHeightScale; }
     uint32_t GetGridSize() const { return mGridSize; }
-
-    // Per-patch instance data for GPU instanced rendering.
-    // One entry per visible (non-culled) leaf node per frame.
-    // Layout must match HLSL PatchInstanceData in TerrainBasePassInstanced.shader
-    // and TerrainDepthInstanced.shader exactly (same fields, same order).
-    struct PatchInstanceData
-    {
-        uint32_t baseVertex;   // VB offset: leaf->z * mGridSize + leaf->x
-        uint32_t indexStart;   // offset into mMasterIndices for this patch's indices
-        // NOTE: indexCount is NOT here — the shader uses the uniform dummy IB size
-        //       (mUniformPatchIndexCount) as the per-instance vertex count via SV_VertexID.
-        //       Keeping this struct identical between C++ and HLSL is critical.
-        uint32_t _pad0 = 0;   // explicit padding to 16 bytes for StructuredBuffer alignment
-        uint32_t _pad1 = 0;   // (HLSL StructuredBuffer elements are 16-byte aligned)
-    };
-
-    // Get patch instance data for GPU instanced rendering.
-    // Fills mPatchInstances with data for leaves that pass frustum culling.
-    // Also computes mMaxPatchIndexCount (for dummy IB sizing).
-    // Call after Update() each frame.
-    void BuildPatchInstances(const mathutil::Frustumf* frustum = nullptr);
-
-    // Accessors for instanced rendering
-    const std::vector<PatchInstanceData>& GetPatchInstances() const { return mPatchInstances; }
-    uint32_t GetPatchInstanceCount() const { return (uint32_t)mPatchInstances.size(); }
-    uint32_t GetMaxPatchIndexCount() const { return mMaxPatchIndexCount; }
-
-    // Uniform index count: all static pool entries are padded to this size.
-    // Required by DrawIndexedInstancePrimitives which uses one index count for all instances.
-    uint32_t GetUniformPatchIndexCount() const { return mUniformPatchIndexCount; }
 
 private:
     QuadTreeTerrain();
@@ -183,11 +152,6 @@ private:
     // Static index pool (built once at init, read-only at runtime)
     std::vector<std::vector<IndexPoolEntry>> mIndexPool;  // [strideLevel][16 permutations]
     std::vector<uint32_t> mMasterIndices;                  // contiguous master index buffer
-
-    // Per-patch instance data for instanced rendering (rebuilt each frame)
-    std::vector<PatchInstanceData> mPatchInstances;
-    uint32_t mMaxPatchIndexCount = 0;   // max index count across all patches this frame
-    uint32_t mUniformPatchIndexCount = 0; // uniform size all pool entries are padded to
 
     // GPU resources
     MeshPtr mMesh;
