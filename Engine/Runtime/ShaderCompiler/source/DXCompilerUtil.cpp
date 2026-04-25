@@ -9,6 +9,7 @@
 #include "spirv_reflection.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include <assert.h>
+#include <filesystem>
 
 //代码可以参考这个博客。https://simoncoenen.com/blog/programming/graphics/DxcCompiling
 
@@ -109,41 +110,31 @@ LPCWSTR GetTargetProfile(ShaderStage stage)
             break;
             
         case ShaderStage_Task:
-            return L"as_6_6";
+            return L"as_6_7";
             break;
             
         case ShaderStage_Mesh:
-            return L"ms_6_6";
+            return L"ms_6_7";
             break;
             
         default:
             break;
     }
     
-    return L"PS";
+    return L"";
 }
 
-const wchar_t *GetWC(const char *c)
+static std::wstring GetWC(const std::string& s)
 {
-    const size_t cSize = strlen(c)+1;
-    wchar_t* wc = new wchar_t[cSize];
-    memset(wc, 0, cSize * sizeof(wchar_t));
-    mbstowcs (wc, c, cSize);
-
-    return wc;
+    return std::filesystem::path(s).wstring();
 }
 
 ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType)
 {
-//    CComPtr<IDxcBlobEncoding> pSource = nullptr;
-//    m_pUtils->CreateBlob(shaderSource.c_str(), shaderSource.size(), CP_UTF8, &pSource);
-    
-    const wchar_t* pw_ShaderFile = GetWC(shaderFile.c_str());
+    std::wstring wShaderFile = GetWC(shaderFile);
     
     std::vector<LPCWSTR> arguments;
-    arguments.push_back(pw_ShaderFile);
-    
-#if 1
+    arguments.push_back(wShaderFile.c_str());
     
     //-E for the entry point (eg. PSMain)
     arguments.push_back(L"-E");
@@ -176,26 +167,12 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
         arguments.push_back(L"USE_REVERSE_Z");
     }
 
-    if (shaderStage == ShaderStage_Fragment)
-    {
-        //arguments.push_back(L"-auto-binding-space 1");
-        //arguments.push_back(L"-fvk-auto-shift-bindings");
-    }
-
     // -fvk-use-dx-layout -fvk-s-shift 1
     // -fvk-auto-shift-bindings
-
-//    for (const std::wstring& define : defines)
-//    {
-//        arguments.push_back(L"-D");
-//        arguments.push_back(define.c_str());
-//    }
-    
-#endif
     
     // 加载shader源码
     CComPtr<IDxcBlobEncoding> pSource = nullptr;
-    HRESULT result = m_pUtils->LoadFile(pw_ShaderFile, nullptr, &pSource);
+    HRESULT result = m_pUtils->LoadFile(wShaderFile.c_str(), nullptr, &pSource);
     DxcBuffer sourceBuffer;
     sourceBuffer.Ptr = pSource->GetBufferPointer();
     sourceBuffer.Size = pSource->GetBufferSize();
@@ -209,7 +186,6 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
     
     CComPtr<IDxcResult> pResults = nullptr;
     result = m_pCompiler->Compile(&sourceBuffer, arguments.data(), (UINT32)arguments.size(), pIncludeHandler, IID_PPV_ARGS(&pResults));
-    delete []pw_ShaderFile;
     
     //
     // 如果有错误，就打印出来看看
