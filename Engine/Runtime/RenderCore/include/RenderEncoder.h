@@ -146,7 +146,7 @@ public:
      @param buffer buffer description
      @param index index description
      */
-    virtual void SetObjectUniformBuffer(UniformBufferPtr buffer, int index) = 0;
+    virtual void SetTaskUniformBuffer(UniformBufferPtr buffer, int index) = 0;
 
     // ==================== 绘制接口 ====================
     

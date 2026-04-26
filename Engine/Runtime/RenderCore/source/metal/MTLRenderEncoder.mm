@@ -229,7 +229,7 @@ void MTLRenderEncoder::SetMeshUniformBuffer(UniformBufferPtr buffer, int index)
     }
 }
 
-void MTLRenderEncoder::SetObjectUniformBuffer(UniformBufferPtr buffer, int index)
+void MTLRenderEncoder::SetTaskUniformBuffer(UniformBufferPtr buffer, int index)
 {
     if (!buffer)
     {

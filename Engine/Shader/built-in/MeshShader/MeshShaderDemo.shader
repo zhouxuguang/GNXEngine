@@ -11,7 +11,7 @@ cbuffer UBO
     float4x4 view;
 };
 
-// ==================== Task Shader (Amplification Shader) ====================
+// ==================== Task Shader ====================
 struct DummyPayLoad
 {
     uint dummyData;
@@ -20,7 +20,7 @@ struct DummyPayLoad
 groupshared DummyPayLoad dummyPayLoad;
 
 [numthreads(1, 1, 1)]
-void AS()
+void TS()
 {
     DispatchMesh(2, 1, 1, dummyPayLoad);
 }

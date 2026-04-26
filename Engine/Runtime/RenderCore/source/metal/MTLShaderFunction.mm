@@ -35,7 +35,7 @@ static const char* getFunctionName(ShaderStage shaderStage)
             return "CS";
 
         case ShaderStage_Task:
-            return "AS";
+            return "TS";
 
         case ShaderStage_Mesh:
             return "MS";

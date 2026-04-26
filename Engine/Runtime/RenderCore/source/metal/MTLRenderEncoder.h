@@ -97,12 +97,12 @@ public:
     virtual void SetMeshUniformBuffer(UniformBufferPtr buffer, int index);
 
     /**
-     设置object (task) shader的uniformbuffer
+     设置task shader的uniformbuffer
 
      @param buffer buffer description
      @param index index description
      */
-    virtual void SetObjectUniformBuffer(UniformBufferPtr buffer, int index);
+    virtual void SetTaskUniformBuffer(UniformBufferPtr buffer, int index);
 
     /**
      draw function

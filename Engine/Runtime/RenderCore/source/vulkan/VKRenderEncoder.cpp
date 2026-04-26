@@ -670,7 +670,7 @@ void VKRenderEncoder::SetMeshUniformBuffer(UniformBufferPtr buffer, int index)
         mGraphicsPipieline->GetPipelineLayout(), 0, 1, &writeDescriptorSet);
 }
 
-void VKRenderEncoder::SetObjectUniformBuffer(UniformBufferPtr buffer, int index)
+void VKRenderEncoder::SetTaskUniformBuffer(UniformBufferPtr buffer, int index)
 {
     if (!buffer || !mGraphicsPipieline)
     {

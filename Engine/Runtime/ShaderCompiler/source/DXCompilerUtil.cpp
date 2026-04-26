@@ -79,7 +79,7 @@ LPCWSTR GetEntryPoint(ShaderStage stage)
             break;
             
         case ShaderStage_Task:
-            return L"AS";
+            return L"TS";
             break;
             
         case ShaderStage_Mesh:

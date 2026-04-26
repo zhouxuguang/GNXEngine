@@ -63,7 +63,7 @@ public:
 
     virtual void SetMeshUniformBuffer(UniformBufferPtr buffer, int index);
 
-    virtual void SetObjectUniformBuffer(UniformBufferPtr buffer, int index);
+    virtual void SetTaskUniformBuffer(UniformBufferPtr buffer, int index);
 
     virtual void DrawPrimitives(PrimitiveMode mode, int offset, int size);
 
