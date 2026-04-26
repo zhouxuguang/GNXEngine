@@ -276,9 +276,13 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
         shaderInfo->vertexDescriptor = GetMetalReflectionInfo(msl, resources);
         //shaderInfo.vertexUniformBufferLayout = GetMetalUniformReflectionInfo(msl, resources);
     }
-    else
+
+    // 提取 mesh/task/compute shader 的 threadgroup 大小（来自 SPIR-V LocalSize）
+    if (shaderStage == ShaderStage_Task || shaderStage == ShaderStage_Mesh || shaderStage == ShaderStage_Compute)
     {
-        //shaderInfo.fragmentUniformBufferLayout = GetMetalUniformReflectionInfo(msl, resources);
+        shaderInfo->threadgroupSizeX = msl.get_execution_mode_argument(spv::ExecutionModeLocalSize, 0);
+        shaderInfo->threadgroupSizeY = msl.get_execution_mode_argument(spv::ExecutionModeLocalSize, 1);
+        shaderInfo->threadgroupSizeZ = msl.get_execution_mode_argument(spv::ExecutionModeLocalSize, 2);
     }
     
     shaderInfo->shaderSource = std::make_shared<ShaderCode>();
@@ -311,6 +315,16 @@ CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage s
     {
         CompiledShaderInfoPtr compileShader = std::make_shared<CompiledShaderInfo>();
         compileShader->shaderSource = shaderCode;
+
+        // 提取 mesh/task/compute shader 的 threadgroup 大小
+        if (shaderStage == ShaderStage_Task || shaderStage == ShaderStage_Mesh || shaderStage == ShaderStage_Compute)
+        {
+            spirv_cross::Compiler reflection((const uint32_t*)shaderCode->data(), shaderCode->size() / 4);
+            compileShader->threadgroupSizeX = reflection.get_execution_mode_argument(spv::ExecutionModeLocalSize, 0);
+            compileShader->threadgroupSizeY = reflection.get_execution_mode_argument(spv::ExecutionModeLocalSize, 1);
+            compileShader->threadgroupSizeZ = reflection.get_execution_mode_argument(spv::ExecutionModeLocalSize, 2);
+        }
+
         return compileShader;
     }
     

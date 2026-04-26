@@ -258,7 +258,7 @@ MTLGraphicsPipeline::MTLGraphicsPipeline(id<MTLDevice> device, const GraphicsPip
                                            const std::shared_ptr<MTLPipelineCache>& pipelineCache) : GraphicsPipeline(des)
 {
     mDevice = device;
-    mDesc.pipelineType = des.pipelineType;
+    mDesc = des;
     mPipelineCache = pipelineCache;
     mDepthStencilState = convertToMTLDSDes(device, des.depthStencilDescriptor);
     

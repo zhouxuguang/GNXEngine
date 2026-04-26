@@ -39,6 +39,11 @@ struct CompiledShaderInfo
 {
     ShaderCodePtr shaderSource = nullptr;
     RenderCore::VertexDesc vertexDescriptor;
+
+    // mesh/task shader 的 threadgroup 大小（来自 SPIR-V LocalSize）
+    uint32_t threadgroupSizeX = 0;
+    uint32_t threadgroupSizeY = 0;
+    uint32_t threadgroupSizeZ = 0;
 };
 
 using CompiledShaderInfoPtr = std::shared_ptr<CompiledShaderInfo>;
