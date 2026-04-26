@@ -330,7 +330,17 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     vertexAssemblyCreateInfo.primitiveRestartEnable = VK_FALSE;
     vertexAssemblyCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;     //todo 这里还需要根据实际情况修改
     vertexAssemblyCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    mPipeCreateInfo.pInputAssemblyState = &vertexAssemblyCreateInfo;
+
+    if (mGraphicsPipelineDes.pipelineType == PipelineType::Mesh)
+    {
+        // Mesh Pipeline 不使用输入装配状态，设置为 nullptr
+        mPipeCreateInfo.pInputAssemblyState = nullptr;
+        mPipeCreateInfo.pVertexInputState = nullptr;
+    }
+    else
+    {
+        mPipeCreateInfo.pInputAssemblyState = &vertexAssemblyCreateInfo;
+    }
 
     //4、细分状态
     mPipeCreateInfo.pTessellationState = NULL;
@@ -408,10 +418,14 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
     //dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
     dynamicStates.push_back(VK_DYNAMIC_STATE_STENCIL_REFERENCE);
-    if (mContext->vulkanExtension.enabledExtendedDynamicState)
+
+    // Mesh Pipeline 不使用输入装配，因此不需要 PRIMITIVE_TOPOLOGY 动态状态
+    if (mContext->vulkanExtension.enabledExtendedDynamicState &&
+        mGraphicsPipelineDes.pipelineType != PipelineType::Mesh)
     {
         dynamicStates.push_back(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT);
     }
+
     if (mContext->vulkanExtension.enabledExtendedDynamicState3)
     {
         dynamicStates.push_back(VK_DYNAMIC_STATE_POLYGON_MODE_EXT);
