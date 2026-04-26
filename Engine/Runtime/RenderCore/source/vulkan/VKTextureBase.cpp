@@ -326,7 +326,7 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
         // 异步加载逻辑还有问题
         VkBuffer stageBuffer = VK_NULL_HANDLE;
         VmaAllocation allocation = VK_NULL_HANDLE;
-        VkDeviceSize size = bytesPerImage;
+        VkDeviceSize size = bytesPerRow * rect.height;
         VulkanBufferUtil::CreateBufferVMA(mContext->vmaAllocator, StorageModeShared, size,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
             stageBuffer, allocation, nullptr);

@@ -22,8 +22,34 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
     // host image copy关联的扩展
     enableFormatFeatureFlags2 = ExtensionSupported(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     enableCopyCommands2 = ExtensionSupported(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
-    enableHostImageCopy = ExtensionSupported(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME) && 
-        enableFormatFeatureFlags2 && enableCopyCommands2/* && mPhysicalDeviceProperties.deviceID != 0x1C81*/;
+    enableHostImageCopy = ExtensionSupported(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME) &&
+        enableFormatFeatureFlags2 && enableCopyCommands2;
+
+    // NVIDIA 驱动的 VK_EXT_host_image_copy 实现与 RenderDoc Layer 存在兼容性问题，
+    // 当 RenderDoc Layer 激活时可能导致 vkCreateDevice 崩溃或数据拷贝错误。
+    // 检测 RenderDoc Layer，仅在存在时禁用此扩展。
+    if (enableHostImageCopy)
+    {
+        uint32_t instanceLayerCount = 0;
+        vkEnumerateInstanceLayerProperties(&instanceLayerCount, nullptr);
+        std::vector<VkLayerProperties> instanceLayers(instanceLayerCount);
+        vkEnumerateInstanceLayerProperties(&instanceLayerCount, instanceLayers.data());
+
+        bool hasRenderDocLayer = false;
+        for (const auto& layer : instanceLayers)
+        {
+            if (strstr(layer.layerName, "RenderDoc") != nullptr)
+            {
+                hasRenderDocLayer = true;
+                break;
+            }
+        }
+
+        if (hasRenderDocLayer)
+        {
+            enableHostImageCopy = false;
+        }
+    }
     
     enableDeviceFault = ExtensionSupported(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
     
