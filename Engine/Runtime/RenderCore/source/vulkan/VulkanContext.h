@@ -78,6 +78,9 @@ struct VulkanContext
     // Host Image Copy 支持的 copy destination layouts
     std::vector<VkImageLayout> hostImageCopyDstLayouts;
 
+    // Mesh Shader 属性（通过 vkGetPhysicalDeviceProperties2 查询）
+    VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties = {};
+
     VulkanFencePool fencePool;
     UpLoadThreadPool upLoadPool;
     std::shared_ptr<VulkanGarbageCollector> garbageCollector;  // 资源垃圾收集器

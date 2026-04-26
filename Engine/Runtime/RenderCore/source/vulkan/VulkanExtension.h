@@ -30,7 +30,15 @@ struct VulkanExtension
     
     // Mesh Shader 扩展支持（仅使用标准的 EXT 扩展）
     bool enableMeshShaderEXT = false;
-    
+
+    // Mesh Shader 的依赖扩展
+    bool enableSpirv14 = false;
+    bool enableShaderFloatControls = false;
+
+    // Mesh Shader 实际 feature 支持情况（通过 vkGetPhysicalDeviceFeatures2 查询）
+    bool meshShaderSupported = false;
+    bool taskShaderSupported = false;
+
     std::vector<VkExtensionProperties> mDeviceExtensions;
     
     void Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties physicalDeviceProperties);

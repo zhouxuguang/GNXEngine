@@ -27,8 +27,37 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
     
     enableDeviceFault = ExtensionSupported(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
     
+    // Mesh Shader 的依赖扩展检测
+    enableShaderFloatControls = ExtensionSupported(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+    enableSpirv14 = ExtensionSupported(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+
     // Mesh Shader 扩展检测（仅使用标准的 EXT 扩展，与 Metal 等其他图形 API 通用）
-    enableMeshShaderEXT = ExtensionSupported(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+    // 需要 VK_KHR_spirv_1_4 和 VK_KHR_shader_float_controls 作为依赖
+    enableMeshShaderEXT = ExtensionSupported(VK_EXT_MESH_SHADER_EXTENSION_NAME) &&
+                          enableSpirv14 && enableShaderFloatControls;
+
+    // 查询 Mesh Shader 实际 feature 支持情况
+    if (enableMeshShaderEXT)
+    {
+        VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeatures = {};
+        meshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+        meshShaderFeatures.pNext = nullptr;
+
+        VkPhysicalDeviceFeatures2 features2 = {};
+        features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features2.pNext = &meshShaderFeatures;
+
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &features2);
+
+        meshShaderSupported = meshShaderFeatures.meshShader == VK_TRUE;
+        taskShaderSupported = meshShaderFeatures.taskShader == VK_TRUE;
+
+        // 如果 meshShader feature 不支持，则整体禁用 mesh shader
+        if (!meshShaderSupported)
+        {
+            enableMeshShaderEXT = false;
+        }
+    }
 }
 
 void VulkanExtension::InitExtendedDynamicState(VkPhysicalDevice physicalDevice)

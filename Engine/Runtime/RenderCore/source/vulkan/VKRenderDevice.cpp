@@ -200,8 +200,8 @@ void VKRenderDevice::InitializeFeatures()
     if (props.limits.framebufferColorSampleCounts & VK_SAMPLE_COUNT_2_BIT)   L.maxSampleCountMaskBits |= (1u << 0);
 
     // ---- Shader capabilities ----
-    mFeatures.shader.meshShader         = ext.enableMeshShaderEXT;
-    mFeatures.shader.taskShader         = ext.enableMeshShaderEXT;
+    mFeatures.shader.meshShader         = ext.meshShaderSupported;
+    mFeatures.shader.taskShader         = ext.taskShaderSupported;
     mFeatures.shader.waveIntrinsics     = true;   // Vulkan 1.1+ 必须支持 subgroup
     mFeatures.shader.int64Atomics       = f12.shaderBufferInt64Atomics || f12.shaderSharedInt64Atomics;
     mFeatures.shader.float16            = f12.shaderFloat16;

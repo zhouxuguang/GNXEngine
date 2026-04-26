@@ -12,6 +12,7 @@
 #include "Runtime/BaseLib/include/LogService.h"
 #include "VKUtil.h"
 #include <optional>
+#include <algorithm>
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -116,6 +117,7 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
     vkEnumerateInstanceExtensionProperties(nullptr, &instance_extension_count, available_instance_extensions.data());
     
     bool debugUtils = false;
+    bool hasPhysicalDeviceProperties2 = false;
     for (auto &available_extension : available_instance_extensions)
     {
         if (strcmp(available_extension.extensionName, VK_EXT_DEBUG_UTILS_EXTENSION_NAME) == 0)
@@ -125,8 +127,19 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
         }
         if (strcmp(available_extension.extensionName, VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME) == 0)
         {
-            instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+            hasPhysicalDeviceProperties2 = true;
         }
+    }
+    
+    // VK_KHR_get_physical_device_properties2 已在上方无条件添加，
+    // 若运行时不支持则移除（实际上 Vulkan 1.1+ 核心包含此扩展，基本不会不支持）
+    if (!hasPhysicalDeviceProperties2)
+    {
+        // 移除之前无条件添加的扩展
+        instanceExtensions.erase(
+            std::remove(instanceExtensions.begin(), instanceExtensions.end(),
+                        VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME),
+            instanceExtensions.end());
     }
     
     // 创建vulkan实例
@@ -398,10 +411,14 @@ bool CreateVirtualDevice(VulkanContext& context)
     VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT = {};
     if (context.vulkanExtension.enableMeshShaderEXT)
     {
+        // 启用 Mesh Shader 的依赖扩展
+        deviceExtensionNames.push_back(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+        deviceExtensionNames.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+
         deviceExtensionNames.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
         meshShaderFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
-        meshShaderFeaturesEXT.taskShader = VK_TRUE;
-        meshShaderFeaturesEXT.meshShader = VK_TRUE;
+        meshShaderFeaturesEXT.meshShader = context.vulkanExtension.meshShaderSupported ? VK_TRUE : VK_FALSE;
+        meshShaderFeaturesEXT.taskShader = context.vulkanExtension.taskShaderSupported ? VK_TRUE : VK_FALSE;
         AppendToPNextChain(deviceCreateNextChain, &meshShaderFeaturesEXT);
     }
 
@@ -451,6 +468,14 @@ bool CreateVirtualDevice(VulkanContext& context)
         hostImageCopyProperties.pCopyDstLayouts = hostImageCopyDstLayoutsStorage.data();
 
         AppendToPNextChain(&deviceProperties, &hostImageCopyProperties);
+    }
+
+    // 查询 Mesh Shader 属性（maxMeshOutputVertices, maxMeshOutputPrimitives 等）
+    if (context.vulkanExtension.enableMeshShaderEXT)
+    {
+        context.meshShaderProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
+        context.meshShaderProperties.pNext = nullptr;
+        AppendToPNextChain(&deviceProperties, &context.meshShaderProperties);
     }
 
     vkGetPhysicalDeviceProperties2(context.physicalDevice, &deviceProperties);
@@ -722,7 +747,7 @@ void CreateVMA(VulkanContext& context)
     vmaAllocatorCreateInfo.pDeviceMemoryCallbacks = nullptr;
     vmaAllocatorCreateInfo.preferredLargeHeapBlockSize = 128 * 1024 * 1024;
     vmaAllocatorCreateInfo.pHeapSizeLimit = nullptr;
-    vmaAllocatorCreateInfo.vulkanApiVersion = VK_API_VERSION_1_1;
+    vmaAllocatorCreateInfo.vulkanApiVersion = context.apiVersion;
     VmaVulkanFunctions vmaVulkanFunctions;
     GetVulkanFunctions(context.device, vmaVulkanFunctions);
     vmaAllocatorCreateInfo.pVulkanFunctions = &vmaVulkanFunctions;
