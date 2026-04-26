@@ -280,6 +280,10 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
+    // vertexInputLayout 必须在函数作用域内声明，因为 vertexInputInfo 的指针指向它的数据，
+    // 这些数据在 vkCreateGraphicsPipelines 调用时仍需有效
+    VertexInputLayout vertexInputLayout;
+
     if (mGraphicsPipelineDes.pipelineType == PipelineType::Mesh)
     {
         // Mesh pipeline 不使用顶点输入，使用空状态
@@ -288,7 +292,7 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     }
     else
     {
-        VertexInputLayout vertexInputLayout = mShader->GetVertexInputLayout();
+        vertexInputLayout = mShader->GetVertexInputLayout();
 
         // 如果 GraphicsPipelineDesc 中指定了顶点属性格式，则覆盖 shader 反射的格式
         // 这对于 byte4 -> float4 归一化等场景非常重要
