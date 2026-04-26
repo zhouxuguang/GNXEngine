@@ -69,6 +69,7 @@ private:
         uint32_t z = 0;
         uint32_t size = 0;        // size in grid cells (power of 2)
         uint32_t level = 0;       // depth in tree (0 = root)
+        float maxGeoError = 0.0f; // max geometric error when rendered at this LOD
         mathutil::AxisAlignedBoxf bounds;
         Node* parent = nullptr;   // parent pointer for neighbor traversal
 
@@ -92,6 +93,11 @@ private:
     void Subdivide(Node* node);
     void CollectLeaves(Node* node);
     void ComputeNodeBounds(Node* node);
+
+    // Geometric error computation
+    void ComputeAllGeoErrors();
+    float ComputeNodeGeoError(uint32_t x, uint32_t z, uint32_t size) const;
+    float GetCachedGeoError(uint32_t level, uint32_t x, uint32_t z) const;
 
     // Neighbor constraint: ensure adjacent leaves differ by at most 1 level
     static int GetChildIndex(const Node* node);
@@ -153,12 +159,15 @@ private:
     std::vector<std::vector<IndexPoolEntry>> mIndexPool;  // [strideLevel][16 permutations]
     std::vector<uint32_t> mMasterIndices;                  // contiguous master index buffer
 
+    // Pre-computed geometric error cache: mGeoErrorCache[level][j * nodesPerSide + i]
+    std::vector<std::vector<float>> mGeoErrorCache;
+
     // GPU resources
     MeshPtr mMesh;
 
     // LOD configuration
     float mLODDistanceFactor = 1.0f; // distance = nodeWorldSize * factor
-    float mSSEThreshold = 4.0f;
+    float mSSEThreshold = 32.0f;
     float mTanHalfFovY = 0.0f;
     float mScreenHeight = 0.0f;
 

@@ -191,6 +191,9 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
     // Build quadtree
     terrain->BuildNode(&terrain->mRoot);
 
+    // Pre-compute geometric errors for SSE LOD selection
+    terrain->ComputeAllGeoErrors();
+
     // Build static index pool BEFORE first Update()
     // (Update→GenerateLeafMesh reads from mIndexPool, must be populated)
     terrain->BuildStaticIndexPool();
@@ -303,6 +306,9 @@ QuadTreeTerrainPtr QuadTreeTerrain::Create(
 
     // Build quadtree
     terrain->BuildNode(&terrain->mRoot);
+
+    // Pre-compute geometric errors for SSE LOD selection
+    terrain->ComputeAllGeoErrors();
 
     // Build static index pool BEFORE first Update()
     terrain->BuildStaticIndexPool();
@@ -421,15 +427,37 @@ bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPo
     // Cannot subdivide beyond maxLevel
     if (node.level >= mMaxLevel) return false;
 
-    // Distance-based test: subdivide if camera is close enough
+    // No geometric error means this LOD perfectly represents the terrain
+    if (node.maxGeoError <= 0.0f) return false;
+
+    // SSE-based test when camera parameters are available
+    if (mTanHalfFovY > 0.0f && mScreenHeight > 0.0f)
+    {
+        // Distance from camera to closest point on node's AABB
+        float dx = std::max(0.0f, std::max(node.bounds.minimum.x - cameraPos.x,
+                                            cameraPos.x - node.bounds.maximum.x));
+        float dy = std::max(0.0f, std::max(node.bounds.minimum.y - cameraPos.y,
+                                            cameraPos.y - node.bounds.maximum.y));
+        float dz = std::max(0.0f, std::max(node.bounds.minimum.z - cameraPos.z,
+                                            cameraPos.z - node.bounds.maximum.z));
+        float distance = sqrtf(dx * dx + dy * dy + dz * dz);
+        distance = std::max(distance, 0.001f);  // avoid division by zero
+
+        // Screen-space error: screenError = (geoError * tanHalfFov * screenHeight) / distance
+        // Subdivide when screenError exceeds threshold
+        float screenError = (node.maxGeoError * mTanHalfFovY * mScreenHeight) / distance;
+        return screenError > mSSEThreshold;
+    }
+
+    // Fallback: distance-based test (when camera params not provided)
     float nodeWorldSize = (float)node.size * (mWorldSize / (float)(mGridSize - 1));
     float threshold = nodeWorldSize * mLODDistanceFactor;
 
     Vector3f nodeCenter = node.bounds.center;
-    float dx = cameraPos.x - nodeCenter.x;
-    float dy = cameraPos.y - nodeCenter.y;
-    float dz = cameraPos.z - nodeCenter.z;
-    float distance = sqrtf(dx * dx + dy * dy + dz * dz);
+    float cdx = cameraPos.x - nodeCenter.x;
+    float cdy = cameraPos.y - nodeCenter.y;
+    float cdz = cameraPos.z - nodeCenter.z;
+    float distance = sqrtf(cdx * cdx + cdy * cdy + cdz * cdz);
 
     return distance < threshold;
 }
@@ -451,6 +479,7 @@ void QuadTreeTerrain::Subdivide(Node* node)
     node->children[0]->level = childLevel;
     node->children[0]->parent = node;
     ComputeNodeBounds(node->children[0].get());
+    node->children[0]->maxGeoError = GetCachedGeoError(childLevel, node->x, node->z);
 
     // NE (top-right)
     node->children[1] = std::make_unique<Node>();
@@ -460,6 +489,7 @@ void QuadTreeTerrain::Subdivide(Node* node)
     node->children[1]->level = childLevel;
     node->children[1]->parent = node;
     ComputeNodeBounds(node->children[1].get());
+    node->children[1]->maxGeoError = GetCachedGeoError(childLevel, node->x + halfSize, node->z);
 
     // SW (bottom-left)
     node->children[2] = std::make_unique<Node>();
@@ -469,6 +499,7 @@ void QuadTreeTerrain::Subdivide(Node* node)
     node->children[2]->level = childLevel;
     node->children[2]->parent = node;
     ComputeNodeBounds(node->children[2].get());
+    node->children[2]->maxGeoError = GetCachedGeoError(childLevel, node->x, node->z + halfSize);
 
     // SE (bottom-right)
     node->children[3] = std::make_unique<Node>();
@@ -478,6 +509,7 @@ void QuadTreeTerrain::Subdivide(Node* node)
     node->children[3]->level = childLevel;
     node->children[3]->parent = node;
     ComputeNodeBounds(node->children[3].get());
+    node->children[3]->maxGeoError = GetCachedGeoError(childLevel, node->x + halfSize, node->z + halfSize);
 }
 
 //=============================================================================
@@ -671,6 +703,121 @@ uint32_t QuadTreeTerrain::GetStrideLevel(uint32_t stride) const
     uint32_t level = 0;
     while (stride > 1) { stride >>= 1; ++level; }
     return level;
+}
+
+//=============================================================================
+// ComputeNodeGeoError - compute max geometric error when a node is rendered
+// at its LOD level (i.e., with kLeafVerticesPerSide vertices per side).
+//
+// The geometric error is the maximum |actual_height - bilinear_interpolated_height|
+// over all grid vertices within the node that are NOT on the rendered vertex grid.
+// When the node size equals kLeafVerticesPerSide-1, every vertex is rendered
+// and the error is zero.
+//=============================================================================
+
+float QuadTreeTerrain::ComputeNodeGeoError(uint32_t x, uint32_t z, uint32_t size) const
+{
+    uint32_t cellsPerSide = kLeafVerticesPerSide - 1;  // 16
+    if (size <= cellsPerSide) return 0.0f;  // finest detail, no error
+
+    uint32_t stride = size / cellsPerSide;
+    float maxError = 0.0f;
+
+    for (uint32_t gz = z; gz <= z + size && gz < mGridSize; ++gz)
+    {
+        for (uint32_t gx = x; gx <= x + size && gx < mGridSize; ++gx)
+        {
+            // Skip rendered vertices (they lie exactly on the sampled grid)
+            uint32_t localX = gx - x;
+            uint32_t localZ = gz - z;
+            if (localX % stride == 0 && localZ % stride == 0) continue;
+
+            // Find which rendered grid cell this vertex falls in
+            uint32_t cellX = localX / stride;
+            uint32_t cellZ = localZ / stride;
+
+            // Clamp to valid cell range
+            cellX = std::min(cellX, cellsPerSide - 1);
+            cellZ = std::min(cellZ, cellsPerSide - 1);
+
+            // 4 corners of the rendered grid cell (global coords)
+            uint32_t x0 = x + cellX * stride;
+            uint32_t z0 = z + cellZ * stride;
+            uint32_t x1 = std::min(x0 + stride, mGridSize - 1);
+            uint32_t z1 = std::min(z0 + stride, mGridSize - 1);
+
+            float h00 = mHeightMap[z0 * mGridSize + x0];
+            float h10 = mHeightMap[z0 * mGridSize + x1];
+            float h01 = mHeightMap[z1 * mGridSize + x0];
+            float h11 = mHeightMap[z1 * mGridSize + x1];
+
+            // Bilinear interpolation weights
+            float tx = (x1 > x0) ? (float)(gx - x0) / (float)(x1 - x0) : 0.0f;
+            float tz = (z1 > z0) ? (float)(gz - z0) / (float)(z1 - z0) : 0.0f;
+
+            float interp = h00 * (1.0f - tx) * (1.0f - tz)
+                         + h10 * tx * (1.0f - tz)
+                         + h01 * (1.0f - tx) * tz
+                         + h11 * tx * tz;
+
+            float actual = mHeightMap[gz * mGridSize + gx];
+            float error = fabsf(actual - interp);
+            maxError = std::max(maxError, error);
+        }
+    }
+
+    return maxError;
+}
+
+//=============================================================================
+// ComputeAllGeoErrors - pre-compute geometric error for every possible node
+// at every level. Called once at initialization.
+//=============================================================================
+
+void QuadTreeTerrain::ComputeAllGeoErrors()
+{
+    mGeoErrorCache.resize(mMaxLevel + 1);
+
+    for (uint32_t level = 0; level <= mMaxLevel; ++level)
+    {
+        uint32_t nodeSize = mGridSizeCells >> level;
+        uint32_t nodesPerSide = 1u << level;
+        mGeoErrorCache[level].resize(nodesPerSide * nodesPerSide);
+
+        for (uint32_t j = 0; j < nodesPerSide; ++j)
+        {
+            for (uint32_t i = 0; i < nodesPerSide; ++i)
+            {
+                uint32_t nx = i * nodeSize;
+                uint32_t nz = j * nodeSize;
+                mGeoErrorCache[level][j * nodesPerSide + i] =
+                    ComputeNodeGeoError(nx, nz, nodeSize);
+            }
+        }
+    }
+
+    // Set root node's geoError
+    mRoot.maxGeoError = GetCachedGeoError(mRoot.level, mRoot.x, mRoot.z);
+
+    LOG_INFO("QuadTreeTerrain: GeoError cache computed for %u levels", mMaxLevel + 1);
+}
+
+//=============================================================================
+// GetCachedGeoError - look up pre-computed geometric error from cache
+//=============================================================================
+
+float QuadTreeTerrain::GetCachedGeoError(uint32_t level, uint32_t x, uint32_t z) const
+{
+    if (level >= mGeoErrorCache.size()) return 0.0f;
+
+    uint32_t nodeSize = mGridSizeCells >> level;
+    uint32_t nodesPerSide = 1u << level;
+    uint32_t i = x / nodeSize;
+    uint32_t j = z / nodeSize;
+
+    if (i >= nodesPerSide || j >= nodesPerSide) return 0.0f;
+
+    return mGeoErrorCache[level][j * nodesPerSide + i];
 }
 
 //=============================================================================
