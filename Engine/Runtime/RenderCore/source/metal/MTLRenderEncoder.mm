@@ -210,6 +210,44 @@ void MTLRenderEncoder::SetFragmentUniformBuffer(UniformBufferPtr buffer, int ind
     }
 }
 
+void MTLRenderEncoder::SetMeshUniformBuffer(UniformBufferPtr buffer, int index)
+{
+    if (!buffer)
+    {
+        return;
+    }
+
+    MTLUniformBuffer *mtlBuffer = (MTLUniformBuffer *)buffer.get();
+    if (mtlBuffer->isBuffer())
+    {
+        [mRenderEncoder setMeshBuffer:mtlBuffer->getMTLBuffer() offset:0 atIndex:index];
+    }
+    else
+    {
+        const std::vector<uint8_t>& bufferData = mtlBuffer->getBufferData();
+        [mRenderEncoder setMeshBytes:bufferData.data() length:bufferData.size() atIndex:index];
+    }
+}
+
+void MTLRenderEncoder::SetObjectUniformBuffer(UniformBufferPtr buffer, int index)
+{
+    if (!buffer)
+    {
+        return;
+    }
+
+    MTLUniformBuffer *mtlBuffer = (MTLUniformBuffer *)buffer.get();
+    if (mtlBuffer->isBuffer())
+    {
+        [mRenderEncoder setObjectBuffer:mtlBuffer->getMTLBuffer() offset:0 atIndex:index];
+    }
+    else
+    {
+        const std::vector<uint8_t>& bufferData = mtlBuffer->getBufferData();
+        [mRenderEncoder setObjectBytes:bufferData.data() length:bufferData.size() atIndex:index];
+    }
+}
+
 void MTLRenderEncoder::SetFragmentStorageTexture(const std::string& resourceName, RCTexturePtr texture)
 {
     MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();

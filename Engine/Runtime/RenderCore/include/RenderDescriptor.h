@@ -316,7 +316,7 @@ struct GraphicsPipelineDesc
     VertexDesc vertexDescriptor;                                                  //顶点buffer数据描述
 
     // 以下字段在 PipelineType::Mesh 时使用
-    uint32_t meshThreadgroupSizeX = 128;    // 每个mesh threadgroup的线程数
+    uint32_t meshThreadgroupSizeX = 1;    // 每个mesh threadgroup的线程数
     uint32_t meshThreadgroupSizeY = 1;
     uint32_t meshThreadgroupSizeZ = 1;
     uint32_t taskPayloadSize = 0;           // Vulkan Task Shader payload 大小（Metal 忽略）

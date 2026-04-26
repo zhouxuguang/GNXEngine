@@ -43,7 +43,7 @@ public:
      */
     id<MTLRenderPipelineState> getMeshPipelineState() const { return mMeshPipelineState; }
     
-    bool IsMeshPipeline() const { return mDesc.pipelineType == PipelineType::Mesh; }
+    bool IsMeshPipeline() const { return mMeshPipelineState != nil; }
     
     id<MTLDepthStencilState> GetDepthStencilState() const
     {

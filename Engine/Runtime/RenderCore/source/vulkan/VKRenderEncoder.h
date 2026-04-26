@@ -60,7 +60,11 @@ public:
     virtual void SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
 
     virtual void SetFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
-    
+
+    virtual void SetMeshUniformBuffer(UniformBufferPtr buffer, int index);
+
+    virtual void SetObjectUniformBuffer(UniformBufferPtr buffer, int index);
+
     virtual void DrawPrimitives(PrimitiveMode mode, int offset, int size);
 
     virtual void DrawInstancePrimitives(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount);

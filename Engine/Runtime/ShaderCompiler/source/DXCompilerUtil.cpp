@@ -156,6 +156,7 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
     arguments.push_back(DXC_ARG_PACK_MATRIX_COLUMN_MAJOR);   //列优先矩阵
     //arguments.push_back(DXC_ARG_PACK_MATRIX_ROW_MAJOR); //-Zp
     //arguments.push_back(L"-enable-16bit-types");
+    arguments.push_back(L"-fspv-target-env=vulkan1.2");
     
     arguments.push_back(L"-D");
     arguments.push_back(L"TEXCOORD_FLIP");

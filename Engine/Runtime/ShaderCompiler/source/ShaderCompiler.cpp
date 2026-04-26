@@ -109,8 +109,10 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
     switch (shaderStage)
     {
         case ShaderStage_Vertex:  model = spv::ExecutionModelVertex; break;
-        case ShaderStage_Fragment:model = spv::ExecutionModelFragment; break;
+        case ShaderStage_Fragment: model = spv::ExecutionModelFragment; break;
         case ShaderStage_Compute: model = spv::ExecutionModelGLCompute; break;
+        case ShaderStage_Task:  model = spv::ExecutionModelTaskEXT; break;
+        case ShaderStage_Mesh:  model = spv::ExecutionModelMeshEXT; break;
         default: model = spv::ExecutionModelVertex; break;
     }
 
@@ -262,6 +264,7 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
 
     // 关键：使用 MSLResourceBinding 代替 decoration binding
     options.enable_decoration_binding = false;
+    options.msl_version = spirv_cross::CompilerMSL::Options::make_msl_version(3, 0);
     msl.set_msl_options(options);
 
     // Compile to msl, ready to give to metal driver.

@@ -27,17 +27,23 @@ static const char* getFunctionName(ShaderStage shaderStage)
     {
         case ShaderStage_Vertex:
             return "VS";
-            
+
         case ShaderStage_Fragment:
             return "PS";
-            
+
         case ShaderStage_Compute:
             return "CS";
-            
+
+        case ShaderStage_Task:
+            return "AS";
+
+        case ShaderStage_Mesh:
+            return "MS";
+
         default:
             break;
     }
-    
+
     return "";
 }
 
@@ -53,8 +59,14 @@ ShaderFunctionPtr MTLShaderFunction::InitWithShaderSource(const ShaderCode& shad
     std::string shaderStr;
     shaderStr.resize(shaderSource.size());
     memcpy(shaderStr.data(), shaderSource.data(), shaderSource.size());
-    
-    id<MTLLibrary> library = [mDevice newLibraryWithSource:[NSString stringWithUTF8String:shaderStr.c_str()] options:nil error:&error];
+
+    MTLCompileOptions *options = [MTLCompileOptions new];
+    if (@available(macOS 13.0, iOS 16.0, *))
+    {
+        options.languageVersion = MTLLanguageVersion3_0;
+    }
+
+    id<MTLLibrary> library = [mDevice newLibraryWithSource:[NSString stringWithUTF8String:shaderStr.c_str()] options:options error:&error];
     if (error)
     {
         //NSString* errorStr = error.domain;
@@ -92,9 +104,15 @@ static id<MTLFunction> CreateShaderFunction(id<MTLDevice> device, const ShaderCo
     std::string shaderStr;
     shaderStr.resize(shaderSource.size());
     memcpy(shaderStr.data(), shaderSource.data(), shaderSource.size());
-    
+
+    MTLCompileOptions *options = [MTLCompileOptions new];
+    if (@available(macOS 13.0, iOS 16.0, *))
+    {
+        options.languageVersion = MTLLanguageVersion3_0;
+    }
+
     NSError *error = nil;
-    id<MTLLibrary> library = [device newLibraryWithSource:[NSString stringWithUTF8String:shaderStr.c_str()] options:nil error:&error];
+    id<MTLLibrary> library = [device newLibraryWithSource:[NSString stringWithUTF8String:shaderStr.c_str()] options:options error:&error];
     if (error)
     {
         //NSString* errorStr = error.domain;

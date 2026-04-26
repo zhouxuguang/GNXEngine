@@ -131,7 +131,23 @@ public:
      @param index index description
      */
     virtual void SetFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer) = 0;
-    
+
+    /**
+     设置mesh shader的uniformbuffer
+
+     @param buffer buffer description
+     @param index index description
+     */
+    virtual void SetMeshUniformBuffer(UniformBufferPtr buffer, int index) = 0;
+
+    /**
+     设置object (task) shader的uniformbuffer
+
+     @param buffer buffer description
+     @param index index description
+     */
+    virtual void SetObjectUniformBuffer(UniformBufferPtr buffer, int index) = 0;
+
     // ==================== 绘制接口 ====================
     
     /**

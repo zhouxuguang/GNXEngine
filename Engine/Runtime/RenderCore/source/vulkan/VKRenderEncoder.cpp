@@ -642,6 +642,20 @@ void VKRenderEncoder::SetFragmentUniformBuffer(const std::string& resourceName, 
 	shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
 }
 
+void VKRenderEncoder::SetMeshUniformBuffer(UniformBufferPtr buffer, int index)
+{
+	// Vulkan mesh shaders share the same descriptor set layout with the pipeline.
+	// For now, map mesh uniform binding to the same descriptor set logic as vertex.
+	SetVertexUniformBuffer(buffer, index);
+}
+
+void VKRenderEncoder::SetObjectUniformBuffer(UniformBufferPtr buffer, int index)
+{
+	// Vulkan task shaders share the same descriptor set layout with the pipeline.
+	// For now, map object uniform binding to the same descriptor set logic as vertex.
+	SetVertexUniformBuffer(buffer, index);
+}
+
 void VKRenderEncoder::DrawPrimitives(PrimitiveMode mode, int offset, int size)
 {
     //设置图元拓扑类型，需要使用扩展动态状态

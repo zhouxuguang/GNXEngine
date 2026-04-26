@@ -258,6 +258,7 @@ MTLGraphicsPipeline::MTLGraphicsPipeline(id<MTLDevice> device, const GraphicsPip
                                            const std::shared_ptr<MTLPipelineCache>& pipelineCache) : GraphicsPipeline(des)
 {
     mDevice = device;
+    mDesc.pipelineType = des.pipelineType;
     mPipelineCache = pipelineCache;
     mDepthStencilState = convertToMTLDSDes(device, des.depthStencilDescriptor);
     
@@ -319,7 +320,15 @@ void MTLGraphicsPipeline::AttachFragmentShader(ShaderFunctionPtr shaderFunction)
     }
     
     MTLShaderFunctionPtr shaderPtr = std::dynamic_pointer_cast<MTLShaderFunction>(shaderFunction);
-    mRenderPipelineDes.fragmentFunction = shaderPtr->GetShaderFunction();
+
+    if (mDesc.pipelineType == PipelineType::Mesh && mMeshPipelineDes)
+    {
+        mMeshPipelineDes.fragmentFunction = shaderPtr->GetShaderFunction();
+    }
+    else if (mRenderPipelineDes)
+    {
+        mRenderPipelineDes.fragmentFunction = shaderPtr->GetShaderFunction();
+    }
 }
 
 void MTLGraphicsPipeline::AttachGraphicsShader(GraphicsShaderPtr graphicsShader)
