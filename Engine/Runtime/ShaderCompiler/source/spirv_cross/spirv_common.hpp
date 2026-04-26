@@ -1,5 +1,6 @@
 /*
  * Copyright 2015-2021 Arm Limited
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +19,23 @@
  * At your option, you may choose to accept this material under either:
  *  1. The Apache License, Version 2.0, found at <http://www.apache.org/licenses/LICENSE-2.0>, or
  *  2. The MIT License, found at <http://opensource.org/licenses/MIT>.
- * SPDX-License-Identifier: Apache-2.0 OR MIT.
  */
 
 #ifndef SPIRV_CROSS_COMMON_HPP
 #define SPIRV_CROSS_COMMON_HPP
+
+#ifndef SPV_ENABLE_UTILITY_CODE
+#define SPV_ENABLE_UTILITY_CODE
+#endif
+
+// Pragmatic hack to avoid symbol conflicts when including both hpp11 and hpp headers in same translation unit.
+// This is an unfortunate SPIRV-Headers issue that we cannot easily deal with ourselves.
+#ifdef SPIRV_CROSS_SPV_HEADER_NAMESPACE_OVERRIDE
+#define spv SPIRV_CROSS_SPV_HEADER_NAMESPACE_OVERRIDE
+#define SPIRV_CROSS_SPV_HEADER_NAMESPACE SPIRV_CROSS_SPV_HEADER_NAMESPACE_OVERRIDE
+#else
+#define SPIRV_CROSS_SPV_HEADER_NAMESPACE spv
+#endif
 
 #include "spirv.hpp"
 #include "spirv_cross_containers.hpp"
@@ -211,6 +224,28 @@ inline std::string convert_to_string(const T &t)
 	return std::to_string(t);
 }
 
+static inline std::string convert_to_string(int32_t value)
+{
+	// INT_MIN is ... special on some backends. If we use a decimal literal, and negate it, we
+	// could accidentally promote the literal to long first, then negate.
+	// To workaround it, emit int(0x80000000) instead.
+	if (value == (std::numeric_limits<int32_t>::min)())
+		return "int(0x80000000)";
+	else
+		return std::to_string(value);
+}
+
+static inline std::string convert_to_string(int64_t value, const std::string &int64_type, bool long_long_literal_suffix)
+{
+	// INT64_MIN is ... special on some backends.
+	// If we use a decimal literal, and negate it, we might overflow the representable numbers.
+	// To workaround it, emit int(0x80000000) instead.
+	if (value == (std::numeric_limits<int64_t>::min)())
+		return join(int64_type, "(0x8000000000000000u", (long_long_literal_suffix ? "ll" : "l"), ")");
+	else
+		return std::to_string(value) + (long_long_literal_suffix ? "ll" : "l");
+}
+
 // Allow implementations to set a convenient standard precision
 #ifndef SPIRV_CROSS_FLT_FMT
 #define SPIRV_CROSS_FLT_FMT "%.32g"
@@ -269,6 +304,20 @@ inline std::string convert_to_string(double t, char locale_radix_point)
 	return buf;
 }
 
+#if defined(__clang__) || defined(__GNUC__)
+#pragma GCC diagnostic pop
+#elif defined(_MSC_VER)
+#pragma warning(pop)
+#endif
+
+class FloatFormatter
+{
+public:
+	virtual ~FloatFormatter() = default;
+	virtual std::string format_float(float value) = 0;
+	virtual std::string format_double(double value) = 0;
+};
+
 template <typename T>
 struct ValueSaver
 {
@@ -292,18 +341,24 @@ struct ValueSaver
 	T saved;
 };
 
-#if defined(__clang__) || defined(__GNUC__)
-#pragma GCC diagnostic pop
-#elif defined(_MSC_VER)
-#pragma warning(pop)
-#endif
-
 struct Instruction
 {
 	uint16_t op = 0;
 	uint16_t count = 0;
+	// If offset is 0 (not a valid offset into the instruction stream),
+	// we have an instruction stream which is embedded in the object.
 	uint32_t offset = 0;
 	uint32_t length = 0;
+
+	inline bool is_embedded() const
+	{
+		return offset == 0;
+	}
+};
+
+struct EmbeddedInstruction : Instruction
+{
+	SmallVector<uint32_t> ops;
 };
 
 enum Types
@@ -322,6 +377,7 @@ enum Types
 	TypeAccessChain,
 	TypeUndef,
 	TypeString,
+	TypeDebugLocalVariable,
 	TypeCount
 };
 
@@ -405,6 +461,11 @@ struct IVariant
 	virtual ~IVariant() = default;
 	virtual IVariant *clone(ObjectPoolBase *pool) = 0;
 	ID self = 0;
+
+protected:
+	IVariant() = default;
+	IVariant(const IVariant&) = default;
+	IVariant &operator=(const IVariant&) = default;
 };
 
 #define SPIRV_CROSS_DECLARE_CLONE(T)                                \
@@ -444,6 +505,18 @@ struct SPIRString : IVariant
 	std::string str;
 
 	SPIRV_CROSS_DECLARE_CLONE(SPIRString)
+};
+
+struct SPIRDebugLocalVariable : IVariant
+{
+	enum
+	{
+		type = TypeDebugLocalVariable
+	};
+
+	uint32_t name_id;
+
+	SPIRV_CROSS_DECLARE_CLONE(SPIRDebugLocalVariable)
 };
 
 // This type is only used by backends which need to access the combined image and sampler IDs separately after
@@ -497,6 +570,9 @@ struct SPIRType : IVariant
 		type = TypeType
 	};
 
+	spv::Op op = spv::Op::OpNop;
+	explicit SPIRType(spv::Op op_) : op(op_) {}
+
 	enum BaseType
 	{
 		Unknown,
@@ -520,11 +596,19 @@ struct SPIRType : IVariant
 		Sampler,
 		AccelerationStructure,
 		RayQuery,
+		CoopVecNV,
 
 		// Keep internal types at the end.
 		ControlPointArray,
 		Interpolant,
-		Char
+		Char,
+		// MSL specific type, that is used by 'object'(analog of 'task' from glsl) shader.
+		MeshGridProperties,
+		BFloat16,
+		FloatE4M3,
+		FloatE5M2,
+
+		Tensor
 	};
 
 	// Scalar/vector/matrix support.
@@ -549,6 +633,30 @@ struct SPIRType : IVariant
 	bool pointer = false;
 	bool forward_pointer = false;
 
+	union
+	{
+		struct
+		{
+			uint32_t use_id;
+			uint32_t rows_id;
+			uint32_t columns_id;
+			uint32_t scope_id;
+		} cooperative;
+
+		struct
+		{
+			uint32_t component_type_id;
+			uint32_t component_count_id;
+		} coopVecNV;
+
+		struct
+		{
+			uint32_t type;
+			uint32_t rank;
+			uint32_t shape;
+		} tensor;
+	} ext;
+
 	spv::StorageClass storage = spv::StorageClassGeneric;
 
 	SmallVector<TypeID> member_types;
@@ -567,7 +675,7 @@ struct SPIRType : IVariant
 		uint32_t sampled;
 		spv::ImageFormat format;
 		spv::AccessQualifier access;
-	} image;
+	} image = {};
 
 	// Structs can be declared multiple times if they are used as part of interface blocks.
 	// We want to detect this so that we only emit the struct definition once.
@@ -599,7 +707,16 @@ struct SPIRExtension : IVariant
 		SPV_AMD_shader_ballot,
 		SPV_AMD_shader_explicit_vertex_parameter,
 		SPV_AMD_shader_trinary_minmax,
-		SPV_AMD_gcn_shader
+		SPV_AMD_gcn_shader,
+		NonSemanticDebugPrintf,
+		NonSemanticShaderDebugInfo,
+		NonSemanticGeneric
+	};
+
+	enum ShaderDebugInfoOps
+	{
+		DebugLine = 103,
+		DebugSource = 35
 	};
 
 	explicit SPIRExtension(Extension ext_)
@@ -627,16 +744,23 @@ struct SPIREntryPoint
 	FunctionID self = 0;
 	std::string name;
 	std::string orig_name;
+	std::unordered_map<uint32_t, uint32_t> fp_fast_math_defaults;
+	bool signed_zero_inf_nan_preserve_8 = false;
+	bool signed_zero_inf_nan_preserve_16 = false;
+	bool signed_zero_inf_nan_preserve_32 = false;
+	bool signed_zero_inf_nan_preserve_64 = false;
 	SmallVector<VariableID> interface_variables;
 
 	Bitset flags;
 	struct WorkgroupSize
 	{
 		uint32_t x = 0, y = 0, z = 0;
+		uint32_t id_x = 0, id_y = 0, id_z = 0;
 		uint32_t constant = 0; // Workgroup size can be expressed as a constant/spec-constant instead.
 	} workgroup_size;
 	uint32_t invocations = 0;
 	uint32_t output_vertices = 0;
+	uint32_t output_primitives = 0;
 	spv::ExecutionModel model = spv::ExecutionModelMax;
 	bool geometry_passthrough = false;
 };
@@ -650,7 +774,7 @@ struct SPIRExpression : IVariant
 
 	// Only created by the backend target to avoid creating tons of temporaries.
 	SPIRExpression(std::string expr, TypeID expression_type_, bool immutable_)
-	    : expression(move(expr))
+	    : expression(std::move(expr))
 	    , expression_type(expression_type_)
 	    , immutable(immutable_)
 	{
@@ -681,8 +805,15 @@ struct SPIRExpression : IVariant
 	// Whether or not this is an access chain expression.
 	bool access_chain = false;
 
+	// Whether or not gl_MeshVerticesEXT[].gl_Position (as a whole or .y) is referenced
+	bool access_meshlet_position_y = false;
+
 	// A list of expressions which this expression depends on.
 	SmallVector<ID> expression_dependencies;
+
+	// Similar as expression dependencies, but does not stop the tracking for force-temporary variables.
+	// We need to know the full chain from store back to any SSA variable.
+	SmallVector<ID> invariance_dependencies;
 
 	// By reading this expression, we implicitly read these expressions as well.
 	// Used by access chain Store and Load since we read multiple expressions in this case.
@@ -731,7 +862,8 @@ struct SPIRBlock : IVariant
 		Unreachable, // Noop
 		Kill, // Discard
 		IgnoreIntersection, // Ray Tracing
-		TerminateRay // Ray Tracing
+		TerminateRay, // Ray Tracing
+		EmitMeshTasks // Mesh shaders
 	};
 
 	enum Merge
@@ -793,6 +925,13 @@ struct SPIRBlock : IVariant
 	BlockID false_block = 0;
 	BlockID default_block = 0;
 
+	// If terminator is EmitMeshTasksEXT.
+	struct
+	{
+		ID groups[3];
+		ID payload;
+	} mesh = {};
+
 	SmallVector<Instruction> ops;
 
 	struct Phi
@@ -815,10 +954,11 @@ struct SPIRBlock : IVariant
 
 	struct Case
 	{
-		uint32_t value;
+		uint64_t value;
 		BlockID block;
 	};
-	SmallVector<Case> cases;
+	SmallVector<Case> cases_32bit;
+	SmallVector<Case> cases_64bit;
 
 	// If we have tried to optimize code for this block but failed,
 	// keep track of this.
@@ -841,6 +981,7 @@ struct SPIRBlock : IVariant
 	// All access to these variables are dominated by this block,
 	// so before branching anywhere we need to make sure that we declare these variables.
 	SmallVector<VariableID> dominated_variables;
+	SmallVector<bool> rearm_dominated_variables;
 
 	// These are variables which should be declared in a for loop header, if we
 	// fail to use a classic for-loop,
@@ -949,6 +1090,9 @@ struct SPIRFunction : IVariant
 	// consider arrays value types.
 	SmallVector<ID> constant_arrays_needed_on_stack;
 
+	// Does this function (or any function called by it), emit geometry?
+	bool emits_geometry = false;
+
 	bool active = false;
 	bool flush_undeclared = true;
 	bool do_combined_parameters = true;
@@ -1031,7 +1175,9 @@ struct SPIRVariable : IVariant
 
 	// Temporaries which can remain forwarded as long as this variable is not modified.
 	SmallVector<ID> dependees;
-	bool forwardable = true;
+
+	// ShaderDebugInfo local variables attached to this variable via DebugDeclare
+	SmallVector<ID> debug_local_variables;
 
 	bool deferred_declaration = false;
 	bool phi_variable = false;
@@ -1050,6 +1196,9 @@ struct SPIRVariable : IVariant
 	bool loop_variable = false;
 	// Set to true while we're inside the for loop.
 	bool loop_variable_enable = false;
+
+	// Used to find global LUTs
+	bool is_written_to = false;
 
 	SPIRFunction::Parameter *parameter = nullptr;
 
@@ -1147,6 +1296,26 @@ struct SPIRConstant : IVariant
 		return u.f32;
 	}
 
+	static inline float fe4m3_to_f32(uint8_t v)
+	{
+		if ((v & 0x7f) == 0x7f)
+		{
+			union
+			{
+				float f32;
+				uint32_t u32;
+			} u;
+
+			u.u32 = (v & 0x80) ? 0xffffffffu : 0x7fffffffu;
+			return u.f32;
+		}
+		else
+		{
+			// Reuse the FP16 to FP32 code. Cute bit-hackery.
+			return f16_to_f32((int16_t(int8_t(v)) << 7) & (0xffff ^ 0x4000)) * 256.0f;
+		}
+	}
+
 	inline uint32_t specialization_constant_id(uint32_t col, uint32_t row) const
 	{
 		return m.c[col].id[row];
@@ -1185,6 +1354,24 @@ struct SPIRConstant : IVariant
 	inline float scalar_f16(uint32_t col = 0, uint32_t row = 0) const
 	{
 		return f16_to_f32(scalar_u16(col, row));
+	}
+
+	inline float scalar_bf16(uint32_t col = 0, uint32_t row = 0) const
+	{
+		uint32_t v = scalar_u16(col, row) << 16;
+		float fp32;
+		memcpy(&fp32, &v, sizeof(float));
+		return fp32;
+	}
+
+	inline float scalar_floate4m3(uint32_t col = 0, uint32_t row = 0) const
+	{
+		return fe4m3_to_f32(scalar_u8(col, row));
+	}
+
+	inline float scalar_bf8(uint32_t col = 0, uint32_t row = 0) const
+	{
+		return f16_to_f32(uint16_t(scalar_u8(col, row) << 8));
 	}
 
 	inline float scalar_f32(uint32_t col = 0, uint32_t row = 0) const
@@ -1257,9 +1444,10 @@ struct SPIRConstant : IVariant
 
 	SPIRConstant() = default;
 
-	SPIRConstant(TypeID constant_type_, const uint32_t *elements, uint32_t num_elements, bool specialized)
+	SPIRConstant(TypeID constant_type_, const uint32_t *elements, uint32_t num_elements, bool specialized, bool replicated_ = false)
 	    : constant_type(constant_type_)
 	    , specialization(specialized)
+	    , replicated(replicated_)
 	{
 		subconstants.reserve(num_elements);
 		for (uint32_t i = 0; i < num_elements; i++)
@@ -1331,8 +1519,15 @@ struct SPIRConstant : IVariant
 	// If true, this is a LUT, and should always be declared in the outer scope.
 	bool is_used_as_lut = false;
 
+	// If this is a null constant of array type with specialized length.
+	// May require special handling in initializer
+	bool is_null_array_specialized_length = false;
+
 	// For composites which are constant arrays, etc.
 	SmallVector<ConstantID> subconstants;
+
+	// Whether the subconstants are intended to be replicated (e.g. OpConstantCompositeReplicateEXT)
+	bool replicated = false;
 
 	// Non-Vulkan GLSL, HLSL and sometimes MSL emits defines for each specialization constant,
 	// and uses them to initialize the constant. This allows the user
@@ -1360,7 +1555,7 @@ public:
 	~Variant()
 	{
 		if (holder)
-			group->pools[type]->free_opaque(holder);
+			group->pools[type]->deallocate_opaque(holder);
 	}
 
 	// Marking custom move constructor as noexcept is important.
@@ -1379,7 +1574,7 @@ public:
 		if (this != &other)
 		{
 			if (holder)
-				group->pools[type]->free_opaque(holder);
+				group->pools[type]->deallocate_opaque(holder);
 			holder = other.holder;
 			group = other.group;
 			type = other.type;
@@ -1403,7 +1598,7 @@ public:
 		if (this != &other)
 		{
 			if (holder)
-				group->pools[type]->free_opaque(holder);
+				group->pools[type]->deallocate_opaque(holder);
 
 			if (other.holder)
 				holder = other.holder->clone(group->pools[other.type].get());
@@ -1419,13 +1614,13 @@ public:
 	void set(IVariant *val, Types new_type)
 	{
 		if (holder)
-			group->pools[type]->free_opaque(holder);
+			group->pools[type]->deallocate_opaque(holder);
 		holder = nullptr;
 
 		if (!allow_type_rewrite && type != TypeNone && type != new_type)
 		{
 			if (val)
-				group->pools[new_type]->free_opaque(val);
+				group->pools[new_type]->deallocate_opaque(val);
 			SPIRV_CROSS_THROW("Overwriting a variant with new type.");
 		}
 
@@ -1480,7 +1675,7 @@ public:
 	void reset()
 	{
 		if (holder)
-			group->pools[type]->free_opaque(holder);
+			group->pools[type]->deallocate_opaque(holder);
 		holder = nullptr;
 		type = TypeNone;
 	}
@@ -1523,6 +1718,10 @@ struct AccessChainMeta
 	bool storage_is_packed = false;
 	bool storage_is_invariant = false;
 	bool flattened_struct = false;
+	bool relaxed_precision = false;
+	bool access_meshlet_position_y = false;
+	bool chain_is_builtin = false;
+	spv::BuiltIn builtin = {};
 };
 
 enum ExtendedDecorations
@@ -1590,6 +1789,14 @@ enum ExtendedDecorations
 	// results of interpolation can.
 	SPIRVCrossDecorationInterpolantComponentExpr,
 
+	// Apply to any struct type that is used in the Workgroup storage class.
+	// This causes matrices in MSL prior to Metal 3.0 to be emitted using a special
+	// class that is convertible to the standard matrix type, to work around the
+	// lack of constructors in the 'threadgroup' address space.
+	SPIRVCrossDecorationWorkgroupStruct,
+
+	SPIRVCrossDecorationOverlappingBinding,
+
 	SPIRVCrossDecorationCount
 };
 
@@ -1599,7 +1806,8 @@ struct Meta
 	{
 		std::string alias;
 		std::string qualified_alias;
-		std::string hlsl_semantic;
+		std::string user_semantic;
+		std::string user_type;
 		Bitset decoration_flags;
 		spv::BuiltIn builtin_type = spv::BuiltInMax;
 		uint32_t location = 0;
@@ -1616,7 +1824,9 @@ struct Meta
 		uint32_t spec_id = 0;
 		uint32_t index = 0;
 		spv::FPRoundingMode fp_rounding_mode = spv::FPRoundingModeMax;
+		spv::FPFastMathModeMask fp_fast_math_mode = spv::FPFastMathModeMaskNone;
 		bool builtin = false;
+		bool qualified_alias_explicit_override = false;
 
 		struct Extended
 		{
@@ -1670,7 +1880,8 @@ private:
 
 static inline bool type_is_floating_point(const SPIRType &type)
 {
-	return type.basetype == SPIRType::Half || type.basetype == SPIRType::Float || type.basetype == SPIRType::Double;
+	return type.basetype == SPIRType::Half || type.basetype == SPIRType::Float || type.basetype == SPIRType::Double ||
+	       type.basetype == SPIRType::BFloat16 || type.basetype == SPIRType::FloatE5M2 || type.basetype == SPIRType::FloatE4M3;
 }
 
 static inline bool type_is_integral(const SPIRType &type)
@@ -1695,8 +1906,6 @@ static inline SPIRType::BaseType to_signed_basetype(uint32_t width)
 	default:
 		SPIRV_CROSS_THROW("Invalid bit width.");
 	}
-    
-    return SPIRType::Unknown;
 }
 
 static inline SPIRType::BaseType to_unsigned_basetype(uint32_t width)
@@ -1714,8 +1923,6 @@ static inline SPIRType::BaseType to_unsigned_basetype(uint32_t width)
 	default:
 		SPIRV_CROSS_THROW("Invalid bit width.");
 	}
-    
-    return SPIRType::Unknown;
 }
 
 // Returns true if an arithmetic operation does not change behavior depending on signedness.
@@ -1739,6 +1946,33 @@ static inline bool opcode_is_sign_invariant(spv::Op opcode)
 	}
 }
 
+static inline bool opcode_can_promote_integer_implicitly(spv::Op opcode)
+{
+	switch (opcode)
+	{
+	case spv::OpSNegate:
+	case spv::OpNot:
+	case spv::OpBitwiseAnd:
+	case spv::OpBitwiseOr:
+	case spv::OpBitwiseXor:
+	case spv::OpShiftLeftLogical:
+	case spv::OpShiftRightLogical:
+	case spv::OpShiftRightArithmetic:
+	case spv::OpIAdd:
+	case spv::OpISub:
+	case spv::OpIMul:
+	case spv::OpSDiv:
+	case spv::OpUDiv:
+	case spv::OpSRem:
+	case spv::OpUMod:
+	case spv::OpSMod:
+		return true;
+
+	default:
+		return false;
+	}
+}
+
 struct SetBindingPair
 {
 	uint32_t desc_set;
@@ -1752,6 +1986,22 @@ struct SetBindingPair
 	inline bool operator<(const SetBindingPair &other) const
 	{
 		return desc_set < other.desc_set || (desc_set == other.desc_set && binding < other.binding);
+	}
+};
+
+struct LocationComponentPair
+{
+	uint32_t location;
+	uint32_t component;
+
+	inline bool operator==(const LocationComponentPair &other) const
+	{
+		return location == other.location && component == other.component;
+	}
+
+	inline bool operator<(const LocationComponentPair &other) const
+	{
+		return location < other.location || (location == other.location && component < other.component);
 	}
 };
 
@@ -1774,6 +2024,14 @@ struct InternalHasher
 		// Quality of hash doesn't really matter here.
 		auto hash_set = std::hash<uint32_t>()(value.desc_set);
 		auto hash_binding = std::hash<uint32_t>()(value.binding);
+		return (hash_set * 0x10001b31) ^ hash_binding;
+	}
+
+	inline size_t operator()(const LocationComponentPair &value) const
+	{
+		// Quality of hash doesn't really matter here.
+		auto hash_set = std::hash<uint32_t>()(value.location);
+		auto hash_binding = std::hash<uint32_t>()(value.component);
 		return (hash_set * 0x10001b31) ^ hash_binding;
 	}
 
@@ -1808,4 +2066,7 @@ struct hash<SPIRV_CROSS_NAMESPACE::TypedID<type>>
 };
 } // namespace std
 
+#ifdef SPIRV_CROSS_SPV_HEADER_NAMESPACE_OVERRIDE
+#undef spv
+#endif
 #endif

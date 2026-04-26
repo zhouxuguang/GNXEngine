@@ -1,5 +1,6 @@
 /*
  * Copyright 2018-2021 Arm Limited
+ * SPDX-License-Identifier: Apache-2.0 OR MIT
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +19,20 @@
  * At your option, you may choose to accept this material under either:
  *  1. The Apache License, Version 2.0, found at <http://www.apache.org/licenses/LICENSE-2.0>, or
  *  2. The MIT License, found at <http://opensource.org/licenses/MIT>.
- * SPDX-License-Identifier: Apache-2.0 OR MIT.
  */
 
 #include "spirv_parser.hpp"
+#include "NonSemanticShaderDebugInfo100.h"
 #include <assert.h>
 
 using namespace std;
-using namespace spv;
+using namespace SPIRV_CROSS_SPV_HEADER_NAMESPACE;
 
 namespace SPIRV_CROSS_NAMESPACE
 {
 Parser::Parser(vector<uint32_t> spirv)
 {
-	ir.spirv = move(spirv);
+	ir.spirv = std::move(spirv);
 }
 
 Parser::Parser(const uint32_t *spirv_data, size_t word_count)
@@ -43,7 +44,7 @@ static bool decoration_is_string(Decoration decoration)
 {
 	switch (decoration)
 	{
-	case DecorationHlslSemanticGOOGLE:
+	case DecorationUserSemantic:
 		return true;
 
 	default:
@@ -68,6 +69,7 @@ static bool is_valid_spirv_version(uint32_t version)
 	case 0x10300: // SPIR-V 1.3
 	case 0x10400: // SPIR-V 1.4
 	case 0x10500: // SPIR-V 1.5
+	case 0x10600: // SPIR-V 1.6
 		return true;
 
 	default:
@@ -136,10 +138,21 @@ void Parser::parse()
 	}
 	forward_pointer_fixups.clear();
 
+	for (auto &source : ir.sources)
+	{
+		auto cmp = [](const ParsedIR::Source::Marker &a, const ParsedIR::Source::Marker &b) {
+			return a.line < b.line;
+		};
+
+		std::sort(source.line_markers.begin(), source.line_markers.end(), cmp);
+	}
+
 	if (current_function)
 		SPIRV_CROSS_THROW("Function was not terminated.");
 	if (current_block)
 		SPIRV_CROSS_THROW("Block was not terminated.");
+	if (ir.default_entry_point == 0)
+		SPIRV_CROSS_THROW("There is no entry point in the SPIR-V module.");
 }
 
 const uint32_t *Parser::stream(const Instruction &instr) const
@@ -172,8 +185,6 @@ static string extract_string(const vector<uint32_t> &spirv, uint32_t offset)
 	}
 
 	SPIRV_CROSS_THROW("String was not terminated before EOF");
-    
-    return "";
 }
 
 void Parser::parse(const Instruction &instruction)
@@ -182,9 +193,17 @@ void Parser::parse(const Instruction &instruction)
 	auto op = static_cast<Op>(instruction.op);
 	uint32_t length = instruction.length;
 
+	// HACK for glslang that might emit OpEmitMeshTasksEXT followed by return / branch.
+	// Instead of failing hard, just ignore it.
+	if (ignore_trailing_block_opcodes)
+	{
+		ignore_trailing_block_opcodes = false;
+		if (op == OpReturn || op == OpBranch || op == OpUnreachable)
+			return;
+	}
+
 	switch (op)
 	{
-	case OpSourceContinued:
 	case OpSourceExtension:
 	case OpNop:
 	case OpModuleProcessed:
@@ -203,37 +222,52 @@ void Parser::parse(const Instruction &instruction)
 
 	case OpSource:
 	{
-		auto lang = static_cast<SourceLanguage>(ops[0]);
-		switch (lang)
+		ir.sources.emplace_back();
+		auto &source = ir.sources.back();
+		source.lang = static_cast<SourceLanguage>(ops[0]);
+
+		switch (source.lang)
 		{
 		case SourceLanguageESSL:
-			ir.source.es = true;
-			ir.source.version = ops[1];
-			ir.source.known = true;
-			ir.source.hlsl = false;
+			source.es = true;
+			source.version = ops[1];
+			source.known = true;
+			source.hlsl = false;
 			break;
 
 		case SourceLanguageGLSL:
-			ir.source.es = false;
-			ir.source.version = ops[1];
-			ir.source.known = true;
-			ir.source.hlsl = false;
+			source.es = false;
+			source.version = ops[1];
+			source.known = true;
+			source.hlsl = false;
 			break;
 
 		case SourceLanguageHLSL:
 			// For purposes of cross-compiling, this is GLSL 450.
-			ir.source.es = false;
-			ir.source.version = 450;
-			ir.source.known = true;
-			ir.source.hlsl = true;
+			source.es = false;
+			source.version = 450;
+			source.known = true;
+			source.hlsl = true;
 			break;
 
 		default:
-			ir.source.known = false;
+			source.known = false;
 			break;
 		}
+
+		if (length >= 3)
+			source.file_id = ops[2];
+
+		if (length >= 4)
+			source.source = extract_string(ir.spirv, instruction.offset + 3);
+
 		break;
 	}
+
+	case OpSourceContinued:
+		if (!ir.sources.empty())
+			ir.sources.back().source += extract_string(ir.spirv, instruction.offset);
+		break;
 
 	case OpUndef:
 	{
@@ -258,39 +292,122 @@ void Parser::parse(const Instruction &instruction)
 	case OpExtension:
 	{
 		auto ext = extract_string(ir.spirv, instruction.offset);
-		ir.declared_extensions.push_back(move(ext));
+		ir.declared_extensions.push_back(std::move(ext));
 		break;
 	}
 
 	case OpExtInstImport:
 	{
 		uint32_t id = ops[0];
+
+		SPIRExtension::Extension spirv_ext = SPIRExtension::Unsupported;
+
 		auto ext = extract_string(ir.spirv, instruction.offset + 1);
 		if (ext == "GLSL.std.450")
-			set<SPIRExtension>(id, SPIRExtension::GLSL);
+			spirv_ext = SPIRExtension::GLSL;
 		else if (ext == "DebugInfo")
-			set<SPIRExtension>(id, SPIRExtension::SPV_debug_info);
+			spirv_ext = SPIRExtension::SPV_debug_info;
 		else if (ext == "SPV_AMD_shader_ballot")
-			set<SPIRExtension>(id, SPIRExtension::SPV_AMD_shader_ballot);
+			spirv_ext = SPIRExtension::SPV_AMD_shader_ballot;
 		else if (ext == "SPV_AMD_shader_explicit_vertex_parameter")
-			set<SPIRExtension>(id, SPIRExtension::SPV_AMD_shader_explicit_vertex_parameter);
+			spirv_ext = SPIRExtension::SPV_AMD_shader_explicit_vertex_parameter;
 		else if (ext == "SPV_AMD_shader_trinary_minmax")
-			set<SPIRExtension>(id, SPIRExtension::SPV_AMD_shader_trinary_minmax);
+			spirv_ext = SPIRExtension::SPV_AMD_shader_trinary_minmax;
 		else if (ext == "SPV_AMD_gcn_shader")
-			set<SPIRExtension>(id, SPIRExtension::SPV_AMD_gcn_shader);
-		else
-			set<SPIRExtension>(id, SPIRExtension::Unsupported);
+			spirv_ext = SPIRExtension::SPV_AMD_gcn_shader;
+		else if (ext == "NonSemantic.DebugPrintf")
+			spirv_ext = SPIRExtension::NonSemanticDebugPrintf;
+		else if (ext == "NonSemantic.Shader.DebugInfo.100")
+			spirv_ext = SPIRExtension::NonSemanticShaderDebugInfo;
+		else if (ext.find("NonSemantic.") == 0)
+			spirv_ext = SPIRExtension::NonSemanticGeneric;
 
+		set<SPIRExtension>(id, spirv_ext);
 		// Other SPIR-V extensions which have ExtInstrs are currently not supported.
 
 		break;
 	}
 
 	case OpExtInst:
+	case OpExtInstWithForwardRefsKHR:
 	{
 		// The SPIR-V debug information extended instructions might come at global scope.
 		if (current_block)
+		{
 			current_block->ops.push_back(instruction);
+			if (length >= 2)
+			{
+				const auto *type = maybe_get<SPIRType>(ops[0]);
+				if (type)
+					ir.load_type_width.insert({ ops[1], type->width });
+			}
+		}
+
+		if (op == OpExtInst && length > 4)
+		{
+			// Don't want to deal with ForwardRefs here.
+			auto &ext = get<SPIRExtension>(ops[2]);
+			if (ext.ext == SPIRExtension::NonSemanticShaderDebugInfo)
+			{
+				const auto instr = ops[3];
+				if (instr == NonSemanticShaderDebugInfo100DebugSource)
+				{
+					set<SPIRString>(ops[1], get<SPIRString>(ops[4]).str);
+
+					ir.sources.emplace_back();
+					auto &source = ir.sources.back();
+					source.file_id = ops[4];
+					source.define_id = ops[1];
+					if (length >= 6)
+						source.source = ir.get<SPIRString>(ops[5]).str;
+				}
+				else if (instr == NonSemanticShaderDebugInfo100DebugSourceContinued)
+				{
+					if (length < 5)
+						SPIRV_CROSS_THROW("Invalid arguments for ShaderDebugInfo100DebugSourceContinued");
+					if (!ir.sources.empty())
+						ir.sources.back().source += ir.get<SPIRString>(ops[4]).str;
+				}
+				else if (instr == NonSemanticShaderDebugInfo100DebugLine)
+				{
+					if (length < 9)
+						SPIRV_CROSS_THROW("Invalid arguments for ShaderDebugInfo100DebugLine");
+					auto source_id = ops[4];
+					auto line_start = ir.get<SPIRConstant>(ops[5]).scalar_i32();
+					auto col_start = ir.get<SPIRConstant>(ops[7]).scalar_i32();
+
+					for (auto &source : ir.sources)
+					{
+						if (source.define_id != source_id)
+							continue;
+
+						source.line_markers.emplace_back();
+						auto &marker = source.line_markers.back();
+						marker.line = line_start;
+						marker.col = col_start;
+						marker.offset = instruction.offset - 1;
+						marker.function_id = current_function ? current_function->self : ID(0);
+						marker.block_id = current_block ? current_block->self : ID(0);
+						break;
+					}
+				}
+				else if (instr == NonSemanticShaderDebugInfo100DebugLocalVariable)
+				{
+					if (length < 11)
+						SPIRV_CROSS_THROW("Invalid arguments for ShaderDebugInfo100DebugLocalVariable");
+					auto &lvar = set<SPIRDebugLocalVariable>(ops[1]);
+					lvar.name_id = ops[4];
+				}
+				else if (instr == NonSemanticShaderDebugInfo100DebugDeclare)
+				{
+					if (length < 7)
+						SPIRV_CROSS_THROW("Invalid arguments for ShaderDebugInfo100DebugDeclare");
+					auto &lvar = get<SPIRDebugLocalVariable>(ops[4]);
+					auto &var = get<SPIRVariable>(ops[5]);
+					var.debug_local_variables.push_back(lvar.self);
+				}
+			}
+		}
 		break;
 	}
 
@@ -336,6 +453,58 @@ void Parser::parse(const Instruction &instruction)
 
 		case ExecutionModeOutputVertices:
 			execution.output_vertices = ops[2];
+			break;
+
+		case ExecutionModeOutputPrimitivesEXT:
+			execution.output_primitives = ops[2];
+			break;
+
+		case ExecutionModeSignedZeroInfNanPreserve:
+			switch (ops[2])
+			{
+			case 8:
+				execution.signed_zero_inf_nan_preserve_8 = true;
+				break;
+
+			case 16:
+				execution.signed_zero_inf_nan_preserve_16 = true;
+				break;
+
+			case 32:
+				execution.signed_zero_inf_nan_preserve_32 = true;
+				break;
+
+			case 64:
+				execution.signed_zero_inf_nan_preserve_64 = true;
+				break;
+
+			default:
+				SPIRV_CROSS_THROW("Invalid bit-width for SignedZeroInfNanPreserve.");
+			}
+			break;
+
+		default:
+			break;
+		}
+		break;
+	}
+
+	case OpExecutionModeId:
+	{
+		auto &execution = ir.entry_points[ops[0]];
+		auto mode = static_cast<ExecutionMode>(ops[1]);
+		execution.flags.set(mode);
+
+		switch (mode)
+		{
+		case ExecutionModeLocalSizeId:
+			execution.workgroup_size.id_x = ops[2];
+			execution.workgroup_size.id_y = ops[3];
+			execution.workgroup_size.id_z = ops[4];
+			break;
+
+		case ExecutionModeFPFastMathDefault:
+			execution.fp_fast_math_defaults[ops[2]] = ops[3];
 			break;
 
 		default:
@@ -471,7 +640,7 @@ void Parser::parse(const Instruction &instruction)
 	case OpTypeVoid:
 	{
 		uint32_t id = ops[0];
-		auto &type = set<SPIRType>(id);
+		auto &type = set<SPIRType>(id, op);
 		type.basetype = SPIRType::Void;
 		break;
 	}
@@ -479,7 +648,7 @@ void Parser::parse(const Instruction &instruction)
 	case OpTypeBool:
 	{
 		uint32_t id = ops[0];
-		auto &type = set<SPIRType>(id);
+		auto &type = set<SPIRType>(id, op);
 		type.basetype = SPIRType::Boolean;
 		type.width = 1;
 		break;
@@ -489,13 +658,38 @@ void Parser::parse(const Instruction &instruction)
 	{
 		uint32_t id = ops[0];
 		uint32_t width = ops[1];
-		auto &type = set<SPIRType>(id);
+		auto &type = set<SPIRType>(id, op);
+
+		if (width != 16 && width != 8 && length > 2)
+			SPIRV_CROSS_THROW("Unrecognized FP encoding mode for OpTypeFloat.");
+
 		if (width == 64)
 			type.basetype = SPIRType::Double;
 		else if (width == 32)
 			type.basetype = SPIRType::Float;
 		else if (width == 16)
-			type.basetype = SPIRType::Half;
+		{
+			if (length > 2)
+			{
+				if (ops[2] == FPEncodingBFloat16KHR)
+					type.basetype = SPIRType::BFloat16;
+				else
+					SPIRV_CROSS_THROW("Unrecognized encoding for OpTypeFloat 16.");
+			}
+			else
+				type.basetype = SPIRType::Half;
+		}
+		else if (width == 8)
+		{
+			if (length < 2)
+				SPIRV_CROSS_THROW("Missing encoding for OpTypeFloat 8.");
+			else if (ops[2] == FPEncodingFloat8E4M3EXT)
+				type.basetype = SPIRType::FloatE4M3;
+			else if (ops[2] == FPEncodingFloat8E5M2EXT)
+				type.basetype = SPIRType::FloatE5M2;
+			else
+				SPIRV_CROSS_THROW("Invalid encoding for OpTypeFloat 8.");
+		}
 		else
 			SPIRV_CROSS_THROW("Unrecognized bit-width of floating point type.");
 		type.width = width;
@@ -507,7 +701,7 @@ void Parser::parse(const Instruction &instruction)
 		uint32_t id = ops[0];
 		uint32_t width = ops[1];
 		bool signedness = ops[2] != 0;
-		auto &type = set<SPIRType>(id);
+		auto &type = set<SPIRType>(id, op);
 		type.basetype = signedness ? to_signed_basetype(width) : to_unsigned_basetype(width);
 		type.width = width;
 		break;
@@ -522,9 +716,9 @@ void Parser::parse(const Instruction &instruction)
 		uint32_t vecsize = ops[2];
 
 		auto &base = get<SPIRType>(ops[1]);
-		auto &vecbase = set<SPIRType>(id);
+		auto &vecbase = set<SPIRType>(id, base);
 
-		vecbase = base;
+		vecbase.op = op;
 		vecbase.vecsize = vecsize;
 		vecbase.self = id;
 		vecbase.parent_type = ops[1];
@@ -537,24 +731,57 @@ void Parser::parse(const Instruction &instruction)
 		uint32_t colcount = ops[2];
 
 		auto &base = get<SPIRType>(ops[1]);
-		auto &matrixbase = set<SPIRType>(id);
+		auto &matrixbase = set<SPIRType>(id, base);
 
-		matrixbase = base;
+		matrixbase.op = op;
 		matrixbase.columns = colcount;
 		matrixbase.self = id;
 		matrixbase.parent_type = ops[1];
 		break;
 	}
 
+	case OpTypeCooperativeMatrixKHR:
+	{
+		uint32_t id = ops[0];
+		auto &base = get<SPIRType>(ops[1]);
+		auto &matrixbase = set<SPIRType>(id, base);
+
+		matrixbase.op = op;
+		matrixbase.ext.cooperative.scope_id = ops[2];
+		matrixbase.ext.cooperative.rows_id = ops[3];
+		matrixbase.ext.cooperative.columns_id = ops[4];
+		matrixbase.ext.cooperative.use_id = ops[5];
+		matrixbase.self = id;
+		matrixbase.parent_type = ops[1];
+		break;
+	}
+
+	case OpTypeCooperativeVectorNV:
+	{
+		uint32_t id = ops[0];
+		auto &type = set<SPIRType>(id, op);
+
+		type.basetype = SPIRType::CoopVecNV;
+		type.op = op;
+		type.ext.coopVecNV.component_type_id = ops[1];
+		type.ext.coopVecNV.component_count_id = ops[2];
+		type.parent_type = ops[1];
+
+		// CoopVec-Nv can be used with integer operations like SMax where
+		// where spirv-opt does explicit checks on integer bitwidth
+		auto component_type = get<SPIRType>(type.ext.coopVecNV.component_type_id);
+		type.width = component_type.width;
+		break;
+	}
+
 	case OpTypeArray:
 	{
 		uint32_t id = ops[0];
-		auto &arraybase = set<SPIRType>(id);
-
 		uint32_t tid = ops[1];
 		auto &base = get<SPIRType>(tid);
+		auto &arraybase = set<SPIRType>(id, base);
 
-		arraybase = base;
+		arraybase.op = op;
 		arraybase.parent_type = tid;
 
 		uint32_t cid = ops[2];
@@ -569,7 +796,9 @@ void Parser::parse(const Instruction &instruction)
 
 		arraybase.array_size_literal.push_back(literal);
 		arraybase.array.push_back(literal ? c->scalar() : cid);
-		// Do NOT set arraybase.self!
+
+		// .self resolves down to non-array/non-pointer type.
+		arraybase.self = base.self;
 		break;
 	}
 
@@ -578,25 +807,27 @@ void Parser::parse(const Instruction &instruction)
 		uint32_t id = ops[0];
 
 		auto &base = get<SPIRType>(ops[1]);
-		auto &arraybase = set<SPIRType>(id);
+		auto &arraybase = set<SPIRType>(id, base);
 
 		// We're copying type information into Array types, so we'll need a fixup for any physical pointer
 		// references.
 		if (base.forward_pointer)
 			forward_pointer_fixups.push_back({ id, ops[1] });
 
-		arraybase = base;
+		arraybase.op = op;
 		arraybase.array.push_back(0);
 		arraybase.array_size_literal.push_back(true);
 		arraybase.parent_type = ops[1];
-		// Do NOT set arraybase.self!
+
+		// .self resolves down to non-array/non-pointer type.
+		arraybase.self = base.self;
 		break;
 	}
 
 	case OpTypeImage:
 	{
 		uint32_t id = ops[0];
-		auto &type = set<SPIRType>(id);
+		auto &type = set<SPIRType>(id, op);
 		type.basetype = SPIRType::Image;
 		type.image.type = ops[1];
 		type.image.dim = static_cast<Dim>(ops[2]);
@@ -613,7 +844,7 @@ void Parser::parse(const Instruction &instruction)
 	{
 		uint32_t id = ops[0];
 		uint32_t imagetype = ops[1];
-		auto &type = set<SPIRType>(id);
+		auto &type = set<SPIRType>(id, op);
 		type = get<SPIRType>(imagetype);
 		type.basetype = SPIRType::SampledImage;
 		type.self = id;
@@ -623,7 +854,7 @@ void Parser::parse(const Instruction &instruction)
 	case OpTypeSampler:
 	{
 		uint32_t id = ops[0];
-		auto &type = set<SPIRType>(id);
+		auto &type = set<SPIRType>(id, op);
 		type.basetype = SPIRType::Sampler;
 		break;
 	}
@@ -636,10 +867,13 @@ void Parser::parse(const Instruction &instruction)
 		// We won't be able to compile it, but we shouldn't crash when parsing.
 		// We should be able to reflect.
 		auto *base = maybe_get<SPIRType>(ops[2]);
-		auto &ptrbase = set<SPIRType>(id);
+		auto &ptrbase = set<SPIRType>(id, op);
 
 		if (base)
+		{
 			ptrbase = *base;
+			ptrbase.op = op;
+		}
 
 		ptrbase.pointer = true;
 		ptrbase.pointer_depth++;
@@ -660,7 +894,7 @@ void Parser::parse(const Instruction &instruction)
 	case OpTypeForwardPointer:
 	{
 		uint32_t id = ops[0];
-		auto &ptrbase = set<SPIRType>(id);
+		auto &ptrbase = set<SPIRType>(id, op);
 		ptrbase.pointer = true;
 		ptrbase.pointer_depth++;
 		ptrbase.storage = static_cast<StorageClass>(ops[1]);
@@ -675,7 +909,7 @@ void Parser::parse(const Instruction &instruction)
 	case OpTypeStruct:
 	{
 		uint32_t id = ops[0];
-		auto &type = set<SPIRType>(id);
+		auto &type = set<SPIRType>(id, op);
 		type.basetype = SPIRType::Struct;
 		for (uint32_t i = 1; i < length; i++)
 			type.member_types.push_back(ops[i]);
@@ -724,7 +958,7 @@ void Parser::parse(const Instruction &instruction)
 	case OpTypeAccelerationStructureKHR:
 	{
 		uint32_t id = ops[0];
-		auto &type = set<SPIRType>(id);
+		auto &type = set<SPIRType>(id, op);
 		type.basetype = SPIRType::AccelerationStructure;
 		break;
 	}
@@ -732,8 +966,22 @@ void Parser::parse(const Instruction &instruction)
 	case OpTypeRayQueryKHR:
 	{
 		uint32_t id = ops[0];
-		auto &type = set<SPIRType>(id);
+		auto &type = set<SPIRType>(id, op);
 		type.basetype = SPIRType::RayQuery;
+		break;
+	}
+
+	case OpTypeTensorARM:
+	{
+		uint32_t id = ops[0];
+		auto &type = set<SPIRType>(id, op);
+		type.basetype = SPIRType::Tensor;
+		type.ext.tensor = {};
+		type.ext.tensor.type = ops[1];
+		if (length >= 3)
+			type.ext.tensor.rank = ops[2];
+		if (length >= 4)
+			type.ext.tensor.shape = ops[3];
 		break;
 	}
 
@@ -773,7 +1021,7 @@ void Parser::parse(const Instruction &instruction)
 		uint32_t id = ops[1];
 
 		// Instead of a temporary, create a new function-wide temporary with this ID instead.
-		auto &var = set<SPIRVariable>(id, result_type, spv::StorageClassFunction);
+		auto &var = set<SPIRVariable>(id, result_type, StorageClassFunction);
 		var.phi_variable = true;
 
 		current_function->add_local_variable(id);
@@ -783,17 +1031,27 @@ void Parser::parse(const Instruction &instruction)
 		break;
 	}
 
-		// Constants
+	// Constants
 	case OpSpecConstant:
 	case OpConstant:
+	case OpConstantCompositeReplicateEXT:
+	case OpSpecConstantCompositeReplicateEXT:
 	{
 		uint32_t id = ops[1];
 		auto &type = get<SPIRType>(ops[0]);
-
-		if (type.width > 32)
-			set<SPIRConstant>(id, ops[0], ops[2] | (uint64_t(ops[3]) << 32), op == OpSpecConstant);
+		if (op == OpConstantCompositeReplicateEXT || op == OpSpecConstantCompositeReplicateEXT)
+		{
+			auto subconstant = uint32_t(ops[2]);
+			set<SPIRConstant>(id, ops[0], &subconstant, 1, op == OpSpecConstantCompositeReplicateEXT, true);
+		}
 		else
-			set<SPIRConstant>(id, ops[0], ops[2], op == OpSpecConstant);
+		{
+
+			if (type.width > 32)
+				set<SPIRConstant>(id, ops[0], ops[2] | (uint64_t(ops[3]) << 32), op == OpSpecConstant);
+			else
+				set<SPIRConstant>(id, ops[0], ops[2], op == OpSpecConstant);
+		}
 		break;
 	}
 
@@ -961,6 +1219,57 @@ void Parser::parse(const Instruction &instruction)
 		current_block->false_block = ops[2];
 
 		current_block->terminator = SPIRBlock::Select;
+
+		if (current_block->true_block == current_block->false_block)
+		{
+			// Bogus conditional, translate to a direct branch.
+			// Avoids some ugly edge cases later when analyzing CFGs.
+
+			// There are some super jank cases where the merge block is different from the true/false,
+			// and later branches can "break" out of the selection construct this way.
+			// This is complete nonsense, but CTS hits this case.
+			// In this scenario, we should see the selection construct as more of a Switch with one default case.
+			// The problem here is that this breaks any attempt to break out of outer switch statements,
+			// but it's theoretically solvable if this ever comes up using the ladder breaking system ...
+
+			if (current_block->true_block != current_block->next_block &&
+			    current_block->merge == SPIRBlock::MergeSelection)
+			{
+				uint32_t ids = ir.increase_bound_by(2);
+
+				auto &type = set<SPIRType>(ids, OpTypeInt);
+				type.basetype = SPIRType::Int;
+				type.width = 32;
+				auto &c = set<SPIRConstant>(ids + 1, ids);
+
+				current_block->condition = c.self;
+				current_block->default_block = current_block->true_block;
+				current_block->terminator = SPIRBlock::MultiSelect;
+				ir.block_meta[current_block->next_block] &= ~ParsedIR::BLOCK_META_SELECTION_MERGE_BIT;
+				ir.block_meta[current_block->next_block] |= ParsedIR::BLOCK_META_MULTISELECT_MERGE_BIT;
+			}
+			else
+			{
+				// Collapse loops if we have to.
+				bool collapsed_loop = current_block->true_block == current_block->merge_block &&
+				                      current_block->merge == SPIRBlock::MergeLoop;
+
+				if (collapsed_loop)
+				{
+					ir.block_meta[current_block->merge_block] &= ~ParsedIR::BLOCK_META_LOOP_MERGE_BIT;
+					ir.block_meta[current_block->continue_block] &= ~ParsedIR::BLOCK_META_CONTINUE_BIT;
+				}
+
+				current_block->next_block = current_block->true_block;
+				current_block->condition = 0;
+				current_block->true_block = 0;
+				current_block->false_block = 0;
+				current_block->merge_block = 0;
+				current_block->merge = SPIRBlock::MergeNone;
+				current_block->terminator = SPIRBlock::Direct;
+			}
+		}
+
 		current_block = nullptr;
 		break;
 	}
@@ -975,8 +1284,21 @@ void Parser::parse(const Instruction &instruction)
 		current_block->condition = ops[0];
 		current_block->default_block = ops[1];
 
-		for (uint32_t i = 2; i + 2 <= length; i += 2)
-			current_block->cases.push_back({ ops[i], ops[i + 1] });
+		uint32_t remaining_ops = length - 2;
+		if ((remaining_ops % 2) == 0)
+		{
+			for (uint32_t i = 2; i + 2 <= length; i += 2)
+				current_block->cases_32bit.push_back({ ops[i], ops[i + 1] });
+		}
+
+		if ((remaining_ops % 3) == 0)
+		{
+			for (uint32_t i = 2; i + 3 <= length; i += 3)
+			{
+				uint64_t value = (static_cast<uint64_t>(ops[i + 1]) << 32) | ops[i];
+				current_block->cases_64bit.push_back({ value, ops[i + 2] });
+			}
+		}
 
 		// If we jump to next block, make it break instead since we're inside a switch case block at that point.
 		ir.block_meta[current_block->next_block] |= ParsedIR::BLOCK_META_MULTISELECT_MERGE_BIT;
@@ -986,6 +1308,7 @@ void Parser::parse(const Instruction &instruction)
 	}
 
 	case OpKill:
+	case OpTerminateInvocation:
 	{
 		if (!current_block)
 			SPIRV_CROSS_THROW("Trying to end a non-existing block.");
@@ -1008,6 +1331,18 @@ void Parser::parse(const Instruction &instruction)
 			SPIRV_CROSS_THROW("Trying to end a non-existing block.");
 		current_block->terminator = SPIRBlock::IgnoreIntersection;
 		current_block = nullptr;
+		break;
+
+	case OpEmitMeshTasksEXT:
+		if (!current_block)
+			SPIRV_CROSS_THROW("Trying to end a non-existing block.");
+		current_block->terminator = SPIRBlock::EmitMeshTasks;
+		for (uint32_t i = 0; i < 3; i++)
+			current_block->mesh.groups[i] = ops[i];
+		current_block->mesh.payload = length >= 4 ? ops[3] : 0;
+		current_block = nullptr;
+		// Currently glslang is bugged and does not treat EmitMeshTasksEXT as a terminator.
+		ignore_trailing_block_opcodes = true;
 		break;
 
 	case OpReturn:
@@ -1120,6 +1455,24 @@ void Parser::parse(const Instruction &instruction)
 				current_function->entry_line.line_literal = ops[1];
 			}
 		}
+
+		uint32_t file = ops[0];
+		uint32_t line = ops[1];
+
+		for (auto &source : ir.sources)
+		{
+			if (source.file_id == file)
+			{
+				source.line_markers.emplace_back();
+				auto &marker = source.line_markers.back();
+				marker.line = line;
+				marker.offset = instruction.offset - 1;
+				marker.function_id = current_function ? current_function->self : ID(0);
+				marker.block_id = current_block ? current_block->self : ID(0);
+				break;
+			}
+		}
+
 		break;
 	}
 
@@ -1134,6 +1487,13 @@ void Parser::parse(const Instruction &instruction)
 	// Actual opcodes.
 	default:
 	{
+		if (length >= 2)
+		{
+			const auto *type = maybe_get<SPIRType>(ops[0]);
+			if (type)
+				ir.load_type_width.insert({ ops[1], type->width });
+		}
+
 		if (!current_block)
 			SPIRV_CROSS_THROW("Currently no block to insert opcode.");
 
