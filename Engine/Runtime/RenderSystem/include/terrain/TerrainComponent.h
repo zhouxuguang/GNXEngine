@@ -124,6 +124,10 @@ private:
     QuadTreeTerrainPtr mQuadTreeTerrain;
     MaterialPtr      mMaterial;
     bool             mWireframe = false;
+
+    // Indirect draw buffer (created lazily, updated per frame)
+    RenderCore::RCBufferPtr mIndirectBuffer;
+    uint32_t              mIndirectBufferSize = 0;
 };
 
 typedef std::shared_ptr<TerrainComponent> TerrainComponentPtr;

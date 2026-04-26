@@ -10,6 +10,7 @@
 #include "terrain/TerrainComponent.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/RenderCore/include/RenderEncoder.h"
+#include "Runtime/RenderCore/include/RCBuffer.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 
@@ -112,6 +113,45 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
         return;
     }
 
+    // ---- Build indirect draw commands (includes frustum culling) ----
+    mQuadTreeTerrain->BuildIndirectCommands(frustum);
+    uint32_t drawCount = mQuadTreeTerrain->GetIndirectDrawCount();
+
+    if (drawCount == 0)
+    {
+        return;
+    }
+
+    // ---- Ensure indirect buffer is large enough ----
+    const auto& indirectCommands = mQuadTreeTerrain->GetIndirectCommands();
+    uint32_t requiredSize = drawCount * sizeof(RenderCore::DrawIndexedIndirectCommand);
+
+    if (!mIndirectBuffer || mIndirectBufferSize < requiredSize)
+    {
+        // Allocate with 50% extra room to avoid frequent reallocation
+        uint32_t allocSize = requiredSize + requiredSize / 2;
+        RenderCore::RCBufferDesc desc(allocSize,
+            RenderCore::RCBufferUsage::IndirectBuffer,
+            RenderCore::StorageMode::StorageModeShared);
+        mIndirectBuffer = RenderCore::GetRenderDevice()->CreateBuffer(desc);
+        mIndirectBufferSize = allocSize;
+        if (mIndirectBuffer)
+        {
+            mIndirectBuffer->SetName("TerrainIndirectBuffer");
+        }
+    }
+
+    // ---- Upload indirect commands to GPU ----
+    if (mIndirectBuffer)
+    {
+        void* mapped = mIndirectBuffer->Map();
+        if (mapped)
+        {
+            memcpy(mapped, indirectCommands.data(), requiredSize);
+            mIndirectBuffer->Unmap();
+        }
+    }
+
     // ---- Bind PSO and shared state ONCE for all leaf nodes ----
     renderEncoder->SetGraphicsPipeline(basePassPSO);
 
@@ -151,27 +191,15 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
     renderEncoder->SetFragmentTextureAndSampler("gEmissiveMap",   mMaterial->GetTexture("emissiveTexture"),  textureSampler);
     renderEncoder->SetFragmentTextureAndSampler("gAmbientMap",    mMaterial->GetTexture("ambientTexture"),   textureSampler);
 
-    // ---- Draw all visible leaf nodes ----
-    int subMeshCount = mesh->GetSubMeshCount();
-    const auto& leafBounds = mQuadTreeTerrain->GetLeafBounds();
-
-    for (int n = 0; n < subMeshCount; n++)
-    {
-        // Per-leaf frustum culling
-        if (frustum && n < (int)leafBounds.size())
-        {
-            if (!frustum->IsBoxInFrustum(leafBounds[n]))
-                continue;
-        }
-
-        const SubMeshInfo& subInfo = mesh->GetSubMeshInfo(n);
-        renderEncoder->DrawIndexedPrimitives(
-            subInfo.topology,
-            (int)subInfo.indexCount,
-            indexBuffer,
-            subInfo.firstIndex,
-            subInfo.baseVertex);
-    }
+    // ---- Single indirect draw call for ALL visible leaf nodes ----
+    renderEncoder->DrawIndexedPrimitivesIndirect(
+        PrimitiveMode_TRIANGLES,
+        indexBuffer,
+        0,  // indexBufferOffset - bind the entire index buffer
+        mIndirectBuffer,
+        0,  // indirectBufferOffset
+        drawCount,
+        sizeof(RenderCore::DrawIndexedIndirectCommand));
 }
 
 //=============================================================================
@@ -204,6 +232,44 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
         return;
     }
 
+    // ---- Build indirect draw commands (includes frustum culling) ----
+    mQuadTreeTerrain->BuildIndirectCommands(frustum);
+    uint32_t drawCount = mQuadTreeTerrain->GetIndirectDrawCount();
+
+    if (drawCount == 0)
+    {
+        return;
+    }
+
+    // ---- Ensure indirect buffer is large enough ----
+    const auto& indirectCommands = mQuadTreeTerrain->GetIndirectCommands();
+    uint32_t requiredSize = drawCount * sizeof(RenderCore::DrawIndexedIndirectCommand);
+
+    if (!mIndirectBuffer || mIndirectBufferSize < requiredSize)
+    {
+        uint32_t allocSize = requiredSize + requiredSize / 2;
+        RenderCore::RCBufferDesc desc(allocSize,
+            RenderCore::RCBufferUsage::IndirectBuffer,
+            RenderCore::StorageMode::StorageModeShared);
+        mIndirectBuffer = RenderCore::GetRenderDevice()->CreateBuffer(desc);
+        mIndirectBufferSize = allocSize;
+        if (mIndirectBuffer)
+        {
+            mIndirectBuffer->SetName("TerrainIndirectBuffer");
+        }
+    }
+
+    // ---- Upload indirect commands to GPU ----
+    if (mIndirectBuffer)
+    {
+        void* mapped = mIndirectBuffer->Map();
+        if (mapped)
+        {
+            memcpy(mapped, indirectCommands.data(), requiredSize);
+            mIndirectBuffer->Unmap();
+        }
+    }
+
     // ---- Bind depth PSO and shared state ONCE ----
     renderEncoder->SetGraphicsPipeline(depthPSO);
 
@@ -219,27 +285,15 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
     // ---- Only bind position vertex buffer ----
     renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
 
-    // ---- Draw all visible leaf nodes ----
-    int subMeshCount = mesh->GetSubMeshCount();
-    const auto& leafBounds = mQuadTreeTerrain->GetLeafBounds();
-
-    for (int n = 0; n < subMeshCount; n++)
-    {
-        // Per-leaf frustum culling
-        if (frustum && n < (int)leafBounds.size())
-        {
-            if (!frustum->IsBoxInFrustum(leafBounds[n]))
-                continue;
-        }
-
-        const SubMeshInfo& subInfo = mesh->GetSubMeshInfo(n);
-        renderEncoder->DrawIndexedPrimitives(
-            subInfo.topology,
-            (int)subInfo.indexCount,
-            indexBuffer,
-            subInfo.firstIndex,
-            subInfo.baseVertex);
-    }
+    // ---- Single indirect draw call for ALL visible leaf nodes ----
+    renderEncoder->DrawIndexedPrimitivesIndirect(
+        PrimitiveMode_TRIANGLES,
+        indexBuffer,
+        0,
+        mIndirectBuffer,
+        0,
+        drawCount,
+        sizeof(RenderCore::DrawIndexedIndirectCommand));
 }
 
 //=============================================================================

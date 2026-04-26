@@ -15,6 +15,7 @@
 #include "../RSDefine.h"
 #include "../mesh/Mesh.h"
 #include "Runtime/MathUtil/include/AABB.h"
+#include "Runtime/MathUtil/include/Frustum.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -51,6 +52,11 @@ public:
     // Configuration
     void SetLODDistanceFactor(float factor);
     void SetSSEThreshold(float threshold);
+
+    // Build indirect draw commands from visible leaves (with optional frustum culling)
+    void BuildIndirectCommands(const mathutil::Frustumf* frustum = nullptr);
+    const std::vector<RenderCore::DrawIndexedIndirectCommand>& GetIndirectCommands() const { return mIndirectCommands; }
+    uint32_t GetIndirectDrawCount() const { return (uint32_t)mIndirectCommands.size(); }
 
     uint32_t GetMaxLevel() const { return mMaxLevel; }
     uint32_t GetLeafCount() const { return (uint32_t)mLeafNodes.size(); }
@@ -164,6 +170,9 @@ private:
 
     // GPU resources
     MeshPtr mMesh;
+
+    // Indirect draw commands (built each frame by BuildIndirectCommands)
+    std::vector<RenderCore::DrawIndexedIndirectCommand> mIndirectCommands;
 
     // LOD configuration
     float mLODDistanceFactor = 1.0f; // distance = nodeWorldSize * factor

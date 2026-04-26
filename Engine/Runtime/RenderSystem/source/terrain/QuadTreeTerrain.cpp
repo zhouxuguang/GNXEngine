@@ -1200,4 +1200,41 @@ void QuadTreeTerrain::SetSSEThreshold(float threshold)
     mSSEThreshold = threshold;
 }
 
+//=============================================================================
+// BuildIndirectCommands - build indirect draw commands from visible leaves.
+// Applies per-leaf frustum culling and fills the command buffer for a single
+// DrawIndexedPrimitivesIndirect call.
+//=============================================================================
+
+void QuadTreeTerrain::BuildIndirectCommands(const mathutil::Frustumf* frustum)
+{
+    mIndirectCommands.clear();
+
+    if (!mMesh) return;
+
+    int subMeshCount = mMesh->GetSubMeshCount();
+    const auto& leafBounds = GetLeafBounds();
+
+    mIndirectCommands.reserve(subMeshCount);
+
+    for (int n = 0; n < subMeshCount; n++)
+    {
+        // Per-leaf frustum culling
+        if (frustum && n < (int)leafBounds.size())
+        {
+            if (!frustum->IsBoxInFrustum(leafBounds[n]))
+                continue;
+        }
+
+        const SubMeshInfo& subInfo = mMesh->GetSubMeshInfo(n);
+        RenderCore::DrawIndexedIndirectCommand cmd;
+        cmd.indexCount    = subInfo.indexCount;
+        cmd.instanceCount = 1;
+        cmd.firstIndex    = subInfo.firstIndex;
+        cmd.vertexOffset  = subInfo.baseVertex;
+        cmd.firstInstance = 0;
+        mIndirectCommands.push_back(cmd);
+    }
+}
+
 NS_RENDERSYSTEM_END
