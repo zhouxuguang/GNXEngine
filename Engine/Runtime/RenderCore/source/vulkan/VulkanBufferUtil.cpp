@@ -718,6 +718,56 @@ VkFormat VulkanBufferUtil::ConvertTextureFormat(TextureFormat texFormat)
             format = VK_FORMAT_R32G32_SFLOAT;
             break;
 
+        // 8-bit integer formats
+        case kTexFormatR8Uint:
+            format = VK_FORMAT_R8_UINT;
+            break;
+
+        case kTexFormatRG8Uint:
+            format = VK_FORMAT_R8G8_UINT;
+            break;
+
+        case kTexFormatRGBA8Uint:
+            format = VK_FORMAT_R8G8B8A8_UINT;
+            break;
+
+        case kTexFormatR8Sint:
+            format = VK_FORMAT_R8_SINT;
+            break;
+
+        case kTexFormatRG8Sint:
+            format = VK_FORMAT_R8G8_SINT;
+            break;
+
+        case kTexFormatRGBA8Sint:
+            format = VK_FORMAT_R8G8B8A8_SINT;
+            break;
+
+        // 16-bit integer formats
+        case kTexFormatR16Uint:
+            format = VK_FORMAT_R16_UINT;
+            break;
+
+        case kTexFormatRG16Uint:
+            format = VK_FORMAT_R16G16_UINT;
+            break;
+
+        case kTexFormatRGBA16Uint:
+            format = VK_FORMAT_R16G16B16A16_UINT;
+            break;
+
+        case kTexFormatR16Sint:
+            format = VK_FORMAT_R16_SINT;
+            break;
+
+        case kTexFormatRG16Sint:
+            format = VK_FORMAT_R16G16_SINT;
+            break;
+
+        case kTexFormatRGBA16Sint:
+            format = VK_FORMAT_R16G16B16A16_SINT;
+            break;
+
         default:
             break;
     }

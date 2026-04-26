@@ -110,6 +110,22 @@ enum
     kTexFormatRG32Sint = 102,
     kTexFormatRG32Float = 103,
 
+    // 8-bit / 16-bit unsigned/integer formats
+    // Useful for: virtual texture page tables, index buffers as textures,
+    // packed coordinate storage, compute shader readback
+    kTexFormatR8Uint   = 104,
+    kTexFormatRG8Uint  = 105,
+    kTexFormatRGBA8Uint= 106,
+    kTexFormatR8Sint   = 107,
+    kTexFormatRG8Sint  = 108,
+    kTexFormatRGBA8Sint= 109,
+    kTexFormatR16Uint  = 110,
+    kTexFormatRG16Uint = 111,
+    kTexFormatRGBA16Uint=112,
+    kTexFormatR16Sint  = 113,
+    kTexFormatRG16Sint = 114,
+    kTexFormatRGBA16Sint=115,
+
     kTexFormatTotalCount    = 1000 // keep this last!
 };
 

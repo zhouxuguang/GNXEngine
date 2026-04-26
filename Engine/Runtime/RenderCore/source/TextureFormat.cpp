@@ -44,10 +44,34 @@ const static int kTextureByteTable[kTexFormatTotalCount] =
 uint32_t GetBytesFromTextureFormat (TextureFormat inFormat)
 {
     assert (inFormat < kTexFormatDXT1_RGB || inFormat == kTexFormatBGRA32 || inFormat == kTexFormatRGBA4444
-            || inFormat == kTexFormatSRGB8 || inFormat == kTexFormatSRGB8_ALPHA8 || inFormat == kTexR10G10B10A2);
+            || inFormat == kTexFormatSRGB8 || inFormat == kTexFormatSRGB8_ALPHA8 || inFormat == kTexR10G10B10A2
+            || (inFormat >= kTexFormatR32Float && inFormat <= kTexFormatRGBA16Sint));
     // SRGB formats have same byte size as their linear counterparts
     if (inFormat == kTexFormatSRGB8) return 3;
     if (inFormat == kTexFormatSRGB8_ALPHA8) return 4;
+
+    // Float / integer formats
+    if (inFormat == kTexFormatR32Float)      return 4;
+    if (inFormat == kTexFormatRG32Uint)      return 8;
+    if (inFormat == kTexFormatRG32Sint)      return 8;
+    if (inFormat == kTexFormatRG32Float)     return 8;
+
+    // 8-bit integer formats
+    if (inFormat == kTexFormatR8Uint)        return 1;
+    if (inFormat == kTexFormatRG8Uint)       return 2;
+    if (inFormat == kTexFormatRGBA8Uint)     return 4;
+    if (inFormat == kTexFormatR8Sint)        return 1;
+    if (inFormat == kTexFormatRG8Sint)       return 2;
+    if (inFormat == kTexFormatRGBA8Sint)     return 4;
+
+    // 16-bit integer formats
+    if (inFormat == kTexFormatR16Uint)       return 2;
+    if (inFormat == kTexFormatRG16Uint)      return 4;
+    if (inFormat == kTexFormatRGBA16Uint)    return 8;
+    if (inFormat == kTexFormatR16Sint)       return 2;
+    if (inFormat == kTexFormatRG16Sint)      return 4;
+    if (inFormat == kTexFormatRGBA16Sint)    return 8;
+
 	return (inFormat == kTexFormatBGRA32) ? 4 : kTextureByteTable[inFormat];
 }
 
@@ -59,8 +83,9 @@ uint32_t GetMaxBytesPerPixel (TextureFormat inFormat)
 
 int GetRowBytesFromWidthAndFormat (int width, TextureFormat inFormat)
 {
-    assert (inFormat < kTexFormatDXT1_RGB || inFormat == kTexFormatBGRA32 || inFormat == kTexFormatRGBA4444
-            || inFormat == kTexFormatSRGB8 || inFormat == kTexFormatSRGB8_ALPHA8 || inFormat == kTexR10G10B10A2);
+	assert (inFormat < kTexFormatDXT1_RGB || inFormat == kTexFormatBGRA32 || inFormat == kTexFormatRGBA4444
+			|| inFormat == kTexFormatSRGB8 || inFormat == kTexFormatSRGB8_ALPHA8 || inFormat == kTexR10G10B10A2
+			|| (inFormat >= kTexFormatR32Float && inFormat <= kTexFormatRGBA16Sint));
 	return GetBytesFromTextureFormat (inFormat) * width;
 }
 
@@ -77,7 +102,10 @@ bool IsValidTextureFormat (TextureFormat format)
 		IsCompressedETC2TextureFormat(format) ||
 		IsCompressedASTCTextureFormat(format) ||
 		IsCompressedEACTextureFormat(format) ||
-		format == kTexFormatBGRA32)
+		format == kTexFormatBGRA32 ||
+		// Float / integer formats
+		(format >= kTexFormatR32Float && format <= kTexFormatRG32Float) ||
+		(format >= kTexFormatR8Uint && format <= kTexFormatRGBA16Sint))
 		return true;
 	else
 		return false;
@@ -231,6 +259,28 @@ const char* GetTextureFormatString(TextureFormat format)
 #undef STR_
 
 		case kTexFormatBGRA32: return "BGRA 32 bit";
+
+		// Float formats
+		case kTexFormatR32Float: return "R32 Float";
+		case kTexFormatRG32Uint: return "RG32 Uint";
+		case kTexFormatRG32Sint: return "RG32 Sint";
+		case kTexFormatRG32Float: return "RG32 Float";
+
+		// 8-bit integer formats
+		case kTexFormatR8Uint: return "R8 Uint";
+		case kTexFormatRG8Uint: return "RG8 Uint";
+		case kTexFormatRGBA8Uint: return "RGBA8 Uint";
+		case kTexFormatR8Sint: return "R8 Sint";
+		case kTexFormatRG8Sint: return "RG8 Sint";
+		case kTexFormatRGBA8Sint: return "RGBA8 Sint";
+
+		// 16-bit integer formats
+		case kTexFormatR16Uint: return "R16 Uint";
+		case kTexFormatRG16Uint: return "RG16 Uint";
+		case kTexFormatRGBA16Uint: return "RGBA16 Uint";
+		case kTexFormatR16Sint: return "R16 Sint";
+		case kTexFormatRG16Sint: return "RG16 Sint";
+		case kTexFormatRGBA16Sint: return "RGBA16 Sint";
 
 		default:
 		return "Unsupported";
