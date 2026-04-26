@@ -57,6 +57,19 @@ public:
             SafeDestroyPipeline(*mContext, mPipeline);
             mPipeline = VK_NULL_HANDLE;
         }
+        if (mPipelineLayout != VK_NULL_HANDLE)
+        {
+            vkDestroyPipelineLayout(mContext->device, mPipelineLayout, nullptr);
+            mPipelineLayout = VK_NULL_HANDLE;
+        }
+        for (auto& layout : mMeshDescriptorSetLayouts)
+        {
+            if (layout != VK_NULL_HANDLE)
+            {
+                vkDestroyDescriptorSetLayout(mContext->device, layout, nullptr);
+            }
+        }
+        mMeshDescriptorSetLayouts.clear();
     }
     
     virtual void AttachVertexShader(ShaderFunctionPtr shaderFunction);
@@ -161,6 +174,7 @@ private:
     // Mesh shader 相关
     VKShaderFunctionPtr mTaskShader = nullptr;
     VKShaderFunctionPtr mMeshShader = nullptr;
+    std::vector<VkDescriptorSetLayout> mMeshDescriptorSetLayouts;
     
     uint32_t mStageSetOffsets[ShaderStage_Max][DESCRIPTOR_TYPE_MAX];
     std::vector<VkDescriptorSet> mDescriptorSets;

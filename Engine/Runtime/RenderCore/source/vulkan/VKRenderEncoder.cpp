@@ -644,16 +644,58 @@ void VKRenderEncoder::SetFragmentUniformBuffer(const std::string& resourceName, 
 
 void VKRenderEncoder::SetMeshUniformBuffer(UniformBufferPtr buffer, int index)
 {
-	// Vulkan mesh shaders share the same descriptor set layout with the pipeline.
-	// For now, map mesh uniform binding to the same descriptor set logic as vertex.
-	SetVertexUniformBuffer(buffer, index);
+    if (!buffer || !mGraphicsPipieline)
+    {
+        return;
+    }
+
+    VKUniformBuffer* vkUniformBuffer = (VKUniformBuffer*)buffer.get();
+
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = vkUniformBuffer->GetBuffer();
+    bufferInfo.offset = 0;
+    bufferInfo.range = VK_WHOLE_SIZE;
+
+    // Mesh shader 使用 push descriptor 绑定 uniform buffer
+    VkWriteDescriptorSet writeDescriptorSet = {};
+    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDescriptorSet.dstSet = VK_NULL_HANDLE;
+    writeDescriptorSet.dstBinding = index;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    writeDescriptorSet.pBufferInfo = &bufferInfo;
+
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        mGraphicsPipieline->GetPipelineLayout(), 0, 1, &writeDescriptorSet);
 }
 
 void VKRenderEncoder::SetObjectUniformBuffer(UniformBufferPtr buffer, int index)
 {
-	// Vulkan task shaders share the same descriptor set layout with the pipeline.
-	// For now, map object uniform binding to the same descriptor set logic as vertex.
-	SetVertexUniformBuffer(buffer, index);
+    if (!buffer || !mGraphicsPipieline)
+    {
+        return;
+    }
+
+    VKUniformBuffer* vkUniformBuffer = (VKUniformBuffer*)buffer.get();
+
+    VkDescriptorBufferInfo bufferInfo = {};
+    bufferInfo.buffer = vkUniformBuffer->GetBuffer();
+    bufferInfo.offset = 0;
+    bufferInfo.range = VK_WHOLE_SIZE;
+
+    // Task shader 使用 push descriptor 绑定 uniform buffer
+    VkWriteDescriptorSet writeDescriptorSet = {};
+    writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    writeDescriptorSet.dstSet = VK_NULL_HANDLE;
+    writeDescriptorSet.dstBinding = index;
+    writeDescriptorSet.dstArrayElement = 0;
+    writeDescriptorSet.descriptorCount = 1;
+    writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    writeDescriptorSet.pBufferInfo = &bufferInfo;
+
+    vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        mGraphicsPipieline->GetPipelineLayout(), 0, 1, &writeDescriptorSet);
 }
 
 void VKRenderEncoder::DrawPrimitives(PrimitiveMode mode, int offset, int size)

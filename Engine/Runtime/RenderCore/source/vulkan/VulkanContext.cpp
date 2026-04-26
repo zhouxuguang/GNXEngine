@@ -402,7 +402,6 @@ bool CreateVirtualDevice(VulkanContext& context)
         meshShaderFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
         meshShaderFeaturesEXT.taskShader = VK_TRUE;
         meshShaderFeaturesEXT.meshShader = VK_TRUE;
-        meshShaderFeaturesEXT.meshShaderQueries = VK_TRUE;
         AppendToPNextChain(deviceCreateNextChain, &meshShaderFeaturesEXT);
     }
 
