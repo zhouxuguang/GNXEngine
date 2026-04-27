@@ -16,8 +16,25 @@
 #include "../mesh/Mesh.h"
 #include "Runtime/MathUtil/include/AABB.h"
 #include "Runtime/MathUtil/include/Frustum.h"
+#include "Runtime/RenderCore/include/RCBuffer.h"
+#include "Runtime/RenderCore/include/RCTexture.h"
 
 NS_RENDERSYSTEM_BEGIN
+
+// Per-leaf metadata for GPU-driven terrain rendering (SSBO).
+// 32 bytes, aligned to vec4 for GPU access.
+struct PatchMeta
+{
+    float worldX;       // world X of patch top-left corner
+    float worldZ;       // world Z of patch top-left corner
+    float worldSize;    // world-space size of the patch
+    float minHeight;    // AABB min Y (for occlusion culling)
+
+    uint32_t gridX;     // grid X start coordinate
+    uint32_t gridZ;     // grid Z start coordinate
+    uint32_t gridSize;  // size in grid cells
+    uint32_t level;     // quadtree depth (LOD level)
+};
 
 class RENDERSYSTEM_API QuadTreeTerrain
 {
@@ -65,6 +82,11 @@ public:
     float GetHeightScale() const { return mHeightScale; }
     uint32_t GetGridSize() const { return mGridSize; }
 
+    // GPU resources for future GPU-driven rendering
+    RenderCore::RCTexture2DPtr GetHeightMapTexture() const { return mHeightMapTexture; }
+    RenderCore::RCBufferPtr GetPatchMetaBuffer() const { return mPatchMetaBuffer; }
+    uint32_t GetPatchMetaCount() const { return (uint32_t)mPatchMetaData.size(); }
+
 private:
     QuadTreeTerrain();
 
@@ -91,6 +113,12 @@ private:
         const std::vector<mathutil::Vector3f>& normals,
         const std::vector<mathutil::Vector4f>& tangents,
         const std::vector<mathutil::Vector2f>& uvs);
+
+    // Upload heightmap as GPU texture (called once during init)
+    void CreateHeightMapTexture();
+
+    // Build and upload PatchMeta SSBO (called each frame in GenerateLeafMesh)
+    void BuildPatchMetaBuffer();
 
     // Quadtree operations
     void BuildNode(Node* node);
@@ -170,6 +198,11 @@ private:
 
     // GPU resources
     MeshPtr mMesh;
+
+    // GPU resources for future GPU-driven rendering (阶段1A: 纯增量，不影响现有渲染)
+    RenderCore::RCTexture2DPtr mHeightMapTexture;   // heightmap as R32Float texture (created once)
+    RenderCore::RCBufferPtr mPatchMetaBuffer;        // PatchMeta[] SSBO (rebuilt each frame)
+    std::vector<PatchMeta> mPatchMetaData;           // CPU-side PatchMeta data
 
     // Indirect draw commands (built each frame by BuildIndirectCommands)
     std::vector<RenderCore::DrawIndexedIndirectCommand> mIndirectCommands;

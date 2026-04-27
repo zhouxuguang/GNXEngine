@@ -8,6 +8,8 @@
 
 #include "terrain/QuadTreeTerrain.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/RenderCore/include/TextureFormat.h"
+#include "Runtime/RenderCore/include/RCBuffer.h"
 #include "Runtime/ImageCodec/include/VImage.h"
 #include "Runtime/ImageCodec/include/ImageDecoder.h"
 #include "Runtime/BaseLib/include/LogService.h"
@@ -198,6 +200,9 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
     // (Update→GenerateLeafMesh reads from mIndexPool, must be populated)
     terrain->BuildStaticIndexPool();
 
+    // Upload heightmap as GPU texture (阶段1A: 纯增量)
+    terrain->CreateHeightMapTexture();
+
     // Initial update (now safe — pool is ready)
     terrain->Update(Vector3f(0, 0, 0));
 
@@ -369,6 +374,83 @@ void QuadTreeTerrain::InitVertexData(
     mMesh->SetUv(0, uvs.data(), vertexCount);
 
     mMesh->SetUpBuffer();
+}
+
+//=============================================================================
+// CreateHeightMapTexture - upload mHeightMap as a R32Float Texture2D.
+// Called once during initialization. The texture is read-only for shaders.
+//=============================================================================
+
+void QuadTreeTerrain::CreateHeightMapTexture()
+{
+    if (mHeightMap.empty()) return;
+
+    auto renderDevice = RenderCore::GetRenderDevice();
+
+    // Create R32Float texture matching the heightmap dimensions
+    mHeightMapTexture = renderDevice->CreateTexture2D(
+        RenderCore::kTexFormatR32Float,
+        RenderCore::TextureUsage::TextureUsageShaderRead,
+        mGridSize, mGridSize, 1);
+
+    if (!mHeightMapTexture) return;
+
+    // Upload height data: 4 bytes per pixel (R32Float)
+    uint32_t bytesPerRow = mGridSize * sizeof(float);
+    RenderCore::Rect2D region(0, 0, mGridSize, mGridSize);
+    mHeightMapTexture->ReplaceRegion(region, 0,
+        reinterpret_cast<const uint8_t*>(mHeightMap.data()), bytesPerRow);
+
+    LOG_INFO("QuadTreeTerrain: Heightmap texture uploaded (%ux%u, R32Float)",
+             mGridSize, mGridSize);
+}
+
+//=============================================================================
+// BuildPatchMetaBuffer - pack leaf node metadata into PatchMeta[] SSBO.
+// Called each frame after GenerateLeafMesh. The buffer is then available
+// for GPU-driven rendering passes (compute culling, instanced draw, etc.).
+//=============================================================================
+
+void QuadTreeTerrain::BuildPatchMetaBuffer()
+{
+    mPatchMetaData.clear();
+    mPatchMetaData.reserve(mLeafNodes.size());
+
+    float step = mWorldSize / (float)(mGridSize - 1);
+    float halfSize = mWorldSize * 0.5f;
+
+    for (size_t i = 0; i < mLeafNodes.size(); ++i)
+    {
+        Node* leaf = mLeafNodes[i];
+
+        PatchMeta meta;
+        meta.worldX    = -halfSize + (float)leaf->x * step;
+        meta.worldZ    = -halfSize + (float)leaf->z * step;
+        meta.worldSize = (float)leaf->size * step;
+        meta.minHeight = leaf->bounds.minimum.y;
+        meta.gridX     = leaf->x;
+        meta.gridZ     = leaf->z;
+        meta.gridSize  = leaf->size;
+        meta.level     = leaf->level;
+
+        mPatchMetaData.push_back(meta);
+    }
+
+    // Upload to GPU as SSBO
+    if (!mPatchMetaData.empty())
+    {
+        uint32_t dataSize = (uint32_t)(mPatchMetaData.size() * sizeof(PatchMeta));
+        RenderCore::RCBufferDesc desc(dataSize,
+            RenderCore::RCBufferUsage::StorageBuffer,
+            RenderCore::StorageModeShared);  // CPU-accessible for creation
+
+        auto renderDevice = RenderCore::GetRenderDevice();
+        mPatchMetaBuffer = renderDevice->CreateBuffer(desc, mPatchMetaData.data());
+    }
+    else
+    {
+        mPatchMetaBuffer.reset();
+    }
 }
 
 //=============================================================================
@@ -1156,6 +1238,9 @@ void QuadTreeTerrain::Update(const Vector3f& cameraPos,
 
     // Build mesh from leaves
     GenerateLeafMesh();
+
+    // Build PatchMeta SSBO for GPU-driven rendering (阶段1A: 纯增量)
+    BuildPatchMetaBuffer();
 }
 
 //=============================================================================
