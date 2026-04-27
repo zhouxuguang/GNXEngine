@@ -74,7 +74,7 @@ private:
         uint32_t x = 0;           // top-left corner in grid coordinates
         uint32_t z = 0;
         uint32_t size = 0;        // size in grid cells (power of 2)
-        uint32_t level = 0;       // depth in tree (0 = root)
+        uint32_t level = 0;       // LOD level: mMaxLevel=coarsest (root), 0=finest
         float maxGeoError = 0.0f; // max geometric error when rendered at this LOD
         mathutil::AxisAlignedBoxf bounds;
         Node* parent = nullptr;   // parent pointer for neighbor traversal
@@ -107,7 +107,7 @@ private:
 
     // Neighbor constraint: ensure adjacent leaves differ by at most 1 level
     static int GetChildIndex(const Node* node);
-    uint32_t GetMaxNeighborLevel(const Node* node, int direction) const;
+    uint32_t GetMinNeighborLevel(const Node* node, int direction) const;
     void EnforceNeighborConstraint();
 
     // Per-leaf neighbor LOD info for crack-fixing triangle fan

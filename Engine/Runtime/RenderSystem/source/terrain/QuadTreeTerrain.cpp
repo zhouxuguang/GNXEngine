@@ -380,7 +380,7 @@ void QuadTreeTerrain::BuildNode(Node* node)
     node->x     = 0;
     node->z     = 0;
     node->size  = mGridSizeCells;
-    node->level = 0;
+    node->level = mMaxLevel;  // root is the coarsest LOD
     ComputeNodeBounds(node);
 }
 
@@ -424,8 +424,8 @@ void QuadTreeTerrain::ComputeNodeBounds(Node* node)
 
 bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPos) const
 {
-    // Cannot subdivide beyond maxLevel
-    if (node.level >= mMaxLevel) return false;
+    // Cannot subdivide beyond finest level
+    if (node.level == 0) return false;
 
     // No geometric error means this LOD perfectly represents the terrain
     if (node.maxGeoError <= 0.0f) return false;
@@ -469,7 +469,7 @@ bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPo
 void QuadTreeTerrain::Subdivide(Node* node)
 {
     uint32_t halfSize = node->size / 2;
-    uint32_t childLevel = node->level + 1;
+    uint32_t childLevel = node->level - 1;  // go finer: 5→4→3→2→1→0
 
     // NW (top-left)
     node->children[0] = std::make_unique<Node>();
@@ -796,7 +796,7 @@ void QuadTreeTerrain::ComputeAllGeoErrors()
         }
     }
 
-    // Set root node's geoError
+    // Set root node's geoError (root level = mMaxLevel)
     mRoot.maxGeoError = GetCachedGeoError(mRoot.level, mRoot.x, mRoot.z);
 
     LOG_INFO("QuadTreeTerrain: GeoError cache computed for %u levels", mMaxLevel + 1);
@@ -808,16 +808,18 @@ void QuadTreeTerrain::ComputeAllGeoErrors()
 
 float QuadTreeTerrain::GetCachedGeoError(uint32_t level, uint32_t x, uint32_t z) const
 {
-    if (level >= mGeoErrorCache.size()) return 0.0f;
+    // Convert LOD level to depth index: depth=0 is root (coarsest), depth=mMaxLevel is finest
+    uint32_t depth = mMaxLevel - level;
+    if (depth >= mGeoErrorCache.size()) return 0.0f;
 
-    uint32_t nodeSize = mGridSizeCells >> level;
-    uint32_t nodesPerSide = 1u << level;
+    uint32_t nodeSize = mGridSizeCells >> depth;
+    uint32_t nodesPerSide = 1u << depth;
     uint32_t i = x / nodeSize;
     uint32_t j = z / nodeSize;
 
     if (i >= nodesPerSide || j >= nodesPerSide) return 0.0f;
 
-    return mGeoErrorCache[level][j * nodesPerSide + i];
+    return mGeoErrorCache[depth][j * nodesPerSide + i];
 }
 
 //=============================================================================
@@ -929,7 +931,7 @@ int QuadTreeTerrain::GetChildIndex(const Node* node)
 }
 
 //=============================================================================
-// GetMaxNeighborLevel - find the maximum leaf level among all leaves
+// GetMinNeighborLevel - find the minimum (finest) leaf level among all leaves
 // adjacent to `node` on the specified edge.
 //
 // direction: 0=left(-X), 1=right(+X), 2=bottom(+Z), 3=top(-Z)
@@ -941,7 +943,7 @@ int QuadTreeTerrain::GetChildIndex(const Node* node)
 //    to find the finest leaf.
 //=============================================================================
 
-uint32_t QuadTreeTerrain::GetMaxNeighborLevel(const Node* node, int direction) const
+uint32_t QuadTreeTerrain::GetMinNeighborLevel(const Node* node, int direction) const
 {
     // Child layout:
     //   0=NW(x,    z,    h)  1=NE(x+h, z,    h)
@@ -997,7 +999,7 @@ uint32_t QuadTreeTerrain::GetMaxNeighborLevel(const Node* node, int direction) c
         return node->level;
     }
 
-    // Descend into the neighbor to find the maximum leaf level
+    // Descend into the neighbor to find the minimum leaf level (finest detail)
     // among all leaves sharing the edge with the original node.
     //
     // We must only follow children whose range on the perpendicular axis
@@ -1016,7 +1018,7 @@ uint32_t QuadTreeTerrain::GetMaxNeighborLevel(const Node* node, int direction) c
         origMax = node->x + node->size;
     }
 
-    uint32_t maxLevel = 0;
+    uint32_t minLevel = mMaxLevel;  // start with coarsest
 
     // DFS into the neighbor tree
     std::vector<const Node*> stack;
@@ -1047,7 +1049,7 @@ uint32_t QuadTreeTerrain::GetMaxNeighborLevel(const Node* node, int direction) c
 
         if (n->IsLeaf())
         {
-            maxLevel = std::max(maxLevel, n->level);
+            minLevel = std::min(minLevel, n->level);
             continue;
         }
 
@@ -1060,7 +1062,7 @@ uint32_t QuadTreeTerrain::GetMaxNeighborLevel(const Node* node, int direction) c
         }
     }
 
-    return maxLevel;
+    return minLevel;
 }
 
 //=============================================================================
@@ -1083,10 +1085,14 @@ void QuadTreeTerrain::EnforceNeighborConstraint()
 
         for (Node* leaf : mLeafNodes)
         {
+            // Cannot subdivide if already at finest level
+            if (leaf->level == 0) continue;
+
             for (int dir = 0; dir < 4; ++dir)
             {
-                uint32_t maxNeighbor = GetMaxNeighborLevel(leaf, dir);
-                if (maxNeighbor > leaf->level + 1)
+                uint32_t minNeighbor = GetMinNeighborLevel(leaf, dir);
+                // Neighbor is finer (lower level number) by more than 1 → subdivide
+                if (minNeighbor + 1 < leaf->level)
                 {
                     Subdivide(leaf);
                     changed = true;
@@ -1136,16 +1142,16 @@ void QuadTreeTerrain::Update(const Vector3f& cameraPos,
         LeafNeighborInfo& info = mLeafNeighborInfo[i];
 
         // direction: 0=left(-X), 1=right(+X), 2=bottom(+Z), 3=top(-Z)
-        uint32_t nbrLeft   = GetMaxNeighborLevel(leaf, 0);
-        uint32_t nbrRight  = GetMaxNeighborLevel(leaf, 1);
-        uint32_t nbrBottom = GetMaxNeighborLevel(leaf, 2);
-        uint32_t nbrTop    = GetMaxNeighborLevel(leaf, 3);
+        uint32_t nbrLeft   = GetMinNeighborLevel(leaf, 0);
+        uint32_t nbrRight  = GetMinNeighborLevel(leaf, 1);
+        uint32_t nbrBottom = GetMinNeighborLevel(leaf, 2);
+        uint32_t nbrTop    = GetMinNeighborLevel(leaf, 3);
 
-        // Neighbor is coarser if its level is LOWER than ours
-        info.leftCoarser   = (nbrLeft   < leaf->level) ? 1 : 0;
-        info.rightCoarser  = (nbrRight  < leaf->level) ? 1 : 0;
-        info.topCoarser    = (nbrTop    < leaf->level) ? 1 : 0;
-        info.bottomCoarser = (nbrBottom < leaf->level) ? 1 : 0;
+        // Neighbor is coarser if its level is HIGHER than ours (larger number = coarser)
+        info.leftCoarser   = (nbrLeft   > leaf->level) ? 1 : 0;
+        info.rightCoarser  = (nbrRight  > leaf->level) ? 1 : 0;
+        info.topCoarser    = (nbrTop    > leaf->level) ? 1 : 0;
+        info.bottomCoarser = (nbrBottom > leaf->level) ? 1 : 0;
     }
 
     // Build mesh from leaves
