@@ -135,6 +135,7 @@ private:
     std::shared_ptr<Material> mCurrentMaterial = nullptr;
     // 渲染管线
     GraphicsPipelinePtr mGBufferPipeline = nullptr;
+    GraphicsPipelinePtr mTerrainGBufferPipeline = nullptr;  // terrain-specific G-buffer PSO
     bool mIsInitialized = false;
 };
 

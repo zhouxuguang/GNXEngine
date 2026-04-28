@@ -25,10 +25,11 @@ struct RenderInfo;
  * Terrain rendering component.
  *
  * Key differences from MeshRenderer-based terrain:
- * - Uses dedicated Terrain.shader (not generic GBufferPBR)
- * - Single PSO/material bind for all patches (vs N binds for N submeshes)
- * - Per-leaf frustum culling before draw calls
- * - Future-proof for GPU-driven rendering (Indirect Draw, Compute culling)
+ * - Uses dedicated Terrain.shader/TerrainDepth.shader (not generic BasePass/DepthGenerate)
+ * - Template mesh (17x17) shared across all patches via SSBO + heightmap sampling
+ * - VS reads PatchMeta[instanceID] from SSBO for per-patch world transform
+ * - VS samples heightmap Texture for Y displacement
+ * - Future-proof for GPU-driven rendering (Compute culling, Indirect Draw)
  */
 class RENDERSYSTEM_API TerrainComponent : public Component
 {
@@ -38,10 +39,6 @@ public:
 
     /**
      * Initialize terrain from a heightmap image.
-     * @param heightmapPath  Path to GRAY8/GRAY16 heightmap
-     * @param worldSizeXZ    World-space extent in X and Z
-     * @param heightScale    Multiplier for height values
-     * @param maxLevel       Maximum quadtree subdivision level
      */
     void InitFromHeightMap(const char* heightmapPath,
                            float worldSizeXZ = 512.0f,
@@ -63,43 +60,40 @@ public:
 
     /**
      * Per-frame update: LOD selection based on camera position.
-     * Called by the scene system or the demo's RenderFrame().
      */
     void Update(float deltaTime) override;
 
     /**
-     * Render the terrain through a dedicated rendering path.
-     * Called by DeferredSceneRenderer during the G-Buffer pass.
+     * Render the terrain through the GPU-driven rendering path (G-Buffer pass).
      *
-     * Sets PSO + material once, then draws all visible leaf nodes.
-     * This avoids the N x PSO-bind overhead of MeshDrawUtil.
+     * Uses template mesh + PatchMeta SSBO + heightmap texture.
+     * VS reads PatchMeta[instanceID] for per-patch world transform.
      *
-     * @param renderEncoder  Active render encoder (within G-Buffer render pass)
-     * @param cameraUBO      Camera uniform buffer
-     * @param objectUBO      Object (model matrix) uniform buffer
-     * @param basePassPSO    The G-Buffer graphics pipeline state object
-     * @param frustum        Camera frustum for per-leaf culling (nullptr = draw all)
+     * @param renderEncoder      Active render encoder (within G-Buffer render pass)
+     * @param cameraUBO          Camera uniform buffer
+     * @param objectUBO          Object (model matrix) uniform buffer
+     * @param terrainGBufferPSO  Terrain-specific G-Buffer graphics pipeline
+     * @param frustum            Camera frustum for per-leaf culling (nullptr = draw all)
      */
     void Render(class RenderEncoder* renderEncoder,
                 UniformBufferPtr cameraUBO,
                 UniformBufferPtr objectUBO,
-                GraphicsPipelinePtr basePassPSO,
+                GraphicsPipelinePtr terrainGBufferPSO,
                 const mathutil::Frustumf* frustum = nullptr);
 
     /**
      * Render terrain depth only (for PreDepth pass).
-     * Only binds position vertex buffer + depth PSO, then draws all leaf nodes.
      *
-     * @param renderEncoder  Active render encoder (within depth render pass)
-     * @param cameraUBO      Camera uniform buffer
-     * @param objectUBO      Object (model matrix) uniform buffer
-     * @param depthPSO       Depth-only graphics pipeline state object
-     * @param frustum        Camera frustum for per-leaf culling (nullptr = draw all)
+     * @param renderEncoder     Active render encoder (within depth render pass)
+     * @param cameraUBO         Camera uniform buffer
+     * @param objectUBO         Object (model matrix) uniform buffer
+     * @param terrainDepthPSO   Terrain-specific depth-only graphics pipeline
+     * @param frustum           Camera frustum for per-leaf culling (nullptr = draw all)
      */
     void RenderDepthOnly(class RenderEncoder* renderEncoder,
                          UniformBufferPtr cameraUBO,
                          UniformBufferPtr objectUBO,
-                         GraphicsPipelinePtr depthPSO,
+                         GraphicsPipelinePtr terrainDepthPSO,
                          const mathutil::Frustumf* frustum = nullptr);
 
     // ---- Accessors ----
@@ -121,13 +115,36 @@ public:
     bool IsWireframe() const { return mWireframe; }
 
 private:
+    /**
+     * Ensure terrain-specific UBO (cbTerrain) is created and up-to-date.
+     */
+    void EnsureTerrainUBO();
+
+    /**
+     * Build GPU path data (frustum culling + visible PatchMeta SSBO).
+     * Called once per frame before the first render call.
+     */
+    void PrepareGPUPathData(const mathutil::Frustumf* frustum);
+
     QuadTreeTerrainPtr mQuadTreeTerrain;
     MaterialPtr      mMaterial;
     bool             mWireframe = false;
 
-    // Indirect draw buffer (created lazily, updated per frame)
-    RenderCore::RCBufferPtr mIndirectBuffer;
-    uint32_t              mIndirectBufferSize = 0;
+    // Terrain params UBO (cbTerrain in shader)
+    UniformBufferPtr mTerrainParamsUBO;
+    bool mTerrainParamsDirty = true;
+
+    // GPU path data prepared flag (reset each frame)
+    bool mGPUPathDataPrepared = false;
+
+    // cbTerrain struct matching shader layout
+    struct cbTerrainParams
+    {
+        float worldSize;
+        float halfWorldSize;
+        float uvTileScale;
+        uint32_t gridSize;
+    };
 };
 
 typedef std::shared_ptr<TerrainComponent> TerrainComponentPtr;

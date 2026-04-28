@@ -224,8 +224,8 @@ GBufferData GBufferRenderer::AddToFrameGraph(
                 }
             }
 
-            // 渲染地形（专属渲染路径）
-            if (!data.meshes.terrainItems.empty() && mGBufferPipeline)
+            // 渲染地形（专属渲染路径 - GPU-driven）
+            if (!data.meshes.terrainItems.empty() && mTerrainGBufferPipeline)
             {
                 for (TerrainComponent* terrain : data.meshes.terrainItems)
                 {
@@ -243,7 +243,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
                     terrain->Render(renderEncoder.get(),
                                     data.uniforms.cameraUBO,
                                     objectUBO,
-                                    mGBufferPipeline,
+                                    mTerrainGBufferPipeline,
                                     &data.frustum);
                 }
             }
@@ -286,6 +286,14 @@ void GBufferRenderer::CreateGBufferPipeline()
     
     mGBufferPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shaderInfoDepth.graphicsPipelineDesc);
     mGBufferPipeline->AttachGraphicsShader(shaderInfoDepth.graphicsShader);
+
+    // Terrain-specific G-buffer PSO (VS reads SSBO + heightmap)
+    GraphicsShaderInfo shaderInfoTerrain = CreateGraphicsShaderInfo("Terrain");
+    shaderInfoTerrain.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
+    shaderInfoTerrain.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionEqual;
+    shaderInfoTerrain.graphicsPipelineDesc.renderTargetCount = 5;
+    mTerrainGBufferPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shaderInfoTerrain.graphicsPipelineDesc);
+    mTerrainGBufferPipeline->AttachGraphicsShader(shaderInfoTerrain.graphicsShader);
 }
 
 NS_RENDERSYSTEM_END

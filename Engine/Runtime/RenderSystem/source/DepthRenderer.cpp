@@ -28,6 +28,12 @@ DepthRenderer::DepthRenderer(RenderDevice* device) : mDevice(device)
     shaderInfoSkinnedDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
     mSkinnedDepthOnlyPipeline = mDevice->CreateGraphicsPipeline(shaderInfoSkinnedDepth.graphicsPipelineDesc);
     mSkinnedDepthOnlyPipeline->AttachGraphicsShader(shaderInfoSkinnedDepth.graphicsShader);
+
+    // Terrain-specific depth PSO (VS reads SSBO + heightmap)
+    GraphicsShaderInfo shaderInfoTerrainDepth = CreateGraphicsShaderInfo("TerrainDepth");
+    shaderInfoTerrainDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
+    mTerrainDepthPipeline = mDevice->CreateGraphicsPipeline(shaderInfoTerrainDepth.graphicsPipelineDesc);
+    mTerrainDepthPipeline->AttachGraphicsShader(shaderInfoTerrainDepth.graphicsShader);
 }
 
 DepthRenderer::~DepthRenderer()
@@ -51,6 +57,7 @@ void DepthRenderer::Shutdown()
 {
     mDepthOnlyPipeline = nullptr;
     mSkinnedDepthOnlyPipeline = nullptr;
+    mTerrainDepthPipeline = nullptr;
     mInitialized = false;
 }
 
@@ -162,8 +169,8 @@ FrameGraphResource DepthRenderer::Render(
                 }
             }
 
-            // 渲染地形深度（专属渲染路径）
-            if (!data.meshes.terrainItems.empty() && mDepthOnlyPipeline)
+            // 渲染地形深度（专属渲染路径 - GPU-driven）
+            if (!data.meshes.terrainItems.empty() && mTerrainDepthPipeline)
             {
                 for (TerrainComponent* terrain : data.meshes.terrainItems)
                 {
@@ -175,7 +182,7 @@ FrameGraphResource DepthRenderer::Render(
                     if (terrainNode)
                         objectUBO = terrainNode->GetOrCreateModelUBO(RenderCore::GetRenderDevice());
 
-                    terrain->RenderDepthOnly(renderEncoder.get(), data.uniforms.cameraUBO, objectUBO, mDepthOnlyPipeline, &data.frustum);
+                    terrain->RenderDepthOnly(renderEncoder.get(), data.uniforms.cameraUBO, objectUBO, mTerrainDepthPipeline, &data.frustum);
                 }
             }
             renderEncoder->EndEncode();

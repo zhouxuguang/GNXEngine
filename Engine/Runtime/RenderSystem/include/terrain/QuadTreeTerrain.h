@@ -75,6 +75,9 @@ public:
     const std::vector<RenderCore::DrawIndexedIndirectCommand>& GetIndirectCommands() const { return mIndirectCommands; }
     uint32_t GetIndirectDrawCount() const { return (uint32_t)mIndirectCommands.size(); }
 
+    // Build GPU path data: visible PatchMeta SSBO + template mesh indirect commands
+    void BuildGPUPathData(const mathutil::Frustumf* frustum = nullptr);
+
     uint32_t GetMaxLevel() const { return mMaxLevel; }
     uint32_t GetLeafCount() const { return (uint32_t)mLeafNodes.size(); }
     const std::vector<mathutil::AxisAlignedBoxf>& GetLeafBounds() const { return mLeafBounds; }
@@ -82,10 +85,17 @@ public:
     float GetHeightScale() const { return mHeightScale; }
     uint32_t GetGridSize() const { return mGridSize; }
 
-    // GPU resources for future GPU-driven rendering
+    // GPU resources for GPU-driven rendering
     RenderCore::RCTexture2DPtr GetHeightMapTexture() const { return mHeightMapTexture; }
     RenderCore::RCBufferPtr GetPatchMetaBuffer() const { return mPatchMetaBuffer; }
     uint32_t GetPatchMetaCount() const { return (uint32_t)mPatchMetaData.size(); }
+    RenderCore::RCBufferPtr GetVisiblePatchMetaBuffer() const { return mVisiblePatchMetaBuffer; }
+    uint32_t GetVisiblePatchMetaCount() const { return (uint32_t)mVisiblePatchMeta.size(); }
+
+    // Template mesh for GPU-driven rendering
+    RenderCore::RCBufferPtr GetTemplateVB() const { return mTemplateVB; }
+    RenderCore::IndexBufferPtr GetTemplateIB() const { return mTemplateIB; }
+    uint32_t GetTemplatePositionSize() const { return mTemplatePositionSize; }
 
 private:
     QuadTreeTerrain();
@@ -117,8 +127,11 @@ private:
     // Upload heightmap as GPU texture (called once during init)
     void CreateHeightMapTexture();
 
-    // Build and upload PatchMeta SSBO (called each frame in GenerateLeafMesh)
+    // Build and upload PatchMeta SSBO (called each frame in Update)
     void BuildPatchMetaBuffer();
+
+    // Create template mesh (17x17) for GPU-driven rendering
+    void CreateTemplateMesh();
 
     // Quadtree operations
     void BuildNode(Node* node);
@@ -199,10 +212,17 @@ private:
     // GPU resources
     MeshPtr mMesh;
 
-    // GPU resources for future GPU-driven rendering (阶段1A: 纯增量，不影响现有渲染)
+    // GPU resources for GPU-driven rendering (阶段1A+1B)
     RenderCore::RCTexture2DPtr mHeightMapTexture;   // heightmap as R32Float texture (created once)
     RenderCore::RCBufferPtr mPatchMetaBuffer;        // PatchMeta[] SSBO (rebuilt each frame)
     std::vector<PatchMeta> mPatchMetaData;           // CPU-side PatchMeta data
+    std::vector<PatchMeta> mVisiblePatchMeta;        // visible PatchMeta (after frustum culling)
+    RenderCore::RCBufferPtr mVisiblePatchMetaBuffer; // SSBO for visible patches only
+
+    // Template mesh for GPU-driven rendering (17x17 = 289 verts, 1536 indices)
+    RenderCore::RCBufferPtr  mTemplateVB;            // vertex buffer (SoA: positions + texCoords)
+    RenderCore::IndexBufferPtr mTemplateIB;          // index buffer
+    uint32_t mTemplatePositionSize = 0;              // byte offset to texCoord data in template VB
 
     // Indirect draw commands (built each frame by BuildIndirectCommands)
     std::vector<RenderCore::DrawIndexedIndirectCommand> mIndirectCommands;
@@ -215,6 +235,14 @@ private:
 
     // Each leaf renders as a grid with this many vertices per side
     static constexpr uint32_t kLeafVerticesPerSide = 17;
+    
+    // LOD stability management - prevent rapid LOD switching
+    static constexpr uint32_t LOD_STABILITY_FRAMES = 3;  // 需要连续3帧才切换LOD
+    struct LODStabilityData {
+        int stabilityCounter = 0;    // 稳定性计数器
+        bool lastDecision = false;   // 上次的决定
+    };
+    std::unordered_map<const Node*, LODStabilityData> mLODStabilityMap;
 };
 
 typedef std::shared_ptr<QuadTreeTerrain> QuadTreeTerrainPtr;

@@ -13,10 +13,12 @@
 #include "Runtime/ImageCodec/include/VImage.h"
 #include "Runtime/ImageCodec/include/ImageDecoder.h"
 #include "Runtime/BaseLib/include/LogService.h"
+#include <unordered_map>
 
 #include <cmath>
 #include <algorithm>
 #include <vector>
+#include <cstring>
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -202,6 +204,9 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
 
     // Upload heightmap as GPU texture (阶段1A: 纯增量)
     terrain->CreateHeightMapTexture();
+
+    // Create template mesh for GPU-driven rendering
+    terrain->CreateTemplateMesh();
 
     // Initial update (now safe — pool is ready)
     terrain->Update(Vector3f(0, 0, 0));
@@ -454,6 +459,165 @@ void QuadTreeTerrain::BuildPatchMetaBuffer()
 }
 
 //=============================================================================
+// CreateTemplateMesh - 17x17 template mesh for GPU-driven rendering
+//=============================================================================
+
+void QuadTreeTerrain::CreateTemplateMesh()
+{
+    constexpr uint32_t kVertsPerSide = kLeafVerticesPerSide;  // 17
+    constexpr uint32_t kCellCount   = kVertsPerSide - 1;      // 16
+    constexpr uint32_t kVertexCount = kVertsPerSide * kVertsPerSide;  // 289
+    constexpr uint32_t kIndexCount  = kCellCount * kCellCount * 6;     // 1536
+
+    // Build vertex data in SoA layout: positions first, then texCoords
+    std::vector<float> positions(kVertexCount * 3);
+    std::vector<float> texCoords(kVertexCount * 2);
+
+    for (uint32_t row = 0; row < kVertsPerSide; ++row)
+    {
+        for (uint32_t col = 0; col < kVertsPerSide; ++col)
+        {
+            uint32_t idx = row * kVertsPerSide + col;
+            float u = (float)col / (float)kCellCount;  // [0, 1]
+            float v = (float)row / (float)kCellCount;  // [0, 1]
+
+            // Position: local XZ coordinates, Y=0 (replaced by heightmap in VS)
+            positions[idx * 3 + 0] = u;  // local X → maps to world X via PatchMeta
+            positions[idx * 3 + 1] = 0.0f;
+            positions[idx * 3 + 2] = v;  // local Z → maps to world Z via PatchMeta
+
+            // TexCoord: same as local UV
+            texCoords[idx * 2 + 0] = u;
+            texCoords[idx * 2 + 1] = v;
+        }
+    }
+
+    // Build index data
+    std::vector<uint32_t> indices(kIndexCount);
+    uint32_t idxOffset = 0;
+    for (uint32_t row = 0; row < kCellCount; ++row)
+    {
+        for (uint32_t col = 0; col < kCellCount; ++col)
+        {
+            uint32_t v00 = row * kVertsPerSide + col;
+            uint32_t v10 = v00 + 1;
+            uint32_t v01 = v00 + kVertsPerSide;
+            uint32_t v11 = v01 + 1;
+
+            indices[idxOffset++] = v00;
+            indices[idxOffset++] = v01;
+            indices[idxOffset++] = v11;
+
+            indices[idxOffset++] = v00;
+            indices[idxOffset++] = v11;
+            indices[idxOffset++] = v10;
+        }
+    }
+
+    // Create SoA vertex buffer: [positions | texCoords]
+    uint32_t posDataSize  = kVertexCount * 3 * sizeof(float);  // 3468 bytes
+    uint32_t uvDataSize   = kVertexCount * 2 * sizeof(float);  // 2312 bytes
+    uint32_t totalVBSize  = posDataSize + uvDataSize;
+    mTemplatePositionSize = posDataSize;
+
+    std::vector<uint8_t> vbData(totalVBSize);
+    memcpy(vbData.data(), positions.data(), posDataSize);
+    memcpy(vbData.data() + posDataSize, texCoords.data(), uvDataSize);
+
+    auto renderDevice = RenderCore::GetRenderDevice();
+
+    // Create vertex buffer (RCBuffer with VertexBuffer usage)
+    RenderCore::RCBufferDesc vbDesc(totalVBSize,
+        RenderCore::RCBufferUsage::VertexBuffer,
+        RenderCore::StorageModeShared);
+    mTemplateVB = renderDevice->CreateBuffer(vbDesc, vbData.data());
+    if (mTemplateVB)
+        mTemplateVB->SetName("TerrainTemplateVB");
+
+    // Create index buffer
+    mTemplateIB = renderDevice->CreateIndexBufferWithBytes(indices.data(), kIndexCount * sizeof(uint32_t), RenderCore::IndexType_UInt);
+}
+
+//=============================================================================
+// BuildGPUPathData - Build visible PatchMeta SSBO + indirect commands
+//=============================================================================
+
+void QuadTreeTerrain::BuildGPUPathData(const mathutil::Frustumf* frustum)
+{
+    mVisiblePatchMeta.clear();
+
+    const auto& leafBounds = GetLeafBounds();
+    float step = mWorldSize / (float)(mGridSize - 1);
+    float halfSize = mWorldSize * 0.5f;
+
+    for (size_t i = 0; i < mLeafNodes.size(); ++i)
+    {
+        // Frustum culling
+        if (frustum && i < leafBounds.size())
+        {
+            if (!frustum->IsBoxInFrustum(leafBounds[i]))
+                continue;
+        }
+
+        Node* leaf = mLeafNodes[i];
+
+        // Build visible PatchMeta
+        PatchMeta meta;
+        meta.worldX    = -halfSize + (float)leaf->x * step;
+        meta.worldZ    = -halfSize + (float)leaf->z * step;
+        meta.worldSize = (float)leaf->size * step;
+        meta.minHeight = leaf->bounds.minimum.y;
+        meta.gridX     = leaf->x;
+        meta.gridZ     = leaf->z;
+        meta.gridSize  = leaf->size;
+        meta.level     = leaf->level;
+        mVisiblePatchMeta.push_back(meta);
+    }
+
+    // Upload visible PatchMeta to GPU as SSBO - reuse buffer to avoid GPU sync issues
+    if (!mVisiblePatchMeta.empty())
+    {
+        uint32_t dataSize = (uint32_t)(mVisiblePatchMeta.size() * sizeof(PatchMeta));
+        auto renderDevice = RenderCore::GetRenderDevice();
+        
+        // Reuse existing buffer if possible, avoid reallocation
+        if (mVisiblePatchMetaBuffer && mVisiblePatchMetaBuffer->GetSize() >= dataSize)
+        {
+            // Update existing buffer content - avoid GPU sync problems
+            void* mappedData = mVisiblePatchMetaBuffer->Map();
+            if (mappedData)
+            {
+                memcpy(mappedData, mVisiblePatchMeta.data(), dataSize);
+                mVisiblePatchMetaBuffer->Unmap();
+            }
+        }
+        else
+        {
+            // Only recreate buffer when necessary
+            RenderCore::RCBufferDesc desc(dataSize,
+                RenderCore::RCBufferUsage::StorageBuffer,
+                RenderCore::StorageModeShared);
+            mVisiblePatchMetaBuffer = renderDevice->CreateBuffer(desc, mVisiblePatchMeta.data());
+        }
+    }
+    else
+    {
+        // Keep the buffer even if no patches visible to maintain sync consistency
+        if (mVisiblePatchMetaBuffer)
+        {
+            // Clear buffer content but keep allocation
+            static PatchMeta emptyMeta = {};
+            void* mappedData = mVisiblePatchMetaBuffer->Map();
+            if (mappedData)
+            {
+                memcpy(mappedData, &emptyMeta, sizeof(PatchMeta));
+                mVisiblePatchMetaBuffer->Unmap();
+            }
+        }
+    }
+}
+
+//=============================================================================
 // Build quadtree root node
 //=============================================================================
 
@@ -462,7 +626,7 @@ void QuadTreeTerrain::BuildNode(Node* node)
     node->x     = 0;
     node->z     = 0;
     node->size  = mGridSizeCells;
-    node->level = mMaxLevel;  // root is the coarsest LOD
+    node->level = mMaxLevel;  // root starts at coarsest LOD (level mMaxLevel is coarsest, 0 is finest)
     ComputeNodeBounds(node);
 }
 
@@ -506,7 +670,7 @@ void QuadTreeTerrain::ComputeNodeBounds(Node* node)
 
 bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPos) const
 {
-    // Cannot subdivide beyond finest level
+    // Cannot subdivide beyond finest level (0=finest, cannot go below 0)
     if (node.level == 0) return false;
 
     // No geometric error means this LOD perfectly represents the terrain
@@ -551,7 +715,7 @@ bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPo
 void QuadTreeTerrain::Subdivide(Node* node)
 {
     uint32_t halfSize = node->size / 2;
-    uint32_t childLevel = node->level - 1;  // go finer: 5→4→3→2→1→0
+    uint32_t childLevel = node->level - 1;  // go finer: 5→4→3→2→1→0 (0=finest, mMaxLevel=coarsest)
 
     // NW (top-left)
     node->children[0] = std::make_unique<Node>();
@@ -878,7 +1042,7 @@ void QuadTreeTerrain::ComputeAllGeoErrors()
         }
     }
 
-    // Set root node's geoError (root level = mMaxLevel)
+    // Set root node's geoError (root level = 0, coarsest)
     mRoot.maxGeoError = GetCachedGeoError(mRoot.level, mRoot.x, mRoot.z);
 
     LOG_INFO("QuadTreeTerrain: GeoError cache computed for %u levels", mMaxLevel + 1);
@@ -890,7 +1054,7 @@ void QuadTreeTerrain::ComputeAllGeoErrors()
 
 float QuadTreeTerrain::GetCachedGeoError(uint32_t level, uint32_t x, uint32_t z) const
 {
-    // Convert LOD level to depth index: depth=0 is root (coarsest), depth=mMaxLevel is finest
+    // Convert LOD level to depth index: depth=mMaxLevel is coarsest (root), depth=0 is finest
     uint32_t depth = mMaxLevel - level;
     if (depth >= mGeoErrorCache.size()) return 0.0f;
 
@@ -1100,7 +1264,7 @@ uint32_t QuadTreeTerrain::GetMinNeighborLevel(const Node* node, int direction) c
         origMax = node->x + node->size;
     }
 
-    uint32_t minLevel = mMaxLevel;  // start with coarsest
+    uint32_t minLevel = UINT32_MAX;  // start with finest possible, but we'll find finest level (smallest number in 0=finest, mMaxLevel=coarsest)
 
     // DFS into the neighbor tree
     std::vector<const Node*> stack;
@@ -1131,7 +1295,7 @@ uint32_t QuadTreeTerrain::GetMinNeighborLevel(const Node* node, int direction) c
 
         if (n->IsLeaf())
         {
-            minLevel = std::min(minLevel, n->level);
+            minLevel = std::min(minLevel, n->level);  // Find finest level (smallest number in 0=finest, mMaxLevel=coarsest)
             continue;
         }
 

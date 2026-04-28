@@ -2,15 +2,16 @@
 //  TerrainComponent.cpp
 //  GNXEngine
 //
-//  Terrain rendering component with dedicated rendering path.
-//  Binds PSO/material once and draws all visible leaf nodes,
-//  avoiding the per-submesh PSO rebind overhead of MeshDrawUtil.
+//  Terrain rendering component with GPU-driven rendering path.
+//  Uses template mesh (17x17) + PatchMeta SSBO + heightmap texture.
+//  VS reads PatchMeta[instanceID] for per-patch world transform and
+//  samples heightmap for Y displacement.
 //
 
 #include "terrain/TerrainComponent.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/RenderCore/include/RenderEncoder.h"
-#include "Runtime/RenderCore/include/RCBuffer.h"
+#include "Runtime/RenderCore/include/TextureSampler.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 
@@ -39,6 +40,7 @@ void TerrainComponent::InitFromHeightMap(const char* heightmapPath,
 
     if (mQuadTreeTerrain)
     {
+        mTerrainParamsDirty = true;
         LOG_INFO("TerrainComponent: Initialized from heightmap '%s', maxLevel=%u",
                  heightmapPath, mQuadTreeTerrain->GetMaxLevel());
     }
@@ -58,6 +60,7 @@ void TerrainComponent::InitProcedural(uint32_t gridSize,
 
     if (mQuadTreeTerrain)
     {
+        mTerrainParamsDirty = true;
         LOG_INFO("TerrainComponent: Initialized procedural terrain, maxLevel=%u",
                  mQuadTreeTerrain->GetMaxLevel());
     }
@@ -78,222 +81,219 @@ void TerrainComponent::SetMaterial(const MaterialPtr& material)
 
 void TerrainComponent::Update(float deltaTime)
 {
-    // LOD update is driven by camera position; the scene system or demo
-    // should call QuadTreeTerrain::Update explicitly when the camera moves.
-    // This Update hook is reserved for future use (e.g., vegetation animation).
+    mGPUPathDataPrepared = false;
 }
 
 //=============================================================================
-// Dedicated terrain rendering path
+// Terrain params UBO
+//=============================================================================
+
+void TerrainComponent::EnsureTerrainUBO()
+{
+    if (!mQuadTreeTerrain) return;
+
+    cbTerrainParams params;
+    params.worldSize     = mQuadTreeTerrain->GetWorldSize();
+    params.halfWorldSize = params.worldSize * 0.5f;
+    params.uvTileScale   = 1.0f;  // tiling factor for material textures (1.0 = no tiling)
+    params.gridSize      = mQuadTreeTerrain->GetGridSize();
+
+    if (!mTerrainParamsUBO)
+    {
+        mTerrainParamsUBO = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbTerrainParams));
+        if (mTerrainParamsUBO)
+            mTerrainParamsDirty = true;
+    }
+
+    if (mTerrainParamsUBO && mTerrainParamsDirty)
+    {
+        mTerrainParamsUBO->SetData(&params, 0, sizeof(params));
+        mTerrainParamsDirty = false;
+    }
+}
+
+//=============================================================================
+// GPU path data preparation
+//=============================================================================
+
+void TerrainComponent::PrepareGPUPathData(const Frustumf* frustum)
+{
+    if (!mQuadTreeTerrain || mGPUPathDataPrepared) return;
+
+    // Build visible PatchMeta SSBO (with frustum culling)
+    mQuadTreeTerrain->BuildGPUPathData(frustum);
+
+    // Ensure terrain params UBO is up to date
+    EnsureTerrainUBO();
+
+    mGPUPathDataPrepared = true;
+}
+
+//=============================================================================
+// GPU-driven rendering path (G-Buffer)
 //=============================================================================
 
 void TerrainComponent::Render(RenderEncoder* renderEncoder,
                                UniformBufferPtr cameraUBO,
                                UniformBufferPtr objectUBO,
-                               GraphicsPipelinePtr basePassPSO,
+                               GraphicsPipelinePtr terrainGBufferPSO,
                                const Frustumf* frustum)
 {
     if (!mQuadTreeTerrain || !mMaterial || !renderEncoder)
-    {
         return;
-    }
 
-    MeshPtr mesh = mQuadTreeTerrain->GetMesh();
-    if (!mesh)
-    {
+    // Prepare GPU path data (culling + visible PatchMeta)
+    PrepareGPUPathData(frustum);
+
+    uint32_t visibleCount = mQuadTreeTerrain->GetVisiblePatchMetaCount();
+    if (visibleCount == 0)
         return;
-    }
 
-    const ChannelInfo* channels = mesh->GetVertexData().GetChannels();
-    VertexBufferPtr vertexBuffer = mesh->GetVertexBuffer();
-    IndexBufferPtr  indexBuffer  = mesh->GetIndexBuffer();
+    auto templateVB = mQuadTreeTerrain->GetTemplateVB();
+    auto templateIB = mQuadTreeTerrain->GetTemplateIB();
+    auto visiblePatchMeta = mQuadTreeTerrain->GetVisiblePatchMetaBuffer();
+    auto heightmapTexture = mQuadTreeTerrain->GetHeightMapTexture();
 
-    if (!vertexBuffer || !indexBuffer)
-    {
+    if (!templateVB || !templateIB || !visiblePatchMeta || !heightmapTexture)
         return;
-    }
 
-    // ---- Build indirect draw commands (includes frustum culling) ----
-    mQuadTreeTerrain->BuildIndirectCommands(frustum);
-    uint32_t drawCount = mQuadTreeTerrain->GetIndirectDrawCount();
-
-    if (drawCount == 0)
-    {
-        return;
-    }
-
-    // ---- Ensure indirect buffer is large enough ----
-    const auto& indirectCommands = mQuadTreeTerrain->GetIndirectCommands();
-    uint32_t requiredSize = drawCount * sizeof(RenderCore::DrawIndexedIndirectCommand);
-
-    if (!mIndirectBuffer || mIndirectBufferSize < requiredSize)
-    {
-        // Allocate with 50% extra room to avoid frequent reallocation
-        uint32_t allocSize = requiredSize + requiredSize / 2;
-        RenderCore::RCBufferDesc desc(allocSize,
-            RenderCore::RCBufferUsage::IndirectBuffer,
-            RenderCore::StorageMode::StorageModeShared);
-        mIndirectBuffer = RenderCore::GetRenderDevice()->CreateBuffer(desc);
-        mIndirectBufferSize = allocSize;
-        if (mIndirectBuffer)
-        {
-            mIndirectBuffer->SetName("TerrainIndirectBuffer");
-        }
-    }
-
-    // ---- Upload indirect commands to GPU ----
-    if (mIndirectBuffer)
-    {
-        void* mapped = mIndirectBuffer->Map();
-        if (mapped)
-        {
-            memcpy(mapped, indirectCommands.data(), requiredSize);
-            mIndirectBuffer->Unmap();
-        }
-    }
-
-    // ---- Bind PSO and shared state ONCE for all leaf nodes ----
-    renderEncoder->SetGraphicsPipeline(basePassPSO);
+    // ---- Bind PSO and shared state ----
+    renderEncoder->SetGraphicsPipeline(terrainGBufferPSO);
 
     if (mWireframe)
-    {
         renderEncoder->SetFillMode(FillModeWireframe);
-    }
 
+    // Bind UBOs
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
-    renderEncoder->SetVertexUniformBuffer("cbPerObject", objectUBO);
+    renderEncoder->SetVertexUniformBuffer("cbTerrain", mTerrainParamsUBO);
     renderEncoder->SetFragmentUniformBuffer("cbPerCamera", cameraUBO);
 
-    // ---- Bind vertex buffers ONCE ----
-    renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
-    renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelNormal].offset, 1);
-    renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTangent].offset, 2);
-    renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTexCoord0].offset, 3);
+    // Bind PatchMeta SSBO to vertex stage (VS reads gPatchMeta[instanceID])
+    renderEncoder->SetStorageBuffer("gPatchMeta", visiblePatchMeta,
+        RenderCore::ShaderStage_Vertex);
 
-    // ---- Bind material textures ONCE ----
-    TextureSamplerPtr textureSampler = mesh->GetSampler();
+    // Bind heightmap texture (accessible from VS via shared descriptor)
+    RenderCore::SamplerDesc heightmapSamplerDesc(
+        RenderCore::MAG_LINEAR, RenderCore::MIN_LINEAR,
+        RenderCore::CLAMP_TO_EDGE, RenderCore::CLAMP_TO_EDGE);
+    auto heightmapSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(heightmapSamplerDesc);
+    renderEncoder->SetFragmentTextureAndSampler("gHeightmap", heightmapTexture, heightmapSampler);
+
+    // Bind template mesh vertex buffers (SoA layout: positions | texCoords)
+    uint32_t posSize = mQuadTreeTerrain->GetTemplatePositionSize();
+    renderEncoder->SetVertexBuffer(templateVB, 0, 0);       // positions at offset 0
+    renderEncoder->SetVertexBuffer(templateVB, posSize, 1);  // texCoords at offset posSize
+
+    // Bind material textures
+    TextureSamplerPtr textureSampler;
+    if (auto mesh = mQuadTreeTerrain->GetMesh())
+        textureSampler = mesh->GetSampler();
     if (!textureSampler)
     {
-        SamplerDesc defaultDesc;
+        RenderCore::SamplerDesc defaultDesc;
+        defaultDesc.filterMag = RenderCore::MAG_LINEAR;
+        defaultDesc.filterMin = RenderCore::MIN_LINEAR;  // Linear filtering for min
+        defaultDesc.filterMip = RenderCore::MIN_LINEAR_MIPMAP_LINEAR;  // Trilinear filtering
+        defaultDesc.anisotropyLog2 = 2;  // Enable 4x anisotropic filtering for better scaling
+        defaultDesc.wrapS = RenderCore::REPEAT;  // Repeat texture for tiling
+        defaultDesc.wrapT = RenderCore::REPEAT;  // Repeat texture for tiling
         textureSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(defaultDesc);
     }
 
     auto diffuseSlot = mMaterial->GetTextureSlot("diffuseTexture");
     if (diffuseSlot)
     {
-        SamplerDesc desc = diffuseSlot->samplerDesc;
-        auto sampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(desc);
+        // Create optimized sampler with anisotropic filtering for better scaling
+        RenderCore::SamplerDesc optimizedDesc = diffuseSlot->samplerDesc;
+        optimizedDesc.filterMin = RenderCore::MIN_LINEAR;
+        optimizedDesc.filterMip = RenderCore::MIN_LINEAR_MIPMAP_LINEAR;
+        optimizedDesc.anisotropyLog2 = 2;  // Enable 4x anisotropic filtering
+        optimizedDesc.wrapS = RenderCore::REPEAT;
+        optimizedDesc.wrapT = RenderCore::REPEAT;
+        
+        auto sampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(optimizedDesc);
         renderEncoder->SetFragmentTextureAndSampler("gDiffuseMap", diffuseSlot->texture, sampler);
     }
+    else
+    {
+        // If no diffuse texture, bind a null texture to ensure binding consistency
+        // Shader will handle the fallback to a default color
+        renderEncoder->SetFragmentTextureAndSampler("gDiffuseMap", nullptr, textureSampler);
+    }
 
-    renderEncoder->SetFragmentTextureAndSampler("gNormalMap",     mMaterial->GetTexture("normalTexture"),   textureSampler);
-    renderEncoder->SetFragmentTextureAndSampler("gMetalRoughMap", mMaterial->GetTexture("roughnessTexture"), textureSampler);
-    renderEncoder->SetFragmentTextureAndSampler("gEmissiveMap",   mMaterial->GetTexture("emissiveTexture"),  textureSampler);
-    renderEncoder->SetFragmentTextureAndSampler("gAmbientMap",    mMaterial->GetTexture("ambientTexture"),   textureSampler);
-
-    // ---- Single indirect draw call for ALL visible leaf nodes ----
-    renderEncoder->DrawIndexedPrimitivesIndirect(
+    // ---- Instanced draw: one instance per visible patch ----
+    renderEncoder->DrawIndexedInstancePrimitives(
         PrimitiveMode_TRIANGLES,
-        indexBuffer,
-        0,  // indexBufferOffset - bind the entire index buffer
-        mIndirectBuffer,
-        0,  // indirectBufferOffset
-        drawCount,
-        sizeof(RenderCore::DrawIndexedIndirectCommand));
+        1536,          // indexCount for 17x17 template mesh (16*16*6)
+        templateIB,
+        0,             // indexBufferOffset
+        0,             // firstInstance
+        visibleCount); // instanceCount = number of visible patches
 }
 
 //=============================================================================
-// Depth-only rendering
+// GPU-driven rendering path (Depth-only)
 //=============================================================================
 
 void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
                                         UniformBufferPtr cameraUBO,
                                         UniformBufferPtr objectUBO,
-                                        GraphicsPipelinePtr depthPSO,
+                                        GraphicsPipelinePtr terrainDepthPSO,
                                         const Frustumf* frustum)
 {
-    if (!mQuadTreeTerrain || !renderEncoder || !depthPSO)
-    {
+    if (!mQuadTreeTerrain || !renderEncoder || !terrainDepthPSO)
         return;
-    }
 
-    MeshPtr mesh = mQuadTreeTerrain->GetMesh();
-    if (!mesh || !mesh->HasChannel(kShaderChannelPosition))
-    {
+    // Prepare GPU path data (culling + visible PatchMeta)
+    PrepareGPUPathData(frustum);
+
+    uint32_t visibleCount = mQuadTreeTerrain->GetVisiblePatchMetaCount();
+    if (visibleCount == 0)
         return;
-    }
 
-    const ChannelInfo* channels = mesh->GetVertexData().GetChannels();
-    VertexBufferPtr vertexBuffer = mesh->GetVertexBuffer();
-    IndexBufferPtr  indexBuffer  = mesh->GetIndexBuffer();
+    auto templateVB = mQuadTreeTerrain->GetTemplateVB();
+    auto templateIB = mQuadTreeTerrain->GetTemplateIB();
+    auto visiblePatchMeta = mQuadTreeTerrain->GetVisiblePatchMetaBuffer();
+    auto heightmapTexture = mQuadTreeTerrain->GetHeightMapTexture();
 
-    if (!vertexBuffer || !indexBuffer)
-    {
+    if (!templateVB || !templateIB || !visiblePatchMeta || !heightmapTexture)
         return;
-    }
 
-    // ---- Build indirect draw commands (includes frustum culling) ----
-    mQuadTreeTerrain->BuildIndirectCommands(frustum);
-    uint32_t drawCount = mQuadTreeTerrain->GetIndirectDrawCount();
-
-    if (drawCount == 0)
-    {
-        return;
-    }
-
-    // ---- Ensure indirect buffer is large enough ----
-    const auto& indirectCommands = mQuadTreeTerrain->GetIndirectCommands();
-    uint32_t requiredSize = drawCount * sizeof(RenderCore::DrawIndexedIndirectCommand);
-
-    if (!mIndirectBuffer || mIndirectBufferSize < requiredSize)
-    {
-        uint32_t allocSize = requiredSize + requiredSize / 2;
-        RenderCore::RCBufferDesc desc(allocSize,
-            RenderCore::RCBufferUsage::IndirectBuffer,
-            RenderCore::StorageMode::StorageModeShared);
-        mIndirectBuffer = RenderCore::GetRenderDevice()->CreateBuffer(desc);
-        mIndirectBufferSize = allocSize;
-        if (mIndirectBuffer)
-        {
-            mIndirectBuffer->SetName("TerrainIndirectBuffer");
-        }
-    }
-
-    // ---- Upload indirect commands to GPU ----
-    if (mIndirectBuffer)
-    {
-        void* mapped = mIndirectBuffer->Map();
-        if (mapped)
-        {
-            memcpy(mapped, indirectCommands.data(), requiredSize);
-            mIndirectBuffer->Unmap();
-        }
-    }
-
-    // ---- Bind depth PSO and shared state ONCE ----
-    renderEncoder->SetGraphicsPipeline(depthPSO);
+    // ---- Bind PSO and shared state ----
+    renderEncoder->SetGraphicsPipeline(terrainDepthPSO);
 
     if (mWireframe)
-    {
         renderEncoder->SetFillMode(FillModeWireframe);
-    }
 
+    // Bind UBOs
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
-    renderEncoder->SetVertexUniformBuffer("cbPerObject", objectUBO);
+    renderEncoder->SetVertexUniformBuffer("cbTerrain", mTerrainParamsUBO);
     renderEncoder->SetFragmentUniformBuffer("cbPerCamera", cameraUBO);
 
-    // ---- Only bind position vertex buffer ----
-    renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
+    // Bind PatchMeta SSBO to vertex stage
+    renderEncoder->SetStorageBuffer("gPatchMeta", visiblePatchMeta,
+        RenderCore::ShaderStage_Vertex);
 
-    // ---- Single indirect draw call for ALL visible leaf nodes ----
-    renderEncoder->DrawIndexedPrimitivesIndirect(
+    // Bind heightmap texture
+    RenderCore::SamplerDesc heightmapSamplerDesc(
+        RenderCore::MAG_LINEAR, RenderCore::MIN_LINEAR,
+        RenderCore::CLAMP_TO_EDGE, RenderCore::CLAMP_TO_EDGE);
+    auto heightmapSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(heightmapSamplerDesc);
+    renderEncoder->SetFragmentTextureAndSampler("gHeightmap", heightmapTexture, heightmapSampler);
+
+    // Bind template mesh vertex buffers
+    uint32_t posSize = mQuadTreeTerrain->GetTemplatePositionSize();
+    renderEncoder->SetVertexBuffer(templateVB, 0, 0);       // positions at offset 0
+    renderEncoder->SetVertexBuffer(templateVB, posSize, 1);  // texCoords at offset posSize
+
+    // ---- Instanced draw: one instance per visible patch ----
+    renderEncoder->DrawIndexedInstancePrimitives(
         PrimitiveMode_TRIANGLES,
-        indexBuffer,
-        0,
-        mIndirectBuffer,
-        0,
-        drawCount,
-        sizeof(RenderCore::DrawIndexedIndirectCommand));
+        1536,          // indexCount for 17x17 template mesh (16*16*6)
+        templateIB,
+        0,             // indexBufferOffset
+        0,             // firstInstance
+        visibleCount); // instanceCount = number of visible patches
 }
 
 //=============================================================================
@@ -303,26 +303,20 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
 float TerrainComponent::GetHeight(float worldX, float worldZ) const
 {
     if (!mQuadTreeTerrain)
-    {
         return 0.0f;
-    }
     return mQuadTreeTerrain->GetHeight(worldX, worldZ);
 }
 
 void TerrainComponent::SetLODDistanceFactor(float factor)
 {
     if (mQuadTreeTerrain)
-    {
         mQuadTreeTerrain->SetLODDistanceFactor(factor);
-    }
 }
 
 void TerrainComponent::SetSSEThreshold(float threshold)
 {
     if (mQuadTreeTerrain)
-    {
         mQuadTreeTerrain->SetSSEThreshold(threshold);
-    }
 }
 
 void TerrainComponent::SetWireframe(bool wireframe)
