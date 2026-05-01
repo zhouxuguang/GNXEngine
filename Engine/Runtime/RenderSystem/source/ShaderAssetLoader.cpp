@@ -49,6 +49,18 @@ ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName)
         shaderAssetString.computeShader = computeShaderInfo;
     }
     
+    CompiledShaderInfoPtr taskShaderInfo = CompileShader(shaderName, ShaderStage_Task, renderType);
+    if (taskShaderInfo)
+    {
+        shaderAssetString.taskShader = taskShaderInfo;
+    }
+    
+    CompiledShaderInfoPtr meshShaderInfo = CompileShader(shaderName, ShaderStage_Mesh, renderType);
+    if (meshShaderInfo)
+    {
+        shaderAssetString.meshShader = meshShaderInfo;
+    }
+    
     return shaderAssetString;
 }
 
@@ -56,15 +68,55 @@ GraphicsShaderInfo CreateGraphicsShaderInfo(const std::string& shaderName)
 {
     ShaderAssetString shaderAssetString = LoadShaderAsset(shaderName);
     
-    ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
-    ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
-
     GraphicsShaderInfo graphicsShaderInfo;
     
-    GraphicsShaderPtr graphicsShader = GetRenderDevice()->CreateGraphicsShader(*vertexShader, *fragmentShader);
-    graphicsShaderInfo.graphicsShader = graphicsShader;
+    // 判断是否为 Mesh Shader 管线（有 mesh shader 但没有 vertex shader）
+    bool isMeshShader = shaderAssetString.meshShader && !shaderAssetString.vertexShader;
     
-    graphicsShaderInfo.graphicsPipelineDesc.vertexDescriptor = std::move(shaderAssetString.vertexDescriptor);
+    if (isMeshShader)
+    {
+        // Mesh Shader 管线：Task(可选) + Mesh + Fragment
+        ShaderCodePtr taskShader = shaderAssetString.taskShader ? shaderAssetString.taskShader->shaderSource : ShaderCodePtr();
+        ShaderCodePtr meshShader = shaderAssetString.meshShader->shaderSource;
+        ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
+        
+        ShaderCode emptyTask; // 空 task shader
+        GraphicsShaderPtr graphicsShader = GetRenderDevice()->CreateMeshGraphicsShader(
+            taskShader ? *taskShader : emptyTask,
+            *meshShader,
+            *fragmentShader);
+        graphicsShaderInfo.graphicsShader = graphicsShader;
+        
+        // Mesh Pipeline 不需要顶点描述
+        graphicsShaderInfo.graphicsPipelineDesc.pipelineType = PipelineType::Mesh;
+        
+        // 从 mesh shader 的编译信息中提取 threadgroup 大小
+        if (shaderAssetString.meshShader->threadgroupSizeX > 0)
+        {
+            graphicsShaderInfo.graphicsPipelineDesc.meshThreadgroupSizeX = shaderAssetString.meshShader->threadgroupSizeX;
+            graphicsShaderInfo.graphicsPipelineDesc.meshThreadgroupSizeY = shaderAssetString.meshShader->threadgroupSizeY;
+            graphicsShaderInfo.graphicsPipelineDesc.meshThreadgroupSizeZ = shaderAssetString.meshShader->threadgroupSizeZ;
+        }
+        
+        // 从 task shader 的编译信息中提取 threadgroup 大小
+        if (shaderAssetString.taskShader && shaderAssetString.taskShader->threadgroupSizeX > 0)
+        {
+            graphicsShaderInfo.graphicsPipelineDesc.taskThreadgroupSizeX = shaderAssetString.taskShader->threadgroupSizeX;
+            graphicsShaderInfo.graphicsPipelineDesc.taskThreadgroupSizeY = shaderAssetString.taskShader->threadgroupSizeY;
+            graphicsShaderInfo.graphicsPipelineDesc.taskThreadgroupSizeZ = shaderAssetString.taskShader->threadgroupSizeZ;
+        }
+    }
+    else
+    {
+        // 传统图形管线：Vertex + Fragment
+        ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
+        ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
+        
+        GraphicsShaderPtr graphicsShader = GetRenderDevice()->CreateGraphicsShader(*vertexShader, *fragmentShader);
+        graphicsShaderInfo.graphicsShader = graphicsShader;
+        
+        graphicsShaderInfo.graphicsPipelineDesc.vertexDescriptor = std::move(shaderAssetString.vertexDescriptor);
+    }
     
     return graphicsShaderInfo;
 }
