@@ -228,7 +228,7 @@ private:
     std::vector<RenderCore::DrawIndexedIndirectCommand> mIndirectCommands;
 
     // LOD configuration
-    float mLODDistanceFactor = 1.0f; // distance = nodeWorldSize * factor
+    float mLODDistanceFactor = 0.5f; // distance = nodeWorldSize * factor
     float mSSEThreshold = 32.0f;
     float mTanHalfFovY = 0.0f;
     float mScreenHeight = 0.0f;
