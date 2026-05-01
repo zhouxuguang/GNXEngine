@@ -382,6 +382,8 @@ static void GetShaderReflectionInfo(MTLRenderPipelineReflection* reflectionObj)
     {
         NSLog(@"Found arg: %@\n", arg.name);
         
+        //MTLTextureType textureType
+        
         MTLArgumentType argType = arg.type;
         int index = arg.index;
         MTLArgumentAccess access = arg.access;
@@ -520,14 +522,11 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
             MTLPipelineOption option = MTLPipelineOptionBufferTypeInfo | MTLPipelineOptionArgumentInfo;
             mRenderPipelineState = [mDevice newRenderPipelineStateWithDescriptor:mRenderPipelineDes options:option reflection:&reflectionObj error:&error];
             
-            GetShaderReflectionInfo(reflectionObj);
-            
             if (mShader)
             {
                 mShader->GenerateRefectionInfo(reflectionObj);
             }
             
-            //
             uint32_t maxVertexIndex = 0;
             int vertexCount = 0;
             for (MTLArgument *arg in reflectionObj.vertexArguments)
@@ -535,6 +534,10 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
                 NSLog(@"Found arg: %@\n", arg.name);
                 
                 MTLArgumentType argType = arg.type;
+                if (MTLArgumentTypeBuffer != argType)
+                {
+                    continue;
+                }
                 int index = arg.index;
                 MTLArgumentAccess access = arg.access;
                 int bufferAlignment = arg.bufferAlignment;
@@ -544,12 +547,9 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
                 
                 MTLPointerType * pointerType = arg.bufferPointerType;
                 
-//                MTLArgumentType type = arg.type;
-//                MTLArgumentAccess access = arg.access;
-                
                 if (arg.bufferStructType.members.count == 0)
                 {
-                    vertexCount ++;
+                    vertexCount++;
                     if (maxVertexIndex < index)
                     {
                         maxVertexIndex = index;
