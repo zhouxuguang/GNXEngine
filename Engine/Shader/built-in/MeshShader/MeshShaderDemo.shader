@@ -1,7 +1,12 @@
 // MeshShaderDemo.shader
-// Demonstrates basic mesh shader usage: task shader dispatches 3 mesh workgroups,
-// each mesh workgroup generates 1 triangle offset in Z, resulting in 3 overlapping
-// colored triangles (green, blue, red vertices).
+// Demonstrates mesh shader reading vertex data from StructuredBuffer (SSBO).
+// Task shader dispatches 2 mesh workgroups, each mesh workgroup reads vertices
+// from gVertices SSBO and outputs 1 triangle.
+//
+// This test validates:
+//   - MS + SSBO (StructuredBuffer) read path
+//   - SetStorageBuffer(ShaderStage_Mesh) binding
+//   - Basic indirect-ready command pattern
 
 // ==================== UBO ====================
 cbuffer UBO
@@ -11,18 +16,35 @@ cbuffer UBO
     float4x4 view;
 };
 
-// ==================== Task Shader ====================
-struct DummyPayLoad
+// ==================== SSBO: Vertex Data (filled by CPU) ====================
+struct VertexData
 {
-    uint dummyData;
+    float4 position;  // object-space position
+    float4 color;     // vertex color
 };
 
-groupshared DummyPayLoad dummyPayLoad;
+// Each triangle uses 3 consecutive vertices from the buffer.
+// Triangle 0: vertices[0..2], Triangle 1: vertices[3..5]
+StructuredBuffer<VertexData> gVertices;
+
+// Number of vertices per triangle (fixed for this demo)
+static const uint VERTS_PER_TRIANGLE = 3;
+
+// ==================== Task Shader ====================
+struct MeshPayload
+{
+    uint triangleIndex;  // which triangle this mesh group will output
+};
+
+groupshared MeshPayload payload;
 
 [numthreads(1, 1, 1)]
-void TS()
+void TS(uint dtid : SV_DispatchThreadID)
 {
-    DispatchMesh(2, 1, 1, dummyPayLoad);
+    // Dispatch one mesh workgroup per triangle
+    // The demo has 2 triangles in the vertex buffer
+    payload.triangleIndex = dtid;
+    DispatchMesh(1, 1, 1, payload);
 }
 
 // ==================== Mesh Shader ====================
@@ -32,36 +54,24 @@ struct VertexOutput
     float4 color : COLOR0;
 };
 
-static const float4 positions[3] = {
-    float4( -0.5, 1.0, 0.0, 1.0),
-    float4(-1.0,  -1.0, 0.0, 1.0),
-    float4( 0.0,  -1.0, 0.0, 1.0)
-};
-
-static const float4 colors[3] = {
-    float4(0.0, 1.0, 0.0, 1.0),
-    float4(0.0, 0.0, 1.0, 1.0),
-    float4(1.0, 0.0, 0.0, 1.0)
-};
-
 [outputtopology("triangle")]
 [numthreads(1, 1, 1)]
-void MS(out indices uint3 triangles[1], out vertices VertexOutput vertices[3],
-        uint3 DispatchThreadID : SV_DispatchThreadID)
+void MS(out indices uint3 triangles[1], out vertices VertexOutput vertices[3])
 {
     float4x4 mvp = mul(projection, mul(view, model));
-    float offsetX = 0.0;
-    if (DispatchThreadID.x > 0) 
-    {
-        offsetX = 1.0;
-    }
-    float4 offset = float4((float)DispatchThreadID.x, 0.0, 0.0, 0.0);
-    SetMeshOutputCounts(3, 1);
 
-    for (uint i = 0; i < 3; i++)
+    // Read payload from task shader to determine which triangle to output
+    uint triIdx = payload.triangleIndex;
+    uint baseVertex = triIdx * VERTS_PER_TRIANGLE;
+
+    // Output 3 vertices from SSBO
+    SetMeshOutputCounts(VERTS_PER_TRIANGLE, 1);
+
+    for (uint i = 0; i < VERTS_PER_TRIANGLE; i++)
     {
-        vertices[i].position = mul(mvp, positions[i] + offset);
-        vertices[i].color = colors[i];
+        VertexData v = gVertices[baseVertex + i];
+        vertices[i].position = mul(mvp, v.position);
+        vertices[i].color = v.color;
     }
 
     triangles[0] = uint3(0, 1, 2);

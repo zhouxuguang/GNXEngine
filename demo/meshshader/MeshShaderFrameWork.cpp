@@ -13,7 +13,7 @@
 #include "Runtime/RenderCore/include/ShaderFunction.h"
 #include "Runtime/RenderCore/include/RenderDefine.h"
 #include "Runtime/RenderSystem/include/RenderEngine.h"
-#include "Runtime/ShaderCompiler/include/ShaderCompiler.h"
+#include "Runtime/RenderSystem/include/ShaderAssetLoader.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
 #include "Runtime/BaseLib/include/LogService.h"
@@ -40,6 +40,7 @@ void MeshShaderFrameWork::Initlize()
     GNXEngine::AppFrameWork::Initlize();
     mRenderDevice = GetRenderDevice();
     CreatePipeline();
+    CreateVertexSSBO();
 }
 
 void MeshShaderFrameWork::CreatePipeline()
@@ -49,87 +50,38 @@ void MeshShaderFrameWork::CreatePipeline()
         return;
     }
 
-    RenderDeviceType renderType = mRenderDevice->GetRenderDeviceType();
-    ShaderFunctionPtr taskShader;
-    ShaderFunctionPtr meshShader;
-    ShaderFunctionPtr fragmentShader;
+    // 使用统一的 CreateGraphicsShaderInfo 接口
+    // 会自动检测 Mesh Shader 并设置 PipelineType::Mesh
+    RenderSystem::GraphicsShaderInfo shaderInfo = RenderSystem::CreateGraphicsShaderInfo("MeshShader/MeshShaderDemo");
 
-    std::string shaderDir = getBuiltInShaderDir();
-    std::string shaderFilePath = shaderDir + "MeshShader/MeshShaderDemo.shader";
-
-    shader_compiler::CompiledShaderInfoPtr taskShaderInfo =
-        shader_compiler::CompileShader(shaderFilePath, ShaderStage_Task, renderType);
-    if (!taskShaderInfo || !taskShaderInfo->shaderSource)
+    if (!shaderInfo.graphicsShader)
     {
-        LOG_ERROR("Failed to compile task shader");
+        LOG_ERROR("Failed to create mesh graphics shader");
         return;
     }
 
-    shader_compiler::CompiledShaderInfoPtr meshShaderInfo =
-        shader_compiler::CompileShader(shaderFilePath, ShaderStage_Mesh, renderType);
-    if (!meshShaderInfo || !meshShaderInfo->shaderSource)
-    {
-        LOG_ERROR("Failed to compile mesh shader");
-        return;
-    }
-
-    shader_compiler::CompiledShaderInfoPtr fragmentShaderInfo =
-        shader_compiler::CompileShader(shaderFilePath, ShaderStage_Fragment, renderType);
-    if (!fragmentShaderInfo || !fragmentShaderInfo->shaderSource)
-    {
-        LOG_ERROR("Failed to compile fragment shader");
-        return;
-    }
-
-    taskShader = mRenderDevice->CreateShaderFunction(
-        *taskShaderInfo->shaderSource, ShaderStage_Task);
-    meshShader = mRenderDevice->CreateShaderFunction(
-        *meshShaderInfo->shaderSource, ShaderStage_Mesh);
-    fragmentShader = mRenderDevice->CreateShaderFunction(
-        *fragmentShaderInfo->shaderSource, ShaderStage_Fragment);
-
-    if (!taskShader || !meshShader || !fragmentShader)
-    {
-        LOG_ERROR("Failed to create shader functions");
-        return;
-    }
-
-    // create mesh pipeline descriptor
-    GraphicsPipelineDesc pipelineDesc;
-    pipelineDesc.pipelineType = PipelineType::Mesh;
-
-    // 从 SPIR-V LocalSize 反射中自动提取 mesh shader 的 threadgroup 大小
-    if (meshShaderInfo->threadgroupSizeX > 0)
-    {
-        pipelineDesc.meshThreadgroupSizeX = meshShaderInfo->threadgroupSizeX;
-        pipelineDesc.meshThreadgroupSizeY = meshShaderInfo->threadgroupSizeY;
-        pipelineDesc.meshThreadgroupSizeZ = meshShaderInfo->threadgroupSizeZ;
-    }
-
-    // Object shader dispatches 3 mesh threadgroups per object threadgroup
-    pipelineDesc.maxObjectPayloadMeshlets = 3;
+    // 补充 pipeline 描述
+    shaderInfo.graphicsPipelineDesc.maxObjectPayloadMeshlets = 3;
 
     // color attachment (default RGBA8)
-    pipelineDesc.renderTargetCount = 1;
-    pipelineDesc.colorAttachmentDescriptors[0].blendingEnabled = false;
-    pipelineDesc.colorAttachmentDescriptors[0].writeMask = ColorWriteMaskAll;
+    shaderInfo.graphicsPipelineDesc.renderTargetCount = 1;
+    shaderInfo.graphicsPipelineDesc.colorAttachmentDescriptors[0].blendingEnabled = false;
+    shaderInfo.graphicsPipelineDesc.colorAttachmentDescriptors[0].writeMask = ColorWriteMaskAll;
 
     // depth attachment
-    pipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionLessThanOrEqual;
-    pipelineDesc.depthStencilDescriptor.depthWriteEnabled = true;
+    shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionLessThanOrEqual;
+    shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = true;
 
     // create pipeline
-    mMeshPipeline = mRenderDevice->CreateGraphicsPipeline(pipelineDesc);
+    mMeshPipeline = mRenderDevice->CreateGraphicsPipeline(shaderInfo.graphicsPipelineDesc);
     if (!mMeshPipeline)
     {
         LOG_ERROR("Failed to create mesh pipeline");
         return;
     }
 
-    // attach shaders
-    mMeshPipeline->AttachTaskShader(taskShader);
-    mMeshPipeline->AttachMeshShader(meshShader);
-    mMeshPipeline->AttachFragmentShader(fragmentShader);
+    // 使用 AttachGraphicsShader 绑定 shader（支持 Mesh Shader 的 TS+MS+FS 组合）
+    mMeshPipeline->AttachGraphicsShader(shaderInfo.graphicsShader);
 
     // create uniform buffer (3 mat4 = 192 bytes)
     mUniformBuffer = mRenderDevice->CreateUniformBufferWithSize(sizeof(UniformData));
@@ -140,6 +92,54 @@ void MeshShaderFrameWork::CreatePipeline()
     }
 
     LOG_INFO("Mesh shader pipeline created successfully");
+}
+
+void MeshShaderFrameWork::CreateVertexSSBO()
+{
+    if (!mRenderDevice)
+    {
+        return;
+    }
+
+    // 2 triangles × 3 vertices each = 6 vertices
+    // Triangle 0: green-cyan-blue (left side)
+    // Triangle 1: orange-yellow-red (right side, offset +X)
+    constexpr uint32_t kVertexCount = 6;
+    constexpr uint32_t kBufferSize = kVertexCount * sizeof(SSBOVertexData);
+
+    RCBufferDesc desc(kBufferSize,
+        RCBufferUsage::StorageBuffer,
+        StorageModeShared);
+    mVertexSSBO = mRenderDevice->CreateBuffer(desc);
+    if (!mVertexSSBO)
+    {
+        LOG_ERROR("Failed to create vertex SSBO");
+        return;
+    }
+    mVertexSSBO->SetName("MeshDemo_VertexSSBO");
+
+    // Fill vertex data
+    SSBOVertexData* vertices = static_cast<SSBOVertexData*>(mVertexSSBO->Map());
+    if (!vertices)
+    {
+        LOG_ERROR("Failed to map vertex SSBO");
+        return;
+    }
+
+    // Triangle 0: left triangle (green → cyan → blue)
+    vertices[0] = {{ -0.5f,  0.5f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}};   // top,    green
+    vertices[1] = {{ -1.0f, -0.5f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f, 1.0f}};   // bottom-left, cyan
+    vertices[2] = {{  0.0f, -0.5f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}};   // bottom-right, blue
+
+    // Triangle 1: right triangle (orange → yellow → red), offset by +1.0 in X
+    vertices[3] = {{  0.5f,  0.5f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.0f, 1.0f}};   // top,    orange
+    vertices[4] = {{  0.0f, -0.5f, 0.0f, 1.0f}, {1.0f, 1.0f, 0.0f, 1.0f}};   // bottom-left, yellow
+    vertices[5] = {{  1.0f, -0.5f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}};   // bottom-right, red
+
+    mVertexSSBO->Unmap();
+
+    LOG_INFO("Mesh shader vertex SSBO created: %u vertices (%u bytes)",
+             kVertexCount, kBufferSize);
 }
 
 void MeshShaderFrameWork::Resize(uint32_t width, uint32_t height)
@@ -191,8 +191,15 @@ void MeshShaderFrameWork::RenderFrame()
     // bind uniform buffer to mesh shader (binding 0)
     renderEncoder->SetMeshUniformBuffer(mUniformBuffer, 0);
 
-    // draw: 1 object threadgroup -> object shader dispatches 3 mesh threadgroups -> 3 triangles
-    renderEncoder->DrawMeshTasks(1, 1, 1);
+    // bind vertex SSBO to mesh shader stage (StructuredBuffer read in MS)
+    if (mVertexSSBO)
+    {
+        renderEncoder->SetStorageBuffer("gVertices", mVertexSSBO, ShaderStage_Mesh);
+    }
+
+    // draw: 2 object threadgroups -> each dispatches 1 mesh threadgroup -> 2 triangles
+    // Triangle 0 from vertices[0..2], Triangle 1 from vertices[3..5]
+    renderEncoder->DrawMeshTasks(2, 1, 1);
 
     renderEncoder->EndEncode();
     commandBuffer->PresentFrameBuffer();

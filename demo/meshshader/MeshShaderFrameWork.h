@@ -13,6 +13,14 @@
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/RenderCore/include/GraphicsPipeline.h"
 #include "Runtime/RenderCore/include/UniformBuffer.h"
+#include "Runtime/RenderCore/include/RCBuffer.h"
+
+// Must match VertexData struct in MeshShaderDemo.shader (float4 position + float4 color)
+struct alignas(16) SSBOVertexData
+{
+    float position[4];  // x, y, z, w
+    float color[4];     // r, g, b, a
+};
 
 class MeshShaderFrameWork : public GNXEngine::AppFrameWork
 {
@@ -26,10 +34,14 @@ public:
 
 private:
     void CreatePipeline();
+    void CreateVertexSSBO();
 
     RenderCore::RenderDevicePtr mRenderDevice = nullptr;
     RenderCore::GraphicsPipelinePtr mMeshPipeline = nullptr;
     RenderCore::UniformBufferPtr mUniformBuffer = nullptr;
+
+    // SSBO: vertex data uploaded to GPU for mesh shader to read
+    RenderCore::RCBufferPtr mVertexSSBO = nullptr;
 
     uint32_t mWidth = 1280;
     uint32_t mHeight = 720;
