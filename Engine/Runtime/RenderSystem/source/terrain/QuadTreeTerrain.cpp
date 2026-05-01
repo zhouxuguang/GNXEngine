@@ -674,40 +674,12 @@ bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPo
     // Cannot subdivide beyond finest level (0=finest, cannot go below 0)
     if (node.level == 0) return false;
 
-    // No geometric error means this LOD perfectly represents the terrain
-    if (node.maxGeoError <= 0.0f) return false;
-
-    // SSE-based test when camera parameters are available
-    if (mTanHalfFovY > 0.0f && mScreenHeight > 0.0f)
-    {
-        // Distance from camera to closest point on node's AABB
-        float dx = std::max(0.0f, std::max(node.bounds.minimum.x - cameraPos.x,
-                                            cameraPos.x - node.bounds.maximum.x));
-        float dy = std::max(0.0f, std::max(node.bounds.minimum.y - cameraPos.y,
-                                            cameraPos.y - node.bounds.maximum.y));
-        float dz = std::max(0.0f, std::max(node.bounds.minimum.z - cameraPos.z,
-                                            cameraPos.z - node.bounds.maximum.z));
-        float distance = sqrtf(dx * dx + dy * dy + dz * dz);
-        distance = std::max(distance, 0.001f);  // avoid division by zero
-
-        // Screen-space error (standard formula):
-        //   screenError(pixels) = (geoError × screenHeight) / (2 × distance × tan(fov/2))
-        //
-        // Derivation:
-        //   1. Geometric error δ at distance d subtends angle ≈ δ/d (radians, small-angle)
-        //   2. This angle as fraction of vertical FOV: (δ/d) / (2×tan(fov/2))
-        //   3. Convert to pixels: fraction × screenHeight
-        //
-        // Subdivide when screenError exceeds threshold (mSSEThreshold is in pixels)
-        float screenError = (node.maxGeoError * mScreenHeight) / (2.0f * distance * mTanHalfFovY);
-        return screenError > mSSEThreshold;
-    }
-
-    // Fallback: distance-based test (when camera params not provided)
-    // Use AABB closest-point distance (consistent with SSE path above)
+    // Distance-based LOD: subdivide when camera is close enough.
+    // Larger nodes subdivide at greater distances, smaller nodes only up close.
     float nodeWorldSize = (float)node.size * (mWorldSize / (float)(mGridSize - 1));
     float threshold = nodeWorldSize * mLODDistanceFactor;
 
+    // Use AABB closest-point distance (camera inside AABB → distance=0 → always subdivide)
     float dx = std::max(0.0f, std::max(node.bounds.minimum.x - cameraPos.x,
                                         cameraPos.x - node.bounds.maximum.x));
     float dy = std::max(0.0f, std::max(node.bounds.minimum.y - cameraPos.y,
@@ -715,7 +687,6 @@ bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPo
     float dz = std::max(0.0f, std::max(node.bounds.minimum.z - cameraPos.z,
                                         cameraPos.z - node.bounds.maximum.z));
     float distance = sqrtf(dx * dx + dy * dy + dz * dz);
-    distance = std::max(distance, 0.001f);  // avoid division by zero
 
     return distance < threshold;
 }
