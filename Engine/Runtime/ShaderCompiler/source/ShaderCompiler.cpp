@@ -98,6 +98,47 @@ ShaderCode compileToESSL30(ShaderCodePtr spirvCode, ShaderStage shaderStage)
     return shaderCode;
 }
 
+// DXC Bug Workaround: DXC uses Workgroup storage class for the groupshared
+// task payload variable in mesh shaders. According to SPV_EXT_mesh_shader,
+// it should be TaskPayloadWorkgroupEXT. DXC correctly handles this in task
+// shaders but misses the conversion in mesh shaders.
+// Without this fix:
+//   - SPIRV-Cross (Metal) translates the payload as "threadgroup" (uninitialized
+//     local) instead of "const object_data" (Metal's task→mesh payload mechanism).
+//   - Vulkan drivers receive invalid SPIR-V that violates the spec (mesh shader
+//     payload must use TaskPayloadWorkgroupEXT, not Workgroup).
+// See: https://github.com/microsoft/DirectXShaderCompiler/issues/5981
+static void patchDXCMeshShaderPayloadBug(ShaderCodePtr spirvCode, ShaderStage shaderStage)
+{
+    if (shaderStage != ShaderStage_Mesh || !spirvCode || spirvCode->size() < 20)
+        return;
+
+    uint32_t* words = reinterpret_cast<uint32_t*>(spirvCode->data());
+    size_t wordCount = spirvCode->size() / 4;
+    size_t offset = 5; // skip 5-word SPIR-V header
+    while (offset + 3 < wordCount)
+    {
+        uint32_t instr = words[offset];
+        uint16_t opcode = instr & 0xFFFF;
+        uint16_t wordCountInstr = (instr >> 16) & 0xFFFF;
+        if (wordCountInstr == 0) break;
+
+        if (opcode == 59 && wordCountInstr >= 4) // OpVariable
+        {
+            uint32_t& storageClass = words[offset + 3];
+            if (storageClass == spv::StorageClassWorkgroup)
+                storageClass = spv::StorageClassTaskPayloadWorkgroupEXT;
+        }
+        else if (opcode == 32 && wordCountInstr >= 3) // OpTypePointer
+        {
+            uint32_t& storageClass = words[offset + 2];
+            if (storageClass == spv::StorageClassWorkgroup)
+                storageClass = spv::StorageClassTaskPayloadWorkgroupEXT;
+        }
+        offset += wordCountInstr;
+    }
+}
+
 CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderStage)
 {
     spirv_cross::CompilerMSL msl((const uint32_t*)spirvCode->data(), spirvCode->size() / 4);
@@ -305,7 +346,10 @@ CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage s
     {
         return nullptr;
     }
-    
+
+    // Fix DXC mesh shader payload storage class bug for both Metal and Vulkan
+    patchDXCMeshShaderPayloadBug(shaderCode, shaderStage);
+
     if (renderType == RenderDeviceType::METAL)
     {
         return compileToMSL(shaderCode, shaderStage);
