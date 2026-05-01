@@ -3,7 +3,8 @@
 //  GNXEngine
 //
 //  Quadtree-based terrain with adaptive LOD.
-//  No crack fixing for now.
+//  Features: SSE-based LOD selection, triangle-fan crack fixing,
+//  static index pool (zero per-frame GPU upload), frustum culling.
 //
 
 #include "terrain/QuadTreeTerrain.h"
@@ -689,21 +690,32 @@ bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPo
         float distance = sqrtf(dx * dx + dy * dy + dz * dz);
         distance = std::max(distance, 0.001f);  // avoid division by zero
 
-        // Screen-space error: screenError = (geoError * tanHalfFov * screenHeight) / distance
-        // Subdivide when screenError exceeds threshold
-        float screenError = (node.maxGeoError * mTanHalfFovY * mScreenHeight) / distance;
+        // Screen-space error (standard formula):
+        //   screenError(pixels) = (geoError × screenHeight) / (2 × distance × tan(fov/2))
+        //
+        // Derivation:
+        //   1. Geometric error δ at distance d subtends angle ≈ δ/d (radians, small-angle)
+        //   2. This angle as fraction of vertical FOV: (δ/d) / (2×tan(fov/2))
+        //   3. Convert to pixels: fraction × screenHeight
+        //
+        // Subdivide when screenError exceeds threshold (mSSEThreshold is in pixels)
+        float screenError = (node.maxGeoError * mScreenHeight) / (2.0f * distance * mTanHalfFovY);
         return screenError > mSSEThreshold;
     }
 
     // Fallback: distance-based test (when camera params not provided)
+    // Use AABB closest-point distance (consistent with SSE path above)
     float nodeWorldSize = (float)node.size * (mWorldSize / (float)(mGridSize - 1));
     float threshold = nodeWorldSize * mLODDistanceFactor;
 
-    Vector3f nodeCenter = node.bounds.center;
-    float cdx = cameraPos.x - nodeCenter.x;
-    float cdy = cameraPos.y - nodeCenter.y;
-    float cdz = cameraPos.z - nodeCenter.z;
-    float distance = sqrtf(cdx * cdx + cdy * cdy + cdz * cdz);
+    float dx = std::max(0.0f, std::max(node.bounds.minimum.x - cameraPos.x,
+                                        cameraPos.x - node.bounds.maximum.x));
+    float dy = std::max(0.0f, std::max(node.bounds.minimum.y - cameraPos.y,
+                                        cameraPos.y - node.bounds.maximum.y));
+    float dz = std::max(0.0f, std::max(node.bounds.minimum.z - cameraPos.z,
+                                        cameraPos.z - node.bounds.maximum.z));
+    float distance = sqrtf(dx * dx + dy * dy + dz * dz);
+    distance = std::max(distance, 0.001f);  // avoid division by zero
 
     return distance < threshold;
 }
