@@ -220,6 +220,10 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     if (mGraphicsPipelineDes.pipelineType == PipelineType::Mesh)
     {
         // Mesh Pipeline：task + mesh + fragment shader stages
+        // 优先从 mTaskShader/mMeshShader/mShaders 读取（手动 AttachTaskShader/AttachMeshShader 路径）
+        // 其次从 mShader 读取（AttachGraphicsShader 路径）
+
+        // Task Shader
         if (mTaskShader)
         {
             VkPipelineShaderStageCreateInfo taskShaderStage = {};
@@ -229,7 +233,17 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
             taskShaderStage.pName = mTaskShader->GetEntryName().c_str();
             shaderStages.push_back(taskShaderStage);
         }
+        else if (mShader && mShader->IsMeshShader() && mShader->GetTaskShaderModule() != VK_NULL_HANDLE)
+        {
+            VkPipelineShaderStageCreateInfo taskShaderStage = {};
+            taskShaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            taskShaderStage.stage = VK_SHADER_STAGE_TASK_BIT_EXT;
+            taskShaderStage.module = mShader->GetTaskShaderModule();
+            taskShaderStage.pName = mShader->GetTaskEntryName().c_str();
+            shaderStages.push_back(taskShaderStage);
+        }
 
+        // Mesh Shader
         if (mMeshShader)
         {
             VkPipelineShaderStageCreateInfo meshShaderStage = {};
@@ -239,8 +253,18 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
             meshShaderStage.pName = mMeshShader->GetEntryName().c_str();
             shaderStages.push_back(meshShaderStage);
         }
+        else if (mShader && mShader->IsMeshShader() && mShader->GetMeshShaderModule() != VK_NULL_HANDLE)
+        {
+            VkPipelineShaderStageCreateInfo meshShaderStage = {};
+            meshShaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            meshShaderStage.stage = VK_SHADER_STAGE_MESH_BIT_EXT;
+            meshShaderStage.module = mShader->GetMeshShaderModule();
+            meshShaderStage.pName = mShader->GetMeshEntryName().c_str();
+            shaderStages.push_back(meshShaderStage);
+        }
 
-        // Fragment shader（从 mShaders 中找到 fragment stage 的 shader）
+        // Fragment shader
+        bool fragFound = false;
         for (auto& shaderFunc : mShaders)
         {
             if (shaderFunc && shaderFunc->GetShaderStage() == ShaderStage_Fragment)
@@ -251,8 +275,18 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
                 fragShaderStage.module = shaderFunc->GetShaderModule();
                 fragShaderStage.pName = shaderFunc->GetEntryName().c_str();
                 shaderStages.push_back(fragShaderStage);
+                fragFound = true;
                 break;
             }
+        }
+        if (!fragFound && mShader && mShader->IsMeshShader() && mShader->GetFragmentShaderModule() != VK_NULL_HANDLE)
+        {
+            VkPipelineShaderStageCreateInfo fragShaderStage = {};
+            fragShaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+            fragShaderStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+            fragShaderStage.module = mShader->GetFragmentShaderModule();
+            fragShaderStage.pName = mShader->GetFragmentEntryName().c_str();
+            shaderStages.push_back(fragShaderStage);
         }
     }
     else
@@ -470,87 +504,111 @@ void VKGraphicsPipeline::CreatePipelineLayout()
 {
     if (mGraphicsPipelineDes.pipelineType == PipelineType::Mesh)
     {
-        // Mesh pipeline：从各个 VKShaderFunction 的反射数据构建管线布局
-        // 收集所有 shader stage 的 descriptor set layout data，按 set number 合并
-        std::map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> setGroups;
-
-        auto collectDescriptorSets = [&](const VKShaderFunctionPtr& shaderFunc)
+        // Mesh pipeline：构建管线布局
+        // 路径1: 手动 AttachTaskShader/AttachMeshShader 路径 -> 从 mTaskShader/mMeshShader/mShaders 收集
+        // 路径2: AttachGraphicsShader 路径 -> 从 mShader 的 descriptor set layouts 获取
+        
+        bool useManualPath = (mTaskShader || mMeshShader);
+        
+        if (useManualPath)
         {
-            if (!shaderFunc) return;
-            const auto& desSets = shaderFunc->GetDescriptorSets();
-            for (const auto& desSet : desSets)
+            // 路径1: 从各个 VKShaderFunction 的反射数据构建管线布局
+            std::map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> setGroups;
+
+            auto collectDescriptorSets = [&](const VKShaderFunctionPtr& shaderFunc)
             {
-                for (const auto& binding : desSet.bindings)
+                if (!shaderFunc) return;
+                const auto& desSets = shaderFunc->GetDescriptorSets();
+                for (const auto& desSet : desSets)
                 {
-                    // 合并同一 set 的 binding，用 VK_SHADER_STAGE_ALL 标记
-                    auto& groupBindings = setGroups[desSet.set_number];
-                    bool found = false;
-                    for (auto& existing : groupBindings)
+                    for (const auto& binding : desSet.bindings)
                     {
-                        if (existing.binding == binding.binding)
+                        auto& groupBindings = setGroups[desSet.set_number];
+                        bool found = false;
+                        for (auto& existing : groupBindings)
                         {
-                            // 同一 binding 已存在，合并 stage flags
-                            existing.stageFlags |= binding.stageFlags;
-                            found = true;
-                            break;
+                            if (existing.binding == binding.binding)
+                            {
+                                existing.stageFlags |= binding.stageFlags;
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found)
+                        {
+                            VkDescriptorSetLayoutBinding newBinding = binding;
+                            newBinding.stageFlags = VK_SHADER_STAGE_ALL;
+                            groupBindings.push_back(newBinding);
                         }
                     }
-                    if (!found)
-                    {
-                        VkDescriptorSetLayoutBinding newBinding = binding;
-                        newBinding.stageFlags = VK_SHADER_STAGE_ALL;
-                        groupBindings.push_back(newBinding);
-                    }
+                }
+            };
+
+            collectDescriptorSets(mTaskShader);
+            collectDescriptorSets(mMeshShader);
+            for (auto& shaderFunc : mShaders)
+            {
+                if (shaderFunc && shaderFunc->GetShaderStage() == ShaderStage_Fragment)
+                {
+                    collectDescriptorSets(shaderFunc);
+                    break;
                 }
             }
-        };
 
-        collectDescriptorSets(mTaskShader);
-        collectDescriptorSets(mMeshShader);
-        // Fragment shader（从 mShaders 中找到）
-        for (auto& shaderFunc : mShaders)
-        {
-            if (shaderFunc && shaderFunc->GetShaderStage() == ShaderStage_Fragment)
+            if (setGroups.empty())
             {
-                collectDescriptorSets(shaderFunc);
-                break;
+                VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+                pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+                vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &mPipelineLayout);
+                return;
+            }
+
+            bool enablePushDesDescriptor = mContext->vulkanExtension.enablePushDesDescriptor;
+            for (const auto& [setIndex, bindings] : setGroups)
+            {
+                VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+                layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                if (enablePushDesDescriptor)
+                {
+                    layoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
+                }
+                layoutCreateInfo.bindingCount = (uint32_t)bindings.size();
+                layoutCreateInfo.pBindings = bindings.data();
+                VkDescriptorSetLayout setLayout = VK_NULL_HANDLE;
+                vkCreateDescriptorSetLayout(mContext->device, &layoutCreateInfo, nullptr, &setLayout);
+                mMeshDescriptorSetLayouts.push_back(setLayout);
+            }
+
+            VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+            pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            pipelineLayoutInfo.setLayoutCount = (uint32_t)mMeshDescriptorSetLayouts.size();
+            pipelineLayoutInfo.pSetLayouts = mMeshDescriptorSetLayouts.data();
+
+            if (vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
+            {
+                printf("failed to create mesh pipeline layout!");
             }
         }
-
-        // 如果没有任何 descriptor，创建一个空的 pipeline layout
-        if (setGroups.empty())
+        else if (mShader && mShader->IsMeshShader())
         {
+            // 路径2: 从 VKGraphicsShader 的 descriptor set layouts 获取
+            const std::vector<VkDescriptorSetLayout>& desLayouts = mShader->GetDescriptorSetLayouts();
+            VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+            pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+            pipelineLayoutInfo.setLayoutCount = (uint32_t)desLayouts.size();
+            pipelineLayoutInfo.pSetLayouts = desLayouts.data();
+
+            if (vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
+            {
+                printf("failed to create mesh pipeline layout!");
+            }
+        }
+        else
+        {
+            // 无 shader，创建空 pipeline layout
             VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
             pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
             vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &mPipelineLayout);
-            return;
-        }
-
-        // 创建 VkDescriptorSetLayout
-        bool enablePushDesDescriptor = mContext->vulkanExtension.enablePushDesDescriptor;
-        for (const auto& [setIndex, bindings] : setGroups)
-        {
-            VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
-            layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-            if (enablePushDesDescriptor)
-            {
-                layoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_PUSH_DESCRIPTOR_BIT_KHR;
-            }
-            layoutCreateInfo.bindingCount = (uint32_t)bindings.size();
-            layoutCreateInfo.pBindings = bindings.data();
-            VkDescriptorSetLayout setLayout = VK_NULL_HANDLE;
-            vkCreateDescriptorSetLayout(mContext->device, &layoutCreateInfo, nullptr, &setLayout);
-            mMeshDescriptorSetLayouts.push_back(setLayout);
-        }
-
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = (uint32_t)mMeshDescriptorSetLayouts.size();
-        pipelineLayoutInfo.pSetLayouts = mMeshDescriptorSetLayouts.data();
-
-        if (vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
-        {
-            printf("failed to create mesh pipeline layout!");
         }
     }
     else

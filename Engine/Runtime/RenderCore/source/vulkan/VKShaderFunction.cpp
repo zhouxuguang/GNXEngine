@@ -322,12 +322,82 @@ VKGraphicsShader::VKGraphicsShader(VulkanContextPtr context, const ShaderCode& v
     GenerateDescriptorSets();
 }
 
+VKGraphicsShader::VKGraphicsShader(VulkanContextPtr context, const ShaderCode& taskShader, const ShaderCode& meshShader, const ShaderCode& fragmentShader)
+{
+    mContext = context;
+    mDescriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+
+    // Task shader (optional)
+    if (!taskShader.empty())
+    {
+        SpvReflectShaderModule taskShaderModule = {};
+        SpvReflectResult result = spvReflectCreateShaderModule(taskShader.size(), taskShader.data(), &taskShaderModule);
+        if (result == SPV_REFLECT_RESULT_SUCCESS)
+        {
+            CollectResource(taskShaderModule, ShaderStage_Task);
+            mTaskShaderModule = CreateShaderModule(mContext->device, taskShader);
+            if (taskShaderModule.entry_point_name)
+            {
+                mTaskEntryName = std::string(taskShaderModule.entry_point_name);
+            }
+            spvReflectDestroyShaderModule(&taskShaderModule);
+        }
+    }
+
+    // Mesh shader (required)
+    SpvReflectShaderModule meshShaderModule = {};
+    SpvReflectResult result = spvReflectCreateShaderModule(meshShader.size(), meshShader.data(), &meshShaderModule);
+    if (result == SPV_REFLECT_RESULT_SUCCESS)
+    {
+        CollectResource(meshShaderModule, ShaderStage_Mesh);
+        mMeshShaderModule = CreateShaderModule(mContext->device, meshShader);
+        if (meshShaderModule.entry_point_name)
+        {
+            mMeshEntryName = std::string(meshShaderModule.entry_point_name);
+        }
+        spvReflectDestroyShaderModule(&meshShaderModule);
+    }
+
+    // Fragment shader (required)
+    SpvReflectShaderModule fragShaderModule = {};
+    result = spvReflectCreateShaderModule(fragmentShader.size(), fragmentShader.data(), &fragShaderModule);
+    if (result == SPV_REFLECT_RESULT_SUCCESS)
+    {
+        CollectResource(fragShaderModule, ShaderStage_Fragment);
+        mFragShader = CreateShaderModule(mContext->device, fragmentShader);
+        if (fragShaderModule.entry_point_name)
+        {
+            mFragmentEntryName = std::string(fragShaderModule.entry_point_name);
+        }
+        spvReflectDestroyShaderModule(&fragShaderModule);
+    }
+
+    GenerateVulkanDescriptorSetLayout();
+    GenerateDescriptorSets();
+}
+
 VKGraphicsShader::~VKGraphicsShader()
 {
-    vkDestroyShaderModule(mContext->device, mVertexShader, nullptr);
-    mVertexShader = VK_NULL_HANDLE;
-    vkDestroyShaderModule(mContext->device, mFragShader, nullptr);
-    mFragShader = VK_NULL_HANDLE;
+    if (mVertexShader) 
+    {
+        vkDestroyShaderModule(mContext->device, mVertexShader, nullptr);
+        mVertexShader = VK_NULL_HANDLE;
+    }
+    if (mFragShader) 
+    {
+        vkDestroyShaderModule(mContext->device, mFragShader, nullptr);
+        mFragShader = VK_NULL_HANDLE;
+    }
+    if (mTaskShaderModule)
+    {
+        vkDestroyShaderModule(mContext->device, mTaskShaderModule, nullptr);
+        mFragShader = VK_NULL_HANDLE;
+    }
+    if (mMeshShaderModule)
+    {
+        vkDestroyShaderModule(mContext->device, mMeshShaderModule, nullptr);
+        mFragShader = VK_NULL_HANDLE;
+    }
 
 	// destroy layout
 	for (auto& descriptorSetLayout : mDescriptorSetLayouts) 

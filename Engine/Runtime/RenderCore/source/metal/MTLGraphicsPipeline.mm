@@ -343,8 +343,13 @@ void MTLGraphicsPipeline::AttachGraphicsShader(GraphicsShaderPtr graphicsShader)
     
     if (mDesc.pipelineType == PipelineType::Mesh)
     {
-        // Mesh 模式只使用 fragment shader
-        mMeshPipelineDes.fragmentFunction = shaderPtr->GetFragmentFunction();
+        // Mesh 模式：设置 task + mesh + fragment shader
+        if (mMeshPipelineDes)
+        {
+            mMeshPipelineDes.objectFunction = shaderPtr->GetTaskFunction();
+            mMeshPipelineDes.meshFunction = shaderPtr->GetMeshFunction();
+            mMeshPipelineDes.fragmentFunction = shaderPtr->GetFragmentFunction();
+        }
     }
     else
     {
@@ -376,75 +381,6 @@ void MTLGraphicsPipeline::AttachMeshShader(ShaderFunctionPtr shaderFunction)
     mMeshPipelineDes.meshFunction = shaderPtr->GetShaderFunction();
 }
 
-static void GetShaderReflectionInfo(MTLRenderPipelineReflection* reflectionObj)
-{
-    for (MTLArgument *arg in reflectionObj.vertexArguments)
-    {
-        NSLog(@"Found arg: %@\n", arg.name);
-        
-        //MTLTextureType textureType
-        
-        MTLArgumentType argType = arg.type;
-        int index = arg.index;
-        MTLArgumentAccess access = arg.access;
-        int bufferAlignment = arg.bufferAlignment;
-        MTLDataType dataType = arg.bufferDataType;
-        int dataSize = arg.bufferDataSize;
-        BOOL isActive = arg.isActive;
-        
-        MTLPointerType * pointerType = arg.bufferPointerType;
-        MTLDataType dataType1 = pointerType.dataType;
-        MTLDataType dataType2 = pointerType.elementType;
-        BOOL isConstBuffer = pointerType.elementIsArgumentBuffer;
-        
-        //NSArray<NSString *> *assar = arg.bufferStructType.attributeKeys;
-        
-        MTLDataType dataType3 = pointerType.elementStructType.dataType;
-        MTLDataType dataType4 = arg.bufferPointerType.elementStructType.dataType;
-        
-//        for (MTLStructMember* uniform in )
-//        {
-//            MTLDataType dataType = pointerType.elementArrayType.dataType;
-//            uint32_t stride = pointerType.elementArrayType.stride;
-//            uint32_t arrayLength = pointerType.elementArrayType.arrayLength;
-//            NSString *name = @"";
-//            //NSLog(@"vertex buffer: %@ type:%lu, location: %lu", uniform.name, (unsigned long)uniform.dataType, (unsigned long)uniform.offset);
-//        }
-        
-        
-        
-        if (arg.bufferStructType.members.count == 0)
-        {
-            //count++;
-        }
-
-        for (MTLStructMember* uniform in arg.bufferStructType.members)
-        {
-            NSLog(@"uniform: %@ type:%lu, location: %lu", uniform.name, (unsigned long)uniform.dataType, (unsigned long)uniform.offset);
-        }
-    }
-    
-#if 0
-    for (id<MTLBinding> arg in reflectionObj.vertexBindings)
-    {
-        NSLog(@"Found arg: %@\n", arg.name);
-        
-        MTLBindingType argType = arg.type;
-        int index = arg.index;
-        MTLArgumentAccess access = arg.access;
-        BOOL used = arg.isUsed;
-        BOOL arugment = arg.isArgument;   //arugment为true则是uniformbuffer
-        NSString* descStr = arg.debugDescription;
-        NSString* descStr1 = arg.description;
-        
-//        for (MTLStructMember* uniform in arg..members)
-//        {
-//            NSLog(@"uniform: %@ type:%lu, location: %lu", uniform.name, (unsigned long)uniform.dataType, (unsigned long)uniform.offset);
-//        }
-    }
-#endif
-}
-
 void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
 {
     if (mGenerated)
@@ -472,19 +408,60 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
             // For now, Mesh Pipeline PSOs are created without cache acceleration.
 
             NSError *error = nil;
-            MTLAutoreleasedRenderPipelineReflection* reflectionObj = nil;
+            MTLRenderPipelineReflection* reflectionObj = nil;
             MTLPipelineOption option = MTLPipelineOptionBufferTypeInfo | MTLPipelineOptionArgumentInfo;
             mMeshPipelineState = [mDevice newRenderPipelineStateWithMeshDescriptor:mMeshPipelineDes options:option
-                                                                        reflection:reflectionObj error:&error];
+                                                                        reflection:&reflectionObj error:&error];
             
             if (!mMeshPipelineState)
             {
                 NSLog(@"创建 Metal Mesh Pipeline 失败: %@", error);
             }
-            else if (mPipelineCache)
+            else
             {
-                // Capture mode：注册到归档
-                mPipelineCache->AddRenderPipelineState(mMeshPipelineState);
+                // Populate mesh/task resource bindings from reflection
+                if (reflectionObj)
+                {
+#if SUPPORTED_NEW_REFLECT
+                    // Extract object (task) shader arguments
+                    for (id<MTLBinding> arg in reflectionObj.objectBindings)
+                    {
+                        NSLog(@"[MeshPipeline] Task arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
+                        mTaskBindings[arg.name.UTF8String] = arg.index;
+                    }
+
+                    // Extract mesh shader arguments
+                    for (id<MTLBinding> arg in reflectionObj.meshBindings)
+                    {
+                        NSLog(@"[MeshPipeline] Mesh arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
+                        mMeshBindings[arg.name.UTF8String] = arg.index;
+                    }
+#else
+                    for (MTLArgument * arg in reflectionObj.objectArguments)
+                    {
+                        NSLog(@"[MeshPipeline] Task arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
+                        mTaskBindings[arg.name.UTF8String] = arg.index;
+                    }
+
+                    for (MTLArgument * arg in reflectionObj.meshArguments)
+                    {
+                        NSLog(@"[MeshPipeline] Mesh arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
+                        mMeshBindings[arg.name.UTF8String] = arg.index;
+                    }
+#endif
+                    
+                    // 如果通过 AttachGraphicsShader 绑定了 mesh shader，将反射信息也传递给 shader
+                    if (mShader && reflectionObj)
+                    {
+                        mShader->GenerateMeshRefectionInfo(reflectionObj);
+                    }
+                }
+
+                if (mPipelineCache)
+                {
+                    // Capture mode：注册到归档
+                    mPipelineCache->AddRenderPipelineState(mMeshPipelineState);
+                }
             }
         }
     }

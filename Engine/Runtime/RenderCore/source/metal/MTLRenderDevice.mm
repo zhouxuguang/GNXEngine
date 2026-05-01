@@ -175,6 +175,12 @@ GraphicsShaderPtr MTLRenderDevice::CreateGraphicsShader(const ShaderCode& vertex
     return shaderPtr;
 }
 
+GraphicsShaderPtr MTLRenderDevice::CreateMeshGraphicsShader(const ShaderCode& taskShader, const ShaderCode& meshShader, const ShaderCode& fragmentShader) const
+{
+    MTLGraphicsShaderPtr shaderPtr = std::make_shared<MTLGraphicsShader>(mMetalLayer.device, taskShader, meshShader, fragmentShader);
+    return shaderPtr;
+}
+
 /**
  创建图形管线
  */

@@ -11,6 +11,7 @@
 #include "MTLRenderDefine.h"
 #include "GraphicsPipeline.h"
 #include "MTLShaderFunction.h"
+#include <unordered_map>
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -44,10 +45,32 @@ public:
     id<MTLRenderPipelineState> getMeshPipelineState() const { return mMeshPipelineState; }
     
     bool IsMeshPipeline() const { return mMeshPipelineState != nil; }
-    
+
     id<MTLDepthStencilState> GetDepthStencilState() const
     {
         return mDepthStencilState;
+    }
+
+//    MTLRenderPipelineReflection* GetReflectionObject()
+//    {
+//        return mReflectionObj;
+//    }
+
+    // Mesh/Task shader resource bindings (populated from pipeline reflection)
+    NSUInteger GetMeshResourceBindIndex(const std::string& resourceName) const
+    {
+        auto iter = mMeshBindings.find(resourceName);
+        if (iter != mMeshBindings.end())
+            return iter->second;
+        return InvalidBindingIndex;
+    }
+
+    NSUInteger GetTaskResourceBindIndex(const std::string& resourceName) const
+    {
+        auto iter = mTaskBindings.find(resourceName);
+        if (iter != mTaskBindings.end())
+            return iter->second;
+        return InvalidBindingIndex;
     }
     
 //    MTLRenderPipelineReflection* GetReflectionObject() const
@@ -73,8 +96,12 @@ private:
     id<MTLRenderPipelineState> mMeshPipelineState = nil;
     
     uint32_t mVertexUniformOffset = 0;
-    
+
     MTLGraphicsShaderPtr mShader = nullptr;
+
+    // Mesh/Task shader resource bindings (populated from pipeline reflection)
+    std::unordered_map<std::string, NSUInteger> mMeshBindings;
+    std::unordered_map<std::string, NSUInteger> mTaskBindings;
     
     std::shared_ptr<MTLPipelineCache> mPipelineCache;
     

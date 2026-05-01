@@ -56,6 +56,8 @@ public:
 
     virtual GraphicsShaderPtr CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const;
     
+    virtual GraphicsShaderPtr CreateMeshGraphicsShader(const ShaderCode& taskShader, const ShaderCode& meshShader, const ShaderCode& fragmentShader) const;
+    
     virtual GraphicsPipelinePtr CreateGraphicsPipeline(const GraphicsPipelineDesc& des) const;
     
     virtual ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderString) const;

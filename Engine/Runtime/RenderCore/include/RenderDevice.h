@@ -114,6 +114,12 @@ public:
     virtual GraphicsShaderPtr CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const = 0;
     
     /**
+     创建Mesh GraphicsShader (Task + Mesh + Fragment)
+     taskShader可以为空（无Task Shader的Mesh Pipeline）
+     */
+    virtual GraphicsShaderPtr CreateMeshGraphicsShader(const ShaderCode& taskShader, const ShaderCode& meshShader, const ShaderCode& fragmentShader) const = 0;
+    
+    /**
      创建图形管线
      */
     virtual GraphicsPipelinePtr CreateGraphicsPipeline(const GraphicsPipelineDesc& des) const = 0;

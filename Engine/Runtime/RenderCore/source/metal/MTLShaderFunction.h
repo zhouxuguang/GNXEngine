@@ -46,7 +46,13 @@ class MTLGraphicsShader : public GraphicsShader
 public:
     MTLGraphicsShader(id<MTLDevice> device, const ShaderCode& vertexShader, const ShaderCode& fragmentShader);
     
+    // Mesh Shader 构造函数 (Task + Mesh + Fragment)
+    MTLGraphicsShader(id<MTLDevice> device, const ShaderCode& taskShader, const ShaderCode& meshShader, const ShaderCode& fragmentShader);
+    
     void GenerateRefectionInfo(MTLRenderPipelineReflection* reflectionObj);
+    
+    // Mesh Pipeline 反射信息
+    void GenerateMeshRefectionInfo(MTLRenderPipelineReflection* reflectionObj);
     
     id<MTLFunction> GetVertexFunction() const
     {
@@ -56,6 +62,21 @@ public:
     id<MTLFunction> GetFragmentFunction() const
     {
         return mFragmentFunction;
+    }
+    
+    id<MTLFunction> GetTaskFunction() const
+    {
+        return mTaskFunction;
+    }
+    
+    id<MTLFunction> GetMeshFunction() const
+    {
+        return mMeshFunction;
+    }
+    
+    bool IsMeshShader() const
+    {
+        return mMeshFunction != nil;
     }
     
     virtual std::string GetName() const
@@ -81,14 +102,38 @@ public:
         {
             return iter->second;
         }
-        
+
+        return InvalidBindingIndex;
+    }
+    
+    NSUInteger GetMeshResourceBindIndex(const std::string& resourceName) const
+    {
+        auto iter = mMeshBindings.find(resourceName);
+        if (iter != mMeshBindings.end())
+        {
+            return iter->second;
+        }
+        return InvalidBindingIndex;
+    }
+    
+    NSUInteger GetTaskResourceBindIndex(const std::string& resourceName) const
+    {
+        auto iter = mTaskBindings.find(resourceName);
+        if (iter != mTaskBindings.end())
+        {
+            return iter->second;
+        }
         return InvalidBindingIndex;
     }
 private:
     id<MTLFunction> mVertexFunction = nil;
     id<MTLFunction> mFragmentFunction = nil;
+    id<MTLFunction> mTaskFunction = nil;
+    id<MTLFunction> mMeshFunction = nil;
     std::unordered_map<std::string, NSUInteger> mVertexBindings;
     std::unordered_map<std::string, NSUInteger> mFragmentBindings;
+    std::unordered_map<std::string, NSUInteger> mMeshBindings;
+    std::unordered_map<std::string, NSUInteger> mTaskBindings;
 };
 
 using MTLGraphicsShaderPtr = std::shared_ptr<MTLGraphicsShader>;

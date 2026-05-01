@@ -146,6 +146,28 @@ void MTLRenderEncoder::SetStorageBuffer(const std::string& resourceName, RCBuffe
             [mRenderEncoder setFragmentBuffer:mtlBuffer->GetMTLBuffer() offset:0 atIndex:realIndex];
         }
     }
+    else if (stage == ShaderStage_Mesh)
+    {
+        realIndex = mMtlGraphicsPipeline->GetMeshResourceBindIndex(resourceName);
+        if (realIndex != InvalidBindingIndex)
+        {
+            if (@available(macOS 13.0, iOS 16.0, *))
+            {
+                [mRenderEncoder setMeshBuffer:mtlBuffer->GetMTLBuffer() offset:0 atIndex:realIndex];
+            }
+        }
+    }
+    else if (stage == ShaderStage_Task)
+    {
+        realIndex = mMtlGraphicsPipeline->GetTaskResourceBindIndex(resourceName);
+        if (realIndex != InvalidBindingIndex)
+        {
+            if (@available(macOS 13.0, iOS 16.0, *))
+            {
+                [mRenderEncoder setObjectBuffer:mtlBuffer->GetMTLBuffer() offset:0 atIndex:realIndex];
+            }
+        }
+    }
 }
 
 /**
@@ -572,8 +594,23 @@ void MTLRenderEncoder::DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY,
     );
 
     // Object Shader (Task Shader) threadgroup size
-    // 如果没有 object shader，threadsPerObjectThreadgroup 会被忽略
     MTLSize threadsPerObjectThreadgroup = MTLSizeMake(1, 1, 1);
+    if (pipeline->GetDesc().taskThreadgroupSizeX > 0)
+    {
+        threadsPerObjectThreadgroup = MTLSizeMake(
+            pipeline->GetDesc().taskThreadgroupSizeX,
+            pipeline->GetDesc().taskThreadgroupSizeY,
+            pipeline->GetDesc().taskThreadgroupSizeZ
+        );
+    }
+    if (pipeline->GetDesc().taskThreadgroupSizeX > 0)
+    {
+        threadsPerObjectThreadgroup = MTLSizeMake(
+            pipeline->GetDesc().taskThreadgroupSizeX,
+            pipeline->GetDesc().taskThreadgroupSizeY,
+            pipeline->GetDesc().taskThreadgroupSizeZ
+        );
+    }
 
     if (@available(macOS 13.0, iOS 16.0, *))
     {
@@ -615,6 +652,14 @@ void MTLRenderEncoder::DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset
 
     // Object Shader (Task Shader) threadgroup size
     MTLSize threadsPerObjectThreadgroup = MTLSizeMake(1, 1, 1);
+    if (pipeline->GetDesc().taskThreadgroupSizeX > 0)
+    {
+        threadsPerObjectThreadgroup = MTLSizeMake(
+            pipeline->GetDesc().taskThreadgroupSizeX,
+            pipeline->GetDesc().taskThreadgroupSizeY,
+            pipeline->GetDesc().taskThreadgroupSizeZ
+        );
+    }
     
     // 注意：Metal 的 MTLDrawMeshThreadgroupsIndirectArguments 结构体与 Vulkan 的 DrawMeshTasksIndirectCommand 不同
     // Metal 结构体: { uint32_t threadgroupsPerGrid[3]; }

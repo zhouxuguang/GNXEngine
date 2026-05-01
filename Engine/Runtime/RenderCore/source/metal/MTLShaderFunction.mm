@@ -134,39 +134,95 @@ MTLGraphicsShader::MTLGraphicsShader(id<MTLDevice> device, const ShaderCode& ver
     mFragmentFunction = CreateShaderFunction(device, fragmentShader, ShaderStage_Fragment);
 }
 
+MTLGraphicsShader::MTLGraphicsShader(id<MTLDevice> device, const ShaderCode& taskShader, const ShaderCode& meshShader, const ShaderCode& fragmentShader)
+{
+    if (!taskShader.empty())
+    {
+        mTaskFunction = CreateShaderFunction(device, taskShader, ShaderStage_Task);
+    }
+    mMeshFunction = CreateShaderFunction(device, meshShader, ShaderStage_Mesh);
+    mFragmentFunction = CreateShaderFunction(device, fragmentShader, ShaderStage_Fragment);
+}
+
 void MTLGraphicsShader::GenerateRefectionInfo(MTLRenderPipelineReflection* reflectionObj)
 {
     if (!reflectionObj)
     {
         return;
     }
-    
+
 #if SUPPORTED_NEW_REFLECT
     for (id<MTLBinding> arg in reflectionObj.vertexBindings)
     {
         NSLog(@"MTLGraphicsShader::GenerateRefectionInfo Found arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
-        
+
         mVertexBindings[arg.name.UTF8String] = arg.index;
     }
-    
+
     for (id<MTLBinding> arg in reflectionObj.fragmentBindings)
     {
         NSLog(@"MTLGraphicsShader::GenerateRefectionInfo Found arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
-        
+
         mFragmentBindings[arg.name.UTF8String] = arg.index;
     }
 #else
     for (MTLArgument * arg in reflectionObj.vertexArguments)
     {
         NSLog(@"MTLGraphicsShader::GenerateRefectionInfo Found arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
-        
+
         mVertexBindings[arg.name.UTF8String] = arg.index;
     }
-    
+
     for (MTLArgument * arg in reflectionObj.fragmentArguments)
     {
         NSLog(@"MTLGraphicsShader::GenerateRefectionInfo Found arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
-        
+
+        mFragmentBindings[arg.name.UTF8String] = arg.index;
+    }
+#endif
+}
+
+void MTLGraphicsShader::GenerateMeshRefectionInfo(MTLRenderPipelineReflection* reflectionObj)
+{
+    if (!reflectionObj)
+    {
+        return;
+    }
+
+#if SUPPORTED_NEW_REFLECT
+    for (id<MTLBinding> arg in reflectionObj.objectBindings)
+    {
+        NSLog(@"MTLGraphicsShader::GenerateMeshRefectionInfo Task arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
+        mTaskBindings[arg.name.UTF8String] = arg.index;
+    }
+
+    for (id<MTLBinding> arg in reflectionObj.meshBindings)
+    {
+        NSLog(@"MTLGraphicsShader::GenerateMeshRefectionInfo Mesh arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
+        mMeshBindings[arg.name.UTF8String] = arg.index;
+    }
+
+    for (id<MTLBinding> arg in reflectionObj.fragmentBindings)
+    {
+        NSLog(@"MTLGraphicsShader::GenerateMeshRefectionInfo Fragment arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
+        mFragmentBindings[arg.name.UTF8String] = arg.index;
+    }
+#else
+    for (MTLArgument * arg in reflectionObj.objectArguments)
+    {
+        NSLog(@"MTLGraphicsShader::GenerateMeshRefectionInfo Task arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
+        mTaskBindings[arg.name.UTF8String] = arg.index;
+    }
+
+    for (MTLArgument * arg in reflectionObj.meshArguments)
+    {
+        NSLog(@"MTLGraphicsShader::GenerateMeshRefectionInfo Mesh arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
+        mMeshBindings[arg.name.UTF8String] = arg.index;
+    }
+
+    for (MTLArgument * arg in reflectionObj.fragmentArguments)
+    {
+        NSLog(@"MTLGraphicsShader::GenerateMeshRefectionInfo Fragment arg: %@, index = %lu\n", arg.name, (unsigned long)arg.index);
         mFragmentBindings[arg.name.UTF8String] = arg.index;
     }
 #endif

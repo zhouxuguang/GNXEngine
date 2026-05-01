@@ -159,6 +159,10 @@ public:
 
 public:
     VKGraphicsShader(VulkanContextPtr context, const ShaderCode& vertexShader, const ShaderCode& fragmentShader);
+
+    // Mesh Shader 构造函数 (Task + Mesh + Fragment)
+    VKGraphicsShader(VulkanContextPtr context, const ShaderCode& taskShader, const ShaderCode& meshShader, const ShaderCode& fragmentShader);
+
     ~VKGraphicsShader();
 
     virtual std::string GetName() const
@@ -169,8 +173,16 @@ public:
     VkShaderModule GetVertexShaderModule() const { return mVertexShader; }
     VkShaderModule GetFragmentShaderModule() const { return mFragShader; }
 
+    VkShaderModule GetTaskShaderModule() const { return mTaskShaderModule; }
+    VkShaderModule GetMeshShaderModule() const { return mMeshShaderModule; }
+
     const std::string& GetVertexEntryName() const { return mVertexEntryName; }
     const std::string& GetFragmentEntryName() const { return mFragmentEntryName; }
+
+    const std::string& GetTaskEntryName() const { return mTaskEntryName; }
+    const std::string& GetMeshEntryName() const { return mMeshEntryName; }
+
+    bool IsMeshShader() const { return mMeshShaderModule != VK_NULL_HANDLE; }
 
     auto& GetDescriptorSetLayouts() const { return mDescriptorSetLayouts; }
     auto& GetCurrentDescriptorSets() const { return mDescriptorSets[mCurrentFrame]; }
@@ -231,10 +243,14 @@ private:
     VulkanContextPtr mContext = nullptr;
     VkShaderModule mVertexShader = VK_NULL_HANDLE;
     VkShaderModule mFragShader = VK_NULL_HANDLE;
+    VkShaderModule mTaskShaderModule = VK_NULL_HANDLE;
+    VkShaderModule mMeshShaderModule = VK_NULL_HANDLE;
     uint32_t mCurrentFrame = 0;
 
 	std::string mVertexEntryName;
     std::string mFragmentEntryName;
+    std::string mTaskEntryName;
+    std::string mMeshEntryName;
 
     std::unordered_map<std::string, BindMetaData> mReflectionDatas;
 

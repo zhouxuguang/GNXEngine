@@ -88,6 +88,11 @@ public:
     virtual GraphicsShaderPtr CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const;
     
     /**
+    创建Mesh图形shader (Task + Mesh + Fragment)
+     */
+    virtual GraphicsShaderPtr CreateMeshGraphicsShader(const ShaderCode& taskShader, const ShaderCode& meshShader, const ShaderCode& fragmentShader) const;
+    
+    /**
      创建图形管线
      */
     virtual GraphicsPipelinePtr CreateGraphicsPipeline(const GraphicsPipelineDesc& des) const;

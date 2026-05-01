@@ -319,6 +319,9 @@ struct GraphicsPipelineDesc
     uint32_t meshThreadgroupSizeX = 1;    // 每个mesh threadgroup的线程数
     uint32_t meshThreadgroupSizeY = 1;
     uint32_t meshThreadgroupSizeZ = 1;
+    uint32_t taskThreadgroupSizeX = 1;    // 每个task threadgroup的线程数 (Metal Object Shader)
+    uint32_t taskThreadgroupSizeY = 1;
+    uint32_t taskThreadgroupSizeZ = 1;
     uint32_t taskPayloadSize = 0;           // Vulkan Task Shader payload 大小（Metal 忽略）
     uint32_t maxObjectPayloadMeshlets = 0;  // Metal maxTotalThreadgroupsPerMeshGrid（Vulkan 忽略）
 
