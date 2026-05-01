@@ -35,12 +35,22 @@ message("ISPC: ${CMAKE_ISPC_COMPILER}")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Engine)
 
-enable_testing()
+# 编译选项：单元测试和编辑器默认关闭，通过 -DENABLE_TESTING=ON / -DENABLE_EDITOR=ON 打开
+option(ENABLE_TESTING "Build unit tests" OFF)
+option(ENABLE_EDITOR "Build editor" OFF)
 
 add_subdirectory(Engine/Runtime)
-add_subdirectory(Engine/Editor)
+
+if(ENABLE_EDITOR)
+    add_subdirectory(Engine/Editor)
+endif()
+
 add_subdirectory(ThirdParty)
 add_subdirectory(test)
-add_subdirectory(unittest)
 add_subdirectory(demo)
+
+if(ENABLE_TESTING)
+    enable_testing()
+    add_subdirectory(unittest)
+endif()
 
