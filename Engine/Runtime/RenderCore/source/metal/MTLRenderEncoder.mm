@@ -603,14 +603,6 @@ void MTLRenderEncoder::DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY,
             pipeline->GetDesc().taskThreadgroupSizeZ
         );
     }
-    if (pipeline->GetDesc().taskThreadgroupSizeX > 0)
-    {
-        threadsPerObjectThreadgroup = MTLSizeMake(
-            pipeline->GetDesc().taskThreadgroupSizeX,
-            pipeline->GetDesc().taskThreadgroupSizeY,
-            pipeline->GetDesc().taskThreadgroupSizeZ
-        );
-    }
 
     if (@available(macOS 13.0, iOS 16.0, *))
     {
