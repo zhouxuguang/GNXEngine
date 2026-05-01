@@ -161,7 +161,9 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
     renderEncoder->SetGraphicsPipeline(terrainGBufferPSO);
 
     if (mWireframe)
+    {
         renderEncoder->SetFillMode(FillModeWireframe);
+    }
 
     // Bind UBOs
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
@@ -172,17 +174,17 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
     renderEncoder->SetStorageBuffer("gPatchMeta", visiblePatchMeta,
         RenderCore::ShaderStage_Vertex);
 
-    // Bind heightmap texture (accessible from VS via shared descriptor)
+    // Bind heightmap texture + sampler to BOTH vertex and fragment stages
+    // VS samples gHeightmap.SampleLevel(gHeightmapSam, ...) for height displacement
     RenderCore::SamplerDesc heightmapSamplerDesc(
         RenderCore::MAG_LINEAR, RenderCore::MIN_LINEAR,
         RenderCore::CLAMP_TO_EDGE, RenderCore::CLAMP_TO_EDGE);
     auto heightmapSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(heightmapSamplerDesc);
-    renderEncoder->SetFragmentTextureAndSampler("gHeightmap", heightmapTexture, heightmapSampler);
+    renderEncoder->SetVertexTextureAndSampler("gHeightmap", heightmapTexture, heightmapSampler);
 
-    // Bind template mesh vertex buffers (SoA layout: positions | texCoords)
+    // Bind template mesh vertex buffers
     uint32_t posSize = mQuadTreeTerrain->GetTemplatePositionSize();
-    renderEncoder->SetVertexBuffer(templateVB, 0, 0);       // positions at offset 0
-    renderEncoder->SetVertexBuffer(templateVB, posSize, 1);  // texCoords at offset posSize
+    renderEncoder->SetVertexBuffer(templateVB, 0, 0);
 
     // Bind material textures
     TextureSamplerPtr textureSampler;
@@ -263,7 +265,9 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
     renderEncoder->SetGraphicsPipeline(terrainDepthPSO);
 
     if (mWireframe)
+    {
         renderEncoder->SetFillMode(FillModeWireframe);
+    }
 
     // Bind UBOs
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
@@ -274,17 +278,15 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
     renderEncoder->SetStorageBuffer("gPatchMeta", visiblePatchMeta,
         RenderCore::ShaderStage_Vertex);
 
-    // Bind heightmap texture
+    // Bind heightmap texture + sampler to BOTH vertex and fragment stages
     RenderCore::SamplerDesc heightmapSamplerDesc(
         RenderCore::MAG_LINEAR, RenderCore::MIN_LINEAR,
         RenderCore::CLAMP_TO_EDGE, RenderCore::CLAMP_TO_EDGE);
     auto heightmapSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(heightmapSamplerDesc);
-    renderEncoder->SetFragmentTextureAndSampler("gHeightmap", heightmapTexture, heightmapSampler);
+    renderEncoder->SetVertexTextureAndSampler("gHeightmap", heightmapTexture, heightmapSampler);
 
-    // Bind template mesh vertex buffers
     uint32_t posSize = mQuadTreeTerrain->GetTemplatePositionSize();
-    renderEncoder->SetVertexBuffer(templateVB, 0, 0);       // positions at offset 0
-    renderEncoder->SetVertexBuffer(templateVB, posSize, 1);  // texCoords at offset posSize
+    renderEncoder->SetVertexBuffer(templateVB, 0, 0);
 
     // ---- Instanced draw: one instance per visible patch ----
     renderEncoder->DrawIndexedInstancePrimitives(

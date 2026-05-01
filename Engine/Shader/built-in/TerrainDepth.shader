@@ -47,7 +47,6 @@ cbuffer cbTerrain
 struct VertexInput
 {
     float3 position : POSITION;
-    float2 texCoord : TEXCOORD0;
     uint   instanceID : SV_InstanceID;
 };
 
