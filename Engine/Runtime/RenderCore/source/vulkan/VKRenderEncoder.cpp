@@ -912,7 +912,7 @@ void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceNa
     VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
 
     VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
-    
+
     if (vkTexture)
     {
         // 根据纹理格式选择正确的布局
@@ -934,6 +934,13 @@ void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceNa
     {
         shader->BindSampler(mCommandBuffer, resourceName + "Sam", vkSampler->GetVKSampler(), mGraphicsPipieline->GetPipelineLayout());
     }
+}
+
+void VKRenderEncoder::SetVertexTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
+{
+    // Vulkan uses combined image samplers in the descriptor set; the same binding
+    // is accessible from any shader stage. Just delegate to the fragment version.
+    SetFragmentTextureAndSampler(resourceName, texture, sampler);
 }
 
 void VKRenderEncoder::DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)

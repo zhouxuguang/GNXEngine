@@ -139,6 +139,7 @@ public:
                                                uint32_t firstInstance, uint32_t instanceCount);
     
     virtual void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
+    virtual void SetVertexTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
 
     // ===== Mesh Shader 绘制接口 =====
     virtual void DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);

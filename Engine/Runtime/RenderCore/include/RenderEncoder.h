@@ -202,6 +202,15 @@ public:
      * @param sampler 采样器句柄
      */
     virtual void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler) = 0;
+
+    /**
+     * @brief 设置顶点着色器的纹理和采样器
+     *
+     * @param resourceName 对应shader中的名字
+     * @param texture 纹理句柄
+     * @param sampler 采样器句柄
+     */
+    virtual void SetVertexTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler) = 0;
     
     // ==================== Mesh Shader 绘制接口 ====================
     

@@ -675,6 +675,46 @@ void MTLRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceN
     }
 }
 
+void MTLRenderEncoder::SetVertexTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
+{
+    MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();
+    if (!shader)
+    {
+        return;
+    }
+
+    NSUInteger texIndex = shader->GetVertexResourceBindIndex(resourceName);
+    if (texIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    NSUInteger samIndex = shader->GetVertexResourceBindIndex(resourceName + "Sam");
+    if (samIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+
+    if (!texture)
+    {
+        [mRenderEncoder setVertexTexture:nil atIndex:texIndex];
+    }
+    else
+    {
+        id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTextureBase>(texture)->getMTLTexture();
+        [mRenderEncoder setVertexTexture:mtlTexture atIndex:texIndex];
+    }
+
+    if (!sampler)
+    {
+        [mRenderEncoder setVertexSamplerState:nil atIndex:samIndex];
+    }
+    else
+    {
+        id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
+        [mRenderEncoder setVertexSamplerState:mtlSampler atIndex:samIndex];
+    }
+}
+
 // ===== 动态渲染状态实现 =====
 
 void MTLRenderEncoder::SetScissorRect(int x, int y, uint32_t width, uint32_t height)
