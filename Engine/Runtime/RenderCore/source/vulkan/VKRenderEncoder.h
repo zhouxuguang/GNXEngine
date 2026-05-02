@@ -76,7 +76,9 @@ public:
     
     virtual void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
     virtual void SetVertexTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
-    
+    virtual void SetMeshTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
+    virtual void SetTaskTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
+
     // ===== Mesh Shader 绘制接口 =====
     virtual void DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
     virtual void DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset,

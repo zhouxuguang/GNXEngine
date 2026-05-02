@@ -943,6 +943,20 @@ void VKRenderEncoder::SetVertexTextureAndSampler(const std::string& resourceName
     SetFragmentTextureAndSampler(resourceName, texture, sampler);
 }
 
+void VKRenderEncoder::SetMeshTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
+{
+    // Vulkan descriptor sets are pipeline-level and shared across all stages.
+    // The combined image sampler binding is accessible from mesh stage as well.
+    SetFragmentTextureAndSampler(resourceName, texture, sampler);
+}
+
+void VKRenderEncoder::SetTaskTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
+{
+    // Vulkan descriptor sets are pipeline-level and shared across all stages.
+    // The combined image sampler binding is accessible from task stage as well.
+    SetFragmentTextureAndSampler(resourceName, texture, sampler);
+}
+
 void VKRenderEncoder::DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
     if (mContext->vulkanExtension.enableMeshShaderEXT)

@@ -752,6 +752,90 @@ void MTLRenderEncoder::SetVertexTextureAndSampler(const std::string& resourceNam
     }
 }
 
+void MTLRenderEncoder::SetMeshTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
+{
+    if (!mMtlGraphicsPipeline)
+    {
+        return;
+    }
+
+    NSUInteger texIndex = mMtlGraphicsPipeline->GetMeshResourceBindIndex(resourceName);
+    if (texIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    NSUInteger samIndex = mMtlGraphicsPipeline->GetMeshResourceBindIndex(resourceName + "Sam");
+    if (samIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+
+    if (@available(macOS 13.0, iOS 16.0, *))
+    {
+        if (!texture)
+        {
+            [mRenderEncoder setMeshTexture:nil atIndex:texIndex];
+        }
+        else
+        {
+            id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTextureBase>(texture)->getMTLTexture();
+            [mRenderEncoder setMeshTexture:mtlTexture atIndex:texIndex];
+        }
+
+        if (!sampler)
+        {
+            [mRenderEncoder setMeshSamplerState:nil atIndex:samIndex];
+        }
+        else
+        {
+            id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
+            [mRenderEncoder setMeshSamplerState:mtlSampler atIndex:samIndex];
+        }
+    }
+}
+
+void MTLRenderEncoder::SetTaskTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
+{
+    if (!mMtlGraphicsPipeline)
+    {
+        return;
+    }
+
+    NSUInteger texIndex = mMtlGraphicsPipeline->GetTaskResourceBindIndex(resourceName);
+    if (texIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+    NSUInteger samIndex = mMtlGraphicsPipeline->GetTaskResourceBindIndex(resourceName + "Sam");
+    if (samIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+
+    if (@available(macOS 13.0, iOS 16.0, *))
+    {
+        if (!texture)
+        {
+            [mRenderEncoder setObjectTexture:nil atIndex:texIndex];
+        }
+        else
+        {
+            id<MTLTexture> mtlTexture = std::dynamic_pointer_cast<MTLTextureBase>(texture)->getMTLTexture();
+            [mRenderEncoder setObjectTexture:mtlTexture atIndex:texIndex];
+        }
+
+        if (!sampler)
+        {
+            [mRenderEncoder setObjectSamplerState:nil atIndex:samIndex];
+        }
+        else
+        {
+            id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
+            [mRenderEncoder setObjectSamplerState:mtlSampler atIndex:samIndex];
+        }
+    }
+}
+
 // ===== 动态渲染状态实现 =====
 
 void MTLRenderEncoder::SetScissorRect(int x, int y, uint32_t width, uint32_t height)
