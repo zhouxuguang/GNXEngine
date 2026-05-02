@@ -196,7 +196,13 @@ void MeshShaderFrameWork::RenderFrame()
 
     // draw: 2 object threadgroups -> each dispatches 1 mesh threadgroup -> 2 triangles
     // Triangle 0 from vertices[0..2], Triangle 1 from vertices[3..5]
-    renderEncoder->DrawMeshTasks(2, 1, 1);
+    
+    const uint32_t* groupSizes = mMeshPipeline->GetMeshThreadgroupSize();
+    uint32_t groupSizeX = groupSizes[0];
+    uint32_t groupSizeY = groupSizes[1];
+    uint32_t groupSizeZ = groupSizes[2];
+    
+    renderEncoder->DrawMeshTasks((groupSizeX * 2 + groupSizeX - 1) / groupSizeX , (1 + groupSizeY - 1) / groupSizeY, 1);
 
     renderEncoder->EndEncode();
     commandBuffer->PresentFrameBuffer();
