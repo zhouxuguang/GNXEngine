@@ -39,11 +39,11 @@ struct MeshPayload
 groupshared MeshPayload payload;
 
 [numthreads(1, 1, 1)]
-void TS(uint dtid : SV_DispatchThreadID)
+void TS(in uint groupId : SV_GroupID)
 {
     // Dispatch one mesh workgroup per triangle
     // The demo has 2 triangles in the vertex buffer
-    payload.triangleIndex = dtid;
+    payload.triangleIndex = groupId;
     DispatchMesh(1, 1, 1, payload);
 }
 
@@ -56,11 +56,10 @@ struct VertexOutput
 
 [outputtopology("triangle")]
 [numthreads(1, 1, 1)]
-void MS(out indices uint3 triangles[1], out vertices VertexOutput vertices[3])
+void MS(out indices uint3 triangles[1], out vertices VertexOutput vertices[3], uint3 dispatchThreadID : SV_DispatchThreadID)
 {
     float4x4 mvp = mul(projection, mul(view, model));
 
-    // Read payload from task shader to determine which triangle to output
     uint triIdx = payload.triangleIndex;
     uint baseVertex = triIdx * VERTS_PER_TRIANGLE;
 
