@@ -46,6 +46,10 @@ public:
     
     bool IsMeshPipeline() const { return mMeshPipelineState != nil; }
 
+    // Mesh Pipeline PSO 反射属性：threadgroup 大小（从 Metal 编译后的 PSO 获取）
+    const uint32_t* GetMeshThreadgroupSize() const { return mMeshThreadgroupSize; }
+    const uint32_t* GetTaskThreadgroupSize() const { return mTaskThreadgroupSize; }
+
     id<MTLDepthStencilState> GetDepthStencilState() const
     {
         return mDepthStencilState;
@@ -102,6 +106,10 @@ private:
     // Mesh/Task shader resource bindings (populated from pipeline reflection)
     std::unordered_map<std::string, NSUInteger> mMeshBindings;
     std::unordered_map<std::string, NSUInteger> mTaskBindings;
+
+    // Mesh Pipeline PSO 反射的 threadgroup 大小（在 Generate() 中从 PSO 读取）
+    uint32_t mMeshThreadgroupSize[3] = {1, 1, 1};
+    uint32_t mTaskThreadgroupSize[3] = {1, 1, 1};
     
     std::shared_ptr<MTLPipelineCache> mPipelineCache;
     

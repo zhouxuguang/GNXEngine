@@ -282,12 +282,6 @@ MTLGraphicsPipeline::MTLGraphicsPipeline(id<MTLDevice> device, const GraphicsPip
             mMeshPipelineDes.colorAttachments[i].alphaBlendOperation = (MTLBlendOperation)des.colorAttachmentDescriptors[i].aplhaBlendOperation;
             mMeshPipelineDes.colorAttachments[i].writeMask = (MTLColorWriteMask)des.colorAttachmentDescriptors[i].writeMask;
         }
-        
-        // 设置 Metal mesh pipeline 特有属性
-        if (des.maxObjectPayloadMeshlets > 0)
-        {
-            mMeshPipelineDes.maxTotalThreadgroupsPerMeshGrid = des.maxObjectPayloadMeshlets;
-        }
     }
     else
     {
@@ -419,6 +413,24 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
             }
             else
             {
+                // 从 PSO 反射属性读取 mesh/task shader 的 threadgroup 大小
+                if (@available(macOS 13.0, iOS 16.0, *))
+                {
+                    // Object (Task) shader: threadsPerObjectThreadgroup
+                    uint32_t objExecWidth = (uint32_t)mMeshPipelineState.objectThreadExecutionWidth;
+                    uint32_t objMaxTotal  = (uint32_t)mMeshPipelineState.maxTotalThreadsPerObjectThreadgroup;
+                    mTaskThreadgroupSize[0] = objExecWidth;
+                    mTaskThreadgroupSize[1] = objMaxTotal / objExecWidth;
+                    mTaskThreadgroupSize[2] = 1;
+
+                    // Mesh shader: threadsPerMeshThreadgroup
+                    uint32_t meshExecWidth = (uint32_t)mMeshPipelineState.meshThreadExecutionWidth;
+                    uint32_t meshMaxTotal  = (uint32_t)mMeshPipelineState.maxTotalThreadsPerMeshThreadgroup;
+                    mMeshThreadgroupSize[0] = meshExecWidth;
+                    mMeshThreadgroupSize[1] = meshMaxTotal / meshExecWidth;
+                    mMeshThreadgroupSize[2] = 1;
+                }
+
                 // Populate mesh/task resource bindings from reflection
                 if (reflectionObj)
                 {

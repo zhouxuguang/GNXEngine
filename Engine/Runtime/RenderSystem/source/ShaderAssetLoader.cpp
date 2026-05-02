@@ -89,22 +89,6 @@ GraphicsShaderInfo CreateGraphicsShaderInfo(const std::string& shaderName)
         
         // Mesh Pipeline 不需要顶点描述
         graphicsShaderInfo.graphicsPipelineDesc.pipelineType = PipelineType::Mesh;
-        
-        // 从 mesh shader 的编译信息中提取 threadgroup 大小
-        if (shaderAssetString.meshShader->threadgroupSizeX > 0)
-        {
-            graphicsShaderInfo.graphicsPipelineDesc.meshThreadgroupSizeX = shaderAssetString.meshShader->threadgroupSizeX;
-            graphicsShaderInfo.graphicsPipelineDesc.meshThreadgroupSizeY = shaderAssetString.meshShader->threadgroupSizeY;
-            graphicsShaderInfo.graphicsPipelineDesc.meshThreadgroupSizeZ = shaderAssetString.meshShader->threadgroupSizeZ;
-        }
-        
-        // 从 task shader 的编译信息中提取 threadgroup 大小
-        if (shaderAssetString.taskShader && shaderAssetString.taskShader->threadgroupSizeX > 0)
-        {
-            graphicsShaderInfo.graphicsPipelineDesc.taskThreadgroupSizeX = shaderAssetString.taskShader->threadgroupSizeX;
-            graphicsShaderInfo.graphicsPipelineDesc.taskThreadgroupSizeY = shaderAssetString.taskShader->threadgroupSizeY;
-            graphicsShaderInfo.graphicsPipelineDesc.taskThreadgroupSizeZ = shaderAssetString.taskShader->threadgroupSizeZ;
-        }
     }
     else
     {

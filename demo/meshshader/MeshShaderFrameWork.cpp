@@ -60,9 +60,6 @@ void MeshShaderFrameWork::CreatePipeline()
         return;
     }
 
-    // 补充 pipeline 描述
-    shaderInfo.graphicsPipelineDesc.maxObjectPayloadMeshlets = 3;
-
     // color attachment (default RGBA8)
     shaderInfo.graphicsPipelineDesc.renderTargetCount = 1;
     shaderInfo.graphicsPipelineDesc.colorAttachmentDescriptors[0].blendingEnabled = false;

@@ -315,16 +315,6 @@ struct GraphicsPipelineDesc
     // 以下字段在 PipelineType::Graphics 时使用
     VertexDesc vertexDescriptor;                                                  //顶点buffer数据描述
 
-    // 以下字段在 PipelineType::Mesh 时使用
-    uint32_t meshThreadgroupSizeX = 1;    // 每个mesh threadgroup的线程数
-    uint32_t meshThreadgroupSizeY = 1;
-    uint32_t meshThreadgroupSizeZ = 1;
-    uint32_t taskThreadgroupSizeX = 1;    // 每个task threadgroup的线程数 (Metal Object Shader)
-    uint32_t taskThreadgroupSizeY = 1;
-    uint32_t taskThreadgroupSizeZ = 1;
-    uint32_t taskPayloadSize = 0;           // Vulkan Task Shader payload 大小（Metal 忽略）
-    uint32_t maxObjectPayloadMeshlets = 0;  // Metal maxTotalThreadgroupsPerMeshGrid（Vulkan 忽略）
-
     // 以下两种模式共用
     uint32_t renderTargetCount = 1;
     ColorAttachmentDesc colorAttachmentDescriptors[MAX_COLOR_ATTACHMENT_COUNT];   //颜色相关描述
@@ -340,17 +330,6 @@ public:
         if (pipelineType == PipelineType::Graphics && vertexDescriptor != des.vertexDescriptor)
         {
             return false;
-        }
-        if (pipelineType == PipelineType::Mesh)
-        {
-            if (meshThreadgroupSizeX != des.meshThreadgroupSizeX ||
-                meshThreadgroupSizeY != des.meshThreadgroupSizeY ||
-                meshThreadgroupSizeZ != des.meshThreadgroupSizeZ ||
-                taskPayloadSize != des.taskPayloadSize ||
-                maxObjectPayloadMeshlets != des.maxObjectPayloadMeshlets)
-            {
-                return false;
-            }
         }
         if (depthStencilDescriptor != des.depthStencilDescriptor)
         {

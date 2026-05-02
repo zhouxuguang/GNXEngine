@@ -578,31 +578,16 @@ void MTLRenderEncoder::DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY,
     {
         return;
     }
-    
-    MTLSize threadgroupsPerGrid = MTLSizeMake(groupCountX, groupCountY, groupCountZ);
-    
-    // threadsPerObjectThreadgroup 从 pipeline descriptor 中获取
-    // Metal mesh shader 的线程组大小由 pipeline 创建时确定
-    MTLGraphicsPipeline* pipeline = mMtlGraphicsPipeline.get();
-    uint32_t meshThreadsX = pipeline->GetDesc().meshThreadgroupSizeX;
-    uint32_t meshThreadsY = pipeline->GetDesc().meshThreadgroupSizeY;
-    uint32_t meshThreadsZ = pipeline->GetDesc().meshThreadgroupSizeZ;
-    MTLSize threadsPerMeshThreadgroup = MTLSizeMake(
-        meshThreadsX > 0 ? meshThreadsX : 1,
-        meshThreadsY > 0 ? meshThreadsY : 1,
-        meshThreadsZ > 0 ? meshThreadsZ : 1
-    );
 
-    // Object Shader (Task Shader) threadgroup size
-    MTLSize threadsPerObjectThreadgroup = MTLSizeMake(1, 1, 1);
-    if (pipeline->GetDesc().taskThreadgroupSizeX > 0)
-    {
-        threadsPerObjectThreadgroup = MTLSizeMake(
-            pipeline->GetDesc().taskThreadgroupSizeX,
-            pipeline->GetDesc().taskThreadgroupSizeY,
-            pipeline->GetDesc().taskThreadgroupSizeZ
-        );
-    }
+    MTLSize threadgroupsPerGrid = MTLSizeMake(groupCountX, groupCountY, groupCountZ);
+
+    // 从 PSO 反射属性获取 threadgroup 大小（Metal 编译后自动从 [numthreads] 计算）
+    MTLGraphicsPipeline* pipeline = mMtlGraphicsPipeline.get();
+    const uint32_t* meshThreads = pipeline->GetMeshThreadgroupSize();
+    MTLSize threadsPerMeshThreadgroup = MTLSizeMake(meshThreads[0], meshThreads[1], meshThreads[2]);
+
+    const uint32_t* taskThreads = pipeline->GetTaskThreadgroupSize();
+    MTLSize threadsPerObjectThreadgroup = MTLSizeMake(taskThreads[0], taskThreads[1], taskThreads[2]);
 
     if (@available(macOS 13.0, iOS 16.0, *))
     {
@@ -619,39 +604,26 @@ void MTLRenderEncoder::DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset
     {
         return;
     }
-    
+
     MTLRCBufferPtr mtlBufferPtr = std::dynamic_pointer_cast<MTLRCBuffer>(buffer);
     if (!mtlBufferPtr)
     {
         return;
     }
-    
+
     id<MTLBuffer> mtlBuffer = mtlBufferPtr->GetMTLBuffer();
     if (!mtlBuffer)
     {
         return;
     }
-    
-    MTLGraphicsPipeline* pipeline = mMtlGraphicsPipeline.get();
-    uint32_t meshThreadsX = pipeline->GetDesc().meshThreadgroupSizeX;
-    uint32_t meshThreadsY = pipeline->GetDesc().meshThreadgroupSizeY;
-    uint32_t meshThreadsZ = pipeline->GetDesc().meshThreadgroupSizeZ;
-    MTLSize threadsPerMeshThreadgroup = MTLSizeMake(
-        meshThreadsX > 0 ? meshThreadsX : 1,
-        meshThreadsY > 0 ? meshThreadsY : 1,
-        meshThreadsZ > 0 ? meshThreadsZ : 1
-    );
 
-    // Object Shader (Task Shader) threadgroup size
-    MTLSize threadsPerObjectThreadgroup = MTLSizeMake(1, 1, 1);
-    if (pipeline->GetDesc().taskThreadgroupSizeX > 0)
-    {
-        threadsPerObjectThreadgroup = MTLSizeMake(
-            pipeline->GetDesc().taskThreadgroupSizeX,
-            pipeline->GetDesc().taskThreadgroupSizeY,
-            pipeline->GetDesc().taskThreadgroupSizeZ
-        );
-    }
+    // 从 PSO 反射属性获取 threadgroup 大小（Metal 编译后自动从 [numthreads] 计算）
+    MTLGraphicsPipeline* pipeline = mMtlGraphicsPipeline.get();
+    const uint32_t* meshThreads = pipeline->GetMeshThreadgroupSize();
+    MTLSize threadsPerMeshThreadgroup = MTLSizeMake(meshThreads[0], meshThreads[1], meshThreads[2]);
+
+    const uint32_t* taskThreads = pipeline->GetTaskThreadgroupSize();
+    MTLSize threadsPerObjectThreadgroup = MTLSizeMake(taskThreads[0], taskThreads[1], taskThreads[2]);
     
     // 注意：Metal 的 MTLDrawMeshThreadgroupsIndirectArguments 结构体与 Vulkan 的 DrawMeshTasksIndirectCommand 不同
     // Metal 结构体: { uint32_t threadgroupsPerGrid[3]; }
