@@ -698,6 +698,50 @@ void VKRenderEncoder::SetTaskUniformBuffer(UniformBufferPtr buffer, int index)
         mGraphicsPipieline->GetPipelineLayout(), 0, 1, &writeDescriptorSet);
 }
 
+void VKRenderEncoder::SetMeshUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+{
+    if (!buffer || !mGraphicsPipieline)
+    {
+        return;
+    }
+
+    VKUniformBuffer* vkUniformBuffer = (VKUniformBuffer*)buffer.get();
+    VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+    if (!shader)
+    {
+        return;
+    }
+
+    ShaderBufferDesc bufferDesc;
+    bufferDesc.buffer = vkUniformBuffer->GetBuffer();
+    bufferDesc.offset = 0;
+    bufferDesc.range = VK_WHOLE_SIZE;
+
+    shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
+}
+
+void VKRenderEncoder::SetTaskUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+{
+    if (!buffer || !mGraphicsPipieline)
+    {
+        return;
+    }
+
+    VKUniformBuffer* vkUniformBuffer = (VKUniformBuffer*)buffer.get();
+    VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+    if (!shader)
+    {
+        return;
+    }
+
+    ShaderBufferDesc bufferDesc;
+    bufferDesc.buffer = vkUniformBuffer->GetBuffer();
+    bufferDesc.offset = 0;
+    bufferDesc.range = VK_WHOLE_SIZE;
+
+    shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
+}
+
 void VKRenderEncoder::DrawPrimitives(PrimitiveMode mode, int offset, int size)
 {
     //设置图元拓扑类型，需要使用扩展动态状态
@@ -912,6 +956,10 @@ void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceNa
     VKTextureSampler* vkSampler = (VKTextureSampler*)sampler.get();
 
     VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
+    if (!shader)
+    {
+        return;
+    }
 
     if (vkTexture)
     {

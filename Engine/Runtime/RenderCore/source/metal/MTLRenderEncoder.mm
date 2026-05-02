@@ -270,6 +270,56 @@ void MTLRenderEncoder::SetTaskUniformBuffer(UniformBufferPtr buffer, int index)
     }
 }
 
+void MTLRenderEncoder::SetMeshUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+{
+    if (!buffer || !mMtlGraphicsPipeline)
+    {
+        return;
+    }
+
+    NSUInteger realIndex = mMtlGraphicsPipeline->GetMeshResourceBindIndex(resourceName);
+    if (realIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+
+    MTLUniformBuffer *mtlBuffer = (MTLUniformBuffer *)buffer.get();
+    if (mtlBuffer->isBuffer())
+    {
+        [mRenderEncoder setMeshBuffer:mtlBuffer->getMTLBuffer() offset:0 atIndex:realIndex];
+    }
+    else
+    {
+        const std::vector<uint8_t>& bufferData = mtlBuffer->getBufferData();
+        [mRenderEncoder setMeshBytes:bufferData.data() length:bufferData.size() atIndex:realIndex];
+    }
+}
+
+void MTLRenderEncoder::SetTaskUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer)
+{
+    if (!buffer || !mMtlGraphicsPipeline)
+    {
+        return;
+    }
+
+    NSUInteger realIndex = mMtlGraphicsPipeline->GetTaskResourceBindIndex(resourceName);
+    if (realIndex == InvalidBindingIndex)
+    {
+        return;
+    }
+
+    MTLUniformBuffer *mtlBuffer = (MTLUniformBuffer *)buffer.get();
+    if (mtlBuffer->isBuffer())
+    {
+        [mRenderEncoder setObjectBuffer:mtlBuffer->getMTLBuffer() offset:0 atIndex:realIndex];
+    }
+    else
+    {
+        const std::vector<uint8_t>& bufferData = mtlBuffer->getBufferData();
+        [mRenderEncoder setObjectBytes:bufferData.data() length:bufferData.size() atIndex:realIndex];
+    }
+}
+
 void MTLRenderEncoder::SetFragmentStorageTexture(const std::string& resourceName, RCTexturePtr texture)
 {
     MTLGraphicsShaderPtr shader = mMtlGraphicsPipeline->GetShader();

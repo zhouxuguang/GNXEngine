@@ -407,12 +407,12 @@ VKGraphicsShader::~VKGraphicsShader()
     if (mTaskShaderModule)
     {
         vkDestroyShaderModule(mContext->device, mTaskShaderModule, nullptr);
-        mFragShader = VK_NULL_HANDLE;
+        mTaskShaderModule = VK_NULL_HANDLE;
     }
     if (mMeshShaderModule)
     {
         vkDestroyShaderModule(mContext->device, mMeshShaderModule, nullptr);
-        mFragShader = VK_NULL_HANDLE;
+        mMeshShaderModule = VK_NULL_HANDLE;
     }
 
 	// destroy layout

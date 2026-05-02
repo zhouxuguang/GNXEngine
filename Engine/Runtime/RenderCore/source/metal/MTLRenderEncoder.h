@@ -105,6 +105,22 @@ public:
     virtual void SetTaskUniformBuffer(UniformBufferPtr buffer, int index);
 
     /**
+     设置mesh shader的uniformbuffer（按资源名绑定）
+
+     @param resourceName shader中的资源名
+     @param buffer buffer description
+     */
+    virtual void SetMeshUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+
+    /**
+     设置task shader的uniformbuffer（按资源名绑定）
+
+     @param resourceName shader中的资源名
+     @param buffer buffer description
+     */
+    virtual void SetTaskUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+
+    /**
      draw function
      
      @param mode mode description

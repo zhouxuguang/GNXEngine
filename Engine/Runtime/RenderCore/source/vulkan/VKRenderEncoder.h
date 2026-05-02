@@ -65,6 +65,10 @@ public:
 
     virtual void SetTaskUniformBuffer(UniformBufferPtr buffer, int index);
 
+    virtual void SetMeshUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+
+    virtual void SetTaskUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+
     virtual void DrawPrimitives(PrimitiveMode mode, int offset, int size);
 
     virtual void DrawInstancePrimitives(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount);
