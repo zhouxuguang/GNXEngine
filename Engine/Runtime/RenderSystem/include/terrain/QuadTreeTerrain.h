@@ -227,7 +227,7 @@ private:
     std::vector<RenderCore::DrawIndexedIndirectCommand> mIndirectCommands;
 
     // LOD 配置
-    float mLODDistanceFactor = 0.5f; // 阈值 = 节点世界尺寸 * factor
+    float mLODDistanceFactor = 2.0f; // 阈值 = 节点世界尺寸 * factor（中心点距离需要比最近点距离更大的因子）
     float mSSEThreshold = 32.0f;
     float mTanHalfFovY = 0.0f;
     float mScreenHeight = 0.0f;

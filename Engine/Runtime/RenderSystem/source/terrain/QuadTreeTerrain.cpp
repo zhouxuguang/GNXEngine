@@ -679,13 +679,9 @@ bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPo
     float nodeWorldSize = (float)node.size * (mWorldSize / (float)(mGridSize - 1));
     float threshold = nodeWorldSize * mLODDistanceFactor;
 
-    // 使用 AABB 最近点距离（相机在 AABB 内 → 距离=0 → 始终细分）
-    float dx = std::max(0.0f, std::max(node.bounds.minimum.x - cameraPos.x,
-                                        cameraPos.x - node.bounds.maximum.x));
-    float dy = std::max(0.0f, std::max(node.bounds.minimum.y - cameraPos.y,
-                                        cameraPos.y - node.bounds.maximum.y));
-    float dz = std::max(0.0f, std::max(node.bounds.minimum.z - cameraPos.z,
-                                        cameraPos.z - node.bounds.maximum.z));
+    float dx = cameraPos.x - node.bounds.center.x;
+    float dz = cameraPos.z - node.bounds.center.z;
+    float dy = cameraPos.y;
     float distance = sqrtf(dx * dx + dy * dy + dz * dz);
 
     return distance < threshold;
