@@ -155,6 +155,10 @@ public:
     
     // 获取指定描述符类型的 set 偏移
     uint32_t GetSetOffset(DescriptorType descriptorType) const;
+
+    // Mesh Shader 的 threadgroup 大小（委托给 VKGraphicsShader，来自 SPIR-V 反射）
+    const uint32_t* GetMeshThreadgroupSize() const override;
+    const uint32_t* GetTaskThreadgroupSize() const override;
     
 private:
     VkPipeline mPipeline = VK_NULL_HANDLE;

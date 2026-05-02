@@ -46,6 +46,10 @@ public:
     
     const GraphicsPipelineDesc& GetDesc() const { return mDesc; }
 
+    // 获取 Mesh Shader 的 threadgroup 大小（来自 SPIR-V ExecutionModeLocalSize / PSO 反射）
+    virtual const uint32_t* GetMeshThreadgroupSize() const = 0;
+    virtual const uint32_t* GetTaskThreadgroupSize() const = 0;
+
 protected:
     GraphicsPipelineDesc mDesc;
 };

@@ -47,8 +47,8 @@ public:
     bool IsMeshPipeline() const { return mMeshPipelineState != nil; }
 
     // Mesh Pipeline PSO 反射属性：threadgroup 大小（从 Metal 编译后的 PSO 获取）
-    const uint32_t* GetMeshThreadgroupSize() const { return mMeshThreadgroupSize; }
-    const uint32_t* GetTaskThreadgroupSize() const { return mTaskThreadgroupSize; }
+    const uint32_t* GetMeshThreadgroupSize() const override { return mMeshThreadgroupSize; }
+    const uint32_t* GetTaskThreadgroupSize() const override { return mTaskThreadgroupSize; }
 
     id<MTLDepthStencilState> GetDepthStencilState() const
     {

@@ -233,6 +233,9 @@ public:
     // 获取指定描述符类型的 set 偏移
     uint32_t GetSetOffset(DescriptorType descriptorType) const;
 
+    const uint32_t* GetMeshThreadgroupSize() const { return mMeshThreadgroupSize; }
+    const uint32_t* GetTaskThreadgroupSize() const { return mTaskThreadgroupSize; }
+
 private:
     void CollectResource(SpvReflectShaderModule shaderModule, ShaderStage shaderStage);
 
@@ -259,6 +262,10 @@ private:
 
     // 顶点数据布局
     VertexInputLayout mVertexInputLayout;
+
+    // Mesh/Task shader 的 threadgroup 大小（来自 SPIR-V 反射的 ExecutionModeLocalSize）
+    uint32_t mMeshThreadgroupSize[3] = {1, 1, 1};
+    uint32_t mTaskThreadgroupSize[3] = {1, 1, 1};
 };
 
 using VKGraphicsShaderPtr = std::shared_ptr<VKGraphicsShader>;

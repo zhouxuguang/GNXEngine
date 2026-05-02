@@ -340,6 +340,14 @@ VKGraphicsShader::VKGraphicsShader(VulkanContextPtr context, const ShaderCode& t
             {
                 mTaskEntryName = std::string(taskShaderModule.entry_point_name);
             }
+            // 从 SPIR-V 反射提取 task shader 的 threadgroup 大小
+            const SpvReflectEntryPoint* taskEntry = spvReflectGetEntryPoint(&taskShaderModule, mTaskEntryName.c_str());
+            if (taskEntry)
+            {
+                mTaskThreadgroupSize[0] = taskEntry->local_size.x;
+                mTaskThreadgroupSize[1] = taskEntry->local_size.y;
+                mTaskThreadgroupSize[2] = taskEntry->local_size.z;
+            }
             spvReflectDestroyShaderModule(&taskShaderModule);
         }
     }
@@ -354,6 +362,14 @@ VKGraphicsShader::VKGraphicsShader(VulkanContextPtr context, const ShaderCode& t
         if (meshShaderModule.entry_point_name)
         {
             mMeshEntryName = std::string(meshShaderModule.entry_point_name);
+        }
+        // 从 SPIR-V 反射提取 mesh shader 的 threadgroup 大小
+        const SpvReflectEntryPoint* meshEntry = spvReflectGetEntryPoint(&meshShaderModule, mMeshEntryName.c_str());
+        if (meshEntry)
+        {
+            mMeshThreadgroupSize[0] = meshEntry->local_size.x;
+            mMeshThreadgroupSize[1] = meshEntry->local_size.y;
+            mMeshThreadgroupSize[2] = meshEntry->local_size.z;
         }
         spvReflectDestroyShaderModule(&meshShaderModule);
     }

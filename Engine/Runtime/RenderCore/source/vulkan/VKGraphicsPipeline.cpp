@@ -650,4 +650,24 @@ uint32_t VKGraphicsPipeline::GetSetOffset(DescriptorType descriptorType) const
     return mShader->GetSetOffset(descriptorType);
 }
 
+const uint32_t* VKGraphicsPipeline::GetMeshThreadgroupSize() const
+{
+    if (!mShader)
+    {
+        static const uint32_t d[3] = {1, 1, 1};
+        return d;
+    }
+    return mShader->GetMeshThreadgroupSize();
+}
+
+const uint32_t* VKGraphicsPipeline::GetTaskThreadgroupSize() const
+{
+    if (!mShader)
+    {
+        static const uint32_t d[3] = {1, 1, 1};
+        return d;
+    }
+    return mShader->GetTaskThreadgroupSize();
+}
+
 NAMESPACE_RENDERCORE_END
