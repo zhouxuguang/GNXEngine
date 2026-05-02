@@ -126,7 +126,21 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     }
 
     // ========== 执行渲染 Pass ==========
-    
+
+    // Terrain GPU Culling（FrameGraph Compute Pass，必须在 PreDepth + BasePass 之前）
+    // 注册到 FrameGraph 后，CS 在 Execute 阶段执行，输出 IndirectArgs 供后续 Pass 消费
+    if (!terrainItems.empty() && camera)
+    {
+        mathutil::Matrix4x4f vp = camera->GetProjectionMatrix() * camera->GetViewMatrix();
+        for (TerrainComponent* terrain : terrainItems)
+        {
+            if (terrain && terrain->IsInitialized() && terrain->IsUsingGPUCulling())
+            {
+                terrain->DispatchCullViaFrameGraph(frameGraph, commandBuffer, vp, cameraUBO);
+            }
+        }
+    }
+
     // PreZPass
     FrameGraphResource depthResource = RenderPreDepthPass(
         frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, terrainItems, frustum);

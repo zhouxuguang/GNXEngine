@@ -15,6 +15,8 @@
 #include "../Component.h"
 #include "../Material.h"
 #include "QuadTreeTerrain.h"
+#include "TerrainCullPass.h"
+#include "../FrameGraph/FrameGraph.h"           // FrameGraph integration for GPU culling
 #include "Runtime/MathUtil/include/Frustum.h"
 
 NS_RENDERSYSTEM_BEGIN
@@ -112,7 +114,44 @@ public:
      */
     void SetWireframe(bool wireframe);
 
-    bool IsWireframe() const { return mWireframe; }
+    /**
+     * Enable/disable GPU Compute Shader culling (default: off).
+     * When enabled, uses TerrainCullPass (CS frustum cull → Indirect Draw).
+     * When disabled, uses CPU frustum culling + instanced draw (original path).
+     */
+    void SetUseGPUCulling(bool enable);
+    bool IsUsingGPUCulling() const { return mUseGPUCulling; }
+
+    /**
+     * Execute GPU culling compute dispatch (must call BEFORE Render() when GPU culling is enabled).
+     *
+     * Runs TerrainCull CS on all patches, outputs IndirectCommand buffer.
+     * The result is cached and consumed by Render()/RenderDepthOnly().
+     *
+     * @param commandBuffer  Command buffer for creating ComputeEncoder
+     * @param vpMatrix       View-Projection matrix (for frustum plane extraction in shader)
+     * @param cameraUBO      Camera uniform buffer (cbPerCamera, provides MATRIX_VP to shader)
+     */
+    void DispatchGPUCull(CommandBufferPtr commandBuffer,
+                         const mathutil::Matrix4x4f& vpMatrix,
+                         RenderCore::UniformBufferPtr cameraUBO = nullptr);
+
+    /**
+     * Execute GPU culling as a FrameGraph Compute Pass (preferred over DispatchGPUCull).
+     *
+     * Registers TerrainCull CS into FrameGraph as a proper compute pass.
+     * Must be called during frame setup (before PreDepthPass + BasePass),
+     * so the indirect args buffer is ready when Render()/RenderDepthOnly() execute.
+     *
+     * @param frameGraph     FrameGraph to register the cull pass into
+     * @param commandBuffer  Command buffer for creating ComputeEncoder
+     * @param vpMatrix       View-Projection matrix (for frustum plane extraction in shader)
+     * @param cameraUBO      Camera uniform buffer (cbPerCamera, provides MATRIX_VP to shader)
+     */
+    void DispatchCullViaFrameGraph(FrameGraph& frameGraph,
+                                    CommandBufferPtr commandBuffer,
+                                    const mathutil::Matrix4x4f& vpMatrix,
+                                    RenderCore::UniformBufferPtr cameraUBO = nullptr);
 
 private:
     /**
@@ -126,6 +165,43 @@ private:
      */
     void PrepareGPUPathData(const mathutil::Frustumf* frustum);
 
+    /**
+     * GPU-culled indirect draw path (G-Buffer).
+     * Uses mLastCullOutput.indirectArgsBuffer from DispatchGPUCull().
+     */
+    void RenderGPUCulled(class RenderEncoder* renderEncoder,
+                         UniformBufferPtr cameraUBO,
+                         GraphicsPipelinePtr terrainGBufferPSO);
+
+    /**
+     * CPU instanced draw path (G-Buffer, original).
+     * Uses CPU frustum culling + DrawIndexedInstancePrimitives.
+     */
+    void RenderCPUInstanced(class RenderEncoder* renderEncoder,
+                            UniformBufferPtr cameraUBO,
+                            GraphicsPipelinePtr terrainGBufferPSO,
+                            const mathutil::Frustumf* frustum);
+
+    /**
+     * GPU-culled indirect draw path (Depth-only).
+     */
+    void RenderDepthGPUCulled(class RenderEncoder* renderEncoder,
+                              UniformBufferPtr cameraUBO,
+                              GraphicsPipelinePtr terrainDepthPSO);
+
+    /**
+     * CPU instanced draw path (Depth-only, original).
+     */
+    void RenderDepthCPUInstanced(class RenderEncoder* renderEncoder,
+                                 UniformBufferPtr cameraUBO,
+                                 GraphicsPipelinePtr terrainDepthPSO,
+                                 const mathutil::Frustumf* frustum);
+
+    /**
+     * Bind material diffuse texture (shared by G-Buffer and Depth paths).
+     */
+    void BindMaterialTextures(class RenderEncoder* renderEncoder);
+
     QuadTreeTerrainPtr mQuadTreeTerrain;
     MaterialPtr      mMaterial;
     bool             mWireframe = false;
@@ -136,6 +212,13 @@ private:
 
     // GPU path data prepared flag (reset each frame)
     bool mGPUPathDataPrepared = false;
+
+    // GPU Compute Shader culling pass (frustum cull on GPU → indirect draw)
+    TerrainCullPassPtr mCullPass = nullptr;
+    bool mUseGPUCulling = false;   // default: use GPU culling (Compute Shader → Indirect Draw)
+
+    // Cached output from last DispatchGPUCull() call (consumed by Render/RenderDepthOnly)
+    TerrainCullOutput mLastCullOutput;
 
     // cbTerrain struct matching shader layout
     struct cbTerrainParams
