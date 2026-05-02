@@ -2,10 +2,10 @@
 //  TerrainComponent.cpp
 //  GNXEngine
 //
-//  Terrain rendering component with GPU-driven rendering path.
-//  Uses template mesh (17x17) + PatchMeta SSBO + heightmap texture.
-//  VS reads PatchMeta[instanceID] for per-patch world transform and
-//  samples heightmap for Y displacement.
+//  带有 GPU 驱动渲染路径的地形渲染组件。
+//  使用模板网格（17x17）+ PatchMeta SSBO + 高度图纹理。
+//  VS 从 PatchMeta[instanceID] 读取每个 patch 的世界变换，
+//  并采样高度图获取 Y 轴位移。
 //
 
 #include "terrain/TerrainComponent.h"
@@ -22,14 +22,14 @@ USING_NS_MATHUTIL
 NS_RENDERSYSTEM_BEGIN
 
 //=============================================================================
-// Construction / Destruction
+// 构造 / 析构
 //=============================================================================
 
 TerrainComponent::TerrainComponent() = default;
 TerrainComponent::~TerrainComponent() = default;
 
 //=============================================================================
-// Initialization
+// 初始化
 //=============================================================================
 
 void TerrainComponent::InitFromHeightMap(const char* heightmapPath,
@@ -69,7 +69,7 @@ void TerrainComponent::InitProcedural(uint32_t gridSize,
 }
 
 //=============================================================================
-// Material
+// 材质
 //=============================================================================
 
 void TerrainComponent::SetMaterial(const MaterialPtr& material)
@@ -78,7 +78,7 @@ void TerrainComponent::SetMaterial(const MaterialPtr& material)
 }
 
 //=============================================================================
-// Per-frame update
+// 每帧更新
 //=============================================================================
 
 void TerrainComponent::Update(float deltaTime)
@@ -87,7 +87,7 @@ void TerrainComponent::Update(float deltaTime)
 }
 
 //=============================================================================
-// Terrain params UBO
+// 地形参数 UBO
 //=============================================================================
 
 void TerrainComponent::EnsureTerrainUBO()
@@ -97,7 +97,7 @@ void TerrainComponent::EnsureTerrainUBO()
     cbTerrainParams params;
     params.worldSize     = mQuadTreeTerrain->GetWorldSize();
     params.halfWorldSize = params.worldSize * 0.5f;
-    params.uvTileScale   = 1.0f;  // tiling factor for material textures (1.0 = no tiling)
+    params.uvTileScale   = 1.0f;  // 材质纹理的平铺因子（1.0 = 不平铺）
     params.gridSize      = mQuadTreeTerrain->GetGridSize();
 
     if (!mTerrainParamsUBO)
@@ -115,24 +115,24 @@ void TerrainComponent::EnsureTerrainUBO()
 }
 
 //=============================================================================
-// GPU path data preparation
+// GPU 路径数据准备
 //=============================================================================
 
 void TerrainComponent::PrepareGPUPathData(const Frustumf* frustum)
 {
     if (!mQuadTreeTerrain || mGPUPathDataPrepared) return;
 
-    // Build visible PatchMeta SSBO (with frustum culling)
+    // 构建可见 PatchMeta SSBO（含视锥体剔除）
     mQuadTreeTerrain->BuildGPUPathData(frustum);
 
-    // Ensure terrain params UBO is up to date
+    // 确保地形参数 UBO 数据最新
     EnsureTerrainUBO();
 
     mGPUPathDataPrepared = true;
 }
 
 //=============================================================================
-// GPU-driven rendering path (G-Buffer)
+// GPU 驱动渲染路径（G-Buffer）
 //=============================================================================
 
 void TerrainComponent::Render(RenderEncoder* renderEncoder,
@@ -145,22 +145,22 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
         return;
 
     // ========================================================================
-    // Path selection: GPU Culling (Indirect Draw) vs CPU Instanced Draw
+    // 路径选择：GPU 剔除（Indirect Draw） vs CPU 实例化绘制
     // ========================================================================
     if (mUseGPUCulling && mCullPass && mLastCullOutput.indirectArgsBuffer)
     {
-        // ---- GPU Culling Path: CS already dispatched, use Indirect Draw ----
+        // ---- GPU 剔除路径：CS 已分发，使用 Indirect Draw ----
         RenderGPUCulled(renderEncoder, cameraUBO, terrainGBufferPSO);
     }
     else
     {
-        // ---- CPU Instanced Draw Path: original frustum cull + instanced draw ----
+        // ---- CPU 实例化绘制路径：原始视锥体剔除 + 实例化绘制 ----
         RenderCPUInstanced(renderEncoder, cameraUBO, terrainGBufferPSO, frustum);
     }
 }
 
 //=============================================================================
-// GPU Culled rendering path (Indirect Draw)
+// GPU 剔除渲染路径（Indirect Draw）
 //=============================================================================
 
 void TerrainComponent::RenderGPUCulled(RenderEncoder* renderEncoder,
@@ -179,7 +179,7 @@ void TerrainComponent::RenderGPUCulled(RenderEncoder* renderEncoder,
 
     EnsureTerrainUBO();
 
-    // ---- Bind PSO and shared state ----
+    // ---- 绑定 PSO 和共享状态 ----
     renderEncoder->SetGraphicsPipeline(terrainGBufferPSO);
     if (mWireframe)
         renderEncoder->SetFillMode(FillModeWireframe);
@@ -189,37 +189,37 @@ void TerrainComponent::RenderGPUCulled(RenderEncoder* renderEncoder,
     renderEncoder->SetVertexUniformBuffer("cbTerrain", mTerrainParamsUBO);
     renderEncoder->SetFragmentUniformBuffer("cbPerCamera", cameraUBO);
 
-    // PatchMeta SSBO (ALL patches — GPU has already culled to indirect args)
+    // PatchMeta SSBO（全部 patch — GPU 已完成剔除到 indirect args）
     renderEncoder->SetStorageBuffer("gPatchMeta", allPatchMeta,
         RenderCore::ShaderStage_Vertex);
 
-    // Heightmap texture (VS samples for Y displacement)
+    // 高度图纹理（VS 采样获取 Y 位移）
     RenderCore::SamplerDesc heightmapSamplerDesc(
         RenderCore::MAG_LINEAR, RenderCore::MIN_LINEAR,
         RenderCore::CLAMP_TO_EDGE, RenderCore::CLAMP_TO_EDGE);
     auto heightmapSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(heightmapSamplerDesc);
     renderEncoder->SetVertexTextureAndSampler("gHeightmap", heightmapTexture, heightmapSampler);
 
-    // Template VB
+    // 模板 VB
     renderEncoder->SetVertexBuffer(mQuadTreeTerrain->GetTemplateVB(), 0, 0);
 
-    // Material textures
+    // 材质纹理
     BindMaterialTextures(renderEncoder);
 
-    // ---- Indirect Draw: GPU decided visibility per-patch ----
+    // ---- Indirect Draw：GPU 决定每个 patch 的可见性 ----
     renderEncoder->DrawIndexedPrimitivesIndirect(
         PrimitiveMode_TRIANGLES,
         templateIB,
         0,                                    // indexBufferOffset
-        mLastCullOutput.indirectArgsBuffer,   // indirect args (GPU-written)
+        mLastCullOutput.indirectArgsBuffer,   // indirect args（GPU 写入）
         0,                                    // indirectBufferOffset
-        totalPatchCount,                      // drawCount (= total patches, culled ones have instanceCount=0)
+        totalPatchCount,                      // drawCount（= 总 patch 数，被剔除的 instanceCount=0）
         sizeof(RenderCore::DrawIndexedIndirectCommand)  // stride
     );
 }
 
 //=============================================================================
-// CPU Instanced rendering path (original)
+// CPU 实例化渲染路径（原始路径）
 //=============================================================================
 
 void TerrainComponent::RenderCPUInstanced(RenderEncoder* renderEncoder,
@@ -227,7 +227,7 @@ void TerrainComponent::RenderCPUInstanced(RenderEncoder* renderEncoder,
                                            GraphicsPipelinePtr terrainGBufferPSO,
                                            const Frustumf* frustum)
 {
-    // Prepare GPU path data (CPU frustum culling + visible PatchMeta SSBO)
+    // 准备 GPU 路径数据（CPU 视锥体剔除 + 可见 PatchMeta SSBO）
     PrepareGPUPathData(frustum);
 
     uint32_t visibleCount = mQuadTreeTerrain->GetVisiblePatchMetaCount();
@@ -242,7 +242,7 @@ void TerrainComponent::RenderCPUInstanced(RenderEncoder* renderEncoder,
     if (!templateVB || !templateIB || !visiblePatchMeta || !heightmapTexture)
         return;
 
-    // ---- Bind PSO and shared state ----
+    // ---- 绑定 PSO 和共享状态 ----
     renderEncoder->SetGraphicsPipeline(terrainGBufferPSO);
 
     if (mWireframe)
@@ -250,40 +250,40 @@ void TerrainComponent::RenderCPUInstanced(RenderEncoder* renderEncoder,
         renderEncoder->SetFillMode(FillModeWireframe);
     }
 
-    // Bind UBOs
+    // 绑定 UBOs
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
     renderEncoder->SetVertexUniformBuffer("cbTerrain", mTerrainParamsUBO);
     renderEncoder->SetFragmentUniformBuffer("cbPerCamera", cameraUBO);
 
-    // Bind PatchMeta SSBO to vertex stage (VS reads gPatchMeta[instanceID])
+    // 绑定 PatchMeta SSBO 到顶点阶段（VS 读取 gPatchMeta[instanceID]）
     renderEncoder->SetStorageBuffer("gPatchMeta", visiblePatchMeta,
         RenderCore::ShaderStage_Vertex);
 
-    // Bind heightmap texture + sampler
+    // 绑定高度图纹理 + 采样器
     RenderCore::SamplerDesc heightmapSamplerDesc(
         RenderCore::MAG_LINEAR, RenderCore::MIN_LINEAR,
         RenderCore::CLAMP_TO_EDGE, RenderCore::CLAMP_TO_EDGE);
     auto heightmapSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(heightmapSamplerDesc);
     renderEncoder->SetVertexTextureAndSampler("gHeightmap", heightmapTexture, heightmapSampler);
 
-    // Bind template mesh vertex buffers
+    // 绑定模板网格顶点缓冲区
     renderEncoder->SetVertexBuffer(templateVB, 0, 0);
 
-    // Material textures
+    // 材质纹理
     BindMaterialTextures(renderEncoder);
 
-    // ---- Instanced draw: one instance per visible patch ----
+    // ---- 实例化绘制：每个可见 patch 一个实例 ----
     renderEncoder->DrawIndexedInstancePrimitives(
         PrimitiveMode_TRIANGLES,
-        1536,          // indexCount for 17x17 template mesh (16*16*6)
+        1536,          // 17x17 模板网格的索引数（16*16*6）
         templateIB,
         0,             // indexBufferOffset
         0,             // firstInstance
-        visibleCount); // instanceCount = number of visible patches
+        visibleCount); // instanceCount = 可见 patch 数量
 }
 
 //=============================================================================
-// GPU-driven rendering path (Depth-only)
+// GPU 驱动渲染路径（仅深度）
 //=============================================================================
 
 void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
@@ -295,21 +295,21 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
     if (!mQuadTreeTerrain || !renderEncoder || !terrainDepthPSO)
         return;
 
-    // Path selection
+    // 路径选择
     if (mUseGPUCulling && mCullPass && mLastCullOutput.indirectArgsBuffer)
     {
-        // GPU Culling Path: Indirect Draw
+        // GPU 剔除路径：Indirect Draw
         RenderDepthGPUCulled(renderEncoder, cameraUBO, terrainDepthPSO);
     }
     else
     {
-        // CPU Instanced Draw Path
+        // CPU 实例化绘制路径
         RenderDepthCPUInstanced(renderEncoder, cameraUBO, terrainDepthPSO, frustum);
     }
 }
 
 //=============================================================================
-// Depth-only GPU Culled path (Indirect Draw)
+// 仅深度 GPU 剔除路径（Indirect Draw）
 //=============================================================================
 
 void TerrainComponent::RenderDepthGPUCulled(RenderEncoder* renderEncoder,
@@ -360,7 +360,7 @@ void TerrainComponent::RenderDepthGPUCulled(RenderEncoder* renderEncoder,
 }
 
 //=============================================================================
-// Depth-only CPU Instanced path (original)
+// 仅深度 CPU 实例化路径（原始路径）
 //=============================================================================
 
 void TerrainComponent::RenderDepthCPUInstanced(RenderEncoder* renderEncoder,
@@ -414,7 +414,7 @@ void TerrainComponent::RenderDepthCPUInstanced(RenderEncoder* renderEncoder,
 }
 
 //=============================================================================
-// Accessors
+// 访问器
 //=============================================================================
 
 float TerrainComponent::GetHeight(float worldX, float worldZ) const
@@ -442,7 +442,7 @@ void TerrainComponent::SetWireframe(bool wireframe)
 }
 
 //=============================================================================
-// GPU Culling toggle
+// GPU 剔除开关
 //=============================================================================
 
 void TerrainComponent::SetUseGPUCulling(bool enable)
@@ -454,17 +454,17 @@ void TerrainComponent::SetUseGPUCulling(bool enable)
         mCullPass = std::make_shared<TerrainCullPass>();
         if (!mCullPass->Initialize())
         {
-            LOG_ERROR("TerrainComponent: Failed to initialize TerrainCullPass, falling back to CPU culling");
+            LOG_ERROR("TerrainComponent: TerrainCullPass 初始化失败，回退到 CPU 剔除");
             mCullPass.reset();
             mUseGPUCulling = false;
         }
     }
 
-    LOG_INFO("TerrainComponent: GPU culling %s", enable ? "enabled" : "disabled (using CPU instanced draw)");
+    LOG_INFO("TerrainComponent: GPU 剔除 %s", enable ? "已启用" : "已禁用（使用 CPU 实例化绘制）");
 }
 
 //=============================================================================
-// DispatchGPUCull - Execute GPU Compute Shader culling (call BEFORE Render)
+// DispatchGPUCull - 执行 GPU Compute Shader 剔除（在 Render 之前调用）
 //=============================================================================
 
 void TerrainComponent::DispatchGPUCull(CommandBufferPtr commandBuffer,
@@ -473,15 +473,15 @@ void TerrainComponent::DispatchGPUCull(CommandBufferPtr commandBuffer,
 {
     if (!mUseGPUCulling || !mCullPass || !mCullPass->IsInitialized() || !mQuadTreeTerrain)
     {
-        // Clear cached output so Render() falls back to CPU path
+        // 清除缓存输出，使 Render() 回退到 CPU 路径
         mLastCullOutput.indirectArgsBuffer = nullptr;
         mLastCullOutput.indirectArgsCount = 0;
         return;
     }
 
-    // Build ALL patch meta buffer (not just visible — GPU does the culling)
-    // Note: BuildPatchMetaBuffer() is called inside BuildGPUPathData or we call it directly
-    // For GPU path, we need the full buffer from GetPatchMetaBuffer()
+    // 构建全部 patch 元数据缓冲区（不仅是可见的 — GPU 负责剔除）
+    // 注意：BuildPatchMetaBuffer() 在 BuildGPUPathData 内部调用，或我们直接调用
+    // 对于 GPU 路径，我们需要从 GetPatchMetaBuffer() 获取完整缓冲区
     auto allPatchMeta = mQuadTreeTerrain->GetPatchMetaBuffer();
     uint32_t totalPatchCount = mQuadTreeTerrain->GetPatchMetaCount();
 
@@ -498,10 +498,10 @@ void TerrainComponent::DispatchGPUCull(CommandBufferPtr commandBuffer,
     params.patchCount = totalPatchCount;
     params.maxHeight = mQuadTreeTerrain->GetHeightScale();
 
-    // Dispatch compute shader culling
+    // 分发 compute shader 剔除
     mLastCullOutput = mCullPass->DispatchCull(commandBuffer, params, allPatchMeta, cameraUBO);
 
-    LOG_DEBUG("TerrainComponent::DispatchGPUCull: %u patches, indirect args buffer %s",
+    LOG_DEBUG("TerrainComponent::DispatchGPUCull: %u 个 patch，indirect args 缓冲区 %s",
               totalPatchCount,
               mLastCullOutput.indirectArgsBuffer ? "ready" : "FAILED");
 }
@@ -542,12 +542,12 @@ void TerrainComponent::DispatchCullViaFrameGraph(FrameGraph& frameGraph,
     mLastCullOutput = mCullPass->AddToFrameGraph(
         "TerrainCull", frameGraph, commandBuffer, params, allPatchMeta, cameraUBO);
 
-    LOG_DEBUG("TerrainComponent::DispatchCullViaFrameGraph: %u patches registered in FrameGraph",
+    LOG_DEBUG("TerrainComponent::DispatchCullViaFrameGraph: %u 个 patch 已注册到 FrameGraph",
               totalPatchCount);
 }
 
 //=============================================================================
-// BindMaterialTextures - Shared material texture binding (DRY helper)
+// BindMaterialTextures - 共享材质纹理绑定（DRY 辅助函数）
 //=============================================================================
 
 void TerrainComponent::BindMaterialTextures(RenderEncoder* renderEncoder)

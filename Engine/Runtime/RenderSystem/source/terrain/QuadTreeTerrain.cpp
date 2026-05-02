@@ -2,9 +2,9 @@
 //  QuadTreeTerrain.cpp
 //  GNXEngine
 //
-//  Quadtree-based terrain with adaptive LOD.
-//  Features: SSE-based LOD selection, triangle-fan crack fixing,
-//  static index pool (zero per-frame GPU upload), frustum culling.
+//  基于四叉树的自适应LOD地形系统。
+//  功能：基于距离的LOD选择、三角形扇形裂缝修复、
+//       静态索引池（零每帧GPU上传）、视锥体剔除、GPU驱动渲染路径。
 //
 
 #include "terrain/QuadTreeTerrain.h"
@@ -26,7 +26,7 @@ NS_RENDERSYSTEM_BEGIN
 using namespace mathutil;
 
 //=============================================================================
-// Procedural height function (same as GeoMipTerrain)
+// 程序化高度函数（与 GeoMipTerrain 相同）
 //=============================================================================
 
 float QuadTreeTerrain::ComputeHeight(float x, float z)
@@ -40,14 +40,14 @@ float QuadTreeTerrain::ComputeHeight(float x, float z)
 }
 
 //=============================================================================
-// Constructor / Destructor
+// 构造函数 / 析构函数
 //=============================================================================
 
 QuadTreeTerrain::QuadTreeTerrain() = default;
 QuadTreeTerrain::~QuadTreeTerrain() = default;
 
 //=============================================================================
-// Factory: Create from heightmap image
+// 工厂方法：从高度图创建地形
 //=============================================================================
 
 QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
@@ -58,7 +58,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
 {
     using namespace imagecodec;
 
-    // Load heightmap
+    // 加载高度图
     VImage heightmapImage;
     if (!ImageDecoder::DecodeFile(heightmapPath, &heightmapImage))
     {
@@ -81,7 +81,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
                  imageWidth, imageHeight);
     }
 
-    // Round grid size up to next 2^n + 1
+    // 将网格大小向上取整到 2^n + 1
     uint32_t n = 0;
     uint32_t cells = imageWidth - 1;
     while ((1u << n) < cells) ++n;
@@ -93,7 +93,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
     terrain->mGridSize      = gridSize;
     terrain->mGridSizeCells = gridSize - 1;
 
-    // Clamp maxLevel so minimum node size >= (kLeafVerticesPerSide - 1)
+    // 限制 maxLevel，确保最小节点尺寸 >= (kLeafVerticesPerSide - 1)
     uint32_t minNodeCells = kLeafVerticesPerSide - 1;  // 16
     uint32_t maxPossibleLevel = 0;
     uint32_t tmp = terrain->mGridSizeCells;
@@ -103,7 +103,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
     LOG_INFO("QuadTreeTerrain: Heightmap %s (%ux%u), grid=%u, maxLevel=%u",
              heightmapPath, imageWidth, imageHeight, gridSize, terrain->mMaxLevel);
 
-    // Sample heightmap into mHeightMap
+    // 采样高度图到 mHeightMap
     uint32_t vertexCount = gridSize * gridSize;
     terrain->mHeightMap.resize(vertexCount);
 
@@ -133,7 +133,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
         }
     }
 
-    // Generate vertices
+    // 生成顶点数据
     float step     = worldSizeXZ / (float)(gridSize - 1);
     float halfSize = worldSizeXZ * 0.5f;
 
@@ -157,7 +157,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
         }
     }
 
-    // Compute normals via central differences
+    // 通过中心差分计算法线（CreateFromHeightMap 路径）
     for (uint32_t iz = 0; iz < gridSize; ++iz)
     {
         for (uint32_t ix = 0; ix < gridSize; ++ix)
@@ -175,7 +175,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
         }
     }
 
-    // Compute tangents
+    // 计算切线
     for (uint32_t iz = 0; iz < gridSize; ++iz)
     {
         for (uint32_t ix = 0; ix < gridSize; ++ix)
@@ -193,23 +193,23 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
 
     terrain->InitVertexData(positions, normals, tangents, uvs);
 
-    // Build quadtree
+    // 构建四叉树
     terrain->BuildNode(&terrain->mRoot);
 
-    // Pre-compute geometric errors for SSE LOD selection
+    // 预计算几何误差（用于LOD选择）
     terrain->ComputeAllGeoErrors();
 
-    // Build static index pool BEFORE first Update()
-    // (Update→GenerateLeafMesh reads from mIndexPool, must be populated)
+    // 在首次 Update() 之前构建静态索引池
+    // （Update→GenerateLeafMesh 会读取 mIndexPool，必须先填充）
     terrain->BuildStaticIndexPool();
 
-    // Upload heightmap as GPU texture (阶段1A: 纯增量)
+    // 将高度图上传为 GPU 纹理（阶段1A: 纯增量）
     terrain->CreateHeightMapTexture();
 
-    // Create template mesh for GPU-driven rendering
+    // 创建用于 GPU 驱动渲染的模板网格
     terrain->CreateTemplateMesh();
 
-    // Initial update (now safe — pool is ready)
+    // 初始更新（此时安全 — 索引池已就绪）
     terrain->Update(Vector3f(0, 0, 0));
 
     LOG_INFO("QuadTreeTerrain: Created from heightmap, grid=%u, maxLevel=%u",
@@ -219,7 +219,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
 }
 
 //=============================================================================
-// Factory: Create from procedural noise
+// 工厂方法：从程序化噪声创建地形
 //=============================================================================
 
 QuadTreeTerrainPtr QuadTreeTerrain::Create(
@@ -228,7 +228,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::Create(
     float heightScale,
     uint32_t maxLevel)
 {
-    // Round up gridSize to 2^n + 1
+    // 将 gridSize 向上取整到 2^n + 1
     uint32_t n = 0;
     uint32_t cells = gridSize - 1;
     while ((1u << n) < cells) ++n;
@@ -240,7 +240,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::Create(
     terrain->mGridSize      = adjustedGridSize;
     terrain->mGridSizeCells = adjustedGridSize - 1;
 
-    // Clamp maxLevel
+    // 限制 maxLevel
     uint32_t minNodeCells = kLeafVerticesPerSide - 1;
     uint32_t maxPossibleLevel = 0;
     uint32_t tmp = terrain->mGridSizeCells;
@@ -258,7 +258,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::Create(
     std::vector<Vector4f> tangents(vertexCount);
     std::vector<Vector2f> uvs(vertexCount);
 
-    // Generate vertices with procedural height
+    // 使用程序化高度生成顶点
     for (uint32_t iz = 0; iz < adjustedGridSize; ++iz)
     {
         for (uint32_t ix = 0; ix < adjustedGridSize; ++ix)
@@ -275,7 +275,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::Create(
         }
     }
 
-    // Compute normals via central differences
+    // 通过中心差分计算法线（Create 路径）
     for (uint32_t iz = 0; iz < adjustedGridSize; ++iz)
     {
         for (uint32_t ix = 0; ix < adjustedGridSize; ++ix)
@@ -295,7 +295,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::Create(
         }
     }
 
-    // Compute tangents
+    // 计算切线
     for (uint32_t iz = 0; iz < adjustedGridSize; ++iz)
     {
         for (uint32_t ix = 0; ix < adjustedGridSize; ++ix)
@@ -315,16 +315,16 @@ QuadTreeTerrainPtr QuadTreeTerrain::Create(
 
     terrain->InitVertexData(positions, normals, tangents, uvs);
 
-    // Build quadtree
+    // 构建四叉树
     terrain->BuildNode(&terrain->mRoot);
 
-    // Pre-compute geometric errors for SSE LOD selection
+    // 预计算几何误差（用于 LOD 选择）
     terrain->ComputeAllGeoErrors();
 
-    // Build static index pool BEFORE first Update()
+    // 在首次 Update() 之前构建静态索引池
     terrain->BuildStaticIndexPool();
 
-    // Initial update (now safe — pool is ready)
+    // 初始更新（此时安全 — 索引池已就绪）
     terrain->Update(Vector3f(0, 0, 0));
 
     LOG_INFO("QuadTreeTerrain: Created procedural, grid=%u, maxLevel=%u",
@@ -334,7 +334,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::Create(
 }
 
 //=============================================================================
-// Initialize vertex data and create GPU vertex buffer
+    // 初始化顶点数据并创建 GPU 顶点缓冲
 //=============================================================================
 
 void QuadTreeTerrain::InitVertexData(
@@ -383,8 +383,8 @@ void QuadTreeTerrain::InitVertexData(
 }
 
 //=============================================================================
-// CreateHeightMapTexture - upload mHeightMap as a R32Float Texture2D.
-// Called once during initialization. The texture is read-only for shaders.
+// CreateHeightMapTexture - 将 mHeightMap 上传为 R32Float Texture2D
+// 仅在初始化时调用一次。该纹理对 Shader 只读。
 //=============================================================================
 
 void QuadTreeTerrain::CreateHeightMapTexture()
@@ -393,7 +393,7 @@ void QuadTreeTerrain::CreateHeightMapTexture()
 
     auto renderDevice = RenderCore::GetRenderDevice();
 
-    // Create R32Float texture matching the heightmap dimensions
+    // 创建与高度图尺寸匹配的 R32Float 纹理
     mHeightMapTexture = renderDevice->CreateTexture2D(
         RenderCore::kTexFormatR32Float,
         RenderCore::TextureUsage::TextureUsageShaderRead,
@@ -401,7 +401,7 @@ void QuadTreeTerrain::CreateHeightMapTexture()
 
     if (!mHeightMapTexture) return;
 
-    // Upload height data: 4 bytes per pixel (R32Float)
+    // 上传高度数据：每像素 4 字节（R32Float）
     uint32_t bytesPerRow = mGridSize * sizeof(float);
     RenderCore::Rect2D region(0, 0, mGridSize, mGridSize);
     mHeightMapTexture->ReplaceRegion(region, 0,
@@ -412,9 +412,9 @@ void QuadTreeTerrain::CreateHeightMapTexture()
 }
 
 //=============================================================================
-// BuildPatchMetaBuffer - pack leaf node metadata into PatchMeta[] SSBO.
-// Called each frame after GenerateLeafMesh. The buffer is then available
-// for GPU-driven rendering passes (compute culling, instanced draw, etc.).
+// BuildPatchMetaBuffer - 将叶节点元数据打包到 PatchMeta[] SSBO 中。
+// 每帧在 GenerateLeafMesh 之后调用。该缓冲区随后可用于 GPU 驱动的渲染流程
+//（compute 剔除、实例化绘制等）。
 //=============================================================================
 
 void QuadTreeTerrain::BuildPatchMetaBuffer()
@@ -442,7 +442,7 @@ void QuadTreeTerrain::BuildPatchMetaBuffer()
         mPatchMetaData.push_back(meta);
     }
 
-    // Upload to GPU as SSBO
+    // 上传到 GPU 作为 SSBO
     if (!mPatchMetaData.empty())
     {
         uint32_t dataSize = (uint32_t)(mPatchMetaData.size() * sizeof(PatchMeta));
@@ -460,7 +460,7 @@ void QuadTreeTerrain::BuildPatchMetaBuffer()
 }
 
 //=============================================================================
-// CreateTemplateMesh - 17x17 template mesh for GPU-driven rendering
+// CreateTemplateMesh - 创建 17x17 模板网格，用于 GPU 驱动渲染
 //=============================================================================
 
 void QuadTreeTerrain::CreateTemplateMesh()
@@ -470,7 +470,7 @@ void QuadTreeTerrain::CreateTemplateMesh()
     constexpr uint32_t kVertexCount = kVertsPerSide * kVertsPerSide;  // 289
     constexpr uint32_t kIndexCount  = kCellCount * kCellCount * 6;     // 1536
 
-    // Build vertex data in SoA layout: positions first, then texCoords
+    // 构建 SoA 布局的顶点数据：先位置，后纹理坐标
     std::vector<float> positions(kVertexCount * 3);
     std::vector<float> texCoords(kVertexCount * 2);
 
@@ -482,18 +482,18 @@ void QuadTreeTerrain::CreateTemplateMesh()
             float u = (float)col / (float)kCellCount;  // [0, 1]
             float v = (float)row / (float)kCellCount;  // [0, 1]
 
-            // Position: local XZ coordinates, Y=0 (replaced by heightmap in VS)
-            positions[idx * 3 + 0] = u;  // local X → maps to world X via PatchMeta
+            // 位置：局部 XZ 坐标，Y=0（在顶点着色器中由高度图替换）
+            positions[idx * 3 + 0] = u;  // 局部 X → 通过 PatchMeta 映射到世界 X
             positions[idx * 3 + 1] = 0.0f;
-            positions[idx * 3 + 2] = v;  // local Z → maps to world Z via PatchMeta
+            positions[idx * 3 + 2] = v;  // 局部 Z → 通过 PatchMeta 映射到世界 Z
 
-            // TexCoord: same as local UV
+            // 纹理坐标：与局部 UV 相同
             texCoords[idx * 2 + 0] = u;
             texCoords[idx * 2 + 1] = v;
         }
     }
 
-    // Build index data
+    // 构建索引数据
     std::vector<uint32_t> indices(kIndexCount);
     uint32_t idxOffset = 0;
     for (uint32_t row = 0; row < kCellCount; ++row)
@@ -515,7 +515,7 @@ void QuadTreeTerrain::CreateTemplateMesh()
         }
     }
 
-    // Create SoA vertex buffer: [positions | texCoords]
+    // 创建 SoA 顶点缓冲区：[位置 | 纹理坐标]
     uint32_t posDataSize  = kVertexCount * 3 * sizeof(float);  // 3468 bytes
     uint32_t uvDataSize   = kVertexCount * 2 * sizeof(float);  // 2312 bytes
     uint32_t totalVBSize  = posDataSize + uvDataSize;
@@ -527,7 +527,7 @@ void QuadTreeTerrain::CreateTemplateMesh()
 
     auto renderDevice = RenderCore::GetRenderDevice();
 
-    // Create vertex buffer (RCBuffer with VertexBuffer usage)
+    // 创建顶点缓冲区（RCBuffer，VertexBuffer 用途）
     RenderCore::RCBufferDesc vbDesc(totalVBSize,
         RenderCore::RCBufferUsage::VertexBuffer,
         RenderCore::StorageModeShared);
@@ -535,12 +535,12 @@ void QuadTreeTerrain::CreateTemplateMesh()
     if (mTemplateVB)
         mTemplateVB->SetName("TerrainTemplateVB");
 
-    // Create index buffer
+    // 创建索引缓冲区
     mTemplateIB = renderDevice->CreateIndexBufferWithBytes(indices.data(), kIndexCount * sizeof(uint32_t), RenderCore::IndexType_UInt);
 }
 
 //=============================================================================
-// BuildGPUPathData - Build visible PatchMeta SSBO + indirect commands
+// BuildGPUPathData - 构建可见 PatchMeta SSBO + 间接绘制命令
 //=============================================================================
 
 void QuadTreeTerrain::BuildGPUPathData(const mathutil::Frustumf* frustum)
@@ -553,7 +553,7 @@ void QuadTreeTerrain::BuildGPUPathData(const mathutil::Frustumf* frustum)
 
     for (size_t i = 0; i < mLeafNodes.size(); ++i)
     {
-        // Frustum culling
+        // 视锥体剔除
         if (frustum && i < leafBounds.size())
         {
             if (!frustum->IsBoxInFrustum(leafBounds[i]))
@@ -562,7 +562,7 @@ void QuadTreeTerrain::BuildGPUPathData(const mathutil::Frustumf* frustum)
 
         Node* leaf = mLeafNodes[i];
 
-        // Build visible PatchMeta
+        // 构建可见 PatchMeta
         PatchMeta meta;
         meta.worldX    = -halfSize + (float)leaf->x * step;
         meta.worldZ    = -halfSize + (float)leaf->z * step;
@@ -575,16 +575,16 @@ void QuadTreeTerrain::BuildGPUPathData(const mathutil::Frustumf* frustum)
         mVisiblePatchMeta.push_back(meta);
     }
 
-    // Upload visible PatchMeta to GPU as SSBO - reuse buffer to avoid GPU sync issues
+    // 上传可见 PatchMeta 到 GPU 作为 SSBO — 复用缓冲区以避免 GPU 同步问题
     if (!mVisiblePatchMeta.empty())
     {
         uint32_t dataSize = (uint32_t)(mVisiblePatchMeta.size() * sizeof(PatchMeta));
         auto renderDevice = RenderCore::GetRenderDevice();
         
-        // Reuse existing buffer if possible, avoid reallocation
+        // 尽可能复用已有缓冲区，避免重新分配
         if (mVisiblePatchMetaBuffer && mVisiblePatchMetaBuffer->GetSize() >= dataSize)
         {
-            // Update existing buffer content - avoid GPU sync problems
+            // 更新已有缓冲区内容 — 避免 GPU 同步问题
             void* mappedData = mVisiblePatchMetaBuffer->Map();
             if (mappedData)
             {
@@ -594,7 +594,7 @@ void QuadTreeTerrain::BuildGPUPathData(const mathutil::Frustumf* frustum)
         }
         else
         {
-            // Only recreate buffer when necessary
+            // 仅在必要时重新创建缓冲区
             RenderCore::RCBufferDesc desc(dataSize,
                 RenderCore::RCBufferUsage::StorageBuffer,
                 RenderCore::StorageModeShared);
@@ -603,10 +603,10 @@ void QuadTreeTerrain::BuildGPUPathData(const mathutil::Frustumf* frustum)
     }
     else
     {
-        // Keep the buffer even if no patches visible to maintain sync consistency
+        // 即使没有可见 patch 也保留缓冲区，以维持同步一致性
         if (mVisiblePatchMetaBuffer)
         {
-            // Clear buffer content but keep allocation
+            // 清空缓冲区内容但保留分配
             static PatchMeta emptyMeta = {};
             void* mappedData = mVisiblePatchMetaBuffer->Map();
             if (mappedData)
@@ -619,7 +619,7 @@ void QuadTreeTerrain::BuildGPUPathData(const mathutil::Frustumf* frustum)
 }
 
 //=============================================================================
-// Build quadtree root node
+// BuildNode - 构建四叉树根节点
 //=============================================================================
 
 void QuadTreeTerrain::BuildNode(Node* node)
@@ -627,12 +627,12 @@ void QuadTreeTerrain::BuildNode(Node* node)
     node->x     = 0;
     node->z     = 0;
     node->size  = mGridSizeCells;
-    node->level = mMaxLevel;  // root starts at coarsest LOD (level mMaxLevel is coarsest, 0 is finest)
+    node->level = mMaxLevel;  // 根节点从最粗 LOD 开始（mMaxLevel 为最粗，0 为最细）
     ComputeNodeBounds(node);
 }
 
 //=============================================================================
-// Compute world-space AABB for a node
+// ComputeNodeBounds - 计算节点的世界空间 AABB
 //=============================================================================
 
 void QuadTreeTerrain::ComputeNodeBounds(Node* node)
@@ -640,13 +640,13 @@ void QuadTreeTerrain::ComputeNodeBounds(Node* node)
     float step     = mWorldSize / (float)(mGridSize - 1);
     float halfSize = mWorldSize * 0.5f;
 
-    // Grid range [x, x+size] cells → vertex range [x, x+size]
+    // 网格范围 [x, x+size] 个单元 → 顶点范围 [x, x+size]
     float worldMinX = -halfSize + (float)node->x * step;
     float worldMinZ = -halfSize + (float)node->z * step;
     float worldMaxX = -halfSize + (float)(node->x + node->size) * step;
     float worldMaxZ = -halfSize + (float)(node->z + node->size) * step;
 
-    // Find min/max height in this node's region
+    // 在该节点区域内查找最小/最大高度
     float minY =  std::numeric_limits<float>::max();
     float maxY = -std::numeric_limits<float>::max();
 
@@ -666,20 +666,20 @@ void QuadTreeTerrain::ComputeNodeBounds(Node* node)
 }
 
 //=============================================================================
-// ShouldSubdivide - determine if a node should be split into 4 children
+// ShouldSubdivide - 判断节点是否应该分裂为 4 个子节点
 //=============================================================================
 
 bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPos) const
 {
-    // Cannot subdivide beyond finest level (0=finest, cannot go below 0)
+    // 不能超过最细层级继续细分（0=最细，不能再往下）
     if (node.level == 0) return false;
 
-    // Distance-based LOD: subdivide when camera is close enough.
-    // Larger nodes subdivide at greater distances, smaller nodes only up close.
+    // 基于距离的 LOD：相机足够近时细分。
+    // 较大的节点在更远的距离就细分，较小的节点只在很近时才细分。
     float nodeWorldSize = (float)node.size * (mWorldSize / (float)(mGridSize - 1));
     float threshold = nodeWorldSize * mLODDistanceFactor;
 
-    // Use AABB closest-point distance (camera inside AABB → distance=0 → always subdivide)
+    // 使用 AABB 最近点距离（相机在 AABB 内 → 距离=0 → 始终细分）
     float dx = std::max(0.0f, std::max(node.bounds.minimum.x - cameraPos.x,
                                         cameraPos.x - node.bounds.maximum.x));
     float dy = std::max(0.0f, std::max(node.bounds.minimum.y - cameraPos.y,
@@ -692,15 +692,15 @@ bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPo
 }
 
 //=============================================================================
-// Subdivide - create 4 children for a node
+// Subdivide - 为节点创建 4 个子节点
 //=============================================================================
 
 void QuadTreeTerrain::Subdivide(Node* node)
 {
     uint32_t halfSize = node->size / 2;
-    uint32_t childLevel = node->level - 1;  // go finer: 5→4→3→2→1→0 (0=finest, mMaxLevel=coarsest)
+    uint32_t childLevel = node->level - 1;  // 变细：5→4→3→2→1→0（0=最细，mMaxLevel=最粗）
 
-    // NW (top-left)
+    // 西北（左上）
     node->children[0] = std::make_unique<Node>();
     node->children[0]->x     = node->x;
     node->children[0]->z     = node->z;
@@ -710,7 +710,7 @@ void QuadTreeTerrain::Subdivide(Node* node)
     ComputeNodeBounds(node->children[0].get());
     node->children[0]->maxGeoError = GetCachedGeoError(childLevel, node->x, node->z);
 
-    // NE (top-right)
+    // 东北（右上）
     node->children[1] = std::make_unique<Node>();
     node->children[1]->x     = node->x + halfSize;
     node->children[1]->z     = node->z;
@@ -720,7 +720,7 @@ void QuadTreeTerrain::Subdivide(Node* node)
     ComputeNodeBounds(node->children[1].get());
     node->children[1]->maxGeoError = GetCachedGeoError(childLevel, node->x + halfSize, node->z);
 
-    // SW (bottom-left)
+    // 西南（左下）
     node->children[2] = std::make_unique<Node>();
     node->children[2]->x     = node->x;
     node->children[2]->z     = node->z + halfSize;
@@ -730,7 +730,7 @@ void QuadTreeTerrain::Subdivide(Node* node)
     ComputeNodeBounds(node->children[2].get());
     node->children[2]->maxGeoError = GetCachedGeoError(childLevel, node->x, node->z + halfSize);
 
-    // SE (bottom-right)
+    // 东南（右下）
     node->children[3] = std::make_unique<Node>();
     node->children[3]->x     = node->x + halfSize;
     node->children[3]->z     = node->z + halfSize;
@@ -742,20 +742,20 @@ void QuadTreeTerrain::Subdivide(Node* node)
 }
 
 //=============================================================================
-// UpdateNode - recursively update quadtree based on camera position
+// UpdateNode - 根据相机位置递归更新四叉树
 //=============================================================================
 
 void QuadTreeTerrain::UpdateNode(Node* node, const Vector3f& cameraPos)
 {
     if (ShouldSubdivide(*node, cameraPos))
     {
-        // Need subdivision
+        // 需要细分
         if (node->IsLeaf())
         {
             Subdivide(node);
         }
 
-        // Recurse into children
+        // 递归进入子节点
         for (int i = 0; i < 4; ++i)
         {
             UpdateNode(node->children[i].get(), cameraPos);
@@ -763,7 +763,7 @@ void QuadTreeTerrain::UpdateNode(Node* node, const Vector3f& cameraPos)
     }
     else
     {
-        // No subdivision needed - collapse children if any
+        // 不需要细分 — 如果有子节点则合并
         for (int i = 0; i < 4; ++i)
         {
             node->children[i].reset();
@@ -772,7 +772,7 @@ void QuadTreeTerrain::UpdateNode(Node* node, const Vector3f& cameraPos)
 }
 
 //=============================================================================
-// CollectLeaves - gather all leaf nodes into mLeafNodes
+// CollectLeaves - 收集所有叶节点到 mLeafNodes 中
 //=============================================================================
 
 void QuadTreeTerrain::CollectLeaves(Node* node)
@@ -793,18 +793,18 @@ void QuadTreeTerrain::CollectLeaves(Node* node)
 }
 
 //=============================================================================
-// GenerateLeafMesh - build SubMeshInfo list from current leaf nodes.
+// GenerateLeafMesh - 从当前叶节点构建 SubMeshInfo 列表。
 //
-// Looks up pre-computed index buffers from the static pool (built by
-// BuildStaticIndexPool). No index generation, no GPU upload — O(1) per leaf.
+// 从静态索引池（由 BuildStaticIndexPool 构建）中查找预计算的索引缓冲区。
+// 无需索引生成，无需 GPU 上传 — 每个叶节点 O(1)。
 //
-// All indices in the static pool are LEAF-LOCAL. We set baseVertex per
-// leaf to offset them into the global terrain vertex buffer.
+// 静态池中的所有索引都是叶节点局部的。我们为每个叶节点设置 baseVertex
+// 来将它们偏移到全局地形顶点缓冲区的正确位置。
 //=============================================================================
 
 void QuadTreeTerrain::GenerateLeafMesh()
 {
-    // Clear previous frame's SubMeshInfos
+    // 清除上一帧的 SubMeshInfos
     mMesh->ClearSubMeshInfos();
     mLeafBounds.clear();
     mLeafBounds.reserve(mLeafNodes.size());
@@ -814,20 +814,20 @@ void QuadTreeTerrain::GenerateLeafMesh()
         Node* leaf = mLeafNodes[idx];
         const LeafNeighborInfo& nbrInfo = mLeafNeighborInfo[idx];
 
-        // Compute stride for this leaf's LOD level
+        // 计算该叶节点 LOD 层级的步长
         uint32_t cellsPerSide = kLeafVerticesPerSide - 1;  // 16
         uint32_t stride = leaf->size / cellsPerSide;
 
-        // Map stride → level index into the static pool
+        // 将步长映射到静态池中的层级索引
         uint32_t strideLevel = GetStrideLevel(stride);
 
-        // Encode 4 neighbor coarser flags as a permutation index [0..15]
+        // 将 4 个邻居更粗标志编码为排列索引 [0..15]
         uint32_t perm = (nbrInfo.leftCoarser   ? 1u : 0u)
                       | (nbrInfo.rightCoarser  ? 2u : 0u)
                       | (nbrInfo.topCoarser    ? 4u : 0u)
                       | (nbrInfo.bottomCoarser ? 8u : 0u);
 
-        // Look up pre-computed indices from the static pool
+        // 从静态池中查找预计算的索引
         const IndexPoolEntry& entry = mIndexPool[strideLevel][perm];
 
         SubMeshInfo subMeshInfo;
@@ -835,27 +835,27 @@ void QuadTreeTerrain::GenerateLeafMesh()
         subMeshInfo.indexCount = entry.count;
         subMeshInfo.topology   = PrimitiveMode_TRIANGLES;
         subMeshInfo.vertexCount = mGridSize * mGridSize;
-        // baseVertex offsets leaf-local indices to absolute positions in global VB
+        // baseVertex 将叶节点局部索引偏移到全局 VB 中的绝对位置
         subMeshInfo.baseVertex = leaf->z * mGridSize + leaf->x;
         mMesh->AddSubMeshInfo(subMeshInfo);
         mLeafBounds.push_back(leaf->bounds);
     }
 
-    // NO UpdateIndices call — buffer is static, built once at init time
+    // 不调用 UpdateIndices — 缓冲区是静态的，在初始化时构建一次
 }
 
 //=============================================================================
-// CreateTriangleFanLocal - generate triangles for a single fan-cell with crack fixing.
+// CreateTriangleFanLocal - 为单个扇形单元生成带裂缝修复的三角形。
 //
-// Outputs SEMI-LOCAL indices: uses GLOBAL row stride (mGridSize) but LEAF-LOCAL
-// coordinates. This allows baseVertex to correctly offset into the global VB:
+// 输出半局部索引：使用全局行跨度（mGridSize）但叶节点局部坐标。
+// 这使得 baseVertex 能正确偏移到全局 VB 中：
 //
 //   finalIndex = poolIndex + baseVertex
 //             = (local_z * mGridSize + local_x) + (leaf->z * mGridSize + leaf->x)
 //             = (leaf->z + local_z) * mGridSize + (leaf->x + local_x)  ✓
 //
-// (fcx, fcz): fan-cell origin in LEAF-LOCAL grid coordinates
-// globalGridSize: mGridSize (global terrain vertices per side)
+// (fcx, fcz): 扇形单元原点（叶节点局部网格坐标）
+// globalGridSize: mGridSize（全局地形每边顶点数）
 //=============================================================================
 
 void QuadTreeTerrain::CreateTriangleFanLocal(
@@ -868,16 +868,16 @@ void QuadTreeTerrain::CreateTriangleFanLocal(
     bool topCoarser,                // top   neighbor (-Z) is coarser?
     bool bottomCoarser)             // bottom neighbor (+Z) is coarser?
 {
-    // Effective step per direction: double stride when neighbor is coarser.
+    // 各方向有效步长：邻居更粗时步长翻倍
     uint32_t sLeft   = leftCoarser   ? 2 * stride : stride;
     uint32_t sRight  = rightCoarser  ? 2 * stride : stride;
     uint32_t sTop    = topCoarser    ? 2 * stride : stride;
     uint32_t sBottom = bottomCoarser ? 2 * stride : stride;
 
-    // Fan center in semi-local coords (global row stride, leaf-local offsets)
+    // 扇形中心（半局部坐标：全局行跨度，叶节点局部偏移）
     uint32_t idxCenter = (fcz + stride) * globalGridSize + (fcx + stride);
 
-    // ---- Sector 1: LEFT edge (from TL to BL), traversing downward ----
+    // ---- 扇区 1：左边缘（从 TL 到 BL），向下遍历 ----
     uint32_t t1 = fcz * globalGridSize + fcx;
     uint32_t t2 = (fcz + sLeft) * globalGridSize + fcx;
     indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
@@ -888,8 +888,8 @@ void QuadTreeTerrain::CreateTriangleFanLocal(
         indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
     }
 
-    // ---- Sector 2: BOTTOM edge (from BL to BR), traversing rightward ----
-    // Continue from Sector 1's end
+    // ---- 扇区 2：下边缘（从 BL 到 BR），向右遍历 ----
+    // 接续扇区 1 的终点
     t1 = t2; t2 = t1 + sBottom;
     indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
 
@@ -899,8 +899,8 @@ void QuadTreeTerrain::CreateTriangleFanLocal(
         indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
     }
 
-    // ---- Sector 3: RIGHT edge (from BR to TR), traversing upward ----
-    // Continue from Sector 2's end
+    // ---- 扇区 3：右边缘（从 BR 到 TR），向上遍历 ----
+    // 接续扇区 2 的终点
     t1 = t2; t2 = t1 - sRight * globalGridSize;
     indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
 
@@ -910,8 +910,8 @@ void QuadTreeTerrain::CreateTriangleFanLocal(
         indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
     }
 
-    // ---- Sector 4: TOP edge (from TR to TL), traversing leftward ----
-    // Continue from Sector 3's end
+    // ---- 扇区 4：上边缘（从 TR 到 TL），向左遍历 ----
+    // 接续扇区 3 的终点
     t1 = t2; t2 = t1 - sTop;
     indices.push_back(idxCenter); indices.push_back(t1); indices.push_back(t2);
 
@@ -923,8 +923,8 @@ void QuadTreeTerrain::CreateTriangleFanLocal(
 }
 
 //=============================================================================
-// GetStrideLevel - map stride value to level index (log2).
-// stride must be a power of 2: returns 0 for stride=1, 1 for stride=2, etc.
+// GetStrideLevel - 将步长值映射为层级索引（log2）。
+// 步长必须是 2 的幂：stride=1 返回 0，stride=2 返回 1，以此类推。
 //=============================================================================
 
 uint32_t QuadTreeTerrain::GetStrideLevel(uint32_t stride) const
@@ -935,19 +935,18 @@ uint32_t QuadTreeTerrain::GetStrideLevel(uint32_t stride) const
 }
 
 //=============================================================================
-// ComputeNodeGeoError - compute max geometric error when a node is rendered
-// at its LOD level (i.e., with kLeafVerticesPerSide vertices per side).
+// ComputeNodeGeoError - 计算节点以其 LOD 层级渲染时的最大几何误差
+//（即每边使用 kLeafVerticesPerSide 个顶点）。
 //
-// The geometric error is the maximum |actual_height - bilinear_interpolated_height|
-// over all grid vertices within the node that are NOT on the rendered vertex grid.
-// When the node size equals kLeafVerticesPerSide-1, every vertex is rendered
-// and the error is zero.
+// 几何误差是该节点内所有不在渲染顶点网格上的网格顶点的
+// |实际高度 - 双线性插值高度| 的最大值。
+// 当节点大小等于 kLeafVerticesPerSide-1 时，每个顶点都被渲染，误差为零。
 //=============================================================================
 
 float QuadTreeTerrain::ComputeNodeGeoError(uint32_t x, uint32_t z, uint32_t size) const
 {
     uint32_t cellsPerSide = kLeafVerticesPerSide - 1;  // 16
-    if (size <= cellsPerSide) return 0.0f;  // finest detail, no error
+    if (size <= cellsPerSide) return 0.0f;  // 最细细节，无误差
 
     uint32_t stride = size / cellsPerSide;
     float maxError = 0.0f;
@@ -956,20 +955,20 @@ float QuadTreeTerrain::ComputeNodeGeoError(uint32_t x, uint32_t z, uint32_t size
     {
         for (uint32_t gx = x; gx <= x + size && gx < mGridSize; ++gx)
         {
-            // Skip rendered vertices (they lie exactly on the sampled grid)
+            // 跳过已渲染的顶点（它们恰好位于采样网格上）
             uint32_t localX = gx - x;
             uint32_t localZ = gz - z;
             if (localX % stride == 0 && localZ % stride == 0) continue;
 
-            // Find which rendered grid cell this vertex falls in
+            // 确定该顶点落在哪个渲染网格单元中
             uint32_t cellX = localX / stride;
             uint32_t cellZ = localZ / stride;
 
-            // Clamp to valid cell range
+            // 钳制到有效单元范围
             cellX = std::min(cellX, cellsPerSide - 1);
             cellZ = std::min(cellZ, cellsPerSide - 1);
 
-            // 4 corners of the rendered grid cell (global coords)
+            // 渲染网格单元的 4 个角（全局坐标）
             uint32_t x0 = x + cellX * stride;
             uint32_t z0 = z + cellZ * stride;
             uint32_t x1 = std::min(x0 + stride, mGridSize - 1);
@@ -980,7 +979,7 @@ float QuadTreeTerrain::ComputeNodeGeoError(uint32_t x, uint32_t z, uint32_t size
             float h01 = mHeightMap[z1 * mGridSize + x0];
             float h11 = mHeightMap[z1 * mGridSize + x1];
 
-            // Bilinear interpolation weights
+            // 双线性插值权重
             float tx = (x1 > x0) ? (float)(gx - x0) / (float)(x1 - x0) : 0.0f;
             float tz = (z1 > z0) ? (float)(gz - z0) / (float)(z1 - z0) : 0.0f;
 
@@ -999,8 +998,8 @@ float QuadTreeTerrain::ComputeNodeGeoError(uint32_t x, uint32_t z, uint32_t size
 }
 
 //=============================================================================
-// ComputeAllGeoErrors - pre-compute geometric error for every possible node
-// at every level. Called once at initialization.
+// ComputeAllGeoErrors - 预计算每个层级所有可能节点的几何误差。
+// 在初始化时调用一次。
 //=============================================================================
 
 void QuadTreeTerrain::ComputeAllGeoErrors()
@@ -1025,19 +1024,19 @@ void QuadTreeTerrain::ComputeAllGeoErrors()
         }
     }
 
-    // Set root node's geoError (root level = 0, coarsest)
+    // 设置根节点的 geoError（根层级 = 0，最粗）
     mRoot.maxGeoError = GetCachedGeoError(mRoot.level, mRoot.x, mRoot.z);
 
     LOG_INFO("QuadTreeTerrain: GeoError cache computed for %u levels", mMaxLevel + 1);
 }
 
 //=============================================================================
-// GetCachedGeoError - look up pre-computed geometric error from cache
+// GetCachedGeoError - 从缓存中查找预计算的几何误差
 //=============================================================================
 
 float QuadTreeTerrain::GetCachedGeoError(uint32_t level, uint32_t x, uint32_t z) const
 {
-    // Convert LOD level to depth index: depth=mMaxLevel is coarsest (root), depth=0 is finest
+    // 将 LOD 层级转换为深度索引：depth=mMaxLevel 为最粗（根节点），depth=0 为最细
     uint32_t depth = mMaxLevel - level;
     if (depth >= mGeoErrorCache.size()) return 0.0f;
 
@@ -1052,17 +1051,16 @@ float QuadTreeTerrain::GetCachedGeoError(uint32_t level, uint32_t x, uint32_t z)
 }
 
 //=============================================================================
-// BuildStaticIndexPool - pre-compute all index permutations for static IB.
+// BuildStaticIndexPool - 为静态 IB 预计算所有索引排列。
 //
-// For each possible stride level (1, 2, 4, ..., maxStride), generates all 16
-// neighbor-coarser permutations. Each entry contains the complete index buffer
-// for one leaf configuration (64 fan-cells × 4~8 triangles each).
+// 对每个可能的步长层级（1, 2, 4, ..., maxStride），生成全部 16 种
+// 邻居更粗排列。每个条目包含一个叶节点配置的完整索引缓冲区
+//（64 个扇形单元 × 每个 4~8 个三角形）。
 //
-// All indices are LEAF-LOCAL. At runtime, GenerateLeafMesh() looks up the
-// correct entry and sets baseVertex to offset into the global VB.
+// 所有索引都是叶节点局部的。运行时，GenerateLeafMesh() 查找正确的条目
+// 并设置 baseVertex 来偏移到全局 VB 中。
 //
-// Called once during terrain creation. After this, UpdateIndices() is never
-// called again — zero per-frame GPU upload.
+// 在地形创建时调用一次。此后不再调用 UpdateIndices() — 零每帧 GPU 上传。
 //=============================================================================
 
 void QuadTreeTerrain::BuildStaticIndexPool()
@@ -1070,7 +1068,7 @@ void QuadTreeTerrain::BuildStaticIndexPool()
     uint32_t minNodeCells = kLeafVerticesPerSide - 1;  // 16
     uint32_t maxStride = mGridSizeCells / minNodeCells;
 
-    // Compute max stride level (log2 of maxStride)
+    // 计算最大步长层级（maxStride 的 log2）
     uint32_t maxStrideLevel = 0;
     { uint32_t tmp = maxStride; while (tmp > 1) { tmp >>= 1; ++maxStrideLevel; } }
 
@@ -1079,7 +1077,7 @@ void QuadTreeTerrain::BuildStaticIndexPool()
     for (auto& v : mIndexPool) v.resize(16);
 
     mMasterIndices.clear();
-    mMasterIndices.reserve(numLevels * 16 * 1200);  // ~1200 indices per entry (estimate)
+    mMasterIndices.reserve(numLevels * 16 * 1200);  // ~1200 索引/条目（估算）
 
     uint32_t fanCellsPerSide = minNodeCells / 2;  // always 8
 
@@ -1097,18 +1095,18 @@ void QuadTreeTerrain::BuildStaticIndexPool()
 
             uint32_t startIdx = (uint32_t)mMasterIndices.size();
 
-            // Generate all 64 fan-cells for this leaf configuration
+            // 为该叶节点配置生成全部 64 个扇形单元
             for (uint32_t fj = 0; fj < fanCellsPerSide; ++fj)
             {
                 for (uint32_t fi = 0; fi < fanCellsPerSide; ++fi)
                 {
-                    // Fan-cell origin in LEAF-LOCAL coordinates
+                    // 扇形单元原点（叶节点局部坐标）
                     uint32_t fcx = fi * 2 * stride;
                     uint32_t fcz = fj * 2 * stride;
 
-                    // Edge detection within the leaf's fan-cell grid
-                    // fj=0 → fcz=0 → smallest Z → TOP edge (-Z)
-                    // fj=max → largest Z → BOTTOM edge (+Z)
+                    // 叶节点扇形单元网格内的边缘检测
+                    // fj=0 → fcz=0 → 最小 Z → 上边缘（-Z）
+                    // fj=max → 最大 Z → 下边缘（+Z）
                     bool onLeftEdge   = (fi == 0);
                     bool onRightEdge  = (fi == fanCellsPerSide - 1);
                     bool onTopEdge    = (fj == 0);
@@ -1132,7 +1130,7 @@ void QuadTreeTerrain::BuildStaticIndexPool()
                  level, stride, leafSizeCells);
     }
 
-    // Upload master index buffer to GPU — ONCE
+    // 上传主索引缓冲区到 GPU — 仅一次
     if (!mMasterIndices.empty())
     {
         mMesh->UpdateIndices(mMasterIndices.data(), (uint32_t)mMasterIndices.size());
@@ -1145,7 +1143,7 @@ void QuadTreeTerrain::BuildStaticIndexPool()
 }
 
 //=============================================================================
-// GetChildIndex - find which child index this node is within its parent
+// GetChildIndex - 查找该节点在其父节点中的子节点索引
 //=============================================================================
 
 int QuadTreeTerrain::GetChildIndex(const Node* node)
@@ -1160,31 +1158,29 @@ int QuadTreeTerrain::GetChildIndex(const Node* node)
 }
 
 //=============================================================================
-// GetMinNeighborLevel - find the minimum (finest) leaf level among all leaves
-// adjacent to `node` on the specified edge.
+// GetMinNeighborLevel - 查找 `node` 在指定边上所有相邻叶节点中的
+// 最小（最细）层级。
 //
-// direction: 0=left(-X), 1=right(+X), 2=bottom(+Z), 3=top(-Z)
+// direction: 0=左(-X), 1=右(+X), 2=下(+Z), 3=上(-Z)
 //
-// Uses the standard quadtree neighbor-finding algorithm:
-// 1. Walk up the tree to find an ancestor whose sibling is in the
-//    desired direction.
-// 2. Descend into that sibling, following children that share the edge,
-//    to find the finest leaf.
+// 使用标准四叉树邻居查找算法：
+// 1. 向上遍历树，找到其兄弟节点在目标方向的祖先。
+// 2. 下降进入该兄弟节点，沿着共享边的子节点，找到最细的叶节点。
 //=============================================================================
 
 uint32_t QuadTreeTerrain::GetMinNeighborLevel(const Node* node, int direction) const
 {
-    // Child layout:
+    // 子节点布局：
     //   0=NW(x,    z,    h)  1=NE(x+h, z,    h)
     //   2=SW(x,    z+h,  h)  3=SE(x+h, z+h,  h)
     //
-    // For each direction, some children have their neighbor as a sibling,
-    // others must go up to the parent first.
+    // 对每个方向，某些子节点的邻居是兄弟节点，
+    // 其他子节点需要先向上到父节点。
     //
-    // LEFT (-X):  child 1→sibling 0, child 3→sibling 2;  child 0,2→go up
-    // RIGHT(+X):  child 0→sibling 1, child 2→sibling 3;  child 1,3→go up
-    // BOTTOM(+Z): child 0→sibling 2, child 1→sibling 3;  child 2,3→go up
-    // TOP (-Z):   child 2→sibling 0, child 3→sibling 1;  child 0,1→go up
+    // 左(-X):   子节点1→兄弟0, 子节点3→兄弟2;  子节点0,2→上溯
+    // 右(+X):   子节点0→兄弟1, 子节点2→兄弟3;  子节点1,3→上溯
+    // 下(+Z):   子节点0→兄弟2, 子节点1→兄弟3;  子节点2,3→上溯
+    // 上(-Z):   子节点2→兄弟0, 子节点3→兄弟1;  子节点0,1→上溯
 
     static const int kSibling[4][4] = {
         { -1,  0, -1,  2 },   // LEFT:  child 1→0, child 3→2
@@ -1193,11 +1189,11 @@ uint32_t QuadTreeTerrain::GetMinNeighborLevel(const Node* node, int direction) c
         { -1, -1,  0,  1 },   // TOP:   child 2→0, child 3→1
     };
 
-    // Children to explore when descending into the neighbor.
-    // LEFT:  right-side  children [1,3] (they share the LEFT edge of neighbor)
-    // RIGHT: left-side   children [0,2]
-    // BOTTOM:top-side    children [0,1]
-    // TOP:   bottom-side children [2,3]
+    // 下降到邻居时要探索的子节点。
+    // 左:   右侧子节点 [1,3]（它们共享邻居的左边缘）
+    // 右:   左侧子节点 [0,2]
+    // 下:   上侧子节点 [0,1]
+    // 上:   下侧子节点 [2,3]
     static const int kDescend[4][2] = {
         { 1, 3 },   // LEFT
         { 0, 2 },   // RIGHT
@@ -1205,7 +1201,7 @@ uint32_t QuadTreeTerrain::GetMinNeighborLevel(const Node* node, int direction) c
         { 2, 3 },   // TOP
     };
 
-    // Walk up to find the neighbor at the same or coarser level
+    // 向上遍历以找到相同或更粗层级的邻居
     const Node* current = node;
     const Node* neighbor = nullptr;
 
@@ -1224,32 +1220,30 @@ uint32_t QuadTreeTerrain::GetMinNeighborLevel(const Node* node, int direction) c
 
     if (!neighbor)
     {
-        // Terrain boundary — no neighbor in this direction
+        // 地形边界 — 该方向无邻居
         return node->level;
     }
 
-    // Descend into the neighbor to find the minimum leaf level (finest detail)
-    // among all leaves sharing the edge with the original node.
+    // 下降到邻居树中，找到与原节点共享边的所有叶节点中的最小层级（最细细节）。
     //
-    // We must only follow children whose range on the perpendicular axis
-    // overlaps the original node's range. Otherwise we might count
-    // leaves that don't actually share the edge.
+    // 我们必须只沿着垂直轴范围与原节点范围重叠的子节点前进。
+    // 否则可能会统计到实际上不共享边的叶节点。
 
-    uint32_t origMin, origMax;  // original node's range on the perpendicular axis
-    if (direction <= 1)  // LEFT/RIGHT → perpendicular axis is Z
+    uint32_t origMin, origMax;  // 原节点在垂直轴上的范围
+    if (direction <= 1)  // 左/右 → 垂直轴为 Z
     {
         origMin = node->z;
         origMax = node->z + node->size;
     }
-    else  // BOTTOM/TOP → perpendicular axis is X
+    else  // 下/上 → 垂直轴为 X
     {
         origMin = node->x;
         origMax = node->x + node->size;
     }
 
-    uint32_t minLevel = UINT32_MAX;  // start with finest possible, but we'll find finest level (smallest number in 0=finest, mMaxLevel=coarsest)
+    uint32_t minLevel = UINT32_MAX;  // 从最细可能值开始，但我们会找到最细层级（0=最细，mMaxLevel=最粗）
 
-    // DFS into the neighbor tree
+    // DFS 深度优先搜索进入邻居树
     std::vector<const Node*> stack;
     stack.push_back(neighbor);
 
@@ -1258,7 +1252,7 @@ uint32_t QuadTreeTerrain::GetMinNeighborLevel(const Node* node, int direction) c
         const Node* n = stack.back();
         stack.pop_back();
 
-        // Check if this node overlaps the original node's perpendicular range
+        // 检查该节点是否与原节点的垂直范围重叠
         uint32_t nMin, nMax;
         if (direction <= 1)
         {
@@ -1273,12 +1267,12 @@ uint32_t QuadTreeTerrain::GetMinNeighborLevel(const Node* node, int direction) c
 
         if (nMin >= origMax || nMax <= origMin)
         {
-            continue;  // no overlap, skip
+            continue;  // 无重叠，跳过
         }
 
         if (n->IsLeaf())
         {
-            minLevel = std::min(minLevel, n->level);  // Find finest level (smallest number in 0=finest, mMaxLevel=coarsest)
+            minLevel = std::min(minLevel, n->level);  // 找到最细层级（0=最细，mMaxLevel=最粗）
             continue;
         }
 
@@ -1295,12 +1289,11 @@ uint32_t QuadTreeTerrain::GetMinNeighborLevel(const Node* node, int direction) c
 }
 
 //=============================================================================
-// EnforceNeighborConstraint - ensure adjacent leaves differ by at most 1 level.
+// EnforceNeighborConstraint - 确保相邻叶节点层级差不超过 1。
 //
-// After the camera-based subdivision, adjacent leaves can differ by 2+ levels
-// (e.g., a level-1 leaf next to a level-3 leaf). This pass forcibly
-// subdivides any leaf whose neighbor is more than 1 level finer, repeating
-// until the constraint is satisfied.
+// 在基于相机的细分后，相邻叶节点的层级差可能达到 2+（例如
+// level-1 叶节点旁边是 level-3 叶节点）。此过程强制将邻居比自身
+// 细 1 级以上的叶节点细分，直到约束满足为止。
 //=============================================================================
 
 void QuadTreeTerrain::EnforceNeighborConstraint()
@@ -1314,18 +1307,18 @@ void QuadTreeTerrain::EnforceNeighborConstraint()
 
         for (Node* leaf : mLeafNodes)
         {
-            // Cannot subdivide if already at finest level
+            // 已在最细层级，无法继续细分
             if (leaf->level == 0) continue;
 
             for (int dir = 0; dir < 4; ++dir)
             {
                 uint32_t minNeighbor = GetMinNeighborLevel(leaf, dir);
-                // Neighbor is finer (lower level number) by more than 1 → subdivide
+                // 邻居比自身细（层级号更小）超过 1 级 → 细分
                 if (minNeighbor + 1 < leaf->level)
                 {
                     Subdivide(leaf);
                     changed = true;
-                    break;  // leaf is no longer a leaf, move to next
+                    break;  // 叶节点不再是叶节点，处理下一个
                 }
             }
         }
@@ -1333,7 +1326,7 @@ void QuadTreeTerrain::EnforceNeighborConstraint()
 }
 
 //=============================================================================
-// Update - rebuild quadtree and regenerate mesh
+// Update - 重建四叉树并重新生成网格
 //=============================================================================
 
 void QuadTreeTerrain::Update(const Vector3f& cameraPos,
@@ -1342,7 +1335,7 @@ void QuadTreeTerrain::Update(const Vector3f& cameraPos,
 {
     if (!mMesh) return;
 
-    // Cache camera parameters for SSE
+    // 缓存相机参数用于 SSE
     if (fovY > 0.0f)
     {
         const float DEG2RAD = 0.0174532925199432958f;
@@ -1353,37 +1346,37 @@ void QuadTreeTerrain::Update(const Vector3f& cameraPos,
         mScreenHeight = screenHeight;
     }
 
-    // Update quadtree from root
+    // 从根节点更新四叉树
     UpdateNode(&mRoot, cameraPos);
 
-    // Enforce neighbor constraint: adjacent leaves must differ by at most 1 level
+    // 强制邻居约束：相邻叶节点层级差最多为 1
     EnforceNeighborConstraint();
 
-    // Collect all leaf nodes
+    // 收集所有叶节点
     mLeafNodes.clear();
     CollectLeaves(&mRoot);
 
-    // Compute neighbor LOD info for each leaf (for crack-fixing fan)
+    // 为每个叶节点计算邻居 LOD 信息（用于裂缝修复扇形）
     mLeafNeighborInfo.resize(mLeafNodes.size());
     for (size_t i = 0; i < mLeafNodes.size(); ++i)
     {
         Node* leaf = mLeafNodes[i];
         LeafNeighborInfo& info = mLeafNeighborInfo[i];
 
-        // direction: 0=left(-X), 1=right(+X), 2=bottom(+Z), 3=top(-Z)
+        // direction: 0=左(-X), 1=右(+X), 2=下(+Z), 3=上(-Z)
         uint32_t nbrLeft   = GetMinNeighborLevel(leaf, 0);
         uint32_t nbrRight  = GetMinNeighborLevel(leaf, 1);
         uint32_t nbrBottom = GetMinNeighborLevel(leaf, 2);
         uint32_t nbrTop    = GetMinNeighborLevel(leaf, 3);
 
-        // Neighbor is coarser if its level is HIGHER than ours (larger number = coarser)
+        // 邻居更粗的条件：其层级号比我们大（数字越大 = 越粗）
         info.leftCoarser   = (nbrLeft   > leaf->level) ? 1 : 0;
         info.rightCoarser  = (nbrRight  > leaf->level) ? 1 : 0;
         info.topCoarser    = (nbrTop    > leaf->level) ? 1 : 0;
         info.bottomCoarser = (nbrBottom > leaf->level) ? 1 : 0;
     }
 
-    // Build mesh from leaves
+    // 从叶节点构建网格
     GenerateLeafMesh();
 
     // Build PatchMeta SSBO for GPU-driven rendering (阶段1A: 纯增量)
@@ -1391,7 +1384,7 @@ void QuadTreeTerrain::Update(const Vector3f& cameraPos,
 }
 
 //=============================================================================
-// GetHeight - bilinear interpolation of heightmap
+// GetHeight - 高度图的双线性插值查询
 //=============================================================================
 
 float QuadTreeTerrain::GetHeight(float worldX, float worldZ) const
@@ -1425,7 +1418,7 @@ float QuadTreeTerrain::GetHeight(float worldX, float worldZ) const
 }
 
 //=============================================================================
-// Configuration setters
+// 配置参数设置器
 //=============================================================================
 
 void QuadTreeTerrain::SetLODDistanceFactor(float factor)
@@ -1439,9 +1432,9 @@ void QuadTreeTerrain::SetSSEThreshold(float threshold)
 }
 
 //=============================================================================
-// BuildIndirectCommands - build indirect draw commands from visible leaves.
-// Applies per-leaf frustum culling and fills the command buffer for a single
-// DrawIndexedPrimitivesIndirect call.
+// BuildIndirectCommands - 从可见叶节点构建间接绘制命令。
+// 对每个叶节点执行视锥体剔除，填充命令缓冲区用于单次
+// DrawIndexedPrimitivesIndirect 调用。
 //=============================================================================
 
 void QuadTreeTerrain::BuildIndirectCommands(const mathutil::Frustumf* frustum)
@@ -1457,7 +1450,7 @@ void QuadTreeTerrain::BuildIndirectCommands(const mathutil::Frustumf* frustum)
 
     for (int n = 0; n < subMeshCount; n++)
     {
-        // Per-leaf frustum culling
+        // 逐叶节点视锥体剔除
         if (frustum && n < (int)leafBounds.size())
         {
             if (!frustum->IsBoxInFrustum(leafBounds[n]))
