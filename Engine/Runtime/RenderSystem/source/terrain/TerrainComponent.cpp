@@ -84,6 +84,7 @@ void TerrainComponent::SetMaterial(const MaterialPtr& material)
 void TerrainComponent::Update(float deltaTime)
 {
     mGPUPathDataPrepared = false;
+    mCullParamsDirty = true;
 }
 
 //=============================================================================
@@ -111,6 +112,29 @@ void TerrainComponent::EnsureTerrainUBO()
     {
         mTerrainParamsUBO->SetData(&params, 0, sizeof(params));
         mTerrainParamsDirty = false;
+    }
+}
+
+void TerrainComponent::EnsureCullParamsUBO()
+{
+    if (!mQuadTreeTerrain) return;
+
+    cbTerrainCullParams params;
+    memset(&params, 0, sizeof(params));
+    params.patchCount = mQuadTreeTerrain->GetPatchMetaCount();
+    params.maxHeight  = mQuadTreeTerrain->GetHeightScale();
+
+    if (!mCullParamsUBO)
+    {
+        mCullParamsUBO = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbTerrainCullParams));
+        if (mCullParamsUBO)
+            mCullParamsDirty = true;
+    }
+
+    if (mCullParamsUBO && mCullParamsDirty)
+    {
+        mCullParamsUBO->SetData(&params, 0, sizeof(params));
+        mCullParamsDirty = false;
     }
 }
 
@@ -145,9 +169,14 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
         return;
 
     // ========================================================================
-    // 路径选择：GPU 剔除（Indirect Draw） vs CPU 实例化绘制
+    // 路径选择：Mesh Shader > GPU 剔除（Indirect Draw） > CPU 实例化绘制
     // ========================================================================
-    if (mUseGPUCulling && mCullPass && mLastCullOutput.indirectArgsBuffer)
+    if (IsUsingMeshShader())
+    {
+        // ---- Mesh Shader 路径：TS 剔除 + MS 生成网格 + DrawMeshTasks ----
+        RenderMS(renderEncoder, cameraUBO);
+    }
+    else if (mUseGPUCulling && mCullPass && mLastCullOutput.indirectArgsBuffer)
     {
         // ---- GPU 剔除路径：CS 已分发，使用 Indirect Draw ----
         RenderGPUCulled(renderEncoder, cameraUBO, terrainGBufferPSO);
@@ -295,8 +324,13 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
     if (!mQuadTreeTerrain || !renderEncoder || !terrainDepthPSO)
         return;
 
-    // 路径选择
-    if (mUseGPUCulling && mCullPass && mLastCullOutput.indirectArgsBuffer)
+    // 路径选择：Mesh Shader > GPU 剔除 > CPU 实例化
+    if (IsUsingMeshShader())
+    {
+        // Mesh Shader 路径：TS 剔除 + MS 生成网格 + DrawMeshTasks
+        RenderDepthMS(renderEncoder, cameraUBO);
+    }
+    else if (mUseGPUCulling && mCullPass && mLastCullOutput.indirectArgsBuffer)
     {
         // GPU 剔除路径：Indirect Draw
         RenderDepthGPUCulled(renderEncoder, cameraUBO, terrainDepthPSO);
@@ -411,6 +445,112 @@ void TerrainComponent::RenderDepthCPUInstanced(RenderEncoder* renderEncoder,
         0,
         0,
         visibleCount);
+}
+
+//=============================================================================
+// Mesh Shader 渲染路径（G-Buffer）
+//=============================================================================
+
+void TerrainComponent::RenderMS(RenderEncoder* renderEncoder,
+                                UniformBufferPtr cameraUBO)
+{
+    if (!mTerrainMSPipeline)
+        return;
+
+    auto allPatchMeta = mQuadTreeTerrain->GetPatchMetaBuffer();
+    uint32_t totalPatchCount = mQuadTreeTerrain->GetPatchMetaCount();
+    if (!allPatchMeta || totalPatchCount == 0)
+        return;
+
+    auto heightmapTexture = mQuadTreeTerrain->GetHeightMapTexture();
+    if (!heightmapTexture)
+        return;
+
+    EnsureTerrainUBO();
+    EnsureCullParamsUBO();
+
+    // ---- 绑定 Mesh Pipeline ----
+    renderEncoder->SetGraphicsPipeline(mTerrainMSPipeline);
+    if (mWireframe)
+        renderEncoder->SetFillMode(FillModeWireframe);
+
+    // UBOs: Task stage 需要 cbPerCamera（视锥体提取）和 cbTerrainCull（剔除参数）
+    renderEncoder->SetTaskUniformBuffer("cbPerCamera", cameraUBO);
+    renderEncoder->SetTaskUniformBuffer("cbTerrainCull", mCullParamsUBO);
+    
+    renderEncoder->SetMeshUniformBuffer("cbPerCamera", cameraUBO);
+    renderEncoder->SetMeshUniformBuffer("cbTerrain", mTerrainParamsUBO);
+    renderEncoder->SetFragmentUniformBuffer("cbPerCamera", cameraUBO);
+
+    // PatchMeta SSBO → Task + Mesh 阶段（TS 读取做剔除，MS 读取生成顶点）
+    renderEncoder->SetStorageBuffer("gPatchMeta", allPatchMeta,
+        RenderCore::ShaderStage_Task);
+    renderEncoder->SetStorageBuffer("gPatchMeta", allPatchMeta,
+        RenderCore::ShaderStage_Mesh);
+
+    // 高度图纹理 → Mesh 阶段采样
+    RenderCore::SamplerDesc heightmapSamplerDesc(
+        RenderCore::MAG_LINEAR, RenderCore::MIN_LINEAR,
+        RenderCore::CLAMP_TO_EDGE, RenderCore::CLAMP_TO_EDGE);
+    auto heightmapSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(heightmapSamplerDesc);
+    renderEncoder->SetMeshTextureAndSampler("gHeightmap", heightmapTexture, heightmapSampler);
+
+    // 材质漫反射纹理 → Fragment 阶段
+    BindMaterialTextures(renderEncoder);
+
+    // ---- DrawMeshTasks：每个 patch 一个 TS thread group ----
+    renderEncoder->DrawMeshTasks(totalPatchCount, 1, 1);
+}
+
+//=============================================================================
+// Mesh Shader 渲染路径（仅深度）
+//=============================================================================
+
+void TerrainComponent::RenderDepthMS(RenderEncoder* renderEncoder,
+                                     UniformBufferPtr cameraUBO)
+{
+    if (!mTerrainDepthMSPipeline)
+        return;
+
+    auto allPatchMeta = mQuadTreeTerrain->GetPatchMetaBuffer();
+    uint32_t totalPatchCount = mQuadTreeTerrain->GetPatchMetaCount();
+    if (!allPatchMeta || totalPatchCount == 0)
+        return;
+
+    auto heightmapTexture = mQuadTreeTerrain->GetHeightMapTexture();
+    if (!heightmapTexture)
+        return;
+
+    EnsureTerrainUBO();
+    EnsureCullParamsUBO();
+
+    // ---- 绑定 Mesh Pipeline（深度专用）----
+    renderEncoder->SetGraphicsPipeline(mTerrainDepthMSPipeline);
+    if (mWireframe)
+        renderEncoder->SetFillMode(FillModeWireframe);
+
+    // UBOs
+    renderEncoder->SetTaskUniformBuffer("cbPerCamera", cameraUBO);
+    renderEncoder->SetTaskUniformBuffer("cbTerrainCull", mCullParamsUBO);
+    
+    renderEncoder->SetMeshUniformBuffer("cbPerCamera", cameraUBO);
+    renderEncoder->SetMeshUniformBuffer("cbTerrain", mTerrainParamsUBO);
+
+    // PatchMeta SSBO → Task + Mesh
+    renderEncoder->SetStorageBuffer("gPatchMeta", allPatchMeta,
+        RenderCore::ShaderStage_Task);
+    renderEncoder->SetStorageBuffer("gPatchMeta", allPatchMeta,
+        RenderCore::ShaderStage_Mesh);
+
+    // 高度图纹理 → Mesh 阶段
+    RenderCore::SamplerDesc heightmapSamplerDesc(
+        RenderCore::MAG_LINEAR, RenderCore::MIN_LINEAR,
+        RenderCore::CLAMP_TO_EDGE, RenderCore::CLAMP_TO_EDGE);
+    auto heightmapSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(heightmapSamplerDesc);
+    renderEncoder->SetMeshTextureAndSampler("gHeightmap", heightmapTexture, heightmapSampler);
+
+    // ---- DrawMeshTasks ----
+    renderEncoder->DrawMeshTasks(totalPatchCount, 1, 1);
 }
 
 //=============================================================================

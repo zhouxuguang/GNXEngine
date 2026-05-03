@@ -209,6 +209,7 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
     mTerrainComponent->SetMaterial(material);
     mTerrainComponent->SetWireframe(true);
     mTerrainComponent->SetUseGPUCulling(false);
+    mTerrainComponent->SetUseMeshShader(true);
 
     // Add TerrainComponent to scene (NOT MeshRenderer)
     auto* terrainNode = sceneManager->GetRootNode()->CreateChildSceneNode("Terrain");
