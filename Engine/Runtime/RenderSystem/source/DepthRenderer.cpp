@@ -34,6 +34,16 @@ DepthRenderer::DepthRenderer(RenderDevice* device) : mDevice(device)
     shaderInfoTerrainDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
     mTerrainDepthPipeline = mDevice->CreateGraphicsPipeline(shaderInfoTerrainDepth.graphicsPipelineDesc);
     mTerrainDepthPipeline->AttachGraphicsShader(shaderInfoTerrainDepth.graphicsShader);
+
+    // Terrain Mesh Shader depth PSO (TS culling + MS vertex expansion)
+    if (mDevice->GetFeatures().SupportsMeshPipeline())
+    {
+        GraphicsShaderInfo shaderInfoTerrainMSDepth = CreateGraphicsShaderInfo("TerrainMSDepth");
+        shaderInfoTerrainMSDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
+        mTerrainDepthMSPipeline = mDevice->CreateGraphicsPipeline(shaderInfoTerrainMSDepth.graphicsPipelineDesc);
+        if (mTerrainDepthMSPipeline)
+            mTerrainDepthMSPipeline->AttachGraphicsShader(shaderInfoTerrainMSDepth.graphicsShader);
+    }
 }
 
 DepthRenderer::~DepthRenderer()
@@ -169,8 +179,8 @@ FrameGraphResource DepthRenderer::Render(
                 }
             }
 
-            // 渲染地形深度（专属渲染路径 - GPU-driven）
-            if (!data.meshes.terrainItems.empty() && mTerrainDepthPipeline)
+            // 渲染地形深度（专属渲染路径 - GPU-driven / Mesh Shader）
+            if (!data.meshes.terrainItems.empty())
             {
                 for (TerrainComponent* terrain : data.meshes.terrainItems)
                 {
@@ -182,7 +192,20 @@ FrameGraphResource DepthRenderer::Render(
                     if (terrainNode)
                         objectUBO = terrainNode->GetOrCreateModelUBO(RenderCore::GetRenderDevice());
 
-                    terrain->RenderDepthOnly(renderEncoder.get(), data.uniforms.cameraUBO, objectUBO, mTerrainDepthPipeline, &data.frustum);
+                    // 注入 Mesh Shader Depth PSO（如果可用）
+                    if (mTerrainDepthMSPipeline)
+                        terrain->SetTerrainDepthMSPipeline(mTerrainDepthMSPipeline);
+
+                    // Mesh Shader 路径：PSO 由 TerrainComponent 内部持有
+                    // 传统路径：传入 DepthRenderer 创建的 PSO
+                    if (terrain->IsUsingMeshShader())
+                    {
+                        terrain->RenderDepthOnly(renderEncoder.get(), data.uniforms.cameraUBO, objectUBO, mTerrainDepthPipeline, &data.frustum);
+                    }
+                    else if (mTerrainDepthPipeline)
+                    {
+                        terrain->RenderDepthOnly(renderEncoder.get(), data.uniforms.cameraUBO, objectUBO, mTerrainDepthPipeline, &data.frustum);
+                    }
                 }
             }
             renderEncoder->EndEncode();

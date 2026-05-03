@@ -224,8 +224,8 @@ GBufferData GBufferRenderer::AddToFrameGraph(
                 }
             }
 
-            // 渲染地形（专属渲染路径 - GPU-driven）
-            if (!data.meshes.terrainItems.empty() && mTerrainGBufferPipeline)
+            // 渲染地形（专属渲染路径 - GPU-driven / Mesh Shader）
+            if (!data.meshes.terrainItems.empty())
             {
                 for (TerrainComponent* terrain : data.meshes.terrainItems)
                 {
@@ -240,11 +240,28 @@ GBufferData GBufferRenderer::AddToFrameGraph(
                         objectUBO = terrainNode->GetOrCreateModelUBO(RenderCore::GetRenderDevice());
                     }
 
-                    terrain->Render(renderEncoder.get(),
-                                    data.uniforms.cameraUBO,
-                                    objectUBO,
-                                    mTerrainGBufferPipeline,
-                                    &data.frustum);
+                    // 注入 Mesh Shader PSO（如果可用）
+                    if (mTerrainMSPipeline)
+                        terrain->SetTerrainMSPipeline(mTerrainMSPipeline);
+
+                    // Mesh Shader 路径：PSO 由 TerrainComponent 内部持有（mTerrainMSPipeline）
+                    // 传统路径：传入 GBufferRenderer 创建的 PSO
+                    if (terrain->IsUsingMeshShader())
+                    {
+                        terrain->Render(renderEncoder.get(),
+                                        data.uniforms.cameraUBO,
+                                        objectUBO,
+                                        mTerrainGBufferPipeline,
+                                        &data.frustum);
+                    }
+                    else if (mTerrainGBufferPipeline)
+                    {
+                        terrain->Render(renderEncoder.get(),
+                                        data.uniforms.cameraUBO,
+                                        objectUBO,
+                                        mTerrainGBufferPipeline,
+                                        &data.frustum);
+                    }
                 }
             }
 
@@ -294,6 +311,18 @@ void GBufferRenderer::CreateGBufferPipeline()
     shaderInfoTerrain.graphicsPipelineDesc.renderTargetCount = 5;
     mTerrainGBufferPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shaderInfoTerrain.graphicsPipelineDesc);
     mTerrainGBufferPipeline->AttachGraphicsShader(shaderInfoTerrain.graphicsShader);
+
+    // Terrain Mesh Shader G-buffer PSO (TS culling + MS vertex expansion)
+    if (RenderCore::GetRenderDevice()->GetFeatures().SupportsMeshPipeline())
+    {
+        GraphicsShaderInfo shaderInfoTerrainMS = CreateGraphicsShaderInfo("TerrainMS");
+        shaderInfoTerrainMS.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
+        shaderInfoTerrainMS.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionEqual;
+        shaderInfoTerrainMS.graphicsPipelineDesc.renderTargetCount = 5;
+        mTerrainMSPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shaderInfoTerrainMS.graphicsPipelineDesc);
+        if (mTerrainMSPipeline)
+            mTerrainMSPipeline->AttachGraphicsShader(shaderInfoTerrainMS.graphicsShader);
+    }
 }
 
 NS_RENDERSYSTEM_END

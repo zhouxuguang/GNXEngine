@@ -67,8 +67,8 @@ void ExtractFrustumPlanes(float4x4 vp, out float4 planes[6])
     planes[2] = vp[3] + vp[1];
     // Top
     planes[3] = vp[3] - vp[1];
-    // Near
-    planes[4] = vp[3] + vp[2];
+    // Near (DirectX/Metal: 0 <= z <= w)
+    planes[4] = vp[2];
     // Far
     planes[5] = vp[3] - vp[2];
 

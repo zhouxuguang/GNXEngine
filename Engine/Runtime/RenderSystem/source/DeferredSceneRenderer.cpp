@@ -129,12 +129,15 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // Terrain GPU Culling（FrameGraph Compute Pass，必须在 PreDepth + BasePass 之前）
     // 注册到 FrameGraph 后，CS 在 Execute 阶段执行，输出 IndirectArgs 供后续 Pass 消费
+    // 注意：Mesh Shader 地形不需要此步骤（TS 内部自己做视锥体剔除）
     if (!terrainItems.empty() && camera)
     {
         mathutil::Matrix4x4f vp = camera->GetProjectionMatrix() * camera->GetViewMatrix();
         for (TerrainComponent* terrain : terrainItems)
         {
-            if (terrain && terrain->IsInitialized() && terrain->IsUsingGPUCulling())
+            if (terrain && terrain->IsInitialized()
+                && !terrain->IsUsingMeshShader()       // MS 跳过：TS 自带剔除
+                && terrain->IsUsingGPUCulling())
             {
                 terrain->DispatchCullViaFrameGraph(frameGraph, commandBuffer, vp, cameraUBO);
             }

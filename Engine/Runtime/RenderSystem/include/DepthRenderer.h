@@ -273,6 +273,7 @@ private:
     GraphicsPipelinePtr mDepthOnlyPipeline = nullptr;
     GraphicsPipelinePtr mSkinnedDepthOnlyPipeline = nullptr;
     GraphicsPipelinePtr mTerrainDepthPipeline = nullptr;  // terrain-specific depth PSO
+    GraphicsPipelinePtr mTerrainDepthMSPipeline = nullptr; // terrain Mesh Shader depth PSO
     
     // FrameGraph 资源 ID
     FrameGraphResource mDepthResource;

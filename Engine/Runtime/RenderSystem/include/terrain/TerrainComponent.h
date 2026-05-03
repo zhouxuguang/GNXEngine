@@ -114,6 +114,15 @@ public:
      */
     void SetWireframe(bool wireframe);
 
+    void SetUseMeshShader(bool enable) { mUseMeshShader = enable; }
+    bool IsUsingMeshShader() const { return mUseMeshShader && mTerrainMSPipeline != nullptr; }
+
+    /**
+     * 设置 Mesh Shader 管线（由 GBufferRenderer / DepthRenderer 在渲染前注入）。
+     */
+    void SetTerrainMSPipeline(GraphicsPipelinePtr pipeline) { mTerrainMSPipeline = pipeline; }
+    void SetTerrainDepthMSPipeline(GraphicsPipelinePtr pipeline) { mTerrainDepthMSPipeline = pipeline; }
+
     /**
      * 启用/禁用 GPU Compute Shader 剔除（默认：开启）。
      * 启用时使用 TerrainCullPass（CS 视锥体剔除 → Indirect Draw）。
@@ -160,6 +169,11 @@ private:
     void EnsureTerrainUBO();
 
     /**
+     * 确保剔除参数 UBO（cbTerrainCull）已创建且数据最新。
+     */
+    void EnsureCullParamsUBO();
+
+    /**
      * 构建 GPU 路径数据（视锥体剔除 + 可见 PatchMeta SSBO）。
      * 每帧在首次渲染调用之前调用一次。
      */
@@ -198,6 +212,19 @@ private:
                                  const mathutil::Frustumf* frustum);
 
     /**
+     * Mesh Shader 渲染路径（G-Buffer）。
+     * TS 做视锥体剔除 + DispatchMesh，MS 生成网格顶点 + 采样高度图。
+     */
+    void RenderMS(class RenderEncoder* renderEncoder,
+                  UniformBufferPtr cameraUBO);
+
+    /**
+     * Mesh Shader 渲染路径（仅深度）。
+     */
+    void RenderDepthMS(class RenderEncoder* renderEncoder,
+                       UniformBufferPtr cameraUBO);
+
+    /**
      * 绑定材质漫反射纹理（G-Buffer 和 Depth 路径共用）。
      */
     void BindMaterialTextures(class RenderEncoder* renderEncoder);
@@ -228,6 +255,23 @@ private:
         float uvTileScale;
         uint32_t gridSize;
     };
+
+    // cbTerrainCull 结构体，匹配 shader 布局
+    struct cbTerrainCullParams
+    {
+        uint32_t patchCount;    // gPatchMeta 数组长度
+        float    maxHeight;     // 地形最大高度（AABB Y 轴上界）
+        uint32_t pad0;
+        uint32_t pad1;
+    };
+
+    // 地形剔除参数 UBO（shader 中的 cbTerrainCull）
+    UniformBufferPtr mCullParamsUBO;
+    bool mCullParamsDirty = true;
+
+    GraphicsPipelinePtr mTerrainMSPipeline = nullptr;
+    GraphicsPipelinePtr mTerrainDepthMSPipeline = nullptr;
+    bool mUseMeshShader = false;
 };
 
 typedef std::shared_ptr<TerrainComponent> TerrainComponentPtr;

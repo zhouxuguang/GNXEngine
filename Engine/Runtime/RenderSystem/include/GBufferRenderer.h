@@ -136,6 +136,7 @@ private:
     // 渲染管线
     GraphicsPipelinePtr mGBufferPipeline = nullptr;
     GraphicsPipelinePtr mTerrainGBufferPipeline = nullptr;  // terrain-specific G-buffer PSO
+    GraphicsPipelinePtr mTerrainMSPipeline = nullptr;       // terrain Mesh Shader G-buffer PSO
     bool mIsInitialized = false;
 };
 
