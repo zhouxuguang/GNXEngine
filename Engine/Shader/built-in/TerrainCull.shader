@@ -124,7 +124,7 @@ void CS(int3 dtid : SV_DispatchThreadID)
 
     // Write IndirectArgs
     IndirectCommand cmd;
-    cmd.indexCount    = 1536;              // 16x16 quads * 6 indices per quad
+    cmd.indexCount    = 384;               // 8x8 quads * 6 indices per quad (9x9 template mesh)
     cmd.instanceCount = visible ? 1 : 0;
     cmd.firstIndex    = 0;
     cmd.vertexOffset  = 0;

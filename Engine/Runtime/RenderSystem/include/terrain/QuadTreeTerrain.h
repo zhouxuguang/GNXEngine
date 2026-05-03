@@ -232,8 +232,8 @@ private:
     float mTanHalfFovY = 0.0f;
     float mScreenHeight = 0.0f;
 
-    // 每个叶节点渲染为每边这么多顶点的网格
-    static constexpr uint32_t kLeafVerticesPerSide = 17;
+    // 每个叶节点渲染为每边这么多顶点的网格（9x9 = 81 顶点，8x8 = 64 三角形）
+    static constexpr uint32_t kLeafVerticesPerSide = 9;
     
     // LOD 稳定性管理 - 防止 LOD 快速切换
     static constexpr uint32_t LOD_STABILITY_FRAMES = 3;  // 需要连续3帧才切换LOD

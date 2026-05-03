@@ -275,7 +275,7 @@ void TerrainComponent::RenderCPUInstanced(RenderEncoder* renderEncoder,
     // ---- 实例化绘制：每个可见 patch 一个实例 ----
     renderEncoder->DrawIndexedInstancePrimitives(
         PrimitiveMode_TRIANGLES,
-        1536,          // 17x17 模板网格的索引数（16*16*6）
+        384,          // 9x9 模板网格的索引数（8*8*6）
         templateIB,
         0,             // indexBufferOffset
         0,             // firstInstance
@@ -406,7 +406,7 @@ void TerrainComponent::RenderDepthCPUInstanced(RenderEncoder* renderEncoder,
 
     renderEncoder->DrawIndexedInstancePrimitives(
         PrimitiveMode_TRIANGLES,
-        1536,
+        384,
         templateIB,
         0,
         0,

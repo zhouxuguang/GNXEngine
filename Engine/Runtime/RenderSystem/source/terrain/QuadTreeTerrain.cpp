@@ -94,7 +94,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
     terrain->mGridSizeCells = gridSize - 1;
 
     // 限制 maxLevel，确保最小节点尺寸 >= (kLeafVerticesPerSide - 1)
-    uint32_t minNodeCells = kLeafVerticesPerSide - 1;  // 16
+    uint32_t minNodeCells = kLeafVerticesPerSide - 1;  // 8
     uint32_t maxPossibleLevel = 0;
     uint32_t tmp = terrain->mGridSizeCells;
     while (tmp > minNodeCells) { tmp >>= 1; ++maxPossibleLevel; }
@@ -460,15 +460,15 @@ void QuadTreeTerrain::BuildPatchMetaBuffer()
 }
 
 //=============================================================================
-// CreateTemplateMesh - 创建 17x17 模板网格，用于 GPU 驱动渲染
+// CreateTemplateMesh - 创建 9x9 模板网格，用于 GPU 驱动渲染
 //=============================================================================
 
 void QuadTreeTerrain::CreateTemplateMesh()
 {
-    constexpr uint32_t kVertsPerSide = kLeafVerticesPerSide;  // 17
-    constexpr uint32_t kCellCount   = kVertsPerSide - 1;      // 16
-    constexpr uint32_t kVertexCount = kVertsPerSide * kVertsPerSide;  // 289
-    constexpr uint32_t kIndexCount  = kCellCount * kCellCount * 6;     // 1536
+    constexpr uint32_t kVertsPerSide = kLeafVerticesPerSide;  // 9
+    constexpr uint32_t kCellCount   = kVertsPerSide - 1;      // 8
+    constexpr uint32_t kVertexCount = kVertsPerSide * kVertsPerSide;  // 81
+    constexpr uint32_t kIndexCount  = kCellCount * kCellCount * 6;     // 384
 
     // 构建 SoA 布局的顶点数据：先位置，后纹理坐标
     std::vector<float> positions(kVertexCount * 3);
@@ -811,7 +811,7 @@ void QuadTreeTerrain::GenerateLeafMesh()
         const LeafNeighborInfo& nbrInfo = mLeafNeighborInfo[idx];
 
         // 计算该叶节点 LOD 层级的步长
-        uint32_t cellsPerSide = kLeafVerticesPerSide - 1;  // 16
+        uint32_t cellsPerSide = kLeafVerticesPerSide - 1;  // 8
         uint32_t stride = leaf->size / cellsPerSide;
 
         // 将步长映射到静态池中的层级索引
@@ -941,7 +941,7 @@ uint32_t QuadTreeTerrain::GetStrideLevel(uint32_t stride) const
 
 float QuadTreeTerrain::ComputeNodeGeoError(uint32_t x, uint32_t z, uint32_t size) const
 {
-    uint32_t cellsPerSide = kLeafVerticesPerSide - 1;  // 16
+    uint32_t cellsPerSide = kLeafVerticesPerSide - 1;  // 8
     if (size <= cellsPerSide) return 0.0f;  // 最细细节，无误差
 
     uint32_t stride = size / cellsPerSide;
@@ -1061,7 +1061,7 @@ float QuadTreeTerrain::GetCachedGeoError(uint32_t level, uint32_t x, uint32_t z)
 
 void QuadTreeTerrain::BuildStaticIndexPool()
 {
-    uint32_t minNodeCells = kLeafVerticesPerSide - 1;  // 16
+    uint32_t minNodeCells = kLeafVerticesPerSide - 1;  // 8
     uint32_t maxStride = mGridSizeCells / minNodeCells;
 
     // 计算最大步长层级（maxStride 的 log2）
@@ -1080,7 +1080,7 @@ void QuadTreeTerrain::BuildStaticIndexPool()
     for (uint32_t level = 0; level <= maxStrideLevel; ++level)
     {
         uint32_t stride = 1u << level;
-        uint32_t leafSizeCells = stride * minNodeCells;  // 16 << level
+        uint32_t leafSizeCells = stride * minNodeCells;  // 8 << level
 
         for (uint32_t perm = 0; perm < 16; ++perm)
         {
