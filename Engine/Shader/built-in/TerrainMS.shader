@@ -30,16 +30,16 @@ SamplerState gDiffuseMapSam;
 groupshared TerrainPayload terrainPayload;
 
 [numthreads(64, 1, 1)]
-void TS(uint3 gid : SV_GroupID, uint gtid : SV_GroupIndex, uint3 dtid : SV_DispatchThreadID)
+void TS(uint gid : SV_GroupID, uint gtid : SV_GroupIndex, uint dtid : SV_DispatchThreadID)
 {
     bool visible = true;
 
-    if (dtid.x < gPatchCount)
+    if (dtid < gPatchCount)
     {
         float4 ps[6];
         ExtractFrustumPlanes(MATRIX_VP, ps);
 
-        PatchMeta m = gPatchMeta[dtid.x];
+        PatchMeta m = gPatchMeta[dtid];
         float3 mn = float3(m.worldX, m.minHeight, m.worldZ);
         float3 mx = float3(m.worldX + m.worldSize, m.minHeight + gMaxHeight, m.worldZ + m.worldSize);
 
@@ -52,7 +52,7 @@ void TS(uint3 gid : SV_GroupID, uint gtid : SV_GroupIndex, uint3 dtid : SV_Dispa
     if (visible)
     {
         uint index = WavePrefixCountBits(visible);
-        terrainPayload.patchIndices[index] = dtid.x;
+        terrainPayload.patchIndices[index] = dtid;
     }
 
     // Dispatch the required number of MS threadgroups to render the visible meshlets
