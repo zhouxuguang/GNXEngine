@@ -202,7 +202,7 @@ void VKRenderDevice::InitializeFeatures()
     // ---- Shader capabilities ----
     mFeatures.shader.meshShader         = ext.meshShaderSupported;
     mFeatures.shader.taskShader         = ext.taskShaderSupported;
-    mFeatures.shader.waveIntrinsics     = true;   // Vulkan 1.1+ 必须支持 subgroup
+    mFeatures.shader.waveIntrinsics     = ext.shaderSubgroupFullSupported;  // 所有 core subgroup 操作都支持才启用
     mFeatures.shader.int64Atomics       = f12.shaderBufferInt64Atomics || f12.shaderSharedInt64Atomics;
     mFeatures.shader.float16            = f12.shaderFloat16;
     mFeatures.shader.int8               = f12.shaderInt8;

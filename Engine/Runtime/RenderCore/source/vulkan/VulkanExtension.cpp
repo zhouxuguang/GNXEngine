@@ -51,6 +51,32 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
         }
     }
     
+    // Subgroup 操作检测（Wave* 系列 HLSL 指令）
+    // 保守策略：所有 core subgroup 操作都必须支持，waveIntrinsics 才返回 true
+    // Core 操作: BASIC | VOTE | ARITHMETIC | BALLOT | SHUFFLE | SHUFFLE_RELATIVE | CLUSTERED | QUAD = 0xFF
+    {
+        VkPhysicalDeviceSubgroupProperties subgroupProps = {};
+        subgroupProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
+        subgroupProps.pNext = nullptr;
+
+        VkPhysicalDeviceProperties2 props2 = {};
+        props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        props2.pNext = &subgroupProps;
+        vkGetPhysicalDeviceProperties2(physicalDevice, &props2);
+
+        static const VkSubgroupFeatureFlags REQUIRED_SUBGROUP_OPS =
+            VK_SUBGROUP_FEATURE_BASIC_BIT |
+            VK_SUBGROUP_FEATURE_VOTE_BIT |
+            VK_SUBGROUP_FEATURE_ARITHMETIC_BIT |
+            VK_SUBGROUP_FEATURE_BALLOT_BIT |
+            VK_SUBGROUP_FEATURE_SHUFFLE_BIT |
+            VK_SUBGROUP_FEATURE_SHUFFLE_RELATIVE_BIT |
+            VK_SUBGROUP_FEATURE_CLUSTERED_BIT |
+            VK_SUBGROUP_FEATURE_QUAD_BIT;
+
+        shaderSubgroupFullSupported = (subgroupProps.supportedOperations & REQUIRED_SUBGROUP_OPS) == REQUIRED_SUBGROUP_OPS;
+    }
+
     enableDeviceFault = ExtensionSupported(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
     
     // Mesh Shader 的依赖扩展检测
