@@ -600,13 +600,13 @@ void TerrainComponent::SetUseGPUCulling(bool enable)
         mCullPass = std::make_shared<TerrainCullPass>();
         if (!mCullPass->Initialize())
         {
-            LOG_ERROR("TerrainComponent: TerrainCullPass 初始化失败，回退到 CPU 剔除");
+            LOG_ERROR("TerrainComponent: TerrainCullPass init failed, fallback to CPU cull");
             mCullPass.reset();
             mUseGPUCulling = false;
         }
     }
 
-    LOG_INFO("TerrainComponent: GPU 剔除 %s", enable ? "已启用" : "已禁用（使用 CPU 实例化绘制）");
+    LOG_INFO("TerrainComponent: GPU cull %s", enable ? "enabled" : "disabled (use CPU instanced draw)");
 }
 
 //=============================================================================
@@ -647,7 +647,7 @@ void TerrainComponent::DispatchGPUCull(CommandBufferPtr commandBuffer,
     // 分发 compute shader 剔除
     mLastCullOutput = mCullPass->DispatchCull(commandBuffer, params, allPatchMeta, cameraUBO);
 
-    LOG_DEBUG("TerrainComponent::DispatchGPUCull: %u 个 patch，indirect args 缓冲区 %s",
+    LOG_DEBUG("TerrainComponent::DispatchGPUCull: %u patches, indirect args buffer %s",
               totalPatchCount,
               mLastCullOutput.indirectArgsBuffer ? "ready" : "FAILED");
 }
@@ -688,7 +688,7 @@ void TerrainComponent::DispatchCullViaFrameGraph(FrameGraph& frameGraph,
     mLastCullOutput = mCullPass->AddToFrameGraph(
         "TerrainCull", frameGraph, commandBuffer, params, allPatchMeta, cameraUBO);
 
-    LOG_DEBUG("TerrainComponent::DispatchCullViaFrameGraph: %u 个 patch 已注册到 FrameGraph",
+    LOG_DEBUG("TerrainComponent::DispatchCullViaFrameGraph: %u patches registered to FrameGraph",
               totalPatchCount);
 }
 
