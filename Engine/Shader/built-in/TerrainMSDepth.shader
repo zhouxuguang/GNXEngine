@@ -19,7 +19,7 @@ SamplerState gHeightmapSam;
 
 groupshared TerrainPayload terrainPayload;
 
-[numthreads(64, 1, 1)]
+[numthreads(32, 1, 1)]
 void TS(uint gid : SV_GroupID, uint gtid : SV_GroupIndex, uint dtid : SV_DispatchThreadID)
 {
     bool visible = true;
