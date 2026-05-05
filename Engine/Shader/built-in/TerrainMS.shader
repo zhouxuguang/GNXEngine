@@ -32,30 +32,29 @@ groupshared TerrainPayload terrainPayload;
 [numthreads(32, 1, 1)]
 void TS(uint gid : SV_GroupID, uint gtid : SV_GroupIndex, uint dtid : SV_DispatchThreadID)
 {
-    bool visible = true;
+    bool visible = false;
 
     if (dtid < gPatchCount)
     {
+        visible = true;  // Culling disabled — all valid patches are visible
+
+        // Frustum culling (disabled for debugging)
         float4 ps[6];
         ExtractFrustumPlanes(MATRIX_VP, ps);
-
         PatchMeta m = gPatchMeta[dtid];
         float3 mn = float3(m.worldX, m.minHeight, m.worldZ);
         float3 mx = float3(m.worldX + m.worldSize, m.minHeight + gMaxHeight, m.worldZ + m.worldSize);
-
-        if (!AABBInFrustum(mn, mx, ps))
-        {
-            //return;
-        }
+        //visible = AABBInFrustum(mn, mx, ps);
     }
 
+    // Compact visible patch indices into payload using WavePrefixCountBits
     if (visible)
     {
         uint index = WavePrefixCountBits(visible);
         terrainPayload.patchIndices[index] = dtid;
     }
 
-    // Dispatch the required number of MS threadgroups to render the visible meshlets
+    // Dispatch the required number of MS threadgroups to render the visible patches
     uint visibleCount = WaveActiveCountBits(visible);
 
     DispatchMesh(visibleCount, 1, 1, terrainPayload);
@@ -92,7 +91,10 @@ void MS(out indices uint3 triangles[K_IC / 3],
 
     // Catch any out-of-range indices (in case too many MS threadgroups were dispatched from AS)
     if (patchIndex >= gPatchCount)
+    {
+        SetMeshOutputCounts(0, 0);
         return;
+    }
         
     PatchMeta meta = gPatchMeta[patchIndex];
     SetMeshOutputCounts(K_VC, K_IC / 3);
