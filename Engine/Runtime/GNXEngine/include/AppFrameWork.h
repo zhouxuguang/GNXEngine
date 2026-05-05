@@ -24,6 +24,9 @@ public:
     
     virtual void OnEvent(Event& e);
 
+    void SetVSync(bool enable);
+    bool IsVSync() const;
+
 private:
     RenderWindowPtr mRenderWindow = nullptr;
     

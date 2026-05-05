@@ -25,12 +25,14 @@ VulkanSwapChain::VulkanSwapChain(VulkanContextPtr vulkanContext, uint32_t width,
     CreateSwapChain(vulkanContext, width, height);
 }
 
-void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t width, uint32_t height)
+void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t width, uint32_t height, bool vSync)
 {
     /*if (mDisplaySize.width == width && mDisplaySize.height == height)
     {
         return;
     }*/
+
+    mVSync = vSync;
 
     //The Vulkan spec states : compositeAlpha must be one of the bits present in the supportedCompositeAlpha member of the 
     // VkSurfaceCapabilitiesKHR structure returned by vkGetPhysicalDeviceSurfaceCapabilitiesKHR for the surface
@@ -58,7 +60,24 @@ void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t w
     
     mDisplaySize = chooseSwapExtent(mSurfaceCapabilities, width, height);
     mDisplayFormat = formats[chosenFormat].format;
-    
+
+    // 查询支持的 present mode 并选择合适的模式
+    uint32_t presentModeCount = 0;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(vulkanContext->physicalDevice, vulkanContext->surfaceKhr, &presentModeCount, nullptr);
+    std::vector<VkPresentModeKHR> presentModes(presentModeCount);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(vulkanContext->physicalDevice, vulkanContext->surfaceKhr, &presentModeCount, presentModes.data());
+
+    VkPresentModeKHR selectedPresentMode = VK_PRESENT_MODE_FIFO_KHR;  // 默认 VSync
+    if (!vSync)
+    {
+        // 关闭 VSync：优先 IMMEDIATE，其次 MAILBOX
+        if (std::find(presentModes.begin(), presentModes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR) != presentModes.end())
+            selectedPresentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+        else if (std::find(presentModes.begin(), presentModes.end(), VK_PRESENT_MODE_MAILBOX_KHR) != presentModes.end())
+            selectedPresentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+        // 都不支持则回退到 FIFO（VSync）
+    }
+
     //创建交换链
     VkSwapchainCreateInfoKHR swapchainCreateInfo = {};
     swapchainCreateInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -77,7 +96,7 @@ void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t w
     swapchainCreateInfo.queueFamilyIndexCount = 1;
     swapchainCreateInfo.pQueueFamilyIndices = &vulkanContext->graphicsQueueFamilyIndex;
     swapchainCreateInfo.compositeAlpha = mCompositeAlpha;
-    swapchainCreateInfo.presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    swapchainCreateInfo.presentMode = selectedPresentMode;
     swapchainCreateInfo.oldSwapchain = mSwapchain;
     swapchainCreateInfo.clipped = VK_FALSE;
     res = vkCreateSwapchainKHR(vulkanContext->device, &swapchainCreateInfo, nullptr, &mSwapchain);

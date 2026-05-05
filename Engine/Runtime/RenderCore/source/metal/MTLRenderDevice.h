@@ -145,9 +145,13 @@ public:
     void ShutdownPipelineCache();
     MTLPipelineCachePtr GetPipelineCache() const { return mPipelineCache; }
 
+    void SetVSync(bool enable) override;
+    bool IsVSync() const override;
+
 private:
     CAMetalLayer *mMetalLayer;
     id<MTLCommandQueue> mMetalCommandQueue;
+    bool mVSync = true;
 
     id<MTLTexture> mDepthTexture;
     id<MTLTexture> mStencilTexture;

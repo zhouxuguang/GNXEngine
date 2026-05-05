@@ -219,6 +219,18 @@ public:
      * Default implementation does nothing (non-Vulkan backends may ignore this)
      */
     virtual void FlushPipelineCache() {}
+
+    /**
+     * @brief 设置垂直同步（VSync）
+     * @param enable true 开启垂直同步，false 关闭垂直同步
+     */
+    virtual void SetVSync(bool enable) = 0;
+
+    /**
+     * @brief 查询当前垂直同步状态
+     * @return true 垂直同步已开启，false 垂直同步已关闭
+     */
+    virtual bool IsVSync() const = 0;
 };
 
 typedef std::shared_ptr<RenderDevice> RenderDevicePtr;

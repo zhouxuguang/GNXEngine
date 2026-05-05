@@ -282,7 +282,9 @@ void VKRenderDevice::Resize(uint32_t width, uint32_t height)
 {
     vkQueueWaitIdle(mVulkanContext->graphicsQueue);
     //vkDeviceWaitIdle(mVulkanContext->device);
-    
+
+    bool vSync = mSwapChain ? mSwapChain->IsVSync() : false;
+
     if (!mSwapChain)
     {
         mSwapChain = std::make_shared<VulkanSwapChain>(mVulkanContext, width, height);
@@ -290,7 +292,7 @@ void VKRenderDevice::Resize(uint32_t width, uint32_t height)
     else
     {
         mSwapChain->Release();
-        mSwapChain->CreateSwapChain(mVulkanContext, width, height);
+        mSwapChain->CreateSwapChain(mVulkanContext, width, height, vSync);
     }
     
     // 创建命令缓冲区
@@ -788,6 +790,26 @@ void VKRenderDevice::FlushPipelineCache()
 
     vkDeviceWaitIdle(mVulkanContext->device);
     SavePipelineCache(*mVulkanContext);
+}
+
+void VKRenderDevice::SetVSync(bool enable)
+{
+    if (!mSwapChain || mSwapChain->IsVSync() == enable)
+        return;
+
+    // 重建交换链，使用新的 present mode
+    uint32_t width = mSwapChain->GetWidth();
+    uint32_t height = mSwapChain->GetHeight();
+
+    vkQueueWaitIdle(mVulkanContext->graphicsQueue);
+
+    mSwapChain->Release();
+    mSwapChain->CreateSwapChain(mVulkanContext, width, height, enable);
+}
+
+bool VKRenderDevice::IsVSync() const
+{
+    return mSwapChain ? mSwapChain->IsVSync() : false;
 }
 
 NAMESPACE_RENDERCORE_END

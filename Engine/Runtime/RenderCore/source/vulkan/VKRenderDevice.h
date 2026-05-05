@@ -103,6 +103,9 @@ public:
 
     // 从 VkPhysicalDevice 填充 RenderDeviceFeatures（在构造函数中调用一次）
     void InitializeFeatures();
+
+    void SetVSync(bool enable) override;
+    bool IsVSync() const override;
     
 private:
     VulkanContextPtr mVulkanContext = nullptr;

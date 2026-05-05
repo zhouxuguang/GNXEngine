@@ -830,4 +830,18 @@ void MTLRenderDevice::ShutdownPipelineCache()
     }
 }
 
+void MTLRenderDevice::SetVSync(bool enable)
+{
+    mVSync = enable;
+    // CAMetalLayer.displaySyncEnabled 控制垂直同步
+    // YES = 垂直同步开启（等 VBlank 呈现）
+    // NO  = 垂直同步关闭（立即呈现，不等待 VBlank）
+    mMetalLayer.displaySyncEnabled = enable;
+}
+
+bool MTLRenderDevice::IsVSync() const
+{
+    return mVSync;
+}
+
 NAMESPACE_RENDERCORE_END

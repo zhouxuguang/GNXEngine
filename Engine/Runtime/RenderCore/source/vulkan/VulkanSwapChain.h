@@ -25,7 +25,7 @@ public:
     void CreateFrameBuffer(VulkanContextPtr vulkanContext, VkRenderPass renderPass, VkImageView depthStencilImage);
     
     //创建交换链
-    void CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t width, uint32_t height);
+    void CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t width, uint32_t height, bool vSync = true);
     
     size_t GetSwapChainImageCount() const
     {
@@ -80,6 +80,8 @@ public:
         return mDSBuffer;
     }
 
+    bool IsVSync() const { return mVSync; }
+
 private:
     VulkanContextPtr mVulkanContext = nullptr;
     VkSwapchainKHR mSwapchain = VK_NULL_HANDLE;                        //swapchain对象
@@ -97,6 +99,7 @@ private:
     VkCompositeAlphaFlagBitsKHR mCompositeAlpha;
 
     VKDepthStencilBufferPtr mDSBuffer = nullptr;
+    bool mVSync = true;                                              // 当前 VSync 状态
 };
 
 using VulkanSwapChainPtr = std::shared_ptr<VulkanSwapChain>;

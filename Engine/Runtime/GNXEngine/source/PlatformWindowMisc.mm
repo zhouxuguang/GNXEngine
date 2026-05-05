@@ -13,6 +13,7 @@ void* GetPlatformWindow(GLFWwindow *window)
     metalLayer.opaque = YES;
     metalLayer.contentsScale = 1.0;
     metalLayer.framebufferOnly = YES;
+    metalLayer.displaySyncEnabled = YES;    // 默认开启垂直同步
     
     NSWindow *nsWindow = glfwGetCocoaWindow(window);
     nsWindow.contentView.layer = metalLayer;

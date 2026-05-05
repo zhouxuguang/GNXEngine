@@ -70,6 +70,25 @@ void AppFrameWork::OnEventImpl(Event& e)
     OnEvent(e);
 }
 
+void AppFrameWork::SetVSync(bool enable)
+{
+    RenderCore::RenderDevicePtr renderDevice = RenderCore::GetRenderDevice();
+    if (renderDevice)
+    {
+        renderDevice->SetVSync(enable);
+    }
+}
+
+bool AppFrameWork::IsVSync() const
+{
+    RenderCore::RenderDevicePtr renderDevice = RenderCore::GetRenderDevice();
+    if (renderDevice)
+    {
+        return renderDevice->IsVSync();
+    }
+    return false;
+}
+
 bool AppFrameWork::OnWindowClose(WindowCloseEvent& e)
 {
     LOG_INFO("%s", e.ToString().c_str());
