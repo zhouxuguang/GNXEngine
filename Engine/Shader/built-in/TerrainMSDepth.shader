@@ -16,12 +16,7 @@ SamplerState gHeightmapSam;
 //=============================================================================
 // Task Shader: 视锥体剔除
 //=============================================================================
-#define AS_GROUP_SIZE 1024
 
-struct TerrainPayload
-{
-    uint patchIndices[AS_GROUP_SIZE];
-};
 groupshared TerrainPayload terrainPayload;
 
 [numthreads(64, 1, 1)]

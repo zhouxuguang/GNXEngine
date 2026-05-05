@@ -27,36 +27,38 @@ SamplerState gDiffuseMapSam;
 //=============================================================================
 // Task Shader - per-patch culling
 //=============================================================================
+groupshared TerrainPayload terrainPayload;
 
-struct TerrainPayload { uint patchIndex; };
-groupshared TerrainPayload payload;
-
-[numthreads(1, 1, 1)]
-void TS(uint3 gid : SV_GroupID)
+[numthreads(64, 1, 1)]
+void TS(uint3 gid : SV_GroupID, uint gtid : SV_GroupIndex, uint3 dtid : SV_DispatchThreadID)
 {
-    uint idx = gid.x;
-    if (idx >= gPatchCount)
-        return;
+    bool visible = true;
 
-    float4 planes[6];
-    ExtractFrustumPlanes(MATRIX_VP, planes);
-
-    PatchMeta meta = gPatchMeta[idx];
-
-    float3 aabbMin = float3(meta.worldX, meta.minHeight, meta.worldZ);
-    float3 aabbMax = float3(
-        meta.worldX + meta.worldSize,
-        meta.minHeight + gMaxHeight,
-        meta.worldZ + meta.worldSize
-    );
-
-    if (!AABBInFrustum(aabbMin, aabbMax, planes))
+    if (dtid.x < gPatchCount)
     {
-        //return;
+        float4 ps[6];
+        ExtractFrustumPlanes(MATRIX_VP, ps);
+
+        PatchMeta m = gPatchMeta[dtid.x];
+        float3 mn = float3(m.worldX, m.minHeight, m.worldZ);
+        float3 mx = float3(m.worldX + m.worldSize, m.minHeight + gMaxHeight, m.worldZ + m.worldSize);
+
+        if (!AABBInFrustum(mn, mx, ps))
+        {
+            //return;
+        }
     }
 
-    payload.patchIndex = idx;
-    DispatchMesh(1, 1, 1, payload);
+    if (visible)
+    {
+        uint index = WavePrefixCountBits(visible);
+        terrainPayload.patchIndices[index] = dtid.x;
+    }
+
+    // Dispatch the required number of MS threadgroups to render the visible meshlets
+    uint visibleCount = WaveActiveCountBits(visible);
+
+    DispatchMesh(visibleCount, 1, 1, terrainPayload);
 }
 
 //=============================================================================
@@ -80,9 +82,19 @@ struct VertexOutput
 [outputtopology("triangle")]
 [numthreads(1, 1, 1)]
 void MS(out indices uint3 triangles[K_IC / 3],
-        out vertices VertexOutput verts[K_VC])
+        out vertices VertexOutput verts[K_VC],
+        uint dtid : SV_DispatchThreadID,
+        uint gtid : SV_GroupThreadID,
+        uint gid : SV_GroupID)
 {
-    PatchMeta meta = gPatchMeta[payload.patchIndex];
+    // Load the meshlet from the AS payload data
+    uint patchIndex = terrainPayload.patchIndices[gid];
+
+    // Catch any out-of-range indices (in case too many MS threadgroups were dispatched from AS)
+    if (patchIndex >= gPatchCount)
+        return;
+        
+    PatchMeta meta = gPatchMeta[patchIndex];
     SetMeshOutputCounts(K_VC, K_IC / 3);
 
     // Generate vertices: sample heightmap within patch bounds

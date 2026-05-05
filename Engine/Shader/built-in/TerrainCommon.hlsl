@@ -32,6 +32,13 @@ cbuffer cbTerrainCull
     uint  _pad1;
 };
 
+#define AS_GROUP_SIZE 1024
+
+struct TerrainPayload
+{
+    uint patchIndices[AS_GROUP_SIZE];
+};
+
 //=============================================================================
 // Frustum culling (shared logic with TerrainCull.shader)
 //=============================================================================
