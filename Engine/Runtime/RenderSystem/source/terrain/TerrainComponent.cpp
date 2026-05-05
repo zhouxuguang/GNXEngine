@@ -499,8 +499,10 @@ void TerrainComponent::RenderMS(RenderEncoder* renderEncoder,
     // 材质漫反射纹理 → Fragment 阶段
     BindMaterialTextures(renderEncoder);
 
-    // ---- DrawMeshTasks：每个 patch 一个 TS thread group ----
-    renderEncoder->DrawMeshTasks(totalPatchCount, 1, 1);
+    // ---- DrawMeshTasks：从 PSO 查询 TS threadgroup size 动态计算 dispatch 数 ----
+    const uint32_t* taskGroupSizes = mTerrainMSPipeline->GetTaskThreadgroupSize();
+    uint32_t tgX = taskGroupSizes[0];
+    renderEncoder->DrawMeshTasks((totalPatchCount + tgX - 1) / tgX, 1, 1);
 }
 
 //=============================================================================
@@ -551,8 +553,10 @@ void TerrainComponent::RenderDepthMS(RenderEncoder* renderEncoder,
     auto heightmapSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(heightmapSamplerDesc);
     renderEncoder->SetMeshTextureAndSampler("gHeightmap", heightmapTexture, heightmapSampler);
 
-    // ---- DrawMeshTasks ----
-    renderEncoder->DrawMeshTasks(totalPatchCount, 1, 1);
+    // ---- DrawMeshTasks：从 PSO 查询 TS threadgroup size 动态计算 dispatch 数 ----
+    const uint32_t* taskGroupSizes = mTerrainDepthMSPipeline->GetTaskThreadgroupSize();
+    uint32_t tgX = taskGroupSizes[0];
+    renderEncoder->DrawMeshTasks((totalPatchCount + tgX - 1) / tgX, 1, 1);
 }
 
 //=============================================================================

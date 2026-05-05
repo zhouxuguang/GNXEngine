@@ -16,31 +16,44 @@ SamplerState gHeightmapSam;
 //=============================================================================
 // Task Shader: 视锥体剔除
 //=============================================================================
+#define AS_GROUP_SIZE 1024
 
-struct TP { uint patchIndex; };
-groupshared TP pl;
-
-[numthreads(1, 1, 1)]
-void TS(uint3 gid : SV_GroupID)
+struct TerrainPayload
 {
-    uint idx = gid.x;
-    if (idx >= gPatchCount)
-        return;
+    uint patchIndices[AS_GROUP_SIZE];
+};
+groupshared TerrainPayload terrainPayload;
 
-    float4 ps[6];
-    ExtractFrustumPlanes(MATRIX_VP, ps);
+[numthreads(64, 1, 1)]
+void TS(uint3 gid : SV_GroupID, uint gtid : SV_GroupIndex, uint3 dtid : SV_DispatchThreadID)
+{
+    bool visible = true;
 
-    PatchMeta m = gPatchMeta[idx];
-    float3 mn = float3(m.worldX, m.minHeight, m.worldZ);
-    float3 mx = float3(m.worldX + m.worldSize, m.minHeight + gMaxHeight, m.worldZ + m.worldSize);
-
-    if (!AABBInFrustum(mn, mx, ps))
+    if (dtid.x < gPatchCount)
     {
-        //return;
+        float4 ps[6];
+        ExtractFrustumPlanes(MATRIX_VP, ps);
+
+        PatchMeta m = gPatchMeta[dtid.x];
+        float3 mn = float3(m.worldX, m.minHeight, m.worldZ);
+        float3 mx = float3(m.worldX + m.worldSize, m.minHeight + gMaxHeight, m.worldZ + m.worldSize);
+
+        if (!AABBInFrustum(mn, mx, ps))
+        {
+            //return;
+        }
     }
 
-    pl.patchIndex = idx;
-    DispatchMesh(1, 1, 1, pl);
+    if (visible)
+    {
+        uint index = WavePrefixCountBits(visible);
+        terrainPayload.patchIndices[index] = dtid.x;
+    }
+
+    // Dispatch the required number of MS threadgroups to render the visible meshlets
+    uint visibleCount = WaveActiveCountBits(visible);
+
+    DispatchMesh(visibleCount, 1, 1, terrainPayload);
 }
 
 //=============================================================================
@@ -56,11 +69,21 @@ struct VO { float4 pos : SV_Position; };
 
 [outputtopology("triangle")]
 [numthreads(1, 1, 1)]
-void MS(out indices uint3 t[IC / 3], out vertices VO v[VC])
+void MS(out indices uint3 t[IC / 3], out vertices VO v[VC], 
+    uint dtid : SV_DispatchThreadID,
+    uint gtid : SV_GroupThreadID,
+    uint gid : SV_GroupID)
 {
+    // Load the meshlet from the AS payload data
+    uint patchIndex = terrainPayload.patchIndices[gid];
+
+    // Catch any out-of-range indices (in case too many MS threadgroups were dispatched from AS)
+    if (patchIndex >= gPatchCount)
+        return;
+
     SetMeshOutputCounts(VC, IC / 3);
 
-    PatchMeta m = gPatchMeta[pl.patchIndex];
+    PatchMeta m = gPatchMeta[patchIndex];
 
     // 生成顶点：在 patch 范围内采样高度图
     for (uint r = 0; r < V; r++)
