@@ -677,14 +677,28 @@ bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPo
     // 基于距离的 LOD：相机足够近时细分。
     // 较大的节点在更远的距离就细分，较小的节点只在很近时才细分。
     float nodeWorldSize = (float)node.size * (mWorldSize / (float)(mGridSize - 1));
-    float threshold = nodeWorldSize * mLODDistanceFactor;
+    float splitThreshold = nodeWorldSize * mLODDistanceFactor;
 
     float dx = cameraPos.x - node.bounds.center.x;
     float dz = cameraPos.z - node.bounds.center.z;
-    float dy = cameraPos.y;
+    float dy = cameraPos.y - 0.0;
     float distance = sqrtf(dx * dx + dy * dy + dz * dz);
 
-    return distance < threshold;
+    return distance < splitThreshold;
+}
+
+bool QuadTreeTerrain::ShouldMerge(const Node& node, const Vector3f& cameraPos) const
+{
+    // 使用比 split 更大的阈值，制造滞后区间防止 LOD 振荡
+    float nodeWorldSize = (float)node.size * (mWorldSize / (float)(mGridSize - 1));
+    float mergeThreshold = nodeWorldSize * mLODDistanceFactor * 1.49f;  // 40% 滞后
+
+    float dx = cameraPos.x - node.bounds.center.x;
+    float dz = cameraPos.z - node.bounds.center.z;
+    float dy = cameraPos.y - 0.0;
+    float distance = sqrtf(dx * dx + dy * dy + dz * dz);
+
+    return distance > mergeThreshold;
 }
 
 //=============================================================================
@@ -743,26 +757,36 @@ void QuadTreeTerrain::Subdivide(Node* node)
 
 void QuadTreeTerrain::UpdateNode(Node* node, const Vector3f& cameraPos)
 {
-    if (ShouldSubdivide(*node, cameraPos))
+    if (node->IsLeaf())
     {
-        // 需要细分
-        if (node->IsLeaf())
+        // 叶节点：只考虑细分（split）
+        if (ShouldSubdivide(*node, cameraPos))
         {
             Subdivide(node);
-        }
-
-        // 递归进入子节点
-        for (int i = 0; i < 4; ++i)
-        {
-            UpdateNode(node->children[i].get(), cameraPos);
+            for (int i = 0; i < 4; ++i)
+            {
+                UpdateNode(node->children[i].get(), cameraPos);
+            }
         }
     }
     else
     {
-        // 不需要细分 — 如果有子节点则合并
-        for (int i = 0; i < 4; ++i)
+        // 中间节点：只考虑合并（merge），使用更大的阈值制造滞后区间
+        if (ShouldMerge(*node, cameraPos))
         {
-            node->children[i].reset();
+            // 距离足够远，合并子节点
+            for (int i = 0; i < 4; ++i)
+            {
+                node->children[i].reset();
+            }
+        }
+        else
+        {
+            // 不合并，递归更新子节点
+            for (int i = 0; i < 4; ++i)
+            {
+                UpdateNode(node->children[i].get(), cameraPos);
+            }
         }
     }
 }

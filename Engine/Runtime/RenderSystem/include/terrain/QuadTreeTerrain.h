@@ -136,6 +136,7 @@ private:
     void BuildNode(Node* node);
     void UpdateNode(Node* node, const mathutil::Vector3f& cameraPos);
     bool ShouldSubdivide(const Node& node, const mathutil::Vector3f& cameraPos) const;
+    bool ShouldMerge(const Node& node, const mathutil::Vector3f& cameraPos) const;
     void Subdivide(Node* node);
     void CollectLeaves(Node* node);
     void ComputeNodeBounds(Node* node);
