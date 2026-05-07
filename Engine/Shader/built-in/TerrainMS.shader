@@ -32,6 +32,9 @@ groupshared TerrainPayload terrainPayload;
 [numthreads(32, 1, 1)]
 void TS(uint gid : SV_GroupID, uint gtid : SV_GroupIndex, uint dtid : SV_DispatchThreadID)
 {
+    // Initialize payload to sentinel — prevents stale groupshared data from causing ghost patches
+    terrainPayload.patchIndices[gtid] = 0xFFFFFFFF;
+
     bool visible = false;
 
     if (dtid < gPatchCount)
@@ -61,13 +64,13 @@ void TS(uint gid : SV_GroupID, uint gtid : SV_GroupIndex, uint dtid : SV_Dispatc
 }
 
 //=============================================================================
-// Mesh Shader - 9x9 grid expansion
+// Mesh Shader - 9x9 grid expansion (32 threads: each thread handles multiple vertices/indices via loop)
 //=============================================================================
 
 static const uint K_V  = 9;             // vertices per side
 static const uint K_C  = K_V - 1;       // cells per side
-static const uint K_VC = K_V * K_V;     // total vertices
-static const uint K_IC = K_C * K_C * 6; // total indices
+static const uint K_VC = K_V * K_V;     // total vertices = 81
+static const uint K_TC = K_C * K_C * 2; // total triangles = 128
 
 struct VertexOutput
 {
@@ -79,86 +82,82 @@ struct VertexOutput
 };
 
 [outputtopology("triangle")]
-[numthreads(1, 1, 1)]
-void MS(out indices uint3 triangles[K_IC / 3],
+[numthreads(32, 1, 1)]
+void MS(out indices uint3 triangles[K_TC],
         out vertices VertexOutput verts[K_VC],
-        uint dtid : SV_DispatchThreadID,
         uint gtid : SV_GroupThreadID,
         uint gid : SV_GroupID)
 {
-    // Load the meshlet from the AS payload data
     uint patchIndex = terrainPayload.patchIndices[gid];
 
-    // Catch any out-of-range indices (in case too many MS threadgroups were dispatched from AS)
     if (patchIndex >= gPatchCount)
     {
-        SetMeshOutputCounts(0, 0);
         return;
     }
-        
+
     PatchMeta meta = gPatchMeta[patchIndex];
-    SetMeshOutputCounts(K_VC, K_IC / 3);
 
-    // Generate vertices: sample heightmap within patch bounds
-    for (uint row = 0; row < K_V; row++)
+    // All threads must call SetMeshOutputCounts with the same values
+    SetMeshOutputCounts(K_VC, K_TC);
+
+    // ---- Vertex generation: each thread handles ceil(81/32)=3 vertices ----
+    // Thread i processes vertices at indices: i, i+32, i+64 (if < 81)
+    for (uint vi = gtid; vi < K_VC; vi += 32)
     {
-        for (uint col = 0; col < K_V; col++)
-        {
-            uint vi = row * K_V + col;
-            float u = (float)col / (float)(K_V - 1);
-            float v = (float)row / (float)(K_V - 1);
+        uint row = vi / K_V;
+        uint col = vi % K_V;
+        float u = (float)col / (float)(K_V - 1);
+        float v = (float)row / (float)(K_V - 1);
 
-            float worldX = meta.worldX + u * meta.worldSize;
-            float worldZ = meta.worldZ + v * meta.worldSize;
+        float worldX = meta.worldX + u * meta.worldSize;
+        float worldZ = meta.worldZ + v * meta.worldSize;
 
-            float texU = (worldX + _HalfWorldSize) / _WorldSize;
-            float texV = (worldZ + _HalfWorldSize) / _WorldSize;
-            float height = gHeightmap.SampleLevel(gHeightmapSam, float2(texU, texV), 0);
+        float texU = (worldX + _HalfWorldSize) / _WorldSize;
+        float texV = (worldZ + _HalfWorldSize) / _WorldSize;
+        float height = gHeightmap.SampleLevel(gHeightmapSam, float2(texU, texV), 0);
 
-            // Normal via finite differences
-            float ts = 1.0 / (float)_GridSize;
-            float hL = gHeightmap.SampleLevel(gHeightmapSam, float2(texU - ts, texV), 0);
-            float hR = gHeightmap.SampleLevel(gHeightmapSam, float2(ts + texU, texV), 0);
-            float hD = gHeightmap.SampleLevel(gHeightmapSam, float2(texU, texV - ts), 0);
-            float hU = gHeightmap.SampleLevel(gHeightmapSam, float2(texU, texV + ts), 0);
+        // Normal via finite differences
+        float ts = 1.0 / (float)_GridSize;
+        float hL = gHeightmap.SampleLevel(gHeightmapSam, float2(texU - ts, texV), 0);
+        float hR = gHeightmap.SampleLevel(gHeightmapSam, float2(ts + texU, texV), 0);
+        float hD = gHeightmap.SampleLevel(gHeightmapSam, float2(texU, texV - ts), 0);
+        float hU = gHeightmap.SampleLevel(gHeightmapSam, float2(texU, texV + ts), 0);
 
-            float ws = _WorldSize / (float)_GridSize;
-            float3 n = normalize(float3(
-                -(hR - hL) / (2.0 * ws),
-                1.0,
-                -(hU - hD) / (2.0 * ws)
-            ));
-            float3 t = normalize(cross(float3(0, 1, 0), n));
-            if (length(t) < 0.001)
-                t = float3(1, 0, 0);
+        float ws = _WorldSize / (float)_GridSize;
+        float3 n = normalize(float3(
+            -(hR - hL) / (2.0 * ws),
+            1.0,
+            -(hU - hD) / (2.0 * ws)
+        ));
+        float3 t = normalize(cross(float3(0, 1, 0), n));
+        if (length(t) < 0.001)
+            t = float3(1, 0, 0);
 
-            float4 wp = float4(worldX, height, worldZ, 1.0);
-            float4 cp = mul(wp, MATRIX_VP);
-            float4 pp = mul(wp, MATRIX_PrevVP);
-            float2 muv = float2(texU, texV) * _UVTileScale;
+        float4 wp = float4(worldX, height, worldZ, 1.0);
+        float4 cp = mul(wp, MATRIX_VP);
+        float4 pp = mul(wp, MATRIX_PrevVP);
+        float2 muv = float2(texU, texV) * _UVTileScale;
 
-            verts[vi].position    = cp;
-            verts[vi].normal      = n;
-            verts[vi].tangent     = float4(t, 1.0);
-            verts[vi].texCoord    = muv;
-            verts[vi].prevClipPos = pp;
-        }
+        verts[vi].position    = cp;
+        verts[vi].normal      = n;
+        verts[vi].tangent     = float4(t, 1.0);
+        verts[vi].texCoord    = muv;
+        verts[vi].prevClipPos = pp;
     }
 
-    // Generate triangle indices: K_C x K_C cells, 2 triangles each
-    uint ti = 0;
-    for (uint r = 0; r < K_C; r++)
+    // ---- Index generation: each thread handles ceil(64/32)=2 cells ----
+    // Thread i processes cells at indices: i, i+32 (if < 64)
+    for (uint ci = gtid; ci < K_C * K_C; ci += 32)
     {
-        for (uint c = 0; c < K_C; c++)
-        {
-            uint v00 = r * K_V + c;
-            uint v10 = v00 + 1;
-            uint v01 = v00 + K_V;
-            uint v11 = v01 + 1;
+        uint r = ci / K_C;
+        uint c = ci % K_C;
+        uint v00 = r * K_V + c;
+        uint v10 = v00 + 1;
+        uint v01 = v00 + K_V;
+        uint v11 = v01 + 1;
 
-            triangles[ti++] = uint3(v00, v01, v11);
-            triangles[ti++] = uint3(v00, v11, v10);
-        }
+        triangles[ci * 2 + 0] = uint3(v00, v01, v11);
+        triangles[ci * 2 + 1] = uint3(v00, v11, v10);
     }
 }
 

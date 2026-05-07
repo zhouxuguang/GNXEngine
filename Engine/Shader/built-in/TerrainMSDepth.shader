@@ -22,6 +22,9 @@ groupshared TerrainPayload terrainPayload;
 [numthreads(32, 1, 1)]
 void TS(uint gid : SV_GroupID, uint gtid : SV_GroupIndex, uint dtid : SV_DispatchThreadID)
 {
+    // Initialize payload to sentinel — prevents stale groupshared data from causing ghost patches
+    terrainPayload.patchIndices[gtid] = 0xFFFFFFFF;
+
     bool visible = false;
 
     if (dtid < gPatchCount)
@@ -49,71 +52,62 @@ void TS(uint gid : SV_GroupID, uint gtid : SV_GroupIndex, uint dtid : SV_Dispatc
 }
 
 //=============================================================================
-// Mesh Shader: 生成地形网格顶点 + 采样高度图
+// Mesh Shader: 生成地形网格顶点 + 采样高度图 (32 threads)
 //=============================================================================
 
-static const uint V = 9;          // 顶点网格边长
-static const uint C = V - 1;      // 单元格边长
-static const uint VC = V * V;     // 顶点总数
-static const uint IC = C * C * 6; // 索引总数
+static const uint V  = 9;            // vertices per side
+static const uint C  = V - 1;        // cells per side
+static const uint VC = V * V;        // total vertices = 81
+static const uint TC = C * C * 2;    // total triangles = 128
 
 struct VO { float4 pos : SV_Position; };
 
 [outputtopology("triangle")]
-[numthreads(1, 1, 1)]
-void MS(out indices uint3 t[IC / 3], out vertices VO v[VC], 
-    uint dtid : SV_DispatchThreadID,
+[numthreads(32, 1, 1)]
+void MS(out indices uint3 triangles[TC], out vertices VO v[VC],
     uint gtid : SV_GroupThreadID,
     uint gid : SV_GroupID)
 {
-    // Load the meshlet from the AS payload data
     uint patchIndex = terrainPayload.patchIndices[gid];
 
-    // Catch any out-of-range indices (in case too many MS threadgroups were dispatched from AS)
     if (patchIndex >= gPatchCount)
     {
-        SetMeshOutputCounts(0, 0);
         return;
     }
 
-    SetMeshOutputCounts(VC, IC / 3);
-
     PatchMeta m = gPatchMeta[patchIndex];
 
-    // 生成顶点：在 patch 范围内采样高度图
-    for (uint r = 0; r < V; r++)
+    // All threads must call SetMeshOutputCounts with the same values
+    SetMeshOutputCounts(VC, TC);
+
+    // ---- Vertex generation: each thread handles ceil(81/32)=3 vertices ----
+    for (uint vi = gtid; vi < VC; vi += 32)
     {
-        for (uint c = 0; c < V; c++)
-        {
-            uint vi = r * V + c;
-            float uf = (float)c / (V - 1);
-            float vf = (float)r / (V - 1);
+        float uf = (float)(vi % V) / (V - 1);
+        float vf = (float)(vi / V) / (V - 1);
 
-            float wx = m.worldX + uf * m.worldSize;
-            float wz = m.worldZ + vf * m.worldSize;
+        float wx = m.worldX + uf * m.worldSize;
+        float wz = m.worldZ + vf * m.worldSize;
 
-            float tu = (wx + _HalfWorldSize) / _WorldSize;
-            float tv = (wz + _HalfWorldSize) / _WorldSize;
+        float tu = (wx + _HalfWorldSize) / _WorldSize;
+        float tv = (wz + _HalfWorldSize) / _WorldSize;
 
-            float h = gHeightmap.SampleLevel(gHeightmapSam, float2(tu, tv), 0);
-            v[vi].pos = mul(float4(wx, h, wz, 1), MATRIX_VP);
-        }
+        float h = gHeightmap.SampleLevel(gHeightmapSam, float2(tu, tv), 0);
+        v[vi].pos = mul(float4(wx, h, wz, 1), MATRIX_VP);
     }
 
-    // 生成三角形索引
-    uint ti = 0;
-    for (uint r = 0; r < C; r++)
+    // ---- Index generation: each thread handles ceil(64/32)=2 cells ----
+    for (uint ci = gtid; ci < C * C; ci += 32)
     {
-        for (uint c = 0; c < C; c++)
-        {
-            uint v00 = r * V + c;
-            uint v10 = v00 + 1;
-            uint v01 = v00 + V;
-            uint v11 = v01 + 1;
+        uint r = ci / C;
+        uint c = ci % C;
+        uint v00 = r * V + c;
+        uint v10 = v00 + 1;
+        uint v01 = v00 + V;
+        uint v11 = v01 + 1;
 
-            t[ti++] = uint3(v00, v01, v11);
-            t[ti++] = uint3(v00, v11, v10);
-        }
+        triangles[ci * 2 + 0] = uint3(v00, v01, v11);
+        triangles[ci * 2 + 1] = uint3(v00, v11, v10);
     }
 }
 
