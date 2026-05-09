@@ -83,8 +83,10 @@ void MS(out indices uint3 triangles[TC], out vertices VO v[VC],
     // ---- Vertex generation: each thread handles ceil(81/32)=3 vertices ----
     for (uint vi = gtid; vi < VC; vi += 32)
     {
-        float uf = (float)(vi % V) / (V - 1);
-        float vf = (float)(vi / V) / (V - 1);
+        uint row = vi / V;
+        uint col = vi % V;
+        float uf = (float)col / (V - 1);
+        float vf = (float)row / (V - 1);
 
         float wx = m.worldX + uf * m.worldSize;
         float wz = m.worldZ + vf * m.worldSize;
@@ -93,6 +95,45 @@ void MS(out indices uint3 triangles[TC], out vertices VO v[VC],
         float tv = (wz + _HalfWorldSize) / _WorldSize;
 
         float h = gHeightmap.SampleLevel(gHeightmapSam, float2(tu, tv), 0);
+
+        // 裂缝处理，取更粗patch边上上相邻两点的平均值作为新的高程
+        uint nf = m.neighborFlags;
+        if (nf != 0)
+        {
+            if (col == 0 && (row & 1) && (nf & 1u))          // left(-X) coarser
+            {
+                float wz0 = m.worldZ + (float)(row - 1) / (float)(V - 1) * m.worldSize;
+                float wz1 = m.worldZ + (float)(row + 1) / (float)(V - 1) * m.worldSize;
+                float h0 = gHeightmap.SampleLevel(gHeightmapSam, float2(tu, (wz0 + _HalfWorldSize) / _WorldSize), 0);
+                float h1 = gHeightmap.SampleLevel(gHeightmapSam, float2(tu, (wz1 + _HalfWorldSize) / _WorldSize), 0);
+                h = (h0 + h1) * 0.5;
+            }
+            else if (col == V - 1 && (row & 1) && (nf & 2u)) // right(+X) coarser
+            {
+                float wz0 = m.worldZ + (float)(row - 1) / (float)(V - 1) * m.worldSize;
+                float wz1 = m.worldZ + (float)(row + 1) / (float)(V - 1) * m.worldSize;
+                float h0 = gHeightmap.SampleLevel(gHeightmapSam, float2(tu, (wz0 + _HalfWorldSize) / _WorldSize), 0);
+                float h1 = gHeightmap.SampleLevel(gHeightmapSam, float2(tu, (wz1 + _HalfWorldSize) / _WorldSize), 0);
+                h = (h0 + h1) * 0.5;
+            }
+            else if (row == V - 1 && (col & 1) && (nf & 4u)) // bottom(+Z) coarser
+            {
+                float wx0 = m.worldX + (float)(col - 1) / (float)(V - 1) * m.worldSize;
+                float wx1 = m.worldX + (float)(col + 1) / (float)(V - 1) * m.worldSize;
+                float h0 = gHeightmap.SampleLevel(gHeightmapSam, float2((wx0 + _HalfWorldSize) / _WorldSize, tv), 0);
+                float h1 = gHeightmap.SampleLevel(gHeightmapSam, float2((wx1 + _HalfWorldSize) / _WorldSize, tv), 0);
+                h = (h0 + h1) * 0.5;
+            }
+            else if (row == 0 && (col & 1) && (nf & 8u))      // top(-Z) coarser
+            {
+                float wx0 = m.worldX + (float)(col - 1) / (float)(V - 1) * m.worldSize;
+                float wx1 = m.worldX + (float)(col + 1) / (float)(V - 1) * m.worldSize;
+                float h0 = gHeightmap.SampleLevel(gHeightmapSam, float2((wx0 + _HalfWorldSize) / _WorldSize, tv), 0);
+                float h1 = gHeightmap.SampleLevel(gHeightmapSam, float2((wx1 + _HalfWorldSize) / _WorldSize, tv), 0);
+                h = (h0 + h1) * 0.5;
+            }
+        }
+
         v[vi].pos = mul(float4(wx, h, wz, 1), MATRIX_VP);
     }
 
@@ -112,12 +153,11 @@ void MS(out indices uint3 triangles[TC], out vertices VO v[VC],
 }
 
 //=============================================================================
-// Pixel Shader: 仅输出深度
+// Pixel Shader: 深度由光栅化器自动写入，无需手动输出
 //=============================================================================
 
-float PS(VO input) : SV_Depth
+void PS(VO input)
 {
-    return input.pos.z;
 }
 
 #endif

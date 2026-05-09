@@ -13,21 +13,7 @@
 
 #include "GNXEngineVariables.hlsl"
 #include "GBufferCommon.hlsl"
-
-//=============================================================================
-// PatchMeta struct (must match C++ definition)
-//=============================================================================
-struct PatchMeta
-{
-    float worldX;
-    float worldZ;
-    float worldSize;
-    float minHeight;
-    uint  gridX;
-    uint  gridZ;
-    uint  gridSize;
-    uint  level;
-};
+#include "TerrainCommon.hlsl"
 
 //=============================================================================
 // Resources
@@ -39,14 +25,6 @@ SamplerState gHeightmapSam;
 // Material textures (currently only diffuse map)
 Texture2D gDiffuseMap;
 SamplerState gDiffuseMapSam;
-
-cbuffer cbTerrain
-{
-    float _WorldSize;        // world size XZ
-    float _HalfWorldSize;    // half of world size
-    float _UVTileScale;      // material texture tiling scale
-    uint  _GridSize;         // grid vertices per side
-};
 
 //=============================================================================
 // Vertex shader

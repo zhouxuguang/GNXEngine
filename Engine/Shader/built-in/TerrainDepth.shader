@@ -11,21 +11,7 @@
 #define GNX_ENGINE_TERRAIN_DEPTH_HLSL
 
 #include "GNXEngineVariables.hlsl"
-
-//=============================================================================
-// PatchMeta struct (must match C++ definition)
-//=============================================================================
-struct PatchMeta
-{
-    float worldX;
-    float worldZ;
-    float worldSize;
-    float minHeight;
-    uint  gridX;
-    uint  gridZ;
-    uint  gridSize;
-    uint  level;
-};
+#include "TerrainCommon.hlsl"
 
 //=============================================================================
 // Resources
@@ -33,13 +19,6 @@ struct PatchMeta
 StructuredBuffer<PatchMeta> gPatchMeta;
 Texture2D<float> gHeightmap;
 SamplerState gHeightmapSam;
-
-cbuffer cbTerrain
-{
-    float _WorldSize;        // world size XZ
-    float _HalfWorldSize;    // half of world size
-    uint  _GridSize;         // grid vertices per side
-};
 
 //=============================================================================
 // Vertex / Pixel shaders
@@ -78,9 +57,8 @@ VertexOutput VS(VertexInput input)
     return output;
 }
 
-float PS(VertexOutput input) : SV_Depth
+void PS(VertexOutput input)
 {
-    return input.position.z;
 }
 
 #endif // GNX_ENGINE_TERRAIN_DEPTH_HLSL

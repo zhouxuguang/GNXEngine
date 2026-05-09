@@ -116,6 +116,44 @@ void MS(out indices uint3 triangles[K_TC],
         float texV = (worldZ + _HalfWorldSize) / _WorldSize;
         float height = gHeightmap.SampleLevel(gHeightmapSam, float2(texU, texV), 0);
 
+        // 裂缝处理，取更粗patch边上上相邻两点的平均值作为新的高程
+        uint nf = meta.neighborFlags;
+        if (nf != 0)
+        {
+            if (col == 0 && (row & 1) && (nf & 1u))          // left(-X) coarser
+            {
+                float wz0 = meta.worldZ + (float)(row - 1) / (float)(K_V - 1) * meta.worldSize;
+                float wz1 = meta.worldZ + (float)(row + 1) / (float)(K_V - 1) * meta.worldSize;
+                float h0 = gHeightmap.SampleLevel(gHeightmapSam, float2(texU, (wz0 + _HalfWorldSize) / _WorldSize), 0);
+                float h1 = gHeightmap.SampleLevel(gHeightmapSam, float2(texU, (wz1 + _HalfWorldSize) / _WorldSize), 0);
+                height = (h0 + h1) * 0.5;
+            }
+            else if (col == K_V - 1 && (row & 1) && (nf & 2u)) // right(+X) coarser
+            {
+                float wz0 = meta.worldZ + (float)(row - 1) / (float)(K_V - 1) * meta.worldSize;
+                float wz1 = meta.worldZ + (float)(row + 1) / (float)(K_V - 1) * meta.worldSize;
+                float h0 = gHeightmap.SampleLevel(gHeightmapSam, float2(texU, (wz0 + _HalfWorldSize) / _WorldSize), 0);
+                float h1 = gHeightmap.SampleLevel(gHeightmapSam, float2(texU, (wz1 + _HalfWorldSize) / _WorldSize), 0);
+                height = (h0 + h1) * 0.5;
+            }
+            else if (row == K_V - 1 && (col & 1) && (nf & 4u)) // bottom(+Z) coarser
+            {
+                float wx0 = meta.worldX + (float)(col - 1) / (float)(K_V - 1) * meta.worldSize;
+                float wx1 = meta.worldX + (float)(col + 1) / (float)(K_V - 1) * meta.worldSize;
+                float h0 = gHeightmap.SampleLevel(gHeightmapSam, float2((wx0 + _HalfWorldSize) / _WorldSize, texV), 0);
+                float h1 = gHeightmap.SampleLevel(gHeightmapSam, float2((wx1 + _HalfWorldSize) / _WorldSize, texV), 0);
+                height = (h0 + h1) * 0.5;
+            }
+            else if (row == 0 && (col & 1) && (nf & 8u))      // top(-Z) coarser
+            {
+                float wx0 = meta.worldX + (float)(col - 1) / (float)(K_V - 1) * meta.worldSize;
+                float wx1 = meta.worldX + (float)(col + 1) / (float)(K_V - 1) * meta.worldSize;
+                float h0 = gHeightmap.SampleLevel(gHeightmapSam, float2((wx0 + _HalfWorldSize) / _WorldSize, texV), 0);
+                float h1 = gHeightmap.SampleLevel(gHeightmapSam, float2((wx1 + _HalfWorldSize) / _WorldSize, texV), 0);
+                height = (h0 + h1) * 0.5;
+            }
+        }
+
         // Normal via finite differences
         float ts = 1.0 / (float)_GridSize;
         float hL = gHeightmap.SampleLevel(gHeightmapSam, float2(texU - ts, texV), 0);

@@ -21,7 +21,7 @@
 NS_RENDERSYSTEM_BEGIN
 
 // GPU 驱动地形渲染的叶节点元数据（SSBO）。
-// 32 字节，按 vec4 对齐以便 GPU 访问。
+// 48 字节，按 16 字节对齐以匹配 StructuredBuffer stride 要求。
 struct PatchMeta
 {
     float worldX;       // patch 左上角的世界 X 坐标
@@ -33,7 +33,16 @@ struct PatchMeta
     uint32_t gridZ;     // 网格 Z 起始坐标
     uint32_t gridSize;  // 网格单元尺寸
     uint32_t level;     // 四叉树深度（LOD 层级）
+
+    // 邻居更粗标志（用于 mesh shader 裂缝消除顶点吸附）
+    // bit0: 左(-X)邻居更粗  bit1: 右(+X)邻居更粗
+    // bit2: 下(+Z)邻居更粗  bit3: 上(-Z)邻居更粗
+    uint32_t neighborFlags;
+    uint32_t _pad0;
+    uint32_t _pad1;
+    uint32_t _pad2;
 };
+static_assert(sizeof(PatchMeta) == 48, "PatchMeta must be 48 bytes for StructuredBuffer 16-byte alignment");
 
 class RENDERSYSTEM_API QuadTreeTerrain
 {

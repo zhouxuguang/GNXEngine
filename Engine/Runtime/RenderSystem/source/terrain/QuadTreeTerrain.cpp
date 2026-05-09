@@ -439,6 +439,13 @@ void QuadTreeTerrain::BuildPatchMetaBuffer()
         meta.gridSize  = leaf->size;
         meta.level     = leaf->level;
 
+        // 从已计算的邻居信息填充 neighborFlags
+        const LeafNeighborInfo& nbrInfo = mLeafNeighborInfo[i];
+        meta.neighborFlags = (nbrInfo.leftCoarser   ? 1u : 0u)
+                           | (nbrInfo.rightCoarser  ? 2u : 0u)
+                           | (nbrInfo.bottomCoarser ? 4u : 0u)
+                           | (nbrInfo.topCoarser    ? 8u : 0u);
+
         mPatchMetaData.push_back(meta);
     }
 
@@ -563,7 +570,7 @@ void QuadTreeTerrain::BuildGPUPathData(const mathutil::Frustumf* frustum)
         Node* leaf = mLeafNodes[i];
 
         // 构建可见 PatchMeta
-        PatchMeta meta;
+        PatchMeta meta = {};  // 零初始化，确保 neighborFlags 和 padding 正确
         meta.worldX    = -halfSize + (float)leaf->x * step;
         meta.worldZ    = -halfSize + (float)leaf->z * step;
         meta.worldSize = (float)leaf->size * step;
@@ -572,6 +579,17 @@ void QuadTreeTerrain::BuildGPUPathData(const mathutil::Frustumf* frustum)
         meta.gridZ     = leaf->z;
         meta.gridSize  = leaf->size;
         meta.level     = leaf->level;
+
+        // 从已计算的邻居信息填充 neighborFlags
+        if (i < mLeafNeighborInfo.size())
+        {
+            const LeafNeighborInfo& nbrInfo = mLeafNeighborInfo[i];
+            meta.neighborFlags = (nbrInfo.leftCoarser   ? 1u : 0u)
+                               | (nbrInfo.rightCoarser  ? 2u : 0u)
+                               | (nbrInfo.bottomCoarser ? 4u : 0u)
+                               | (nbrInfo.topCoarser    ? 8u : 0u);
+        }
+
         mVisiblePatchMeta.push_back(meta);
     }
 
