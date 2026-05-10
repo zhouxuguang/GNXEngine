@@ -429,7 +429,7 @@ void QuadTreeTerrain::BuildPatchMetaBuffer()
     {
         Node* leaf = mLeafNodes[i];
 
-        PatchMeta meta;
+        PatchMeta meta = {};
         meta.worldX    = -halfSize + (float)leaf->x * step;
         meta.worldZ    = -halfSize + (float)leaf->z * step;
         meta.worldSize = (float)leaf->size * step;
@@ -694,13 +694,13 @@ bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPo
 
     // 基于距离的 LOD：相机足够近时细分。
     // 较大的节点在更远的距离就细分，较小的节点只在很近时才细分。
-    float nodeWorldSize = (float)node.size * (mWorldSize / (float)(mGridSize - 1));
-    float threshold = nodeWorldSize * mLODDistanceFactor;
+    double nodeWorldSize = (double)node.size * (mWorldSize / (double)(mGridSize - 1));
+    double threshold = nodeWorldSize * mLODDistanceFactor;
 
-    float dx = cameraPos.x - node.bounds.center.x;
-    float dz = cameraPos.z - node.bounds.center.z;
-    float dy = cameraPos.y;
-    float distance = sqrtf(dx * dx + dy * dy + dz * dz);
+    double dx = cameraPos.x - node.bounds.center.x;
+    double dz = cameraPos.z - node.bounds.center.z;
+    double dy = cameraPos.y - node.bounds.center.y;
+    double distance = sqrt(dx * dx + dy * dy + dz * dz);
 
     return (distance / nodeWorldSize) < mLODDistanceFactor;
 }
@@ -709,15 +709,15 @@ bool QuadTreeTerrain::ShouldMerge(const Node& node, const mathutil::Vector3f& ca
 {
 	// 基于距离的 LOD：相机足够近时细分。
 	// 较大的节点在更远的距离就细分，较小的节点只在很近时才细分。
-	float nodeWorldSize = (float)node.size * (mWorldSize / (float)(mGridSize - 1));
-	float threshold = nodeWorldSize * mLODDistanceFactor;
+    double nodeWorldSize = (double)node.size * (mWorldSize / (double)(mGridSize - 1));
+    double threshold = nodeWorldSize * mLODDistanceFactor;
 
-	float dx = cameraPos.x - node.bounds.center.x;
-	float dz = cameraPos.z - node.bounds.center.z;
-	float dy = cameraPos.y;
-	float distance = sqrtf(dx * dx + dy * dy + dz * dz);
+	double dx = cameraPos.x - node.bounds.center.x;
+    double dz = cameraPos.z - node.bounds.center.z;
+    double dy = cameraPos.y - node.bounds.center.y;
+    double distance = sqrt(dx * dx + dy * dy + dz * dz);
 
-	return (distance / nodeWorldSize) > mLODDistanceFactor * 1.0;
+	return (distance / nodeWorldSize) > mLODDistanceFactor * 1.49;
 }
 
 //=============================================================================
@@ -798,16 +798,28 @@ void QuadTreeTerrain::UpdateNode(Node* node, const Vector3f& cameraPos)
     {
         if (node->IsLeaf())
         {
+			LOG_INFO("Split node: level=%d, center=(%.2f, %.2f)",
+				node->level, node->bounds.center.x, node->bounds.center.z);
+
             Subdivide(node);
         }
-
-        for (int i = 0; i < 4; ++i)
+        else
         {
-            UpdateNode(node->children[i].get(), cameraPos);
+			for (int i = 0; i < 4; ++i)
+			{
+                bool wantSubdivide = ShouldSubdivide(*node->children[i], cameraPos);
+                if (!wantSubdivide)
+                {
+                    //continue;
+                }
+				UpdateNode(node->children[i].get(), cameraPos);
+			}
         }
     }
     else if (ShouldMerge(*node, cameraPos))
     {
+		LOG_INFO("Merge node: level=%d, center=(%.2f, %.2f)",
+			node->level, node->bounds.center.x, node->bounds.center.z);
         for (int i = 0; i < 4; ++i)
         {
             node->children[i].reset();
