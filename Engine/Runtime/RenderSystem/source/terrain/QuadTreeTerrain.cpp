@@ -702,7 +702,22 @@ bool QuadTreeTerrain::ShouldSubdivide(const Node& node, const Vector3f& cameraPo
     float dy = cameraPos.y;
     float distance = sqrtf(dx * dx + dy * dy + dz * dz);
 
-    return distance < threshold;
+    return (distance / nodeWorldSize) < mLODDistanceFactor;
+}
+
+bool QuadTreeTerrain::ShouldMerge(const Node& node, const mathutil::Vector3f& cameraPos) const
+{
+	// 基于距离的 LOD：相机足够近时细分。
+	// 较大的节点在更远的距离就细分，较小的节点只在很近时才细分。
+	float nodeWorldSize = (float)node.size * (mWorldSize / (float)(mGridSize - 1));
+	float threshold = nodeWorldSize * mLODDistanceFactor;
+
+	float dx = cameraPos.x - node.bounds.center.x;
+	float dz = cameraPos.z - node.bounds.center.z;
+	float dy = cameraPos.y;
+	float distance = sqrtf(dx * dx + dy * dy + dz * dz);
+
+	return (distance / nodeWorldSize) > mLODDistanceFactor * 1.0;
 }
 
 //=============================================================================
@@ -761,23 +776,38 @@ void QuadTreeTerrain::Subdivide(Node* node)
 
 void QuadTreeTerrain::UpdateNode(Node* node, const Vector3f& cameraPos)
 {
-    if (ShouldSubdivide(*node, cameraPos))
+    bool wantSubdivide = ShouldSubdivide(*node, cameraPos);
+
+    // 邻居约束前向检查：即使距离不需要细分，
+    // 如果某个方向的邻居比自己细超过1级（minNbr + 1 < level），
+    // 也必须细分自己以避免裂缝。
+    if (!wantSubdivide && node->level > 0)
     {
-        // 需要细分
+        for (int dir = 0; dir < 4; ++dir)
+        {
+            uint32_t minNbr = GetMinNeighborLevel(node, dir);
+            if (minNbr + 1 < node->level)
+            {
+                wantSubdivide = true;
+                break;
+            }
+        }
+    }
+
+    if (wantSubdivide)
+    {
         if (node->IsLeaf())
         {
             Subdivide(node);
         }
 
-        // 递归进入子节点
         for (int i = 0; i < 4; ++i)
         {
             UpdateNode(node->children[i].get(), cameraPos);
         }
     }
-    else
+    else if (ShouldMerge(*node, cameraPos))
     {
-        // 不需要细分 — 如果有子节点则合并
         for (int i = 0; i < 4; ++i)
         {
             node->children[i].reset();
@@ -1364,7 +1394,7 @@ void QuadTreeTerrain::Update(const Vector3f& cameraPos,
     UpdateNode(&mRoot, cameraPos);
 
     // 强制邻居约束：相邻叶节点层级差最多为 1
-    EnforceNeighborConstraint();
+    //EnforceNeighborConstraint();
 
     // 收集所有叶节点
     mLeafNodes.clear();
