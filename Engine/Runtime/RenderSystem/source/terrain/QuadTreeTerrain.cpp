@@ -453,16 +453,33 @@ void QuadTreeTerrain::BuildPatchMetaBuffer()
     if (!mPatchMetaData.empty())
     {
         uint32_t dataSize = (uint32_t)(mPatchMetaData.size() * sizeof(PatchMeta));
-        RenderCore::RCBufferDesc desc(dataSize,
-            RenderCore::RCBufferUsage::StorageBuffer,
-            RenderCore::StorageModeShared);  // CPU-accessible for creation
-
+        uint32_t frameIdx = mFrameIndex % kFrameInFlightCount;
         auto renderDevice = RenderCore::GetRenderDevice();
-        mPatchMetaBuffer = renderDevice->CreateBuffer(desc, mPatchMetaData.data());
+
+        if (mPatchMetaBuffers[frameIdx] && mPatchMetaBufferSizes[frameIdx] >= dataSize)
+        {
+            void* mappedData = mPatchMetaBuffers[frameIdx]->Map();
+            if (mappedData)
+            {
+                memcpy(mappedData, mPatchMetaData.data(), dataSize);
+                mPatchMetaBuffers[frameIdx]->Unmap();
+            }
+        }
+        else
+        {
+            uint32_t allocSize = dataSize + dataSize / 2;
+            RenderCore::RCBufferDesc desc(allocSize,
+                RenderCore::RCBufferUsage::StorageBuffer,
+                RenderCore::StorageModeShared);
+            mPatchMetaBuffers[frameIdx] = renderDevice->CreateBuffer(desc, mPatchMetaData.data());
+            mPatchMetaBufferSizes[frameIdx] = allocSize;
+        }
     }
     else
     {
-        mPatchMetaBuffer.reset();
+        uint32_t frameIdx = mFrameIndex % kFrameInFlightCount;
+        mPatchMetaBuffers[frameIdx].reset();
+        mPatchMetaBufferSizes[frameIdx] = 0;
     }
 }
 
@@ -593,44 +610,42 @@ void QuadTreeTerrain::BuildGPUPathData(const mathutil::Frustumf* frustum)
         mVisiblePatchMeta.push_back(meta);
     }
 
-    // 上传可见 PatchMeta 到 GPU 作为 SSBO — 复用缓冲区以避免 GPU 同步问题
+    // 上传可见 PatchMeta 到 GPU 作为 SSBO（三缓冲：每帧写入对应 slot，避免 GPU/CPU 竞态）
+    uint32_t frameIdx = mFrameIndex % kFrameInFlightCount;
     if (!mVisiblePatchMeta.empty())
     {
         uint32_t dataSize = (uint32_t)(mVisiblePatchMeta.size() * sizeof(PatchMeta));
         auto renderDevice = RenderCore::GetRenderDevice();
-        
-        // 尽可能复用已有缓冲区，避免重新分配
-        if (mVisiblePatchMetaBuffer && mVisiblePatchMetaBuffer->GetSize() >= dataSize)
+
+        if (mVisiblePatchMetaBuffers[frameIdx] && mVisiblePatchMetaBufferSizes[frameIdx] >= dataSize)
         {
-            // 更新已有缓冲区内容 — 避免 GPU 同步问题
-            void* mappedData = mVisiblePatchMetaBuffer->Map();
+            void* mappedData = mVisiblePatchMetaBuffers[frameIdx]->Map();
             if (mappedData)
             {
                 memcpy(mappedData, mVisiblePatchMeta.data(), dataSize);
-                mVisiblePatchMetaBuffer->Unmap();
+                mVisiblePatchMetaBuffers[frameIdx]->Unmap();
             }
         }
         else
         {
-            // 仅在必要时重新创建缓冲区
-            RenderCore::RCBufferDesc desc(dataSize,
+            uint32_t allocSize = dataSize + dataSize / 2;
+            RenderCore::RCBufferDesc desc(allocSize,
                 RenderCore::RCBufferUsage::StorageBuffer,
                 RenderCore::StorageModeShared);
-            mVisiblePatchMetaBuffer = renderDevice->CreateBuffer(desc, mVisiblePatchMeta.data());
+            mVisiblePatchMetaBuffers[frameIdx] = renderDevice->CreateBuffer(desc, mVisiblePatchMeta.data());
+            mVisiblePatchMetaBufferSizes[frameIdx] = allocSize;
         }
     }
     else
     {
-        // 即使没有可见 patch 也保留缓冲区，以维持同步一致性
-        if (mVisiblePatchMetaBuffer)
+        if (mVisiblePatchMetaBuffers[frameIdx])
         {
-            // 清空缓冲区内容但保留分配
             static PatchMeta emptyMeta = {};
-            void* mappedData = mVisiblePatchMetaBuffer->Map();
+            void* mappedData = mVisiblePatchMetaBuffers[frameIdx]->Map();
             if (mappedData)
             {
                 memcpy(mappedData, &emptyMeta, sizeof(PatchMeta));
-                mVisiblePatchMetaBuffer->Unmap();
+                mVisiblePatchMetaBuffers[frameIdx]->Unmap();
             }
         }
     }
@@ -1435,7 +1450,18 @@ void QuadTreeTerrain::Update(const Vector3f& cameraPos,
     // 从叶节点构建网格
     GenerateLeafMesh();
 
-    // Build PatchMeta SSBO for GPU-driven rendering (阶段1A: 纯增量)
+    // 注意：BuildPatchMetaBuffer() 和 mFrameIndex++ 推迟到 FlushFrameData() 中
+    // 由渲染路径在 vkWaitForFences 之后调用，避免 GPU/CPU 数据竞态
+}
+
+//=============================================================================
+// FlushFrameData - 推进帧索引并上传 SSBO 到 GPU
+// 必须在渲染阶段（vkWaitForFences 之后）调用，避免 GPU/CPU 数据竞态
+//=============================================================================
+
+void QuadTreeTerrain::FlushFrameData()
+{
+    mFrameIndex++;
     BuildPatchMetaBuffer();
 }
 

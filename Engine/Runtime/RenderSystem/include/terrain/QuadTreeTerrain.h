@@ -68,6 +68,9 @@ public:
                 float fovY = 0.0f,
                 float screenHeight = 0.0f);
 
+    // 推进帧索引并上传 SSBO 到 GPU（必须在渲染阶段、vkWaitForFences 之后调用）
+    void FlushFrameData();
+
     // 获取网格（供渲染管线使用）
     MeshPtr GetMesh() const { return mMesh; }
 
@@ -93,11 +96,14 @@ public:
     float GetHeightScale() const { return mHeightScale; }
     uint32_t GetGridSize() const { return mGridSize; }
 
+    // 获取当前帧索引（供 TerrainComponent 三缓冲 UBO 使用）
+    uint32_t GetFrameIndex() const { return mFrameIndex; }
+
     // GPU 驱动渲染的 GPU 资源
     RenderCore::RCTexture2DPtr GetHeightMapTexture() const { return mHeightMapTexture; }
-    RenderCore::RCBufferPtr GetPatchMetaBuffer() const { return mPatchMetaBuffer; }
+    RenderCore::RCBufferPtr GetPatchMetaBuffer() const { return mPatchMetaBuffers[mFrameIndex % kFrameInFlightCount]; }
     uint32_t GetPatchMetaCount() const { return (uint32_t)mPatchMetaData.size(); }
-    RenderCore::RCBufferPtr GetVisiblePatchMetaBuffer() const { return mVisiblePatchMetaBuffer; }
+    RenderCore::RCBufferPtr GetVisiblePatchMetaBuffer() const { return mVisiblePatchMetaBuffers[mFrameIndex % kFrameInFlightCount]; }
     uint32_t GetVisiblePatchMetaCount() const { return (uint32_t)mVisiblePatchMeta.size(); }
 
     // GPU 驱动渲染的模板网格
@@ -223,10 +229,17 @@ private:
 
     // GPU 驱动渲染的 GPU 资源（阶段1A+1B）
     RenderCore::RCTexture2DPtr mHeightMapTexture;   // 高度图 R32Float 纹理（创建一次）
-    RenderCore::RCBufferPtr mPatchMetaBuffer;        // PatchMeta[] SSBO（每帧重建）
+
+    // PatchMeta SSBO — 按帧索引三缓冲，避免 CPU 写入与 GPU 读取的竞态
+    static constexpr uint32_t kFrameInFlightCount = 3;
+    RenderCore::RCBufferPtr mPatchMetaBuffers[kFrameInFlightCount];   // 全量 PatchMeta[] SSBO（每帧写入对应 slot）
+    uint32_t mPatchMetaBufferSizes[kFrameInFlightCount] = {};         // 每个 slot 的分配大小
+    RenderCore::RCBufferPtr mVisiblePatchMetaBuffers[kFrameInFlightCount]; // 可见 PatchMeta SSBO（每帧写入对应 slot）
+    uint32_t mVisiblePatchMetaBufferSizes[kFrameInFlightCount] = {};      // 每个 slot 的分配大小
+    uint32_t mFrameIndex = 0;                                         // 帧索引，每帧递增一次
+
     std::vector<PatchMeta> mPatchMetaData;           // CPU 端 PatchMeta 数据
     std::vector<PatchMeta> mVisiblePatchMeta;        // 可见 PatchMeta（视锥体剔除后）
-    RenderCore::RCBufferPtr mVisiblePatchMetaBuffer; // 仅可见 patch 的 SSBO
 
     // GPU 驱动渲染的模板网格（17x17 = 289 顶点, 1536 索引）
     RenderCore::RCBufferPtr  mTemplateVB;            // 顶点缓冲区（SoA: 位置 + 纹理坐标）

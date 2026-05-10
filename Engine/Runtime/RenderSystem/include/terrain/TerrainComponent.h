@@ -233,12 +233,14 @@ private:
     MaterialPtr      mMaterial;
     bool             mWireframe = false;
 
-    // 地形参数 UBO（shader 中的 cbTerrain）
-    UniformBufferPtr mTerrainParamsUBO;
+    // 地形参数 UBO — 按帧索引三缓冲，避免 CPU 写入与 GPU 读取的竞态
+    static constexpr uint32_t kFrameInFlightCount = 3;
+    UniformBufferPtr mTerrainParamsUBOs[kFrameInFlightCount];
     bool mTerrainParamsDirty = true;
 
     // GPU 路径数据准备标志（每帧重置）
     bool mGPUPathDataPrepared = false;
+    bool mFrameDataFlushed = false;
 
     // GPU Compute Shader 剔除 pass（GPU 视锥体剔除 → 间接绘制）
     TerrainCullPassPtr mCullPass = nullptr;
@@ -265,8 +267,8 @@ private:
         uint32_t pad1;
     };
 
-    // 地形剔除参数 UBO（shader 中的 cbTerrainCull）
-    UniformBufferPtr mCullParamsUBO;
+    // 地形剔除参数 UBO — 按帧索引三缓冲，避免 CPU 写入与 GPU 读取的竞态
+    UniformBufferPtr mCullParamsUBOs[kFrameInFlightCount];
     bool mCullParamsDirty = true;
 
     GraphicsPipelinePtr mTerrainMSPipeline = nullptr;

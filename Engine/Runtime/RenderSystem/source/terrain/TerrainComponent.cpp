@@ -84,6 +84,7 @@ void TerrainComponent::SetMaterial(const MaterialPtr& material)
 void TerrainComponent::Update(float deltaTime)
 {
     mGPUPathDataPrepared = false;
+    mFrameDataFlushed = false;
     mCullParamsDirty = true;
 }
 
@@ -98,20 +99,21 @@ void TerrainComponent::EnsureTerrainUBO()
     cbTerrainParams params;
     params.worldSize     = mQuadTreeTerrain->GetWorldSize();
     params.halfWorldSize = params.worldSize * 0.5f;
-    params.uvTileScale   = 1.0f;  // 材质纹理的平铺因子（1.0 = 不平铺）
+    params.uvTileScale   = 1.0f;
     params.gridSize      = mQuadTreeTerrain->GetGridSize();
 
-    if (!mTerrainParamsUBO)
+    uint32_t frameIdx = mQuadTreeTerrain->GetFrameIndex() % kFrameInFlightCount;
+
+    if (!mTerrainParamsUBOs[frameIdx])
     {
-        mTerrainParamsUBO = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbTerrainParams));
-        if (mTerrainParamsUBO)
+        mTerrainParamsUBOs[frameIdx] = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbTerrainParams));
+        if (mTerrainParamsUBOs[frameIdx])
             mTerrainParamsDirty = true;
     }
 
-    if (mTerrainParamsUBO && mTerrainParamsDirty)
+    if (mTerrainParamsUBOs[frameIdx] && mTerrainParamsDirty)
     {
-        mTerrainParamsUBO->SetData(&params, 0, sizeof(params));
-        mTerrainParamsDirty = false;
+        mTerrainParamsUBOs[frameIdx]->SetData(&params, 0, sizeof(params));
     }
 }
 
@@ -124,17 +126,18 @@ void TerrainComponent::EnsureCullParamsUBO()
     params.patchCount = mQuadTreeTerrain->GetPatchMetaCount();
     params.maxHeight  = mQuadTreeTerrain->GetHeightScale();
 
-    if (!mCullParamsUBO)
+    uint32_t frameIdx = mQuadTreeTerrain->GetFrameIndex() % kFrameInFlightCount;
+
+    if (!mCullParamsUBOs[frameIdx])
     {
-        mCullParamsUBO = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbTerrainCullParams));
-        if (mCullParamsUBO)
+        mCullParamsUBOs[frameIdx] = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbTerrainCullParams));
+        if (mCullParamsUBOs[frameIdx])
             mCullParamsDirty = true;
     }
 
-    if (mCullParamsUBO && mCullParamsDirty)
+    if (mCullParamsUBOs[frameIdx] && mCullParamsDirty)
     {
-        mCullParamsUBO->SetData(&params, 0, sizeof(params));
-        mCullParamsDirty = false;
+        mCullParamsUBOs[frameIdx]->SetData(&params, 0, sizeof(params));
     }
 }
 
@@ -167,6 +170,13 @@ void TerrainComponent::Render(RenderEncoder* renderEncoder,
 {
     if (!mQuadTreeTerrain || !mMaterial || !renderEncoder)
         return;
+
+    // 推进帧索引并上传 SSBO 到 GPU（必须在 vkWaitForFences 之后，每帧仅执行一次）
+    if (!mFrameDataFlushed)
+    {
+        mQuadTreeTerrain->FlushFrameData();
+        mFrameDataFlushed = true;
+    }
 
     // ========================================================================
     // 路径选择：Mesh Shader > GPU 剔除（Indirect Draw） > CPU 实例化绘制
@@ -215,7 +225,7 @@ void TerrainComponent::RenderGPUCulled(RenderEncoder* renderEncoder,
 
     // UBOs
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
-    renderEncoder->SetVertexUniformBuffer("cbTerrain", mTerrainParamsUBO);
+    renderEncoder->SetVertexUniformBuffer("cbTerrain", mTerrainParamsUBOs[mQuadTreeTerrain->GetFrameIndex() % kFrameInFlightCount]);
     renderEncoder->SetFragmentUniformBuffer("cbPerCamera", cameraUBO);
 
     // PatchMeta SSBO（全部 patch — GPU 已完成剔除到 indirect args）
@@ -281,7 +291,7 @@ void TerrainComponent::RenderCPUInstanced(RenderEncoder* renderEncoder,
 
     // 绑定 UBOs
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
-    renderEncoder->SetVertexUniformBuffer("cbTerrain", mTerrainParamsUBO);
+    renderEncoder->SetVertexUniformBuffer("cbTerrain", mTerrainParamsUBOs[mQuadTreeTerrain->GetFrameIndex() % kFrameInFlightCount]);
     renderEncoder->SetFragmentUniformBuffer("cbPerCamera", cameraUBO);
 
     // 绑定 PatchMeta SSBO 到顶点阶段（VS 读取 gPatchMeta[instanceID]）
@@ -323,6 +333,13 @@ void TerrainComponent::RenderDepthOnly(RenderEncoder* renderEncoder,
 {
     if (!mQuadTreeTerrain || !renderEncoder || !terrainDepthPSO)
         return;
+
+    // 推进帧索引并上传 SSBO 到 GPU（必须在 vkWaitForFences 之后，每帧仅执行一次）
+    if (!mFrameDataFlushed)
+    {
+        mQuadTreeTerrain->FlushFrameData();
+        mFrameDataFlushed = true;
+    }
 
     // 路径选择：Mesh Shader > GPU 剔除 > CPU 实例化
     if (IsUsingMeshShader())
@@ -367,7 +384,7 @@ void TerrainComponent::RenderDepthGPUCulled(RenderEncoder* renderEncoder,
         renderEncoder->SetFillMode(FillModeWireframe);
 
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
-    renderEncoder->SetVertexUniformBuffer("cbTerrain", mTerrainParamsUBO);
+    renderEncoder->SetVertexUniformBuffer("cbTerrain", mTerrainParamsUBOs[mQuadTreeTerrain->GetFrameIndex() % kFrameInFlightCount]);
     renderEncoder->SetFragmentUniformBuffer("cbPerCamera", cameraUBO);
 
     renderEncoder->SetStorageBuffer("gPatchMeta", allPatchMeta,
@@ -424,7 +441,7 @@ void TerrainComponent::RenderDepthCPUInstanced(RenderEncoder* renderEncoder,
     }
 
     renderEncoder->SetVertexUniformBuffer("cbPerCamera", cameraUBO);
-    renderEncoder->SetVertexUniformBuffer("cbTerrain", mTerrainParamsUBO);
+    renderEncoder->SetVertexUniformBuffer("cbTerrain", mTerrainParamsUBOs[mQuadTreeTerrain->GetFrameIndex() % kFrameInFlightCount]);
     renderEncoder->SetFragmentUniformBuffer("cbPerCamera", cameraUBO);
 
     renderEncoder->SetStorageBuffer("gPatchMeta", visiblePatchMeta,
@@ -476,11 +493,11 @@ void TerrainComponent::RenderMS(RenderEncoder* renderEncoder,
 
     // UBOs: Task stage 需要 cbPerCamera（视锥体提取）和 cbTerrainCull（剔除参数）
     renderEncoder->SetTaskUniformBuffer("cbPerCamera", cameraUBO);
-    renderEncoder->SetTaskUniformBuffer("cbTerrainCull", mCullParamsUBO);
+    renderEncoder->SetTaskUniformBuffer("cbTerrainCull", mCullParamsUBOs[mQuadTreeTerrain->GetFrameIndex() % kFrameInFlightCount]);
     
     renderEncoder->SetMeshUniformBuffer("cbPerCamera", cameraUBO);
-    renderEncoder->SetMeshUniformBuffer("cbTerrain", mTerrainParamsUBO);
-    renderEncoder->SetMeshUniformBuffer("cbTerrainCull", mCullParamsUBO);
+    renderEncoder->SetMeshUniformBuffer("cbTerrain", mTerrainParamsUBOs[mQuadTreeTerrain->GetFrameIndex() % kFrameInFlightCount]);
+    renderEncoder->SetMeshUniformBuffer("cbTerrainCull", mCullParamsUBOs[mQuadTreeTerrain->GetFrameIndex() % kFrameInFlightCount]);
     renderEncoder->SetFragmentUniformBuffer("cbPerCamera", cameraUBO);
 
     // PatchMeta SSBO → Task + Mesh 阶段（TS 读取做剔除，MS 读取生成顶点）
@@ -534,11 +551,11 @@ void TerrainComponent::RenderDepthMS(RenderEncoder* renderEncoder,
 
     // UBOs
     renderEncoder->SetTaskUniformBuffer("cbPerCamera", cameraUBO);
-    renderEncoder->SetTaskUniformBuffer("cbTerrainCull", mCullParamsUBO);
+    renderEncoder->SetTaskUniformBuffer("cbTerrainCull", mCullParamsUBOs[mQuadTreeTerrain->GetFrameIndex() % kFrameInFlightCount]);
     
     renderEncoder->SetMeshUniformBuffer("cbPerCamera", cameraUBO);
-    renderEncoder->SetMeshUniformBuffer("cbTerrain", mTerrainParamsUBO);
-    renderEncoder->SetMeshUniformBuffer("cbTerrainCull", mCullParamsUBO);
+    renderEncoder->SetMeshUniformBuffer("cbTerrain", mTerrainParamsUBOs[mQuadTreeTerrain->GetFrameIndex() % kFrameInFlightCount]);
+    renderEncoder->SetMeshUniformBuffer("cbTerrainCull", mCullParamsUBOs[mQuadTreeTerrain->GetFrameIndex() % kFrameInFlightCount]);
 
     // PatchMeta SSBO → Task + Mesh
     renderEncoder->SetStorageBuffer("gPatchMeta", allPatchMeta,
