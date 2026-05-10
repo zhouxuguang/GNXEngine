@@ -62,6 +62,12 @@ public:
      */
     bool IsSphereInFrustum(const Sphere<T> sphere) const;
 
+    /**
+     * 获取视锥体的6个裁剪平面 (left, right, bottom, top, near, far)。
+     * 每个平面为 Vector4(nx, ny, nz, d)，已归一化。
+     */
+    const Vector4<T>* GetPlanes() const { return mPlanes; }
+
 private:
     /**
      * 创建裁剪平面

@@ -52,6 +52,9 @@ cbuffer cbPerCamera
     // z = x/far
     // w = 1/far
     float4 _ZBufferParams;
+
+    // 视锥体的6个平面
+    float4 frustumPlanes[6];
 }
 
 //每一个物体的结构

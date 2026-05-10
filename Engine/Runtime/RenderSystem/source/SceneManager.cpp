@@ -14,6 +14,7 @@
 #include "animation/SkeletonAnimation.h"
 #include "SkyBoxNode.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "Runtime/MathUtil/include/Frustum.h"
 #include "Runtime/GNXEngine/include/Events/Event.h"
 #include "Runtime/GNXEngine/include/Events/KeyEvent.h"
 #include "Runtime/GNXEngine/include/Events/MouseEvent.h"
@@ -428,6 +429,18 @@ void SceneManager::UpdateCameraInfo(CameraPtr cameraPtr)
     perCamera.MATRIX_INV_V = perCamera.MATRIX_V.Inverse();
     perCamera.MATRIX_VP = perCamera.MATRIX_P * perCamera.MATRIX_V;
     perCamera.MATRIX_INV_VP = perCamera.MATRIX_VP.Inverse();
+    
+    // 从 VP 矩阵提取视锥体裁剪平面，传递给 GPU 用于 视锥 剔除
+    {
+        mathutil::Frustumf frustum;
+        frustum.InitFrustum(perCamera.MATRIX_VP, true);
+        const mathutil::Vector4f* planes = frustum.GetPlanes();
+        for (int i = 0; i < 6; i++)
+        {
+			perCamera.MATRIX_INV_VP = perCamera.MATRIX_VP.Inverse();
+            perCamera.frustumPlanes[i] = mathutil::make_simd_float4(planes[i].x, planes[i].y, planes[i].z, planes[i].w);
+        }
+    }
     
     // 写入上一帧的 VP 矩阵（第一帧为零矩阵，Motion Vector 输出为零）
     if (mHasPreviousFrameVP)

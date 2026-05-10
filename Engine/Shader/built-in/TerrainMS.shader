@@ -39,15 +39,11 @@ void TS(uint gid : SV_GroupID, uint gtid : SV_GroupIndex, uint dtid : SV_Dispatc
 
     if (dtid < gPatchCount)
     {
-        visible = true;  // Culling disabled — all valid patches are visible
-
-        // Frustum culling (disabled for debugging)
-        float4 ps[6];
-        ExtractFrustumPlanes(MATRIX_VP, ps);
+        // Frustum culling
         PatchMeta m = gPatchMeta[dtid];
         float3 mn = float3(m.worldX, m.minHeight, m.worldZ);
         float3 mx = float3(m.worldX + m.worldSize, m.minHeight + gMaxHeight, m.worldZ + m.worldSize);
-        //visible = AABBInFrustum(mn, mx, ps);
+        visible = AABBInFrustum(mn, mx, frustumPlanes);
     }
 
     // Compact visible patch indices into payload using WavePrefixCountBits

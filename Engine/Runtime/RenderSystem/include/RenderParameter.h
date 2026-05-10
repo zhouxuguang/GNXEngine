@@ -46,6 +46,9 @@ struct cbPerCamera
     // z = x/far
     // w = 1/far
     mathutil::simd_float4 ZBufferParams;
+
+    // 视锥体
+    mathutil::simd_float4 frustumPlanes[6];
 };
 
 struct cbLighting

@@ -13,21 +13,6 @@
 #include "GNXEngineVariables.hlsl"
 
 //=============================================================================
-// PatchMeta struct (must match C++ definition)
-//=============================================================================
-struct PatchMeta
-{
-    float worldX;
-    float worldZ;
-    float worldSize;
-    float minHeight;
-    uint  gridX;
-    uint  gridZ;
-    uint  gridSize;
-    uint  level;
-};
-
-//=============================================================================
 // IndirectCommand struct (must match DrawIndexedIndirectCommand)
 //=============================================================================
 struct IndirectCommand
@@ -54,54 +39,6 @@ cbuffer cbTerrainCull
 };
 
 //=============================================================================
-// Frustum plane extraction from VP matrix
-//=============================================================================
-void ExtractFrustumPlanes(float4x4 vp, out float4 planes[6])
-{
-    // Row-vector convention: plane = vp[row3] +/- vp[rowN]
-    // Left
-    planes[0] = vp[3] + vp[0];
-    // Right
-    planes[1] = vp[3] - vp[0];
-    // Bottom
-    planes[2] = vp[3] + vp[1];
-    // Top
-    planes[3] = vp[3] - vp[1];
-    // Near (DirectX/Metal: 0 <= z <= w)
-    planes[4] = vp[2];
-    // Far
-    planes[5] = vp[3] - vp[2];
-
-    // Normalize planes
-    [unroll]
-    for (int i = 0; i < 6; i++)
-    {
-        float len = length(planes[i].xyz);
-        planes[i] /= len;
-    }
-}
-
-//=============================================================================
-// AABB vs Frustum test
-//=============================================================================
-bool AABBInFrustum(float3 aabbMin, float3 aabbMax, float4 planes[6])
-{
-    [unroll]
-    for (int i = 0; i < 6; i++)
-    {
-        // Find the "most positive" corner along the plane normal
-        float3 p = float3(
-            planes[i].x > 0 ? aabbMin.x : aabbMax.x,
-            planes[i].y > 0 ? aabbMin.y : aabbMax.y,
-            planes[i].z > 0 ? aabbMin.z : aabbMax.z
-        );
-        if (dot(planes[i].xyz, p) + planes[i].w < 0)
-            return false;
-    }
-    return true;
-}
-
-//=============================================================================
 // Compute Shader Entry Point
 //=============================================================================
 [numthreads(64, 1, 1)]
@@ -110,17 +47,13 @@ void CS(int3 dtid : SV_DispatchThreadID)
     uint idx = dtid.x;
     if (idx >= gPatchCount) return;
 
-    // Extract frustum from VP matrix
-    float4 planes[6];
-    ExtractFrustumPlanes(MATRIX_VP, planes);
-
     PatchMeta meta = gPatchMeta[idx];
 
     // Build AABB from PatchMeta
     float3 aabbMin = float3(meta.worldX, meta.minHeight, meta.worldZ);
     float3 aabbMax = float3(meta.worldX + meta.worldSize, meta.minHeight + gMaxHeight, meta.worldZ + meta.worldSize);
 
-    bool visible = AABBInFrustum(aabbMin, aabbMax, planes);
+    bool visible = AABBInFrustum(aabbMin, aabbMax, frustumPlanes);
 
     // Write IndirectArgs
     IndirectCommand cmd;
