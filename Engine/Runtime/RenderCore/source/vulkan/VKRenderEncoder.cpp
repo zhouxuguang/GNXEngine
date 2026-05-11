@@ -947,7 +947,20 @@ void VKRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBuf
         vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
     }
 
-    vkCmdDrawIndexedIndirect(mCommandBuffer, vkBuffer->GetVkBuffer(), indirectBufferOffset, drawCount, stride);
+    // Vulkan spec: if multiDrawIndirect is not enabled, drawCount must be 0 or 1.
+    // Fallback: loop over individual draws with drawCount=1.
+    if (drawCount <= 1 || mContext->physicalDeviceFeatures.multiDrawIndirect)
+    {
+        vkCmdDrawIndexedIndirect(mCommandBuffer, vkBuffer->GetVkBuffer(), indirectBufferOffset, drawCount, stride);
+    }
+    else
+    {
+        for (uint32_t i = 0; i < drawCount; i++)
+        {
+            vkCmdDrawIndexedIndirect(mCommandBuffer, vkBuffer->GetVkBuffer(),
+                indirectBufferOffset + i * stride, 1, stride);
+        }
+    }
 }
 
 void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)

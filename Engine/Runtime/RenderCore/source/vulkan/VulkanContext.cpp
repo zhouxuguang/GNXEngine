@@ -569,6 +569,7 @@ bool CreateVirtualDevice(VulkanContext& context)
     enabledFeatures.independentBlend = supportedFeatures.independentBlend;    // 每个通道独立混合的参数
     enabledFeatures.fragmentStoresAndAtomics = VK_TRUE;
     enabledFeatures.fillModeNonSolid = supportedFeatures.fillModeNonSolid;    // 线框模式渲染
+    enabledFeatures.multiDrawIndirect = supportedFeatures.multiDrawIndirect;  // vkCmdDrawIndexedIndirect drawCount > 1
 
     deviceCreateInfo.pEnabledFeatures = &enabledFeatures;
     deviceCreateInfo.enabledExtensionCount = (uint32_t)deviceExtensionNames.size();
