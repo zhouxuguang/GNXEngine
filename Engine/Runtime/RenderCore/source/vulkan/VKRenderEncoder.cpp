@@ -963,6 +963,63 @@ void VKRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBuf
     }
 }
 
+void VKRenderEncoder::DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+    int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
+    RCBufferPtr countBuffer, uint32_t countBufferOffset,
+    uint32_t maxDrawCount, uint32_t stride)
+{
+    // 绑定 index buffer
+    if (indexBuffer)
+    {
+        VKIndexBufferPtr vkIndexBuffer = std::dynamic_pointer_cast<VKIndexBuffer>(indexBuffer);
+        if (vkIndexBuffer && vkIndexBuffer->GetBuffer())
+        {
+            IndexType type = vkIndexBuffer->getIndexType();
+            VkIndexType vkIndexType = (type == IndexType_UInt) ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
+            int byteOffset = indexBufferOffset * ((type == IndexType_UInt) ? sizeof(uint32_t) : sizeof(uint16_t));
+            vkCmdBindIndexBuffer(mCommandBuffer, vkIndexBuffer->GetBuffer(), byteOffset, vkIndexType);
+        }
+    }
+
+    VKRCBufferPtr vkIndirectBuf = std::dynamic_pointer_cast<VKRCBuffer>(indirectBuffer);
+    VKRCBufferPtr vkCountBuf = std::dynamic_pointer_cast<VKRCBuffer>(countBuffer);
+    if (!vkIndirectBuf || !vkIndirectBuf->GetVkBuffer() || !vkCountBuf || !vkCountBuf->GetVkBuffer())
+    {
+        return;
+    }
+
+    if (mContext->vulkanExtension.enabledExtendedDynamicState)
+    {
+        vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+    }
+
+    if (mContext->vulkanExtension.enableDrawIndirectCount)
+    {
+        // Vulkan 1.2 core: drawCount 从 GPU countBuffer 读取
+        vkCmdDrawIndexedIndirectCount(mCommandBuffer,
+            vkIndirectBuf->GetVkBuffer(), indirectBufferOffset,
+            vkCountBuf->GetVkBuffer(), countBufferOffset,
+            maxDrawCount, stride);
+    }
+    else
+    {
+        // 回退：drawCount 由 CPU 提供，使用 maxDrawCount
+        if (maxDrawCount <= 1 || mContext->physicalDeviceFeatures.multiDrawIndirect)
+        {
+            vkCmdDrawIndexedIndirect(mCommandBuffer, vkIndirectBuf->GetVkBuffer(),
+                indirectBufferOffset, maxDrawCount, stride);
+        }
+        else
+        {
+            for (uint32_t i = 0; i < maxDrawCount; i++)
+            {
+                vkCmdDrawIndexedIndirect(mCommandBuffer, vkIndirectBuf->GetVkBuffer(),
+                    indirectBufferOffset + i * stride, 1, stride);
+            }
+        }
+    }
+}
+
 void VKRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler)
 {
     VKTextureBasePtr vkTexture = std::dynamic_pointer_cast<VKTextureBase>(texture);

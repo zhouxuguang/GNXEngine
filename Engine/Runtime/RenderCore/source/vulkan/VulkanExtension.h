@@ -39,6 +39,9 @@ struct VulkanExtension
     bool meshShaderSupported = false;
     bool taskShaderSupported = false;
 
+    // drawIndirectCount 特性支持（Vulkan 1.2 core feature）
+    bool enableDrawIndirectCount = false;
+
     // Subgroup 全操作支持（Wave* 系列 HLSL 指令）
     // 保守策略：所有 core subgroup 操作（BASIC|VOTE|ARITHMETIC|BALLOT|SHUFFLE|SHUFFLE_RELATIVE|CLUSTERED|QUAD）
     // 都支持时才为 true，上层 waveIntrinsics 依赖此标志

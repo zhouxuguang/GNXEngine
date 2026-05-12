@@ -335,6 +335,11 @@ bool CreateVirtualDevice(VulkanContext& context)
     VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
     physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     AppendToPNextChain(&physicalDeviceFeatures2, &extendedDynamicStateFeaturesEXT);
+
+    // 查询 Vulkan 1.2 drawIndirectCount 特性
+    VkPhysicalDeviceVulkan12Features queryFeatures12 = {};
+    queryFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    AppendToPNextChain(&physicalDeviceFeatures2, &queryFeatures12);
     
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
     portabilityFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR;
@@ -345,7 +350,10 @@ bool CreateVirtualDevice(VulkanContext& context)
     
     vkGetPhysicalDeviceFeatures2(context.physicalDevice, &physicalDeviceFeatures2);
 
-	if (!indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind) 
+    // 记录 drawIndirectCount 是否被物理设备支持
+    context.vulkanExtension.enableDrawIndirectCount = (queryFeatures12.drawIndirectCount == VK_TRUE);
+
+	if (!indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind)
     {
 		// 设备不支持，需要处理回退逻辑或报错
         LOG_INFO("descriptorBindingUniformBufferUpdateAfterBind NOT SUPPORTED");
@@ -431,6 +439,7 @@ bool CreateVirtualDevice(VulkanContext& context)
 	dynamicRenderingFeature.dynamicRendering = VK_TRUE;
 
     context.features_11.pNext = &context.features_12;
+    context.features_12.drawIndirectCount = context.vulkanExtension.enableDrawIndirectCount ? VK_TRUE : VK_FALSE;
     context.features_12.pNext = &dynamicRenderingFeature;
     
     // 开启负的高度

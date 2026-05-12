@@ -89,7 +89,31 @@ public:
     virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
             int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
 		    uint32_t drawCount, uint32_t stride) = 0;
-    
+
+    /**
+     * @brief 索引间接绘制（drawCount 由 GPU buffer 提供）
+     *
+     * 类似 DrawIndexedPrimitivesIndirect，但 drawCount 从 countBuffer 中由 GPU 读取，
+     * 而非 CPU 传入。适用于 GPU 剔除等 GPU-driven 渲染场景。
+     *
+     * Vulkan: vkCmdDrawIndexedIndirectCount（需要 drawIndirectCount 特性）
+     * Metal:  CPU 回读 countBuffer 后循环调用 drawIndexedPrimitives（需要同步保证）
+     *
+     * @param mode              图元类型
+     * @param indexBuffer       索引缓冲区
+     * @param indexBufferOffset 索引缓冲区偏移（索引个数，非字节数）
+     * @param indirectBuffer    间接绘制参数 buffer（DrawIndexedIndirectCommand 数组）
+     * @param indirectBufferOffset indirectBuffer 偏移（字节）
+     * @param countBuffer       包含实际 drawCount 的 buffer（1 个 uint32_t）
+     * @param countBufferOffset countBuffer 偏移（字节）
+     * @param maxDrawCount      drawCount 上限（indirectBuffer 中的最大条目数）
+     * @param stride            每个间接绘制命令的步长（字节）
+     */
+    virtual void DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+            int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
+            RCBufferPtr countBuffer, uint32_t countBufferOffset,
+            uint32_t maxDrawCount, uint32_t stride) = 0;
+
     // ==================== UniformBuffer接口 ====================
     
     /**

@@ -620,6 +620,90 @@ void MTLRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBu
     }
 }
 
+void MTLRenderEncoder::DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+    int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
+    RCBufferPtr countBuffer, uint32_t countBufferOffset,
+    uint32_t maxDrawCount, uint32_t stride)
+{
+    if (!indexBuffer || !indirectBuffer || !countBuffer)
+    {
+        return;
+    }
+
+    MTLIndexBufferPtr mtlIndexBufferPtr = std::dynamic_pointer_cast<MTLIndexBuffer>(indexBuffer);
+    if (!mtlIndexBufferPtr)
+    {
+        return;
+    }
+
+    id<MTLBuffer> mtlIdxBuffer = mtlIndexBufferPtr->getMTLBuffer();
+    if (!mtlIdxBuffer)
+    {
+        return;
+    }
+
+    MTLRCBufferPtr mtlIndirectBufferPtr = std::dynamic_pointer_cast<MTLRCBuffer>(indirectBuffer);
+    if (!mtlIndirectBufferPtr)
+    {
+        return;
+    }
+
+    id<MTLBuffer> mtlIndirectBuf = mtlIndirectBufferPtr->GetMTLBuffer();
+    if (!mtlIndirectBuf)
+    {
+        return;
+    }
+
+    MTLRCBufferPtr mtlCountBufferPtr = std::dynamic_pointer_cast<MTLRCBuffer>(countBuffer);
+    if (!mtlCountBufferPtr)
+    {
+        return;
+    }
+
+    id<MTLBuffer> mtlCountBuf = mtlCountBufferPtr->GetMTLBuffer();
+    if (!mtlCountBuf)
+    {
+        return;
+    }
+
+    IndexType type = mtlIndexBufferPtr->getIndexType();
+    MTLIndexType mtlIndexType = (MTLIndexType)type;
+
+    int byteOffset = indexBufferOffset * sizeof(uint16_t);
+    if (type == IndexType_UInt)
+    {
+        byteOffset = indexBufferOffset * sizeof(uint32_t);
+    }
+
+    // Metal 没有 GPU-driven drawCount 的 API，回退到 CPU 回读 countBuffer
+    // 注意：调用方需确保 countBuffer 的 GPU 写入对 CPU 可见
+    // （例如 compute command buffer 已 commit 并 waitUntilCompleted）
+    uint32_t actualDrawCount = 0;
+    void* mapped = mtlCountBuf.contents;
+    if (mapped)
+    {
+        actualDrawCount = *reinterpret_cast<const uint32_t*>(static_cast<const uint8_t*>(mapped) + countBufferOffset);
+    }
+
+    // 钳制到 maxDrawCount 上限
+    if (actualDrawCount > maxDrawCount)
+    {
+        actualDrawCount = maxDrawCount;
+    }
+
+    uint32_t currentOffset = indirectBufferOffset;
+    for (uint32_t i = 0; i < actualDrawCount; i++)
+    {
+        [mRenderEncoder drawIndexedPrimitives:ConvertPrimitiveType(mode)
+                                   indexType:mtlIndexType
+                                 indexBuffer:mtlIdxBuffer
+                           indexBufferOffset:byteOffset
+                              indirectBuffer:mtlIndirectBuf
+                        indirectBufferOffset:currentOffset];
+        currentOffset += stride;
+    }
+}
+
 // ===== Mesh Shader 绘制实现 =====
 
 void MTLRenderEncoder::DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)

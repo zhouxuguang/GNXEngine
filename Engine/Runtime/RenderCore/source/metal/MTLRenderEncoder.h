@@ -53,6 +53,11 @@ public:
     virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
         int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
         uint32_t drawCount, uint32_t stride);
+
+    virtual void DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+        int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
+        RCBufferPtr countBuffer, uint32_t countBufferOffset,
+        uint32_t maxDrawCount, uint32_t stride);
     
     /**
      设置uniformbuffer的索引
