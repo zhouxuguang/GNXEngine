@@ -38,6 +38,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Engine)
 # 编译选项：单元测试和编辑器默认关闭，通过 -DENABLE_TESTING=ON / -DENABLE_EDITOR=ON 打开
 option(ENABLE_TESTING "Build unit tests" OFF)
 option(ENABLE_EDITOR "Build editor" OFF)
+option(ENABLE_NSIGHT_AFTERMATH "Enable NVIDIA Nsight Aftermath GPU crash dump integration" OFF)
 
 add_subdirectory(Engine/Runtime)
 

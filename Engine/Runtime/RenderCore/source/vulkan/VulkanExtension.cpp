@@ -110,7 +110,17 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
             enableMeshShaderEXT = false;
         }
     }
-}
+
+#ifdef ENABLE_NSIGHT_AFTERMATH
+    // NVIDIA Nsight Aftermath 扩展检测（仅 NVIDIA GPU 支持）
+    if (physicalDeviceProperties.vendorID == 0x10DE) // NVIDIA
+    {
+        enableDiagnosticCheckpoints = ExtensionSupported(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+        enableDiagnosticsConfig = ExtensionSupported(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME);
+    }
+#endif
+
+}  // VulkanExtension::Init
 
 void VulkanExtension::InitExtendedDynamicState(VkPhysicalDevice physicalDevice)
 {

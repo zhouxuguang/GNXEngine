@@ -50,6 +50,21 @@ source_group(TREE ${rendercore_include_dir} PREFIX include FILES ${RENDERCORE_IN
 target_include_directories(RenderCore PRIVATE ${rendercore_include_dir}
                                                ${PROJECT_SOURCE_DIR}/ThirdParty/vulkan-headers)
 target_compile_definitions(RenderCore PRIVATE RENDERCORE_EXPORTS)
+
+# NVIDIA Nsight Aftermath GPU 崩溃转储集成
+if(ENABLE_NSIGHT_AFTERMATH)
+    target_compile_definitions(RenderCore PRIVATE ENABLE_NSIGHT_AFTERMATH)
+    target_include_directories(RenderCore PRIVATE ${PROJECT_SOURCE_DIR}/ThirdParty/AftermathSDK/include)
+    # 编译完成后将 Aftermath DLL 复制到可执行文件同一目录（Debug/Release）
+    add_custom_target(CopyAftermathDLL ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${PROJECT_SOURCE_DIR}/ThirdParty/AftermathSDK/lib/GFSDK_Aftermath_Lib.x64.dll"
+            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
+        COMMENT "Copying GFSDK_Aftermath_Lib.x64.dll to output directory"
+    )
+    add_dependencies(RenderCore CopyAftermathDLL)
+endif()
+
 target_link_libraries(RenderCore PRIVATE MathUtil spirv_reflect)
 
 if(APPLE)

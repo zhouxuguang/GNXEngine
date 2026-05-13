@@ -408,6 +408,21 @@ bool CreateVirtualDevice(VulkanContext& context)
     {
         deviceExtensionNames.push_back(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
     }
+
+    // NVIDIA Nsight Aftermath 扩展
+#ifdef ENABLE_NSIGHT_AFTERMATH
+    if (context.vulkanExtension.enableAftermath)
+    {
+        if (context.vulkanExtension.enableDiagnosticCheckpoints)
+        {
+            deviceExtensionNames.push_back(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+        }
+        if (context.vulkanExtension.enableDiagnosticsConfig)
+        {
+            deviceExtensionNames.push_back(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME);
+        }
+    }
+#endif
     
     // 如果支持，添加 VK_KHR_portability_subset
     if (context.vulkanExtension.enablePortabilitySubset)
@@ -429,6 +444,21 @@ bool CreateVirtualDevice(VulkanContext& context)
         meshShaderFeaturesEXT.taskShader = context.vulkanExtension.taskShaderSupported ? VK_TRUE : VK_FALSE;
         AppendToPNextChain(deviceCreateNextChain, &meshShaderFeaturesEXT);
     }
+
+    // NVIDIA Nsight Aftermath 诊断配置
+    VkDeviceDiagnosticsConfigCreateInfoNV diagnosticsConfigCreateInfo = {};
+#ifdef ENABLE_NSIGHT_AFTERMATH
+    if (context.vulkanExtension.enableAftermath && context.vulkanExtension.enableDiagnosticsConfig)
+    {
+        diagnosticsConfigCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV;
+        diagnosticsConfigCreateInfo.flags =
+            VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_RESOURCE_TRACKING_BIT_NV |
+            VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_AUTOMATIC_CHECKPOINTS_BIT_NV |
+            VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_DEBUG_INFO_BIT_NV |
+            VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_ERROR_REPORTING_BIT_NV;
+        AppendToPNextChain(deviceCreateNextChain, &diagnosticsConfigCreateInfo);
+    }
+#endif
 
 	VkPhysicalDeviceProperties2 deviceProperties = {};
 	deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;

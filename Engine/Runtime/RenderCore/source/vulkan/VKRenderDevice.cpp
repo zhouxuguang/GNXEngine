@@ -8,6 +8,10 @@
 #include "VKRenderDevice.h"
 #include "VulkanGarbageCollector.h"
 #include "Runtime/BaseLib/include/LogService.h"
+
+#ifdef ENABLE_NSIGHT_AFTERMATH
+#include "AftermathCrashTracker.h"
+#endif
 #include "VKTextureSampler.h"
 #include "VKVertexBuffer.h"
 #include "VKIndexBuffer.h"
@@ -80,7 +84,19 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     
     // 初始化扩展信息
     mVulkanContext->vulkanExtension.Init(mVulkanContext->physicalDevice, mVulkanContext->physicalDeviceProperties);
-    
+
+#ifdef ENABLE_NSIGHT_AFTERMATH
+    // 初始化 Aftermath（必须在创建 Vulkan 设备之前调用）
+    if (mVulkanContext->vulkanExtension.enableDiagnosticCheckpoints ||
+        mVulkanContext->vulkanExtension.enableDiagnosticsConfig)
+    {
+        if (Aftermath_Initialize())
+        {
+            mVulkanContext->vulkanExtension.enableAftermath = true;
+        }
+    }
+#endif
+
     // 创建虚拟设备
     if (!CreateVirtualDevice(*mVulkanContext))
     {
@@ -269,7 +285,15 @@ VKRenderDevice::~VKRenderDevice()
         vkDestroyDevice(mVulkanContext->device, nullptr);
         mVulkanContext->device = VK_NULL_HANDLE;
     }
-    
+
+#ifdef ENABLE_NSIGHT_AFTERMATH
+    // Aftermath 必须在 Vulkan 设备销毁之后关闭
+    if (mVulkanContext->vulkanExtension.enableAftermath)
+    {
+        Aftermath_Shutdown();
+    }
+#endif
+
     // 销毁实例
     if (mVulkanContext->instance != VK_NULL_HANDLE)
     {
@@ -541,19 +565,29 @@ CommandBufferPtr VKRenderDevice::CreateCommandBuffer()
     //VkResult res = vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]);
 
     VkResult res = vkWaitForFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame], VK_TRUE, UINT64_MAX);
-    //assert(res == VK_SUCCESS);  //这里返回值可能是VK_ERROR_DEVICE_LOST
-    if (res == VK_ERROR_DEVICE_LOST && mVulkanContext->vulkanExtension.enableDeviceFault)
+
+#ifdef ENABLE_NSIGHT_AFTERMATH
+    if (res == VK_ERROR_DEVICE_LOST && mVulkanContext->vulkanExtension.enableAftermath)
     {
-        VkDeviceFaultCountsEXT count = {};
-        count.sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_COUNTS_EXT;
-        VkResult res = vkGetDeviceFaultInfoEXT(mVulkanContext->device, &count, nullptr);
+        LOG_ERROR("VKRenderDevice: Device lost! Waiting for Aftermath crash dump (timeout 3s)...");
+        // Device lost notification is asynchronous to the NVIDIA display
+        // driver's GPU crash handling. Give the Nsight Aftermath GPU crash dump
+        // thread some time to do its work before terminating the process.
+        bool dumpOk = Aftermath_WaitForCrashDump(3000);
 
-        VkDeviceFaultInfoEXT info = {};
-        info.sType = VK_STRUCTURE_TYPE_DEVICE_FAULT_INFO_EXT;
-        res = vkGetDeviceFaultInfoEXT(mVulkanContext->device, &count, &info);
+        if (dumpOk)
+            LOG_INFO("VKRenderDevice: Aftermath crash dump completed");
+        else
+            LOG_ERROR("VKRenderDevice: Aftermath crash dump failed or timed out");
 
-        LOG_INFO("error = %s", info.pVendorInfos->description);
+        // Per Vulkan spec, child objects must be explicitly destroyed even when device is lost.
+        // vkDestroy* functions remain safe to call and are required for proper resource cleanup.
+        // The application must handle these expected error codes gracefully.
+
+        // Terminate process after crash dump collected
+        exit(1);
     }
+#endif
     VK_CHECK(vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]));
 
     res = vkAcquireNextImageKHR(mVulkanContext->device, mSwapChain->GetSwapChain(), UINT64_MAX,

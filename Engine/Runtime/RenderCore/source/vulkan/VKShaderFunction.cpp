@@ -8,6 +8,7 @@
 #include "VKShaderFunction.h"
 #include "spirv_reflection.h"
 #include "VulkanBufferUtil.h"
+#include "AftermathCrashTracker.h"
 #include "VulkanDescriptorUtil.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include <set>
@@ -41,7 +42,9 @@ std::shared_ptr<ShaderFunction> VKShaderFunction::InitWithShaderSource(const Sha
         return nullptr;
     }
     mShaderFunction = computeShaderModule;
-    
+
+    Aftermath_RegisterShader(shaderSource.data(), static_cast<uint32_t>(shaderSource.size()));
+
     return shared_from_this();
 }
 
@@ -210,6 +213,8 @@ std::shared_ptr<VKShaderFunction> VKShaderFunction::initWithShaderSourceInner(co
     }
     mShaderFunction = computeShaderModule;
     mShaderStage = shaderStage;
+
+    Aftermath_RegisterShader(shaderSource.data(), static_cast<uint32_t>(shaderSource.size()));
     
     switch (shaderStage)
     {
@@ -279,6 +284,8 @@ static VkShaderModule CreateShaderModule(VkDevice device, const ShaderCode& shad
 	VkShaderModule shaderModule = VK_NULL_HANDLE;
 	VkResult res = vkCreateShaderModule(device, &shaderModuleCreateInfo, nullptr, &shaderModule);
     assert(res == VK_SUCCESS);
+
+    Aftermath_RegisterShader(shaderCode.data(), static_cast<uint32_t>(shaderCode.size()));
 
     return shaderModule;
 }

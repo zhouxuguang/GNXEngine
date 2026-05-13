@@ -13,6 +13,10 @@
 #include "VKGraphicsPipeline.h"
 #include "VulkanDescriptorUtil.h"
 #include "VulkanBufferUtil.h"
+
+#ifdef ENABLE_NSIGHT_AFTERMATH
+#include "AftermathCrashTracker.h"
+#endif
 #include "VKTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -968,6 +972,10 @@ void VKRenderEncoder::DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, Ind
     RCBufferPtr countBuffer, uint32_t countBufferOffset,
     uint32_t maxDrawCount, uint32_t stride)
 {
+#ifdef ENABLE_NSIGHT_AFTERMATH
+    Aftermath_SetCheckpoint(mCommandBuffer, "DrawIndexedPrimitivesIndirectCount");
+#endif
+
     // 绑定 index buffer
     if (indexBuffer)
     {
