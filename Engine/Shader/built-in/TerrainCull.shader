@@ -62,7 +62,7 @@ void CS(int3 dtid : SV_DispatchThreadID)
         cmd.instanceCount = 1;
         cmd.firstIndex    = 0;
         cmd.vertexOffset  = 0;
-        cmd.firstInstance = 0;
+        cmd.firstInstance = idx;  // original patch index, so VS uses gPatchMeta[firstInstance]
         gIndirectArgs[outputIndex] = cmd;
 	}
 }

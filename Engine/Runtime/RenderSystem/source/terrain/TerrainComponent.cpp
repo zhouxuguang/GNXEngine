@@ -245,14 +245,16 @@ void TerrainComponent::RenderGPUCulled(RenderEncoder* renderEncoder,
     // 材质纹理
     BindMaterialTextures(renderEncoder);
 
-    // ---- Indirect Draw：GPU 决定每个 patch 的可见性 ----
-    renderEncoder->DrawIndexedPrimitivesIndirect(
+    // ---- Indirect Draw：drawCount 由 GPU visibleCount buffer 提供 ----
+    renderEncoder->DrawIndexedPrimitivesIndirectCount(
         PrimitiveMode_TRIANGLES,
         templateIB,
         0,                                    // indexBufferOffset
         mLastCullOutput.indirectArgsBuffer,   // indirect args（GPU 写入）
         0,                                    // indirectBufferOffset
-        totalPatchCount,                      // drawCount（= 总 patch 数，被剔除的 instanceCount=0）
+        mLastCullOutput.visibleCountBuffer,   // countBuffer（GPU 写入的实际可见数量）
+        0,                                    // countBufferOffset
+        mLastCullOutput.indirectArgsCount,    // maxDrawCount = 缓冲区容量
         sizeof(RenderCore::DrawIndexedIndirectCommand)  // stride
     );
 }
@@ -398,14 +400,16 @@ void TerrainComponent::RenderDepthGPUCulled(RenderEncoder* renderEncoder,
 
     renderEncoder->SetVertexBuffer(mQuadTreeTerrain->GetTemplateVB(), 0, 0);
 
-    // Indirect Draw
-    renderEncoder->DrawIndexedPrimitivesIndirect(
+    // Indirect Draw（drawCount 由 GPU visibleCount buffer 提供）
+    renderEncoder->DrawIndexedPrimitivesIndirectCount(
         PrimitiveMode_TRIANGLES,
         templateIB,
         0,
         mLastCullOutput.indirectArgsBuffer,
         0,
-        totalPatchCount,
+        mLastCullOutput.visibleCountBuffer,
+        0,
+        mLastCullOutput.indirectArgsCount,
         sizeof(RenderCore::DrawIndexedIndirectCommand)
     );
 }
@@ -662,7 +666,8 @@ void TerrainComponent::DispatchGPUCull(CommandBufferPtr commandBuffer,
     params.maxHeight = mQuadTreeTerrain->GetHeightScale();
 
     // 分发 compute shader 剔除
-    mLastCullOutput = mCullPass->DispatchCull(commandBuffer, params, allPatchMeta, cameraUBO);
+    uint32_t frameIndex = mQuadTreeTerrain->GetFrameIndex();
+    mLastCullOutput = mCullPass->DispatchCull(commandBuffer, params, allPatchMeta, cameraUBO, frameIndex);
 
     LOG_DEBUG("TerrainComponent::DispatchGPUCull: %u patches, indirect args buffer %s",
               totalPatchCount,
@@ -702,8 +707,9 @@ void TerrainComponent::DispatchCullViaFrameGraph(FrameGraph& frameGraph,
     params.maxHeight = mQuadTreeTerrain->GetHeightScale();
 
     // 注册到 FrameGraph 作为 Compute Pass
+    uint32_t frameIndex = mQuadTreeTerrain->GetFrameIndex();
     mLastCullOutput = mCullPass->AddToFrameGraph(
-        "TerrainCull", frameGraph, commandBuffer, params, allPatchMeta, cameraUBO);
+        "TerrainCull", frameGraph, commandBuffer, params, allPatchMeta, cameraUBO, frameIndex);
 
     LOG_DEBUG("TerrainComponent::DispatchCullViaFrameGraph: %u patches registered to FrameGraph",
               totalPatchCount);

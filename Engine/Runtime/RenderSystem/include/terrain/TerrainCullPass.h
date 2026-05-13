@@ -34,8 +34,9 @@ struct TerrainCullParams
  */
 struct TerrainCullOutput
 {
-    RenderCore::RCBufferPtr indirectArgsBuffer;   // GPU 写入的 IndirectCommand[] 缓冲区
-    uint32_t indirectArgsCount;                  // 实际的 command 数量（= patchCount）
+    RenderCore::RCBufferPtr indirectArgsBuffer;   // GPU 写入的 IndirectCommand[] 缓冲区（紧凑排列）
+    RenderCore::RCBufferPtr visibleCountBuffer;   // GPU 写入的可见 Patch 计数（1 个 uint）
+    uint32_t indirectArgsCount;                  // 缓冲区容量（= patchCount，用于 drawCount 上限）
 };
 
 /**
@@ -65,19 +66,18 @@ public:
     /**
      * @brief 独立执行 GPU 剔除 Compute Dispatch（不需要 FrameGraph）
      *
-     * 直接在 CommandBuffer 上创建 ComputeEncoder 并分发剔除 Shader。
-     * 适用于在 FrameGraph 之外调用（如 TerrainComponent::Render 内部）。
-     *
      * @param commandBuffer 命令缓冲
      * @param params         剔除参数（patchCount, maxHeight）
      * @param patchMetaSSBO  全部 PatchMeta 的 SSBO
+     * @param frameIndex     当前帧索引（用于选择 per-frame 缓冲区）
      * @return 输出：包含 IndirectArgs 缓冲区和数量
      */
     TerrainCullOutput DispatchCull(
         CommandBufferPtr commandBuffer,
         const TerrainCullParams& params,
         RenderCore::RCBufferPtr patchMetaSSBO,
-        RenderCore::UniformBufferPtr cameraUBO);
+        RenderCore::UniformBufferPtr cameraUBO,
+        uint32_t frameIndex);
 
     /**
      * @brief 添加 TerrainCull Compute Pass 到 FrameGraph（完整集成用）
@@ -86,7 +86,8 @@ public:
      * @param frameGraph     帧图
      * @param commandBuffer 命令缓冲
      * @param params         剔除参数（patchCount, maxHeight）
-     * @param patchMetaSSBO  全部 PatchMeta 的 SSBO（由 QuadTreeTerrain::GetPatchMetaBuffer() 提供）
+     * @param patchMetaSSBO  全部 PatchMeta 的 SSBO
+     * @param frameIndex     当前帧索引（用于选择 per-frame 缓冲区）
      * @return 输出：包含 IndirectArgs 缓冲区和数量
      */
     TerrainCullOutput AddToFrameGraph(
@@ -95,7 +96,8 @@ public:
         CommandBufferPtr commandBuffer,
         const TerrainCullParams& params,
         RenderCore::RCBufferPtr patchMetaSSBO,
-        RenderCore::UniformBufferPtr cameraUBO);
+        RenderCore::UniformBufferPtr cameraUBO,
+        uint32_t frameIndex);
 
     /**
      * @brief 是否已初始化
@@ -109,9 +111,14 @@ private:
     void CreateCullPipeline();
 
     /**
-     * 创建 / 复用 Indirect Args 缓冲区
+     * 创建 / 复用指定帧的 Indirect Args 缓冲区
      */
-    void EnsureIndirectArgsBuffer(uint32_t count);
+    void EnsureIndirectArgsBuffer(uint32_t count, uint32_t frameIndex);
+
+    /**
+     * 创建 / 复用指定帧的 VisibleCount 缓冲区（1 uint，原子计数器）
+     */
+    void EnsureVisibleCountBuffer(uint32_t frameIndex);
 
     /**
      * 释放所有 GPU 资源
@@ -119,17 +126,24 @@ private:
     void FreeGPUResources();
 
 private:
+    static constexpr uint32_t kFrameInFlightCount = 3;
+
     bool mInitialized = false;
 
     // Compute Pipeline
     RenderCore::ComputePipelinePtr mCullPipeline = nullptr;
 
-    // Uniform Buffer: cbTerrainCull (patchCount, maxHeight, VP matrix)
-    RenderCore::UniformBufferPtr mCullParamsUBO = nullptr;
+    // Uniform Buffer: cbTerrainCull (patchCount, maxHeight) — 按帧索引三缓冲
+    RenderCore::UniformBufferPtr mCullParamsUBOs[kFrameInFlightCount];
 
-    // Indirect Args 输出缓冲区 (RWStructuredBuffer in shader)
-    RenderCore::RCBufferPtr mIndirectArgsBuffer = nullptr;
-    uint32_t mIndirectArgsCapacity = 0;
+    // Indirect Args 输出缓冲区 — 按帧索引三缓冲
+    RenderCore::RCBufferPtr mIndirectArgsBuffers[kFrameInFlightCount];
+    uint32_t mIndirectArgsCapacities[kFrameInFlightCount] = {};
+    RenderCore::RCBufferPtr mRetiredIndirectArgsBuffer;   // resize 时延迟释放
+
+    // VisibleCount 缓冲区 — 按帧索引三缓冲
+    RenderCore::RCBufferPtr mVisibleCountBuffers[kFrameInFlightCount];
+    RenderCore::RCBufferPtr mRetiredVisibleCountBuffer;   // resize 时延迟释放
 
     // CommandBuffer 引用（用于创建 Compute Encoder）
     CommandBufferPtr mCommandBuffer;
