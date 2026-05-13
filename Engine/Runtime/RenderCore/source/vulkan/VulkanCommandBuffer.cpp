@@ -660,6 +660,11 @@ void VulkanCommandBuffer::ResourceBarrier(RCBufferPtr buffer, ResourceAccessType
         dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
     }
+    else if (accessType == ResourceAccessType::IndirectCommandRead)
+    {
+        dstAccessMask = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;
+        dstStageMask = VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+    }
     else
     {
         // 未知访问类型，默认为shader读写
@@ -690,6 +695,12 @@ void VulkanCommandBuffer::ResourceBarrier(RCBufferPtr buffer, ResourceAccessType
     {
         srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
         srcStageMask = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
+    }
+    else if ((accessType & ResourceAccessType::IndirectCommandRead) == ResourceAccessType::IndirectCommandRead)
+    {
+        // Compute Shader 写入 → Indirect Draw 读取
+        srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+        srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
     }
 
     barrier.srcAccessMask = srcAccessMask;

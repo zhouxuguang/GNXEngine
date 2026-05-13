@@ -452,6 +452,7 @@ enum class ResourceAccessType : uint32_t
     TransferSrc = 1 << 5,
     TransferDst = 1 << 6,
     DepthStencilReadOnly = 1 << 7,  // 只读深度/模板附件
+    IndirectCommandRead  = 1 << 8,  // 间接绘制命令读取（drawIndirect/countBuffer）
 };
 
 inline ResourceAccessType operator|(ResourceAccessType a, ResourceAccessType b)
