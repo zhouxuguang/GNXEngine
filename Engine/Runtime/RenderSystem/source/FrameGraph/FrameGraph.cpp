@@ -1,6 +1,7 @@
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/FrameGraphBlackboard.h"
 #include "GraphvizWriter.h"
+#include <tracy/Tracy.hpp>
 #include <stack>
 
 NS_RENDERSYSTEM_BEGIN
@@ -81,6 +82,8 @@ void FrameGraph::Compile()
 
 void FrameGraph::Execute(void* context, void* allocator)
 {
+	ZoneScopedN("FrameGraph::Execute");
+
 	for (const auto& pass : mPassNodes)
 	{
 		if (!pass.canExecute()) continue;

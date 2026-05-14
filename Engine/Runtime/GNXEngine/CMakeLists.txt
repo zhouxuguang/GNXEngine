@@ -30,6 +30,7 @@ target_link_libraries(GNXEngine PRIVATE
     tbb 
     ktx 
     glfw
+    TracyClient
 )
 target_compile_definitions(GNXEngine PRIVATE 
     GNXENGINE_EXPORTS

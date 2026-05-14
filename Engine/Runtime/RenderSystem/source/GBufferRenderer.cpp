@@ -14,6 +14,7 @@
 #include "ShaderAssetLoader.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/RenderCore/include/RenderPass.h"
+#include <tracy/Tracy.hpp>
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -139,6 +140,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
         },
         [=](const GBufferPassData& data, FrameGraphPassResources& resources, void* context)
         {
+            ZoneScopedN("GBufferPass");
             // 获取纹理资源
             FrameGraphTexture& sceneColorTexture = resources.Get<FrameGraphTexture>(data.gbuffer.sceneColor);
             FrameGraphTexture& gBufferA = resources.Get<FrameGraphTexture>(data.gbuffer.gBufferA);

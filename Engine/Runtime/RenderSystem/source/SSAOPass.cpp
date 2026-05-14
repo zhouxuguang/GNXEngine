@@ -14,6 +14,7 @@
 #include "Runtime/MathUtil/include/Vector4.h"
 #include "Runtime/MathUtil/include/RandomMath.h"
 #include "Runtime/MathUtil/include/MathUtil.h"
+#include <tracy/Tracy.hpp>
 
 USING_NS_MATHUTIL
 USING_NS_RENDERCORE
@@ -253,6 +254,7 @@ SSAOOutput SSAOPass::AddToFrameGraph(
         },
         [=](const SSAOPassData& data, FrameGraphPassResources& resources, void* context)
         {
+            ZoneScopedN("SSAOPass");
             FrameGraphTexture& gBufferA = resources.Get<FrameGraphTexture>(data.gBufferA);
             FrameGraphTexture& depthTexture = resources.Get<FrameGraphTexture>(data.depthTexture);
             FrameGraphTexture& outputTexture = resources.Get<FrameGraphTexture>(data.output.ssaoResult);
@@ -324,6 +326,7 @@ SSAOOutput SSAOPass::AddToFrameGraph(
             },
             [=](const BlurPassData& data, FrameGraphPassResources& resources, void* context)
             {
+                ZoneScopedN("SSAOBlurPass");
                 FrameGraphTexture& ssaoInput = resources.Get<FrameGraphTexture>(data.ssaoInput);
                 FrameGraphTexture& depthTexture = resources.Get<FrameGraphTexture>(data.depthTexture);
                 FrameGraphTexture& outputTexture = resources.Get<FrameGraphTexture>(data.output.ssaoResult);

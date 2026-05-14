@@ -12,6 +12,7 @@
 #include <limits>
 
 #include "Runtime/RenderSystem/include/ShaderAssetLoader.h"
+#include <tracy/Tracy.hpp>
 
 USING_NS_MATHUTIL
 
@@ -128,6 +129,7 @@ FrameGraphResource DepthRenderer::Render(
         },
         [=](const DepthPassData& data, FrameGraphPassResources& resources, void* context)
         {
+            ZoneScopedN("DepthPrePass");
             RenderSystem::FrameGraphTexture &depthTexture = resources.Get<RenderSystem::FrameGraphTexture>(data.depthTexture);
             
             RenderPass renderPass;

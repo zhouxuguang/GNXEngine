@@ -14,6 +14,7 @@
 #include "Runtime/MathUtil/include/Vector2.h"
 #include <cmath>
 #include <algorithm>
+#include <tracy/Tracy.hpp>
 
 USING_NS_RENDERCORE
 
@@ -116,8 +117,9 @@ HiZOutput HiZPass::AddToFrameGraph(
             builder.SetSideEffect();
         },
         // Execute阶段：执行Compute Shader
-        [=](const HiZPassData& passData, FrameGraphPassResources& resources, void* context) 
+        [=](const HiZPassData& passData, FrameGraphPassResources& resources, void* context)
         {
+            ZoneScopedN("HiZPass");
             float debugColor[4] = {1.0f, 1.0f, 0.0f, 1.0f};
             SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), debugColor);
             

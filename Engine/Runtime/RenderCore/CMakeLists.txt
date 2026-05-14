@@ -65,7 +65,7 @@ if(ENABLE_NSIGHT_AFTERMATH)
     add_dependencies(RenderCore CopyAftermathDLL)
 endif()
 
-target_link_libraries(RenderCore PRIVATE MathUtil spirv_reflect)
+target_link_libraries(RenderCore PRIVATE MathUtil spirv_reflect TracyClient)
 
 if(APPLE)
     target_compile_options(RenderCore PRIVATE "-fobjc-arc")

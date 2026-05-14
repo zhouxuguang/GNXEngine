@@ -19,6 +19,7 @@
 #include "BuildSetting.h"
 #include <algorithm>
 #include <functional>
+#include <tracy/Tracy.hpp>
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -70,6 +71,8 @@ const GBufferRenderer::GBufferConfig& DeferredSceneRenderer::GetGBufferConfig() 
 
 void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 {
+    ZoneScopedN("DeferredSceneRenderer::Render");
+
     if (!sceneManager)
     {
         return;

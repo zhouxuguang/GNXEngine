@@ -13,6 +13,7 @@
 #include "Runtime/RenderCore/include/TextureSampler.h"
 #include "Runtime/MathUtil/include/Vector4.h"
 #include <cmath>
+#include <tracy/Tracy.hpp>
 
 USING_NS_MATHUTIL
 USING_NS_RENDERCORE
@@ -238,6 +239,7 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
         },
         [=](const LightingPassData& data, FrameGraphPassResources& resources, void* context)
         {
+            ZoneScopedN("DeferredLightingPass");
             // 更新光源数据
             UpdateLightData(params);
             

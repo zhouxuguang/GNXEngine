@@ -1,5 +1,6 @@
 #include "AppFrameWork.h"
 #include "Runtime/BaseLib/include/LogService.h"
+#include <tracy/Tracy.hpp>
 
 NAMESPACE_GNXENGINE_BEGIN
 
@@ -25,6 +26,7 @@ void AppFrameWork::RunLoop()
     {
         mRenderWindow->OnUpdate();
         RenderFrame();
+        FrameMark;
     }
 
     // Flush pipeline cache to disk before RenderWindow is destroyed

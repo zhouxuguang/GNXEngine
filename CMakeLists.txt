@@ -39,6 +39,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Engine)
 option(ENABLE_TESTING "Build unit tests" OFF)
 option(ENABLE_EDITOR "Build editor" OFF)
 option(ENABLE_NSIGHT_AFTERMATH "Enable NVIDIA Nsight Aftermath GPU crash dump integration" OFF)
+option(ENABLE_TRACY "Enable Tracy profiler instrumentation" OFF)
+
+if(ENABLE_TRACY)
+    add_compile_definitions(TRACY_ENABLE)
+endif()
 
 add_subdirectory(Engine/Runtime)
 
