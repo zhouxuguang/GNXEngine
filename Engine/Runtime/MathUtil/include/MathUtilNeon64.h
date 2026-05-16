@@ -18,7 +18,14 @@
  This file was modified to fit the cocos2d-x project
  */
 
-NS_CC_MATH_BEGIN
+#ifndef MATH3D_MATH_UTIL_NEON64_INCLUDE_FSKDEFMNWE
+#define MATH3D_MATH_UTIL_NEON64_INCLUDE_FSKDEFMNWE
+
+#include "Math3DCommon.h"
+
+#define MATRIX_SIZE 16*4
+
+NS_MATHUTIL_BEGIN
 
 class MathUtilNeon64
 {
@@ -216,4 +223,6 @@ inline void MathUtilNeon64::crossVec3(const float* v1, const float* v2, float* d
     dst[2] = z;
 }
 
-NS_CC_MATH_END
+NS_MATHUTIL_END
+
+#endif

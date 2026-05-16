@@ -5,6 +5,13 @@
  */
 
 
+#ifndef MATH3D_MATH_UTIL_NEON_INCLUDE_FSKDEFMNWE
+#define MATH3D_MATH_UTIL_NEON_INCLUDE_FSKDEFMNWE
+
+#include "Math3DCommon.h"
+
+NS_MATHUTIL_BEGIN
+
 class MathUtilNeon
 {
 public:
@@ -253,5 +260,9 @@ inline void MathUtilNeon::crossVec3(const float* v1, const float* v2, float* dst
                  : "q0", "q1", "q2", "memory"
                  );
 }
+
+NS_MATHUTIL_END
+
+#endif
 
 

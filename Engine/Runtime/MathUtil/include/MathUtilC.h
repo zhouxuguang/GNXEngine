@@ -7,7 +7,11 @@
 #ifndef MATH3D_MATH_UTIL_C_INCLUDE_FSKDEFMNWE
 #define MATH3D_MATH_UTIL_C_INCLUDE_FSKDEFMNWE
 
+#include "Math3DCommon.h"
+
 #define MATRIX_SIZE 16*4
+
+NS_MATHUTIL_BEGIN
 
 class MathUtilC
 {
@@ -204,6 +208,8 @@ inline void MathUtilC::crossVec3(const float* v1, const float* v2, float* dst)
     dst[1] = y;
     dst[2] = z;
 }
+
+NS_MATHUTIL_END
 
 #endif
 

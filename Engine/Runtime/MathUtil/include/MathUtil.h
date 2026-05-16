@@ -14,6 +14,8 @@
 
 #include "Math3DCommon.h"
 
+NS_MATHUTIL_BEGIN
+
 const float kPi = 3.14159265f;
 const float k2Pi = kPi * 2.0f;
 const float kPiOver2 = kPi / 2.0f;
@@ -104,5 +106,7 @@ public:
 
 uint32_t convertRGBFloatToRGB9E5(float red, float green, float blue);
 void convertRGB9E5toRGBFloat(uint32_t input, float* red, float* green, float* blue);
+
+NS_MATHUTIL_END
 
 #endif 

@@ -6,7 +6,7 @@
 #include "MathUtil.h"
 #include "Vector3.h"
 
-USING_NS_MATHUTIL
+NS_MATHUTIL_BEGIN
 
 //const Vector3 kZeroVector(0.0f, 0.0f, 0.0f);
 
@@ -276,3 +276,5 @@ void convertRGB9E5toRGBFloat(uint32_t input, float* red, float* green, float* bl
 	*green = inputData->G * pow2_exp;
 	*blue = inputData->B * pow2_exp;
 }
+
+NS_MATHUTIL_END
