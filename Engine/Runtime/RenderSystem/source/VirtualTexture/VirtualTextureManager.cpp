@@ -97,10 +97,7 @@ void VirtualTextureManager::ProcessCompletedLoads()
 
 void VirtualTextureManager::RequestPageAsync(const PageRequest& page, const PageSlot& slot)
 {
-    mPendingLoads.push_back({
-        .page = page,
-        .targetSlot = slot
-    });
+    mPendingLoads.push_back({page, {}, false, slot});
 }
 
 NS_RENDERSYSTEM_END

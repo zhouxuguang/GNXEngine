@@ -30,18 +30,14 @@ CacheAllocation VirtualTextureCache::Allocate(const PageRequest& request)
 {
     if (mActiveAllocations.find(request) != mActiveAllocations.end())
     {
-        return {
-            .success = true,
-            .slot = mActiveAllocations[request],
-            .hasEvicted = false
-        };
+        return {true, mActiveAllocations[request], false, {}};
     }
 
     if (!mFreeSlots.empty())
     {
         PageSlot slot = mFreeSlots.back();
         mFreeSlots.pop_back();
-        return {.success = true, .slot = slot, .hasEvicted = false};
+        return {true, slot, false, {}};
     }
 
     // LRU 淘汰
@@ -51,12 +47,7 @@ CacheAllocation VirtualTextureCache::Allocate(const PageRequest& request)
     mActiveAllocations.erase(evicted);
     mSlotOwners.erase(slot);
 
-    return {
-        .success = true,
-        .slot = slot,
-        .hasEvicted = true,
-        .evictedRequest = evicted
-    };
+    return {true, slot, true, evicted};
 }
 
 void VirtualTextureCache::Touch(const PageRequest& request)
@@ -80,6 +71,7 @@ void VirtualTextureCache::FreeSlot(const PageSlot& slot)
 PageRequest VirtualTextureCache::FindEvictionCandidate() const
 {
     // TODO: 从 mLRUList 末尾查找第一个 mipLevel >= mPinnedMipLevels 的 page 返回。
+    return { 0, 0, 0 };
 }
 
 void VirtualTextureCache::Evict(const PageRequest& request)
