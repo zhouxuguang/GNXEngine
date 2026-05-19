@@ -22,8 +22,6 @@ VirtualTextureCache::VirtualTextureCache(const VirtualTextureConfig& config)
             mFreeSlots.push_back({x, y});
         }
     }
-
-    // TODO: 创建物理 atlas 纹理 SRGBA8，尺寸 config.atlasWidth × config.atlasHeight。
 }
 
 CacheAllocation VirtualTextureCache::Allocate(const PageRequest& request)

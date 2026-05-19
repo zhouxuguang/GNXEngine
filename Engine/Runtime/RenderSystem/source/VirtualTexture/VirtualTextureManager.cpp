@@ -26,6 +26,10 @@ void VirtualTextureManager::Initialize(const VirtualTextureConfig& config,
     mCache     = std::make_shared<VirtualTextureCache>(resolved);
     mFeedback  = std::make_shared<VirtualTextureFeedback>(feedbackScale, resolved);
 
+    // TODO: 创建物理 atlas 纹理 SRGBA8，尺寸 config.atlasWidth  config.atlasHeight。
+    //       通过 RenderDevice::CreateTexture2D() 创建并存入 mAtlasTexture。
+    //       格式：kTexFormatSRGB8_ALPHA8，Usage：ShaderRead | CopyDst，levels：1
+
     // TODO: 预填充最低几级 mip 的所有 page（pinned）。
 }
 
@@ -79,29 +83,29 @@ void VirtualTextureManager::DispatchLoadRequests(const FeedbackResult& feedback)
 void VirtualTextureManager::ProcessCompletedLoads()
 {
     const uint32_t slotSizeX = mConfig.slotSize;
-	const uint32_t slotSizeY = mConfig.slotSize;
+    const uint32_t slotSizeY = mConfig.slotSize;
 
     // 将处理完的tile从队列中移除，此时也是上传tile到缓存，以及更新pagetable的时机
-	std::erase_if(mPendingLoads, [this, slotSizeX, slotSizeY](PageLoadRequest& req)
+    std::erase_if(mPendingLoads, [this, slotSizeX, slotSizeY](PageLoadRequest& req)
     {
-		if (req.future.wait_for(std::chrono::microseconds(0)) != std::future_status::ready) 
+        if (req.future.wait_for(std::chrono::microseconds(0)) != std::future_status::ready) 
         {
-			return false;
-		}
+            return false;
+        }
 
-		ByteVector result = req.future.get();
-		if (result.empty())
+        ByteVector result = req.future.get();
+        if (result.empty())
         {
-			mPendingRequests.erase(req.page);
-			return true;
-		}
+            mPendingRequests.erase(req.page);
+            return true;
+        }
 
         RenderCore::Rect2D region;
         region.offsetX = slotSizeX * req.targetSlot.atlasX;
         region.offsetY = slotSizeY * req.targetSlot.atlasY;
         region.width = slotSizeX;
         region.height = slotSizeY;
-        mCache->GetAtlasTexture()->ReplaceRegion(region, 0, result.data(), slotSizeX * 4);   //先假定是RGBA8的图像
+        mAtlasTexture->ReplaceRegion(region, 0, result.data(), slotSizeX * 4);   //先假定是RGBA8的图像
 
         uint32_t entry = 0x1 | ((req.targetSlot.atlasX & 0xFFu) << 1) | ((req.targetSlot.atlasY & 0xFFu) << 9);
 
@@ -109,8 +113,8 @@ void VirtualTextureManager::ProcessCompletedLoads()
         mCache->Commit(req.page, req.targetSlot);
         mPendingRequests.erase(req.page);
 
-		return true;
-	});
+        return true;
+    });
 }
 
 void VirtualTextureManager::RequestPageAsync(const PageRequest& page, const PageSlot& slot)

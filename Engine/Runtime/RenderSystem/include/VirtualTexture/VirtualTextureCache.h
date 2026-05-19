@@ -11,7 +11,6 @@
 #define GNXENGINE_RENDERSYSTEM_VIRTUALTEXTURE_CACHE_H
 
 #include "VirtualTextureDefines.h"
-#include "Runtime/RenderCore/include/RCTexture.h"
 #include <vector>
 #include <list>
 #include <unordered_map>
@@ -55,12 +54,14 @@ public:
     /// 释放指定 page 占用的物理 slot。
     void FreeSlot(const PageSlot& slot);
 
-    /// 获取物理 atlas 纹理。
-    const RCTexture2DPtr& GetAtlasTexture() const { return mAtlasTexture; }
-
     /// 每帧最大上传数。
     void SetUploadsPerFrame(uint32_t count) { mUploadsPerFrame = count; }
     uint32_t GetUploadsPerFrame() const { return mUploadsPerFrame; }
+
+    /// 获取 config 参数的访问接口（供 Manager 创建纹理时参考）。
+    uint32_t GetAtlasSlotsX() const { return mAtlasSlotsX; }
+    uint32_t GetAtlasSlotsY() const { return mAtlasSlotsY; }
+    uint32_t GetSlotSize()   const { return mSlotSize; }
 
 private:
     // 配置缓存
@@ -69,9 +70,6 @@ private:
     uint32_t mSlotSize    = 0;
     uint32_t mPinnedMipLevels = 0;
     uint32_t mUploadsPerFrame = 8;
-
-    // GPU 物理 atlas 纹理。
-    RCTexture2DPtr mAtlasTexture;
 
     // 空闲 slot 池。
     std::vector<PageSlot> mFreeSlots;

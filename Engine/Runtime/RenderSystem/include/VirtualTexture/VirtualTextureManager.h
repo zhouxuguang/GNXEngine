@@ -16,6 +16,7 @@
 #include "VirtualTextureCache.h"
 #include "VirtualTextureFeedback.h"
 #include "Runtime/RenderCore/include/RCBuffer.h"
+#include "Runtime/RenderCore/include/RCTexture.h"
 #include <vector>
 #include <queue>
 #include <future>
@@ -39,7 +40,7 @@ public:
     VirtualTextureManager();
     ~VirtualTextureManager() = default;
 
-VirtualTextureManager(const VirtualTextureManager&) = delete;
+    VirtualTextureManager(const VirtualTextureManager&) = delete;
     VirtualTextureManager& operator=(const VirtualTextureManager&) = delete;
 
     /// 初始化 VT 系统，传入所有运行时参数及数据源。
@@ -52,7 +53,7 @@ VirtualTextureManager(const VirtualTextureManager&) = delete;
 
     // 纹理绑定接口
     const RCTexturePtr& GetPageTableTexture() const { return mPageTable->GetGPUTexture(); }
-    const RCTexturePtr& GetAtlasTexture()    const { return mCache->GetAtlasTexture(); }
+    const RCTexturePtr& GetAtlasTexture()    const { return mAtlasTexture; }
     const RCTexturePtr& GetFeedbackTarget()   const { return mFeedback->GetFeedbackTarget(); }
     const RCTexturePtr& GetFeedbackDepthTarget() const { return mFeedback->GetDepthTarget(); }
 
@@ -69,6 +70,7 @@ private:
     VirtualTextureCachePtr     mCache;
     VirtualTextureFeedbackPtr  mFeedback;
     std::shared_ptr<IVirtualTextureDataSource> mDataSource;
+    RCTexture2DPtr mAtlasTexture;
 
     std::vector<PageLoadRequest> mPendingLoads;      //当前请求的结果
     std::set<PageRequest>      mPendingRequests;   //请求队列
