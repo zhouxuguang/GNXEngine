@@ -10,6 +10,7 @@
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 #include "Runtime/MathUtil/include/MathUtil.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
+#include "Runtime/RenderSystem/include/VirtualTexture/FileVirtualTextureDataSource.h"
 
 using namespace mathutil;
 
@@ -54,7 +55,8 @@ void VTFrameWork::Initlize()
     vtConfig.uploadsPerFrame = 4;
 
     mVTManager = std::make_shared<VirtualTextureManager>();
-    mVTManager->Initialize(vtConfig);
+    auto fileSource = std::make_shared<FileVirtualTextureDataSource>("assets/virtualtexture/terrain");
+    mVTManager->Initialize(vtConfig, fileSource);
 
     // Log VT info
     const auto& cfg = mVTManager->GetConfig();

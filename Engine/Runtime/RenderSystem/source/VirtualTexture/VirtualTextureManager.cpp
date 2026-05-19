@@ -12,12 +12,15 @@ VirtualTextureManager::VirtualTextureManager()
 {
 }
 
-void VirtualTextureManager::Initialize(const VirtualTextureConfig& config, uint32_t feedbackScale)
+void VirtualTextureManager::Initialize(const VirtualTextureConfig& config, 
+                                        std::shared_ptr<IVirtualTextureDataSource> dataSource,
+                                        uint32_t feedbackScale)
 {
     VirtualTextureConfig resolved = config;
     resolved.ResolveDerived();
 
     mConfig = resolved;
+    mDataSource = std::move(dataSource);
 
     mPageTable = std::make_shared<VirtualTexturePageTable>(resolved);
     mCache     = std::make_shared<VirtualTextureCache>(resolved);
@@ -112,7 +115,16 @@ void VirtualTextureManager::ProcessCompletedLoads()
 
 void VirtualTextureManager::RequestPageAsync(const PageRequest& page, const PageSlot& slot)
 {
-    mPendingLoads.push_back({page, {}, false, slot});
+    mPendingRequests.insert(page);
+
+    if (!mDataSource)
+    {
+        mPendingLoads.push_back({page, {}, false, slot});
+        return;
+    }
+
+    auto future = mDataSource->RequestTile(page);
+    mPendingLoads.push_back({page, std::move(future), false, slot});
 }
 
 NS_RENDERSYSTEM_END

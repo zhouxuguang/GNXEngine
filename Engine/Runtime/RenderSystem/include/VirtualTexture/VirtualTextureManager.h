@@ -11,6 +11,7 @@
 #define GNXENGINE_RENDERSYSTEM_VIRTUALTEXTURE_MANAGER_H
 
 #include "VirtualTextureDefines.h"
+#include "VirtualTextureDataSource.h"
 #include "VirtualTexturePageTable.h"
 #include "VirtualTextureCache.h"
 #include "VirtualTextureFeedback.h"
@@ -38,11 +39,13 @@ public:
     VirtualTextureManager();
     ~VirtualTextureManager() = default;
 
-    VirtualTextureManager(const VirtualTextureManager&) = delete;
+VirtualTextureManager(const VirtualTextureManager&) = delete;
     VirtualTextureManager& operator=(const VirtualTextureManager&) = delete;
 
-    /// 初始化 VT 系统，传入所有运行时参数。
-    void Initialize(const VirtualTextureConfig& config, uint32_t feedbackScale = 4);
+    /// 初始化 VT 系统，传入所有运行时参数及数据源。
+    void Initialize(const VirtualTextureConfig& config,
+                    std::shared_ptr<IVirtualTextureDataSource> dataSource,
+                    uint32_t feedbackScale = 4);
 
     /// 每帧执行 VT 管线。
     void Tick();
@@ -65,6 +68,7 @@ private:
     VirtualTexturePageTablePtr mPageTable;
     VirtualTextureCachePtr     mCache;
     VirtualTextureFeedbackPtr  mFeedback;
+    std::shared_ptr<IVirtualTextureDataSource> mDataSource;
 
     std::vector<PageLoadRequest> mPendingLoads;      //当前请求的结果
     std::set<PageRequest>      mPendingRequests;   //请求队列
