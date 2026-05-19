@@ -66,8 +66,8 @@ private:
     VirtualTextureCachePtr     mCache;
     VirtualTextureFeedbackPtr  mFeedback;
 
-    std::vector<PageLoadRequest> mPendingLoads;
-    std::queue<PageRequest>      mPendingRequests;
+    std::vector<PageLoadRequest> mPendingLoads;      //当前请求的结果
+    std::set<PageRequest>      mPendingRequests;   //请求队列
 
     void DispatchLoadRequests(const FeedbackResult& feedback);
     void ProcessCompletedLoads();

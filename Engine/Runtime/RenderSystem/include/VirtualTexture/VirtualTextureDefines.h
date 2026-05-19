@@ -99,6 +99,13 @@ struct PageRequest
     {
         return mipLevel == other.mipLevel && pageX == other.pageX && pageY == other.pageY;
     }
+
+    bool operator<(const PageRequest& other) const
+    {
+        if (mipLevel != other.mipLevel) return mipLevel < other.mipLevel;
+        if (pageY != other.pageY) return pageY < other.pageY;
+        return pageX < other.pageX;
+    }
 };
 
 /// Page 在物理 atlas 中的位置。
@@ -125,7 +132,7 @@ inline uint32_t GetPageGridCount(uint32_t dimension, uint32_t mipLevel)
 /// Page table / feedback 的内存开销估算（用于调试/调参）。
 inline uint64_t EstimatePageTableMemory(const VirtualTextureConfig& cfg)
 {
-    // 每级 mip 的 page 数量 × 4 bytes
+    // 每级 mip 的 page 数量 x 4 bytes
     uint64_t total = 0;
     for (uint32_t mip = 0; mip < cfg.mipLevels; ++mip)
     {

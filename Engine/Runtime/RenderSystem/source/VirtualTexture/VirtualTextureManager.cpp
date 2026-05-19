@@ -4,6 +4,7 @@
 //
 
 #include "VirtualTexture/VirtualTextureManager.h"
+#include <chrono>
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -74,25 +75,39 @@ void VirtualTextureManager::DispatchLoadRequests(const FeedbackResult& feedback)
 
 void VirtualTextureManager::ProcessCompletedLoads()
 {
-    uint32_t uploaded = 0;
-    for (auto it = mPendingLoads.begin(); it != mPendingLoads.end() && uploaded < mConfig.uploadsPerFrame; )
+    const uint32_t slotSizeX = mConfig.slotSize;
+	const uint32_t slotSizeY = mConfig.slotSize;
+
+    // 将处理完的tile从队列中移除，此时也是上传tile到缓存，以及更新pagetable的时机
+	std::erase_if(mPendingLoads, [this, slotSizeX, slotSizeY](PageLoadRequest& req)
     {
-        if (it->future.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+		if (req.future.wait_for(std::chrono::microseconds(0)) != std::future_status::ready) 
         {
-            auto data = it->future.get();
-            // TODO: 将 data 上传到物理 atlas 的 it->targetSlot 位置。
-            //       使用 RHI UpdateSubRegion or Blit.
-            // TODO: 更新 page table entry:
-            //       mPageTable->WriteEntry(it->page,
-            //           EncodePageTableEntry(it->targetSlot.atlasX, it->targetSlot.atlasY));
-            it = mPendingLoads.erase(it);
-            uploaded++;
-        }
-        else
+			return false;
+		}
+
+		ByteVector result = req.future.get();
+		if (result.empty())
         {
-            ++it;
-        }
-    }
+			mPendingRequests.erase(req.page);
+			return true;
+		}
+
+        RenderCore::Rect2D region;
+        region.offsetX = slotSizeX * req.targetSlot.atlasX;
+        region.offsetY = slotSizeY * req.targetSlot.atlasY;
+        region.width = slotSizeX;
+        region.height = slotSizeY;
+        mCache->GetAtlasTexture()->ReplaceRegion(region, 0, result.data(), slotSizeX * 4);   //先假定是RGBA8的图像
+
+        uint32_t entry = 0x1 | ((req.targetSlot.atlasX & 0xFFu) << 1) | ((req.targetSlot.atlasY & 0xFFu) << 9);
+
+        mPageTable->WriteEntry(req.page, entry);
+        mCache->Commit(req.page, req.targetSlot);
+        mPendingRequests.erase(req.page);
+
+		return true;
+	});
 }
 
 void VirtualTextureManager::RequestPageAsync(const PageRequest& page, const PageSlot& slot)

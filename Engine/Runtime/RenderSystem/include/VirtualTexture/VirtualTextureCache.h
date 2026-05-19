@@ -56,7 +56,7 @@ public:
     void FreeSlot(const PageSlot& slot);
 
     /// 获取物理 atlas 纹理。
-    const RCTexturePtr& GetAtlasTexture() const { return mAtlasTexture; }
+    const RCTexture2DPtr& GetAtlasTexture() const { return mAtlasTexture; }
 
     /// 每帧最大上传数。
     void SetUploadsPerFrame(uint32_t count) { mUploadsPerFrame = count; }
@@ -71,7 +71,7 @@ private:
     uint32_t mUploadsPerFrame = 8;
 
     // GPU 物理 atlas 纹理。
-    RCTexturePtr mAtlasTexture;
+    RCTexture2DPtr mAtlasTexture;
 
     // 空闲 slot 池。
     std::vector<PageSlot> mFreeSlots;
