@@ -56,7 +56,7 @@ private:
     std::vector<std::vector<PageTableEntry>> mCPUTables;
 
     // GPU 端：R32UI 纹理，使用 mip chain 存储各级 page table。
-    RCTexturePtr mGPUTableTexture;
+    RCTexture2DPtr mGPUTableTexture;
 
     // 配置缓存
     uint32_t mVirtualWidth  = 0;

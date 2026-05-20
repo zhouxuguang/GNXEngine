@@ -4,6 +4,7 @@
 //
 
 #include "VirtualTexture/VirtualTexturePageTable.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -26,7 +27,8 @@ VirtualTexturePageTable::VirtualTexturePageTable(const VirtualTextureConfig& con
         );
     }
 
-    // TODO: 创建 GPU R32UI 纹理（mip chain = mMipLevels）。
+    RenderCore::GetRenderDevice()->CreateTexture2D(RenderCore::kTexFormatR32Uint,
+        RenderCore::TextureUsage::TextureUsageShaderRead, mGridWidth[0], mGridHeight[0], mMipLevels);
 }
 
 void VirtualTexturePageTable::WriteEntry(const PageRequest& request, PageTableEntry entry)
@@ -51,7 +53,16 @@ void VirtualTexturePageTable::ClearEntry(const PageRequest& request)
 
 void VirtualTexturePageTable::SyncToGPU()
 {
-    // TODO: 遍历每级 mip，将 dirty 或全部 page table 数据上传到 mGPUTableTexture。
+	for (size_t i = 0; i < mCPUTables.size(); ++i)
+    {
+		RenderCore::Rect2D region;
+		region.offsetX = 0;
+		region.offsetY = 0;
+		region.width = mGridWidth[i];
+		region.height = mGridHeight[i];
+
+        mGPUTableTexture->ReplaceRegion(region, i, (const uint8_t*)mCPUTables[i].data(), region.width * 4);
+	}
 }
 
 NS_RENDERSYSTEM_END
