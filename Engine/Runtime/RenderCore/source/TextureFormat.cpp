@@ -45,13 +45,15 @@ uint32_t GetBytesFromTextureFormat (TextureFormat inFormat)
 {
     assert (inFormat < kTexFormatDXT1_RGB || inFormat == kTexFormatBGRA32 || inFormat == kTexFormatRGBA4444
             || inFormat == kTexFormatSRGB8 || inFormat == kTexFormatSRGB8_ALPHA8 || inFormat == kTexR10G10B10A2
-            || (inFormat >= kTexFormatR32Float && inFormat <= kTexFormatRGBA16Sint));
+            || (inFormat >= kTexFormatR32Uint && inFormat <= kTexFormatRGBA16Sint));
     // SRGB formats have same byte size as their linear counterparts
     if (inFormat == kTexFormatSRGB8) return 3;
     if (inFormat == kTexFormatSRGB8_ALPHA8) return 4;
 
     // Float / integer formats
     if (inFormat == kTexFormatR32Float)      return 4;
+    if (inFormat == kTexFormatR32Uint)       return 4;
+    if (inFormat == kTexFormatR32Sint)       return 4;
     if (inFormat == kTexFormatRG32Uint)      return 8;
     if (inFormat == kTexFormatRG32Sint)      return 8;
     if (inFormat == kTexFormatRG32Float)     return 8;
@@ -103,8 +105,8 @@ bool IsValidTextureFormat (TextureFormat format)
 		IsCompressedASTCTextureFormat(format) ||
 		IsCompressedEACTextureFormat(format) ||
 		format == kTexFormatBGRA32 ||
-		// Float / integer formats
-		(format >= kTexFormatR32Float && format <= kTexFormatRG32Float) ||
+        // Float / integer formats
+		(format >= kTexFormatR32Uint && format <= kTexFormatRG32Float) ||
 		(format >= kTexFormatR8Uint && format <= kTexFormatRGBA16Sint))
 		return true;
 	else
@@ -260,8 +262,10 @@ const char* GetTextureFormatString(TextureFormat format)
 
 		case kTexFormatBGRA32: return "BGRA 32 bit";
 
-		// Float formats
+        // Float / integer formats
 		case kTexFormatR32Float: return "R32 Float";
+		case kTexFormatR32Uint:  return "R32 Uint";
+		case kTexFormatR32Sint:  return "R32 Sint";
 		case kTexFormatRG32Uint: return "RG32 Uint";
 		case kTexFormatRG32Sint: return "RG32 Sint";
 		case kTexFormatRG32Float: return "RG32 Float";

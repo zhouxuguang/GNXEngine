@@ -706,6 +706,14 @@ VkFormat VulkanBufferUtil::ConvertTextureFormat(TextureFormat texFormat)
             format = VK_FORMAT_R32_SFLOAT;
             break;
 
+        case kTexFormatR32Uint:
+            format = VK_FORMAT_R32_UINT;
+            break;
+
+        case kTexFormatR32Sint:
+            format = VK_FORMAT_R32_SINT;
+            break;
+
         case kTexFormatRG32Uint:
             format = VK_FORMAT_R32G32_UINT;
             break;
