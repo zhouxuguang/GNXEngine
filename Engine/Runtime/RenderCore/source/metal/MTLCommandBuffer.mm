@@ -265,7 +265,6 @@ void MTLCommandBuffer::WaitUntilCompleted()
 {
     @autoreleasepool 
     {
-        [mCommandBuffer commit];
         [mCommandBuffer waitUntilCompleted];
     }
 }
