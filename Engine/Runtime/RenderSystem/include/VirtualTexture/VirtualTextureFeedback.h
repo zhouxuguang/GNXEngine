@@ -48,7 +48,8 @@ public:
 
 private:
     RCTexture2DPtr mFeedbackTarget = nullptr;
-    RCTexture2DPtr mDepthTarget = nullptr;
+    RCTexture2DPtr mDepthTarget   = nullptr;
+    RCBufferPtr   mStagingBuffer  = nullptr;  // GPU→CPU readback staging buffer
     uint32_t mWidth  = 0;
     uint32_t mHeight = 0;
     uint32_t mScale  = 16;

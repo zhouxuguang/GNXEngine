@@ -5,6 +5,10 @@
 
 #include "VirtualTexture/VirtualTextureFeedback.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/RenderCore/include/CommandQueue.h"
+#include "Runtime/RenderCore/include/CommandBuffer.h"
+#include "Runtime/RenderCore/include/BlitEncoder.h"
+#include "Runtime/MathUtil/include/Vector2.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -16,9 +20,15 @@ VirtualTextureFeedback::VirtualTextureFeedback(const mathutil::Vector2i& viewSiz
     
     mFeedbackTarget = RenderCore::GetRenderDevice()->CreateTexture2D(RenderCore::kTexFormatR32Uint,
                             RenderCore::TextureUsage::TextureUsageRenderTarget, mWidth, mHeight, 1);
-    
+
     mDepthTarget = RenderCore::GetRenderDevice()->CreateTexture2D(RenderCore::kTexFormatDepth32,
                             RenderCore::TextureUsage::TextureUsageRenderTarget, mWidth, mHeight, 1);
+
+    // 创建 GPU→CPU readback staging buffer（StorageModeShared 才能.Map()）
+    RCBufferDesc stagingDesc(mWidth * mHeight * sizeof(uint32_t),
+                             RCBufferUsage::TransferDst,
+                             StorageModeShared);
+    mStagingBuffer = RenderCore::GetRenderDevice()->CreateBuffer(stagingDesc);
 }
 
 FeedbackResult VirtualTextureFeedback::ReadbackAndDecode()
@@ -27,10 +37,41 @@ FeedbackResult VirtualTextureFeedback::ReadbackAndDecode()
     result.feedbackWidth  = mWidth;
     result.feedbackHeight = mHeight;
 
-    // TODO:
-    //   1. 从 mFeedbackTarget 执行 GPU → CPU readback（PBO or map）。
-    //   2. 遍历每个像素，调用 DecodePixel()。
-    //   3. 插入 result.requestedPages（自动去重）。
+    if (!mStagingBuffer) 
+    {
+        return result;
+    }
+
+    RenderCore::RenderDevicePtr device = RenderCore::GetRenderDevice();
+
+    // Step 1: GPU Copy: Texture → Staging Buffer
+    CommandQueuePtr queue = device->GetCommandQueue(QueueType::Transfer, 0);
+    CommandBufferPtr cmdBuf = queue->CreateCommandBuffer();
+    BlitEncoderPtr blit = cmdBuf->CreateBlitEncoder();
+
+    blit->CopyTextureToBuffer(mFeedbackTarget, 0, 0, mathutil::Vector2i(0, 0), mathutil::Vector2i(mWidth, mHeight),
+                               mStagingBuffer, 0, mWidth * sizeof(uint32_t), 0);
+    blit->EndEncode();
+
+    cmdBuf->Submit();
+    cmdBuf->WaitUntilCompleted();
+
+    // Step 2: Map + Decode
+    void* mapped = mStagingBuffer->Map();
+    if (mapped) 
+    {
+        const uint32_t* pixels = static_cast<const uint32_t*>(mapped);
+        uint32_t total = mWidth * mHeight;
+        for (uint32_t i = 0; i < total; ++i) 
+        {
+            if (pixels[i] == 0)
+            {
+                continue;
+            }
+            result.requestedPages.insert(DecodePixel(pixels[i]));
+        }
+        mStagingBuffer->Unmap();
+    }
 
     return result;
 }
