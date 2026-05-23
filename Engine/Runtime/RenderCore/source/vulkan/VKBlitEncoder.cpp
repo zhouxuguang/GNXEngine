@@ -170,8 +170,8 @@ void VKBlitEncoder::CopyBuffer(RCBufferPtr source,
 void VKBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
                                         uint32_t sourceSlice,
                                         uint32_t sourceMipLevel,
-                                        const Rect2D& sourceOffset,
-                                        const Rect2D& sourceSize,
+                                        const mathutil::Vector2i& sourceOffset,
+                                        const mathutil::Vector2i& sourceSize,
                                         RCBufferPtr destination,
                                         uint64_t destinationOffset,
                                         uint64_t destinationBytesPerRow,
@@ -192,9 +192,9 @@ void VKBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
     
     VkImageSubresourceLayers subresource = GetImageSubresourceLayers(source, sourceSlice, sourceMipLevel);
     
-    VkOffset3D srcOffset = {sourceOffset.offsetX, sourceOffset.offsetY, 0};
-    VkExtent3D extent = {static_cast<uint32_t>(sourceSize.width), 
-                         static_cast<uint32_t>(sourceSize.height), 1};
+    VkOffset3D srcOffset = {sourceOffset.x, sourceOffset.y, 0};
+    VkExtent3D extent = {static_cast<uint32_t>(sourceSize.x), 
+                         static_cast<uint32_t>(sourceSize.y), 1};
     
     VkBufferImageCopy copyRegion = {};
     copyRegion.bufferOffset = destinationOffset;
@@ -215,8 +215,8 @@ void VKBlitEncoder::CopyBufferToTexture(RCBufferPtr source,
                                         RCTexturePtr destination,
                                         uint32_t destinationSlice,
                                         uint32_t destinationMipLevel,
-                                        const Rect2D& destinationOffset,
-                                        const Rect2D& destinationSize)
+                                        const mathutil::Vector2i& destinationOffset,
+                                        const mathutil::Vector2i& destinationSize)
 {
     if (!mContext || !mCommandBuffer)
     {
@@ -235,9 +235,9 @@ void VKBlitEncoder::CopyBufferToTexture(RCBufferPtr source,
                                                                     destinationSlice, 
                                                                     destinationMipLevel);
     
-    VkOffset3D dstOffset = {destinationOffset.offsetX, destinationOffset.offsetY, 0};
-    VkExtent3D extent = {static_cast<uint32_t>(destinationSize.width), 
-                         static_cast<uint32_t>(destinationSize.height), 1};
+    VkOffset3D dstOffset = {destinationOffset.x, destinationOffset.y, 0};
+    VkExtent3D extent = {static_cast<uint32_t>(destinationSize.x), 
+                         static_cast<uint32_t>(destinationSize.y), 1};
     
     VkBufferImageCopy copyRegion = {};
     copyRegion.bufferOffset = sourceOffset;
@@ -256,8 +256,8 @@ void VKBlitEncoder::CopyBufferToTexture(RCBufferPtr source,
 void VKBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
                                        uint32_t sourceSlice,
                                        uint32_t sourceMipLevel,
-                                       const Rect2D& sourceOffset,
-                                       const Rect2D& sourceSize,
+                                       const mathutil::Vector2i& sourceOffset,
+                                       const mathutil::Vector2i& sourceSize,
                                        VertexBufferPtr destination,
                                        uint64_t destinationOffset,
                                        uint64_t destinationBytesPerRow,
@@ -278,9 +278,9 @@ void VKBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
     
     VkImageSubresourceLayers subresource = GetImageSubresourceLayers(source, sourceSlice, sourceMipLevel);
     
-    VkOffset3D srcOffset = {sourceOffset.offsetX, sourceOffset.offsetY, 0};
-    VkExtent3D extent = {static_cast<uint32_t>(sourceSize.width), 
-                         static_cast<uint32_t>(sourceSize.height), 1};
+    VkOffset3D srcOffset = {sourceOffset.x, sourceOffset.y, 0};
+    VkExtent3D extent = {static_cast<uint32_t>(sourceSize.x), 
+                         static_cast<uint32_t>(sourceSize.y), 1};
     
     VkImageCopy copyRegion = {};
     copyRegion.srcSubresource = subresource;
@@ -306,8 +306,8 @@ void VKBlitEncoder::CopyBufferToTexture(VertexBufferPtr source,
                                        RCTexturePtr destination,
                                        uint32_t destinationSlice,
                                        uint32_t destinationMipLevel,
-                                       const Rect2D& destinationOffset,
-                                       const Rect2D& destinationSize)
+                                       const mathutil::Vector2i& destinationOffset,
+                                       const mathutil::Vector2i& destinationSize)
 {
     if (!mContext || !mCommandBuffer)
     {
@@ -326,9 +326,9 @@ void VKBlitEncoder::CopyBufferToTexture(VertexBufferPtr source,
                                                                     destinationSlice, 
                                                                     destinationMipLevel);
     
-    VkOffset3D dstOffset = {destinationOffset.offsetX, destinationOffset.offsetY, 0};
-    VkExtent3D extent = {static_cast<uint32_t>(destinationSize.width), 
-                         static_cast<uint32_t>(destinationSize.height), 1};
+    VkOffset3D dstOffset = {destinationOffset.x, destinationOffset.y, 0};
+    VkExtent3D extent = {static_cast<uint32_t>(destinationSize.x), 
+                         static_cast<uint32_t>(destinationSize.y), 1};
     
     VkBufferImageCopy copyRegion = {};
     copyRegion.bufferOffset = sourceOffset;
@@ -347,13 +347,13 @@ void VKBlitEncoder::CopyBufferToTexture(VertexBufferPtr source,
 void VKBlitEncoder::CopyTextureToTexture(RCTexturePtr source,
                                          uint32_t sourceSlice,
                                          uint32_t sourceMipLevel,
-                                         const Rect2D& sourceOffset,
-                                         const Rect2D& sourceSize,
+                                         const mathutil::Vector2i& sourceOffset,
+                                         const mathutil::Vector2i& sourceSize,
                                          RCTexturePtr destination,
                                          uint32_t destinationSlice,
                                          uint32_t destinationMipLevel,
-                                         const Rect2D& destinationOffset,
-                                         const Rect2D& destinationSize)
+                                         const mathutil::Vector2i& destinationOffset,
+                                         const mathutil::Vector2i& destinationSize)
 {
     if (!mContext || !mCommandBuffer)
     {
@@ -371,10 +371,10 @@ void VKBlitEncoder::CopyTextureToTexture(RCTexturePtr source,
     VkImageSubresourceLayers srcSubresource = GetImageSubresourceLayers(source, sourceSlice, sourceMipLevel);
     VkImageSubresourceLayers dstSubresource = GetImageSubresourceLayers(destination, destinationSlice, destinationMipLevel);
     
-    VkOffset3D srcOffset = {sourceOffset.offsetX, sourceOffset.offsetY, 0};
-    VkOffset3D dstOffset = {destinationOffset.offsetX, destinationOffset.offsetY, 0};
-    VkExtent3D extent = {static_cast<uint32_t>(sourceSize.width), 
-                         static_cast<uint32_t>(sourceSize.height), 1};
+    VkOffset3D srcOffset = {sourceOffset.x, sourceOffset.y, 0};
+    VkOffset3D dstOffset = {destinationOffset.x, destinationOffset.y, 0};
+    VkExtent3D extent = {static_cast<uint32_t>(sourceSize.x), 
+                         static_cast<uint32_t>(sourceSize.y), 1};
     
     VkImageCopy copyRegion = {};
     copyRegion.srcSubresource = srcSubresource;

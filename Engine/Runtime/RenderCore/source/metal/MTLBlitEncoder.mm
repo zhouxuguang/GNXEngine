@@ -167,8 +167,8 @@ void MTLBlitEncoder::CopyBuffer(RCBufferPtr source,
 void MTLBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
                                          uint32_t sourceSlice,
                                          uint32_t sourceMipLevel,
-                                         const Rect2D& sourceOffset,
-                                         const Rect2D& sourceSize,
+                                         const mathutil::Vector2i& sourceOffset,
+                                         const mathutil::Vector2i& sourceSize,
                                          RCBufferPtr destination,
                                          uint64_t destinationOffset,
                                          uint64_t destinationBytesPerRow,
@@ -184,8 +184,8 @@ void MTLBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
     
     if (sourceTexture && destBuffer)
     {
-        MTLOrigin origin = MTLOriginMake(sourceOffset.offsetX, sourceOffset.offsetY, 0);
-        MTLSize size = MTLSizeMake(sourceSize.width, sourceSize.height, 1);
+        MTLOrigin origin = MTLOriginMake(sourceOffset.x, sourceOffset.y, 0);
+        MTLSize size = MTLSizeMake(sourceSize.x, sourceSize.y, 1);
         
         [mBlitEncoder copyFromTexture:sourceTexture
                           sourceSlice:sourceSlice
@@ -206,8 +206,8 @@ void MTLBlitEncoder::CopyBufferToTexture(RCBufferPtr source,
                                          RCTexturePtr destination,
                                          uint32_t destinationSlice,
                                          uint32_t destinationMipLevel,
-                                         const Rect2D& destinationOffset,
-                                         const Rect2D& destinationSize)
+                                         const mathutil::Vector2i& destinationOffset,
+                                         const mathutil::Vector2i& destinationSize)
 {
     if (!mBlitEncoder)
     {
@@ -219,8 +219,8 @@ void MTLBlitEncoder::CopyBufferToTexture(RCBufferPtr source,
     
     if (sourceBuffer && destTexture)
     {
-        MTLOrigin origin = MTLOriginMake(destinationOffset.offsetX, destinationOffset.offsetY, 0);
-        MTLSize size = MTLSizeMake(destinationSize.width, destinationSize.height, 1);
+        MTLOrigin origin = MTLOriginMake(destinationOffset.x, destinationOffset.y, 0);
+        MTLSize size = MTLSizeMake(destinationSize.x, destinationSize.y, 1);
         
         [mBlitEncoder copyFromBuffer:sourceBuffer
                         sourceOffset:sourceOffset
@@ -239,8 +239,8 @@ void MTLBlitEncoder::CopyBufferToTexture(RCBufferPtr source,
 void MTLBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
                                           uint32_t sourceSlice,
                                           uint32_t sourceMipLevel,
-                                          const Rect2D& sourceOffset,
-                                          const Rect2D& sourceSize,
+                                          const mathutil::Vector2i& sourceOffset,
+                                          const mathutil::Vector2i& sourceSize,
                                           VertexBufferPtr destination,
                                           uint64_t destinationOffset,
                                           uint64_t destinationBytesPerRow,
@@ -256,8 +256,8 @@ void MTLBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
     
     if (sourceTexture && destBuffer)
     {
-        MTLOrigin origin = MTLOriginMake(sourceOffset.offsetX, sourceOffset.offsetY, 0);
-        MTLSize size = MTLSizeMake(sourceSize.width, sourceSize.height, 1);
+        MTLOrigin origin = MTLOriginMake(sourceOffset.x, sourceOffset.y, 0);
+        MTLSize size = MTLSizeMake(sourceSize.x, sourceSize.y, 1);
         
         [mBlitEncoder copyFromTexture:sourceTexture
                           sourceSlice:sourceSlice
@@ -280,8 +280,8 @@ void MTLBlitEncoder::CopyBufferToTexture(VertexBufferPtr source,
                                          RCTexturePtr destination,
                                          uint32_t destinationSlice,
                                          uint32_t destinationMipLevel,
-                                         const Rect2D& destinationOffset,
-                                         const Rect2D& destinationSize)
+                                         const mathutil::Vector2i& destinationOffset,
+                                         const mathutil::Vector2i& destinationSize)
 {
     if (!mBlitEncoder)
     {
@@ -293,8 +293,8 @@ void MTLBlitEncoder::CopyBufferToTexture(VertexBufferPtr source,
     
     if (sourceBuffer && destTexture)
     {
-        MTLOrigin origin = MTLOriginMake(destinationOffset.offsetX, destinationOffset.offsetY, 0);
-        MTLSize size = MTLSizeMake(destinationSize.width, destinationSize.height, 1);
+        MTLOrigin origin = MTLOriginMake(destinationOffset.x, destinationOffset.y, 0);
+        MTLSize size = MTLSizeMake(destinationSize.x, destinationSize.y, 1);
         
         [mBlitEncoder copyFromBuffer:sourceBuffer
                         sourceOffset:sourceOffset
@@ -313,13 +313,13 @@ void MTLBlitEncoder::CopyBufferToTexture(VertexBufferPtr source,
 void MTLBlitEncoder::CopyTextureToTexture(RCTexturePtr source,
                                            uint32_t sourceSlice,
                                            uint32_t sourceMipLevel,
-                                           const Rect2D& sourceOffset,
-                                           const Rect2D& sourceSize,
+                                           const mathutil::Vector2i& sourceOffset,
+                                           const mathutil::Vector2i& sourceSize,
                                            RCTexturePtr destination,
                                            uint32_t destinationSlice,
                                            uint32_t destinationMipLevel,
-                                           const Rect2D& destinationOffset,
-                                           const Rect2D& destinationSize)
+                                           const mathutil::Vector2i& destinationOffset,
+                                           const mathutil::Vector2i& destinationSize)
 {
     if (!mBlitEncoder)
     {
@@ -331,16 +331,16 @@ void MTLBlitEncoder::CopyTextureToTexture(RCTexturePtr source,
     
     if (sourceTexture && destTexture)
     {
-        MTLOrigin sourceOrigin = MTLOriginMake(sourceOffset.offsetX, sourceOffset.offsetY, 0);
-        MTLSize sourceSize = MTLSizeMake(sourceSize.width, sourceSize.height, 1);
+        MTLOrigin sourceOrigin = MTLOriginMake(sourceOffset.x, sourceOffset.y, 0);
+        MTLSize copySize = MTLSizeMake(sourceSize.x, sourceSize.y, 1);
         
-        MTLOrigin destOrigin = MTLOriginMake(destinationOffset.offsetX, destinationOffset.offsetY, 0);
+        MTLOrigin destOrigin = MTLOriginMake(destinationOffset.x, destinationOffset.y, 0);
         
         [mBlitEncoder copyFromTexture:sourceTexture
                           sourceSlice:sourceSlice
                           sourceLevel:sourceMipLevel
                          sourceOrigin:sourceOrigin
-                           sourceSize:sourceSize
+                           sourceSize:copySize
                              toTexture:destTexture
                       destinationSlice:destinationSlice
                       destinationLevel:destinationMipLevel

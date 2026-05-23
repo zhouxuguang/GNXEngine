@@ -266,6 +266,7 @@ void MTLCommandBuffer::WaitUntilCompleted()
     @autoreleasepool 
     {
         [mCommandBuffer waitUntilCompleted];
+        mCommandBuffer = nil;
     }
 }
 

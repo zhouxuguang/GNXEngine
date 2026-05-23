@@ -75,10 +75,9 @@ void Example_BufferToTexture(RenderDevicePtr renderDevice, const void* textureDa
     BlitEncoderPtr blitEncoder = commandBuffer->CreateBlitEncoder();
     
     // 上传纹理数据
-    Rect2D offset(0, 0, width, height);
     blitEncoder->CopyBufferToTexture(
         stagingBuffer, 0, bytesPerRow, 0,
-        texture, 0, 0, offset, offset);
+        texture, 0, 0, mathutil::Vector2i(0, 0), mathutil::Vector2i(width, height));
     
     // 结束编码
     blitEncoder->EndEncode();
@@ -105,9 +104,8 @@ void Example_TextureToBuffer(RenderDevicePtr renderDevice, RCTexture2DPtr textur
     BlitEncoderPtr blitEncoder = commandBuffer->CreateBlitEncoder();
     
     // 下载纹理数据
-    Rect2D region(0, 0, width, height);
     blitEncoder->CopyTextureToBuffer(
-        texture, 0, 0, region, region,
+        texture, 0, 0, mathutil::Vector2i(0, 0), mathutil::Vector2i(width, height),
         destBuffer, 0, width * 4, 0);
     
     // 结束编码
@@ -137,10 +135,9 @@ void Example_CopyTextureToTexture(RenderDevicePtr renderDevice, RCTexture2DPtr s
     BlitEncoderPtr blitEncoder = commandBuffer->CreateBlitEncoder();
     
     // 执行纹理拷贝
-    Rect2D region(0, 0, width, height);
     blitEncoder->CopyTextureToTexture(
-        srcTexture, 0, 0, region, region,
-        dstTexture, 0, 0, region, region);
+        srcTexture, 0, 0, mathutil::Vector2i(0, 0), mathutil::Vector2i(width, height),
+        dstTexture, 0, 0, mathutil::Vector2i(0, 0), mathutil::Vector2i(width, height));
     
     // 结束编码
     blitEncoder->EndEncode();
@@ -197,10 +194,9 @@ void Example_AsyncResourceLoading(RenderDevicePtr renderDevice, const void* text
     BlitEncoderPtr blitEncoder = commandBuffer->CreateBlitEncoder();
     
     // 上传纹理数据
-    Rect2D region(0, 0, width, height);
     blitEncoder->CopyBufferToTexture(
         stagingBuffer, 0, width * 4, 0,
-        texture, 0, 0, region, region);
+        texture, 0, 0, mathutil::Vector2i(0, 0), mathutil::Vector2i(width, height));
     
     // 添加内存屏障
     blitEncoder->MemoryBarrier();
@@ -237,8 +233,7 @@ void Example_MultipleBlitOperations(RenderDevicePtr renderDevice)
     
     // 操作2：Buffer到Texture
     RCTexture2DPtr texture1 = renderDevice->CreateTexture2D(kTexFormatRGBA8, TextureUsage::TextureUsageShaderRead, 512, 512, 1);
-    Rect2D region(0, 0, 512, 512);
-    blitEncoder->CopyBufferToTexture(buffer2, 0, 512 * 4, 0, texture1, 0, 0, region, region);
+    blitEncoder->CopyBufferToTexture(buffer2, 0, 512 * 4, 0, texture1, 0, 0, mathutil::Vector2i(0, 0), mathutil::Vector2i(512, 512));
     
     // 操作3：生成Mipmap
     blitEncoder->GenerateMipmaps(texture1);
