@@ -27,7 +27,7 @@ VirtualTexturePageTable::VirtualTexturePageTable(const VirtualTextureConfig& con
         );
     }
 
-    RenderCore::GetRenderDevice()->CreateTexture2D(RenderCore::kTexFormatR32Uint,
+    mGPUTableTexture = RenderCore::GetRenderDevice()->CreateTexture2D(RenderCore::kTexFormatR32Uint,
         RenderCore::TextureUsage::TextureUsageShaderRead, mGridWidth[0], mGridHeight[0], mMipLevels);
 }
 

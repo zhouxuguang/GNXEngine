@@ -4,6 +4,7 @@
 //
 
 #include "VirtualTexture/VirtualTextureManager.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
 #include <chrono>
 
 NS_RENDERSYSTEM_BEGIN
@@ -26,11 +27,8 @@ void VirtualTextureManager::Initialize(const VirtualTextureConfig& config,
     mCache     = std::make_shared<VirtualTextureCache>(resolved);
     mFeedback  = std::make_shared<VirtualTextureFeedback>(feedbackScale, resolved);
 
-    // TODO: 创建物理 atlas 纹理 SRGBA8，尺寸 config.atlasWidth  config.atlasHeight。
-    //       通过 RenderDevice::CreateTexture2D() 创建并存入 mAtlasTexture。
-    //       格式：kTexFormatSRGB8_ALPHA8，Usage：ShaderRead | CopyDst，levels：1
-
-    // TODO: 预填充最低几级 mip 的所有 page（pinned）。
+    mAtlasTexture = RenderCore::GetRenderDevice()->CreateTexture2D(RenderCore::kTexFormatSRGB8_ALPHA8,
+                RenderCore::TextureUsage::TextureUsageShaderRead, resolved.atlasWidth, resolved.atlasHeight, 1);
 }
 
 void VirtualTextureManager::Tick()
