@@ -25,7 +25,7 @@ public:
     virtual void OnEvent(GNXEngine::Event& e) override;
 
 private:
-    RenderSystem::VirtualTextureManagerPtr mVTManager = nullptr;
+    uint32_t mVTIndex = UINT32_MAX;  // SceneManager 中 VT 管理器的索引
 };
 
 #endif /* VTFrameWork_h */

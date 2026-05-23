@@ -54,13 +54,13 @@ void VTFrameWork::Initlize()
     vtConfig.pinnedMipLevels = 2;
     vtConfig.uploadsPerFrame = 4;
 
-    mVTManager = std::make_shared<VirtualTextureManager>();
     auto fileSource = std::make_shared<FileVirtualTextureDataSource>("assets/virtualtexture/terrain");
     mathutil::Vector2i viewSize(1280, 720);
-    mVTManager->Initialize(vtConfig, fileSource, viewSize, 16);
+    mVTIndex = sceneManager->AddVTManager(vtConfig, fileSource, viewSize, 16);
 
     // Log VT info
-    const auto& cfg = mVTManager->GetConfig();
+    auto vt = sceneManager->GetVTManager(mVTIndex);
+    const auto& cfg = vt->GetConfig();
     LOG_INFO("=== Virtual Texture Demo ===");
     LOG_INFO("VT: %ux%u, Page: %u, Atlas: %ux%u (%u x %u slots)",
              cfg.virtualWidth, cfg.virtualHeight,
@@ -84,10 +84,7 @@ void VTFrameWork::RenderFrame()
 
     SceneManager* sceneManager = SceneManager::GetInstance();
 
-    if (mVTManager)
-    {
-        mVTManager->Tick();
-    }
+    // VT Tick 已由 SceneManager::Update() 内部统一处理
 
     static uint64_t lastTime = 0;
     uint64_t thisTime = baselib::GetTickNanoSeconds();

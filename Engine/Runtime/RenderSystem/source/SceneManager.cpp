@@ -359,6 +359,11 @@ void SceneManager::Update(float deltaTime)
     // 递归更新所有节点
     UpdateNodeRecursive(mRootSceneNode, deltaTime);
 
+    // Tick 所有虚拟纹理管理器（Readback → Dispatch → SyncToGPU）
+    for (auto& vt : mVTManagers)
+    {
+        vt->Tick();
+    }
 }
 
 void SceneManager::RenderNodeRecursive(SceneNode* node, const RenderInfo& renderInfo)
@@ -540,6 +545,29 @@ void SceneManager::OnEvent(GNXEngine::Event& e)
     {
         mActiveController->OnEvent(e);
     }
+}
+
+uint32_t SceneManager::AddVTManager(const VirtualTextureConfig& config,
+                                    std::shared_ptr<IVirtualTextureDataSource> dataSource,
+                                    const mathutil::Vector2i& viewSize,
+                                    uint32_t feedbackScale)
+{
+    uint32_t index = (uint32_t)mVTManagers.size();
+    
+    auto vt = std::make_shared<VirtualTextureManager>();
+    vt->Initialize(config, dataSource, viewSize, feedbackScale);
+    mVTManagers.push_back(vt);
+    
+    return index;
+}
+
+VirtualTextureManagerPtr SceneManager::GetVTManager(uint32_t index) const
+{
+    if (index < mVTManagers.size())
+    {
+        return mVTManagers[index];
+    }
+    return nullptr;
 }
 
 NS_RENDERSYSTEM_END

@@ -17,7 +17,9 @@
 #include "mesh/MeshDrawUtil.h"
 #include "PostProcess/PostProcessing.h"
 #include "SceneRenderer.h"
+#include "VirtualTexture/VirtualTextureManager.h"
 #include <memory>
+#include <vector>
 
 NAMESPACE_GNXENGINE_BEGIN
 class Event;
@@ -143,6 +145,27 @@ public:
                         RenderCore::RCTexturePtr prefilteredMap,
                         RenderCore::RCTexturePtr brdfLUT);
 
+    // ==================== 虚拟纹理系统 ====================
+
+    /**
+     * @brief 添加一个虚拟纹理管理器
+     * @param config VT 配置
+     * @param dataSource 数据源
+     * @param viewSize 视口尺寸
+     * @param feedbackScale feedback 降采样倍率（默认 16）
+     * @return 管理器在数组中的索引，后续通过 GetVTManager(index) 访问
+     */
+    uint32_t AddVTManager(const VirtualTextureConfig& config,
+                          std::shared_ptr<IVirtualTextureDataSource> dataSource,
+                          const mathutil::Vector2i& viewSize,
+                          uint32_t feedbackScale = 16);
+
+    /// 获取第 index 个 VT 管理器
+    VirtualTextureManagerPtr GetVTManager(uint32_t index) const;
+
+    /// VT 管理器数量
+    uint32_t GetVTManagerCount() const { return (uint32_t)mVTManagers.size(); }
+
 private:
     // 递归渲染节点，支持父子关系变换计算
     void RenderNodeRecursive(SceneNode* node, const RenderInfo& renderInfo);
@@ -180,6 +203,8 @@ private:
     
     RenderPath mRenderPath = RenderPath::Deferred;  // 默认使用延迟渲染
     SceneRendererUniPtr mSceneRenderer = nullptr;
+    
+    std::vector<VirtualTextureManagerPtr> mVTManagers;  // 虚拟纹理管理器数组
     
     SceneManager();
     
