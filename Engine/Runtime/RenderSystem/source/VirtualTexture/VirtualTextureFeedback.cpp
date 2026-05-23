@@ -4,15 +4,21 @@
 //
 
 #include "VirtualTexture/VirtualTextureFeedback.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
 
 NS_RENDERSYSTEM_BEGIN
 
-VirtualTextureFeedback::VirtualTextureFeedback(uint32_t feedbackScale, const VirtualTextureConfig& config)
+VirtualTextureFeedback::VirtualTextureFeedback(const mathutil::Vector2i& viewSize, uint32_t feedbackScale, const VirtualTextureConfig& config)
     : mScale(feedbackScale)
 {
-    // TODO: 根据主渲染目标尺寸创建降分辨率 R32UI render target。
-    // mWidth  = mainWidth / mScale;
-    // mHeight = mainHeight / mScale;
+    mWidth  = viewSize.x / mScale;
+    mHeight = viewSize.y / mScale;
+    
+    mFeedbackTarget = RenderCore::GetRenderDevice()->CreateTexture2D(RenderCore::kTexFormatR32Uint,
+                            RenderCore::TextureUsage::TextureUsageRenderTarget, mWidth, mHeight, 1);
+    
+    mDepthTarget = RenderCore::GetRenderDevice()->CreateTexture2D(RenderCore::kTexFormatDepth32,
+                            RenderCore::TextureUsage::TextureUsageRenderTarget, mWidth, mHeight, 1);
 }
 
 FeedbackResult VirtualTextureFeedback::ReadbackAndDecode()

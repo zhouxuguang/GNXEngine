@@ -15,6 +15,7 @@ VirtualTextureManager::VirtualTextureManager()
 
 void VirtualTextureManager::Initialize(const VirtualTextureConfig& config, 
                                         std::shared_ptr<IVirtualTextureDataSource> dataSource,
+                                       const mathutil::Vector2i& viewSize,
                                         uint32_t feedbackScale)
 {
     VirtualTextureConfig resolved = config;
@@ -25,7 +26,7 @@ void VirtualTextureManager::Initialize(const VirtualTextureConfig& config,
 
     mPageTable = std::make_shared<VirtualTexturePageTable>(resolved);
     mCache     = std::make_shared<VirtualTextureCache>(resolved);
-    mFeedback  = std::make_shared<VirtualTextureFeedback>(feedbackScale, resolved);
+    mFeedback  = std::make_shared<VirtualTextureFeedback>(viewSize, feedbackScale, resolved);
 
     mAtlasTexture = RenderCore::GetRenderDevice()->CreateTexture2D(RenderCore::kTexFormatSRGB8_ALPHA8,
                 RenderCore::TextureUsage::TextureUsageShaderRead, resolved.atlasWidth, resolved.atlasHeight, 1);

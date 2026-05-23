@@ -13,6 +13,7 @@
 #include "VirtualTextureDefines.h"
 #include "Runtime/RenderCore/include/RCBuffer.h"
 #include "Runtime/RenderCore/include/RCTexture.h"
+#include "Runtime/MathUtil/include/Vector2.h"
 #include <vector>
 #include <unordered_set>
 
@@ -30,14 +31,14 @@ struct FeedbackResult
 class RENDERSYSTEM_API VirtualTextureFeedback
 {
 public:
-    VirtualTextureFeedback(uint32_t feedbackScale, const VirtualTextureConfig& config);
+    VirtualTextureFeedback(const mathutil::Vector2i& viewSize, uint32_t feedbackScale, const VirtualTextureConfig& config);
     ~VirtualTextureFeedback() = default;
 
     VirtualTextureFeedback(const VirtualTextureFeedback&) = delete;
     VirtualTextureFeedback& operator=(const VirtualTextureFeedback&) = delete;
 
-    const RCTexturePtr& GetFeedbackTarget() const { return mFeedbackTarget; }
-    const RCTexturePtr& GetDepthTarget() const { return mDepthTarget; }
+    const RCTexturePtr GetFeedbackTarget() const { return mFeedbackTarget; }
+    const RCTexturePtr GetDepthTarget() const { return mDepthTarget; }
 
     /// 执行 readback 并解析 feedback buffer 为 page 请求集合。
     FeedbackResult ReadbackAndDecode();
@@ -46,11 +47,11 @@ public:
     uint32_t GetHeight() const { return mHeight; }
 
 private:
-    RCTexturePtr mFeedbackTarget;
-    RCTexturePtr mDepthTarget;
+    RCTexture2DPtr mFeedbackTarget = nullptr;
+    RCTexture2DPtr mDepthTarget = nullptr;
     uint32_t mWidth  = 0;
     uint32_t mHeight = 0;
-    uint32_t mScale  = 4;
+    uint32_t mScale  = 16;
 
     /// 解码单个 FeedbackPixel → PageRequest。
     static PageRequest DecodePixel(FeedbackPixel pixel);

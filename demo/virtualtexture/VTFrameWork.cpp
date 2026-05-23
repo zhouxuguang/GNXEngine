@@ -8,7 +8,7 @@
 
 #include "VTFrameWork.h"
 #include "Runtime/RenderSystem/include/RenderEngine.h"
-#include "Runtime/MathUtil/include/MathUtil.h"
+#include "Runtime/MathUtil/include/Vector2.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
 #include "Runtime/RenderSystem/include/VirtualTexture/FileVirtualTextureDataSource.h"
 
@@ -56,7 +56,8 @@ void VTFrameWork::Initlize()
 
     mVTManager = std::make_shared<VirtualTextureManager>();
     auto fileSource = std::make_shared<FileVirtualTextureDataSource>("assets/virtualtexture/terrain");
-    mVTManager->Initialize(vtConfig, fileSource);
+    mathutil::Vector2i viewSize(1280, 720);
+    mVTManager->Initialize(vtConfig, fileSource, viewSize, 16);
 
     // Log VT info
     const auto& cfg = mVTManager->GetConfig();

@@ -46,7 +46,8 @@ public:
     /// 初始化 VT 系统，传入所有运行时参数及数据源。
     void Initialize(const VirtualTextureConfig& config,
                     std::shared_ptr<IVirtualTextureDataSource> dataSource,
-                    uint32_t feedbackScale = 4);
+                    const mathutil::Vector2i& viewSize,
+                    uint32_t feedbackScale = 16);
 
     /// 每帧执行 VT 管线。
     void Tick();
