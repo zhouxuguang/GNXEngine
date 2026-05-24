@@ -1,8 +1,8 @@
 #ifndef GNX_ENGINE_GBUFFER_VT_PBR_HLSL
 #define GNX_ENGINE_GBUFFER_VT_PBR_HLSL
 
-#include "GNXEngineVariables.hlsl"
-#include "GBufferCommon.hlsl"
+#include "../GNXEngineVariables.hlsl"
+#include "../GBufferCommon.hlsl"
 #include "VirtualTextureCommon.hlsl"
 
 // 虚拟纹理资源

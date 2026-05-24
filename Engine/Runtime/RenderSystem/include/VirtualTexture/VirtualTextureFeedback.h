@@ -37,8 +37,8 @@ public:
     VirtualTextureFeedback(const VirtualTextureFeedback&) = delete;
     VirtualTextureFeedback& operator=(const VirtualTextureFeedback&) = delete;
 
-    const RCTexturePtr GetFeedbackTarget() const { return mFeedbackTarget; }
-    const RCTexturePtr GetDepthTarget() const { return mDepthTarget; }
+    RCTexturePtr GetFeedbackTarget() const { return mFeedbackTarget; }
+    RCTexturePtr GetDepthTarget() const { return mDepthTarget; }
 
     /// 执行 readback 并解析 feedback buffer 为 page 请求集合。
     FeedbackResult ReadbackAndDecode();

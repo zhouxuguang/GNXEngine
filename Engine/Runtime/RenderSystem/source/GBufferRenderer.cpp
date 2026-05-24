@@ -220,6 +220,20 @@ GBufferData GBufferRenderer::AddToFrameGraph(
                     if (!meshItem.mesh || !meshItem.objectUBO)
                         continue;
 
+                    // 按材质类型选择 PSO
+                    bool hasVT = false;
+                    for (auto& mat : meshItem.materials)
+                    {
+                        if (mat && mat->GetMaterialType() == Material::MaterialType::VirtualTexturePBR)
+                        {
+                            hasVT = true;
+                            break;
+                        }
+                    }
+                    GraphicsPipelinePtr pso = hasVT ? mGBufferVTPipeline : mGBufferPipeline;
+                    if (!pso)
+                        continue;
+
                     RenderInfo renderInfo;
                     renderInfo.renderEncoder = renderEncoder;
                     renderInfo.cameraUBO = data.uniforms.cameraUBO;
@@ -228,7 +242,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
                     renderInfo.pageTableTexture = data.pageTableTexture;
                     renderInfo.atlasTexture = data.atlasTexture;
 
-                    MeshDrawUtil::DrawMeshBasePass(*meshItem.mesh, renderInfo, mGBufferPipeline);
+                    MeshDrawUtil::DrawMeshBasePass(*meshItem.mesh, renderInfo, pso);
                 }
             }
 
@@ -311,6 +325,14 @@ void GBufferRenderer::CreateGBufferPipeline()
     
     mGBufferPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shaderInfoDepth.graphicsPipelineDesc);
     mGBufferPipeline->AttachGraphicsShader(shaderInfoDepth.graphicsShader);
+
+    // 虚拟纹理 GBuffer PSO（VirtualTexturePBR 材质使用）
+    GraphicsShaderInfo shaderInfoVT = CreateGraphicsShaderInfo("vt/GBufferVTPBR");
+    shaderInfoVT.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
+    shaderInfoVT.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionEqual;
+    shaderInfoVT.graphicsPipelineDesc.renderTargetCount = 5;
+    mGBufferVTPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shaderInfoVT.graphicsPipelineDesc);
+    mGBufferVTPipeline->AttachGraphicsShader(shaderInfoVT.graphicsShader);
 
     // Terrain-specific G-buffer PSO (VS reads SSBO + heightmap)
     GraphicsShaderInfo shaderInfoTerrain = CreateGraphicsShaderInfo("Terrain");

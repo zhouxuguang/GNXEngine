@@ -44,7 +44,7 @@ public:
     void SyncToGPU();
 
     /// 获取 GPU page table 纹理。
-    const RCTexturePtr& GetGPUTexture() const { return mGPUTableTexture; }
+    RCTexturePtr GetGPUTexture() const { return mGPUTableTexture; }
 
     /// 获取 page table 的 mip 层级数。
     uint32_t GetMipLevels() const { return mMipLevels; }

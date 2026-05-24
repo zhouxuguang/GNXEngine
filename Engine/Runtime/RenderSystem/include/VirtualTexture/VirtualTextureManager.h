@@ -53,10 +53,10 @@ public:
     void Tick();
 
     // 纹理绑定接口
-    const RCTexturePtr& GetPageTableTexture() const { return mPageTable->GetGPUTexture(); }
-    const RCTexturePtr& GetAtlasTexture()    const { return mAtlasTexture; }
-    const RCTexturePtr& GetFeedbackTarget()   const { return mFeedback->GetFeedbackTarget(); }
-    const RCTexturePtr& GetFeedbackDepthTarget() const { return mFeedback->GetDepthTarget(); }
+    RCTexturePtr GetPageTableTexture() const { return mPageTable->GetGPUTexture(); }
+    RCTexturePtr GetAtlasTexture()    const { return mAtlasTexture; }
+    RCTexturePtr GetFeedbackTarget()   const { return mFeedback->GetFeedbackTarget(); }
+    RCTexturePtr GetFeedbackDepthTarget() const { return mFeedback->GetDepthTarget(); }
 
     /// 获取当前配置（只读）。
     const VirtualTextureConfig& GetConfig() const { return mConfig; }

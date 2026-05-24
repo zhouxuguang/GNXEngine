@@ -139,6 +139,7 @@ private:
     std::shared_ptr<Material> mCurrentMaterial = nullptr;
     // 渲染管线
     GraphicsPipelinePtr mGBufferPipeline = nullptr;
+    GraphicsPipelinePtr mGBufferVTPipeline = nullptr;  // VirtualTexturePBR 专用
     GraphicsPipelinePtr mTerrainGBufferPipeline = nullptr;  // terrain-specific G-buffer PSO
     GraphicsPipelinePtr mTerrainMSPipeline = nullptr;       // terrain Mesh Shader G-buffer PSO
     bool mIsInitialized = false;
