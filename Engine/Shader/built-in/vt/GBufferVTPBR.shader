@@ -75,14 +75,17 @@ VertexOutput VS(VertexInput input)
 // 通过 page table 采样虚拟纹理
 float4 SampleVirtualTexture(float2 uv)
 {
-    uint4 entry = pageTable.Sample(pageTableSam, uv);
+    uint entry = pageTable.Sample(pageTableSam, uv).r;
     
     // 计算 tile 内的局部 UV
     float2 tileUV = frac(uv * pageGrid);
     
     // 从 page table entry 提取物理 tile 坐标
-    // entry.rg = tileX, tileY (low 16 bits each)
-    float2 physicalTile = float2(entry.r, entry.g);
+    // C++ 编码: bit0=resident, bit1-8=slotX, bit9-16=slotY
+    float2 physicalTile = float2(
+        (entry >> 1) & 0xFFu,
+        (entry >> 9) & 0xFFu
+    );
     
     // 计算物理 UV = (tileUV + tile offset) * tileSize / atlasSize
     float2 physicalUV = (tileUV + physicalTile) * tileSize / atlasSize;
