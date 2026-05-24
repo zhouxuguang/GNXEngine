@@ -29,14 +29,14 @@ void VTFrameWork::Initlize()
 
     SceneManager* sceneManager = SceneManager::GetInstance();
 
-    // Camera
+// Camera
     auto cameraPtr = sceneManager->CreateCamera("MainCamera");
     if (cameraPtr)
     {
-        cameraPtr->LookAt(Vector3f(0.0f, 5.0f, -8.0f),
+        cameraPtr->LookAt(Vector3f(0.0f, 30.0f, 80.0f),
                           Vector3f(0.0f, 0.0f, 0.0f),
                           Vector3f(0.0f, 1.0f, 0.0f));
-        cameraPtr->SetLens(60.0f, 1280, 720, 0.1f, 100.0f);
+        cameraPtr->SetLens(60.0f, 1280, 720, 1.0f, 500.0f);
     }
 
     // Direction light
@@ -49,16 +49,16 @@ void VTFrameWork::Initlize()
 
     // Virtual Texture Manager
     VirtualTextureConfig vtConfig;
-    vtConfig.virtualWidth    = 8192;
-    vtConfig.virtualHeight   = 8192;
-    vtConfig.pageSize        = 128;
+    vtConfig.virtualWidth    = 4096;
+    vtConfig.virtualHeight   = 4096;
+    vtConfig.pageSize        = 512;
     vtConfig.pageBorder      = 4;
-    vtConfig.atlasSlotsX     = 16;
-    vtConfig.atlasSlotsY     = 16;
+    vtConfig.atlasSlotsX     = 8;
+    vtConfig.atlasSlotsY     = 8;
     vtConfig.pinnedMipLevels = 2;
     vtConfig.uploadsPerFrame = 4;
 
-    auto fileSource = std::make_shared<FileVirtualTextureDataSource>("assets/virtualtexture/terrain");
+    auto fileSource = std::make_shared<FileVirtualTextureDataSource>("vt/pages");
     mathutil::Vector2i viewSize(1280, 720);
     mVTIndex = sceneManager->AddVTManager(vtConfig, fileSource, viewSize, 16);
 
@@ -71,94 +71,49 @@ void VTFrameWork::Initlize()
              cfg.pageSize,
              cfg.atlasWidth, cfg.atlasHeight,
              cfg.atlasSlotsX, cfg.atlasSlotsY);
-    LOG_INFO("Mip levels: %u, Pinned: %u, Uploads/frame: %u",
-             cfg.mipLevels, cfg.pinnedMipLevels, cfg.uploadsPerFrame);
-    LOG_INFO("PageTable: %llu bytes, Atlas: %.2f MB",
-             (unsigned long long)EstimatePageTableMemory(cfg),
+    LOG_INFO("Mip levels: %u, Pinned: %u, Uploads/frame: %u", cfg.mipLevels, cfg.pinnedMipLevels, cfg.uploadsPerFrame);
+    LOG_INFO("PageTable: %llu bytes, Atlas: %.2f MB", (unsigned long long)EstimatePageTableMemory(cfg),
              EstimateAtlasMemory(cfg) / (1024.0 * 1024.0));
 
-    // 创建平面网格（VT 材质测试）
-    auto CreatePlaneMesh = [](float width, float depth, int xdivs, int zdivs) -> MeshPtr
+    // ── 加载模型（普通模型） ──
     {
-        int nPoints = (xdivs + 1) * (zdivs + 1);
-        std::vector<Vector3f> positions(nPoints);
-        std::vector<Vector3f> normals(nPoints, Vector3f(0, 1, 0));
-        std::vector<Vector4f> tangents(nPoints, Vector4f(1, 0, 0, 1));
-        std::vector<Vector2f> texcoords(nPoints);
-        std::vector<uint32_t> indices(xdivs * zdivs * 6);
-        
-        float halfW = width * 0.5f;
-        float halfD = depth * 0.5f;
-        
-        int vidx = 0;
-        for (int iz = 0; iz <= zdivs; ++iz)
+        std::string modelPath = GetProjectAssetDir() + "vt/snowy_mountain.obj";
+
+        // 山体模型，放在原点，不缩放
+        Transform transform;
+        transform.position = Vector3f(0.0f, 0.0f, 0.0f);
+        transform.rotation = Quaternionf();
+        transform.scale    = Vector3f(1.0f, 1.0f, 1.0f);
+
+        SceneNode* modelNode = sceneManager->GetRootNode()->CreateRendererNode(
+            "VTModel", modelPath, transform.position, transform.rotation, transform.scale);
+
+        if (modelNode)
         {
-            float z = halfD - (float)iz / zdivs * depth;
-            for (int ix = 0; ix <= xdivs; ++ix)
+            // 将模型所有材质替换为 VirtualTexturePBR
+            MeshRenderer* meshRender = modelNode->QueryComponentT<MeshRenderer>();
+            if (meshRender)
             {
-                float x = -halfW + (float)ix / xdivs * width;
-                positions[vidx] = Vector3f(x, 0.0f, z);
-                texcoords[vidx] = Vector2f((float)ix / xdivs * 8.0f, (float)iz / zdivs * 8.0f);
-                ++vidx;
+                const auto& materials = meshRender->GetMaterials();
+                for (const auto& mat : materials)
+                {
+                    mat->SetMaterialType(Material::MaterialType::VirtualTexturePBR);
+                    mat->SetTexture("normalTexture", nullptr);
+                    mat->SetTexture("roughnessTexture", nullptr);
+                    mat->SetTexture("emissiveTexture", nullptr);
+                    mat->SetTexture("ambientTexture", nullptr);
+                }
+                LOG_INFO("Replaced %zu material(s) with VirtualTexturePBR", materials.size());
             }
         }
-        
-        int iidx = 0;
-        for (int iz = 0; iz < zdivs; ++iz)
-        {
-            int rowStart     = iz * (xdivs + 1);
-            int nextRowStart = (iz + 1) * (xdivs + 1);
-            for (int ix = 0; ix < xdivs; ++ix)
-            {
-                indices[iidx++] = rowStart + ix;
-                indices[iidx++] = nextRowStart + ix;
-                indices[iidx++] = nextRowStart + ix + 1;
-                indices[iidx++] = rowStart + ix;
-                indices[iidx++] = nextRowStart + ix + 1;
-                indices[iidx++] = rowStart + ix + 1;
-            }
-        }
-        
-        auto mesh = std::make_shared<Mesh>();
-        mesh->SetPositions(positions.data(), nPoints);
-        mesh->SetNormals(normals.data(), nPoints);
-        mesh->SetTangents(tangents.data(), nPoints);
-        mesh->SetUv(0, texcoords.data(), nPoints);
-        mesh->SetIndices(indices.data(), (int)indices.size());
-        
-        SubMeshInfo subMeshInfo;
-        subMeshInfo.firstIndex  = 0;
-        subMeshInfo.indexCount  = (int)indices.size();
-        subMeshInfo.vertexCount = nPoints;
-        subMeshInfo.topology    = PrimitiveMode_TRIANGLES;
-        mesh->AddSubMeshInfo(subMeshInfo);
-        
-        mesh->SetUpBuffer();
-        return mesh;
-    };
+    }
 
-    // 创建 VT 材质
-    MaterialPtr vtMaterial = std::make_shared<Material>();
-    vtMaterial->SetMaterialType(Material::MaterialType::VirtualTexturePBR);
-    vtMaterial->SetTexture("normalTexture", nullptr);
-    vtMaterial->SetTexture("roughnessTexture", nullptr);
-    vtMaterial->SetTexture("emissiveTexture", nullptr);
-    vtMaterial->SetTexture("ambientTexture", nullptr);
-
-    // 创建场景节点并挂载网格
-    MeshPtr planeMesh = CreatePlaneMesh(20.0f, 20.0f, 2, 2);
-    
-    SceneNode* vtNode = sceneManager->GetRootNode()->CreateChildSceneNode("VTPlane");
-    MeshRenderer* meshRenderer = new MeshRenderer();
-    meshRenderer->SetSharedMesh(planeMesh);
-    meshRenderer->AddMaterial(vtMaterial);
-    vtNode->AddComponent(meshRenderer);
-    
     LOG_INFO("VT demo scene setup complete.");
 }
 
 void VTFrameWork::Resize(uint32_t width, uint32_t height)
 {
+    AppFrameWork::Resize(width, height);
 }
 
 void VTFrameWork::RenderFrame()
