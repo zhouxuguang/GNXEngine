@@ -89,10 +89,9 @@ enum
     kTexFormatASTC_RGBA_10x10 = 64,
     kTexFormatASTC_RGBA_12x12 = 65,
     
-    //深度模板格式
+//深度模板格式
     kTexFormatDepth16 = 70,            // 16 bit depth buffer
     kTexFormatDepth24 = 71,            // 24 bit depth buffer
-    kTexFormatDepth32 = 72,            // 32 bit depth buffer
     kTexFormatDepth32Float = 73,       // 32 bit float depth buffer
     
     kTexFormatDepth24Stencil8 = 74,

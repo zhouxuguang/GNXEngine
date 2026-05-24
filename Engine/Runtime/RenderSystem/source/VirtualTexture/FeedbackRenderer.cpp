@@ -80,7 +80,7 @@ FrameGraphResource FeedbackRenderer::Render(
     depthDesc.SetName("VtFeedbackDepth");
     depthDesc.extent = RenderCore::Rect2D{0, 0, (int)params.width, (int)params.height};
     depthDesc.depth = 1;
-    depthDesc.format = kTexFormatDepth32;
+    depthDesc.format = kTexFormatDepth16;
 
     FrameGraphTexture externalDepthTex;
     externalDepthTex.texture = externalFeedbackDepth;

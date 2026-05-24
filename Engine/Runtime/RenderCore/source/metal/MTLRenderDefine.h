@@ -46,7 +46,7 @@ inline MTLPixelFormat ConvertTextureFormatToMetal(uint32_t textureFormat)
         case kTexFormatRGB24:
             return MTLPixelFormatRGBA8Unorm;
          
-        //srgb
+//srgb
         case kTexFormatSRGB8:
             return MTLPixelFormatRGBA8Unorm_sRGB;
             
@@ -61,9 +61,6 @@ inline MTLPixelFormat ConvertTextureFormatToMetal(uint32_t textureFormat)
             
         case kTexFormatDepth24:
             return MTLPixelFormatInvalid;
-            
-        case kTexFormatDepth32:
-            return MTLPixelFormatDepth32Float;
             
         case kTexFormatDepth32Float:
             return MTLPixelFormatDepth32Float;

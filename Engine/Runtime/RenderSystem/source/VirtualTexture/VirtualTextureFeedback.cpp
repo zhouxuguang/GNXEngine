@@ -21,7 +21,7 @@ VirtualTextureFeedback::VirtualTextureFeedback(const mathutil::Vector2i& viewSiz
     mFeedbackTarget = RenderCore::GetRenderDevice()->CreateTexture2D(RenderCore::kTexFormatR32Uint,
                             RenderCore::TextureUsage::TextureUsageRenderTarget, mWidth, mHeight, 1);
 
-    mDepthTarget = RenderCore::GetRenderDevice()->CreateTexture2D(RenderCore::kTexFormatDepth32,
+    mDepthTarget = RenderCore::GetRenderDevice()->CreateTexture2D(RenderCore::kTexFormatDepth16,
                             RenderCore::TextureUsage::TextureUsageRenderTarget, mWidth, mHeight, 1);
 
     // 创建 GPU→CPU readback staging buffer（StorageModeShared 才能.Map()）
