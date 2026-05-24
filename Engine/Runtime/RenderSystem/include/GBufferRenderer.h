@@ -62,6 +62,10 @@ struct GBufferRenderParams
     /** 视锥体 (用于地形逐patch剔除) */
     mathutil::Frustumf frustum;
 
+    // 虚拟纹理资源（VirtualTexturePBR 材质时需要绑定）
+    RCTexturePtr pageTableTexture = nullptr;
+    RCTexturePtr atlasTexture = nullptr;
+
     static GBufferRenderParams Create(
         const std::vector<DepthMeshItem>& staticMeshItems,
         UniformBufferPtr cameraUBO,

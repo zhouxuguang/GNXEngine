@@ -394,13 +394,35 @@ void MeshDrawUtil::DrawMeshBasePass(const Mesh& mesh, const RenderInfo& renderIn
 			if (material)
 			{
                 TextureSamplerPtr textureSampler = mesh.GetSampler();
-                auto textureSlot = material->GetTextureSlot("diffuseTexture");
-
-				renderEncoder->SetFragmentTextureAndSampler("gDiffuseMap", textureSlot->texture, GetOrCreateSampler(textureSlot->samplerDesc));
-				renderEncoder->SetFragmentTextureAndSampler("gNormalMap", material->GetTexture("normalTexture"), textureSampler);
-				renderEncoder->SetFragmentTextureAndSampler("gMetalRoughMap", material->GetTexture("roughnessTexture"), textureSampler);
-				renderEncoder->SetFragmentTextureAndSampler("gEmissiveMap", material->GetTexture("emissiveTexture"), textureSampler);
-				renderEncoder->SetFragmentTextureAndSampler("gAmbientMap", material->GetTexture("ambientTexture"), textureSampler);
+                
+                if (material->GetMaterialType() == Material::MaterialType::VirtualTexturePBR &&
+                    renderInfo.pageTableTexture && renderInfo.atlasTexture)
+                {
+                    // VT 材质：绑定 page table + atlas 替代 gDiffuseMap
+                    renderEncoder->SetFragmentTextureAndSampler("pageTable", renderInfo.pageTableTexture, textureSampler);
+                    renderEncoder->SetFragmentTextureAndSampler("atlas", renderInfo.atlasTexture, textureSampler);
+                    
+                    // VT 常量：pageGrid / tileSize / atlasSize
+                    // （由调用方在 RenderInfo 中或通过 cbVTInfo uniform 提供）
+                    // 暂时使用默认常量，后续从 VT config 读取
+                    
+                    // 其余纹理保持常规绑定
+                    renderEncoder->SetFragmentTextureAndSampler("gNormalMap", material->GetTexture("normalTexture"), textureSampler);
+                    renderEncoder->SetFragmentTextureAndSampler("gMetalRoughMap", material->GetTexture("roughnessTexture"), textureSampler);
+                    renderEncoder->SetFragmentTextureAndSampler("gEmissiveMap", material->GetTexture("emissiveTexture"), textureSampler);
+                    renderEncoder->SetFragmentTextureAndSampler("gAmbientMap", material->GetTexture("ambientTexture"), textureSampler);
+                }
+                else
+                {
+                    // 常规材质：照常绑定所有纹理
+                    auto textureSlot = material->GetTextureSlot("diffuseTexture");
+                    
+                    renderEncoder->SetFragmentTextureAndSampler("gDiffuseMap", textureSlot->texture, GetOrCreateSampler(textureSlot->samplerDesc));
+                    renderEncoder->SetFragmentTextureAndSampler("gNormalMap", material->GetTexture("normalTexture"), textureSampler);
+                    renderEncoder->SetFragmentTextureAndSampler("gMetalRoughMap", material->GetTexture("roughnessTexture"), textureSampler);
+                    renderEncoder->SetFragmentTextureAndSampler("gEmissiveMap", material->GetTexture("emissiveTexture"), textureSampler);
+                    renderEncoder->SetFragmentTextureAndSampler("gAmbientMap", material->GetTexture("ambientTexture"), textureSampler);
+                }
 			}
 		}
 

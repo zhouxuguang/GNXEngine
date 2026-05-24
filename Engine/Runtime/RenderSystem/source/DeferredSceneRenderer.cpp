@@ -377,6 +377,18 @@ GBufferData DeferredSceneRenderer::RenderBasePass(
     params.preDepthTexture = preDepthTexture;  // 传递 PreDepth 深度图
     params.frustum = frustum;
 
+    // 传入虚拟纹理资源（供 VirtualTexturePBR 材质使用）
+    SceneManager* sm = SceneManager::GetInstance();
+    if (sm && sm->GetVTManagerCount() > 0)
+    {
+        auto vt = sm->GetVTManager(0);
+        if (vt)
+        {
+            params.pageTableTexture = vt->GetPageTableTexture();
+            params.atlasTexture = vt->GetAtlasTexture();
+        }
+    }
+
     // 初始化 GBufferRenderer（如果需要）
     if (!mGBufferRenderer->IsInitialized())
     {

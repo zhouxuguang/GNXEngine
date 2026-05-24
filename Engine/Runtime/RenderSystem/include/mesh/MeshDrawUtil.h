@@ -25,6 +25,10 @@ struct RenderInfo
     RenderEncoderPtr renderEncoder;           //当前的渲染pass
     std::vector<MaterialPtr> materials;                 //当前的材质
     UniformBufferPtr skinnedMatrixUBO;   //GPU蒙皮矩阵
+
+    // 虚拟纹理（VT 材质时绑定）
+    RCTexturePtr pageTableTexture = nullptr;  // page table 纹理
+    RCTexturePtr atlasTexture = nullptr;      // 物理 atlas 纹理
 };
 
 class MeshDrawUtil
