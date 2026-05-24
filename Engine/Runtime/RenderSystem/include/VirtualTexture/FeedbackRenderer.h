@@ -84,7 +84,8 @@ public:
         FrameGraph& frameGraph,
         CommandBufferPtr commandBuffer,
         const FeedbackRenderParams& params,
-        RCTexturePtr externalFeedbackTexture);
+        RCTexturePtr externalFeedbackTexture,
+        RCTexturePtr externalFeedbackDepth);
 
 private:
     RenderDevicePtr mDevice = nullptr;

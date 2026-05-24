@@ -89,7 +89,8 @@ private:
         FrameGraph& frameGraph,
         CommandBufferPtr commandBuffer,
         const FeedbackRenderParams& params,
-        RCTexturePtr externalFeedbackTexture);
+        RCTexturePtr externalFeedbackTexture,
+        RCTexturePtr externalFeedbackDepth);
 
     /**
      * 执行Hi-Z生成Pass

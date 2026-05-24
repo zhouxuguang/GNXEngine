@@ -24,11 +24,11 @@ bool FeedbackRenderer::Initialize()
     if (mInitialized)
         return true;
 
-    // 创建反馈渲染 PSO — PS 输出 R32Uint
+    // 创建反馈渲染 PSO — PS 输出 R32Uint，开启深度写入
     {
         GraphicsShaderInfo shaderInfo = CreateGraphicsShaderInfo("vt/Feedback");
         shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
-        shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
+        shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = true;
         mFeedbackPipeline = mDevice->CreateGraphicsPipeline(shaderInfo.graphicsPipelineDesc);
         if (!mFeedbackPipeline)
             return false;
@@ -61,9 +61,10 @@ FrameGraphResource FeedbackRenderer::Render(
     FrameGraph& frameGraph,
     CommandBufferPtr commandBuffer,
     const FeedbackRenderParams& params,
-    RCTexturePtr externalFeedbackTexture)
+    RCTexturePtr externalFeedbackTexture,
+    RCTexturePtr externalFeedbackDepth)
 {
-    // 先 Import 外部 feedback RT 到 FrameGraph
+    // 先 Import 外部 feedback RT + depth 到 FrameGraph
     FrameGraphTexture::Desc feedbackDesc;
     feedbackDesc.SetName("VtFeedback");
     feedbackDesc.extent = RenderCore::Rect2D{0, 0, (int)params.width, (int)params.height};
@@ -75,9 +76,21 @@ FrameGraphResource FeedbackRenderer::Render(
     FrameGraphResource feedbackResource = frameGraph.Import<FrameGraphTexture>(
         "VtFeedback", feedbackDesc, std::move(externalFGTex));
 
+    FrameGraphTexture::Desc depthDesc;
+    depthDesc.SetName("VtFeedbackDepth");
+    depthDesc.extent = RenderCore::Rect2D{0, 0, (int)params.width, (int)params.height};
+    depthDesc.depth = 1;
+    depthDesc.format = kTexFormatDepth32;
+
+    FrameGraphTexture externalDepthTex;
+    externalDepthTex.texture = externalFeedbackDepth;
+    FrameGraphResource depthResource = frameGraph.Import<FrameGraphTexture>(
+        "VtFeedbackDepth", depthDesc, std::move(externalDepthTex));
+
     struct FeedbackPassData
     {
         FrameGraphResource feedbackTexture;
+        FrameGraphResource depthTexture;
         std::vector<FeedbackMeshItem> staticMeshes;
         std::vector<TerrainComponent*> terrainItems;
         UniformBufferPtr cameraUBO;
@@ -88,6 +101,7 @@ FrameGraphResource FeedbackRenderer::Render(
         [=](FrameGraph::Builder& builder, FeedbackPassData& data)
         {
             data.feedbackTexture = builder.Write(feedbackResource, (uint32_t)RenderCore::ResourceAccessType::ColorAttachment);
+            data.depthTexture = builder.Write(depthResource, (uint32_t)RenderCore::ResourceAccessType::DepthStencilAttachment);
             builder.SetSideEffect();
 
             // 保存引用
@@ -98,6 +112,7 @@ FrameGraphResource FeedbackRenderer::Render(
         [=](const FeedbackPassData& data, FrameGraphPassResources& resources, void* context)
         {
             FrameGraphTexture& feedbackTexture = resources.Get<FrameGraphTexture>(data.feedbackTexture);
+            FrameGraphTexture& depthTexture = resources.Get<FrameGraphTexture>(data.depthTexture);
 
             RenderPass renderPass;
             renderPass.renderRegion = Rect2D(0, 0, (int)params.width, (int)params.height);
@@ -110,8 +125,13 @@ FrameGraphResource FeedbackRenderer::Render(
             colorAttachment->clearColor = {0.0f, 0.0f, 0.0f, 0.0f};
             renderPass.colorAttachments.push_back(colorAttachment);
 
-            // 深度附件：使用 feedback 自己的 depth target（已有，但这里暂不加）
-            // 只写颜色，不测试深度 — 所有 VT 物体都绘制
+            // 深度附件：反馈 depth target，开启深度测试
+            auto depthAttachment = std::make_shared<RenderPassDepthAttachment>();
+            depthAttachment->texture = depthTexture.texture;
+            depthAttachment->clearDepth = DepthConfig::GetDefaultClearDepth();
+            depthAttachment->loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+            depthAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            renderPass.depthAttachment = depthAttachment;
 
             float color[4] = {0.0f, 0.8f, 0.2f, 1.0f};
             SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), color);

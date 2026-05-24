@@ -276,7 +276,9 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
             fbParams.staticMeshes = feedbackMeshItems;
             fbParams.cameraUBO = cameraUBO;
 
-            RenderFeedbackPass(frameGraph, commandBuffer, fbParams, vtManager->GetFeedbackTarget());
+            RenderFeedbackPass(frameGraph, commandBuffer, fbParams,
+                               vtManager->GetFeedbackTarget(),
+                               vtManager->GetFeedbackDepthTarget());
         }
     }
 
@@ -579,12 +581,14 @@ FrameGraphResource DeferredSceneRenderer::RenderFeedbackPass(
     FrameGraph& frameGraph,
     CommandBufferPtr commandBuffer,
     const FeedbackRenderParams& params,
-    RCTexturePtr externalFeedbackTexture)
+    RCTexturePtr externalFeedbackTexture,
+    RCTexturePtr externalFeedbackDepth)
 {
     if (!mFeedbackRender)
         return -1;
 
-    return mFeedbackRender->Render("VtFeedbackPass", frameGraph, commandBuffer, params, externalFeedbackTexture);
+    return mFeedbackRender->Render("VtFeedbackPass", frameGraph, commandBuffer, params,
+                                    externalFeedbackTexture, externalFeedbackDepth);
 }
 
 void DeferredSceneRenderer::CollectLights(
