@@ -34,6 +34,9 @@ DeferredSceneRenderer::DeferredSceneRenderer()
     mMotionBlurPass = std::make_shared<MotionBlurPass>();
     
     mPostProcessing = new PostProcessing(GetRenderDevice());
+    
+    mFeedbackRender = std::make_unique<FeedbackRenderer>(GetRenderDevice());
+    mFeedbackRender->Initialize();
 }
 
 DeferredSceneRenderer::~DeferredSceneRenderer()
@@ -104,6 +107,31 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     if (rootNode)
     {
         CollectMeshesRecursive(rootNode, meshItems, skinnedMeshItems, terrainItems);
+    }
+
+    // 收集使用 VT 材质的物体（用于 feedback pass）
+    std::vector<FeedbackMeshItem> feedbackMeshItems;
+    {
+        for (const auto& item : meshItems)
+        {
+            bool hasVT = false;
+            for (auto& mat : item.materials)
+            {
+                if (mat && mat->GetMaterialType() == Material::MaterialType::VirtualTexturePBR)
+                {
+                    hasVT = true;
+                    break;
+                }
+            }
+            if (hasVT)
+            {
+                FeedbackMeshItem fbItem;
+                fbItem.mesh = item.mesh;
+                fbItem.objectUBO = item.objectUBO;
+                fbItem.materials = item.materials;
+                feedbackMeshItems.push_back(fbItem);
+            }
+        }
     }
 
     // 获取相机UBO
@@ -230,6 +258,26 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
         MotionBlurOutput motionBlurOutput = mMotionBlurPass->AddToFrameGraph(
             "MotionBlurPass", frameGraph, commandBuffer, motionBlurParams);
         finalResult = motionBlurOutput.result;
+    }
+
+    // VT Feedback Pass（在 MotionBlur/Skybox 之后、Present 之前）
+    // 降分辨率重绘 VT 物体，PS 输出 encoded page 到 R32Uint target
+    if (mFeedbackRender && mFeedbackRender->IsInitialized() && !feedbackMeshItems.empty())
+    {
+        auto vtManager = sceneManager->GetVTManager(0);
+        if (vtManager)
+        {
+            uint32_t fbWidth = vtManager->GetFeedbackTarget()->GetWidth();
+            uint32_t fbHeight = vtManager->GetFeedbackTarget()->GetHeight();
+
+            FeedbackRenderParams fbParams;
+            fbParams.width = fbWidth;
+            fbParams.height = fbHeight;
+            fbParams.staticMeshes = feedbackMeshItems;
+            fbParams.cameraUBO = cameraUBO;
+
+            RenderFeedbackPass(frameGraph, commandBuffer, fbParams, vtManager->GetFeedbackTarget());
+        }
     }
 
     RenderPresentPass(frameGraph, commandBuffer, finalResult);
@@ -525,6 +573,18 @@ FrameGraphResource DeferredSceneRenderer::RenderSkyboxPass(
     );
 
     return passData.outputResult;
+}
+
+FrameGraphResource DeferredSceneRenderer::RenderFeedbackPass(
+    FrameGraph& frameGraph,
+    CommandBufferPtr commandBuffer,
+    const FeedbackRenderParams& params,
+    RCTexturePtr externalFeedbackTexture)
+{
+    if (!mFeedbackRender)
+        return -1;
+
+    return mFeedbackRender->Render("VtFeedbackPass", frameGraph, commandBuffer, params, externalFeedbackTexture);
 }
 
 void DeferredSceneRenderer::CollectLights(

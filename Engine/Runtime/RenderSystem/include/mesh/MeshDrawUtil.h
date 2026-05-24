@@ -65,6 +65,14 @@ public:
      */
     static void DrawSkinnedMeshDepthOnly(const SkinnedMesh& mesh, const RenderInfo& renderInfo, GraphicsPipelinePtr depthPSO);
     
+    /**
+     * 反馈渲染（VT feedback pass）
+     * 绑定 Position + TexCoord0，PS 输出 R32Uint encoded page
+     */
+    static void DrawMeshFeedback(const Mesh& mesh, const RenderInfo& renderInfo, GraphicsPipelinePtr feedbackPSO);
+
+    static void DrawSkinnedMeshFeedback(const SkinnedMesh& mesh, const RenderInfo& renderInfo, GraphicsPipelinePtr feedbackPSO);
+    
 private:
     /**
      * 检查网格是否包含指定通道

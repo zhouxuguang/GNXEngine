@@ -2,7 +2,7 @@
 #define FEEDBACK_VIRTUAL_INCLUDE_GVHJH_H
 
 #include "VirtualTextureCommon.hlsl"
-#include "GNXEngineVariables.hlsl"
+#include "../GNXEngineVariables.hlsl"
 
 //=============================================================================
 // 输入输出结构
@@ -50,7 +50,7 @@ cbuffer cbVTFeedback
 //=============================================================================
 // 像素着色器
 //=============================================================================
-uint PS(DepthVertexOutput input)
+uint PS(DepthVertexOutput input) : SV_Target0
 {
     float2 effectiveSize = vtSize * bufferScreenRatio;
 

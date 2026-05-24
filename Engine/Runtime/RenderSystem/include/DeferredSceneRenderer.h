@@ -18,6 +18,7 @@
 #include "PostProcess/PostProcessing.h"
 #include "SkyBoxNode.h"
 #include "terrain/TerrainComponent.h"
+#include "VirtualTexture/FeedbackRenderer.h"
 #include <vector>
 
 NS_RENDERSYSTEM_BEGIN
@@ -80,6 +81,15 @@ private:
         const mathutil::Frustumf& frustum = mathutil::Frustumf());
 
     void RenderPresentPass(FrameGraph& frameGraph, CommandBufferPtr commandBuffer, FrameGraphResource depthResource);
+
+    /**
+     * 渲染 VT feedback pass（降分辨率，重绘 VT 物体）
+     */
+    FrameGraphResource RenderFeedbackPass(
+        FrameGraph& frameGraph,
+        CommandBufferPtr commandBuffer,
+        const FeedbackRenderParams& params,
+        RCTexturePtr externalFeedbackTexture);
 
     /**
      * 执行Hi-Z生成Pass
@@ -155,6 +165,7 @@ private:
     SSAOPassPtr mSSAOPass = nullptr;
     MotionBlurPassPtr mMotionBlurPass = nullptr;
     PostProcessing* mPostProcessing = nullptr;
+    FeedbackRendererUniPtr mFeedbackRender = nullptr;
     bool mEnableMotionBlur = false;
     
     uint32_t mWidth = 1;

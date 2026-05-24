@@ -265,6 +265,86 @@ void MeshDrawUtil::DrawSkinnedMeshDepthOnly(const SkinnedMesh& mesh, const Rende
     }
 }
 
+void MeshDrawUtil::DrawMeshFeedback(const Mesh& mesh, const RenderInfo& renderInfo, GraphicsPipelinePtr feedbackPSO)
+{
+    RenderEncoderPtr renderEncoder = renderInfo.renderEncoder;
+    assert(renderEncoder);
+    assert(feedbackPSO);
+
+    const ChannelInfo* channels = mesh.GetVertexData().GetChannels();
+    VertexBufferPtr vertexBuffer = mesh.GetVertexBuffer();
+    IndexBufferPtr indexBuffer = mesh.GetIndexBuffer();
+
+    if (!mesh.HasChannel(kShaderChannelPosition) || !mesh.HasChannel(kShaderChannelTexCoord0))
+    {
+        return;
+    }
+
+    for (int n = 0; n < mesh.GetSubMeshCount(); n++)
+    {
+        renderEncoder->SetGraphicsPipeline(feedbackPSO);
+
+        renderEncoder->SetVertexUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+        renderEncoder->SetVertexUniformBuffer("cbPerObject", renderInfo.objectUBO);
+
+        renderEncoder->SetFragmentUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+
+        // 绑定 Position + TexCoord0（feedback shader 需要 UV 算 page）
+        renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
+        renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTexCoord0].offset, 1);
+
+        const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
+        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
+    }
+}
+
+void MeshDrawUtil::DrawSkinnedMeshFeedback(const SkinnedMesh& mesh, const RenderInfo& renderInfo, GraphicsPipelinePtr feedbackPSO)
+{
+    RenderEncoderPtr renderEncoder = renderInfo.renderEncoder;
+    assert(renderEncoder);
+    assert(feedbackPSO);
+
+    const ChannelInfo* channels = mesh.GetVertexData().GetChannels();
+    VertexBufferPtr vertexBuffer = mesh.GetVertexBuffer();
+    IndexBufferPtr indexBuffer = mesh.GetIndexBuffer();
+
+    if (!mesh.HasChannel(kShaderChannelPosition) || !mesh.HasChannel(kShaderChannelTexCoord0))
+    {
+        return;
+    }
+
+    bool hasBoneData = mesh.HasChannel(kShaderChannelBoneIndex) &&
+                       mesh.HasChannel(kShaderChannelWeight);
+
+    for (int n = 0; n < mesh.GetSubMeshCount(); n++)
+    {
+        renderEncoder->SetGraphicsPipeline(feedbackPSO);
+
+        renderEncoder->SetVertexUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+        renderEncoder->SetVertexUniformBuffer("cbPerObject", renderInfo.objectUBO);
+
+        renderEncoder->SetFragmentUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+
+        if (hasBoneData && renderInfo.skinnedMatrixUBO)
+        {
+            renderEncoder->SetVertexUniformBuffer("cbSkinned", renderInfo.skinnedMatrixUBO);
+        }
+
+        // 绑定 Position + TexCoord0
+        renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
+        renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTexCoord0].offset, 1);
+
+        if (hasBoneData)
+        {
+            renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelBoneIndex].offset, 2);
+            renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelWeight].offset, 3);
+        }
+
+        const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
+        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
+    }
+}
+
 void MeshDrawUtil::DrawMeshBasePass(const Mesh& mesh, const RenderInfo& renderInfo, GraphicsPipelinePtr basePassPSO)
 {
 	RenderEncoderPtr renderEncoder = renderInfo.renderEncoder;
