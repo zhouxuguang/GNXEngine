@@ -213,6 +213,8 @@ const char* Material::GetGBufferShaderPath(MaterialType type)
             return "GBufferDiffuse";
         case MaterialType::SkinPBR:
             return "GBufferSkinPBR";  // 需要另外实现
+        case MaterialType::VirtualTexturePBR:
+            return "GBufferVTPBR";    // 带虚拟纹理采样的 GBuffer shader
         case MaterialType::Unlit:
             return "GBufferUnlit";    // 需要另外实现
         default:

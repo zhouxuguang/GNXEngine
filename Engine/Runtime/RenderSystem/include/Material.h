@@ -26,10 +26,11 @@ public:
     // 材质类型枚举
     enum class MaterialType
     {
-        PBR,           // PBR材质
-        Diffuse,       // 简单漫反射
-        SkinPBR,       // 蒙皮PBR材质
-        Unlit          // 无光照材质
+        PBR,                // PBR材质
+        Diffuse,            // 简单漫反射
+        SkinPBR,            // 蒙皮PBR材质
+        Unlit,              // 无光照材质
+        VirtualTexturePBR   // 虚拟纹理 PBR材质（带 page table + atlas 采样）
     };
     
     Material();
