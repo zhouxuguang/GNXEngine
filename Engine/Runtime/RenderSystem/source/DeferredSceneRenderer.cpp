@@ -387,6 +387,7 @@ GBufferData DeferredSceneRenderer::RenderBasePass(
             params.pageTableTexture = vt->GetPageTableTexture();
             params.atlasTexture = vt->GetAtlasTexture();
             params.vtInfoUBO = vt->GetVTInfoUBO();
+            params.pageTableSampler = vt->GetPageTableSampler();
         }
     }
 

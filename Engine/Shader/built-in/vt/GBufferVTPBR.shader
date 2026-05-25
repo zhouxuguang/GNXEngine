@@ -6,7 +6,7 @@
 #include "VirtualTextureCommon.hlsl"
 
 // 虚拟纹理资源
-Texture2D pageTable;
+Texture2D<uint> pageTable;
 SamplerState pageTableSam;
 Texture2D atlas;
 SamplerState atlasSam;

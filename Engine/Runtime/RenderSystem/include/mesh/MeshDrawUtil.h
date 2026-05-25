@@ -30,6 +30,7 @@ struct RenderInfo
     RCTexturePtr pageTableTexture = nullptr;  // page table 纹理
     RCTexturePtr atlasTexture = nullptr;      // 物理 atlas 纹理
     UniformBufferPtr vtInfoUBO = nullptr;     // VT info uniform（pageGrid / tileSize / atlasSize）
+    TextureSamplerPtr pageTableSampler = nullptr;  // page table point sampler（R32Uint 用 nearest）
 };
 
 class MeshDrawUtil

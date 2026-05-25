@@ -18,6 +18,7 @@
 #include "Runtime/RenderCore/include/RCBuffer.h"
 #include "Runtime/RenderCore/include/RCTexture.h"
 #include "Runtime/RenderCore/include/UniformBuffer.h"
+#include "Runtime/RenderCore/include/TextureSampler.h"
 #include <vector>
 #include <queue>
 #include <future>
@@ -59,6 +60,9 @@ public:
     RCTexturePtr GetFeedbackTarget()   const { return mFeedback->GetFeedbackTarget(); }
     RCTexturePtr GetFeedbackDepthTarget() const { return mFeedback->GetDepthTarget(); }
 
+    /// Page table 采样器（R32Uint 纹理必须用 point filter）
+    TextureSamplerPtr GetPageTableSampler() const { return mPageTableSampler; }
+
     /// VT info uniform buffer（pageGrid / tileSize / atlasSize），供 shader 采样时使用
     UniformBufferPtr GetVTInfoUBO() const { return mVTInfoUBO; }
 
@@ -77,6 +81,7 @@ private:
     std::shared_ptr<IVirtualTextureDataSource> mDataSource;
     RCTexture2DPtr mAtlasTexture;
     UniformBufferPtr mVTInfoUBO;
+    TextureSamplerPtr mPageTableSampler;
 
     std::vector<PageLoadRequest> mPendingLoads;      //当前请求的结果
     std::set<PageRequest>      mPendingRequests;   //请求队列

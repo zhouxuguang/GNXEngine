@@ -66,6 +66,7 @@ struct GBufferRenderParams
     RCTexturePtr pageTableTexture = nullptr;
     RCTexturePtr atlasTexture = nullptr;
     UniformBufferPtr vtInfoUBO = nullptr;
+    TextureSamplerPtr pageTableSampler = nullptr;
 
     static GBufferRenderParams Create(
         const std::vector<DepthMeshItem>& staticMeshItems,

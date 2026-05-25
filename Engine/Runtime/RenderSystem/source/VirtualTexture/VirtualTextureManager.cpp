@@ -36,6 +36,13 @@ void VirtualTextureManager::Initialize(const VirtualTextureConfig& config,
     vtInfoData.FillFromConfig(resolved);
     mVTInfoUBO = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(sizeof(VTInfoBufferData));
     mVTInfoUBO->SetData(&vtInfoData, 0, sizeof(VTInfoBufferData));
+
+    // Page table point sampler（R32Uint 纹理必须用 nearest filter）
+    RenderCore::SamplerDesc pointSamplerDesc;
+    pointSamplerDesc.filterMag = RenderCore::MAG_NEAREST;
+    pointSamplerDesc.filterMin = RenderCore::MIN_NEAREST;
+    pointSamplerDesc.filterMip = RenderCore::MIN_NEAREST_MIPMAP_NEAREST;
+    mPageTableSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(pointSamplerDesc);
 }
 
 void VirtualTextureManager::Tick()
@@ -43,6 +50,8 @@ void VirtualTextureManager::Tick()
     ProcessCompletedLoads();
 
     FeedbackResult feedback = mFeedback->ReadbackAndDecode();
+
+    return;
     DispatchLoadRequests(feedback);
 
     mPageTable->SyncToGPU();
