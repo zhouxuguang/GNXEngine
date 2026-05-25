@@ -65,6 +65,7 @@ struct GBufferRenderParams
     // 虚拟纹理资源（VirtualTexturePBR 材质时需要绑定）
     RCTexturePtr pageTableTexture = nullptr;
     RCTexturePtr atlasTexture = nullptr;
+    UniformBufferPtr vtInfoUBO = nullptr;
 
     static GBufferRenderParams Create(
         const std::vector<DepthMeshItem>& staticMeshItems,

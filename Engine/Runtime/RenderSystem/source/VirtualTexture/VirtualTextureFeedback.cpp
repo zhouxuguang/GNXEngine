@@ -44,14 +44,21 @@ FeedbackResult VirtualTextureFeedback::ReadbackAndDecode()
 
     RenderCore::RenderDevicePtr device = RenderCore::GetRenderDevice();
 
-    // Step 1: GPU Copy: Texture → Staging Buffer
+// Step 1: GPU Copy: Texture → Staging Buffer
     CommandQueuePtr queue = device->GetCommandQueue(QueueType::Transfer, 0);
     CommandBufferPtr cmdBuf = queue->CreateCommandBuffer();
+    
+    // 从 ColorAttachment → TransferSrc（准备拷贝）
+    cmdBuf->ResourceBarrier(mFeedbackTarget, RenderCore::ResourceAccessType::TransferSrc);
+    
     BlitEncoderPtr blit = cmdBuf->CreateBlitEncoder();
 
     blit->CopyTextureToBuffer(mFeedbackTarget, 0, 0, mathutil::Vector2i(0, 0), mathutil::Vector2i(mWidth, mHeight),
                                mStagingBuffer, 0, mWidth * sizeof(uint32_t), 0);
     blit->EndEncode();
+
+    // 从 TransferSrc → ColorAttachment（为下一帧的 Feedback Pass 做准备）
+    cmdBuf->ResourceBarrier(mFeedbackTarget, RenderCore::ResourceAccessType::ColorAttachment);
 
     cmdBuf->Submit();
     cmdBuf->WaitUntilCompleted();

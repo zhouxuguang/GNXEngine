@@ -17,6 +17,7 @@
 #include "VirtualTextureFeedback.h"
 #include "Runtime/RenderCore/include/RCBuffer.h"
 #include "Runtime/RenderCore/include/RCTexture.h"
+#include "Runtime/RenderCore/include/UniformBuffer.h"
 #include <vector>
 #include <queue>
 #include <future>
@@ -58,6 +59,9 @@ public:
     RCTexturePtr GetFeedbackTarget()   const { return mFeedback->GetFeedbackTarget(); }
     RCTexturePtr GetFeedbackDepthTarget() const { return mFeedback->GetDepthTarget(); }
 
+    /// VT info uniform buffer（pageGrid / tileSize / atlasSize），供 shader 采样时使用
+    UniformBufferPtr GetVTInfoUBO() const { return mVTInfoUBO; }
+
     /// 获取当前配置（只读）。
     const VirtualTextureConfig& GetConfig() const { return mConfig; }
 
@@ -72,6 +76,7 @@ private:
     VirtualTextureFeedbackPtr  mFeedback;
     std::shared_ptr<IVirtualTextureDataSource> mDataSource;
     RCTexture2DPtr mAtlasTexture;
+    UniformBufferPtr mVTInfoUBO;
 
     std::vector<PageLoadRequest> mPendingLoads;      //当前请求的结果
     std::set<PageRequest>      mPendingRequests;   //请求队列

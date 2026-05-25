@@ -29,6 +29,7 @@ struct RenderInfo
     // 虚拟纹理（VT 材质时绑定）
     RCTexturePtr pageTableTexture = nullptr;  // page table 纹理
     RCTexturePtr atlasTexture = nullptr;      // 物理 atlas 纹理
+    UniformBufferPtr vtInfoUBO = nullptr;     // VT info uniform（pageGrid / tileSize / atlasSize）
 };
 
 class MeshDrawUtil

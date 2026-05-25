@@ -79,6 +79,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
         mathutil::Frustumf frustum;
         RCTexturePtr pageTableTexture;
         RCTexturePtr atlasTexture;
+        UniformBufferPtr vtInfoUBO;
     };
 
     auto& passData = frameGraph.AddPass<GBufferPassData>(
@@ -140,6 +141,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
             data.frustum = params.frustum;
             data.pageTableTexture = params.pageTableTexture;
             data.atlasTexture = params.atlasTexture;
+            data.vtInfoUBO = params.vtInfoUBO;
             
         },
         [=](const GBufferPassData& data, FrameGraphPassResources& resources, void* context)
@@ -241,6 +243,7 @@ GBufferData GBufferRenderer::AddToFrameGraph(
                     renderInfo.materials = meshItem.materials;
                     renderInfo.pageTableTexture = data.pageTableTexture;
                     renderInfo.atlasTexture = data.atlasTexture;
+                    renderInfo.vtInfoUBO = data.vtInfoUBO;
 
                     MeshDrawUtil::DrawMeshBasePass(*meshItem.mesh, renderInfo, pso);
                 }

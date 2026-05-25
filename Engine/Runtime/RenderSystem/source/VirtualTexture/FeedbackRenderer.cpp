@@ -37,12 +37,12 @@ bool FeedbackRenderer::Initialize()
 
     // 地形反馈渲染 PSO（使用 Terrain 的专用 VS — 内部读取 heightmap + SSBO）
     {
-//        GraphicsShaderInfo shaderInfo = CreateGraphicsShaderInfo("vt/TerrainFeedback");
-//        shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
-//        shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
-//        mTerrainFeedbackPipeline = mDevice->CreateGraphicsPipeline(shaderInfo.graphicsPipelineDesc);
-//        if (mTerrainFeedbackPipeline)
-//            mTerrainFeedbackPipeline->AttachGraphicsShader(shaderInfo.graphicsShader);
+        /*GraphicsShaderInfo shaderInfo = CreateGraphicsShaderInfo("vt/TerrainFeedback");
+        shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
+        shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
+        mTerrainFeedbackPipeline = mDevice->CreateGraphicsPipeline(shaderInfo.graphicsPipelineDesc);
+        if (mTerrainFeedbackPipeline)
+            mTerrainFeedbackPipeline->AttachGraphicsShader(shaderInfo.graphicsShader);*/
     }
 
     mInitialized = true;

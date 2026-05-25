@@ -395,7 +395,7 @@ void MeshDrawUtil::DrawMeshBasePass(const Mesh& mesh, const RenderInfo& renderIn
 			{
                 TextureSamplerPtr textureSampler = mesh.GetSampler();
                 
-                if (material->GetMaterialType() == Material::MaterialType::VirtualTexturePBR &&
+if (material->GetMaterialType() == Material::MaterialType::VirtualTexturePBR &&
                     renderInfo.pageTableTexture && renderInfo.atlasTexture)
                 {
                     // VT 材质：绑定 page table + atlas 替代 gDiffuseMap
@@ -403,8 +403,10 @@ void MeshDrawUtil::DrawMeshBasePass(const Mesh& mesh, const RenderInfo& renderIn
                     renderEncoder->SetFragmentTextureAndSampler("atlas", renderInfo.atlasTexture, textureSampler);
                     
                     // VT 常量：pageGrid / tileSize / atlasSize
-                    // （由调用方在 RenderInfo 中或通过 cbVTInfo uniform 提供）
-                    // 暂时使用默认常量，后续从 VT config 读取
+                    if (renderInfo.vtInfoUBO)
+                    {
+                        renderEncoder->SetFragmentUniformBuffer("cbVTInfo", renderInfo.vtInfoUBO);
+                    }
                     
                     // 其余纹理保持常规绑定
                     renderEncoder->SetFragmentTextureAndSampler("gNormalMap", material->GetTexture("normalTexture"), textureSampler);

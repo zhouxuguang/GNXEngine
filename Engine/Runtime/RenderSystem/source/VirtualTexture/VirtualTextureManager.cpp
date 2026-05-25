@@ -30,6 +30,12 @@ void VirtualTextureManager::Initialize(const VirtualTextureConfig& config,
 
     mAtlasTexture = RenderCore::GetRenderDevice()->CreateTexture2D(RenderCore::kTexFormatSRGB8_ALPHA8,
                 RenderCore::TextureUsage::TextureUsageShaderRead, resolved.atlasWidth, resolved.atlasHeight, 1);
+
+    // VT info uniform buffer
+    VTInfoBufferData vtInfoData;
+    vtInfoData.FillFromConfig(resolved);
+    mVTInfoUBO = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(sizeof(VTInfoBufferData));
+    mVTInfoUBO->SetData(&vtInfoData, 0, sizeof(VTInfoBufferData));
 }
 
 void VirtualTextureManager::Tick()

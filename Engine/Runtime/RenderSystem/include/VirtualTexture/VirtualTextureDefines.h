@@ -149,6 +149,24 @@ inline uint64_t EstimateAtlasMemory(const VirtualTextureConfig& cfg)
     return static_cast<uint64_t>(cfg.atlasWidth) * cfg.atlasHeight * 4;
 }
 
+/// CPU 端 VT info uniform buffer 数据，与 shader 中 cbVTInfo 对应
+struct VTInfoBufferData
+{
+    float pageGrid[2];   // 虚拟纹理的 tile 网格数 (virtualSize / pageSize)
+    float tileSize[2];   // 单个 tile 的像素尺寸 (pageSize, pageSize)
+    float atlasSize[2];  // 物理 atlas 的像素尺寸 (atlasWidth, atlasHeight)
+
+    void FillFromConfig(const VirtualTextureConfig& cfg)
+    {
+        pageGrid[0]  = static_cast<float>(cfg.virtualWidth)  / cfg.pageSize;
+        pageGrid[1]  = static_cast<float>(cfg.virtualHeight) / cfg.pageSize;
+        tileSize[0]  = static_cast<float>(cfg.pageSize);
+        tileSize[1]  = static_cast<float>(cfg.pageSize);
+        atlasSize[0] = static_cast<float>(cfg.atlasWidth);
+        atlasSize[1] = static_cast<float>(cfg.atlasHeight);
+    }
+};
+
 NS_RENDERSYSTEM_END
 
 // ──────────────────────────────────────────────
