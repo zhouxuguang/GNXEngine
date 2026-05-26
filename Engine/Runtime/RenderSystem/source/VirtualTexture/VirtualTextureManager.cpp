@@ -43,6 +43,12 @@ void VirtualTextureManager::Initialize(const VirtualTextureConfig& config,
     pointSamplerDesc.filterMin = RenderCore::MIN_NEAREST;
     pointSamplerDesc.filterMip = RenderCore::MIN_NEAREST_MIPMAP_NEAREST;
     mPageTableSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(pointSamplerDesc);
+
+    // VT feedback uniform buffer
+    FeedbackBufferData fbData;
+    fbData.FillFromConfig(resolved, feedbackScale);
+    mFeedbackUBO = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(sizeof(FeedbackBufferData));
+    mFeedbackUBO->SetData(&fbData, 0, sizeof(FeedbackBufferData));
 }
 
 void VirtualTextureManager::Tick()

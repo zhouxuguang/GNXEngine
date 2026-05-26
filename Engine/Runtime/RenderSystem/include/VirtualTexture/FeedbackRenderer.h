@@ -47,6 +47,8 @@ struct FeedbackRenderParams
 
     UniformBufferPtr cameraUBO = nullptr;
 
+    UniformBufferPtr feedbackUBO = nullptr;  // VT feedback uniform（cbVTFeedback）
+
     bool IsValid() const
     {
         return (!staticMeshes.empty() || !terrainItems.empty()) && cameraUBO != nullptr;

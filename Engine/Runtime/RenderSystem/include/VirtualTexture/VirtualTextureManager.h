@@ -66,6 +66,9 @@ public:
     /// VT info uniform buffer（pageGrid / tileSize / atlasSize），供 shader 采样时使用
     UniformBufferPtr GetVTInfoUBO() const { return mVTInfoUBO; }
 
+    /// VT feedback uniform buffer（vtSize / pageGrid / minMaxMipLevel / bufferScreenRatio）
+    UniformBufferPtr GetFeedbackUBO() const { return mFeedbackUBO; }
+
     /// 获取当前配置（只读）。
     const VirtualTextureConfig& GetConfig() const { return mConfig; }
 
@@ -81,6 +84,7 @@ private:
     std::shared_ptr<IVirtualTextureDataSource> mDataSource;
     RCTexture2DPtr mAtlasTexture;
     UniformBufferPtr mVTInfoUBO;
+    UniformBufferPtr mFeedbackUBO;
     TextureSamplerPtr mPageTableSampler;
 
     std::vector<PageLoadRequest> mPendingLoads;      //当前请求的结果

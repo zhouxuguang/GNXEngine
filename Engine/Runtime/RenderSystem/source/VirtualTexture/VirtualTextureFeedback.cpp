@@ -44,8 +44,8 @@ FeedbackResult VirtualTextureFeedback::ReadbackAndDecode()
 
     RenderCore::RenderDevicePtr device = RenderCore::GetRenderDevice();
 
-// Step 1: GPU Copy: Texture → Staging Buffer
-    CommandQueuePtr queue = device->GetCommandQueue(QueueType::Transfer, 0);
+    // Step 1: GPU Copy: Texture → Staging Buffer
+    CommandQueuePtr queue = device->GetCommandQueue(QueueType::Graphics, 0);
     CommandBufferPtr cmdBuf = queue->CreateCommandBuffer();
     
     // 从 ColorAttachment → TransferSrc（准备拷贝）

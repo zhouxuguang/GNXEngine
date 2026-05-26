@@ -167,6 +167,28 @@ struct VTInfoBufferData
     }
 };
 
+/// CPU 端 VT feedback uniform buffer 数据，与 shader 中 cbVTFeedback 对应
+struct FeedbackBufferData
+{
+    float vtSize[2];             // 虚拟纹理像素尺寸 (virtualWidth, virtualHeight)
+    float pageGrid[2];           // tile 网格数
+    float minMaxMipLevel[2];     // minMipLevel, maxMipLevel
+    float bufferScreenRatio;     // feedback 缓冲相对于主视口的缩放比例
+    float pad;                   // 对齐填充
+
+    void FillFromConfig(const VirtualTextureConfig& cfg, uint32_t feedbackScale)
+    {
+        vtSize[0]         = static_cast<float>(cfg.virtualWidth);
+        vtSize[1]         = static_cast<float>(cfg.virtualHeight);
+        pageGrid[0]       = static_cast<float>(cfg.virtualWidth)  / cfg.pageSize;
+        pageGrid[1]       = static_cast<float>(cfg.virtualHeight) / cfg.pageSize;
+        minMaxMipLevel[0] = 0.0f;
+        minMaxMipLevel[1] = static_cast<float>(cfg.mipLevels > 0 ? cfg.mipLevels - 1 : 0);
+        bufferScreenRatio = 1.0f / static_cast<float>(feedbackScale);
+        pad               = 0.0f;
+    }
+};
+
 NS_RENDERSYSTEM_END
 
 // ──────────────────────────────────────────────

@@ -289,6 +289,12 @@ void MeshDrawUtil::DrawMeshFeedback(const Mesh& mesh, const RenderInfo& renderIn
 
         renderEncoder->SetFragmentUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
 
+        // VT feedback uniform
+        if (renderInfo.feedbackUBO)
+        {
+            renderEncoder->SetFragmentUniformBuffer("cbVTFeedback", renderInfo.feedbackUBO);
+        }
+
         // 绑定 Position + TexCoord0（feedback shader 需要 UV 算 page）
         renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelPosition].offset, 0);
         renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTexCoord0].offset, 1);
@@ -324,6 +330,12 @@ void MeshDrawUtil::DrawSkinnedMeshFeedback(const SkinnedMesh& mesh, const Render
         renderEncoder->SetVertexUniformBuffer("cbPerObject", renderInfo.objectUBO);
 
         renderEncoder->SetFragmentUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+
+        // VT feedback uniform
+        if (renderInfo.feedbackUBO)
+        {
+            renderEncoder->SetFragmentUniformBuffer("cbVTFeedback", renderInfo.feedbackUBO);
+        }
 
         if (hasBoneData && renderInfo.skinnedMatrixUBO)
         {

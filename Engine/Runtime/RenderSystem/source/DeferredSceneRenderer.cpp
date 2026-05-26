@@ -275,6 +275,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
             fbParams.height = fbHeight;
             fbParams.staticMeshes = feedbackMeshItems;
             fbParams.cameraUBO = cameraUBO;
+            fbParams.feedbackUBO = vtManager->GetFeedbackUBO();
 
             RenderFeedbackPass(frameGraph, commandBuffer, fbParams,
                                vtManager->GetFeedbackTarget(),

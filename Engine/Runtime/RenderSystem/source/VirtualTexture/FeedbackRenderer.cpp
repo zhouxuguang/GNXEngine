@@ -150,6 +150,7 @@ FrameGraphResource FeedbackRenderer::Render(
                     renderInfo.renderEncoder = renderEncoder;
                     renderInfo.cameraUBO = data.cameraUBO;
                     renderInfo.objectUBO = meshItem.objectUBO;
+                    renderInfo.feedbackUBO = params.feedbackUBO;
 
                     MeshDrawUtil::DrawMeshFeedback(*meshItem.mesh, renderInfo, mFeedbackPipeline);
                 }
