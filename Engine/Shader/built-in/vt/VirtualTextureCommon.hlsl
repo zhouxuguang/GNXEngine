@@ -1,9 +1,9 @@
 #ifndef VIRTUAL_TEXTURE_COMMON_HLSL
 #define VIRTUAL_TEXTURE_COMMON_HLSL
 
-const uint VALID_BIT = 1u << 31;
-const uint MIP_MASK  = 0x1Fu;
-const uint PAGE_MASK = 0xFFu;
+static const uint VALID_BIT = 1u << 31;
+static const uint MIP_MASK  = 0x1Fu;
+static const uint PAGE_MASK = 0xFFu;
 
 uint PackPageData(in uint mip, in uint page_x, in uint page_y) 
 {
