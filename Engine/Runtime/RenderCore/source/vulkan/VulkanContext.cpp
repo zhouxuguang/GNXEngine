@@ -445,6 +445,15 @@ bool CreateVirtualDevice(VulkanContext& context)
         AppendToPNextChain(deviceCreateNextChain, &meshShaderFeaturesEXT);
     }
 
+    VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures = {};
+    if (context.vulkanExtension.enableTimelineSemaphore)
+    {
+        deviceExtensionNames.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+        timelineSemaphoreFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+        timelineSemaphoreFeatures.timelineSemaphore = VK_TRUE;
+        AppendToPNextChain(deviceCreateNextChain, &timelineSemaphoreFeatures);
+    }
+
     // NVIDIA Nsight Aftermath 诊断配置
     VkDeviceDiagnosticsConfigCreateInfoNV diagnosticsConfigCreateInfo = {};
 #ifdef ENABLE_NSIGHT_AFTERMATH

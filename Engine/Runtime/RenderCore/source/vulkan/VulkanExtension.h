@@ -54,6 +54,9 @@ struct VulkanExtension
     // Vulkan 1.1:  需启用 VK_EXT_shader_subgroup_ballot 等扩展
     bool shaderSubgroupFullSupported = false;
 
+    // 时间线信号量
+    bool enableTimelineSemaphore = false;
+
     std::vector<VkExtensionProperties> mDeviceExtensions;
     
     void Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties physicalDeviceProperties);

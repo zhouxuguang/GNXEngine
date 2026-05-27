@@ -111,6 +111,24 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
         }
     }
 
+    // 查询时间线信号量的支持
+    enableTimelineSemaphore = ExtensionSupported(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    if (enableTimelineSemaphore)
+    {
+        VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures = {};
+        timelineSemaphoreFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
+        timelineSemaphoreFeatures.pNext = nullptr;
+
+        VkPhysicalDeviceFeatures2 features2 = {};
+        features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        features2.pNext = &timelineSemaphoreFeatures;
+
+        vkGetPhysicalDeviceFeatures2(physicalDevice, &features2);
+
+        enableTimelineSemaphore = timelineSemaphoreFeatures.timelineSemaphore == VK_TRUE;
+    }
+    
+
 #ifdef ENABLE_NSIGHT_AFTERMATH
     // NVIDIA Nsight Aftermath 扩展检测（仅 NVIDIA GPU 支持）
     if (physicalDeviceProperties.vendorID == 0x10DE) // NVIDIA
