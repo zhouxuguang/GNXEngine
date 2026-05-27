@@ -57,7 +57,7 @@ void VirtualTextureManager::Tick()
 
     FeedbackResult feedback = mFeedback->ReadbackAndDecode();
 
-    return;
+    //return;
     DispatchLoadRequests(feedback);
 
     mPageTable->SyncToGPU();

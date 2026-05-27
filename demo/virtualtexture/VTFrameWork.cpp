@@ -52,13 +52,13 @@ void VTFrameWork::Initlize()
     vtConfig.virtualWidth    = 4096;
     vtConfig.virtualHeight   = 4096;
     vtConfig.pageSize        = 512;
-    vtConfig.pageBorder      = 4;
+    vtConfig.pageBorder      = 2;
     vtConfig.atlasSlotsX     = 8;
     vtConfig.atlasSlotsY     = 8;
     vtConfig.pinnedMipLevels = 2;
     vtConfig.uploadsPerFrame = 4;
 
-    auto fileSource = std::make_shared<FileVirtualTextureDataSource>("vt/pages");
+    auto fileSource = std::make_shared<FileVirtualTextureDataSource>("vt/pages", "png");
     mathutil::Vector2i viewSize(1280, 720);
     mVTIndex = sceneManager->AddVTManager(vtConfig, fileSource, viewSize, 16);
 

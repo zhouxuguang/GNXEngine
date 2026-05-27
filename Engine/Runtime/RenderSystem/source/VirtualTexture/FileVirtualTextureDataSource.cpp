@@ -23,10 +23,11 @@ FileVirtualTextureDataSource::FileVirtualTextureDataSource(std::string basePath,
 std::string FileVirtualTextureDataSource::BuildTilePath(const PageRequest& page) const
 {
     // 格式：{basePath}/mip{mipLevel}/{pageX}_{pageY}.{ext}
+    //std::format("assets/pages/{}_{}_{}.png", request.lod, request.x, request.y)
     std::string path = mBasePath;
     path += "mip";
     path += std::to_string(page.mipLevel);
-    path += '/';
+    path += '_';
     path += std::to_string(page.pageX);
     path += '_';
     path += std::to_string(page.pageY);
