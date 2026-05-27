@@ -127,6 +127,8 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
 
         enableTimelineSemaphore = timelineSemaphoreFeatures.timelineSemaphore == VK_TRUE;
     }
+
+    enableSynchronization2 = ExtensionSupported(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     
 
 #ifdef ENABLE_NSIGHT_AFTERMATH

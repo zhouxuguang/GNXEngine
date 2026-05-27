@@ -57,6 +57,9 @@ struct VulkanExtension
     // 时间线信号量
     bool enableTimelineSemaphore = false;
 
+    // 同步2扩展
+    bool enableSynchronization2 = false;
+
     std::vector<VkExtensionProperties> mDeviceExtensions;
     
     void Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties physicalDeviceProperties);
