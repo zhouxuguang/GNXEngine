@@ -69,8 +69,6 @@ struct VulkanExtension
 
 private:
     void InitExtendedDynamicState(VkPhysicalDevice physicalDevice);
-    
-    bool ExtensionSupported(const char* name);
 
 private:
     VkPhysicalDeviceProperties mPhysicalDeviceProperties;

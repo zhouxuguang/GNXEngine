@@ -14,15 +14,15 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
     mPhysicalDeviceProperties = physicalDeviceProperties;
 	InitExtendedDynamicState(physicalDevice);
 
-	enabledDynamicRendering = ExtensionSupported(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-    enablePortabilitySubset = ExtensionSupported(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    enablePushDesDescriptor = ExtensionSupported(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
-    enableDescriptorUpdateTemplate = ExtensionSupported(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
+	enabledDynamicRendering = IsExtensionSupported(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+    enablePortabilitySubset = IsExtensionSupported(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+    enablePushDesDescriptor = IsExtensionSupported(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    enableDescriptorUpdateTemplate = IsExtensionSupported(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
 
     // host image copy关联的扩展
-    enableFormatFeatureFlags2 = ExtensionSupported(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
-    enableCopyCommands2 = ExtensionSupported(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
-    enableHostImageCopy = ExtensionSupported(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME) &&
+    enableFormatFeatureFlags2 = IsExtensionSupported(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
+    enableCopyCommands2 = IsExtensionSupported(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
+    enableHostImageCopy = IsExtensionSupported(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME) &&
         enableFormatFeatureFlags2 && enableCopyCommands2;
 
     // NVIDIA 驱动的 VK_EXT_host_image_copy 实现与 RenderDoc Layer 存在兼容性问题，
@@ -77,15 +77,15 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
         shaderSubgroupFullSupported = (subgroupProps.supportedOperations & REQUIRED_SUBGROUP_OPS) == REQUIRED_SUBGROUP_OPS;
     }
 
-    enableDeviceFault = ExtensionSupported(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
+    enableDeviceFault = IsExtensionSupported(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
     
     // Mesh Shader 的依赖扩展检测
-    enableShaderFloatControls = ExtensionSupported(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
-    enableSpirv14 = ExtensionSupported(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
+    enableShaderFloatControls = IsExtensionSupported(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
+    enableSpirv14 = IsExtensionSupported(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
 
     // Mesh Shader 扩展检测（仅使用标准的 EXT 扩展，与 Metal 等其他图形 API 通用）
     // 需要 VK_KHR_spirv_1_4 和 VK_KHR_shader_float_controls 作为依赖
-    enableMeshShaderEXT = ExtensionSupported(VK_EXT_MESH_SHADER_EXTENSION_NAME) &&
+    enableMeshShaderEXT = IsExtensionSupported(VK_EXT_MESH_SHADER_EXTENSION_NAME) &&
                           enableSpirv14 && enableShaderFloatControls;
 
     // 查询 Mesh Shader 实际 feature 支持情况
@@ -112,7 +112,7 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
     }
 
     // 查询时间线信号量的支持
-    enableTimelineSemaphore = ExtensionSupported(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+    enableTimelineSemaphore = IsExtensionSupported(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
     if (enableTimelineSemaphore)
     {
         VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures = {};
@@ -128,15 +128,15 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
         enableTimelineSemaphore = timelineSemaphoreFeatures.timelineSemaphore == VK_TRUE;
     }
 
-    enableSynchronization2 = ExtensionSupported(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    enableSynchronization2 = IsExtensionSupported(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     
 
 #ifdef ENABLE_NSIGHT_AFTERMATH
     // NVIDIA Nsight Aftermath 扩展检测（仅 NVIDIA GPU 支持）
     if (physicalDeviceProperties.vendorID == 0x10DE) // NVIDIA
     {
-        enableDiagnosticCheckpoints = ExtensionSupported(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
-        enableDiagnosticsConfig = ExtensionSupported(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME);
+        enableDiagnosticCheckpoints = IsExtensionSupported(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+        enableDiagnosticsConfig = IsExtensionSupported(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME);
     }
 #endif
 
@@ -163,30 +163,16 @@ void VulkanExtension::InitExtendedDynamicState(VkPhysicalDevice physicalDevice)
     
     // Check what dynamic states are supported by the current implementation
     // Checking for available features is probably sufficient, but retained redundant extension checks for clarity and consistency
-    enabledExtendedDynamicState = ExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) && 
+    enabledExtendedDynamicState = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) && 
         extendedDynamicStateFeaturesEXT.extendedDynamicState;
-    enabledExtendedDynamicState2 = ExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME) && 
+    enabledExtendedDynamicState2 = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME) && 
         extendedDynamicState2FeaturesEXT.extendedDynamicState2;
-    enabledExtendedDynamicState3 = ExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME) && 
+    enabledExtendedDynamicState3 = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME) && 
         extendedDynamicState3FeaturesEXT.extendedDynamicState3ColorBlendEnable && 
         extendedDynamicState3FeaturesEXT.extendedDynamicState3ColorBlendEquation;
 }
 
 bool VulkanExtension::IsExtensionSupported(const char* name) const
-{
-    uint32_t count = (uint32_t)mDeviceExtensions.size();
-    for (uint32_t k = 0; k < count; ++k)
-    {
-        if (!strcmp(mDeviceExtensions[k].extensionName, name))
-        {
-            return true;
-        }
-    }
-    
-    return false;
-}
-
-bool VulkanExtension::ExtensionSupported(const char* name)
 {
     uint32_t count = (uint32_t)mDeviceExtensions.size();
     for (uint32_t k = 0; k < count; ++k)
