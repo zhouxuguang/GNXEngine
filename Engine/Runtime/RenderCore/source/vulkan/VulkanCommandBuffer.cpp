@@ -287,17 +287,37 @@ void VulkanCommandBuffer::PresentFrameBuffer()
     
     // 信号图形完成
     VkSemaphore signalSemaphores[] = {mCommandInfo->renderFinishSemaphore};
-    
+
+    // 时间线信号量（GPU 进度追踪，用于垃圾收集）
+    VkSemaphore timelineSem = mCommandInfo->vulkanContext->timelineSemaphore;
+    uint64_t timelineValue = 0;
+    uint64_t signalValues[2] = {};  // [0]=binary(0), [1]=timeline
+    VkTimelineSemaphoreSubmitInfo timelineSubmitInfo = {};
+    std::vector<VkSemaphore> allSignalSemaphores;
+
+    if (timelineSem != VK_NULL_HANDLE)
+    {
+        timelineValue = mCommandInfo->vulkanContext->garbageCollector->GetCurrentFrame() + 1;
+        signalValues[0] = 0;                    // binary semaphore: 必须填 0
+        signalValues[1] = timelineValue;        // timeline semaphore: 递增值
+        timelineSubmitInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+        timelineSubmitInfo.signalSemaphoreValueCount = 2;
+        timelineSubmitInfo.pSignalSemaphoreValues = signalValues;
+
+        allSignalSemaphores.push_back(mCommandInfo->renderFinishSemaphore);
+        allSignalSemaphores.push_back(timelineSem);
+    }
+
     VkSubmitInfo submitInfo = {};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.pNext = nullptr;
+    submitInfo.pNext = (timelineSem != VK_NULL_HANDLE) ? &timelineSubmitInfo : nullptr;
     submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
     submitInfo.pWaitSemaphores = waitSemaphores.data();
     submitInfo.pWaitDstStageMask = waitStages.data();
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &mCommandBuffer;
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
+    submitInfo.signalSemaphoreCount = (timelineSem != VK_NULL_HANDLE) ? (uint32_t)allSignalSemaphores.size() : 1;
+    submitInfo.pSignalSemaphores = (timelineSem != VK_NULL_HANDLE) ? allSignalSemaphores.data() : signalSemaphores;
 
     res = vkQueueSubmit(mCommandInfo->vulkanContext->graphicsQueue, 1, &submitInfo, mCommandInfo->flightFence);
     

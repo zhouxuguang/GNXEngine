@@ -87,6 +87,10 @@ struct VulkanContext
 
     // 异步计算同步信号量
     VkSemaphore asyncComputeSemaphore = VK_NULL_HANDLE;  // 图形和计算队列间的同步信号量
+
+    // 时间线信号量（GPU 进度追踪，用于垃圾收集）
+    VkSemaphore timelineSemaphore = VK_NULL_HANDLE;
+    uint64_t GetTimelineValue() const;
 };
 
 using VulkanContextPtr = std::shared_ptr<VulkanContext>;

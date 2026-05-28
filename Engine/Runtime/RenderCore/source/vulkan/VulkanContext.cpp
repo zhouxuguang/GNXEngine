@@ -1290,4 +1290,13 @@ void ChoosePhysicalDevice(
 	vkGetPhysicalDeviceProperties2(*physicalDeviceOut, physicalDeviceProperties2Out);
 }
 
+uint64_t VulkanContext::GetTimelineValue() const
+{
+    if (timelineSemaphore == VK_NULL_HANDLE || device == VK_NULL_HANDLE)
+        return UINT64_MAX;
+    uint64_t value = 0;
+    vkGetSemaphoreCounterValue(device, timelineSemaphore, &value);
+    return value;
+}
+
 NAMESPACE_RENDERCORE_END

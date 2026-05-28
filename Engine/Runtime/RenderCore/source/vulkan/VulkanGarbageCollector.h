@@ -149,6 +149,9 @@ private:
     void CleanupFramebuffers();
     void CleanupPipelines();
 
+    // 获取 GPU 实际进度（timeline semaphore → 实际完成值；不可用时回退到 CPU 帧计数器）
+    uint64_t GetGPUProgress() const;
+
     VulkanContextPtr mContext;
     uint64_t mCurrentFrame = 0;
 

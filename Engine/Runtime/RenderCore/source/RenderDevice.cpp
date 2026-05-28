@@ -106,4 +106,13 @@ RenderDevicePtr GetRenderDevice()
     return renderDevicePtr;
 }
 
+void DestroyRenderDevice()
+{
+    if (renderDevicePtr)
+    {
+        renderDevicePtr->FlushPipelineCache();
+    }
+    renderDevicePtr = nullptr;
+}
+
 NAMESPACE_RENDERCORE_END

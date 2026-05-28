@@ -251,6 +251,8 @@ VKRenderDevice::~VKRenderDevice()
 
     // Save pipeline cache to disk before destroying the device
     SaveAndDestroyPipelineCache(*mVulkanContext);
+
+    mVulkanContext->garbageCollector->Cleanup();
     
     // 销毁异步计算信号量
     if (mVulkanContext->asyncComputeSemaphore != VK_NULL_HANDLE)
@@ -646,6 +648,21 @@ void VKRenderDevice::CreateSyncObject()
         vkCreateSemaphore(mVulkanContext->device, &semaphoreCreateInfo, nullptr, &mRenderFinishedSemaphores[i]);
         vkCreateFence(mVulkanContext->device, &fenceCreateInfo, nullptr, &mFlightFences[i]);
     }
+
+    // 创建时间线信号量（GPU进度追踪，timeline特性可用时创建）
+    if (mVulkanContext->vulkanExtension.enableTimelineSemaphore)
+    {
+        VkSemaphoreTypeCreateInfo timelineInfo = {};
+        timelineInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
+        timelineInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
+        timelineInfo.initialValue = 0;
+
+        VkSemaphoreCreateInfo semaphoreInfo = {};
+        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        semaphoreInfo.pNext = &timelineInfo;
+
+        vkCreateSemaphore(mVulkanContext->device, &semaphoreInfo, nullptr, &mVulkanContext->timelineSemaphore);
+    }
 }
 
 void VKRenderDevice::DestroySyncObject()
@@ -662,6 +679,13 @@ void VKRenderDevice::DestroySyncObject()
     mImageAvailableSemaphores.clear();
     mRenderFinishedSemaphores.clear();
     mFlightFences.clear();
+
+    // 销毁时间线信号量
+    if (mVulkanContext->timelineSemaphore != VK_NULL_HANDLE)
+    {
+        vkDestroySemaphore(mVulkanContext->device, mVulkanContext->timelineSemaphore, nullptr);
+        mVulkanContext->timelineSemaphore = VK_NULL_HANDLE;
+    }
 }
 
 void VKRenderDevice::CreateCommandBufers(VkDevice device, size_t nImageCount, VkCommandPool commandPool)

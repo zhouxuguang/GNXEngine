@@ -245,6 +245,9 @@ RENDERCORE_API RenderDevicePtr CreateRenderDevice(RenderDeviceType deviceType, V
 
 RENDERCORE_API RenderDevicePtr GetRenderDevice();
 
+/// 销毁渲染设备（释放 static shared_ptr，触发析构）
+RENDERCORE_API void DestroyRenderDevice();
+
 NAMESPACE_RENDERCORE_END
 
 #endif /* GNX_ENGINE_RENDER_DEVICE_INCLUSDGG */

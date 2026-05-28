@@ -31,11 +31,11 @@ void AppFrameWork::RunLoop()
 
     // Flush pipeline cache to disk before RenderWindow is destroyed
     // (VKRenderDevice's destructor may not be called in time due to static shared_ptr)
-    RenderCore::RenderDevicePtr renderDevice = RenderCore::GetRenderDevice();
-    if (renderDevice)
-    {
-        renderDevice->FlushPipelineCache();
-    }
+    RenderCore::DestroyRenderDevice();
+
+    // 释放持有 RenderDevice 引用的对象，确保 VKRenderDevice refcount 归零
+    mRenderWindow.reset();
+    gRenderWindow.reset();
 }
 
 void AppFrameWork::Initlize()

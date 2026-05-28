@@ -16,6 +16,14 @@ VulkanGarbageCollector::VulkanGarbageCollector(VulkanContextPtr context)
 {
 }
 
+uint64_t VulkanGarbageCollector::GetGPUProgress() const
+{
+    uint64_t timelineValue = mContext->GetTimelineValue();
+    if (timelineValue != UINT64_MAX)
+        return timelineValue;
+    return mCurrentFrame;
+}
+
 VulkanGarbageCollector::~VulkanGarbageCollector()
 {
     ForceCleanupAll();
@@ -233,7 +241,7 @@ void VulkanGarbageCollector::CleanupBuffers()
     {
         const auto& pending = mPendingBuffers.front();
 
-        if (pending.safeToDestroyFrame > mCurrentFrame)
+        if (pending.safeToDestroyFrame > GetGPUProgress())
         {
             // 还有资源未到期，停止清理
             break;
@@ -262,10 +270,12 @@ void VulkanGarbageCollector::CleanupImages()
     {
         const auto& pending = mPendingImages.front();
 
-        if (pending.safeToDestroyFrame > mCurrentFrame)
+        if (pending.safeToDestroyFrame > GetGPUProgress())
         {
             break;
         }
+
+        printf("FUCK");
 
         if (pending.image != VK_NULL_HANDLE)
         {
@@ -289,7 +299,7 @@ void VulkanGarbageCollector::CleanupImageViews()
     {
         const auto& pending = mPendingImageViews.front();
 
-        if (pending.safeToDestroyFrame > mCurrentFrame)
+        if (pending.safeToDestroyFrame > GetGPUProgress())
         {
             break;
         }
@@ -316,7 +326,7 @@ void VulkanGarbageCollector::CleanupSamplers()
     {
         const auto& pending = mPendingSamplers.front();
 
-        if (pending.safeToDestroyFrame > mCurrentFrame)
+        if (pending.safeToDestroyFrame > GetGPUProgress())
         {
             break;
         }
@@ -343,7 +353,7 @@ void VulkanGarbageCollector::CleanupFramebuffers()
     {
         const auto& pending = mPendingFramebuffers.front();
 
-        if (pending.safeToDestroyFrame > mCurrentFrame)
+        if (pending.safeToDestroyFrame > GetGPUProgress())
         {
             break;
         }
@@ -370,7 +380,7 @@ void VulkanGarbageCollector::CleanupPipelines()
     {
         const auto& pending = mPendingPipelines.front();
 
-        if (pending.safeToDestroyFrame > mCurrentFrame)
+        if (pending.safeToDestroyFrame > GetGPUProgress())
         {
             break;
         }
