@@ -245,6 +245,13 @@ VkResult VulkanBufferUtil::CreateImageGeneral(VmaAllocator vmaAllocator,
     imageAllocCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
     imageAllocCreateInfo.preferredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     
+    // MoltenVK/macOS 上深度格式图像的 vkGetImageMemoryRequirements2 可能返回
+    // memoryTypeBits=0，强制专用分配作为 workaround
+    if (IsDepthStencilFormat(imageCreateInfo.format))
+    {
+        imageAllocCreateInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
+    }
+    
     return vmaCreateImage(vmaAllocator, &imageCreateInfo, &imageAllocCreateInfo, &image, &allocation, nullptr);
 }
 

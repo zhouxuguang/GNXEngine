@@ -140,9 +140,11 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
     VkImageCreateInfo imageCreateInfoCopy = imageCreateInfo;
     if (VulkanBufferUtil::IsDepthStencilFormat(imageCreateInfo.format))
     {
-        // pCreateInfo->format VK_FORMAT_D32_SFLOAT_S8_UINT with tiling VK_IMAGE_TILING_OPTIMAL doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT.
+        // pCreateInfo->format VK_FORMAT_D32_SFLOAT_S8_UINT with tiling VK_IMAGE_TILING_OPTIMAL
+        // doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT.
+        // Metal/MoltenVK also doesn't support TRANSFER_SRC for depth formats.
         extraImageUsageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        imageCreateInfoCopy.usage &= ~VK_IMAGE_USAGE_STORAGE_BIT;
+        imageCreateInfoCopy.usage &= ~(VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
     }
     
     // 新的layout有VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL，就必须有VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT标记
