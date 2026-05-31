@@ -420,27 +420,6 @@ void VKBlitEncoder::GenerateMipmapsForRange(RCTexturePtr texture,
     GenerateMipmaps(texture, slice);
 }
 
-// ==================== Barrier操作 ====================
-
-void VKBlitEncoder::MemoryBarrier()
-{
-    if (!mContext || !mCommandBuffer)
-    {
-        return;
-    }
-    
-    // 创建内存屏障，确保之前的所有操作都已完成
-    VkMemoryBarrier barrier = {};
-    barrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_SHADER_READ_BIT;
-    
-    vkCmdPipelineBarrier(mCommandBuffer,
-                       VK_PIPELINE_STAGE_TRANSFER_BIT,
-                       VK_PIPELINE_STAGE_TRANSFER_BIT | VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
-                       0, 1, &barrier, 0, nullptr, 0, nullptr);
-}
-
 // ==================== 编码结束 ====================
 
 void VKBlitEncoder::EndEncode()

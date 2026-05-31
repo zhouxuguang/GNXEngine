@@ -124,10 +124,6 @@ public:
                                          uint32_t baseMipLevel,
                                          uint32_t levelCount) override;
     
-    // ==================== Barrier操作 ====================
-    
-    virtual void MemoryBarrier() override;
-    
     /**
      * @brief 结束Blit编码
      */

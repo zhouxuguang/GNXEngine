@@ -202,13 +202,6 @@ public:
                                          uint32_t baseMipLevel,
                                          uint32_t levelCount) = 0;
     
-    // ==================== Barrier操作 ====================
-    
-    /**
-     * @brief 添加内存屏障，确保之前的操作完成
-     */
-    virtual void MemoryBarrier() = 0;
-    
     /**
      * @brief 结束Blit编码
      */

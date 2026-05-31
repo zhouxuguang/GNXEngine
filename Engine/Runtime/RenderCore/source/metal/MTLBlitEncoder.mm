@@ -374,22 +374,6 @@ void MTLBlitEncoder::GenerateMipmapsForRange(RCTexturePtr texture,
     GenerateMipmaps(texture, slice);
 }
 
-// ==================== Barrier操作 ====================
-
-void MTLBlitEncoder::MemoryBarrier()
-{
-    // Metal使用栅栏(barrier)来确保内存访问同步
-    // 对于Blit操作，通常不需要显式的内存屏障
-    // 但在某些情况下可能需要使用synchronizeResource
-    if (!mBlitEncoder)
-    {
-        return;
-    }
-    
-    // Metal的BlitCommandEncoder不需要显式的内存屏障
-    // 资源依赖关系会自动处理
-}
-
 // ==================== 编码结束 ====================
 
 void MTLBlitEncoder::EndEncode()
