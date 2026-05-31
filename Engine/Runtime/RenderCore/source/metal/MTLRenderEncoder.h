@@ -179,6 +179,15 @@ private:
     
     FrameBufferFormat mFrameBufferFormat;
     MTLGraphicsPipelinePtr mMtlGraphicsPipeline = nil;
+
+    // Metal Fence 回调：EndEncode 时由 CommandBuffer 设置，用于冲刷 fence 更新
+    mutable std::function<void(id<MTLRenderCommandEncoder>)> mFenceCallback = nullptr;
+
+public:
+    void SetFenceCallback(std::function<void(id<MTLRenderCommandEncoder>)> cb) const
+    {
+        mFenceCallback = std::move(cb);
+    }
 };
 
 NAMESPACE_RENDERCORE_END

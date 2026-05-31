@@ -24,11 +24,20 @@ MTLRenderEncoder::MTLRenderEncoder(id<MTLRenderCommandEncoder> renderEncoder, co
 
 MTLRenderEncoder::~MTLRenderEncoder()
 {
-    //
+    if (mRenderEncoder && mFenceCallback)
+    {
+        mFenceCallback(mRenderEncoder);
+        mFenceCallback = nullptr;
+    }
 }
 
 void MTLRenderEncoder::EndEncode()
 {
+    if (mRenderEncoder && mFenceCallback)
+    {
+        mFenceCallback(mRenderEncoder);
+        mFenceCallback = nullptr;
+    }
     [mRenderEncoder endEncoding];
 }
 

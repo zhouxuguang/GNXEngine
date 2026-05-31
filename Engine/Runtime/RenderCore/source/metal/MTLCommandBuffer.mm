@@ -10,6 +10,7 @@
 #include "MTLComputeEncoder.h"
 #include "MTLBlitEncoder.h"
 #include "MTLTextureBase.h"
+#include "MTLRCBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -65,13 +66,18 @@ MTLCommandBuffer::MTLCommandBuffer(id<MTLCommandQueue> commandQueue, CAMetalLaye
         mMetalLayer = metalLayer;
         mCommandBuffer = [commandQueue commandBuffer];
         mDepthTexture = depthTexture;
-        mStencilTexture = stencilTexture;
+        mStencilTexture = depthStencilTexture;
         mDepthStencilTexture = depthStencilTexture;
+        mMetalDevice = [commandQueue device];
     }
 }
 
 MTLCommandBuffer::~MTLCommandBuffer()
 {
+    @autoreleasepool
+    {
+        mFenceMap.clear();
+    }
 }
 
 //创建默认的encoder，也就是屏幕渲染的encoder
@@ -114,7 +120,12 @@ RenderEncoderPtr MTLCommandBuffer::CreateDefaultRenderEncoder() const
         frameBufferFormat.depthFormat = mDepthStencilTexture.pixelFormat;
         frameBufferFormat.stencilFormat = mDepthStencilTexture.pixelFormat;
         
-        return std::make_shared<MTLRenderEncoder>(commandEncoder, frameBufferFormat);
+        auto encoder = std::make_shared<MTLRenderEncoder>(commandEncoder, frameBufferFormat);
+        encoder->SetFenceCallback([this](id<MTLRenderCommandEncoder> enc) 
+        {
+            this->OnEncoderEnding(enc);
+        });
+        return encoder;
     }
 }
 
@@ -228,8 +239,14 @@ RenderEncoderPtr MTLCommandBuffer::CreateRenderEncoder(const RenderPass& renderP
         viewport.znear = 0;
         viewport.zfar = 1;
         [commandEncoder setViewport:viewport];
-        
-        return std::make_shared<MTLRenderEncoder>(commandEncoder, frameBufferFormat);
+
+        // 创建 encoder + 绑定 fence 回调
+        auto encoder = std::make_shared<MTLRenderEncoder>(commandEncoder, frameBufferFormat);
+        encoder->SetFenceCallback([this](id<MTLRenderCommandEncoder> enc) 
+        {
+            this->OnEncoderEnding(enc);
+        });
+        return encoder;
     }
 }
 
@@ -301,14 +318,116 @@ void MTLCommandBuffer::EndDebugGroup()
 
 void MTLCommandBuffer::ResourceBarrier(RCTexturePtr texture, ResourceAccessType accessType)
 {
-    // Metal automatically handles most resource synchronization
-    // Explicit barriers are rarely needed for Metal
+    if (!texture)
+        return;
+
+    // 判断本次访问是读还是写
+    bool isWrite = ((accessType & ResourceAccessType::ColorAttachment) != static_cast<ResourceAccessType>(0)) ||
+                   ((accessType & ResourceAccessType::DepthStencilAttachment) != static_cast<ResourceAccessType>(0)) ||
+                   ((accessType & ResourceAccessType::ComputeShaderWrite) != static_cast<ResourceAccessType>(0)) ||
+                   ((accessType & ResourceAccessType::TransferDst) != static_cast<ResourceAccessType>(0));
+
+    uint64_t resId = reinterpret_cast<uint64_t>(texture.get());
+    FenceOp op;
+    op.resourceId = resId;
+    op.stage = AccessTypeToStage(accessType);
+    op.type = isWrite ? FenceOp::Update : FenceOp::Wait;
+
+    mPendingFenceOps.push_back(op);
+    mFenceOpsDirty = true;
 }
 
 void MTLCommandBuffer::ResourceBarrier(RCBufferPtr buffer, ResourceAccessType accessType)
 {
-    // Metal automatically handles most resource synchronization
-    // Explicit barriers are rarely needed for Metal
+    if (!buffer)
+        return;
+
+    bool isWrite = ((accessType & ResourceAccessType::ComputeShaderWrite) != static_cast<ResourceAccessType>(0)) ||
+                   ((accessType & ResourceAccessType::TransferDst) != static_cast<ResourceAccessType>(0));
+
+    uint64_t resId = reinterpret_cast<uint64_t>(buffer.get());
+    FenceOp op;
+    op.resourceId = resId;
+    op.stage = AccessTypeToStage(accessType);
+    op.type = isWrite ? FenceOp::Update : FenceOp::Wait;
+
+    mPendingFenceOps.push_back(op);
+    mFenceOpsDirty = true;
+}
+
+// ...........................................................................
+// Metal Fence 管理
+// ...........................................................................
+
+id<MTLFence> MTLCommandBuffer::GetOrCreateFence(uint64_t resourceId) const
+{
+    auto it = mFenceMap.find(resourceId);
+    if (it != mFenceMap.end())
+    {
+        return it->second;
+    }
+    id<MTLFence> fence = [mMetalDevice newFence];
+    mFenceMap[resourceId] = fence;
+    return fence;
+}
+
+MTLRenderStages MTLCommandBuffer::AccessTypeToStage(ResourceAccessType access)
+{
+    if ((access & ResourceAccessType::ColorAttachment) != static_cast<ResourceAccessType>(0))
+        return MTLRenderStageFragment;
+    if ((access & ResourceAccessType::DepthStencilAttachment) != static_cast<ResourceAccessType>(0))
+        return MTLRenderStageFragment;
+    if ((access & ResourceAccessType::ShaderRead) != static_cast<ResourceAccessType>(0))
+        return MTLRenderStageFragment;
+    if ((access & ResourceAccessType::ComputeShaderRead) != static_cast<ResourceAccessType>(0) ||
+        (access & ResourceAccessType::ComputeShaderWrite) != static_cast<ResourceAccessType>(0))
+        return MTLRenderStageVertex | MTLRenderStageFragment;  // compute 是 vertex+fragment 之前的 stage
+    if ((access & ResourceAccessType::TransferSrc) != static_cast<ResourceAccessType>(0) ||
+        (access & ResourceAccessType::TransferDst) != static_cast<ResourceAccessType>(0))
+        return MTLRenderStageVertex | MTLRenderStageFragment;
+    return MTLRenderStageFragment;
+}
+
+void MTLCommandBuffer::OnEncoderEnding(id<MTLRenderCommandEncoder> encoder) const
+{
+    if (!mFenceOpsDirty || mPendingFenceOps.empty())
+        return;
+
+    // 按 resourceId 去重合并
+    std::unordered_map<uint64_t, FenceOp> mergedOps;
+    for (const auto& op : mPendingFenceOps)
+    {
+        mergedOps[op.resourceId] = op;
+    }
+
+    // 处理 Update 操作（合并 → 只需一次 updateFence，stage 取并集）
+    id<MTLFence> updateFence = nil;
+    MTLRenderStages updateStages = 0;
+    for (const auto& pair : mergedOps)
+    {
+        if (pair.second.type == FenceOp::Update)
+        {
+            updateFence = GetOrCreateFence(pair.first);
+            updateStages |= pair.second.stage;
+        }
+    }
+    if (updateFence && updateStages != 0)
+    {
+        [encoder updateFence:updateFence afterStages:updateStages];
+    }
+
+    // 处理 Wait 操作
+    for (const auto& pair : mergedOps)
+    {
+        if (pair.second.type == FenceOp::Wait)
+        {
+            id<MTLFence> waitFence = GetOrCreateFence(pair.first);
+            [encoder waitForFence:waitFence beforeStages:pair.second.stage];
+        }
+    }
+
+    mPendingFenceOps.clear();
+    mFenceOpsDirty = false;
 }
 
 NAMESPACE_RENDERCORE_END
