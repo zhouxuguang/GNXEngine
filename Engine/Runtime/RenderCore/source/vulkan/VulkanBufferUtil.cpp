@@ -56,13 +56,13 @@ void VulkanBufferUtil::EndSingleTimeCommand(VulkanContext& context, VkQueue queu
 bool VulkanBufferUtil::IsDepthStencilFormat(VkFormat format)
 {
     /*
-	* VK_FORMAT_D16_UNORM = 124,
-	VK_FORMAT_X8_D24_UNORM_PACK32 = 125,
-	VK_FORMAT_D32_SFLOAT = 126,
-	VK_FORMAT_S8_UINT = 127,
-	VK_FORMAT_D16_UNORM_S8_UINT = 128,
-	VK_FORMAT_D24_UNORM_S8_UINT = 129,
-	VK_FORMAT_D32_SFLOAT_S8_UINT = 130,
+    * VK_FORMAT_D16_UNORM = 124,
+    VK_FORMAT_X8_D24_UNORM_PACK32 = 125,
+    VK_FORMAT_D32_SFLOAT = 126,
+    VK_FORMAT_S8_UINT = 127,
+    VK_FORMAT_D16_UNORM_S8_UINT = 128,
+    VK_FORMAT_D24_UNORM_S8_UINT = 129,
+    VK_FORMAT_D32_SFLOAT_S8_UINT = 130,
     */
     switch (format)
     {
@@ -661,17 +661,17 @@ case kTexFormatRGBA32Float:
             format = VK_FORMAT_D24_UNORM_S8_UINT;
             break;
 
-		case kTexFormatDepth16:
-			format = VK_FORMAT_D16_UNORM;
-			break;
+        case kTexFormatDepth16:
+            format = VK_FORMAT_D16_UNORM;
+            break;
 
-		case kTexFormatDepth24:
-			format = VK_FORMAT_X8_D24_UNORM_PACK32;
-			break;
+        case kTexFormatDepth24:
+            format = VK_FORMAT_X8_D24_UNORM_PACK32;
+            break;
 
-		case kTexFormatDepth32Float:
-			format = VK_FORMAT_D32_SFLOAT;
-			break;
+        case kTexFormatDepth32Float:
+            format = VK_FORMAT_D32_SFLOAT;
+            break;
 
         case kTexFormatDXT1_RGB:
             format = VK_FORMAT_BC1_RGB_UNORM_BLOCK;
@@ -1226,28 +1226,28 @@ uint32_t VulkanBufferUtil::GetFormatSize(VkFormat format)
 
 VkImageAspectFlags VulkanBufferUtil::GetImageAspectFlags(VkFormat format) 
 {
-	switch (format) 
+    switch (format) 
     {
-		// 纯深度格式
-	    case VK_FORMAT_D16_UNORM:
-	    case VK_FORMAT_D32_SFLOAT:
-	    case VK_FORMAT_X8_D24_UNORM_PACK32:
-		    return VK_IMAGE_ASPECT_DEPTH_BIT;
+        // 纯深度格式
+        case VK_FORMAT_D16_UNORM:
+        case VK_FORMAT_D32_SFLOAT:
+        case VK_FORMAT_X8_D24_UNORM_PACK32:
+            return VK_IMAGE_ASPECT_DEPTH_BIT;
 
-		// 纯模板格式
-	    case VK_FORMAT_S8_UINT:
-		    return VK_IMAGE_ASPECT_STENCIL_BIT;
+        // 纯模板格式
+        case VK_FORMAT_S8_UINT:
+            return VK_IMAGE_ASPECT_STENCIL_BIT;
 
-		// 深度-模板组合格式
-	    case VK_FORMAT_D16_UNORM_S8_UINT:
-	    case VK_FORMAT_D24_UNORM_S8_UINT:
-	    case VK_FORMAT_D32_SFLOAT_S8_UINT:
-		    return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        // 深度-模板组合格式
+        case VK_FORMAT_D16_UNORM_S8_UINT:
+        case VK_FORMAT_D24_UNORM_S8_UINT:
+        case VK_FORMAT_D32_SFLOAT_S8_UINT:
+            return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 
-		// 颜色格式
-		default:
-			return VK_IMAGE_ASPECT_COLOR_BIT;
-	}
+        // 颜色格式
+        default:
+            return VK_IMAGE_ASPECT_COLOR_BIT;
+    }
 
     return VK_IMAGE_ASPECT_COLOR_BIT;
 }
