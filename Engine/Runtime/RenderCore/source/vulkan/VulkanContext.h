@@ -64,6 +64,8 @@ struct VulkanContext
     
     std::vector<const char*> extensionNames;   //设备支持的扩展列表名称
     VulkanExtension vulkanExtension;
+    DeviceExtFeature deviceExtFeatures;    // 设备扩展特性
+    DeviceExtProperties deviceExtProperties;    // 设备扩展属性
 
 #ifdef NDEBUG
 	bool enableValidationLayers = false;

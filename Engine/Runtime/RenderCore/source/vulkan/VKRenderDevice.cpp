@@ -83,7 +83,9 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
 	vkGetPhysicalDeviceFeatures2(mVulkanContext->physicalDevice, &mVulkanContext->features2);
     
     // 初始化扩展信息
-    mVulkanContext->vulkanExtension.Init(mVulkanContext->physicalDevice, mVulkanContext->physicalDeviceProperties);
+    mVulkanContext->deviceExtFeatures.Init(mVulkanContext->physicalDevice);
+    mVulkanContext->deviceExtProperties.Init(mVulkanContext->physicalDevice);
+    mVulkanContext->vulkanExtension.Init(mVulkanContext->physicalDevice, mVulkanContext->physicalDeviceProperties, mVulkanContext->deviceExtFeatures);
 
 #ifdef ENABLE_NSIGHT_AFTERMATH
     // 初始化 Aftermath（必须在创建 Vulkan 设备之前调用）
@@ -131,11 +133,6 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
 
     // 初始化队列管理
     InitializeCommandQueues();
-
-    // 测试以下函数指针是否为空
-    void * p = (void*)vkCmdBeginRenderingKHR;
-    void *p2 = (void*)vkCmdPushDescriptorSetKHR;
-    void* p3 = (void*)vkCmdTraceRaysKHR;
 }
 
 void VKRenderDevice::InitializeFeatures()

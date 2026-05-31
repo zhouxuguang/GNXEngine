@@ -9,6 +9,7 @@
 #define GNX_ENGINE_VK_EXTENSION_FSDJDSGJDFNBGDFJ_INCLUDE
 
 #include "VKRenderDefine.h"
+#include "VulkanFeatures.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -35,7 +36,7 @@ struct VulkanExtension
     bool enableSpirv14 = false;
     bool enableShaderFloatControls = false;
 
-    // Mesh Shader 实际 feature 支持情况（通过 vkGetPhysicalDeviceFeatures2 查询）
+    // Mesh Shader 实际 feature 支持情况
     bool meshShaderSupported = false;
     bool taskShaderSupported = false;
 
@@ -47,11 +48,6 @@ struct VulkanExtension
     bool enableDiagnosticCheckpoints = false;   // VK_NV_device_diagnostic_checkpoints 扩展
     bool enableDiagnosticsConfig = false;       // VK_NV_device_diagnostics_config 扩展
 
-    // Subgroup 全操作支持（Wave* 系列 HLSL 指令）
-    // 保守策略：所有 core subgroup 操作（BASIC|VOTE|ARITHMETIC|BALLOT|SHUFFLE|SHUFFLE_RELATIVE|CLUSTERED|QUAD）
-    // 都支持时才为 true，上层 waveIntrinsics 依赖此标志
-    // Vulkan 1.2+: core feature，无需扩展
-    // Vulkan 1.1:  需启用 VK_EXT_shader_subgroup_ballot 等扩展
     bool shaderSubgroupFullSupported = false;
 
     // 时间线信号量
@@ -60,15 +56,19 @@ struct VulkanExtension
     // 同步2扩展
     bool enableSynchronization2 = false;
 
+    bool enableDescriptorIndexing = false;
+
     std::vector<VkExtensionProperties> mDeviceExtensions;
     
-    void Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties physicalDeviceProperties);
+    void Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties physicalDeviceProperties, const DeviceExtFeature& deviceExtFeature);
 
     /// 检查指定扩展是否被设备支持（public 接口，供 RenderDeviceFeatures 初始化使用）
     bool IsExtensionSupported(const char* name) const;
 
 private:
-    void InitExtendedDynamicState(VkPhysicalDevice physicalDevice);
+    void InitExtendedDynamicState(const DeviceExtFeature& deviceExtFeature);
+
+    void InitHostImageCopy(const DeviceExtFeature& deviceExtFeature);
 
 private:
     VkPhysicalDeviceProperties mPhysicalDeviceProperties;
