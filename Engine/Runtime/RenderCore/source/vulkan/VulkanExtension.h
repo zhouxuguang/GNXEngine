@@ -60,7 +60,8 @@ struct VulkanExtension
 
     std::vector<VkExtensionProperties> mDeviceExtensions;
     
-    void Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties physicalDeviceProperties, const DeviceExtFeature& deviceExtFeature);
+    void Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties physicalDeviceProperties,
+        const DeviceExtFeature& deviceExtFeatures, const DeviceExtProperties& deviceExtProperties);
 
     /// 检查指定扩展是否被设备支持（public 接口，供 RenderDeviceFeatures 初始化使用）
     bool IsExtensionSupported(const char* name) const;

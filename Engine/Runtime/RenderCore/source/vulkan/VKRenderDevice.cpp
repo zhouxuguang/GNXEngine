@@ -72,20 +72,12 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
         LOG_INFO("SelectPhysicalDevice ERROR");
         return;
     }
-
-    // 初始化vulkanfeature
-	mVulkanContext->features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-
-	mVulkanContext->features_11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-    mVulkanContext->features_12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-    mVulkanContext->features_11.pNext = &mVulkanContext->features_12;
-    mVulkanContext->features2.pNext = &mVulkanContext->features_11;
-	vkGetPhysicalDeviceFeatures2(mVulkanContext->physicalDevice, &mVulkanContext->features2);
     
     // 初始化扩展信息
     mVulkanContext->deviceExtFeatures.Init(mVulkanContext->physicalDevice);
     mVulkanContext->deviceExtProperties.Init(mVulkanContext->physicalDevice);
-    mVulkanContext->vulkanExtension.Init(mVulkanContext->physicalDevice, mVulkanContext->physicalDeviceProperties, mVulkanContext->deviceExtFeatures);
+    mVulkanContext->vulkanExtension.Init(mVulkanContext->physicalDevice, mVulkanContext->physicalDeviceProperties, 
+        mVulkanContext->deviceExtFeatures, mVulkanContext->deviceExtProperties);
 
 #ifdef ENABLE_NSIGHT_AFTERMATH
     // 初始化 Aftermath（必须在创建 Vulkan 设备之前调用）
@@ -108,7 +100,6 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     
     // 填充结构化设备特性
     InitializeFeatures();
-    
     
     CreateVMA(*mVulkanContext);
     
@@ -143,8 +134,7 @@ void VKRenderDevice::InitializeFeatures()
     const auto& ctx = *mVulkanContext;
     const auto& props = ctx.physicalDeviceProperties;
     const auto& features = ctx.physicalDeviceFeatures;
-    const auto& features2 = ctx.features2.features;
-    const auto& f12 = ctx.features_12;
+    const auto& f12 = ctx.deviceExtFeatures.features12;
     const auto& ext = ctx.vulkanExtension;
 
     // ---- DeviceInfo ----
@@ -219,7 +209,7 @@ void VKRenderDevice::InitializeFeatures()
     mFeatures.shader.int64Atomics       = f12.shaderBufferInt64Atomics || f12.shaderSharedInt64Atomics;
     mFeatures.shader.float16            = f12.shaderFloat16;
     mFeatures.shader.int8               = f12.shaderInt8;
-    mFeatures.shader.float64            = features2.shaderFloat64;
+    mFeatures.shader.float64            = features.shaderFloat64;
 
     // ---- Resource capabilities ----
     mFeatures.resource.textureCompressionBC    = true;

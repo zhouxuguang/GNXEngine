@@ -28,10 +28,6 @@ struct VulkanContext
     VkPhysicalDeviceProperties physicalDeviceProperties;         // 设备属性
     VkPhysicalDeviceFeatures physicalDeviceFeatures;             // vulkan1.0的设备特性
     VkPhysicalDeviceMemoryProperties memoryProperties;           //内存属性
-
-    VkPhysicalDeviceFeatures2 features2 = {};
-    VkPhysicalDeviceVulkan11Features features_11 = {};
-    VkPhysicalDeviceVulkan12Features features_12 = {};
     
     baselib::ThreadLocal commandPoolTls;
     baselib::ThreadLocal transferCommandPoolTls;
@@ -62,10 +58,11 @@ struct VulkanContext
     VkDescriptorPool graphicsDescriptorPool = VK_NULL_HANDLE;
     VkDescriptorPool computeDescriptorPool = VK_NULL_HANDLE;
     
-    std::vector<const char*> extensionNames;   //设备支持的扩展列表名称
     VulkanExtension vulkanExtension;
     DeviceExtFeature deviceExtFeatures;    // 设备扩展特性
     DeviceExtProperties deviceExtProperties;    // 设备扩展属性
+
+    std::vector<const char*> deviceEnableExtensions;   //设备启用的扩展列表名称
 
 #ifdef NDEBUG
 	bool enableValidationLayers = false;
@@ -77,12 +74,6 @@ struct VulkanContext
     // Pipeline Cache for caching compiled pipeline data
     VkPipelineCache pipelineCache = VK_NULL_HANDLE;
 
-    // Host Image Copy 支持的 copy destination layouts
-    std::vector<VkImageLayout> hostImageCopyDstLayouts;
-
-    // Mesh Shader 属性（通过 vkGetPhysicalDeviceProperties2 查询）
-    VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties = {};
-
     VulkanFencePool fencePool;
     UpLoadThreadPool upLoadPool;
     std::shared_ptr<VulkanGarbageCollector> garbageCollector;  // 资源垃圾收集器
@@ -93,6 +84,8 @@ struct VulkanContext
     // 时间线信号量（GPU 进度追踪，用于垃圾收集）
     VkSemaphore timelineSemaphore = VK_NULL_HANDLE;
     uint64_t GetTimelineValue() const;
+
+    void CollectDeviceExtension();
 };
 
 using VulkanContextPtr = std::shared_ptr<VulkanContext>;

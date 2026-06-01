@@ -251,7 +251,7 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
         // 从驱动返回的pCopyDstLayouts中选择一个合适的layout作为Host Image Copy的中间layout
         // 优先选择TRANSFER_DST_OPTIMAL，其次GENERAL，最后取列表中第一个
         VkImageLayout hostCopyDstLayout = VK_IMAGE_LAYOUT_GENERAL;
-        for (VkImageLayout layout : mContext->hostImageCopyDstLayouts)
+        for (VkImageLayout layout : mContext->deviceExtProperties.hostImageCopyDstLayoutsStorage)
         {
             if (layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
             {

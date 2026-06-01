@@ -272,16 +272,10 @@ bool SelectPhysicalDevice(VulkanContext& context)
 		return false;
 	}
 
-	for (const auto& iter : extensions)
-	{
-		context.extensionNames.push_back(iter.extensionName);
-		LOG_INFO("%s\n", iter.extensionName);
-	}
-
 	bool supportsSwapchain = false;
 	for (uint32_t k = 0; k < extensionCount; ++k)
 	{
-		if (!strcmp(context.extensionNames[k], VK_KHR_SWAPCHAIN_EXTENSION_NAME))
+		if (!strcmp(extensions[k].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME))
 		{
 			supportsSwapchain = true;
 		}
@@ -300,251 +294,137 @@ bool SelectPhysicalDevice(VulkanContext& context)
 
     return true;
 }
-
-bool CreateVirtualDevice(VulkanContext& context)
+void VulkanContext::CollectDeviceExtension()
 {
-    VkDeviceCreateInfo deviceCreateInfo = {};
-    std::vector<const char*> deviceExtensionNames;
-    deviceExtensionNames.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    if (context.vulkanExtension.enabledDynamicRendering)
+    deviceEnableExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+    deviceEnableExtensions.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
+    deviceEnableExtensions.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
+
+    deviceEnableExtensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+    deviceEnableExtensions.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+
+    //动态渲染
+    if (vulkanExtension.enabledDynamicRendering)
     {
-        deviceExtensionNames.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        deviceEnableExtensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.dynamicRenderingFeatures);
     }
 
-    deviceExtensionNames.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    
+    if (vulkanExtension.enableDescriptorIndexing)
+    {
+        deviceEnableExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.descriptorIndexingFeatures);
+    }
+
+    if (vulkanExtension.enablePortabilitySubset)
+    {
+        deviceEnableExtensions.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.portabilitySubsetFeature);
+    }
+
     // 扩展动态状态
-    VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeaturesEXT = {};
-    VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extendedDynamicState2FeaturesEXT = {};
-    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extendedDynamicState3FeaturesEXT = {};
-    
-    // 获得完整的扩展动态状态
-    extendedDynamicStateFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
-    AppendToPNextChain(&extendedDynamicStateFeaturesEXT, &extendedDynamicState2FeaturesEXT);
-  
-    extendedDynamicState2FeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT;
-    AppendToPNextChain(&extendedDynamicState2FeaturesEXT, &extendedDynamicState3FeaturesEXT);
-
-    extendedDynamicState3FeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT;
-
-    // 查询VkPhysicalDeviceDescriptorIndexingFeatures
-	VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures = {};
-	indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-    //AppendToPNextChain(&extendedDynamicState3FeaturesEXT, &indexingFeatures);
-
-    VkPhysicalDeviceFeatures2 physicalDeviceFeatures2 = {};
-    physicalDeviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    AppendToPNextChain(&physicalDeviceFeatures2, &extendedDynamicStateFeaturesEXT);
-
-    // 查询 Vulkan 1.2 drawIndirectCount 特性
-    VkPhysicalDeviceVulkan12Features queryFeatures12 = {};
-    queryFeatures12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
-    AppendToPNextChain(&physicalDeviceFeatures2, &queryFeatures12);
-    
-    VkPhysicalDevicePortabilitySubsetFeaturesKHR portabilityFeatures = {};
-    portabilityFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR;
-    if (context.vulkanExtension.enablePortabilitySubset)
+    if (vulkanExtension.enabledExtendedDynamicState)
     {
-        AppendToPNextChain(&physicalDeviceFeatures2, &portabilityFeatures);
+        deviceEnableExtensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.extendedDynamicStateFeaturesEXT);
+    }
+
+    if (vulkanExtension.enabledExtendedDynamicState2)
+    {
+        deviceEnableExtensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.extendedDynamicState2FeaturesEXT);
+    }
+
+    if (vulkanExtension.enabledExtendedDynamicState3)
+    {
+        deviceEnableExtensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.extendedDynamicState3FeaturesEXT);
     }
     
-    vkGetPhysicalDeviceFeatures2(context.physicalDevice, &physicalDeviceFeatures2);
+    if (vulkanExtension.enablePushDesDescriptor)
+    {
+        deviceEnableExtensions.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+    }
+    
+    if (vulkanExtension.enableDeviceFault)
+    {
+        deviceEnableExtensions.push_back(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
+    }
 
-    // 记录 drawIndirectCount 是否被物理设备支持
-    context.vulkanExtension.enableDrawIndirectCount = (queryFeatures12.drawIndirectCount == VK_TRUE);
+    if (vulkanExtension.enableSynchronization2)
+    {
+        deviceEnableExtensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    }
 
-	if (!indexingFeatures.descriptorBindingUniformBufferUpdateAfterBind)
+    if (vulkanExtension.enableSpirv14)
     {
-		// 设备不支持，需要处理回退逻辑或报错
-        LOG_INFO("descriptorBindingUniformBufferUpdateAfterBind NOT SUPPORTED");
-	}
-    
-    // 构建设备创建时的开启的特性
-    void* deviceCreateNextChain = nullptr;
-    if (context.vulkanExtension.enabledExtendedDynamicState)
-    {
-        deviceExtensionNames.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-        extendedDynamicStateFeaturesEXT.pNext = nullptr;
-        deviceCreateNextChain = &extendedDynamicStateFeaturesEXT;
+        deviceEnableExtensions.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
     }
-    if (context.vulkanExtension.enabledExtendedDynamicState2)
+
+    if (vulkanExtension.enableCopyCommands2)
     {
-        deviceExtensionNames.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
-        extendedDynamicState2FeaturesEXT.pNext = nullptr;
-        if (context.vulkanExtension.enabledExtendedDynamicState)
-        {
-            extendedDynamicStateFeaturesEXT.pNext = &extendedDynamicState2FeaturesEXT;
-        }
-        else
-        {
-            deviceCreateNextChain = &extendedDynamicState2FeaturesEXT;
-        }
+        deviceEnableExtensions.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
     }
-    if (context.vulkanExtension.enabledExtendedDynamicState3)
+
+    if (vulkanExtension.enableFormatFeatureFlags2)
     {
-        deviceExtensionNames.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
-        if (context.vulkanExtension.enabledExtendedDynamicState2)
-        {
-            extendedDynamicState2FeaturesEXT.pNext = &extendedDynamicState3FeaturesEXT;
-        }
-        else
-        {
-            deviceCreateNextChain = &extendedDynamicState3FeaturesEXT;
-        }
-    }
-    if (context.vulkanExtension.enablePortabilitySubset)
-    {
-        AppendToPNextChain(deviceCreateNextChain, &portabilityFeatures);
+        deviceEnableExtensions.push_back(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     }
     
-    // 打开 VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME    
-    // push descriptor开启
-    if (context.vulkanExtension.enablePushDesDescriptor)
+    if (vulkanExtension.enableShaderFloatControls)
     {
-        deviceExtensionNames.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
+        deviceEnableExtensions.push_back(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
     }
     
-    if (context.vulkanExtension.enableDeviceFault)
+    // mesh shader
+    if (vulkanExtension.enableMeshShaderEXT)
     {
-        deviceExtensionNames.push_back(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
+        deviceEnableExtensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.meshShaderFeatures);
+    }
+
+    // 时间线信号量
+    if (vulkanExtension.enableTimelineSemaphore)
+    {
+        deviceEnableExtensions.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.timelineSemaphoreFeatures);
+    }
+
+    if (vulkanExtension.enableHostImageCopy)
+    {
+		deviceEnableExtensions.push_back(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
+		AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.hostImageCopyFeatures);
     }
 
     // NVIDIA Nsight Aftermath 扩展
 #ifdef ENABLE_NSIGHT_AFTERMATH
-    if (context.vulkanExtension.enableAftermath)
+    if (vulkanExtension.enableAftermath)
     {
-        if (context.vulkanExtension.enableDiagnosticCheckpoints)
+        if (vulkanExtension.enableDiagnosticCheckpoints)
         {
-            deviceExtensionNames.push_back(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+            deviceEnableExtensions.push_back(VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
         }
-        if (context.vulkanExtension.enableDiagnosticsConfig)
+        if (vulkanExtension.enableDiagnosticsConfig)
         {
-            deviceExtensionNames.push_back(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME);
+            deviceEnableExtensions.push_back(VK_NV_DEVICE_DIAGNOSTICS_CONFIG_EXTENSION_NAME);
         }
     }
-#endif
-    
-    // 如果支持，添加 VK_KHR_portability_subset
-    if (context.vulkanExtension.enablePortabilitySubset)
-    {
-        deviceExtensionNames.push_back(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
-    }
-    
-    // Mesh Shader 扩展（仅使用标准的 EXT 扩展）
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshShaderFeaturesEXT = {};
-    if (context.vulkanExtension.enableMeshShaderEXT)
-    {
-        // 启用 Mesh Shader 的依赖扩展
-        deviceExtensionNames.push_back(VK_KHR_SHADER_FLOAT_CONTROLS_EXTENSION_NAME);
-        deviceExtensionNames.push_back(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
 
-        deviceExtensionNames.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-        meshShaderFeaturesEXT.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
-        meshShaderFeaturesEXT.meshShader = context.vulkanExtension.meshShaderSupported ? VK_TRUE : VK_FALSE;
-        meshShaderFeaturesEXT.taskShader = context.vulkanExtension.taskShaderSupported ? VK_TRUE : VK_FALSE;
-        AppendToPNextChain(deviceCreateNextChain, &meshShaderFeaturesEXT);
-    }
-
-    VkPhysicalDeviceTimelineSemaphoreFeatures timelineSemaphoreFeatures = {};
-    if (context.vulkanExtension.enableTimelineSemaphore)
-    {
-        deviceExtensionNames.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
-        timelineSemaphoreFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_TIMELINE_SEMAPHORE_FEATURES;
-        timelineSemaphoreFeatures.timelineSemaphore = VK_TRUE;
-        AppendToPNextChain(deviceCreateNextChain, &timelineSemaphoreFeatures);
-    }
-
-    // NVIDIA Nsight Aftermath 诊断配置
-    VkDeviceDiagnosticsConfigCreateInfoNV diagnosticsConfigCreateInfo = {};
-#ifdef ENABLE_NSIGHT_AFTERMATH
-    if (context.vulkanExtension.enableAftermath && context.vulkanExtension.enableDiagnosticsConfig)
-    {
-        diagnosticsConfigCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_DIAGNOSTICS_CONFIG_CREATE_INFO_NV;
-        diagnosticsConfigCreateInfo.flags =
-            VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_RESOURCE_TRACKING_BIT_NV |
-            VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_AUTOMATIC_CHECKPOINTS_BIT_NV |
-            VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_DEBUG_INFO_BIT_NV |
-            VK_DEVICE_DIAGNOSTICS_CONFIG_ENABLE_SHADER_ERROR_REPORTING_BIT_NV;
-        AppendToPNextChain(deviceCreateNextChain, &diagnosticsConfigCreateInfo);
-    }
+	if (vulkanExtension.enableAftermath && vulkanExtension.enableDiagnosticsConfig)
+	{
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.diagnosticsConfigCreateInfo);
+	}
 #endif
 
-	VkPhysicalDeviceProperties2 deviceProperties = {};
-	deviceProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    
-    VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamicRenderingFeature = {};
-	dynamicRenderingFeature.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR;
-	dynamicRenderingFeature.pNext = deviceCreateNextChain;
-	dynamicRenderingFeature.dynamicRendering = VK_TRUE;
+    AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.features12);
+    AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.features13);
+}
 
-    context.features_11.pNext = &context.features_12;
-    context.features_12.drawIndirectCount = context.vulkanExtension.enableDrawIndirectCount ? VK_TRUE : VK_FALSE;
-    context.features_12.pNext = &dynamicRenderingFeature;
-    
-    // 开启负的高度
-    deviceExtensionNames.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
 
-    deviceExtensionNames.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-    deviceExtensionNames.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-
-    if (context.vulkanExtension.enableSynchronization2)
-    {
-        deviceExtensionNames.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
-    }
-    
-    deviceExtensionNames.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-
-    VkPhysicalDeviceHostImageCopyFeaturesEXT hostImageCopyFeatures = {};
-    hostImageCopyFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES_EXT;
-
-    // 这里先要获得hostImageCopyFeatures
-
-    VkPhysicalDeviceHostImageCopyPropertiesEXT hostImageCopyProperties = {};
-    hostImageCopyProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_PROPERTIES_EXT;
-	std::vector<VkImageLayout> hostImageCopySrcLayoutsStorage;
-	std::vector<VkImageLayout> hostImageCopyDstLayoutsStorage;
-    if (context.vulkanExtension.enableHostImageCopy)
-    {
-        hostImageCopyFeatures.hostImageCopy = VK_TRUE;
-        AppendToPNextChain(&context.features_11, &hostImageCopyFeatures);
-
-        deviceExtensionNames.push_back(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
-        deviceExtensionNames.push_back(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
-        deviceExtensionNames.push_back(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME);
-
-		constexpr uint32_t kMaxLayoutCount = 200;
-        hostImageCopySrcLayoutsStorage.resize(kMaxLayoutCount, VK_IMAGE_LAYOUT_UNDEFINED);
-        hostImageCopyDstLayoutsStorage.resize(kMaxLayoutCount, VK_IMAGE_LAYOUT_UNDEFINED);
-        hostImageCopyProperties.copySrcLayoutCount = kMaxLayoutCount;
-        hostImageCopyProperties.copyDstLayoutCount = kMaxLayoutCount;
-        hostImageCopyProperties.pCopySrcLayouts = hostImageCopySrcLayoutsStorage.data();
-        hostImageCopyProperties.pCopyDstLayouts = hostImageCopyDstLayoutsStorage.data();
-
-        AppendToPNextChain(&deviceProperties, &hostImageCopyProperties);
-    }
-
-    // 查询 Mesh Shader 属性（maxMeshOutputVertices, maxMeshOutputPrimitives 等）
-    if (context.vulkanExtension.enableMeshShaderEXT)
-    {
-        context.meshShaderProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
-        context.meshShaderProperties.pNext = nullptr;
-        AppendToPNextChain(&deviceProperties, &context.meshShaderProperties);
-    }
-
-    vkGetPhysicalDeviceProperties2(context.physicalDevice, &deviceProperties);
-
-    // 缓存Host Image Copy支持的copy destination layouts
-    if (context.vulkanExtension.enableHostImageCopy)
-    {
-        context.hostImageCopyDstLayouts.assign(
-            hostImageCopyDstLayoutsStorage.begin(),
-            hostImageCopyDstLayoutsStorage.begin() + hostImageCopyProperties.copyDstLayoutCount);
-    }
-    
-    if (context.vulkanExtension.enablePortabilitySubset)
-    {
-        AppendToPNextChain(&deviceProperties, &portabilityFeatures);
-    }
+bool CreateVirtualDevice(VulkanContext& context)
+{
+    VkDeviceCreateInfo deviceCreateInfo = {};
+    context.CollectDeviceExtension();
 
     // 队列优先级的属性
     std::vector<VkDeviceQueueCreateInfo> deviceQueueCreateInfos;
@@ -610,23 +490,13 @@ bool CreateVirtualDevice(VulkanContext& context)
     }
 
     deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    deviceCreateInfo.pNext = &context.features_11;
+    deviceCreateInfo.pNext = &context.deviceExtFeatures.features11;
     deviceCreateInfo.queueCreateInfoCount = (uint32_t)deviceQueueCreateInfos.size();
     deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos.data();
 
-    const auto& supportedFeatures = context.physicalDeviceFeatures;
-    
-    VkPhysicalDeviceFeatures enabledFeatures = {};
-    enabledFeatures.textureCompressionETC2 = supportedFeatures.textureCompressionETC2;
-    enabledFeatures.textureCompressionBC = supportedFeatures.textureCompressionBC;
-    enabledFeatures.independentBlend = supportedFeatures.independentBlend;    // 每个通道独立混合的参数
-    enabledFeatures.fragmentStoresAndAtomics = VK_TRUE;
-    enabledFeatures.fillModeNonSolid = supportedFeatures.fillModeNonSolid;    // 线框模式渲染
-    enabledFeatures.multiDrawIndirect = supportedFeatures.multiDrawIndirect;  // vkCmdDrawIndexedIndirect drawCount > 1
-
-    deviceCreateInfo.pEnabledFeatures = &enabledFeatures;
-    deviceCreateInfo.enabledExtensionCount = (uint32_t)deviceExtensionNames.size();
-    deviceCreateInfo.ppEnabledExtensionNames = deviceExtensionNames.data();
+    deviceCreateInfo.pEnabledFeatures = &context.physicalDeviceFeatures;
+    deviceCreateInfo.enabledExtensionCount = (uint32_t)context.deviceEnableExtensions.size();
+    deviceCreateInfo.ppEnabledExtensionNames = context.deviceEnableExtensions.data();
     VkResult result = vkCreateDevice(context.physicalDevice, &deviceCreateInfo, NULL, &context.device);
 
     if (result != VK_SUCCESS) 
@@ -634,8 +504,6 @@ bool CreateVirtualDevice(VulkanContext& context)
         LOG_INFO("vkCreateDevice error");
         return false;
     }
-
-    context.vulkanExtension.enableHostImageCopy = (hostImageCopyFeatures.hostImageCopy == VK_TRUE);
     
     volkLoadDevice(context.device);
     

@@ -9,13 +9,14 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties physicalDeviceProperties, const DeviceExtFeature& deviceExtFeature)
+void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties physicalDeviceProperties, 
+        const DeviceExtFeature& deviceExtFeatures, const DeviceExtProperties& deviceExtProperties)
 {
     mPhysicalDeviceProperties = physicalDeviceProperties;
-	InitExtendedDynamicState(deviceExtFeature);
+	InitExtendedDynamicState(deviceExtFeatures);
 
 	enabledDynamicRendering = IsExtensionSupported(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) && 
-        deviceExtFeature.dynamicRenderingFeatures.dynamicRendering;
+        deviceExtFeatures.dynamicRenderingFeatures.dynamicRendering;
     enablePortabilitySubset = IsExtensionSupported(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     enablePushDesDescriptor = IsExtensionSupported(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
     enableDescriptorUpdateTemplate = IsExtensionSupported(VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME);
@@ -23,21 +24,12 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
     // host image copy关联的扩展
     enableFormatFeatureFlags2 = IsExtensionSupported(VK_KHR_FORMAT_FEATURE_FLAGS_2_EXTENSION_NAME);
     enableCopyCommands2 = IsExtensionSupported(VK_KHR_COPY_COMMANDS_2_EXTENSION_NAME);
-    InitHostImageCopy(deviceExtFeature);
+    InitHostImageCopy(deviceExtFeatures);
     
     // Subgroup 操作检测（Wave* 系列 HLSL 指令）
     // 保守策略：所有 core subgroup 操作都必须支持，waveIntrinsics 才返回 true
     // Core 操作: BASIC | VOTE | ARITHMETIC | BALLOT | SHUFFLE | SHUFFLE_RELATIVE | CLUSTERED | QUAD = 0xFF
     {
-        VkPhysicalDeviceSubgroupProperties subgroupProps = {};
-        subgroupProps.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
-        subgroupProps.pNext = nullptr;
-
-        VkPhysicalDeviceProperties2 props2 = {};
-        props2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-        props2.pNext = &subgroupProps;
-        vkGetPhysicalDeviceProperties2(physicalDevice, &props2);
-
         static const VkSubgroupFeatureFlags REQUIRED_SUBGROUP_OPS =
             VK_SUBGROUP_FEATURE_BASIC_BIT |
             VK_SUBGROUP_FEATURE_VOTE_BIT |
@@ -48,7 +40,7 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
             VK_SUBGROUP_FEATURE_CLUSTERED_BIT |
             VK_SUBGROUP_FEATURE_QUAD_BIT;
 
-        shaderSubgroupFullSupported = (subgroupProps.supportedOperations & REQUIRED_SUBGROUP_OPS) == REQUIRED_SUBGROUP_OPS;
+        shaderSubgroupFullSupported = (deviceExtProperties.subgroupProperties.supportedOperations & REQUIRED_SUBGROUP_OPS) == REQUIRED_SUBGROUP_OPS;
     }
 
     enableDeviceFault = IsExtensionSupported(VK_EXT_DEVICE_FAULT_EXTENSION_NAME);
@@ -59,16 +51,17 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
 
     // 需要 VK_KHR_spirv_1_4 和 VK_KHR_shader_float_controls 作为依赖
     enableMeshShaderEXT = IsExtensionSupported(VK_EXT_MESH_SHADER_EXTENSION_NAME) &&
-                          enableSpirv14 && enableShaderFloatControls && deviceExtFeature.meshShaderFeatures.meshShader && 
-                          deviceExtFeature.meshShaderFeatures.taskShader;
+                          enableSpirv14 && enableShaderFloatControls && deviceExtFeatures.meshShaderFeatures.meshShader &&
+        deviceExtFeatures.meshShaderFeatures.taskShader;
 
     // 查询时间线信号量的支持
-    enableTimelineSemaphore = IsExtensionSupported(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME) && deviceExtFeature.timelineSemaphoreFeatures.timelineSemaphore;
+    enableTimelineSemaphore = IsExtensionSupported(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME) && deviceExtFeatures.timelineSemaphoreFeatures.timelineSemaphore;
 
     enableSynchronization2 = IsExtensionSupported(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
 
     enableDescriptorIndexing = IsExtensionSupported(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-    
+
+    enableDrawIndirectCount = deviceExtFeatures.features12.drawIndirectCount == VK_TRUE;
 
 #ifdef ENABLE_NSIGHT_AFTERMATH
     // NVIDIA Nsight Aftermath 扩展检测（仅 NVIDIA GPU 支持）
@@ -95,7 +88,7 @@ void VulkanExtension::InitExtendedDynamicState(const DeviceExtFeature& deviceExt
 void VulkanExtension::InitHostImageCopy(const DeviceExtFeature &deviceExtFeature)
 {
     enableHostImageCopy = IsExtensionSupported(VK_EXT_HOST_IMAGE_COPY_EXTENSION_NAME) &&
-        enableFormatFeatureFlags2 && enableCopyCommands2;
+        enableFormatFeatureFlags2 && enableCopyCommands2 && (deviceExtFeature.hostImageCopyFeatures.hostImageCopy == VK_TRUE);
 
     // NVIDIA 驱动的 VK_EXT_host_image_copy 实现与 RenderDoc Layer 存在兼容性问题，
     // 当 RenderDoc Layer 激活时可能导致 vkCreateDevice 崩溃或数据拷贝错误。
