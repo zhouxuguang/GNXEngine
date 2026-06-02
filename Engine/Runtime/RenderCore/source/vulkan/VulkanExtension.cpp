@@ -59,7 +59,11 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
 
     enableSynchronization2 = IsExtensionSupported(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
 
-    enableDescriptorIndexing = IsExtensionSupported(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
+    // 如下三个字段同时满足，才能启用 Bindless 特性
+	enableDescriptorIndexing = IsExtensionSupported(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) && 
+	    deviceExtFeatures.descriptorIndexingFeatures.runtimeDescriptorArray && 
+        deviceExtFeatures.descriptorIndexingFeatures.descriptorBindingVariableDescriptorCount &&
+        deviceExtFeatures.descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing;
 
     enableDrawIndirectCount = deviceExtFeatures.features12.drawIndirectCount == VK_TRUE;
 
