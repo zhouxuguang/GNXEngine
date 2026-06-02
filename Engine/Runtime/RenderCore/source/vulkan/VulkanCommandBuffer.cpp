@@ -627,11 +627,42 @@ void VulkanCommandBuffer::ResourceBarrier(RCTexturePtr texture, ResourceAccessTy
         srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
     }
 
-    barrier.srcAccessMask = srcAccessMask;
-    barrier.dstAccessMask = dstAccessMask;
+    bool useSync2 = mCommandInfo->vulkanContext->vulkanExtension.enableSynchronization2;
+    if (useSync2)
+    {
+        VkImageMemoryBarrier2KHR barrier2 = {};
+        barrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2_KHR;
+        barrier2.pNext = nullptr;
+        barrier2.srcStageMask = srcStageMask;
+        barrier2.srcAccessMask = srcAccessMask;
+        barrier2.dstStageMask = dstStageMask;
+        barrier2.dstAccessMask = dstAccessMask;
+        barrier2.oldLayout = currentLayout;
+        barrier2.newLayout = targetLayout;
+        barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier2.image = vkTexture->GetVKImage();
+        barrier2.subresourceRange = barrier.subresourceRange;
 
-    // 插入pipeline barrier
-    vkCmdPipelineBarrier(mCommandBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+        VkDependencyInfoKHR depInfo = {};
+        depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR;
+        depInfo.pNext = nullptr;
+        depInfo.dependencyFlags = 0;
+        depInfo.memoryBarrierCount = 0;
+        depInfo.pMemoryBarriers = nullptr;
+        depInfo.bufferMemoryBarrierCount = 0;
+        depInfo.pBufferMemoryBarriers = nullptr;
+        depInfo.imageMemoryBarrierCount = 1;
+        depInfo.pImageMemoryBarriers = &barrier2;
+
+        vkCmdPipelineBarrier2KHR(mCommandBuffer, &depInfo);
+    }
+    else
+    {
+        barrier.srcAccessMask = srcAccessMask;
+        barrier.dstAccessMask = dstAccessMask;
+        vkCmdPipelineBarrier(mCommandBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+    }
 
     // 更新纹理的当前layout
     vkTexture->SetCurrentLayout(targetLayout);
@@ -723,11 +754,41 @@ void VulkanCommandBuffer::ResourceBarrier(RCBufferPtr buffer, ResourceAccessType
         srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
     }
 
-    barrier.srcAccessMask = srcAccessMask;
-    barrier.dstAccessMask = dstAccessMask;
+    bool useSync2 = mCommandInfo->vulkanContext->vulkanExtension.enableSynchronization2;
+    if (useSync2)
+    {
+        VkBufferMemoryBarrier2KHR barrier2 = {};
+        barrier2.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2_KHR;
+        barrier2.pNext = nullptr;
+        barrier2.srcStageMask = srcStageMask;
+        barrier2.srcAccessMask = srcAccessMask;
+        barrier2.dstStageMask = dstStageMask;
+        barrier2.dstAccessMask = dstAccessMask;
+        barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier2.buffer = vkBuffer->GetVkBuffer();
+        barrier2.offset = 0;
+        barrier2.size = VK_WHOLE_SIZE;
 
-    // 插入pipeline barrier
-    vkCmdPipelineBarrier(mCommandBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 1, &barrier, 0, nullptr);
+        VkDependencyInfoKHR depInfo = {};
+        depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR;
+        depInfo.pNext = nullptr;
+        depInfo.dependencyFlags = 0;
+        depInfo.memoryBarrierCount = 0;
+        depInfo.pMemoryBarriers = nullptr;
+        depInfo.imageMemoryBarrierCount = 0;
+        depInfo.pImageMemoryBarriers = nullptr;
+        depInfo.bufferMemoryBarrierCount = 1;
+        depInfo.pBufferMemoryBarriers = &barrier2;
+
+        vkCmdPipelineBarrier2KHR(mCommandBuffer, &depInfo);
+    }
+    else
+    {
+        barrier.srcAccessMask = srcAccessMask;
+        barrier.dstAccessMask = dstAccessMask;
+        vkCmdPipelineBarrier(mCommandBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 1, &barrier, 0, nullptr);
+    }
 }
 
 NAMESPACE_RENDERCORE_END
