@@ -300,6 +300,11 @@ void VulkanContext::CollectDeviceExtension()
     deviceEnableExtensions.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     deviceEnableExtensions.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
 
+    if (vulkanExtension.enableMaintenance3)
+    {
+        deviceEnableExtensions.push_back(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
+    }
+
     deviceEnableExtensions.push_back(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
     deviceEnableExtensions.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
 

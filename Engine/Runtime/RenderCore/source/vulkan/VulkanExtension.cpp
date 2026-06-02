@@ -13,6 +13,7 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
         const DeviceExtFeature& deviceExtFeatures, const DeviceExtProperties& deviceExtProperties)
 {
     mPhysicalDeviceProperties = physicalDeviceProperties;
+    enableMaintenance3 = IsExtensionSupported(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
 	InitExtendedDynamicState(deviceExtFeatures);
 
 	enabledDynamicRendering = IsExtensionSupported(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) && 
@@ -60,7 +61,7 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
     enableSynchronization2 = IsExtensionSupported(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
 
     // 如下三个字段同时满足，才能启用 Bindless 特性
-	enableDescriptorIndexing = IsExtensionSupported(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) && 
+	enableDescriptorIndexing = IsExtensionSupported(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) && enableMaintenance3 &&
 	    deviceExtFeatures.descriptorIndexingFeatures.runtimeDescriptorArray && 
         deviceExtFeatures.descriptorIndexingFeatures.descriptorBindingVariableDescriptorCount &&
         deviceExtFeatures.descriptorIndexingFeatures.shaderSampledImageArrayNonUniformIndexing;

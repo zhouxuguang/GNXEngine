@@ -15,6 +15,7 @@ NAMESPACE_RENDERCORE_BEGIN
 
 struct VulkanExtension
 {
+    bool enableMaintenance3 = false;
     bool enabledExtendedDynamicState = false;
     bool enabledExtendedDynamicState2 = false;
     bool enabledExtendedDynamicState3 = false;
