@@ -23,11 +23,6 @@ NS_RENDERSYSTEM_BEGIN
 struct cbHiZParams
 {
     mathutil::Vector2i textureSize;          // 当前层级的纹理尺寸
-    uint32_t mipLevel;                      // 当前生成的Mip Level
-    uint32_t padding;
-    
-    mathutil::Vector2f invTextureSize;      // 1.0 / textureSize
-    mathutil::Vector2f padding2;
 };
 
 HiZPass::HiZPass()
@@ -171,7 +166,6 @@ HiZOutput HiZPass::AddToFrameGraph(
                 cbHiZParams hiZParams;
                 hiZParams.textureSize.x = levelWidth;
                 hiZParams.textureSize.y = levelHeight;
-                hiZParams.mipLevel = level;
                 
                 mHiZParas->SetData(&hiZParams, 0, sizeof(hiZParams));
                 computeEncoder->SetUniformBuffer("HiZParams", mHiZParas);
@@ -179,16 +173,16 @@ HiZOutput HiZPass::AddToFrameGraph(
                 // 计算Dispatch大小
                 uint32_t groupX = (levelWidth + groupSizeX - 1) / groupSizeX;
                 uint32_t groupY = (levelHeight + groupSizeY - 1) / groupSizeY;
+
+				// Read barrier：保证下一层dispatch能正确读到写入的数据
+				mCommandBuffer->ResourceBarrier(hiZTexture, ResourceAccessType::ComputeShaderRead);
                 
                 // 执行Compute Shader
                 computeEncoder->Dispatch(groupX, groupY, 1);
                 
-                // 内存屏障：确保当前层写入完成，才能被下一层读取
-                // 注意：这里需要根据RHI的具体实现添加内存屏障
-                // Vulkan: vkCmdPipelineBarrier
-                // Metal: MTLBarrier
-                
-                mCommandBuffer->ResourceBarrier(hiZTexture, ResourceAccessType::ComputeShaderRead | ResourceAccessType::ComputeShaderRead);
+                // 内存屏障：确保当前层（level）的写入完成，才能被下一层（level+1）读取
+                // Write barrier：保证storage image写入完成
+                mCommandBuffer->ResourceBarrier(hiZTexture, ResourceAccessType::ComputeShaderWrite);
                 
                 // 准备下一层
                 levelWidth = std::max(levelWidth / 2, 1u);

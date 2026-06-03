@@ -807,34 +807,33 @@ VkImageUsageFlags VulkanBufferUtil::ConvertTextureUsage(TextureUsage textureUsag
         flags |= VK_IMAGE_USAGE_STORAGE_BIT;
     }
     
-    switch (textureUsage)
+    // 注意：textureUsage 是位掩码（如 ShaderRead | RenderTarget），不能用 switch 精确匹配
+    // 需要用位运算判断每个标志位
+    if ((textureUsage & TextureUsage::TextureUsageShaderRead) != static_cast<TextureUsage>(0))
     {
-        case TextureUsage::TextureUsageShaderRead:
-            flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
-            break;
-            
-        case TextureUsage::TextureUsageShaderWrite:
-            // SRGB 格式不支持 storage，跳过
-            if (!IsSRGBFormat(format))
-            {
-                flags |= VK_IMAGE_USAGE_STORAGE_BIT;
-            }
-            break;
-            
-        case TextureUsage::TextureUsageRenderTarget:
-            // 还要区分是深度模板还是颜色缓冲
-            if (VulkanBufferUtil::IsDepthStencilFormat(format))
-            {
-                flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-            }
-            else
-            {
-                flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-            }
-            break;
-            
-        default:
-            break;
+        flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+    }
+    
+    if ((textureUsage & TextureUsage::TextureUsageShaderWrite) != static_cast<TextureUsage>(0))
+    {
+        // SRGB 格式不支持 storage，跳过
+        if (!IsSRGBFormat(format))
+        {
+            flags |= VK_IMAGE_USAGE_STORAGE_BIT;
+        }
+    }
+    
+    if ((textureUsage & TextureUsage::TextureUsageRenderTarget) != static_cast<TextureUsage>(0))
+    {
+        // 还要区分是深度模板还是颜色缓冲
+        if (VulkanBufferUtil::IsDepthStencilFormat(format))
+        {
+            flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        }
+        else
+        {
+            flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        }
     }
     
     return flags;

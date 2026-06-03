@@ -565,12 +565,77 @@ void VulkanCommandBuffer::ResourceBarrier(RCTexturePtr texture, ResourceAccessTy
     // 获取纹理当前layout
     VkImageLayout currentLayout = vkTexture->GetCurrentLayout();
 
-    // 如果当前layout和目标layout相同，不需要转换
+    // 如果当前layout和目标layout相同，不需要layout转换
+    // 但仍需要memory barrier保证写入对后续读取可见（如Hi-Z mip间的compute write→read）
     if (currentLayout == targetLayout)
     {
+        // 仅在无写入操作时才跳过（纯读取路径不需要memory barrier）
+        VkAccessFlags writeAccessFlags = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
+            VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+        
+        // 根据当前layout推断src访问类型
+        VkAccessFlags srcAccessMask = 0;
+        VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+
+        if (currentLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        }
+        else if (currentLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        {
+            srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        }
+        else if (currentLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+        {
+            srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        }
+        else if (currentLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+        {
+            srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        }
+        else if (currentLayout == VK_IMAGE_LAYOUT_GENERAL)
+        {
+            srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+        }
+        
+        // 没有写操作，不需要memory barrier
+        if ((srcAccessMask & writeAccessFlags) == 0)
+        {
+            return;
+        }
+        
+        // layout相同但之前有写操作：发VkMemoryBarrier保证写入可见
+        VkMemoryBarrier memBarrier = {};
+        memBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+        memBarrier.srcAccessMask = srcAccessMask;
+        memBarrier.dstAccessMask = dstAccessMask;
+        
+        bool useSync2 = mCommandInfo->vulkanContext->vulkanExtension.enableSynchronization2;
+        if (useSync2)
+        {
+            VkMemoryBarrier2KHR memBarrier2 = {};
+            memBarrier2.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2_KHR;
+            memBarrier2.srcStageMask = srcStageMask;
+            memBarrier2.srcAccessMask = srcAccessMask;
+            memBarrier2.dstStageMask = dstStageMask;
+            memBarrier2.dstAccessMask = dstAccessMask;
+            
+            VkDependencyInfoKHR depInfo = {};
+            depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO_KHR;
+            depInfo.memoryBarrierCount = 1;
+            depInfo.pMemoryBarriers = &memBarrier2;
+            
+            vkCmdPipelineBarrier2KHR(mCommandBuffer, &depInfo);
+        }
+        else
+        {
+            vkCmdPipelineBarrier(mCommandBuffer, srcStageMask, dstStageMask, 0, 1, &memBarrier, 0, nullptr, 0, nullptr);
+        }
+        
+        // layout不变，不需要更新layout状态
         return;
     }
-
+    
     // 创建barrier
     VkImageMemoryBarrier barrier = {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

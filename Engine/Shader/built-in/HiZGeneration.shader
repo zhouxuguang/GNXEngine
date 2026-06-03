@@ -16,16 +16,10 @@
 cbuffer HiZParams
 {
     uint2 textureSize;          // 当前层级的纹理尺寸
-    uint mipLevel;              // 当前生成的Mip Level
-    uint padding;
-    
-    float2 invTextureSize;      // 1.0 / textureSize
-    float2 padding2;
 };
 
 // 输入：上一层的深度纹理（Level 0为原始深度缓冲）
 Texture2D srcDepth;
-SamplerState srcSampler;
 
 // 输出：当前层的Hi-Z纹理（作为UAV）
 RWTexture2D<float> dstDepth;
@@ -39,10 +33,10 @@ void CS(
     uint groupIndex : SV_GroupIndex)
 {
     // 检查是否在纹理范围内
-    if (dispatchThreadId.x >= textureSize.x || dispatchThreadId.y >= textureSize.y)
-    {
-        return;
-    }
+    // if (dispatchThreadId.x >= textureSize.x || dispatchThreadId.y >= textureSize.y)
+    // {
+    //     return;
+    // }
     
     // 计算2x2邻域的采样位置（在上一层纹理空间）
     // 每个线程处理一个2x2的像素块
@@ -74,6 +68,7 @@ void CS(
     
     // 写入当前层的Hi-Z纹理
     dstDepth[dispatchThreadId.xy] = result;
+    //dstDepth[dispatchThreadId.xy] = float(textureSize.x);
 }
 
 //=============================================================================

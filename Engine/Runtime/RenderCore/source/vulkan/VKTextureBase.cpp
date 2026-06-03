@@ -144,7 +144,13 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
         // doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT.
         // Metal/MoltenVK also doesn't support TRANSFER_SRC for depth formats.
         extraImageUsageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        imageCreateInfoCopy.usage &= ~(VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+
+        //VK_IMAGE_USAGE_STORAGE_BIT
+
+	    //VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT
+
+        imageCreateInfoCopy.usage &= ~(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | 
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT);
     }
     
     // 新的layout有VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL，就必须有VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT标记

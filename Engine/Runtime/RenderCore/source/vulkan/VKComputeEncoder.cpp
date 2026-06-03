@@ -149,7 +149,7 @@ void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint3
     VkImageLayout imageLayout = vkRenderTex->GetCurrentLayout();
 
     VkDescriptorImageInfo imageInfo = {};
-    imageInfo.imageView = vkRenderTex->GetImageView()->GetHandle();
+    imageInfo.imageView = vkRenderTex->GetMipLevelImageView(mipLevel)->GetHandle();
     imageInfo.imageLayout = imageLayout;
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
