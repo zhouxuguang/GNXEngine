@@ -97,7 +97,7 @@ struct DeviceExtProperties
         AddToPNextChain(&properties2, &features13);
         AddToPNextChain(&properties2, &meshShaderProperties);
 
-		constexpr uint32_t kMaxLayoutCount = 200;
+		constexpr uint32_t kMaxLayoutCount = 50;
 		hostImageCopySrcLayoutsStorage.resize(kMaxLayoutCount, VK_IMAGE_LAYOUT_UNDEFINED);
 		hostImageCopyDstLayoutsStorage.resize(kMaxLayoutCount, VK_IMAGE_LAYOUT_UNDEFINED);
 		hostImageCopyProperties.copySrcLayoutCount = kMaxLayoutCount;
