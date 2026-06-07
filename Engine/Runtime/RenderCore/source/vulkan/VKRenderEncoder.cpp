@@ -321,7 +321,7 @@ VKRenderEncoder::VKRenderEncoder(VulkanContextPtr context,
     mContext = context;
     mCurrentFrameIndex = currentFrameIndex;
     
-    if (mContext->vulkanExtension.enabledDynamicRendering)
+    if (mContext->vulkanExtension.enableDynamicRendering)
     {
         BeginDynamicRenderPass(renderInfo);
     }
@@ -378,7 +378,7 @@ void VKRenderEncoder::EndEncode()
 
     mIsEncoding = false;
 
-    if (mContext->vulkanExtension.enabledDynamicRendering)
+    if (mContext->vulkanExtension.enableDynamicRendering)
     {
         EndDynamicRenderPass();
     }
@@ -444,7 +444,7 @@ void VKRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     mGraphicsPipieline->SetCurrentFrameIndex(mCurrentFrameIndex);
     
     // 没有动态渲染时需要设置renderpass
-    if (!mContext->vulkanExtension.enabledDynamicRendering)
+    if (!mContext->vulkanExtension.enableDynamicRendering)
     {
         mGraphicsPipieline->SetRenderPass(mRenderPass->GetRenderPass());
     }
@@ -453,7 +453,7 @@ void VKRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
 
     // 当 VK_DYNAMIC_STATE_POLYGON_MODE_EXT 被启用时，静态 polygonMode 被忽略，
     // 必须在绑定管线后动态设置，否则后续绘制会使用未定义的填充模式
-    if (mContext->vulkanExtension.enabledExtendedDynamicState3)
+    if (mContext->vulkanExtension.enableExtendedDynamicState3)
     {
         VkPolygonMode polygonMode = (mGraphicsPipieline->GetDesc().fillMode == FillModeWireframe)
             ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
@@ -463,7 +463,7 @@ void VKRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
 
 void VKRenderEncoder::SetFillMode(FillMode fillMode)
 {
-    if (mContext->vulkanExtension.enabledExtendedDynamicState3)
+    if (mContext->vulkanExtension.enableExtendedDynamicState3)
     {
         VkPolygonMode polygonMode = (fillMode == FillModeWireframe) ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
         vkCmdSetPolygonModeEXT(mCommandBuffer, polygonMode);
@@ -829,7 +829,7 @@ void VKRenderEncoder::DrawPrimitives(PrimitiveMode mode, int offset, int size)
         VkCommandBuffer                             commandBuffer,
         VkPrimitiveTopology                         primitiveTopology);
 #endif
-    if (mContext->vulkanExtension.enabledExtendedDynamicState)
+    if (mContext->vulkanExtension.enableExtendedDynamicState)
     {
         vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
     }
@@ -855,7 +855,7 @@ void VKRenderEncoder::DrawPrimitives(PrimitiveMode mode, int offset, int size)
 void VKRenderEncoder::DrawInstancePrimitives(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount)
 {
 	//设置图元拓扑类型，需要使用扩展动态状态
-	if (mContext->vulkanExtension.enabledExtendedDynamicState)
+	if (mContext->vulkanExtension.enableExtendedDynamicState)
 	{
 		vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
 	}
@@ -918,7 +918,7 @@ void VKRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexB
 #endif
     
     vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer->GetBuffer(), 0, indexType);
-    if (mContext->vulkanExtension.enabledExtendedDynamicState)
+    if (mContext->vulkanExtension.enableExtendedDynamicState)
     {
         vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
     }
@@ -963,7 +963,7 @@ void VKRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size
 #endif
 
 	vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer->GetBuffer(), 0, indexType);
-	if (mContext->vulkanExtension.enabledExtendedDynamicState)
+	if (mContext->vulkanExtension.enableExtendedDynamicState)
 	{
 		vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
 	}
@@ -984,7 +984,7 @@ void VKRenderEncoder::DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buf
         return;
     }
 
-    if (mContext->vulkanExtension.enabledExtendedDynamicState)
+    if (mContext->vulkanExtension.enableExtendedDynamicState)
     {
         vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
     }
@@ -1015,7 +1015,7 @@ void VKRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBuf
         return;
     }
 
-    if (mContext->vulkanExtension.enabledExtendedDynamicState)
+    if (mContext->vulkanExtension.enableExtendedDynamicState)
     {
         vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
     }
@@ -1065,7 +1065,7 @@ void VKRenderEncoder::DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, Ind
         return;
     }
 
-    if (mContext->vulkanExtension.enabledExtendedDynamicState)
+    if (mContext->vulkanExtension.enableExtendedDynamicState)
     {
         vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
     }

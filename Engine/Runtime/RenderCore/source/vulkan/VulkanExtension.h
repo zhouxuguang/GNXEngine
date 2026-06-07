@@ -16,11 +16,11 @@ NAMESPACE_RENDERCORE_BEGIN
 struct VulkanExtension
 {
     bool enableMaintenance3 = false;
-    bool enabledExtendedDynamicState = false;
-    bool enabledExtendedDynamicState2 = false;
-    bool enabledExtendedDynamicState3 = false;
+    bool enableExtendedDynamicState = false;
+    bool enableExtendedDynamicState2 = false;
+    bool enableExtendedDynamicState3 = false;
     
-    bool enabledDynamicRendering = false;
+    bool enableDynamicRendering = false;
     bool enablePushDesDescriptor = false;
     bool enableDescriptorUpdateTemplate = false;
     bool enableDebugUtils = false;
@@ -36,10 +36,6 @@ struct VulkanExtension
     // Mesh Shader 的依赖扩展
     bool enableSpirv14 = false;
     bool enableShaderFloatControls = false;
-
-    // Mesh Shader 实际 feature 支持情况
-    bool meshShaderSupported = false;
-    bool taskShaderSupported = false;
 
     // drawIndirectCount 特性支持（Vulkan 1.2 core feature）
     bool enableDrawIndirectCount = false;

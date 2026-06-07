@@ -459,13 +459,13 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     dynamicStates.push_back(VK_DYNAMIC_STATE_STENCIL_REFERENCE);
 
     // Mesh Pipeline 不使用输入装配，因此不需要 PRIMITIVE_TOPOLOGY 动态状态
-    if (mContext->vulkanExtension.enabledExtendedDynamicState &&
+    if (mContext->vulkanExtension.enableExtendedDynamicState &&
         mGraphicsPipelineDes.pipelineType != PipelineType::Mesh)
     {
         dynamicStates.push_back(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT);
     }
 
-    if (mContext->vulkanExtension.enabledExtendedDynamicState3)
+    if (mContext->vulkanExtension.enableExtendedDynamicState3)
     {
         dynamicStates.push_back(VK_DYNAMIC_STATE_POLYGON_MODE_EXT);
     }
@@ -481,7 +481,7 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
 
     //12、例如dynamic rendering相关的
     std::vector<VkPipelineRenderingCreateInfoKHR> renderingCreateInfos;
-    if (mContext->vulkanExtension.enabledDynamicRendering)
+    if (mContext->vulkanExtension.enableDynamicRendering)
     {
         // New create info to define color, depth and stencil attachments at pipeline create time
         VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo = {};

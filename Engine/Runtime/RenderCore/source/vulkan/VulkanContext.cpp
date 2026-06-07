@@ -309,7 +309,7 @@ void VulkanContext::CollectDeviceExtension()
     deviceEnableExtensions.push_back(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
 
     //动态渲染
-    if (vulkanExtension.enabledDynamicRendering)
+    if (vulkanExtension.enableDynamicRendering)
     {
         deviceEnableExtensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
         AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.dynamicRenderingFeatures);
@@ -328,19 +328,19 @@ void VulkanContext::CollectDeviceExtension()
     }
 
     // 扩展动态状态
-    if (vulkanExtension.enabledExtendedDynamicState)
+    if (vulkanExtension.enableExtendedDynamicState)
     {
         deviceEnableExtensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
         AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.extendedDynamicStateFeaturesEXT);
     }
 
-    if (vulkanExtension.enabledExtendedDynamicState2)
+    if (vulkanExtension.enableExtendedDynamicState2)
     {
         deviceEnableExtensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME);
         AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.extendedDynamicState2FeaturesEXT);
     }
 
-    if (vulkanExtension.enabledExtendedDynamicState3)
+    if (vulkanExtension.enableExtendedDynamicState3)
     {
         deviceEnableExtensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
         AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.extendedDynamicState3FeaturesEXT);

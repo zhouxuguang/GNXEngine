@@ -16,7 +16,7 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
     enableMaintenance3 = IsExtensionSupported(VK_KHR_MAINTENANCE_3_EXTENSION_NAME);
 	InitExtendedDynamicState(deviceExtFeatures);
 
-	enabledDynamicRendering = IsExtensionSupported(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) && 
+	enableDynamicRendering = IsExtensionSupported(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME) && 
         deviceExtFeatures.dynamicRenderingFeatures.dynamicRendering;
     enablePortabilitySubset = IsExtensionSupported(VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME);
     enablePushDesDescriptor = IsExtensionSupported(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
@@ -81,11 +81,11 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
 
 void VulkanExtension::InitExtendedDynamicState(const DeviceExtFeature& deviceExtFeature)
 {
-    enabledExtendedDynamicState = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) && 
+    enableExtendedDynamicState = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) && 
         deviceExtFeature.extendedDynamicStateFeaturesEXT.extendedDynamicState;
-    enabledExtendedDynamicState2 = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME) && 
+    enableExtendedDynamicState2 = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME) && 
         deviceExtFeature.extendedDynamicState2FeaturesEXT.extendedDynamicState2;
-    enabledExtendedDynamicState3 = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME) && 
+    enableExtendedDynamicState3 = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME) && 
         deviceExtFeature.extendedDynamicState3FeaturesEXT.extendedDynamicState3ColorBlendEnable && 
         deviceExtFeature.extendedDynamicState3FeaturesEXT.extendedDynamicState3ColorBlendEquation;
 }
