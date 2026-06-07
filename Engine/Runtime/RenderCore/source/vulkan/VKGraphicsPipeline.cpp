@@ -9,6 +9,7 @@
 #include "VKDepthStencilBuffer.h"
 #include "VulkanDescriptorUtil.h"
 #include "VulkanBufferUtil.h"
+#include "Runtime/BaseLib/include/LogService.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -502,6 +503,30 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
 
 void VKGraphicsPipeline::CreatePipelineLayout()
 {
+    // 收集 push constants 的辅助 lambda
+    auto collectPushConstants = [&](const VKShaderFunctionPtr& shaderFunc)
+    {
+        if (!shaderFunc) return;
+        const auto& pcs = shaderFunc->GetPushConstants();
+        for (const auto& pc : pcs)
+        {
+            bool found = false;
+            for (auto& existing : mPushConstants)
+            {
+                if (existing.name == pc.name)
+                {
+                    existing.stageFlags |= pc.stageFlags;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                mPushConstants.push_back(pc);
+        }
+    };
+
+    mPushConstants.clear();
+    mPushConstantBindings.clear();
     if (mGraphicsPipelineDes.pipelineType == PipelineType::Mesh)
     {
         // Mesh pipeline：构建管线布局
@@ -555,6 +580,28 @@ void VKGraphicsPipeline::CreatePipelineLayout()
                 }
             }
 
+            // 收集 push constants
+            collectPushConstants(mTaskShader);
+            collectPushConstants(mMeshShader);
+            for (auto& shaderFunc : mShaders)
+            {
+                if (shaderFunc && shaderFunc->GetShaderStage() == ShaderStage_Fragment)
+                {
+                    collectPushConstants(shaderFunc);
+                    break;
+                }
+            }
+
+            // 计算 push constant range
+            VkPushConstantRange pcRange = {};
+            for (const auto& pc : mPushConstants)
+            {
+                pcRange.stageFlags |= pc.stageFlags;
+                uint32_t end = pc.offset + pc.size;
+                if (end > pcRange.size)
+                    pcRange.size = end;
+            }
+
             if (setGroups.empty())
             {
                 VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
@@ -583,24 +630,48 @@ void VKGraphicsPipeline::CreatePipelineLayout()
             pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
             pipelineLayoutInfo.setLayoutCount = (uint32_t)mMeshDescriptorSetLayouts.size();
             pipelineLayoutInfo.pSetLayouts = mMeshDescriptorSetLayouts.data();
+            if (pcRange.size > 0)
+            {
+                pipelineLayoutInfo.pushConstantRangeCount = 1;
+                pipelineLayoutInfo.pPushConstantRanges = &pcRange;
+            }
 
             if (vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
             {
-                printf("failed to create mesh pipeline layout!");
+                LOG_INFO("failed to create mesh pipeline layout!");
             }
         }
         else if (mShader && mShader->IsMeshShader())
         {
-            // 路径2: 从 VKGraphicsShader 的 descriptor set layouts 获取
+            // 路径2: 从 VKGraphicsShader 获取 push constants
+            mPushConstants = mShader->GetPushConstants();
+            mPushConstantBindings = mShader->GetPushConstantBindings();
+
+            VkPushConstantRange pcRange = {};
+            for (const auto& pc : mPushConstants)
+            {
+                pcRange.stageFlags |= pc.stageFlags;
+                uint32_t end = pc.offset + pc.size;
+                if (end > pcRange.size)
+                {
+                    pcRange.size = end;
+                } 
+            }
+
             const std::vector<VkDescriptorSetLayout>& desLayouts = mShader->GetDescriptorSetLayouts();
             VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
             pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
             pipelineLayoutInfo.setLayoutCount = (uint32_t)desLayouts.size();
             pipelineLayoutInfo.pSetLayouts = desLayouts.data();
+            if (pcRange.size > 0)
+            {
+                pipelineLayoutInfo.pushConstantRangeCount = 1;
+                pipelineLayoutInfo.pPushConstantRanges = &pcRange;
+            }
 
             if (vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
             {
-                printf("failed to create mesh pipeline layout!");
+                LOG_INFO("failed to create mesh pipeline layout!");
             }
         }
         else
@@ -614,15 +685,34 @@ void VKGraphicsPipeline::CreatePipelineLayout()
     else
     {
         // 传统 Graphics Pipeline：使用 VKGraphicsShader 的 descriptor set layouts
+        mPushConstants = mShader->GetPushConstants();
+        mPushConstantBindings = mShader->GetPushConstantBindings();
+
+        VkPushConstantRange pcRange = {};
+        for (const auto& pc : mPushConstants)
+        {
+            pcRange.stageFlags |= pc.stageFlags;
+            uint32_t end = pc.offset + pc.size;
+            if (end > pcRange.size)
+            {
+                pcRange.size = end;
+            }
+        }
+
         const std::vector<VkDescriptorSetLayout>& desLayouts = mShader->GetDescriptorSetLayouts();
         VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = (uint32_t)desLayouts.size();
         pipelineLayoutInfo.pSetLayouts = desLayouts.data();
+        if (pcRange.size > 0)
+        {
+            pipelineLayoutInfo.pushConstantRangeCount = 1;
+            pipelineLayoutInfo.pPushConstantRanges = &pcRange;
+        }
 
         if (vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
         {
-            printf("failed to create compute pipeline layout!");
+            LOG_INFO("failed to create compute pipeline layout!");
         }
     }
 }
@@ -668,6 +758,24 @@ const uint32_t* VKGraphicsPipeline::GetTaskThreadgroupSize() const
         return d;
     }
     return mShader->GetTaskThreadgroupSize();
+}
+
+const PushConstantMeta* VKGraphicsPipeline::GetPushConstantByName(const std::string& resourceName) const
+{
+    for (const auto& pc : mPushConstants)
+    {
+        if (pc.name == resourceName)
+            return &pc;
+    }
+    return nullptr;
+}
+
+const PushConstantMeta* VKGraphicsPipeline::GetPushConstantByBinding(uint32_t set, uint32_t binding) const
+{
+    auto it = mPushConstantBindings.find(std::make_pair(set, binding));
+    if (it != mPushConstantBindings.end())
+        return &it->second;
+    return nullptr;
 }
 
 NAMESPACE_RENDERCORE_END

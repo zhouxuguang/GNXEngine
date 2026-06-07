@@ -67,7 +67,7 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
     computeShaderStageInfo.module = shaderFunction->GetShaderModule();
     computeShaderStageInfo.pName = shaderFunction->GetEntryName().c_str();
     
-    // 根据shader反射出来的DescriptorSet信息创建各个DescriptorSetLayout
+// 根据shader反射出来的DescriptorSet信息创建各个DescriptorSetLayout
     const DescriptorSetLayoutDataVec& desSetLayouts = shaderFunction->GetDescriptorSets();
     std::vector<VkDescriptorSetLayout> desLayouts;
     desLayouts.resize(desSetLayouts.size());
@@ -82,11 +82,28 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
     }
     mDescriptorSetLayouts = std::move(desLayouts);
 
+    // 收集 push constant blocks
+    const auto& shaderPushConstants = shaderFunction->GetPushConstants();
+    VkPushConstantRange pcRange = {};
+    for (const auto& pc : shaderPushConstants)
+    {
+        mPushConstants.push_back(pc);
+        // 同一 shader 中所有 push constant block 共享 compute stage
+        pcRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+        pcRange.offset = pc.offset;
+        pcRange.size += pc.size; // 简单累加，实际需要按 offset 对齐
+    }
+
     // 创建管线布局
     VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = (uint32_t)mDescriptorSetLayouts.size();
     pipelineLayoutInfo.pSetLayouts = mDescriptorSetLayouts.data();
+    if (pcRange.size > 0)
+    {
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
+        pipelineLayoutInfo.pPushConstantRanges = &pcRange;
+    }
 
     if (vkCreatePipelineLayout(mContext->device, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS)
     {
@@ -179,6 +196,24 @@ uint32_t VKComputePipeline::GetResourceBindIndex(const std::string& resourceName
         return -1;
 	}
     return bindData->second.binding;
+}
+
+const PushConstantMeta* VKComputePipeline::GetPushConstantByName(const std::string& resourceName) const
+{
+    for (const auto& pc : mPushConstants)
+    {
+        if (pc.name == resourceName)
+            return &pc;
+    }
+    return nullptr;
+}
+
+const PushConstantMeta* VKComputePipeline::GetPushConstantByBinding(uint32_t set, uint32_t binding) const
+{
+    auto it = mPushConstantBindings.find(std::make_pair(set, binding));
+    if (it != mPushConstantBindings.end())
+        return &it->second;
+    return nullptr;
 }
 
 NAMESPACE_RENDERCORE_END

@@ -41,6 +41,18 @@ void VKUniformBuffer::SetData(const void* data, uint32_t offset, uint32_t dataSi
     vmaMapMemory(mContext->vmaAllocator, mAllocation, (void**)&pData);
     memcpy(pData + offset, data, dataSize);
     vmaUnmapMemory(mContext->vmaAllocator, mAllocation);
+    
+    // ≤256B 保留 CPU shadow copy，用于 push constant 路径
+    if (mBufferLength <= 256)
+    {
+        // 确保 shadow copy 足够大
+        size_t requiredSize = offset + dataSize;
+        if (mShadowCopy.size() < requiredSize)
+        {
+            mShadowCopy.resize(requiredSize);
+        }
+        memcpy(mShadowCopy.data() + offset, data, dataSize);
+    }
 }
 
 NAMESPACE_RENDERCORE_END

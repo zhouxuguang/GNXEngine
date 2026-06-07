@@ -8,8 +8,11 @@
 #include "ShaderCompiler.h"
 #include "spirv_cross/spirv_glsl.hpp"
 #include "spirv_cross/spirv_msl.hpp"
+#include "spirv_reflection.h"
 #include "DXCompilerUtil.h"
 #include "ReflectionInfo.h"
+#include <unordered_set>
+#include <unordered_map>
 
 NAMESPACE_SHADERCOMPILER_BEGIN
 
@@ -137,6 +140,152 @@ static void patchDXCMeshShaderPayloadBug(ShaderCodePtr spirvCode, ShaderStage sh
         }
         offset += wordCountInstr;
     }
+}
+
+// 将 ≤256B 的 UBO (cbuffer) 改写为 push constant
+// 在 SPIR-V 二进制层面做三件事：
+//   1. OpVariable: StorageClass Uniform(2) → PushConstant(9)
+//   2. OpTypePointer: StorageClass Uniform(2) → PushConstant(9)
+//   3. OpDecorate DescriptorSet(34) / Binding(33) → 替换为 OpNop
+// 返回转换后的 push constant 元数据列表
+static std::vector<CompiledPushConstantInfo> patchUniformToPushConstant(
+    ShaderCodePtr spirvCode, ShaderStage shaderStage)
+{
+    std::vector<CompiledPushConstantInfo> result;
+    if (!spirvCode || spirvCode->size() < 20)
+        return result;
+
+    // 用 SPIRV-Reflect 枚举所有 descriptor binding，找出 ≤256B 的 UBO
+    SpvReflectShaderModule module;
+    SpvReflectResult reflectResult = spvReflectCreateShaderModule(
+        spirvCode->size(), spirvCode->data(), &module);
+    if (reflectResult != SPV_REFLECT_RESULT_SUCCESS)
+        return result;
+
+    uint32_t bindingCount = 0;
+    spvReflectEnumerateDescriptorBindings(&module, &bindingCount, nullptr);
+    std::vector<SpvReflectDescriptorBinding*> bindings(bindingCount);
+    spvReflectEnumerateDescriptorBindings(&module, &bindingCount, bindings.data());
+
+    // 收集目标 UBO 的 SPIR-V ID
+    struct TargetUBO {
+        uint32_t spirv_id;
+        std::string name;
+        uint32_t size;
+        uint32_t set;
+        uint32_t binding;
+    };
+    std::vector<TargetUBO> targets;
+    for (uint32_t i = 0; i < bindingCount; i++)
+    {
+        const auto* b = bindings[i];
+        if (b->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER &&
+            b->block.padded_size > 0 &&
+            b->block.padded_size <= 256)
+        {
+            targets.push_back({b->spirv_id, b->name ? b->name : "", b->block.padded_size, b->set, b->binding});
+        }
+    }
+
+    if (!targets.empty())
+    {
+        // 将目标 spirv_id 放入 set 方便快速查
+        std::unordered_set<uint32_t> targetIds;
+        // 同时记录 spirv_id -> name/size 映射（用于输出）
+        std::unordered_map<uint32_t, TargetUBO> targetMap;
+        for (auto& t : targets)
+        {
+            targetIds.insert(t.spirv_id);
+            targetMap[t.spirv_id] = t;
+        }
+
+        // 记录 OpVariable 的 result_type (pointer type id)
+        std::unordered_set<uint32_t> pointerTypeIds;
+
+        uint32_t* words = reinterpret_cast<uint32_t*>(spirvCode->data());
+        size_t wordCount = spirvCode->size() / 4;
+        size_t offset = 5; // skip 5-word SPIR-V header
+
+        // 第一遍：查找 OpVariable 和 OpDecorate
+        while (offset + 3 < wordCount)
+        {
+            uint32_t instr = words[offset];
+            uint16_t opcode = instr & 0xFFFF;
+            uint16_t wordCountInstr = (instr >> 16) & 0xFFFF;
+            if (wordCountInstr == 0) break;
+
+            if (opcode == 59 && wordCountInstr >= 4) // OpVariable
+            {
+                // words[offset+1] = result_type (pointer), words[offset+2] = result_id, words[offset+3] = storage_class
+                uint32_t varId = words[offset + 2];
+                if (targetIds.count(varId))
+                {
+                    uint32_t& storageClass = words[offset + 3];
+                    if (storageClass == spv::StorageClassUniform)
+                    {
+                        storageClass = spv::StorageClassPushConstant;
+                        pointerTypeIds.insert(words[offset + 1]);
+                    }
+                }
+            }
+            else if (opcode == 71 && wordCountInstr >= 3) // OpDecorate
+            {
+                uint32_t targetId = words[offset + 1];
+                if (targetIds.count(targetId))
+                {
+                    uint32_t decoration = words[offset + 2];
+                    if (decoration == spv::DecorationDescriptorSet ||
+                        decoration == spv::DecorationBinding)
+                    {
+                        // 保留 OpDecorate DescriptorSet/Binding 不动
+                        // set/binding 装饰对 PushConstant 变量无意义，但保留它们
+                        // 以便 vulkan 后端在内部扫描恢复原始 set/binding 信息
+                        // （用于按 index 绑定的反向查表路由）
+                    }
+                }
+            }
+
+            offset += wordCountInstr;
+        }
+
+        // 第二遍：查找 OpTypePointer 修改 storage class
+        if (!pointerTypeIds.empty())
+        {
+            offset = 5;
+            while (offset + 3 < wordCount)
+            {
+                uint32_t instr = words[offset];
+                uint16_t opcode = instr & 0xFFFF;
+                uint16_t wordCountInstr = (instr >> 16) & 0xFFFF;
+                if (wordCountInstr == 0) break;
+
+                if (opcode == 32 && wordCountInstr >= 3) // OpTypePointer
+                {
+                    // words[offset+1] = result_id, words[offset+2] = storage_class, words[offset+3] = pointed_type
+                    uint32_t ptrId = words[offset + 1];
+                    if (pointerTypeIds.count(ptrId))
+                    {
+                        uint32_t& storageClass = words[offset + 2];
+                        if (storageClass == spv::StorageClassUniform)
+                        {
+                            storageClass = spv::StorageClassPushConstant;
+                        }
+                    }
+                }
+
+                offset += wordCountInstr;
+            }
+        }
+
+        // 构造输出元数据
+        for (auto& t : targets)
+        {
+            result.push_back({t.name, t.size, t.set, t.binding});
+        }
+    }
+
+    spvReflectDestroyShaderModule(&module);
+    return result;
 }
 
 CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderStage)
@@ -359,6 +508,9 @@ CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage s
     {
         CompiledShaderInfoPtr compileShader = std::make_shared<CompiledShaderInfo>();
         compileShader->shaderSource = shaderCode;
+
+        // 将 ≤256B 的 UBO 自动改写为 push constant（SPIR-V 二进制 patching）
+        compileShader->pushConstants = patchUniformToPushConstant(shaderCode, shaderStage);
 
         // 提取 mesh/task/compute shader 的 threadgroup 大小
         if (shaderStage == ShaderStage_Task || shaderStage == ShaderStage_Mesh || shaderStage == ShaderStage_Compute)

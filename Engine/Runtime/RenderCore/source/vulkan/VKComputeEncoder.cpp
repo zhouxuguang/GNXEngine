@@ -43,6 +43,17 @@ void VKComputeEncoder::SetUniformBuffer(const std::string& resourceName, Uniform
         return;
     }
 
+    // 检查是否是 push constant
+    const PushConstantMeta* pcMeta = mVKPipeline->GetPushConstantByName(resourceName);
+    if (pcMeta)
+    {
+        std::shared_ptr<VKUniformBuffer> vkBuffer = std::dynamic_pointer_cast<VKUniformBuffer>(buffer);
+        const void* data = vkBuffer->GetShadowData();
+        vkCmdPushConstants(mCommandBuffer, mVKPipeline->GetPipelineLayout(),
+            VK_SHADER_STAGE_COMPUTE_BIT, pcMeta->offset, pcMeta->size, data);
+        return;
+    }
+
     uint32_t bindIndex = mVKPipeline->GetResourceBindIndex(resourceName);
     if (-1 == bindIndex)
     {

@@ -53,6 +53,11 @@ public:
      */
     uint32_t GetResourceBindIndex(const std::string& resourceName) const;
     
+    // Push constant 查询接口
+    const PushConstantMeta* GetPushConstantByName(const std::string& resourceName) const;
+    const PushConstantMeta* GetPushConstantByBinding(uint32_t set, uint32_t binding) const;
+    const std::vector<PushConstantMeta>& GetPushConstants() const { return mPushConstants; }
+    
 private:
     VulkanContextPtr mContext = nullptr;
     VkPipeline mPipeline = VK_NULL_HANDLE;
@@ -62,6 +67,11 @@ private:
     
     uint32_t mStageSetOffsets[DESCRIPTOR_TYPE_MAX];   //每一种资源所在的set的索引
     std::unordered_map<std::string, BindMetaData> mReflectionDatas;
+    
+    // Push constant 数据
+    std::vector<PushConstantMeta> mPushConstants;
+    // {set, binding} → PushConstantMeta 的反向索引（用于按 index 绑定）
+    PushConstantBindingMap mPushConstantBindings;
 };
 
 NAMESPACE_RENDERCORE_END

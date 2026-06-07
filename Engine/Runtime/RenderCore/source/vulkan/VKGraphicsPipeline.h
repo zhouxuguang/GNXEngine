@@ -160,6 +160,12 @@ public:
     const uint32_t* GetMeshThreadgroupSize() const override;
     const uint32_t* GetTaskThreadgroupSize() const override;
     
+    // Push constant 查询
+    const PushConstantMeta* GetPushConstantByName(const std::string& resourceName) const;
+    const PushConstantMeta* GetPushConstantByBinding(uint32_t set, uint32_t binding) const;
+    const std::vector<PushConstantMeta>& GetPushConstants() const { return mPushConstants; }
+    const PushConstantBindingMap& GetPushConstantBindings() const { return mPushConstantBindings; }
+    
 private:
     VkPipeline mPipeline = VK_NULL_HANDLE;
     VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;
@@ -179,6 +185,10 @@ private:
     VKShaderFunctionPtr mTaskShader = nullptr;
     VKShaderFunctionPtr mMeshShader = nullptr;
     std::vector<VkDescriptorSetLayout> mMeshDescriptorSetLayouts;
+    
+    // Push constant 数据
+    std::vector<PushConstantMeta> mPushConstants;
+    PushConstantBindingMap mPushConstantBindings;
     
     uint32_t mStageSetOffsets[ShaderStage_Max][DESCRIPTOR_TYPE_MAX];
     std::vector<VkDescriptorSet> mDescriptorSets;

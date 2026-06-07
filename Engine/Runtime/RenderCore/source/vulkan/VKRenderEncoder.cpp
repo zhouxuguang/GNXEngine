@@ -551,15 +551,25 @@ void VKRenderEncoder::SetVertexUniformBuffer(UniformBufferPtr buffer, int index)
     }
     VKUniformBuffer *vkUniformBuffer = (VKUniformBuffer*)buffer.get();
     
+    uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Vertex, DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    
+    // 检查是否是 push constant
+    const PushConstantMeta* pcMeta = mGraphicsPipieline->GetPushConstantByBinding(texOffset, index);
+    if (pcMeta)
+    {
+        vkCmdPushConstants(mCommandBuffer, mGraphicsPipieline->GetPipelineLayout(),
+            pcMeta->stageFlags, pcMeta->offset, pcMeta->size,
+            vkUniformBuffer->GetShadowData());
+        return;
+    }
+    
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.range = VK_WHOLE_SIZE;
     bufferInfo.buffer = vkUniformBuffer->GetBuffer();
     
-    // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
-    uint32_t texOffset = mGraphicsPipieline->GetDescriptorOffset(ShaderStage_Vertex, DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     VkDescriptorSet descriptorSet = mGraphicsPipieline->GetDescriptorSet(texOffset);
     VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(descriptorSet,
-                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, index, &bufferInfo);   // 这里还有问题，索引binding的问题
+                VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, index, &bufferInfo);
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     imageInfo.imageView = VK_NULL_HANDLE;
@@ -567,7 +577,6 @@ void VKRenderEncoder::SetVertexUniformBuffer(UniformBufferPtr buffer, int index)
     writeDescriptorSet.pImageInfo = &imageInfo;
     
     vkUpdateDescriptorSets(mContext->device, 1, &writeDescriptorSet, 0, nullptr);
-    //vkCmdPushDescriptorSetKHR(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipelineLayout(), texOffset, 1, &writeDescriptorSet);
 }
 
 void VKRenderEncoder::SetFragmentUniformBuffer(UniformBufferPtr buffer, int index)
@@ -620,6 +629,16 @@ void VKRenderEncoder::SetVertexUniformBuffer(const std::string& resourceName, Un
 
     VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
 
+    // 检查是否是 push constant
+    const PushConstantMeta* pcMeta = mGraphicsPipieline->GetPushConstantByName(resourceName);
+    if (pcMeta)
+    {
+        vkCmdPushConstants(mCommandBuffer, mGraphicsPipieline->GetPipelineLayout(),
+            pcMeta->stageFlags, pcMeta->offset, pcMeta->size,
+            vkUniformBuffer->GetShadowData());
+        return;
+    }
+
     ShaderBufferDesc bufferDesc;
     bufferDesc.buffer = vkUniformBuffer->GetBuffer();
     bufferDesc.offset = 0;
@@ -638,6 +657,16 @@ void VKRenderEncoder::SetFragmentUniformBuffer(const std::string& resourceName, 
 
 	VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
 
+    // 检查是否是 push constant
+    const PushConstantMeta* pcMeta = mGraphicsPipieline->GetPushConstantByName(resourceName);
+    if (pcMeta)
+    {
+        vkCmdPushConstants(mCommandBuffer, mGraphicsPipieline->GetPipelineLayout(),
+            pcMeta->stageFlags, pcMeta->offset, pcMeta->size,
+            vkUniformBuffer->GetShadowData());
+        return;
+    }
+
 	ShaderBufferDesc bufferDesc;
 	bufferDesc.buffer = vkUniformBuffer->GetBuffer();
 	bufferDesc.offset = 0;
@@ -654,6 +683,16 @@ void VKRenderEncoder::SetMeshUniformBuffer(UniformBufferPtr buffer, int index)
     }
 
     VKUniformBuffer* vkUniformBuffer = (VKUniformBuffer*)buffer.get();
+
+    // 检查是否是 push constant（mesh shader 的 uniform buffer 在 set 0）
+    const PushConstantMeta* pcMeta = mGraphicsPipieline->GetPushConstantByBinding(0, index);
+    if (pcMeta)
+    {
+        vkCmdPushConstants(mCommandBuffer, mGraphicsPipieline->GetPipelineLayout(),
+            pcMeta->stageFlags, pcMeta->offset, pcMeta->size,
+            vkUniformBuffer->GetShadowData());
+        return;
+    }
 
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.buffer = vkUniformBuffer->GetBuffer();
@@ -683,6 +722,16 @@ void VKRenderEncoder::SetTaskUniformBuffer(UniformBufferPtr buffer, int index)
 
     VKUniformBuffer* vkUniformBuffer = (VKUniformBuffer*)buffer.get();
 
+    // 检查是否是 push constant（task shader 的 uniform buffer 在 set 0）
+    const PushConstantMeta* pcMeta = mGraphicsPipieline->GetPushConstantByBinding(0, index);
+    if (pcMeta)
+    {
+        vkCmdPushConstants(mCommandBuffer, mGraphicsPipieline->GetPipelineLayout(),
+            pcMeta->stageFlags, pcMeta->offset, pcMeta->size,
+            vkUniformBuffer->GetShadowData());
+        return;
+    }
+
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.buffer = vkUniformBuffer->GetBuffer();
     bufferInfo.offset = 0;
@@ -709,10 +758,20 @@ void VKRenderEncoder::SetMeshUniformBuffer(const std::string& resourceName, Unif
         return;
     }
 
-    VKUniformBuffer* vkUniformBuffer = (VKUniformBuffer*)buffer.get();
+VKUniformBuffer* vkUniformBuffer = (VKUniformBuffer*)buffer.get();
     VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
     if (!shader)
     {
+        return;
+    }
+
+    // 检查是否是 push constant
+    const PushConstantMeta* pcMeta = mGraphicsPipieline->GetPushConstantByName(resourceName);
+    if (pcMeta)
+    {
+        vkCmdPushConstants(mCommandBuffer, mGraphicsPipieline->GetPipelineLayout(),
+            pcMeta->stageFlags, pcMeta->offset, pcMeta->size,
+            vkUniformBuffer->GetShadowData());
         return;
     }
 
@@ -735,6 +794,16 @@ void VKRenderEncoder::SetTaskUniformBuffer(const std::string& resourceName, Unif
     VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
     if (!shader)
     {
+        return;
+    }
+
+    // 检查是否是 push constant
+    const PushConstantMeta* pcMeta = mGraphicsPipieline->GetPushConstantByName(resourceName);
+    if (pcMeta)
+    {
+        vkCmdPushConstants(mCommandBuffer, mGraphicsPipieline->GetPipelineLayout(),
+            pcMeta->stageFlags, pcMeta->offset, pcMeta->size,
+            vkUniformBuffer->GetShadowData());
         return;
     }
 

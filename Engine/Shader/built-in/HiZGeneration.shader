@@ -33,10 +33,10 @@ void CS(
     uint groupIndex : SV_GroupIndex)
 {
     // 检查是否在纹理范围内
-    // if (dispatchThreadId.x >= textureSize.x || dispatchThreadId.y >= textureSize.y)
-    // {
-    //     return;
-    // }
+    if (dispatchThreadId.x >= textureSize.x || dispatchThreadId.y >= textureSize.y)
+    {
+        return;
+    }
     
     // 计算2x2邻域的采样位置（在上一层纹理空间）
     // 每个线程处理一个2x2的像素块

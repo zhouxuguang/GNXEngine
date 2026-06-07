@@ -34,6 +34,15 @@ struct UniformLayout
 
 typedef std::vector<UniformLayout> UniformBuffersLayout;
 
+// 单个 push constant block 的元数据（从 SPIR-V 编译阶段收集）
+struct CompiledPushConstantInfo
+{
+    std::string name;     // cbuffer 名称
+    uint32_t size = 0;    // padded_size（已对齐）
+    uint32_t set = 0;     // 原始 descriptor set（用于按 index 绑定时的反向查表）
+    uint32_t binding = 0; // 原始 descriptor binding
+};
+
 // 编译后的shader信息以及一些反射的元数据信息
 struct CompiledShaderInfo
 {
@@ -44,6 +53,10 @@ struct CompiledShaderInfo
     uint32_t threadgroupSizeX = 0;
     uint32_t threadgroupSizeY = 0;
     uint32_t threadgroupSizeZ = 0;
+    
+    // 从 UBO 转换为 push constant 的 cbuffer 列表
+    // 在 CompileShader 中由 patchUniformToPushConstant 填充
+    std::vector<CompiledPushConstantInfo> pushConstants;
 };
 
 using CompiledShaderInfoPtr = std::shared_ptr<CompiledShaderInfo>;

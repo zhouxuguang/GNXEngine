@@ -81,6 +81,21 @@ struct BindMetaData
     VkShaderStageFlags   shaderStageFlag;
 };
 
+// 单个 push constant block 的元数据
+struct PushConstantMeta
+{
+    std::string        name;          // cbuffer 名称，如 "HiZParams"
+    uint32_t           size = 0;      // block 的 padded_size
+    uint32_t           offset = 0;    // block 在 push constant 空间中的偏移
+    VkShaderStageFlags stageFlags = 0; // 所属 shader stage
+    uint32_t           originalSet = 0;    // 原始 descriptor set（用于按 index 绑定时反向查表）
+    uint32_t           originalBinding = 0; // 原始 descriptor binding
+};
+
+// push constant block 的 {set, binding} → PushConstantMeta 映射
+// 用于按 index 绑定时的反向查表
+using PushConstantBindingMap = std::map<std::pair<uint32_t, uint32_t>, PushConstantMeta>;
+
 class VKShaderFunction : public ShaderFunction, public std::enable_shared_from_this<VKShaderFunction>
 {
 public:
@@ -118,6 +133,11 @@ public:
         return mVertexInputLayout;
     }
     
+    const std::vector<PushConstantMeta>& GetPushConstants() const
+    {
+        return mPushConstants;
+    }
+    
     VkShaderStageFlagBits GetVKShaderStage() const
     {
         return mVKShaderStage;
@@ -134,6 +154,9 @@ private:
     
     DescriptorSetLayoutDataVec mDescriptorSets;
     VertexInputLayout mVertexInputLayout;
+    
+    // push constant blocks（从 SPIRV-Reflect 收集）
+    std::vector<PushConstantMeta> mPushConstants;
 };
 
 using VKShaderFunctionPtr = std::shared_ptr<VKShaderFunction>;
@@ -233,6 +256,11 @@ public:
     // 获取指定描述符类型的 set 偏移
     uint32_t GetSetOffset(DescriptorType descriptorType) const;
 
+    // Push constant 查询
+    const PushConstantMeta* GetPushConstantByName(const std::string& resourceName) const;
+    const std::vector<PushConstantMeta>& GetPushConstants() const { return mPushConstants; }
+    const PushConstantBindingMap& GetPushConstantBindings() const { return mPushConstantBindings; }
+
     const uint32_t* GetMeshThreadgroupSize() const { return mMeshThreadgroupSize; }
     const uint32_t* GetTaskThreadgroupSize() const { return mTaskThreadgroupSize; }
 
@@ -266,6 +294,11 @@ private:
     // Mesh/Task shader 的 threadgroup 大小（来自 SPIR-V 反射的 ExecutionModeLocalSize）
     uint32_t mMeshThreadgroupSize[3] = {1, 1, 1};
     uint32_t mTaskThreadgroupSize[3] = {1, 1, 1};
+
+    // Push constant blocks（从各 shader stage 的 SPIRV-Reflect 收集）
+    std::vector<PushConstantMeta> mPushConstants;
+    // {set, binding} → PushConstantMeta 的反向索引
+    PushConstantBindingMap mPushConstantBindings;
 };
 
 using VKGraphicsShaderPtr = std::shared_ptr<VKGraphicsShader>;

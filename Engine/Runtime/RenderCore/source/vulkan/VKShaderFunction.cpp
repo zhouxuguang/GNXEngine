@@ -12,6 +12,7 @@
 #include "VulkanDescriptorUtil.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include <set>
+#include <tuple>
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -82,6 +83,19 @@ static DescriptorType GetDescriptorType(VkDescriptorType bindingType)
     }
     
     return retType;
+}
+
+static VkShaderStageFlagBits ShaderStageToVkFlag(ShaderStage stage)
+{
+    switch (stage)
+    {
+        case ShaderStage_Vertex:   return VK_SHADER_STAGE_VERTEX_BIT;
+        case ShaderStage_Fragment: return VK_SHADER_STAGE_FRAGMENT_BIT;
+        case ShaderStage_Compute:  return VK_SHADER_STAGE_COMPUTE_BIT;
+        case ShaderStage_Task:     return VK_SHADER_STAGE_TASK_BIT_EXT;
+        case ShaderStage_Mesh:     return VK_SHADER_STAGE_MESH_BIT_EXT;
+        default:                   return VK_SHADER_STAGE_ALL;
+    }
 }
 
 static DescriptorSetLayoutDataVec GetDescriptorInfo(const SpvReflectShaderModule& shaderModule)
@@ -260,9 +274,30 @@ std::shared_ptr<VKShaderFunction> VKShaderFunction::initWithShaderSourceInner(co
         mWorkGroupSize.z = entryPoint->local_size.z;
     }
     
-    if (shaderModule.shader_stage == SPV_REFLECT_SHADER_STAGE_VERTEX_BIT)
+if (shaderModule.shader_stage == SPV_REFLECT_SHADER_STAGE_VERTEX_BIT)
     {
         mVertexInputLayout = GetVertexInfo(shaderModule);
+    }
+    
+    // 收集 push constant blocks
+    {
+        uint32_t pcCount = 0;
+        spvReflectEnumeratePushConstantBlocks(&shaderModule, &pcCount, nullptr);
+        if (pcCount > 0)
+        {
+            std::vector<SpvReflectBlockVariable*> pcBlocks(pcCount);
+            spvReflectEnumeratePushConstantBlocks(&shaderModule, &pcCount, pcBlocks.data());
+            for (uint32_t i = 0; i < pcCount; i++)
+            {
+                const SpvReflectBlockVariable* block = pcBlocks[i];
+                PushConstantMeta meta;
+                meta.name = block->name ? block->name : "";
+                meta.size = block->padded_size;
+                meta.offset = block->offset;
+                meta.stageFlags = mVKShaderStage;
+                mPushConstants.push_back(meta);
+            }
+        }
     }
     
     spvReflectDestroyShaderModule(&shaderModule);
@@ -439,6 +474,16 @@ VKGraphicsShader::~VKGraphicsShader()
 
 void VKGraphicsShader::BindUniformBuffer(VkCommandBuffer commandBuffer, const std::string& resourceName, const ShaderBufferDesc& bufferDesc, VkPipelineLayout layout)
 {
+    // 检查是否是 push constant
+    const PushConstantMeta* pcMeta = GetPushConstantByName(resourceName);
+    if (pcMeta)
+    {
+        // Push constant 路径需要用数据指针，bufferDesc 只有 VkBuffer 句柄
+        // 实际的 push constant 数据已在 Encoder 层读取 shadow copy 并推送
+        // 这里不做实际操作，路由由 Encoder 层（SetVertexUniformBuffer 等）处理
+        return;
+    }
+
 	auto bindData = mReflectionDatas.find(resourceName);
 	if (bindData == mReflectionDatas.end())
 	{
@@ -570,6 +615,51 @@ void VKGraphicsShader::CollectResource(SpvReflectShaderModule shaderModule, Shad
 			}
         }
     }
+    
+    // 收集 push constant blocks
+    {
+        uint32_t pcCount = 0;
+        spvReflectEnumeratePushConstantBlocks(&shaderModule, &pcCount, nullptr);
+        if (pcCount > 0)
+        {
+            std::vector<SpvReflectBlockVariable*> pcBlocks(pcCount);
+            spvReflectEnumeratePushConstantBlocks(&shaderModule, &pcCount, pcBlocks.data());
+            for (uint32_t i = 0; i < pcCount; i++)
+            {
+                const SpvReflectBlockVariable* block = pcBlocks[i];
+                // 只添加尚未收集的 block（避免不同 stage 重复添加同名 block）
+                bool found = false;
+                for (auto& existing : mPushConstants)
+                {
+                    if (existing.name == (block->name ? block->name : ""))
+                    {
+                        existing.stageFlags |= ShaderStageToVkFlag(shaderStage);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    PushConstantMeta meta;
+                    meta.name = block->name ? block->name : "";
+                    meta.size = block->padded_size;
+                    meta.offset = block->offset;
+                    meta.stageFlags = ShaderStageToVkFlag(shaderStage);
+                    mPushConstants.push_back(meta);
+                }
+            }
+        }
+    }
+}
+
+const PushConstantMeta* VKGraphicsShader::GetPushConstantByName(const std::string& resourceName) const
+{
+    for (const auto& pc : mPushConstants)
+    {
+        if (pc.name == resourceName)
+            return &pc;
+    }
+    return nullptr;
 }
 
 void VKGraphicsShader::GenerateVulkanDescriptorSetLayout()
