@@ -50,14 +50,14 @@ public:
     ~QuadTreeTerrain();
 
     // 从高度图图像创建（GRAY8 或 GRAY16）
-    static std::shared_ptr<QuadTreeTerrain> CreateFromHeightMap(
+    static QuadTreeTerrain* CreateFromHeightMap(
         const char* heightmapPath,
         float worldSizeXZ = 512.0f,
         float heightScale = 80.0f,
         uint32_t maxLevel = 5);
 
     // 从程序化正弦波噪声创建
-    static std::shared_ptr<QuadTreeTerrain> Create(
+    static QuadTreeTerrain* Create(
         uint32_t gridSize = 513,
         float worldSizeXZ = 512.0f,
         float heightScale = 80.0f,

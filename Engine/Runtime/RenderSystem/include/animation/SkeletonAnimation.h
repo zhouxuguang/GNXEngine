@@ -26,6 +26,8 @@ NS_RENDERSYSTEM_BEGIN
 class SkeletonAnimation : public Component
 {
 public:
+    ComponentType GetComponentType() const override { return ComponentType::SkeletonAnim; }
+public:
     AnimationPose mAnimatedPose;                  // 当前的姿势
     std::vector<Matrix4x4f> mPosePalette;         // 姿势矩阵
     unsigned int mClip = 0;                        //当前运行哪个动画片段
@@ -57,6 +59,11 @@ private:
             skinnedMesh->GPUSkin(*mSkeleton, mAnimatedPose);
         }
     }
+};
+
+template<> struct ComponentTypeOf<SkeletonAnimation>
+{
+    static constexpr ComponentType Value = ComponentType::SkeletonAnim;
 };
 
 NS_RENDERSYSTEM_END

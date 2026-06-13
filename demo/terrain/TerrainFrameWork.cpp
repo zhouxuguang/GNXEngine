@@ -166,9 +166,12 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
 
     LOG_INFO("Generating QuadTree terrain (worldSize=%.0f, heightScale=%.1f, maxLevel=%u)...",
              kTerrainWorldSize, kTerrainHeightScale, kMaxQuadTreeLevel);
+    
+    // Add TerrainComponent to scene (NOT MeshRenderer)
+    auto* terrainNode = sceneManager->GetRootNode()->CreateChildSceneNode("Terrain");
 
     // Create TerrainComponent and initialize from heightmap
-    mTerrainComponent = new RenderSystem::TerrainComponent();
+    mTerrainComponent = terrainNode->AddComponent<RenderSystem::TerrainComponent>();
     mTerrainComponent->InitFromHeightMap(
         heightmapPath.c_str(), kTerrainWorldSize, kTerrainHeightScale, kMaxQuadTreeLevel);
 
@@ -210,10 +213,6 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
     mTerrainComponent->SetWireframe(true);
     mTerrainComponent->SetUseGPUCulling(false);
     mTerrainComponent->SetUseMeshShader(true);
-
-    // Add TerrainComponent to scene (NOT MeshRenderer)
-    auto* terrainNode = sceneManager->GetRootNode()->CreateChildSceneNode("Terrain");
-    terrainNode->AddComponent(mTerrainComponent);
 
     LOG_INFO("Terrain scene setup complete (TerrainComponent).");
 }

@@ -24,6 +24,8 @@ public:
     SkinnedMeshRenderer();
     
     ~SkinnedMeshRenderer();
+
+    ComponentType GetComponentType() const override { return ComponentType::SkinnedRenderer; }
     
     void SetSharedMesh(SkinnedMeshPtr mesh);
     SkinnedMeshPtr GetSharedMesh();
@@ -45,6 +47,11 @@ private:
 };
 
 typedef std::shared_ptr<SkinnedMeshRenderer> SkinnedMeshRendererPtr;
+
+template<> struct ComponentTypeOf<SkinnedMeshRenderer>
+{
+    static constexpr ComponentType Value = ComponentType::SkinnedRenderer;
+};
 
 NS_RENDERSYSTEM_END
 

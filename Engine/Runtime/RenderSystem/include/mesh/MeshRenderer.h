@@ -23,6 +23,8 @@ public:
     MeshRenderer();
     
     ~MeshRenderer();
+
+    ComponentType GetComponentType() const override { return ComponentType::MeshRenderer; }
     
     void SetSharedMesh(MeshPtr mesh);
     MeshPtr GetSharedMesh();
@@ -43,6 +45,11 @@ private:
 };
 
 typedef std::shared_ptr<MeshRenderer> MeshRendererPtr;
+
+template<> struct ComponentTypeOf<MeshRenderer>
+{
+    static constexpr ComponentType Value = ComponentType::MeshRenderer;
+};
 
 NS_RENDERSYSTEM_END
 

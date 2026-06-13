@@ -50,7 +50,7 @@ QuadTreeTerrain::~QuadTreeTerrain() = default;
 // 工厂方法：从高度图创建地形
 //=============================================================================
 
-QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
+QuadTreeTerrain* QuadTreeTerrain::CreateFromHeightMap(
     const char* heightmapPath,
     float worldSizeXZ,
     float heightScale,
@@ -87,7 +87,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
     while ((1u << n) < cells) ++n;
     uint32_t gridSize = (1u << n) + 1;
 
-    auto terrain = QuadTreeTerrainPtr(new QuadTreeTerrain());
+    auto terrain = new QuadTreeTerrain();
     terrain->mWorldSize     = worldSizeXZ;
     terrain->mHeightScale   = heightScale;
     terrain->mGridSize      = gridSize;
@@ -222,7 +222,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::CreateFromHeightMap(
 // 工厂方法：从程序化噪声创建地形
 //=============================================================================
 
-QuadTreeTerrainPtr QuadTreeTerrain::Create(
+QuadTreeTerrain* QuadTreeTerrain::Create(
     uint32_t gridSize,
     float worldSizeXZ,
     float heightScale,
@@ -234,7 +234,7 @@ QuadTreeTerrainPtr QuadTreeTerrain::Create(
     while ((1u << n) < cells) ++n;
     uint32_t adjustedGridSize = (1u << n) + 1;
 
-    auto terrain = QuadTreeTerrainPtr(new QuadTreeTerrain());
+    auto terrain = new QuadTreeTerrain();
     terrain->mWorldSize     = worldSizeXZ;
     terrain->mHeightScale   = heightScale;
     terrain->mGridSize      = adjustedGridSize;

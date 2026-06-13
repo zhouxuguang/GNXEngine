@@ -106,36 +106,62 @@ public:
     template<class T>
     T* QueryComponentT() const
     {
-        for (int i = 0; i < mComponents.size(); i ++)
+        ComponentType typeID = GetComponentTypeID<T>();
+        auto it = mComponentMap.find(typeID);
+        if (it != mComponentMap.end())
         {
-            Component* p1 = mComponents[i];
-//            typedef decltype(p1) CompPtrType;
-//            if (std::is_same<CompPtrType, T*>::value)
-//            {
-//                return (T*)mComponents[i];
-//            }
-            
-            if (dynamic_cast<T*>(p1))
-            {
-                return (T*)mComponents[i];
-            }
+            return (T*)it->second;
         }
         
         return nullptr;
     }
     
     // 增加组件
-    void AddComponent(Component* component)
+    template<typename T, typename... Args>
+    T* AddComponent(Args&&... args)
     {
+        static_assert(std::is_base_of<Component, T>::value, "T must derive from Component");
+
+        ComponentType typeID = GetComponentTypeID<T>();
+
+        // 检查组件是否存在
+        auto it = mComponentMap.find(typeID);
+        if (it != mComponentMap.end())
+        {
+            return (T*)it->second;
+        }
+
+        // Create new component
+        auto component = std::make_unique<T>(std::forward<Args>(args)...);
         component->SetSceneNode(this);
-        mComponents.push_back(component);
+        T* componentPtr = component.get();
+        mComponentMap[typeID] = componentPtr;
+        mComponents.push_back(std::move(component));
+        return componentPtr;
     }
 
     // 移除组件（不删除，只是从列表中移除）
-    void RemoveComponent(Component* component);
+    template<typename T>
+    bool RemoveComponent(Component* component)
+    {
+        ComponentType typeID = GetComponentTypeID<T>();
+        auto it = mComponentMap.find(typeID);
+        if (it != mComponentMap.end())
+        {
+            Component* componentPtr = it->second;
+            mComponentMap.erase(it);
 
-    // 销毁组件（删除并释放）
-    void DestroyComponent(Component* component);
+            for (auto compIt = mComponents.begin(); compIt != mComponents.end(); ++compIt)
+            {
+                if (compIt->get() == componentPtr) 
+                {
+                    mComponents.erase(compIt);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     virtual void Update(float deltaTime);
     
@@ -159,7 +185,6 @@ private:
     std::vector<SceneNode*> mChildNodes;    //孩子节点
     SceneNode* mParentNode = nullptr;       //父亲节点
     std::vector<SceneObject*> mAttachedObjects;   //该节点关联的物体
-    std::vector<Component*> mComponents;        //组件列表
 
     bool mIsVisible = true;           //节点可见性
     bool mIsActive = true;            //节点是否激活
@@ -168,6 +193,9 @@ private:
 
     mutable UniformBufferPtr mCachedModelUBO;    //缓存的模型 UniformBuffer
     mutable bool mModelUBODirty = true;         //模型 UBO 是否需要更新
+
+    std::vector<std::unique_ptr<Component>> mComponents;              //组件列表
+    std::unordered_map<ComponentType, Component*> mComponentMap;  //组件类型 → 组件指针
 };
 
 

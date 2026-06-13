@@ -220,14 +220,11 @@ RenderSystem::SceneNode* SceneSerializer::DeserializeNodeFromJson(const json& j,
         node->SetName(j.value("name", "Node"));
 
         // 创建并添加默认的 TransformComponent
-        auto* transformComp = new RenderSystem::TransformComponent(
-                                                                   RenderSystem::Transform(
-                mathutil::Vector3f(0, 0, 0),
-                mathutil::Quaternionf(1, 0, 0, 0),
-                mathutil::Vector3f(1, 1, 1)
-            )
-        );
-        node->AddComponent(transformComp);
+        node->AddComponent<RenderSystem::TransformComponent>(RenderSystem::Transform(
+                                                                       mathutil::Vector3f(0, 0, 0),
+                                                                       mathutil::Quaternionf(1, 0, 0, 0),
+                                                                       mathutil::Vector3f(1, 1, 1)
+                                                                   ));
     }
 
     // 设置可见性和激活状态

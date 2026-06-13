@@ -196,30 +196,24 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
     
     RenderSystem::MeshPtr mesh = CreatePlaneMesh(10, 10, 1, 1, 10, 7);
     {
-        RenderSystem::MeshRenderer* meshRender1 = new(std::nothrow) RenderSystem::MeshRenderer();
-        meshRender1->SetSharedMesh(mesh);
-        
         RenderSystem::MaterialPtr material1 = std::make_shared<RenderSystem::Material>();
         material1->SetTexture("diffuseTexture", woodImage, sampDesc);
         material1->SetTexture("normalTexture", normalImage);
         material1->SetTexture("roughnessTexture", metalRoughImage);
         material1->SetTexture("ambientTexture", ambientImage);
-        meshRender1->AddMaterial(material1);
         
         RenderSystem::SceneNode* floorNode = sceneManager->GetRootNode()->CreateChildSceneNode("floorNode");
-        floorNode->AddComponent(meshRender1);
+        RenderSystem::MeshRenderer* meshRender1 = floorNode->AddComponent<RenderSystem::MeshRenderer>();
+        meshRender1->AddMaterial(material1);
+        meshRender1->SetSharedMesh(mesh);
     }
     
     {
-        RenderSystem::MeshRenderer* meshRender1 = new(std::nothrow) RenderSystem::MeshRenderer();
-        meshRender1->SetSharedMesh(mesh);
-        
         RenderSystem::MaterialPtr material1 = std::make_shared<RenderSystem::Material>();
         material1->SetTexture("diffuseTexture", brickImage, sampDesc);
         material1->SetTexture("normalTexture", normalImage);
         material1->SetTexture("roughnessTexture", metalRoughImage);
         material1->SetTexture("ambientTexture", ambientImage);
-        meshRender1->AddMaterial(material1);
         
         Matrix4x4f translateMatrix = Matrix4x4f::CreateTranslate(0, 0, -5);
         Matrix4x4f rotateMatrix = Matrix4x4f::CreateRotation(1, 0, 0, 90.0f);
@@ -229,19 +223,18 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
         
         RenderSystem::SceneNode* wallNode = sceneManager->GetRootNode()->CreateChildSceneNode("wallNode1",
                                             transform.position, transform.rotation, transform.scale);
-        wallNode->AddComponent(meshRender1);
+        
+        RenderSystem::MeshRenderer* meshRender1 = wallNode->AddComponent<RenderSystem::MeshRenderer>();
+        meshRender1->SetSharedMesh(mesh);
+        meshRender1->AddMaterial(material1);
     }
 
 	{
-		RenderSystem::MeshRenderer* meshRender1 = new(std::nothrow) RenderSystem::MeshRenderer();
-		meshRender1->SetSharedMesh(mesh);
-
 		RenderSystem::MaterialPtr material1 = std::make_shared<RenderSystem::Material>();
 		material1->SetTexture("diffuseTexture", brickImage, sampDesc);
 		material1->SetTexture("normalTexture", normalImage);
 		material1->SetTexture("roughnessTexture", metalRoughImage);
 		material1->SetTexture("ambientTexture", ambientImage);
-		meshRender1->AddMaterial(material1);
 
 		Matrix4x4f translateMatrix = Matrix4x4f::CreateTranslate(-5, 0, 0);
 		Matrix4x4f rotateMatrix1 = Matrix4x4f::CreateRotation(1, 0, 0, 90.0f);
@@ -253,7 +246,10 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
 
 		RenderSystem::SceneNode* wallNode = sceneManager->GetRootNode()->CreateChildSceneNode("wallNode2",
 			transform.position, transform.rotation, transform.scale);
-		wallNode->AddComponent(meshRender1);
+        
+        RenderSystem::MeshRenderer* meshRender1 = wallNode->AddComponent<RenderSystem::MeshRenderer>();
+        meshRender1->SetSharedMesh(mesh);
+        meshRender1->AddMaterial(material1);
 	}
 }
 

@@ -39,6 +39,8 @@ public:
     TerrainComponent();
     ~TerrainComponent() override;
 
+    ComponentType GetComponentType() const override { return ComponentType::Terrain; }
+
     /**
      * 从高度图图像初始化地形。
      */
@@ -100,7 +102,7 @@ public:
 
     // ---- 访问器 ----
 
-    QuadTreeTerrainPtr GetQuadTreeTerrain() const { return mQuadTreeTerrain; }
+    QuadTreeTerrain* GetQuadTreeTerrain() const { return mQuadTreeTerrain; }
 
     float GetHeight(float worldX, float worldZ) const;
 
@@ -229,7 +231,7 @@ private:
      */
     void BindMaterialTextures(class RenderEncoder* renderEncoder);
 
-    QuadTreeTerrainPtr mQuadTreeTerrain;
+    QuadTreeTerrain* mQuadTreeTerrain;
     MaterialPtr      mMaterial;
     bool             mWireframe = false;
 
@@ -277,6 +279,11 @@ private:
 };
 
 typedef std::shared_ptr<TerrainComponent> TerrainComponentPtr;
+
+template<> struct ComponentTypeOf<TerrainComponent>
+{
+    static constexpr ComponentType Value = ComponentType::Terrain;
+};
 
 NS_RENDERSYSTEM_END
 

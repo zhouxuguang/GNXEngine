@@ -105,11 +105,11 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
 
     mesh->SetUpBuffer();
 
-    RenderSystem::MeshRenderer* meshRender = new(std::nothrow) RenderSystem::MeshRenderer();
+    RenderSystem::MeshRenderer* meshRender = node1->AddComponent<RenderSystem::MeshRenderer>();
 	meshRender->SetSharedMesh(mesh);
 	
-    node1->AddComponent(meshRender);
-    node2->AddComponent(meshRender);
+    RenderSystem::MeshRenderer* meshRender2 = node1->AddComponent<RenderSystem::MeshRenderer>();
+    meshRender2->SetSharedMesh(mesh);
 }
 
 void LumenFrameWork::Resize(uint32_t width, uint32_t height)

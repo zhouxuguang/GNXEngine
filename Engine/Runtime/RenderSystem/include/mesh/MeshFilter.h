@@ -20,6 +20,8 @@ public:
     MeshFilter();
     
     ~MeshFilter();
+
+    ComponentType GetComponentType() const override { return ComponentType::MeshFilter; }
     
     void SetSharedMesh(MeshPtr mesh);
     MeshPtr GetSharedMesh();
@@ -27,6 +29,11 @@ public:
 private:
     MeshPtr mMeshPtr = nullptr;
     void AssignMeshToRenderer();
+};
+
+template<> struct ComponentTypeOf<MeshFilter>
+{
+    static constexpr ComponentType Value = ComponentType::MeshFilter;
 };
 
 NS_RENDERSYSTEM_END
