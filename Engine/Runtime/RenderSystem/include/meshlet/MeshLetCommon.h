@@ -41,7 +41,7 @@ static constexpr uint32_t kMeshletThreadGroupSize = 128;
 struct Meshlet
 {
     uint32_t vertexOffset;      // meshletVerticesBuffer 中的偏移量
-    uint32_t triangleOffset;    // meshletTrianglesBuffer 中的偏移量（以 uint32_t 为单位）
+    uint32_t triangleOffset;    // meshletTrianglesBuffer 中的偏移量（以 uint32_t 为单位，每个 uint32_t 打包了 3 个 uint8_t 索引）
     uint32_t vertexCount;       // 本 meshlet 使用的顶点数（≤ kMeshletMaxVertices）
     uint32_t triangleCount;     // 本 meshlet 使用的三角形数（≤ kMeshletMaxTriangles）
 };
@@ -75,7 +75,7 @@ struct MeshletVertex
  * @param outVertices    输出的 meshlet 顶点索引映射
  * @param outTriangles   输出的重新打包后的三角形索引（uint32_t）
  */
-void BuildMeshlets(
+RENDERSYSTEM_API void BuildMeshlets(
     const uint32_t* indices,
     size_t          indexCount,
     const float*    positions,
@@ -94,7 +94,7 @@ void BuildMeshlets(
  * @param center         [输出] 包围球中心
  * @param radius         [输出] 包围球半径
  */
-void ComputeMeshletBounds(
+RENDERSYSTEM_API void ComputeMeshletBounds(
     const float*    meshVertices,
     const uint32_t* meshletVerts,
     uint32_t        vertexCount,

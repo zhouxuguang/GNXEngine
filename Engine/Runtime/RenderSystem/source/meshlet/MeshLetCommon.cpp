@@ -59,48 +59,43 @@ void BuildMeshlets(
     // 5. 将 meshopt 输出转换并重新打包到我们的 Meshlet 结构中
     outMeshlets.clear();
     outMeshlets.reserve(meshletCount);
-
-    outVertices.clear();
-    outTriangles.clear();
-
-    for (const auto& m : meshlets)
+    
+    // Repack triangles from 3 consecutive byes to 4-byte uint32_t to
+    // make it easier to unpack on the GPU.
+    //
+    std::vector<uint32_t> meshletTrianglesU32;
+    for (auto& m : meshlets)
     {
-        // 保存当前三角形偏移量
-        const uint32_t triangleOffset = static_cast<uint32_t>(outTriangles.size());
+        // Save triangle offset for current meshlet
+        uint32_t triangleOffset = static_cast<uint32_t>(meshletTrianglesU32.size());
 
-        // 重新打包三角形：3 个 uint8_t → 1 个 uint32_t
+        // Repack to uint32_t
         for (uint32_t i = 0; i < m.triangle_count; ++i)
         {
-            const uint32_t i0 = 3 * i + 0 + m.triangle_offset;
-            const uint32_t i1 = 3 * i + 1 + m.triangle_offset;
-            const uint32_t i2 = 3 * i + 2 + m.triangle_offset;
+            uint32_t i0 = 3 * i + 0 + m.triangle_offset;
+            uint32_t i1 = 3 * i + 1 + m.triangle_offset;
+            uint32_t i2 = 3 * i + 2 + m.triangle_offset;
 
-            const uint8_t vIdx0 = meshletTriangles[i0];
-            const uint8_t vIdx1 = meshletTriangles[i1];
-            const uint8_t vIdx2 = meshletTriangles[i2];
-
-            const uint32_t packed =
-                ((static_cast<uint32_t>(vIdx0) & 0xFF) << 0)  |
-                ((static_cast<uint32_t>(vIdx1) & 0xFF) << 8)  |
-                ((static_cast<uint32_t>(vIdx2) & 0xFF) << 16);
-
-            outTriangles.push_back(packed);
+            uint8_t  vIdx0  = meshletTriangles[i0];
+            uint8_t  vIdx1  = meshletTriangles[i1];
+            uint8_t  vIdx2  = meshletTriangles[i2];
+            uint32_t packed = ((static_cast<uint32_t>(vIdx0) & 0xFF) << 0) |
+                              ((static_cast<uint32_t>(vIdx1) & 0xFF) << 8) |
+                              ((static_cast<uint32_t>(vIdx2) & 0xFF) << 16);
+            meshletTrianglesU32.push_back(packed);
         }
 
         // 添加 meshlet
         Meshlet meshlet = {};
-        meshlet.vertexOffset   = static_cast<uint32_t>(outVertices.size());
+        meshlet.vertexOffset   = m.vertex_offset;
         meshlet.triangleOffset = triangleOffset;
         meshlet.vertexCount    = m.vertex_count;
         meshlet.triangleCount  = m.triangle_count;
         outMeshlets.push_back(meshlet);
-
-        // 复制顶点索引映射
-        for (uint32_t i = 0; i < m.vertex_count; ++i)
-        {
-            outVertices.push_back(meshletVertices[m.vertex_offset + i]);
-        }
     }
+
+    outVertices.swap(meshletVertices);
+    outTriangles.swap(meshletTrianglesU32);
 }
 
 // =======================================================================

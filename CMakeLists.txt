@@ -54,6 +54,7 @@ endif()
 add_subdirectory(ThirdParty)
 add_subdirectory(test)
 add_subdirectory(demo)
+add_subdirectory(tool)
 
 if(ENABLE_TESTING)
     enable_testing()

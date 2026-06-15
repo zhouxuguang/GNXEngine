@@ -1,0 +1,242 @@
+//
+//  main.cpp
+//  meshlet_gen
+//
+//  Meshlet Generation Tool
+//
+//  Loads a 3D mesh via assimp (same library & settings as the engine),
+//  uses the engine's BuildMeshlets() to generate meshlets,
+//  and writes the result to a binary file.
+//
+//  Output binary format (little-endian):
+//  1. uint32_t       vertexCount             number of vertices
+//  2. float[vc][3]   vertexPositions         vertex position data (vc = vertexCount)
+//  3. uint32_t       meshletCount            number of meshlets
+//  4. meshopt_Meshlet[meshletCount]          meshlet array
+//  5. uint32_t       meshletVerticesCount    number of meshlet vertex indices
+//  6. uint32_t[mvc]  meshletVertices         meshlet vertex index array (mvc = meshletVerticesCount)
+//  7. uint32_t       meshletTrianglesCount   number of packed meshlet triangle indices (in uint32_t units)
+//  8. uint32_t[mtc]   meshletTriangles        packed triangle index array (mtc = meshletTrianglesCount, each uint32_t packs 3 uint8_t indices)
+//
+
+#include <cstdint>
+#include <string>
+#include <vector>
+#include <iostream>
+
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+#include <assimp/mesh.h>
+
+#include "Runtime/RenderSystem/include/meshlet/MeshLetCommon.h"
+#include "Runtime/BaseLib/include/FileUtil.h"
+#include "meshoptimizer.h"
+
+using namespace RenderSystem;
+
+// -----------------------------------------------------------------------
+// Print usage information
+// -----------------------------------------------------------------------
+static void PrintUsage(const char* appName)
+{
+    std::cerr << "Usage: " << appName << " <input_mesh> <output_file>" << std::endl;
+    std::cerr << std::endl;
+    std::cerr << "  Reads a mesh from <input_mesh> (obj/fbx/gltf/glb)," << std::endl;
+    std::cerr << "  builds meshlets, and writes them to <output_file>." << std::endl;
+}
+
+// -----------------------------------------------------------------------
+// Helper: append a single value to a byte vector
+// -----------------------------------------------------------------------
+template<typename T>
+static void AppendToBytes(std::vector<uint8_t>& bytes, const T& value)
+{
+    const uint8_t* p = reinterpret_cast<const uint8_t*>(&value);
+    bytes.insert(bytes.end(), p, p + sizeof(T));
+}
+
+// -----------------------------------------------------------------------
+// Unpack a packed uint32_t triangle to 3 uint8_t values
+// -----------------------------------------------------------------------
+static void UnpackTriangle(uint32_t packed, uint8_t& a, uint8_t& b, uint8_t& c)
+{
+    a = static_cast<uint8_t>((packed >> 0)  & 0xFF);
+    b = static_cast<uint8_t>((packed >> 8)  & 0xFF);
+    c = static_cast<uint8_t>((packed >> 16) & 0xFF);
+}
+
+// -----------------------------------------------------------------------
+// Main function
+// -----------------------------------------------------------------------
+int main(int argc, char* argv[])
+{
+    if (argc < 3)
+    {
+        PrintUsage(argv[0]);
+        return 1;
+    }
+
+    const std::string inputFile  = argv[1];
+    const std::string outputFile = argv[2];
+
+    std::cout << "Input mesh:  " << inputFile << std::endl;
+    std::cout << "Output file: " << outputFile << std::endl;
+
+    // ===================================================================
+    // 1. Load mesh via assimp (same library & settings as engine's
+    //    AssimpAssetImporter: triangulate, join verts, optimize, etc.)
+    // ===================================================================
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(inputFile.c_str(),
+        aiProcess_Triangulate |
+        aiProcess_JoinIdenticalVertices |
+        aiProcess_GenNormals |
+        aiProcess_OptimizeMeshes |
+        aiProcess_SortByPType
+    );
+
+    if (!scene || !scene->HasMeshes())
+    {
+        std::cerr << "Error: Failed to load mesh file: " << inputFile << std::endl;
+        return 1;
+    }
+
+    // ===================================================================
+    // 2. Extract vertex positions and indices from all sub-meshes
+    // ===================================================================
+    std::vector<float>    positions;
+    std::vector<uint32_t> indices;
+
+    positions.reserve(scene->mNumMeshes * 1024);
+    indices.reserve(scene->mNumMeshes * 4096);
+
+    uint32_t vertexBase = 0;
+    for (unsigned int m = 0; m < scene->mNumMeshes; ++m)
+    {
+        const aiMesh* mesh = scene->mMeshes[m];
+
+        for (unsigned int i = 0; i < mesh->mNumVertices; ++i)
+        {
+            positions.push_back(mesh->mVertices[i].x);
+            positions.push_back(mesh->mVertices[i].y);
+            positions.push_back(mesh->mVertices[i].z);
+        }
+
+        for (unsigned int f = 0; f < mesh->mNumFaces; ++f)
+        {
+            const aiFace& face = mesh->mFaces[f];
+            for (unsigned int j = 0; j < face.mNumIndices; ++j)
+                indices.push_back(face.mIndices[j] + vertexBase);
+        }
+
+        vertexBase += mesh->mNumVertices;
+    }
+
+    const size_t vertexCount = positions.size() / 3;
+    const size_t indexCount  = indices.size();
+
+    std::cout << "  Vertices: " << vertexCount << std::endl;
+    std::cout << "  Indices:  " << indexCount << std::endl;
+
+    if (vertexCount == 0 || indexCount == 0)
+    {
+        std::cerr << "Error: Mesh has no vertices or indices." << std::endl;
+        return 1;
+    }
+
+    // ===================================================================
+    // 3. Build meshlets using the engine's BuildMeshlets()
+    // ===================================================================
+    std::vector<Meshlet>   engineMeshlets;
+    std::vector<uint32_t>  meshletVertices;
+    std::vector<uint32_t>  packedTriangles;   // engine packs 3 uint8 -> 1 uint32
+
+    BuildMeshlets(
+        indices.data(), indexCount,
+        positions.data(), vertexCount,
+        sizeof(float) * 3,
+        engineMeshlets,
+        meshletVertices,
+        packedTriangles);
+
+    const size_t meshletCount = engineMeshlets.size();
+    std::cout << "  Meshlets: " << meshletCount << std::endl;
+
+    // ===================================================================
+    // 4. Convert engine output -> output format
+    //    Engine Meshlet::triangleOffset is in uint32 units, and the
+    //    triangles are already packed as uint32_t (3 uint8 indices per
+    //    uint32_t). We store them directly (no unpack) so the GPU can
+    //    read byte-level data from a uint32_t[] SSBO.
+    // ===================================================================
+    std::vector<meshopt_Meshlet> outMeshlets(meshletCount);
+    std::vector<uint32_t>        outTriangles;
+
+    for (size_t i = 0; i < meshletCount; ++i)
+    {
+        const Meshlet& src = engineMeshlets[i];
+        meshopt_Meshlet& dst = outMeshlets[i];
+
+        dst.vertex_offset   = src.vertexOffset;
+        dst.triangle_offset = src.triangleOffset;
+        dst.vertex_count    = src.vertexCount;
+        dst.triangle_count  = src.triangleCount;
+
+        for (uint32_t t = 0; t < src.triangleCount; ++t)
+        {
+            outTriangles.push_back(packedTriangles[src.triangleOffset + t]);
+        }
+    }
+
+    // ===================================================================
+    // 5. Serialize to binary
+    // ===================================================================
+    std::vector<uint8_t> bytes;
+
+    // vertex count
+    AppendToBytes(bytes, static_cast<uint32_t>(vertexCount));
+    // vertex positions
+    bytes.insert(bytes.end(),
+        reinterpret_cast<const uint8_t*>(positions.data()),
+        reinterpret_cast<const uint8_t*>(positions.data()) + positions.size() * sizeof(float));
+    // meshlet count
+    AppendToBytes(bytes, static_cast<uint32_t>(meshletCount));
+    // meshlet array
+    bytes.insert(bytes.end(),
+        reinterpret_cast<const uint8_t*>(outMeshlets.data()),
+        reinterpret_cast<const uint8_t*>(outMeshlets.data()) + outMeshlets.size() * sizeof(meshopt_Meshlet));
+    // meshlet vertices count
+    AppendToBytes(bytes, static_cast<uint32_t>(meshletVertices.size()));
+    // meshlet vertices array
+    bytes.insert(bytes.end(),
+        reinterpret_cast<const uint8_t*>(meshletVertices.data()),
+        reinterpret_cast<const uint8_t*>(meshletVertices.data()) + meshletVertices.size() * sizeof(uint32_t));
+    // meshlet triangles count (in uint32_t units)
+    AppendToBytes(bytes, static_cast<uint32_t>(outTriangles.size()));
+    // meshlet triangles array (uint32_t[])
+    bytes.insert(bytes.end(),
+        reinterpret_cast<const uint8_t*>(outTriangles.data()),
+        reinterpret_cast<const uint8_t*>(outTriangles.data()) + outTriangles.size() * sizeof(uint32_t));
+
+    // ===================================================================
+    // 6. Write to file using engine's FileUtil
+    // ===================================================================
+    if (!baselib::FileUtil::WriteBinaryFile(outputFile, bytes))
+        return 1;
+
+    std::cout << "Successfully wrote " << bytes.size() << " bytes to " << outputFile << std::endl;
+
+    std::cout << "\nMeshlet details:" << std::endl;
+    for (size_t i = 0; i < meshletCount; ++i)
+    {
+        const auto& m = outMeshlets[i];
+        std::cout << "  Meshlet[" << i << "]: vertices=" << m.vertex_count
+                  << ", triangles=" << m.triangle_count
+                  << ", vertex_offset=" << m.vertex_offset
+                  << ", triangle_offset=" << m.triangle_offset
+                  << std::endl;
+    }
+
+    return 0;
+}
