@@ -27,7 +27,7 @@
 #include <string>
 #include <cassert>
 
-#include "meshoptimizer.h"
+#include "MeshLetCommon.h"
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -41,7 +41,7 @@ struct MeshletFileData
     std::vector<float>    vertexPositions;
 
     // meshlet 数组
-    std::vector<meshopt_Meshlet> meshlets;
+    std::vector<Meshlet> meshlets;
 
     // meshlet 顶点索引 (meshlet i 的顶点索引范围在
     // [meshlets[i].vertex_offset, meshlets[i].vertex_offset + meshlets[i].vertex_count))
@@ -106,7 +106,7 @@ inline bool LoadMeshletFile(const std::string& filePath, MeshletFileData& outDat
     offset += sizeof(uint32_t);
 
     // 4. meshlet 数组 (meshopt_Meshlet[meshletCount])
-    const size_t meshletBytes = static_cast<size_t>(meshletCount) * sizeof(meshopt_Meshlet);
+    const size_t meshletBytes = static_cast<size_t>(meshletCount) * sizeof(Meshlet);
     if (offset + meshletBytes > fileSize) return false;
     outData.meshlets.resize(meshletCount);
     std::memcpy(outData.meshlets.data(), buffer.data() + offset, meshletBytes);
