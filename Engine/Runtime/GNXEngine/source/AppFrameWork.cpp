@@ -1,5 +1,6 @@
 #include "AppFrameWork.h"
 #include "Runtime/BaseLib/include/LogService.h"
+#include "Runtime/RenderSystem/include/SceneManager.h"
 #include <tracy/Tracy.hpp>
 
 NAMESPACE_GNXENGINE_BEGIN
@@ -65,6 +66,8 @@ void AppFrameWork::OnEvent(Event& e)
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<WindowCloseEvent>(GNX_BIND_EVENT_FN(OnWindowClose));
     dispatcher.Dispatch<WindowResizeEvent>(GNX_BIND_EVENT_FN(OnWindowResize));
+    
+    RenderSystem::SceneManager::GetInstance()->OnEvent(e);
 }
 
 void AppFrameWork::OnEventImpl(Event& e)
