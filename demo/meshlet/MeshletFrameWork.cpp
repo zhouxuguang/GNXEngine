@@ -20,6 +20,8 @@
 #include "Runtime/RenderSystem/include/ShaderAssetLoader.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/BaseLib/include/FileUtil.h"
+#include "Runtime/RenderSystem/include/RenderEngine.h"
+#include "Runtime/RenderSystem/include/SceneManager.h"
 
 using namespace RenderCore;
 using namespace RenderSystem;
@@ -47,29 +49,19 @@ void MeshletFrameWork::Initlize()
     LoadMeshletData();
     InitCullingData();
     CreatePipeline();
+
+    // Create per-object UBO for cbPerObject (model matrix)
+    mPerObjectUBO = mRenderDevice->CreateUniformBufferWithSize(sizeof(RenderSystem::cbPerObject));
 }
 
 void MeshletFrameWork::LoadMeshletData()
 {
-    // Look for .meshlet file in data_asset/meshlet/
-    std::string meshletPath;
-    std::vector<std::string> candidates = {
-        "data_asset/meshlet/horse_statue_01_1k.meshlet",
-        "../../../data_asset/meshlet/horse_statue_01_1k.meshlet",
-        "assets/meshlet/horse_statue_01_1k.meshlet"
-    };
-    for (const auto& p : candidates)
-    {
-        if (LoadMeshletFile(p, mMeshletData))
-        {
-            meshletPath = p;
-            break;
-        }
-    }
+    // Use standard project asset directory (consistent with other demos)
+    std::string meshletPath = GetProjectAssetDir() + "meshlet/horse_statue_01_1k.meshlet";
 
-    if (mMeshletData.GetVertexCount() == 0)
+    if (!LoadMeshletFile(meshletPath, mMeshletData))
     {
-        LOG_ERROR("Failed to load any .meshlet file. Use meshlet_gen tool first.");
+        LOG_ERROR("Failed to load .meshlet file: %s. Use meshlet_gen tool first.", meshletPath.c_str());
         return;
     }
 
@@ -191,7 +183,7 @@ void MeshletFrameWork::CreatePipeline()
     shaderInfo.graphicsPipelineDesc.colorAttachmentDescriptors[0].writeMask = ColorWriteMaskAll;
 
     // depth
-    shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionLessThanOrEqual;
+    shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionGreaterThanOrEqual;
     shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = true;
 
     mMeshPipeline = mRenderDevice->CreateGraphicsPipeline(shaderInfo.graphicsPipelineDesc);
@@ -202,9 +194,6 @@ void MeshletFrameWork::CreatePipeline()
     }
     mMeshPipeline->AttachGraphicsShader(shaderInfo.graphicsShader);
 
-    // uniform buffer
-    mUniformBuffer = mRenderDevice->CreateUniformBufferWithSize(sizeof(UniformData));
-
     LOG_INFO("Meshlet mesh shader pipeline created successfully");
 }
 
@@ -213,6 +202,17 @@ void MeshletFrameWork::Resize(uint32_t width, uint32_t height)
     AppFrameWork::Resize(width, height);
     mWidth  = width;
     mHeight = height;
+    
+    RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
+
+    RenderSystem::CameraPtr cameraPtr = sceneManager->GetCamera("MainCamera");
+    if (!cameraPtr)
+    {
+        cameraPtr = sceneManager->CreateCamera("MainCamera");
+    }
+
+    cameraPtr->LookAt(mathutil::Vector3f(0, 0.105f, 0.40f), mathutil::Vector3f(0, 0.105f, 0), mathutil::Vector3f(0, 1, 0));
+    cameraPtr->SetLens(60, width, height, 0.1f, 1000.f);
 }
 
 void MeshletFrameWork::RenderFrame()
@@ -222,16 +222,14 @@ void MeshletFrameWork::RenderFrame()
         return;
     }
 
-    // ---- Update UBO ----
-    UniformData uboData;
-    uboData.model.MakeIdentity();
-    uboData.view = Matrix4x4f::CreateLookAt(
-        Vector3f(0.0f, 2.0f, -5.0f),
-        Vector3f(0.0f, 1.0f, 0.0f),
-        Vector3f(0.0f, 1.0f, 0.0f));
-    uboData.projection = Matrix4x4f::CreatePerspective(
-        60.0f, (float)mWidth / (float)mHeight, 0.1f, 100.0f);
-    mUniformBuffer->SetData(&uboData, 0, sizeof(UniformData));
+    static uint64_t lastTime = 0;
+    uint64_t thisTime = baselib::GetTickNanoSeconds();
+    float deltaTime = float(thisTime - lastTime) * 0.000000001f;
+    lastTime = thisTime;
+    LOG_INFO("deltaTime = %f\n", deltaTime);
+
+    RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
+    sceneManager->Update(deltaTime);
 
     // ---- Render ----
     CommandQueuePtr graphicsQueue = mRenderDevice->GetCommandQueue(QueueType::Graphics, 0);
@@ -242,26 +240,33 @@ void MeshletFrameWork::RenderFrame()
         if (!renderEncoder) return;
 
         renderEncoder->SetGraphicsPipeline(mMeshPipeline);
+        
+        // Bind camera UBO from SceneManager (cbPerCamera)
+        RenderSystem::RenderInfo renderInfo = sceneManager->GetRenderInfo();
+        renderEncoder->SetMeshUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
 
-        // bind UBO to mesh shader (binding 0)
-        renderEncoder->SetMeshUniformBuffer(mUniformBuffer, 0);
+        // Fill and bind per-object UBO (cbPerObject: model matrix)
+        {
+            RenderSystem::cbPerObject objData;
+            objData.MATRIX_M.MakeIdentity();
+            objData.MATRIX_M_INV.MakeIdentity();
+            objData.MATRIX_Normal.MakeIdentity();
+            mPerObjectUBO->SetData(&objData, 0, sizeof(RenderSystem::cbPerObject));
+        }
+        renderEncoder->SetMeshUniformBuffer("cbPerObject", mPerObjectUBO);
 
         // bind SSBOs
         if (mVertexPosSSBO)
-            renderEncoder->SetStorageBuffer("gVertexPositions", mVertexPosSSBO, ShaderStage_Mesh);
+            renderEncoder->SetStorageBuffer("Vertices", mVertexPosSSBO, ShaderStage_Mesh);
         if (mMeshletDescSSBO)
-            renderEncoder->SetStorageBuffer("gMeshlets", mMeshletDescSSBO, ShaderStage_Mesh);
+            renderEncoder->SetStorageBuffer("Meshlets", mMeshletDescSSBO, ShaderStage_Mesh);
         if (mMeshletVertsSSBO)
-            renderEncoder->SetStorageBuffer("gMeshletVertices", mMeshletVertsSSBO, ShaderStage_Mesh);
+            renderEncoder->SetStorageBuffer("VertexIndices", mMeshletVertsSSBO, ShaderStage_Mesh);
         if (mMeshletTriSSBO)
-            renderEncoder->SetStorageBuffer("gMeshletTriangles", mMeshletTriSSBO, ShaderStage_Mesh);
-        if (mMeshletBoundsSSBO)
-            renderEncoder->SetStorageBuffer("gMeshletBounds", mMeshletBoundsSSBO, ShaderStage_Mesh);
+            renderEncoder->SetStorageBuffer("TriangleIndices", mMeshletTriSSBO, ShaderStage_Mesh);
 
         // Dispatch one task group per meshlet
-        const uint32_t* groupSizes = mMeshPipeline->GetMeshThreadgroupSize();
-        uint32_t dispatchX = (mMeshletCount + groupSizes[0] - 1) / groupSizes[0];
-        renderEncoder->DrawMeshTasks(dispatchX, 1, 1);
+        renderEncoder->DrawMeshTasks(mMeshletCount, 1, 1);
 
         renderEncoder->EndEncode();
     }

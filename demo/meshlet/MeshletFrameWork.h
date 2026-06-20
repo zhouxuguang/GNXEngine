@@ -16,6 +16,7 @@
 #include "Runtime/RenderCore/include/RCBuffer.h"
 #include "Runtime/RenderSystem/include/meshlet/MeshLetCommon.h"
 #include "Runtime/RenderSystem/include/meshlet/MeshLetFile.h"
+#include "Runtime/RenderSystem/include/RenderParameter.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 
 class MeshletFrameWork : public GNXEngine::AppFrameWork
@@ -35,7 +36,6 @@ private:
 
     RenderCore::RenderDevicePtr mRenderDevice = nullptr;
     RenderCore::GraphicsPipelinePtr mMeshPipeline = nullptr;
-    RenderCore::UniformBufferPtr mUniformBuffer = nullptr;
 
     // SSBOs uploaded from .meshlet file
     RenderCore::RCBufferPtr mMeshletDescSSBO = nullptr;    // meshlet descriptors (StructuredBuffer<Meshlet>)
@@ -45,6 +45,9 @@ private:
 
     // Culling data SSBO
     RenderCore::RCBufferPtr mMeshletBoundsSSBO = nullptr;  // bounding spheres (float4 per meshlet)
+
+    // per-object uniform buffer (contains model matrix for shader's cbPerObject)
+    RenderCore::UniformBufferPtr mPerObjectUBO = nullptr;
 
     RenderSystem::MeshletFileData mMeshletData;
 

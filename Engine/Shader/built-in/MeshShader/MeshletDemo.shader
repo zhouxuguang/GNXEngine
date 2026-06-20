@@ -5,7 +5,7 @@
 
 struct Vertex 
 {
-    float3 Position;
+    float Position[3];
 };
 
 struct Meshlet 
@@ -59,7 +59,15 @@ void MS(uint gtid : SV_GroupThreadID,
         uint vertexIndex = m.VertexOffset + gtid;        
         vertexIndex = VertexIndices[vertexIndex];
 
-        vertices[gtid].Position = mul(Cam.MVP, float4(Vertices[vertexIndex].Position, 1.0));
+        // Transform to world space.
+        float4 posW = mul(float4(Vertices[vertexIndex].Position[0], 
+            Vertices[vertexIndex].Position[1], 
+            Vertices[vertexIndex].Position[2], 1.0), MATRIX_M);
+
+        posW = mul(posW, MATRIX_V);
+        posW = mul(posW, MATRIX_P);
+
+        vertices[gtid].Position = posW;
         
         float3 color = float3(
             float(gid & 1),
@@ -71,6 +79,7 @@ void MS(uint gtid : SV_GroupThreadID,
 
 float4 PS(MeshOutput input) : SV_TARGET
 {
+    //return float4(1.0, 0.0, 0.0, 1);
     return float4(input.Color, 1);
 }
 
