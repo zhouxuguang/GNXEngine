@@ -79,8 +79,23 @@ void MTLRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     MTLTriangleFillMode mtlFillMode = (fillMode == FillModeWireframe) ? MTLTriangleFillModeLines : MTLTriangleFillModeFill;
     [mRenderEncoder setTriangleFillMode:mtlFillMode];
     
-    // 设置默认的剔除模式（与 Vulkan VK_CULL_MODE_NONE 一致）和正面方向
-    [mRenderEncoder setCullMode:MTLCullModeNone];
+    // 设置剔除模式（从 pipeline descriptor 中读取）
+    CullMode cullMode = mtlGraphicsPipeline->GetDesc().cullMode;
+    MTLCullMode mtlCullMode = MTLCullModeNone;
+    switch (cullMode)
+    {
+        case CullModeFront:
+            mtlCullMode = MTLCullModeFront;
+            break;
+        case CullModeBack:
+            mtlCullMode = MTLCullModeBack;
+            break;
+        case CullModeNone:
+        default:
+            mtlCullMode = MTLCullModeNone;
+            break;
+    }
+    [mRenderEncoder setCullMode:mtlCullMode];
     [mRenderEncoder setFrontFacingWinding:MTLWindingCounterClockwise];
 }
 

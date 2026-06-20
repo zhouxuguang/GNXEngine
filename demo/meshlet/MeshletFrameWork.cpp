@@ -185,7 +185,8 @@ void MeshletFrameWork::CreatePipeline()
     // depth
     shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionGreaterThanOrEqual;
     shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = true;
-
+    // enable back-face culling for correct rendering
+    shaderInfo.graphicsPipelineDesc.cullMode = CullModeBack;
     mMeshPipeline = mRenderDevice->CreateGraphicsPipeline(shaderInfo.graphicsPipelineDesc);
     if (!mMeshPipeline)
     {
