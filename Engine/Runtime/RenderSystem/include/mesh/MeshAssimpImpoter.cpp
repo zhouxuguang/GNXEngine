@@ -403,7 +403,6 @@ bool MeshAssimpImpoter::ImportFromFile(const std::string &fileName, Mesh* mesh, 
     Assimp::Importer importer;
     const aiScene *scene = importer.ReadFile(fileName.c_str(),
                                              aiProcess_SplitLargeMeshes |
-                                             aiProcess_JoinIdenticalVertices |
                                              aiProcess_Triangulate |     //三角化
                                              aiProcess_SortByPType |        //
                                              //aiProcess_FlipUVs |         //翻转UV坐标

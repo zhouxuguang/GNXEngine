@@ -4,9 +4,9 @@
 //
 //  Meshlet Generation Tool
 //
-//  Loads a 3D mesh via assimp (same library & settings as the engine),
-//  uses the engine's BuildMeshlets() to generate meshlets,
-//  and writes the result to a binary file.
+//  Loads a 3D mesh via the engine's MeshImporter (assimp-based),
+//  deduplicates vertex positions to match unique position count (like MeshLab),
+//  builds meshlets, and writes the result to a binary file.
 //
 //  Output binary format (little-endian):
 //  1. uint32_t       vertexCount             number of vertices
@@ -16,7 +16,7 @@
 //  5. uint32_t       meshletVerticesCount    number of meshlet vertex indices
 //  6. uint32_t[mvc]  meshletVertices         meshlet vertex index array (mvc = meshletVerticesCount)
 //  7. uint32_t       meshletTrianglesCount   number of packed meshlet triangle indices (in uint32_t units)
-//  8. uint32_t[mtc]   meshletTriangles        packed triangle index array (mtc = meshletTrianglesCount, each uint32_t packs 3 uint8_t indices)
+//  8. uint32_t[mtc]  meshletTriangles        packed triangle index array (mtc = meshletTrianglesCount, each uint32_t packs 3 uint8_t indices)
 //
 
 #include <cstdint>
@@ -41,9 +41,9 @@ static void PrintUsage(const char* appName)
 {
     std::cerr << "Usage: " << appName << " <input_mesh> <output_file>" << std::endl;
     std::cerr << std::endl;
-    std::cerr << "  Reads a mesh from <input_mesh> (obj/fbx/gltf/glb) using the engine's" << std::endl;
-    std::cerr << "  built-in MeshImporter (assimp-based), builds meshlets, and writes" << std::endl;
-    std::cerr << "  them to <output_file>." << std::endl;
+    std::cerr << "  Reads a mesh from <input_mesh> (obj/fbx/gltf/glb) using the" << std::endl;
+    std::cerr << "  engine's MeshImporter, deduplicates positions, builds" << std::endl;
+    std::cerr << "  meshlets, and writes them to <output_file>." << std::endl;
 }
 
 // -----------------------------------------------------------------------
@@ -57,13 +57,37 @@ static void AppendToBytes(std::vector<uint8_t>& bytes, const T& value)
 }
 
 // -----------------------------------------------------------------------
-// Unpack a packed uint32_t triangle to 3 uint8_t values
+// Deduplicate vertex positions using meshoptimizer, rebuild indices.
+// The engine's MeshImporter expands vertices per (pos+normal+uv+tangent),
+// but we only need unique vertex positions for meshlet building.
 // -----------------------------------------------------------------------
-static void UnpackTriangle(uint32_t packed, uint8_t& a, uint8_t& b, uint8_t& c)
+static void DeduplicatePositions(
+    const std::vector<float>& expandedPositions,
+    const std::vector<uint32_t>& expandedIndices,
+    std::vector<float>& outPositions,
+    std::vector<uint32_t>& outIndices)
 {
-    a = static_cast<uint8_t>((packed >> 0)  & 0xFF);
-    b = static_cast<uint8_t>((packed >> 8)  & 0xFF);
-    c = static_cast<uint8_t>((packed >> 16) & 0xFF);
+    const size_t vertexCount = expandedPositions.size() / 3;
+
+    // meshopt_generateVertexRemap deduplicates vertices with identical data.
+    // We pass only the position field (float3, stride=12) for comparison,
+    // so vertices with the same position (but different normal/uv) merge.
+    std::vector<uint32_t> remap(vertexCount);
+    const size_t uniqueCount = meshopt_generateVertexRemap(
+        remap.data(),
+        expandedIndices.data(), expandedIndices.size(),
+        expandedPositions.data(), vertexCount,
+        sizeof(float) * 3);  // stride: only compare float3 positions
+
+    // Remap indices: expanded index → unique index
+    outIndices.resize(expandedIndices.size());
+    meshopt_remapIndexBuffer(outIndices.data(), expandedIndices.data(),
+                             expandedIndices.size(), remap.data());
+
+    // Compact the position buffer to unique vertices only
+    outPositions.resize(uniqueCount * 3);
+    meshopt_remapVertexBuffer(outPositions.data(), expandedPositions.data(),
+                              vertexCount, sizeof(float) * 3, remap.data());
 }
 
 // -----------------------------------------------------------------------
@@ -103,33 +127,41 @@ int main(int argc, char* argv[])
     //DestroyMeshImporter(importer);
 
     // ===================================================================
-    // 2. Extract vertex positions and indices from the engine Mesh
+    // 2. Extract expanded vertex positions and indices
     // ===================================================================
-    const uint32_t vertexCount = mesh.GetVertexCount();
-    const auto& indices = mesh.GetIndices();
-    const size_t indexCount = indices.size();
+    const uint32_t expandedVertexCount = mesh.GetVertexCount();
+    const auto& expandedIndices = mesh.GetIndices();
+    const size_t indexCount = expandedIndices.size();
 
-    if (vertexCount == 0 || indexCount == 0)
+    if (expandedVertexCount == 0 || indexCount == 0)
     {
         std::cerr << "Error: Mesh has no vertices or indices." << std::endl;
         return 1;
     }
 
-    // Copy positions from the interleaved VertexData to a contiguous float array
-    std::vector<float> positions;
-    positions.reserve(static_cast<size_t>(vertexCount) * 3);
+    // Copy expanded positions from the interleaved VertexData
+    std::vector<float> expandedPositions;
+    expandedPositions.reserve(static_cast<size_t>(expandedVertexCount) * 3);
     {
         auto posIt = mesh.GetPositionBegin();
-        for (uint32_t i = 0; i < vertexCount; ++i, ++posIt)
+        for (uint32_t i = 0; i < expandedVertexCount; ++i, ++posIt)
         {
-            positions.push_back(posIt->x);
-            positions.push_back(posIt->y);
-            positions.push_back(posIt->z);
+            expandedPositions.push_back(posIt->x);
+            expandedPositions.push_back(posIt->y);
+            expandedPositions.push_back(posIt->z);
         }
     }
 
-    std::cout << "  Vertices: " << vertexCount << std::endl;
-    std::cout << "  Indices:  " << indexCount << std::endl;
+    std::cout << "  Expanded vertices (from engine MeshImporter): " << expandedVertexCount << std::endl;
+
+    // Deduplicate to unique positions only (matching MeshLab count)
+    std::vector<float>    positions;
+    std::vector<uint32_t> indices;
+    DeduplicatePositions(expandedPositions, expandedIndices, positions, indices);
+
+    const uint32_t vertexCount = static_cast<uint32_t>(positions.size() / 3);
+    std::cout << "  Unique positions (after dedup, like MeshLab): " << vertexCount << std::endl;
+    std::cout << "  Indices:                                     " << indices.size() << std::endl;
 
     // ===================================================================
     // 3. Build meshlets using the engine's BuildMeshlets()
