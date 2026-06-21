@@ -26,6 +26,10 @@ ShaderAssetString LoadShaderAsset(const std::string &shaderName)
 ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName)
 {
     ShaderAssetString shaderAssetString;
+    if (!GetRenderDevice())
+    {
+        return shaderAssetString;
+    }
     
     RenderDeviceType renderType = GetRenderDevice()->GetRenderDeviceType();
     

@@ -8,7 +8,7 @@
 #ifndef FNXENGINE_MESH_IMPORTER_INCLUDE_H
 #define FNXENGINE_MESH_IMPORTER_INCLUDE_H
 
-#include "RSDefine.h"
+#include "../RSDefine.h"
 #include "Mesh.h"
 
 NS_RENDERSYSTEM_BEGIN
@@ -25,9 +25,9 @@ public:
     virtual bool ImportFromFile(const std::string &fileName, Mesh* mesh, SkinnedMesh* skinnedMesh) = 0;
 };
 
-MeshImporter* CreateMeshImporter();
+RENDERSYSTEM_API MeshImporter* CreateMeshImporter();
 
-void DestroyMeshImporter(MeshImporter* meshImporter);
+RENDERSYSTEM_API void DestroyMeshImporter(MeshImporter* meshImporter);
 
 NS_RENDERSYSTEM_END
 

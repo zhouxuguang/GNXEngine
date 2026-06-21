@@ -89,6 +89,10 @@ void Mesh::ClearSubMeshInfos()
 
 void Mesh::SetUpBuffer()
 {
+    if (!GetRenderDevice())
+    {
+        return;
+    }
     mVertexBuffer = GetRenderDevice()->CreateVertexBufferWithBytes(mVertexData.GetDataPtr(),
             (uint32_t)mVertexData.GetDataSize(), StorageModePrivate);
 

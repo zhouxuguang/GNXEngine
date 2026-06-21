@@ -51,6 +51,10 @@ MaterialPtr Material::GetDefaultDiffuseMaterial()
 MaterialPtr Material::CreateMaterial(const char *shaderStrPath)
 {
     ShaderAssetString shaderAssetString = LoadShaderAsset(shaderStrPath);
+    if (!shaderAssetString.vertexShader || !shaderAssetString.fragmentShader)
+    {
+        return nullptr;
+    }
     ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
     ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
     

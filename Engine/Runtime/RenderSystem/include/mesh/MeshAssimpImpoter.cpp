@@ -827,9 +827,13 @@ std::vector<std::shared_ptr<Material>> MeshAssimpImpoter::processMeshVertex(cons
         aiMaterial *const material = scene->mMaterials[mesh->mMaterialIndex];
         aiString name;
         material->Get(AI_MATKEY_NAME, name);
-        mat->SetName(name.C_Str());
-        ProcessMatTexture(mat, material, fileTextures);
-        mats.push_back(mat);
+        
+        if (mat)
+        {
+            mat->SetName(name.C_Str());
+            ProcessMatTexture(mat, material, fileTextures);
+            mats.push_back(mat);
+        }
         
         // 遍历submesh的每个顶点
         for(unsigned int i = 0; i < mesh->mNumVertices; i++)

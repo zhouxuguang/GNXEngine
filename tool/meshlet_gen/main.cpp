@@ -24,16 +24,15 @@
 #include <vector>
 #include <iostream>
 
-#include <assimp/Importer.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
-#include <assimp/mesh.h>
-
 #include "Runtime/RenderSystem/include/meshlet/MeshLetCommon.h"
+#include "Runtime/RenderSystem/include/mesh/MeshImporter.h"
+#include "Runtime/RenderSystem/include/mesh/Mesh.h"
 #include "Runtime/BaseLib/include/FileUtil.h"
+#include "Runtime/MathUtil/include/Vector3.h"
 #include "meshoptimizer.h"
 
 using namespace RenderSystem;
+using namespace mathutil;
 
 // -----------------------------------------------------------------------
 // Print usage information
@@ -42,8 +41,9 @@ static void PrintUsage(const char* appName)
 {
     std::cerr << "Usage: " << appName << " <input_mesh> <output_file>" << std::endl;
     std::cerr << std::endl;
-    std::cerr << "  Reads a mesh from <input_mesh> (obj/fbx/gltf/glb)," << std::endl;
-    std::cerr << "  builds meshlets, and writes them to <output_file>." << std::endl;
+    std::cerr << "  Reads a mesh from <input_mesh> (obj/fbx/gltf/glb) using the engine's" << std::endl;
+    std::cerr << "  built-in MeshImporter (assimp-based), builds meshlets, and writes" << std::endl;
+    std::cerr << "  them to <output_file>." << std::endl;
 }
 
 // -----------------------------------------------------------------------
@@ -84,66 +84,52 @@ int main(int argc, char* argv[])
     std::cout << "Output file: " << outputFile << std::endl;
 
     // ===================================================================
-    // 1. Load mesh via assimp (same library & settings as engine's
-    //    AssimpAssetImporter: triangulate, join verts, optimize, etc.)
+    // 1. Load mesh via engine's MeshImporter (assimp-based)
     // ===================================================================
-    Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(inputFile.c_str(),
-        aiProcess_Triangulate |
-        aiProcess_JoinIdenticalVertices |
-        aiProcess_GenNormals |
-        aiProcess_OptimizeMeshes |
-        aiProcess_SortByPType
-    );
-
-    if (!scene || !scene->HasMeshes())
+    MeshImporter* importer = CreateMeshImporter();
+    if (!importer)
     {
-        std::cerr << "Error: Failed to load mesh file: " << inputFile << std::endl;
+        std::cerr << "Error: Failed to create mesh importer." << std::endl;
         return 1;
     }
 
-    // ===================================================================
-    // 2. Extract vertex positions and indices from all sub-meshes
-    // ===================================================================
-    std::vector<float>    positions;
-    std::vector<uint32_t> indices;
-
-    positions.reserve(scene->mNumMeshes * 1024);
-    indices.reserve(scene->mNumMeshes * 4096);
-
-    uint32_t vertexBase = 0;
-    for (unsigned int m = 0; m < scene->mNumMeshes; ++m)
+    Mesh mesh;
+    if (!importer->ImportFromFile(inputFile, &mesh, nullptr))
     {
-        const aiMesh* mesh = scene->mMeshes[m];
-
-        for (unsigned int i = 0; i < mesh->mNumVertices; ++i)
-        {
-            positions.push_back(mesh->mVertices[i].x);
-            positions.push_back(mesh->mVertices[i].y);
-            positions.push_back(mesh->mVertices[i].z);
-        }
-
-        for (unsigned int f = 0; f < mesh->mNumFaces; ++f)
-        {
-            const aiFace& face = mesh->mFaces[f];
-            for (unsigned int j = 0; j < face.mNumIndices; ++j)
-                indices.push_back(face.mIndices[j] + vertexBase);
-        }
-
-        vertexBase += mesh->mNumVertices;
+        std::cerr << "Error: Failed to load mesh file: " << inputFile << std::endl;
+        DestroyMeshImporter(importer);
+        return 1;
     }
+    //DestroyMeshImporter(importer);
 
-    const size_t vertexCount = positions.size() / 3;
-    const size_t indexCount  = indices.size();
-
-    std::cout << "  Vertices: " << vertexCount << std::endl;
-    std::cout << "  Indices:  " << indexCount << std::endl;
+    // ===================================================================
+    // 2. Extract vertex positions and indices from the engine Mesh
+    // ===================================================================
+    const uint32_t vertexCount = mesh.GetVertexCount();
+    const auto& indices = mesh.GetIndices();
+    const size_t indexCount = indices.size();
 
     if (vertexCount == 0 || indexCount == 0)
     {
         std::cerr << "Error: Mesh has no vertices or indices." << std::endl;
         return 1;
     }
+
+    // Copy positions from the interleaved VertexData to a contiguous float array
+    std::vector<float> positions;
+    positions.reserve(static_cast<size_t>(vertexCount) * 3);
+    {
+        auto posIt = mesh.GetPositionBegin();
+        for (uint32_t i = 0; i < vertexCount; ++i, ++posIt)
+        {
+            positions.push_back(posIt->x);
+            positions.push_back(posIt->y);
+            positions.push_back(posIt->z);
+        }
+    }
+
+    std::cout << "  Vertices: " << vertexCount << std::endl;
+    std::cout << "  Indices:  " << indexCount << std::endl;
 
     // ===================================================================
     // 3. Build meshlets using the engine's BuildMeshlets()
