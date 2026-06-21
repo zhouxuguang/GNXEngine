@@ -125,6 +125,25 @@ public:
         }
         return InvalidBindingIndex;
     }
+
+    // ---- Mesh/Task shader threadgroup size (from SPIR-V ExecutionModeLocalSize) ----
+    void SetMeshThreadgroupSize(uint32_t x, uint32_t y, uint32_t z)
+    {
+        mMeshThreadgroupSize[0] = x;
+        mMeshThreadgroupSize[1] = y;
+        mMeshThreadgroupSize[2] = z;
+    }
+    void SetTaskThreadgroupSize(uint32_t x, uint32_t y, uint32_t z)
+    {
+        mTaskThreadgroupSize[0] = x;
+        mTaskThreadgroupSize[1] = y;
+        mTaskThreadgroupSize[2] = z;
+    }
+    const uint32_t* GetMeshThreadgroupSize() const { return mMeshThreadgroupSize; }
+    const uint32_t* GetTaskThreadgroupSize() const { return mTaskThreadgroupSize; }
+    bool HasMeshThreadgroupSize() const { return mMeshThreadgroupSize[0] > 0; }
+    bool HasTaskThreadgroupSize() const { return mTaskThreadgroupSize[0] > 0; }
+
 private:
     id<MTLFunction> mVertexFunction = nil;
     id<MTLFunction> mFragmentFunction = nil;
@@ -134,6 +153,10 @@ private:
     std::unordered_map<std::string, NSUInteger> mFragmentBindings;
     std::unordered_map<std::string, NSUInteger> mMeshBindings;
     std::unordered_map<std::string, NSUInteger> mTaskBindings;
+
+    // Threadgroup sizes from SPIR-V ExecutionModeLocalSize (set by ShaderAssetLoader)
+    uint32_t mMeshThreadgroupSize[3] = {0, 0, 0};
+    uint32_t mTaskThreadgroupSize[3] = {0, 0, 0};
 };
 
 using MTLGraphicsShaderPtr = std::shared_ptr<MTLGraphicsShader>;

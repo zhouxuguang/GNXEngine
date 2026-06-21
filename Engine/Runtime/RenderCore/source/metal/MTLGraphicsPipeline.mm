@@ -416,28 +416,50 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
                 // 从 PSO 反射属性读取 mesh/task shader 的 threadgroup 大小
                 if (@available(macOS 13.0, iOS 16.0, *))
                 {
-                    // Object (Task) shader: threadsPerObjectThreadgroup
-                    uint32_t objExecWidth = (uint32_t)mMeshPipelineState.objectThreadExecutionWidth;
-                    uint32_t objMaxTotal  = (uint32_t)mMeshPipelineState.maxTotalThreadsPerObjectThreadgroup;
-                    if (objExecWidth > 0)
+                    // Object (Task) shader: prefer SPIR-V threadgroup size (from [numthreads]),
+                    // fallback to PSO reflection if not available.
+                    if (mShader && mShader->HasTaskThreadgroupSize())
                     {
-                        mTaskThreadgroupSize[0] = objExecWidth;
-                        mTaskThreadgroupSize[1] = objMaxTotal / objExecWidth;
-                        mTaskThreadgroupSize[2] = 1;
+                        const uint32_t* ts = mShader->GetTaskThreadgroupSize();
+                        mTaskThreadgroupSize[0] = ts[0];
+                        mTaskThreadgroupSize[1] = ts[1];
+                        mTaskThreadgroupSize[2] = ts[2];
                     }
                     else
                     {
-                        mTaskThreadgroupSize[0] = 0;
-                        mTaskThreadgroupSize[1] = 0;
-                        mTaskThreadgroupSize[2] = 0;
+                        uint32_t objExecWidth = (uint32_t)mMeshPipelineState.objectThreadExecutionWidth;
+                        uint32_t objMaxTotal  = (uint32_t)mMeshPipelineState.maxTotalThreadsPerObjectThreadgroup;
+                        if (objExecWidth > 0)
+                        {
+                            mTaskThreadgroupSize[0] = objExecWidth;
+                            mTaskThreadgroupSize[1] = objMaxTotal / objExecWidth;
+                            mTaskThreadgroupSize[2] = 1;
+                        }
+                        else
+                        {
+                            mTaskThreadgroupSize[0] = 0;
+                            mTaskThreadgroupSize[1] = 0;
+                            mTaskThreadgroupSize[2] = 0;
+                        }
                     }
 
-                    // Mesh shader: threadsPerMeshThreadgroup
-                    uint32_t meshExecWidth = (uint32_t)mMeshPipelineState.meshThreadExecutionWidth;
-                    uint32_t meshMaxTotal  = (uint32_t)mMeshPipelineState.maxTotalThreadsPerMeshThreadgroup;
-                    mMeshThreadgroupSize[0] = meshExecWidth;
-                    mMeshThreadgroupSize[1] = meshMaxTotal / meshExecWidth;
-                    mMeshThreadgroupSize[2] = 1;
+                    // Mesh shader: prefer SPIR-V threadgroup size (from [numthreads]),
+                    // fallback to PSO reflection if not available.
+                    if (mShader && mShader->HasMeshThreadgroupSize())
+                    {
+                        const uint32_t* ms = mShader->GetMeshThreadgroupSize();
+                        mMeshThreadgroupSize[0] = ms[0];
+                        mMeshThreadgroupSize[1] = ms[1];
+                        mMeshThreadgroupSize[2] = ms[2];
+                    }
+                    else
+                    {
+                        uint32_t meshExecWidth = (uint32_t)mMeshPipelineState.meshThreadExecutionWidth;
+                        uint32_t meshMaxTotal  = (uint32_t)mMeshPipelineState.maxTotalThreadsPerMeshThreadgroup;
+                        mMeshThreadgroupSize[0] = meshExecWidth;
+                        mMeshThreadgroupSize[1] = meshMaxTotal / meshExecWidth;
+                        mMeshThreadgroupSize[2] = 1;
+                    }
                 }
 
                 // Populate mesh/task resource bindings from reflection

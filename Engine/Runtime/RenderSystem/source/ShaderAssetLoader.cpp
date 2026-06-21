@@ -89,6 +89,24 @@ GraphicsShaderInfo CreateGraphicsShaderInfo(const std::string& shaderName)
             taskShader ? *taskShader : emptyTask,
             *meshShader,
             *fragmentShader);
+
+        // Pass SPIR-V threadgroup sizes (from HLSL [numthreads]) to the graphics shader,
+        // so the pipeline can use them instead of hardcoded defaults.
+        if (shaderAssetString.meshShader->threadgroupSizeX > 0)
+        {
+            graphicsShader->SetMeshThreadgroupSize(
+                shaderAssetString.meshShader->threadgroupSizeX,
+                shaderAssetString.meshShader->threadgroupSizeY,
+                shaderAssetString.meshShader->threadgroupSizeZ);
+        }
+        if (shaderAssetString.taskShader && shaderAssetString.taskShader->threadgroupSizeX > 0)
+        {
+            graphicsShader->SetTaskThreadgroupSize(
+                shaderAssetString.taskShader->threadgroupSizeX,
+                shaderAssetString.taskShader->threadgroupSizeY,
+                shaderAssetString.taskShader->threadgroupSizeZ);
+        }
+
         graphicsShaderInfo.graphicsShader = graphicsShader;
         
         // Mesh Pipeline 不需要顶点描述

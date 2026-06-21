@@ -37,6 +37,14 @@ public:
     virtual ~GraphicsShader();
 
     virtual std::string GetName() const = 0;
+
+    // Mesh/Task shader threadgroup size (from SPIR-V ExecutionModeLocalSize)
+    // Default empty impl — only MTL/VK subclasses supporting mesh shaders override.
+    virtual void SetMeshThreadgroupSize(uint32_t x, uint32_t y, uint32_t z) {}
+    virtual void SetTaskThreadgroupSize(uint32_t x, uint32_t y, uint32_t z) {}
+    virtual const uint32_t* GetMeshThreadgroupSize() const { return nullptr; }
+    virtual const uint32_t* GetTaskThreadgroupSize() const { return nullptr; }
+    virtual bool HasMeshThreadgroupSize() const { return false; }
 };
 
 using GraphicsShaderPtr = std::shared_ptr<GraphicsShader>;
