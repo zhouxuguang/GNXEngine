@@ -117,13 +117,13 @@ public:
     void SetWireframe(bool wireframe);
 
     void SetUseMeshShader(bool enable) { mUseMeshShader = enable; }
-    bool IsUsingMeshShader() const { return mUseMeshShader && mTerrainMSPipeline != nullptr; }
+    bool IsUsingMeshShader() const;
 
     /**
      * 设置 Mesh Shader 管线（由 GBufferRenderer / DepthRenderer 在渲染前注入）。
      */
-    void SetTerrainMSPipeline(GraphicsPipelinePtr pipeline) { mTerrainMSPipeline = pipeline; }
-    void SetTerrainDepthMSPipeline(GraphicsPipelinePtr pipeline) { mTerrainDepthMSPipeline = pipeline; }
+    void SetTerrainMSPipeline(GraphicsPipelinePtr pipeline);
+    void SetTerrainDepthMSPipeline(GraphicsPipelinePtr pipeline);
 
     /**
      * 启用/禁用 GPU Compute Shader 剔除（默认：开启）。

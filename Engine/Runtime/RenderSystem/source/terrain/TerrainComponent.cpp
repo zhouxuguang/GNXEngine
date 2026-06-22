@@ -608,6 +608,24 @@ void TerrainComponent::SetWireframe(bool wireframe)
     mWireframe = wireframe;
 }
 
+inline bool TerrainComponent::IsUsingMeshShader() const 
+{ 
+    return (mUseMeshShader && mTerrainMSPipeline != nullptr) || (mUseMeshShader && mTerrainDepthMSPipeline != nullptr);
+}
+
+/**
+* 设置 Mesh Shader 管线（由 GBufferRenderer / DepthRenderer 在渲染前注入）。
+*/
+inline void TerrainComponent::SetTerrainMSPipeline(GraphicsPipelinePtr pipeline) 
+{ 
+    mTerrainMSPipeline = pipeline; 
+}
+
+inline void TerrainComponent::SetTerrainDepthMSPipeline(GraphicsPipelinePtr pipeline) 
+{ 
+    mTerrainDepthMSPipeline = pipeline; 
+}
+
 //=============================================================================
 // GPU 剔除开关
 //=============================================================================

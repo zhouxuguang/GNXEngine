@@ -272,24 +272,11 @@ GBufferData GBufferRenderer::AddToFrameGraph(
                     if (mTerrainMSPipeline)
                         terrain->SetTerrainMSPipeline(mTerrainMSPipeline);
 
-                    // Mesh Shader 路径：PSO 由 TerrainComponent 内部持有（mTerrainMSPipeline）
-                    // 传统路径：传入 GBufferRenderer 创建的 PSO
-                    if (terrain->IsUsingMeshShader())
-                    {
-                        terrain->Render(renderEncoder.get(),
-                                        data.uniforms.cameraUBO,
-                                        objectUBO,
-                                        mTerrainGBufferPipeline,
-                                        &data.frustum);
-                    }
-                    else if (mTerrainGBufferPipeline)
-                    {
-                        terrain->Render(renderEncoder.get(),
-                                        data.uniforms.cameraUBO,
-                                        objectUBO,
-                                        mTerrainGBufferPipeline,
-                                        &data.frustum);
-                    }
+					terrain->Render(renderEncoder.get(),
+						data.uniforms.cameraUBO,
+						objectUBO,
+						mTerrainGBufferPipeline,
+						&data.frustum);
                 }
             }
 

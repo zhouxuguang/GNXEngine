@@ -198,16 +198,7 @@ FrameGraphResource DepthRenderer::Render(
                     if (mTerrainDepthMSPipeline)
                         terrain->SetTerrainDepthMSPipeline(mTerrainDepthMSPipeline);
 
-                    // Mesh Shader 路径：PSO 由 TerrainComponent 内部持有
-                    // 传统路径：传入 DepthRenderer 创建的 PSO
-                    if (terrain->IsUsingMeshShader())
-                    {
-                        terrain->RenderDepthOnly(renderEncoder.get(), data.uniforms.cameraUBO, objectUBO, mTerrainDepthPipeline, &data.frustum);
-                    }
-                    else if (mTerrainDepthPipeline)
-                    {
-                        terrain->RenderDepthOnly(renderEncoder.get(), data.uniforms.cameraUBO, objectUBO, mTerrainDepthPipeline, &data.frustum);
-                    }
+                    terrain->RenderDepthOnly(renderEncoder.get(), data.uniforms.cameraUBO, objectUBO, mTerrainDepthPipeline, &data.frustum);
                 }
             }
             renderEncoder->EndEncode();
