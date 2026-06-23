@@ -181,7 +181,7 @@ static std::vector<CompiledPushConstantInfo> patchUniformToPushConstant(
         const auto* b = bindings[i];
         if (b->descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER &&
             b->block.padded_size > 0 &&
-            b->block.padded_size <= 256)
+            b->block.padded_size <= 0)   // TODO: 暂时禁用 PushConstant（设为 maxPushConstantsSize 时启用）
         {
             targets.push_back({b->spirv_id, b->name ? b->name : "", b->block.padded_size, b->set, b->binding});
         }
