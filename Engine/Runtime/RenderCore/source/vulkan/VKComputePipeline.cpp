@@ -90,8 +90,9 @@ VKComputePipeline::VKComputePipeline(VulkanContextPtr context, const ShaderCode&
         mPushConstants.push_back(pc);
         // 同一 shader 中所有 push constant block 共享 compute stage
         pcRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-        pcRange.offset = pc.offset;
-        pcRange.size += pc.size; // 简单累加，实际需要按 offset 对齐
+        uint32_t end = pc.offset + pc.size;
+        if (end > pcRange.size)
+            pcRange.size = (end + 15) & ~15u; // 16 字节对齐
     }
 
     // 创建管线布局

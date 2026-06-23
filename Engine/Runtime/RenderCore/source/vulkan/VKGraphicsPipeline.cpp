@@ -10,6 +10,8 @@
 #include "VulkanDescriptorUtil.h"
 #include "VulkanBufferUtil.h"
 #include "Runtime/BaseLib/include/LogService.h"
+#include <algorithm>
+#include <map>
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -530,6 +532,51 @@ void VKGraphicsPipeline::CreatePipelineLayout()
         }
     };
 
+    // 对合并后的 push constant blocks 重排全局 offset
+    // 每个 shader stage 内部各 block 已有正确偏移（由 ShaderCompiler 保证不重叠），
+    // 但跨 stage 合并后不同 stage 的 block 可能 offset 冲突（都从 0 开始）。
+    // 此处按 stage 分桶，每桶内连续分配，确保全局 offset 唯一。
+    auto reassignPushConstantOffsets = [](std::vector<PushConstantMeta>& pcs)
+    {
+        if (pcs.size() <= 1) return;
+        // 按 stageFlags 分组（同一个 stage 内的 block 保持相对偏移不变）
+        std::map<VkShaderStageFlags, std::vector<PushConstantMeta*>> stageBuckets;
+        for (auto& pc : pcs)
+            stageBuckets[pc.stageFlags].push_back(&pc);
+
+        // 同一 stage 内按 offset 排序
+        for (auto& [stage, bucket] : stageBuckets)
+        {
+            std::sort(bucket.begin(), bucket.end(),
+                [](const PushConstantMeta* a, const PushConstantMeta* b) {
+                    return a->offset < b->offset;
+                });
+        }
+
+        uint32_t globalBase = 0;
+        for (auto& [stage, bucket] : stageBuckets)
+        {
+            // 计算这个 stage 内需要的总空间
+            uint32_t stageEnd = 0;
+            for (const auto* pc : bucket)
+            {
+                uint32_t end = pc->offset + pc->size;
+                if (end > stageEnd) stageEnd = end;
+            }
+            // 16 字节对齐
+            stageEnd = (stageEnd + 15) & ~15u;
+
+            // 这个 stage 的第一个 block 的原始 stage 内偏移
+            uint32_t stageBase = bucket[0]->offset;
+            for (auto* pc : bucket)
+            {
+                pc->offset = globalBase + (pc->offset - stageBase);
+            }
+
+            globalBase += stageEnd;
+        }
+    };
+
     mPushConstants.clear();
     mPushConstantBindings.clear();
     if (mGraphicsPipelineDes.pipelineType == PipelineType::Mesh)
@@ -597,6 +644,9 @@ void VKGraphicsPipeline::CreatePipelineLayout()
                 }
             }
 
+            // 跨 stage 合并后重排全局 offset，避免不同 stage 的 block 共享地址空间
+            reassignPushConstantOffsets(mPushConstants);
+
             // 计算 push constant range
             VkPushConstantRange pcRange = {};
             for (const auto& pc : mPushConstants)
@@ -651,6 +701,7 @@ void VKGraphicsPipeline::CreatePipelineLayout()
             // 路径2: 从 VKGraphicsShader 获取 push constants
             mPushConstants = mShader->GetPushConstants();
             mPushConstantBindings = mShader->GetPushConstantBindings();
+            reassignPushConstantOffsets(mPushConstants);
 
             VkPushConstantRange pcRange = {};
             for (const auto& pc : mPushConstants)
@@ -692,6 +743,7 @@ void VKGraphicsPipeline::CreatePipelineLayout()
         // 传统 Graphics Pipeline：使用 VKGraphicsShader 的 descriptor set layouts
         mPushConstants = mShader->GetPushConstants();
         mPushConstantBindings = mShader->GetPushConstantBindings();
+        reassignPushConstantOffsets(mPushConstants);
 
         VkPushConstantRange pcRange = {};
         for (const auto& pc : mPushConstants)
@@ -777,9 +829,13 @@ const PushConstantMeta* VKGraphicsPipeline::GetPushConstantByName(const std::str
 
 const PushConstantMeta* VKGraphicsPipeline::GetPushConstantByBinding(uint32_t set, uint32_t binding) const
 {
-    auto it = mPushConstantBindings.find(std::make_pair(set, binding));
-    if (it != mPushConstantBindings.end())
-        return &it->second;
+	for (const auto& pc : mPushConstants)
+	{
+        if (pc.originalSet == set && pc.originalBinding == binding)
+        {
+            return &pc;
+        }
+	}
     return nullptr;
 }
 

@@ -758,7 +758,7 @@ void VKRenderEncoder::SetMeshUniformBuffer(const std::string& resourceName, Unif
         return;
     }
 
-VKUniformBuffer* vkUniformBuffer = (VKUniformBuffer*)buffer.get();
+    VKUniformBuffer* vkUniformBuffer = (VKUniformBuffer*)buffer.get();
     VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
     if (!shader)
     {
