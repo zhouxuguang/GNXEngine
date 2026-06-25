@@ -167,8 +167,8 @@ HiZOutput HiZPass::AddToFrameGraph(
                 hiZParams.textureSize.x = levelWidth;
                 hiZParams.textureSize.y = levelHeight;
                 
-                mHiZParas->SetData(&hiZParams, 0, sizeof(hiZParams));
-                computeEncoder->SetUniformBuffer("HiZParams", mHiZParas);
+                /*mHiZParas->SetData(&hiZParams, 0, sizeof(hiZParams));
+                computeEncoder->SetUniformBuffer("HiZParams", mHiZParas);*/
                 
                 // 计算Dispatch大小
                 uint32_t groupX = (levelWidth + groupSizeX - 1) / groupSizeX;
