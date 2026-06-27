@@ -27,14 +27,40 @@ struct MeshOutput
     float3 Color    : COLOR;
 };
 
+#define AS_GROUP_SIZE 32
+
+struct Payload 
+{
+    uint MeshletIndices[AS_GROUP_SIZE];
+};
+
+groupshared Payload sPayload;
+
+[numthreads(AS_GROUP_SIZE, 1, 1)]
+void TS(
+    uint gtid : SV_GroupThreadID,
+    uint dtid : SV_DispatchThreadID,
+    uint gid  : SV_GroupID
+)
+{
+    sPayload.MeshletIndices[gtid] = dtid;
+    // Assumes all meshlets are visible
+    DispatchMesh(AS_GROUP_SIZE, 1, 1, sPayload);
+}
+
 [outputtopology("triangle")]
 [numthreads(128, 1, 1)]
 void MS(uint gtid : SV_GroupThreadID, 
     uint gid : SV_GroupID, 
+    in payload Payload payload,
     out indices uint3 triangles[128], 
     out vertices MeshOutput vertices[64]) 
 {
-    Meshlet m = Meshlets[gid];
+    // 这里gid相当于只是一个索引，mesh shader中一个work group 对应一个meshlet
+    uint meshletIndex = payload.MeshletIndices[gid];
+
+    Meshlet m = Meshlets[meshletIndex];
+
     SetMeshOutputCounts(m.VertexCount, m.TriangleCount);
        
     if (gtid < m.TriangleCount) 

@@ -92,6 +92,14 @@ GraphicsShaderInfo CreateGraphicsShaderInfo(const std::string& shaderName)
 
         // Pass SPIR-V threadgroup sizes (from HLSL [numthreads]) to the graphics shader,
         // so the pipeline can use them instead of hardcoded defaults.
+        if (shaderAssetString.taskShader->threadgroupSizeX > 0)
+        {
+            graphicsShader->SetMeshThreadgroupSize(
+                shaderAssetString.taskShader->threadgroupSizeX,
+                shaderAssetString.taskShader->threadgroupSizeY,
+                shaderAssetString.taskShader->threadgroupSizeZ);
+        }
+        
         if (shaderAssetString.meshShader->threadgroupSizeX > 0)
         {
             graphicsShader->SetMeshThreadgroupSize(

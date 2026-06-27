@@ -267,7 +267,8 @@ void MeshletFrameWork::RenderFrame()
             renderEncoder->SetStorageBuffer("TriangleIndices", mMeshletTriSSBO, ShaderStage_Mesh);
 
         // Dispatch one task group per meshlet
-        renderEncoder->DrawMeshTasks(mMeshletCount, 1, 1);
+        uint32_t threadGroupCountX = (mMeshletCount / 32) + 1;
+        renderEncoder->DrawMeshTasks(threadGroupCountX, 1, 1);
 
         renderEncoder->EndEncode();
     }
