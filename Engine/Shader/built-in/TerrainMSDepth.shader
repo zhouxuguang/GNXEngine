@@ -56,7 +56,7 @@ static const uint TC = C * C * 2;    // total triangles = 128
 struct VO { float4 pos : SV_Position; };
 
 [outputtopology("triangle")]
-[numthreads(32, 1, 1)]
+[numthreads(128, 1, 1)]
 void MS(out indices uint3 triangles[TC], out vertices VO v[VC],
     uint gtid : SV_GroupThreadID,
     uint gid : SV_GroupID)
@@ -73,8 +73,8 @@ void MS(out indices uint3 triangles[TC], out vertices VO v[VC],
     // All threads must call SetMeshOutputCounts with the same values
     SetMeshOutputCounts(VC, TC);
 
-    // ---- Vertex generation: each thread handles ceil(81/32)=3 vertices ----
-    for (uint vi = gtid; vi < VC; vi += 32)
+    // ---- Vertex generation: each thread handles ceil(81/128)=1 vertices ----
+    for (uint vi = gtid; vi < VC; vi += 128)
     {
         uint row = vi / V;
         uint col = vi % V;
@@ -130,9 +130,10 @@ void MS(out indices uint3 triangles[TC], out vertices VO v[VC],
         v[vi].pos = mul(float4(wx, h, wz, 1), MATRIX_VP);
     }
 
-    // ---- Index generation: each thread handles ceil(64/32)=2 cells ----
-    for (uint ci = gtid; ci < C * C; ci += 32)
+    // ---- Index generation: each thread handles ceil(64/128)=1 cells ----
+    for (uint ci = gtid; ci < C * C; ci += 128)
     {
+        //uint ci = gtid;
         uint r = ci / C;
         uint c = ci % C;
         uint v00 = r * V + c;

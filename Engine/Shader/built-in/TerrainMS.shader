@@ -75,7 +75,7 @@ struct VertexOutput
 };
 
 [outputtopology("triangle")]
-[numthreads(32, 1, 1)]
+[numthreads(128, 1, 1)]
 void MS(out indices uint3 triangles[K_TC],
         out vertices VertexOutput verts[K_VC],
         uint gtid : SV_GroupThreadID,
@@ -93,9 +93,9 @@ void MS(out indices uint3 triangles[K_TC],
     // All threads must call SetMeshOutputCounts with the same values
     SetMeshOutputCounts(K_VC, K_TC);
 
-    // ---- Vertex generation: each thread handles ceil(81/32)=3 vertices ----
-    // Thread i processes vertices at indices: i, i+32, i+64 (if < 81)
-    for (uint vi = gtid; vi < K_VC; vi += 32)
+    // ---- Vertex generation: each thread handles ceil(81/128)=1 vertices ----
+    // Thread i processes vertices at indices: i, i+128, i+256 (if < 81)
+    for (uint vi = gtid; vi < K_VC; vi += 128)
     {
         uint row = vi / K_V;
         uint col = vi % K_V;
@@ -176,10 +176,11 @@ void MS(out indices uint3 triangles[K_TC],
         verts[vi].prevClipPos = pp;
     }
 
-    // ---- Index generation: each thread handles ceil(64/32)=2 cells ----
-    // Thread i processes cells at indices: i, i+32 (if < 64)
-    for (uint ci = gtid; ci < K_C * K_C; ci += 32)
+    // ---- Index generation: each thread handles ceil(64/128)=1 cells ----
+    // Thread i processes cells at indices: i, i+128 (if < 64)
+    for (uint ci = gtid; ci < K_C * K_C; ci += 128)
     {
+        //uint ci = gtid;
         uint r = ci / K_C;
         uint c = ci % K_C;
         uint v00 = r * K_V + c;
