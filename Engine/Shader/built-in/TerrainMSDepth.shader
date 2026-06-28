@@ -22,9 +22,6 @@ groupshared TerrainPayload terrainPayload;
 [numthreads(32, 1, 1)]
 void TS(uint gid : SV_GroupID, uint gtid : SV_GroupIndex, uint dtid : SV_DispatchThreadID)
 {
-    // Initialize payload to sentinel — prevents stale groupshared data from causing ghost patches
-    terrainPayload.patchIndices[gtid] = 0xFFFFFFFF;
-
     bool visible = false;
 
     if (dtid < gPatchCount)

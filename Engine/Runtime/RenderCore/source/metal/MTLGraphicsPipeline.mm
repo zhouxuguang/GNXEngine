@@ -424,6 +424,16 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
                         mTaskThreadgroupSize[0] = ts[0];
                         mTaskThreadgroupSize[1] = ts[1];
                         mTaskThreadgroupSize[2] = ts[2];
+                        
+                        uint32_t objExecWidth = (uint32_t)mMeshPipelineState.objectThreadExecutionWidth;
+                        uint32_t objMaxTotal  = (uint32_t)mMeshPipelineState.maxTotalThreadsPerObjectThreadgroup;
+                        if (objExecWidth > 0 && objExecWidth < mTaskThreadgroupSize[0])
+                        {
+                            // 这里shader中指定的numthreads可能超过当前的objExecWidth最大值，需要钳制到objExecWidth和mTaskThreadgroupSize[0]最小值
+                            mTaskThreadgroupSize[0] = std::min(objExecWidth, mTaskThreadgroupSize[0]);
+                            mTaskThreadgroupSize[1] = objMaxTotal / mTaskThreadgroupSize[0];
+                            mTaskThreadgroupSize[2] = 1;
+                        }
                     }
                     else
                     {
