@@ -40,6 +40,10 @@ public:
     {
     }
 
+    const T Width() const { return fabs(this->maximum.x - this->minimum.x); }
+    const T Height() const { return fabs(this->maximum.y - this->minimum.y); }
+    const T Depth() const { return fabs(this->maximum.z - this->minimum.z); }
+
     // 最小点
     Vector3<T> minimum;
     // 最大点
