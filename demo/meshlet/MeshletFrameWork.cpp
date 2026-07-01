@@ -27,13 +27,6 @@ using namespace RenderCore;
 using namespace RenderSystem;
 using namespace mathutil;
 
-struct UniformData
-{
-    Matrix4x4f projection;
-    Matrix4x4f model;
-    Matrix4x4f view;
-};
-
 MeshletFrameWork::MeshletFrameWork(const GNXEngine::WindowProps& props)
     : GNXEngine::AppFrameWork(props)
 {
@@ -50,8 +43,38 @@ void MeshletFrameWork::Initlize()
     InitCullingData();
     CreatePipeline();
 
+	const uint32_t    kNumInstanceCols = 20;
+#if OS_WINDOWS
+    const uint32_t    kNumInstanceRows = 10;
+#else
+    const uint32_t    kNumInstanceRows = 5;
+#endif
+	
+	std::vector<mathutil::Matrix4x4f> instances(kNumInstanceCols * kNumInstanceRows);
+
+	float maxSpan = std::max<float>(mMeshAABB.Width(), mMeshAABB.Depth());
+	float instanceSpanX = 2.0f * maxSpan;
+	float instanceSpanZ = 4.5f * maxSpan;
+	float totalSpanX = kNumInstanceCols * instanceSpanX;
+	float totalSpanZ = kNumInstanceRows * instanceSpanZ;
+
+	for (uint32_t j = 0; j < kNumInstanceRows; ++j)
+	{
+		for (uint32_t i = 0; i < kNumInstanceCols; ++i)
+		{
+			float x = i * instanceSpanX - (totalSpanX / 2.0f) + instanceSpanX / 2.0f;
+			float y = 0;
+			float z = j * instanceSpanZ - (totalSpanZ / 2.0f) - 2.15f * instanceSpanZ;
+
+			uint32_t index = j * kNumInstanceCols + i;
+            instances[index] = mathutil::Matrix4x4f::CreateTranslate(mathutil::Vector3f(x, y, z)) *
+                mathutil::Matrix4x4f::CreateRotation(mathutil::Vector3f(0, 1, 0), 0);
+		}
+	}
+
     // Create per-object UBO for cbPerObject (model matrix)
-    mPerObjectUBO = mRenderDevice->CreateUniformBufferWithSize(sizeof(RenderSystem::cbPerObject));
+    mPerObjectUBO = mRenderDevice->CreateUniformBufferWithSize(sizeof(mathutil::Matrix4x4f) * instances.size());
+    mPerObjectUBO->SetData(instances.data(), 0, sizeof(mathutil::Matrix4x4f) * instances.size());
 }
 
 void MeshletFrameWork::LoadMeshletData()
@@ -67,6 +90,18 @@ void MeshletFrameWork::LoadMeshletData()
 
     mMeshletCount = mMeshletData.GetMeshletCount();
     mVertexCount  = mMeshletData.GetVertexCount();
+
+    // ---- 计算整个模型的 AABB ----
+    {
+        std::vector<mathutil::Vector3f> positions;
+        positions.reserve(mVertexCount);
+        const float* pData = mMeshletData.vertexPositions.data();
+        for (uint32_t i = 0; i < mVertexCount; ++i)
+        {
+            positions.push_back(mathutil::Vector3f(pData[i * 3], pData[i * 3 + 1], pData[i * 3 + 2]));
+        }
+        mMeshAABB = mathutil::AxisAlignedBoxf::FromPositions(positions);
+    }
 
     LOG_INFO("Loaded meshlet: %u vertices, %u meshlets",
              mVertexCount, mMeshletCount);

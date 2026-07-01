@@ -18,6 +18,7 @@
 #include "Runtime/RenderSystem/include/meshlet/MeshLetFile.h"
 #include "Runtime/RenderSystem/include/RenderParameter.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "Runtime/MathUtil/include/AABB.h"
 
 class MeshletFrameWork : public GNXEngine::AppFrameWork
 {
@@ -50,6 +51,8 @@ private:
     RenderCore::UniformBufferPtr mPerObjectUBO = nullptr;
 
     RenderSystem::MeshletFileData mMeshletData;
+
+    mathutil::AxisAlignedBoxf mMeshAABB;              // 整个模型的 AABB
 
     uint32_t mMeshletCount = 0;
     uint32_t mVertexCount  = 0;
