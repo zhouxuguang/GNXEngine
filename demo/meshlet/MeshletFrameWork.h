@@ -46,6 +46,8 @@ private:
 
     // Culling data SSBO
     RenderCore::RCBufferPtr mMeshletBoundsSSBO = nullptr;  // bounding spheres (float4 per meshlet)
+    
+    RenderCore::RCBufferPtr mInstanceSSBO = nullptr;  // model matrix instance
 
     // per-object uniform buffer (contains model matrix for shader's cbPerObject)
     RenderCore::UniformBufferPtr mPerObjectUBO = nullptr;
@@ -55,6 +57,7 @@ private:
     mathutil::AxisAlignedBoxf mMeshAABB;              // 整个模型的 AABB
 
     uint32_t mMeshletCount = 0;
+    uint32_t mInstancesCount = 0;
     uint32_t mVertexCount  = 0;
     uint32_t mWidth  = 1280;
     uint32_t mHeight = 720;

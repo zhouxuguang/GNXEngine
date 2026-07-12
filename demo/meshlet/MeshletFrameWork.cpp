@@ -71,10 +71,16 @@ void MeshletFrameWork::Initlize()
                 mathutil::Matrix4x4f::CreateRotation(mathutil::Vector3f(0, 1, 0), 0);
 		}
 	}
+    
+    mInstancesCount = kNumInstanceCols * kNumInstanceRows;
 
     // Create per-object UBO for cbPerObject (model matrix)
     mPerObjectUBO = mRenderDevice->CreateUniformBufferWithSize(sizeof(mathutil::Matrix4x4f) * instances.size());
     mPerObjectUBO->SetData(instances.data(), 0, sizeof(mathutil::Matrix4x4f) * instances.size());
+    
+    RCBufferDesc desc((uint32_t)sizeof(mathutil::Matrix4x4f) * instances.size(), RCBufferUsage::StorageBuffer, StorageModePrivate);
+    mInstanceSSBO = mRenderDevice->CreateBuffer(desc, instances.data());
+    mInstanceSSBO->SetName("Instances");
 }
 
 void MeshletFrameWork::LoadMeshletData()
@@ -247,8 +253,8 @@ void MeshletFrameWork::Resize(uint32_t width, uint32_t height)
         cameraPtr = sceneManager->CreateCamera("MainCamera");
     }
 
-    cameraPtr->LookAt(mathutil::Vector3f(0, 0.105f, 0.40f), mathutil::Vector3f(0, 0.105f, 0), mathutil::Vector3f(0, 1, 0));
-    cameraPtr->SetLens(60, width, height, 0.1f, 1000.f);
+    cameraPtr->LookAt(mathutil::Vector3f(0, 0.7f, 3.0f), mathutil::Vector3f(0, 0.105f, 0), mathutil::Vector3f(0, 1, 0));
+    cameraPtr->SetLens(45, width, height, 0.1f, 1000.f);
 }
 
 void MeshletFrameWork::RenderFrame()
@@ -293,16 +299,29 @@ void MeshletFrameWork::RenderFrame()
 
         // bind SSBOs
         if (mVertexPosSSBO)
+        {
             renderEncoder->SetStorageBuffer("Vertices", mVertexPosSSBO, ShaderStage_Mesh);
+        }
         if (mMeshletDescSSBO)
+        {
             renderEncoder->SetStorageBuffer("Meshlets", mMeshletDescSSBO, ShaderStage_Mesh);
+        }
         if (mMeshletVertsSSBO)
+        {
             renderEncoder->SetStorageBuffer("VertexIndices", mMeshletVertsSSBO, ShaderStage_Mesh);
+        }
         if (mMeshletTriSSBO)
+        {
             renderEncoder->SetStorageBuffer("TriangleIndices", mMeshletTriSSBO, ShaderStage_Mesh);
+        }
+        if (mInstanceSSBO)
+        {
+            renderEncoder->SetStorageBuffer("Instances", mInstanceSSBO, ShaderStage_Mesh);
+        }
 
         // Dispatch one task group per meshlet
-        uint32_t threadGroupCountX = (mMeshletCount / 32) + 1;
+        // Amplification shader uses 32 for thread group size
+        uint32_t threadGroupCountX = ((mMeshletCount * mInstancesCount) / 32) + 1;
         renderEncoder->DrawMeshTasks(threadGroupCountX, 1, 1);
 
         renderEncoder->EndEncode();

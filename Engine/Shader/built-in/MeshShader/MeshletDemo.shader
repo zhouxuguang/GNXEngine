@@ -21,6 +21,12 @@ StructuredBuffer<Meshlet> Meshlets;
 StructuredBuffer<uint>    VertexIndices;
 StructuredBuffer<uint>    TriangleIndices;
 
+struct Instance
+{
+    float4x4 M;
+};
+StructuredBuffer<Instance> Instances;
+
 struct MeshOutput 
 {
     float4 Position : SV_POSITION;
@@ -31,6 +37,7 @@ struct MeshOutput
 
 struct Payload 
 {
+    uint InstanceIndices[AS_GROUP_SIZE];
     uint MeshletIndices[AS_GROUP_SIZE];
 };
 
@@ -43,9 +50,20 @@ void TS(
     uint gid  : SV_GroupID
 )
 {
-    sPayload.MeshletIndices[gtid] = dtid;
-    // Assumes all meshlets are visible
-    DispatchMesh(AS_GROUP_SIZE, 1, 1, sPayload);
+    bool visible = false;
+
+    uint instanceIndex = dtid / 239;
+    uint meshletIndex  = dtid % 239;
+
+    if ((instanceIndex < 100) && (meshletIndex < 239)) 
+    {
+        visible = true;
+        sPayload.InstanceIndices[gtid] = instanceIndex;
+        sPayload.MeshletIndices[gtid]  = meshletIndex;
+    }
+
+    uint visibleCount = WaveActiveCountBits(visible);
+    DispatchMesh(visibleCount, 1, 1, sPayload);
 }
 
 [outputtopology("triangle")]
@@ -58,6 +76,7 @@ void MS(uint gtid : SV_GroupThreadID,
 {
     // 这里gid相当于只是一个索引，mesh shader中一个work group 对应一个meshlet
     uint meshletIndex = payload.MeshletIndices[gid];
+    uint instanceIndex = payload.InstanceIndices[gid];
 
     Meshlet m = Meshlets[meshletIndex];
 
@@ -88,7 +107,7 @@ void MS(uint gtid : SV_GroupThreadID,
         // Transform to world space.
         float4 posW = mul(float4(Vertices[vertexIndex].Position[0], 
             Vertices[vertexIndex].Position[1], 
-            Vertices[vertexIndex].Position[2], 1.0), MATRIX_M);
+            Vertices[vertexIndex].Position[2], 1.0), Instances[instanceIndex].M);
 
         posW = mul(posW, MATRIX_V);
         posW = mul(posW, MATRIX_P);
