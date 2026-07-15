@@ -20,6 +20,7 @@ struct Meshlet
 	uint TriangleOffset;
 	uint VertexCount;
 	uint TriangleCount;
+    float4 BoundingSphere;
 };
 
 StructuredBuffer<Vertex>  Vertices;

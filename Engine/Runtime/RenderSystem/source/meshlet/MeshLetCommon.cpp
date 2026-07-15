@@ -56,6 +56,20 @@ void BuildMeshlets(
     meshletTriangles.resize(last.triangle_offset + ((last.triangle_count * 3 + 3) & ~3));
     meshlets.resize(meshletCount);
 
+	// 构建meshlet的包围盒
+	std::vector<Vector4f> meshletBounds;
+	for (auto& meshlet : meshlets)
+	{
+		auto bounds = meshopt_computeMeshletBounds(
+			&meshletVertices[meshlet.vertex_offset],
+			&meshletTriangles[meshlet.triangle_offset],
+			meshlet.triangle_count,
+            positions,
+            vertexCount,
+            positionStride);
+		meshletBounds.push_back(Vector4f(bounds.center[0], bounds.center[1], bounds.center[2], bounds.radius));
+	}
+
     // 5. 将 meshopt 输出转换并重新打包到我们的 Meshlet 结构中
     outMeshlets.clear();
     outMeshlets.reserve(meshletCount);
@@ -64,8 +78,9 @@ void BuildMeshlets(
     // make it easier to unpack on the GPU.
     //
     std::vector<uint32_t> meshletTrianglesU32;
-    for (auto& m : meshlets)
+    for (size_t i = 0; i < meshlets.size(); i ++)
     {
+        meshopt_Meshlet& m = meshlets[i];
         // Save triangle offset for current meshlet
         uint32_t triangleOffset = static_cast<uint32_t>(meshletTrianglesU32.size());
 
@@ -91,6 +106,7 @@ void BuildMeshlets(
         meshlet.triangleOffset = triangleOffset;
         meshlet.vertexCount    = m.vertex_count;
         meshlet.triangleCount  = m.triangle_count;
+        meshlet.boundingSphere = meshletBounds[i];
         outMeshlets.push_back(meshlet);
     }
 

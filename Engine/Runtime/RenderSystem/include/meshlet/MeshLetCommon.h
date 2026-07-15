@@ -44,6 +44,7 @@ struct Meshlet
     uint32_t triangleOffset;    // meshletTrianglesBuffer 中的偏移量（以 uint32_t 为单位，每个 uint32_t 打包了 3 个 uint8_t 索引）
     uint32_t vertexCount;       // 本 meshlet 使用的顶点数（≤ kMeshletMaxVertices）
     uint32_t triangleCount;     // 本 meshlet 使用的三角形数（≤ kMeshletMaxTriangles）
+    mathutil::Vector4f boundingSphere;    // 包围球
 };
 
 // -----------------------------------------------------------------------

@@ -182,35 +182,22 @@ int main(int argc, char* argv[])
     std::cout << "  Meshlets: " << meshletCount << std::endl;
 
     // ===================================================================
-    // 4. Convert engine output -> output format
-    //    Engine Meshlet::triangleOffset is in uint32 units, and the
-    //    triangles are already packed as uint32_t (3 uint8 indices per
-    //    uint32_t). We store them directly (no unpack) so the GPU can
-    //    read byte-level data from a uint32_t[] SSBO.
-    // ===================================================================
-    std::vector<meshopt_Meshlet> outMeshlets(meshletCount);
-    std::vector<uint32_t>        outTriangles;
-
-    for (size_t i = 0; i < meshletCount; ++i)
-    {
-        const Meshlet& src = engineMeshlets[i];
-        meshopt_Meshlet& dst = outMeshlets[i];
-
-        dst.vertex_offset   = src.vertexOffset;
-        dst.triangle_offset = src.triangleOffset;
-        dst.vertex_count    = src.vertexCount;
-        dst.triangle_count  = src.triangleCount;
-
-        for (uint32_t t = 0; t < src.triangleCount; ++t)
-        {
-            outTriangles.push_back(packedTriangles[src.triangleOffset + t]);
-        }
-    }
-
-    // ===================================================================
-    // 5. Serialize to binary
+    // 4. Serialize to binary
+    //    Engine Meshlet::triangleOffset is in uint32 units (packed 3 uint8
+    //    per uint32), matching MeshLetFile.h reader. Output directly.
     // ===================================================================
     std::vector<uint8_t> bytes;
+
+    std::vector<uint32_t>        outTriangles;
+	for (size_t i = 0; i < meshletCount; ++i)
+	{
+		const Meshlet& src = engineMeshlets[i];
+
+		for (uint32_t t = 0; t < src.triangleCount; ++t)
+		{
+			outTriangles.push_back(packedTriangles[src.triangleOffset + t]);
+		}
+	}
 
     // vertex count
     AppendToBytes(bytes, static_cast<uint32_t>(vertexCount));
@@ -220,10 +207,10 @@ int main(int argc, char* argv[])
         reinterpret_cast<const uint8_t*>(positions.data()) + positions.size() * sizeof(float));
     // meshlet count
     AppendToBytes(bytes, static_cast<uint32_t>(meshletCount));
-    // meshlet array
+    // meshlet array (engine Meshlet, same layout as reader expects)
     bytes.insert(bytes.end(),
-        reinterpret_cast<const uint8_t*>(outMeshlets.data()),
-        reinterpret_cast<const uint8_t*>(outMeshlets.data()) + outMeshlets.size() * sizeof(meshopt_Meshlet));
+        reinterpret_cast<const uint8_t*>(engineMeshlets.data()),
+        reinterpret_cast<const uint8_t*>(engineMeshlets.data()) + engineMeshlets.size() * sizeof(Meshlet));
     // meshlet vertices count
     AppendToBytes(bytes, static_cast<uint32_t>(meshletVertices.size()));
     // meshlet vertices array
@@ -238,7 +225,7 @@ int main(int argc, char* argv[])
         reinterpret_cast<const uint8_t*>(outTriangles.data()) + outTriangles.size() * sizeof(uint32_t));
 
     // ===================================================================
-    // 6. Write to file using engine's FileUtil
+    // 5. Write to file using engine's FileUtil
     // ===================================================================
     if (!baselib::FileUtil::WriteBinaryFile(outputFile, bytes))
         return 1;
@@ -248,11 +235,11 @@ int main(int argc, char* argv[])
     std::cout << "\nMeshlet details:" << std::endl;
     for (size_t i = 0; i < meshletCount; ++i)
     {
-        const auto& m = outMeshlets[i];
-        std::cout << "  Meshlet[" << i << "]: vertices=" << m.vertex_count
-                  << ", triangles=" << m.triangle_count
-                  << ", vertex_offset=" << m.vertex_offset
-                  << ", triangle_offset=" << m.triangle_offset
+        const auto& m = engineMeshlets[i];
+        std::cout << "  Meshlet[" << i << "]: vertices=" << m.vertexCount
+                  << ", triangles=" << m.triangleCount
+                  << ", vertex_offset=" << m.vertexOffset
+                  << ", triangle_offset=" << m.triangleOffset
                   << std::endl;
     }
 
