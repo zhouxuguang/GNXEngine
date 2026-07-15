@@ -188,17 +188,6 @@ int main(int argc, char* argv[])
     // ===================================================================
     std::vector<uint8_t> bytes;
 
-    std::vector<uint32_t>        outTriangles;
-	for (size_t i = 0; i < meshletCount; ++i)
-	{
-		const Meshlet& src = engineMeshlets[i];
-
-		for (uint32_t t = 0; t < src.triangleCount; ++t)
-		{
-			outTriangles.push_back(packedTriangles[src.triangleOffset + t]);
-		}
-	}
-
     // vertex count
     AppendToBytes(bytes, static_cast<uint32_t>(vertexCount));
     // vertex positions
@@ -218,11 +207,11 @@ int main(int argc, char* argv[])
         reinterpret_cast<const uint8_t*>(meshletVertices.data()),
         reinterpret_cast<const uint8_t*>(meshletVertices.data()) + meshletVertices.size() * sizeof(uint32_t));
     // meshlet triangles count (in uint32_t units)
-    AppendToBytes(bytes, static_cast<uint32_t>(outTriangles.size()));
-    // meshlet triangles array (uint32_t[])
+    AppendToBytes(bytes, static_cast<uint32_t>(packedTriangles.size()));
+    // meshlet triangles array (uint32_t[], packed)
     bytes.insert(bytes.end(),
-        reinterpret_cast<const uint8_t*>(outTriangles.data()),
-        reinterpret_cast<const uint8_t*>(outTriangles.data()) + outTriangles.size() * sizeof(uint32_t));
+        reinterpret_cast<const uint8_t*>(packedTriangles.data()),
+        reinterpret_cast<const uint8_t*>(packedTriangles.data()) + packedTriangles.size() * sizeof(uint32_t));
 
     // ===================================================================
     // 5. Write to file using engine's FileUtil
