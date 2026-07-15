@@ -27,6 +27,13 @@ using namespace RenderCore;
 using namespace RenderSystem;
 using namespace mathutil;
 
+// cbMeshletParams: 匹配 shader 中 cbuffer cbMeshletParams 布局
+struct cbMeshletParams
+{
+    uint32_t instanceCount;
+    uint32_t meshletCount;
+};
+
 MeshletFrameWork::MeshletFrameWork(const GNXEngine::WindowProps& props)
     : GNXEngine::AppFrameWork(props)
 {
@@ -73,6 +80,15 @@ void MeshletFrameWork::Initlize()
 	}
     
     mInstancesCount = kNumInstanceCols * kNumInstanceRows;
+
+    // ---- cbMeshletParams UBO (传递给 Task Shader) ----
+    {
+        cbMeshletParams params;
+        params.instanceCount = mInstancesCount;
+        params.meshletCount  = mMeshletCount;
+        mMeshletParamsUBO = mRenderDevice->CreateUniformBufferWithSize(sizeof(cbMeshletParams));
+        mMeshletParamsUBO->SetData(&params, 0, sizeof(cbMeshletParams));
+    }
 
     // Create per-object UBO for cbPerObject (model matrix)
     mPerObjectUBO = mRenderDevice->CreateUniformBufferWithSize(sizeof(mathutil::Matrix4x4f) * instances.size());
@@ -286,6 +302,9 @@ void MeshletFrameWork::RenderFrame()
         // Bind camera UBO from SceneManager (cbPerCamera)
         RenderSystem::RenderInfo renderInfo = sceneManager->GetRenderInfo();
         renderEncoder->SetMeshUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
+
+        // Bind cbMeshletParams UBO (instanceCount, meshletCount → Task Shader)
+        renderEncoder->SetTaskUniformBuffer("cbMeshletParams", mMeshletParamsUBO);
 
         // Fill and bind per-object UBO (cbPerObject: model matrix)
         {

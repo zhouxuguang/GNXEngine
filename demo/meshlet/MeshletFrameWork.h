@@ -52,6 +52,9 @@ private:
     // per-object uniform buffer (contains model matrix for shader's cbPerObject)
     RenderCore::UniformBufferPtr mPerObjectUBO = nullptr;
 
+    // cbMeshletParams UBO (gInstanceCount, gMeshletCount → Task Shader)
+    RenderCore::UniformBufferPtr mMeshletParamsUBO = nullptr;
+
     RenderSystem::MeshletFileData mMeshletData;
 
     mathutil::AxisAlignedBoxf mMeshAABB;              // 整个模型的 AABB

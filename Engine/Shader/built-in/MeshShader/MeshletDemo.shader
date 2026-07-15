@@ -3,6 +3,12 @@
 
 #include "../GNXEngineVariables.hlsl"
 
+cbuffer cbMeshletParams
+{
+    uint gInstanceCount;
+    uint gMeshletCount;
+};
+
 struct Vertex 
 {
     float Position[3];
@@ -52,10 +58,10 @@ void TS(
 {
     bool visible = false;
 
-    uint instanceIndex = dtid / 239;
-    uint meshletIndex  = dtid % 239;
+    uint instanceIndex = dtid / gMeshletCount;
+    uint meshletIndex  = dtid % gMeshletCount;
 
-    if ((instanceIndex < 100) && (meshletIndex < 239)) 
+    if ((instanceIndex < gInstanceCount) && (meshletIndex < gMeshletCount)) 
     {
         visible = true;
         sPayload.InstanceIndices[gtid] = instanceIndex;
