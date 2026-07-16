@@ -131,18 +131,11 @@ void MS(uint gtid : SV_GroupThreadID,
         posW = mul(posW, MATRIX_P);
 
         vertices[gtid].Position = posW;
-        
-        // 稳定伪随机颜色（仅基于 meshletIndex，所有 instance 同一颜色，跨帧不变）
-        float3 color = float3(
-            frac(sin(float(meshletIndex * 127.1) + 311.7) * 43758.5453),
-            frac(sin(float(meshletIndex * 269.5) + 183.3) * 43758.5453),
-            frac(sin(float(meshletIndex * 419.3) + 97.7)  * 43758.5453)
-        );
 
-        // float3 color = float3(
-        //     float(meshletIndex & 1),
-        //     float(meshletIndex & 3) / 4,
-        //     float(meshletIndex & 7) / 8);
+        float3 color = float3(
+            float(meshletIndex & 1),
+            float(meshletIndex & 3) / 4,
+            float(meshletIndex & 7) / 8);
         vertices[gtid].Color = color;
     }
 }
