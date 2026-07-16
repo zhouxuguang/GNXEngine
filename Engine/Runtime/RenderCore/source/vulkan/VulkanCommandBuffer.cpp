@@ -41,13 +41,13 @@ VulkanCommandBuffer::~VulkanCommandBuffer()
 }
 
 //创建默认的encoder，也就是屏幕渲染的encoder
-RenderEncoderPtr VulkanCommandBuffer::CreateDefaultRenderEncoder() const
+RenderEncoderPtr VulkanCommandBuffer::CreateDefaultRenderEncoder(const ClearColor& clearColor) const
 {
-    VkClearValue clearColor;
-    clearColor.color.float32[0] = 0.0;
-    clearColor.color.float32[1] = 0.0;
-    clearColor.color.float32[2] = 0.0;
-    clearColor.color.float32[3] = 1.0;
+    VkClearValue vkClearColor;
+    vkClearColor.color.float32[0] = clearColor.red;
+    vkClearColor.color.float32[1] = clearColor.green;
+    vkClearColor.color.float32[2] = clearColor.blue;
+    vkClearColor.color.float32[3] = clearColor.alpha;
     
     RenderPassFormat passFormat;
     RenderPassImage passImage;
@@ -63,8 +63,8 @@ RenderEncoderPtr VulkanCommandBuffer::CreateDefaultRenderEncoder() const
 	color_attachment_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	color_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	color_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	color_attachment_info.clearValue = clearColor;
-    clearValues.push_back(clearColor);
+	color_attachment_info.clearValue = vkClearColor;
+    clearValues.push_back(vkClearColor);
     
     VkRenderingAttachmentInfoKHR depth_attachment_info = {};
     depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR,

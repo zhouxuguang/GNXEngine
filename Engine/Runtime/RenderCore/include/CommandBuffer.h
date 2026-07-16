@@ -25,7 +25,8 @@ public:
     ~CommandBuffer();
 
     //创建默认的encoder，也就是屏幕渲染的encoder
-    virtual RenderEncoderPtr CreateDefaultRenderEncoder() const = 0;
+    // clearColor: 清屏颜色，默认 (0, 0, 0, 1)
+    virtual RenderEncoderPtr CreateDefaultRenderEncoder(const ClearColor& clearColor = MakeClearColor(0, 0, 0, 1)) const = 0;
 
     virtual RenderEncoderPtr CreateRenderEncoder(const RenderPass& renderPass) const = 0;
 

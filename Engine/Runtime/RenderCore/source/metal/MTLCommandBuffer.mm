@@ -81,7 +81,7 @@ MTLCommandBuffer::~MTLCommandBuffer()
 }
 
 //创建默认的encoder，也就是屏幕渲染的encoder
-RenderEncoderPtr MTLCommandBuffer::CreateDefaultRenderEncoder() const
+RenderEncoderPtr MTLCommandBuffer::CreateDefaultRenderEncoder(const ClearColor& clearColor) const
 {
     @autoreleasepool 
     {
@@ -92,7 +92,7 @@ RenderEncoderPtr MTLCommandBuffer::CreateDefaultRenderEncoder() const
         passDescriptor.colorAttachments[0].texture = texture;
         passDescriptor.colorAttachments[0].loadAction = MTLLoadActionClear;
         passDescriptor.colorAttachments[0].storeAction = MTLStoreActionStore;
-        passDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0, 0, 0, 1);
+        passDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(clearColor.red, clearColor.green, clearColor.blue, clearColor.alpha);
         
         passDescriptor.depthAttachment.texture = mDepthStencilTexture;
         passDescriptor.depthAttachment.loadAction = MTLLoadActionClear;

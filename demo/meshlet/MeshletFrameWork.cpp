@@ -16,6 +16,7 @@
 #include "Runtime/RenderCore/include/CommandQueue.h"
 #include "Runtime/RenderCore/include/ShaderFunction.h"
 #include "Runtime/RenderCore/include/RenderDefine.h"
+#include "Runtime/RenderCore/include/RenderPass.h"
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 #include "Runtime/RenderSystem/include/ShaderAssetLoader.h"
 #include "Runtime/BaseLib/include/LogService.h"
@@ -294,7 +295,8 @@ void MeshletFrameWork::RenderFrame()
     CommandBufferPtr commandBuffer = graphicsQueue->CreateCommandBuffer();
 
     {
-        RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
+        RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder(
+            MakeClearColor(0.1f, 0.15f, 0.25f, 1.0f));
         if (!renderEncoder) return;
 
         renderEncoder->SetGraphicsPipeline(mMeshPipeline);
