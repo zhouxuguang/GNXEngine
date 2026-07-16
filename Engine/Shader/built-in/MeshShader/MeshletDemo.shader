@@ -2,6 +2,7 @@
 #define MESHLET_DEMO_SHADER_H
 
 #include "../GNXEngineVariables.hlsl"
+#include "../Culling.hlsl"
 
 cbuffer cbMeshletParams
 {
@@ -64,9 +65,19 @@ void TS(
 
     if ((instanceIndex < gInstanceCount) && (meshletIndex < gMeshletCount)) 
     {
-        visible = true;
-        sPayload.InstanceIndices[gtid] = instanceIndex;
-        sPayload.MeshletIndices[gtid]  = meshletIndex;
+        float4x4 M = Instances[instanceIndex].M;
+        float4 meshletBoundingSphere = mul(float4(Meshlets[meshletIndex].BoundingSphere.xyz, 1.0), M);
+        meshletBoundingSphere.w = Meshlets[meshletIndex].BoundingSphere.w;
+
+        visible = SphereInFrustum(meshletBoundingSphere.xyz, meshletBoundingSphere.w, frustumPlanes);
+        // visible = true;
+    }
+
+    if (visible) 
+    {
+        uint index = WavePrefixCountBits(visible);
+        sPayload.InstanceIndices[index] = instanceIndex;
+        sPayload.MeshletIndices[index]  = meshletIndex;
     }
 
     uint visibleCount = WaveActiveCountBits(visible);
@@ -122,9 +133,9 @@ void MS(uint gtid : SV_GroupThreadID,
         vertices[gtid].Position = posW;
         
         float3 color = float3(
-            float(gid & 1),
-            float(gid & 3) / 4,
-            float(gid & 7) / 8);
+            float(meshletIndex & 1),
+            float(meshletIndex & 3) / 4,
+            float(meshletIndex & 7) / 8);
         vertices[gtid].Color = color;
     }
 }
