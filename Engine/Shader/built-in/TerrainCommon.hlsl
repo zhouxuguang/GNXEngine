@@ -1,6 +1,8 @@
 #ifndef GNXENGINE_TERRAINCOMMON_HLSL
 #define GNXENGINE_TERRAINCOMMON_HLSL
 
+#include "Culling.hlsl"
+
 //=============================================================================
 // PatchMeta (must match C++ QuadTreeTerrain::PatchMeta exactly)
 //=============================================================================
@@ -39,22 +41,5 @@ struct TerrainPayload
 {
     uint patchIndices[AS_GROUP_SIZE];
 };
-
-bool AABBInFrustum(float3 aabbMin, float3 aabbMax, float4 planes[6])
-{
-    [unroll]
-    for (int i = 0; i < 6; i++)
-    {
-        // p-vertex: 选沿平面法线方向最远的AABB角点（最可能在视锥体内）
-        float3 p = float3(
-            planes[i].x > 0 ? aabbMax.x : aabbMin.x,
-            planes[i].y > 0 ? aabbMax.y : aabbMin.y,
-            planes[i].z > 0 ? aabbMax.z : aabbMin.z
-        );
-        if (dot(planes[i].xyz, p) + planes[i].w < 0)
-            return false;
-    }
-    return true;
-}
 
 #endif //GNXENGINE_TERRAINCOMMON_HLSL
