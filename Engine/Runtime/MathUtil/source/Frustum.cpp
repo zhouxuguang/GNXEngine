@@ -261,11 +261,11 @@ bool Frustum<T>::IsSphereInFrustum(const Sphere<T> sphere) const
 template <typename T>
 static void NormalizePlane(Vector4<T> &plane)
 {
-    T mag = 1.0 / sqrt(plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
-    plane.x = plane.x / mag;
-    plane.y = plane.y / mag;
-    plane.z = plane.z / mag;
-    plane.w = plane.w / mag;
+    T invLen = 1.0 / sqrt(plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
+    plane.x *= invLen;
+    plane.y *= invLen;
+    plane.z *= invLen;
+    plane.w *= invLen;
 }
 
 /**
