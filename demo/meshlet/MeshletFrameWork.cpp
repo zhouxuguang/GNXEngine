@@ -302,7 +302,11 @@ void MeshletFrameWork::RenderFrame()
         renderEncoder->SetGraphicsPipeline(mMeshPipeline);
         
         // Bind camera UBO from SceneManager (cbPerCamera)
+        // 需要同时绑定到 Task 和 Mesh 阶段：
+        //   - Task Shader 使用 frustumPlanes 做视锥剔除
+        //   - Mesh Shader 使用 MATRIX_V/MATRIX_P 做顶点变换
         RenderSystem::RenderInfo renderInfo = sceneManager->GetRenderInfo();
+        renderEncoder->SetTaskUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
         renderEncoder->SetMeshUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
 
         // Bind cbMeshletParams UBO (instanceCount, meshletCount → Task Shader)
@@ -319,24 +323,33 @@ void MeshletFrameWork::RenderFrame()
         renderEncoder->SetMeshUniformBuffer("cbPerObject", mPerObjectUBO);
 
         // bind SSBOs
+        // 注意：Meshlets 和 Instances 在 Task Shader 和 Mesh Shader 中都会用到，
+        // Metal mesh pipeline 中两个阶段使用独立的 buffer 表，必须分别绑定。
         if (mVertexPosSSBO)
         {
+            // Vertices 仅在 Mesh Shader 中用于顶点变换
             renderEncoder->SetStorageBuffer("Vertices", mVertexPosSSBO, ShaderStage_Mesh);
         }
         if (mMeshletDescSSBO)
         {
+            // Meshlets 在 Task Shader 中用于包围球剔除，在 Mesh Shader 中用于读取顶点/三角形数据
+            renderEncoder->SetStorageBuffer("Meshlets", mMeshletDescSSBO, ShaderStage_Task);
             renderEncoder->SetStorageBuffer("Meshlets", mMeshletDescSSBO, ShaderStage_Mesh);
         }
         if (mMeshletVertsSSBO)
         {
+            // VertexIndices 仅在 Mesh Shader 中用于索引解引用
             renderEncoder->SetStorageBuffer("VertexIndices", mMeshletVertsSSBO, ShaderStage_Mesh);
         }
         if (mMeshletTriSSBO)
         {
+            // TriangleIndices 仅在 Mesh Shader 中用于输出三角形
             renderEncoder->SetStorageBuffer("TriangleIndices", mMeshletTriSSBO, ShaderStage_Mesh);
         }
         if (mInstanceSSBO)
         {
+            // Instances 在 Task Shader 中用于变换包围球，在 Mesh Shader 中用于变换顶点
+            renderEncoder->SetStorageBuffer("Instances", mInstanceSSBO, ShaderStage_Task);
             renderEncoder->SetStorageBuffer("Instances", mInstanceSSBO, ShaderStage_Mesh);
         }
 
