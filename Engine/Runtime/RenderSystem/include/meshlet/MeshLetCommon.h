@@ -82,6 +82,34 @@ RENDERSYSTEM_API void BuildMeshlets(
     std::vector<uint32_t>&          outVertices,
     std::vector<uint32_t>&          outTriangles);
 
+/**
+ * 使用 meshopt_simplify 简化网格
+ *
+ * 注意：destination 必须 >= indexCount（原始索引数），而非 targetIndexCount！
+ *   这是 meshopt_simplify 的要求——它需要足够的空间作为工作缓冲区。
+ *
+ * @param indices           原始索引数组
+ * @param indexCount        原始索引数量（= 三角形数 × 3）
+ * @param positions         顶点位置数组
+ * @param vertexCount       顶点数量
+ * @param positionStride    位置步长（字节）
+ * @param targetIndexCount  目标索引数量（如 indexCount * 0.5 = 减半）
+ * @param targetError       目标几何误差，0.0 = 不限制误差
+ * @param options           简化选项（meshopt_SimplifyX 的组合）
+ * @param outResultError    输出的实际误差（可传 nullptr）
+ * @return                  简化后的索引数组
+ */
+RENDERSYSTEM_API std::vector<uint32_t> SimplifyMesh(
+    const uint32_t* indices,
+    size_t          indexCount,
+    const float*    positions,
+    size_t          vertexCount,
+    size_t          positionStride,
+    size_t          targetIndexCount,
+    float           targetError       = 0.0f,
+    uint32_t       options           = 0,
+    float*          outResultError    = nullptr);
+
 NS_RENDERSYSTEM_END
 
 #endif // GNXENGINE_MESHLET_COMMON_INCLUDE_H

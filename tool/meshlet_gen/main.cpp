@@ -182,7 +182,54 @@ int main(int argc, char* argv[])
     std::cout << "  Meshlets: " << meshletCount << std::endl;
 
     // ===================================================================
-    // 4. Serialize to binary
+    // 3.5 测试 LOD 简化链：逐级 SimplifyMesh + BuildMeshlets
+    // ===================================================================
+    std::cout << "\n--- LOD Meshlet Chain Test ---" << std::endl;
+
+    std::vector<uint32_t> lodIndices = indices;  // LOD 0 = 原始去重索引
+    const size_t kMinTriangles = 256;             // 终止阈值
+    int lodLevel = 0;
+
+    while (lodIndices.size() / 3 > kMinTriangles)
+    {
+        size_t numTriangles = lodIndices.size() / 3;
+
+        // 构建当前 LOD 的 meshlet
+        std::vector<Meshlet>   lodMeshlets;
+        std::vector<uint32_t>  lodMeshletVerts;
+        std::vector<uint32_t>  lodMeshletTris;
+        BuildMeshlets(lodIndices.data(), lodIndices.size(),
+                      positions.data(), vertexCount, sizeof(float) * 3,
+                      lodMeshlets, lodMeshletVerts, lodMeshletTris);
+
+        std::cout << "LOD " << lodLevel << ": " << numTriangles << " triangles -> "
+                  << lodMeshlets.size() << " meshlets" << std::endl;
+
+        // 简化到 50%
+        size_t targetCount = lodIndices.size() / 2;
+        float error = 0.0f;
+        auto simplified = SimplifyMesh(lodIndices.data(), lodIndices.size(),
+                                       positions.data(), vertexCount, sizeof(float) * 3,
+                                       targetCount,
+                                       1.0f,       // targetError=1.0 表示不限制误差，完全靠 targetCount 控制
+                                       0, &error);
+        size_t simplifiedTris = simplified.size() / 3;
+        std::cout << "  -> simplified to " << simplifiedTris << " triangles (error=" << error << ")" << std::endl;
+
+        if (simplified.size() >= lodIndices.size())
+        {
+            std::cout << "  -> cannot simplify further, stopping" << std::endl;
+            break;
+        }
+
+        lodIndices = std::move(simplified);
+        ++lodLevel;
+    }
+
+    std::cout << "--- End LOD Test (" << lodLevel << " levels total) ---\n" << std::endl;
+
+    // ===================================================================
+    // 4. Serialize to binary (仅输出 LOD 0 的 meshlet)
     //    Engine Meshlet::triangleOffset is in uint32 units (packed 3 uint8
     //    per uint32), matching MeshLetFile.h reader. Output directly.
     // ===================================================================

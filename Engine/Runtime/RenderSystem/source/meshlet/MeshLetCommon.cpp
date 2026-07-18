@@ -114,4 +114,43 @@ void BuildMeshlets(
     outTriangles.swap(meshletTrianglesU32);
 }
 
+// =======================================================================
+// SimplifyMesh
+// =======================================================================
+
+std::vector<uint32_t> SimplifyMesh(
+    const uint32_t* indices,
+    size_t          indexCount,
+    const float*    positions,
+    size_t          vertexCount,
+    size_t          positionStride,
+    size_t          targetIndexCount,
+    float           targetError,
+    uint32_t        options,
+    float*          outResultError)
+{
+    // 结果数组必须 >= indexCount（原始索引数），因为 meshopt_simplify 需要工作缓冲区
+    std::vector<uint32_t> result(indexCount);
+
+    float error = 0.0f;
+    size_t newCount = meshopt_simplify(
+        result.data(),
+        indices,
+        indexCount,
+        positions,
+        vertexCount,
+        positionStride,
+        targetIndexCount,
+        targetError,
+        options,
+        &error);
+
+    if (outResultError)
+        *outResultError = error;
+
+    // 裁剪到实际简化后的索引数
+    result.resize(newCount);
+    return result;
+}
+
 NS_RENDERSYSTEM_END
