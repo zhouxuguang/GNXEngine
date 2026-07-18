@@ -60,7 +60,12 @@ void TS(
     uint gid  : SV_GroupID
 )
 {
-    bool visible = false;
+    // MUST be uint, NOT bool! SPIRV-Cross only pattern-matches
+    // WavePrefixCountBits/WaveActiveCountBits → simd_prefix_exclusive_sum/simd_sum
+    // when the operand is an integer type (OpTypeInt), not a boolean (OpTypeBool).
+    // bool visible generates mismatched SPIR-V instructions that fail pattern matching,
+    // resulting in broken MSL code.
+    uint visible = 0;
 
     uint instanceIndex = dtid / gMeshletCount;
     uint meshletIndex  = dtid % gMeshletCount;
@@ -70,7 +75,6 @@ void TS(
         uint lod             = instanceIndex;
         uint lodMeshletCount = gLODMeshletCounts[lod].x;
 
-        // Use the current LOD's meshlet count for bounds check, not gMeshletCount
         if (meshletIndex < lodMeshletCount)
         {
             meshletIndex += gLODMeshletOffsets[lod].x;
@@ -79,19 +83,25 @@ void TS(
             float4 meshletBoundingSphere = mul(float4(Meshlets[meshletIndex].BoundingSphere.xyz, 1.0), M);
             meshletBoundingSphere.w = Meshlets[meshletIndex].BoundingSphere.w;
 
-            visible = SphereInFrustum(meshletBoundingSphere.xyz, meshletBoundingSphere.w, frustumPlanes);
-            // visible = true;
+            visible = SphereInFrustum(meshletBoundingSphere.xyz, meshletBoundingSphere.w, frustumPlanes) ? 1 : 0;
         }
     }
 
     if (visible) 
     {
-        uint index = WavePrefixCountBits(visible);
+        // Use WavePrefixSum/WaveActiveSum instead of WavePrefixCountBits/WaveActiveCountBits.
+        // WavePrefixCountBits generates OpGroupNonUniformBallot + OpGroupNonUniformBallotBitCount
+        // in SPIR-V, which SPIRV-Cross translates to spvSubgroupBallot + spvSubgroupBallotExclusiveBitCount
+        // (with threadgroup_barrier!). WavePrefixSum generates OpGroupNonUniformIAdd(ExclusiveScan),
+        // which maps cleanly to simd_prefix_exclusive_sum in Metal without any ballot emulation.
+        // Since visible is 0 or 1, prefix sum == prefix count of bits.
+        uint index = WavePrefixSum(visible);
         sPayload.InstanceIndices[index] = instanceIndex;
         sPayload.MeshletIndices[index]  = meshletIndex;
     }
 
-    uint visibleCount = WaveActiveCountBits(visible);
+    // WaveActiveSum(visible): since visible is 0 or 1, sum == count
+    uint visibleCount = WaveActiveSum(visible);
     DispatchMesh(visibleCount, 1, 1, sPayload);
 }
 
