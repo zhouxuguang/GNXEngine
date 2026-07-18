@@ -8,14 +8,20 @@
 //  运行时直接加载即可使用。
 //
 //  文件格式（小端序）：
-//  1. uint32_t       vertexCount             顶点个数
-//  2. float[vc][3]   vertexPositions         顶点位置数据 (vc = vertexCount)
-//  3. uint32_t       meshletCount            meshlet 个数
-//  4. meshopt_Meshlet[meshletCount]          meshlet 数组
-//  5. uint32_t       meshletVerticesCount    meshlet 顶点索引个数
-//  6. uint32_t[mvc]  meshletVertices         meshlet 顶点索引数组 (mvc = meshletVerticesCount)
-//  7. uint32_t       meshletTrianglesCount   meshlet 三角形索引个数
-//  8. uint32_t[mtc]   meshletTriangles        packed triangle index array (mtc = meshletTrianglesCount, each uint32_t packs 3 uint8_t indices, same format as MeshLetCommon.h output)
+//  [Header]
+//  1. uint32_t       vertexCount             顶点个数（所有 LOD 共享）
+//  2. float[vc][3]   vertexPositions         顶点位置数据
+//  3. uint32_t       lodCount                LOD 数量
+//  [LOD 数组]
+//  4. uint32_t[lodCount] lodMeshletOffsets   每个 LOD 第一个 meshlet 的索引
+//  5. uint32_t[lodCount] lodMeshletCounts    每个 LOD 的 meshlet 数量
+//  [Meshlet 数据]
+//  6. uint32_t       totalMeshletCount       所有 LOD 的 meshlet 总数
+//  7. Meshlet[totalMeshletCount]             meshlet 平坦数组
+//  8. uint32_t       totalVerticesCount      meshlet 顶点索引总数
+//  9. uint32_t[tvc]  meshletVertices         顶点索引平坦数组
+//  10. uint32_t      totalTrianglesCount     三角形索引总数
+//  11. uint32_t[ttc] meshletTriangles        打包三角形索引平坦数组
 //
 
 #ifndef GNXENGINE_MESHLET_FILE_INCLUDE_H
@@ -37,23 +43,26 @@ NS_RENDERSYSTEM_BEGIN
 // 从 meshlet 二进制文件中加载的完整数据
 struct MeshletFileData
 {
-    // 顶点位置 (float[vertexCount][3])
+    // 顶点位置 (float[vertexCount][3]) — 所有 LOD 共享
     std::vector<float>    vertexPositions;
 
-    // meshlet 数组
+    // 所有 LOD 的 meshlet 平坦数组
     std::vector<Meshlet> meshlets;
 
-    // meshlet 顶点索引 (meshlet i 的顶点索引范围在
-    // [meshlets[i].vertex_offset, meshlets[i].vertex_offset + meshlets[i].vertex_count))
+    // 所有 LOD 的 meshlet 顶点索引
     std::vector<uint32_t> meshletVertices;
 
-    // meshlet 三角形索引 (打包为 uint32_t[]，每个 uint32_t 存 3 个 uint8_t 索引)
-    // meshlet i 的三角形索引范围在 [meshlets[i].triangle_offset, meshlets[i].triangle_offset + meshlets[i].triangle_count)
-    // 每个 triangle_offset 以 uint32_t 为单位，一个三角形对应 3 个 uint8_t 索引 = 1 个 uint32_t packed
+    // 所有 LOD 的 meshlet 三角形索引 (packed)
     std::vector<uint32_t>  meshletTriangles;
+
+    // LOD 信息 (NEW)
+    uint32_t              lodCount = 0;
+    std::vector<uint32_t> lodMeshletOffsets;   // [lodCount] 每个 LOD 的第一个 meshlet 索引
+    std::vector<uint32_t> lodMeshletCounts;    // [lodCount] 每个 LOD 的 meshlet 数量
 
     uint32_t GetVertexCount() const { return static_cast<uint32_t>(vertexPositions.size() / 3); }
     uint32_t GetMeshletCount() const { return static_cast<uint32_t>(meshlets.size()); }
+    uint32_t GetLODCount() const { return lodCount; }
 };
 
 // -----------------------------------------------------------------------
@@ -100,36 +109,59 @@ inline bool LoadMeshletFile(const std::string& filePath, MeshletFileData& outDat
     std::memcpy(outData.vertexPositions.data(), buffer.data() + offset, posBytes);
     offset += posBytes;
 
-    // 3. meshlet 个数
+    // 3. LOD 数量
+    if (offset + sizeof(uint32_t) > fileSize) return false;
+    outData.lodCount = *reinterpret_cast<const uint32_t*>(buffer.data() + offset);
+    offset += sizeof(uint32_t);
+
+    // 4. LOD meshlet offsets
+    {
+        const size_t lodBytes = static_cast<size_t>(outData.lodCount) * sizeof(uint32_t);
+        if (offset + lodBytes > fileSize) return false;
+        outData.lodMeshletOffsets.resize(outData.lodCount);
+        std::memcpy(outData.lodMeshletOffsets.data(), buffer.data() + offset, lodBytes);
+        offset += lodBytes;
+    }
+
+    // 5. LOD meshlet counts
+    {
+        const size_t lodBytes = static_cast<size_t>(outData.lodCount) * sizeof(uint32_t);
+        if (offset + lodBytes > fileSize) return false;
+        outData.lodMeshletCounts.resize(outData.lodCount);
+        std::memcpy(outData.lodMeshletCounts.data(), buffer.data() + offset, lodBytes);
+        offset += lodBytes;
+    }
+
+    // 6. meshlet 总数
     if (offset + sizeof(uint32_t) > fileSize) return false;
     const uint32_t meshletCount = *reinterpret_cast<const uint32_t*>(buffer.data() + offset);
     offset += sizeof(uint32_t);
 
-    // 4. meshlet 数组 (meshopt_Meshlet[meshletCount])
+    // 7. meshlet 平坦数组 (Meshlet[meshletCount])
     const size_t meshletBytes = static_cast<size_t>(meshletCount) * sizeof(Meshlet);
     if (offset + meshletBytes > fileSize) return false;
     outData.meshlets.resize(meshletCount);
     std::memcpy(outData.meshlets.data(), buffer.data() + offset, meshletBytes);
     offset += meshletBytes;
 
-    // 5. meshletVertices 个数
+    // 8. meshletVertices 总数
     if (offset + sizeof(uint32_t) > fileSize) return false;
     const uint32_t meshletVerticesCount = *reinterpret_cast<const uint32_t*>(buffer.data() + offset);
     offset += sizeof(uint32_t);
 
-    // 6. meshletVertices 数组 (uint32_t[meshletVerticesCount])
+    // 9. meshletVertices 平坦数组 (uint32_t[meshletVerticesCount])
     const size_t mvBytes = static_cast<size_t>(meshletVerticesCount) * sizeof(uint32_t);
     if (offset + mvBytes > fileSize) return false;
     outData.meshletVertices.resize(meshletVerticesCount);
     std::memcpy(outData.meshletVertices.data(), buffer.data() + offset, mvBytes);
     offset += mvBytes;
 
-    // 7. meshletTriangles 个数
+    // 10. meshletTriangles 总数
     if (offset + sizeof(uint32_t) > fileSize) return false;
     const uint32_t meshletTrianglesCount = *reinterpret_cast<const uint32_t*>(buffer.data() + offset);
     offset += sizeof(uint32_t);
 
-    // 8. meshletTriangles 数组 (uint32_t[meshletTrianglesCount])
+    // 11. meshletTriangles 平坦数组 (uint32_t[meshletTrianglesCount])
     const size_t mtBytes = static_cast<size_t>(meshletTrianglesCount) * sizeof(uint32_t);
     if (offset + mtBytes > fileSize) return false;
     outData.meshletTriangles.resize(meshletTrianglesCount);

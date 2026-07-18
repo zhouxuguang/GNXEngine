@@ -78,18 +78,18 @@ void BuildMeshlets(
     // make it easier to unpack on the GPU.
     //
     std::vector<uint32_t> meshletTrianglesU32;
-    for (size_t i = 0; i < meshlets.size(); i ++)
+    for (size_t meshletIdx = 0; meshletIdx < meshlets.size(); meshletIdx++)
     {
-        meshopt_Meshlet& m = meshlets[i];
+        meshopt_Meshlet& m = meshlets[meshletIdx];
         // Save triangle offset for current meshlet
         uint32_t triangleOffset = static_cast<uint32_t>(meshletTrianglesU32.size());
 
         // Repack to uint32_t
-        for (uint32_t i = 0; i < m.triangle_count; ++i)
+        for (uint32_t triIdx = 0; triIdx < m.triangle_count; ++triIdx)
         {
-            uint32_t i0 = 3 * i + 0 + m.triangle_offset;
-            uint32_t i1 = 3 * i + 1 + m.triangle_offset;
-            uint32_t i2 = 3 * i + 2 + m.triangle_offset;
+            uint32_t i0 = 3 * triIdx + 0 + m.triangle_offset;
+            uint32_t i1 = 3 * triIdx + 1 + m.triangle_offset;
+            uint32_t i2 = 3 * triIdx + 2 + m.triangle_offset;
 
             uint8_t  vIdx0  = meshletTriangles[i0];
             uint8_t  vIdx1  = meshletTriangles[i1];
@@ -100,13 +100,13 @@ void BuildMeshlets(
             meshletTrianglesU32.push_back(packed);
         }
 
-        // 添加 meshlet
+        // 添加 meshlet — use meshletIdx, NOT i (which was shadowed by inner loop!)
         Meshlet meshlet = {};
         meshlet.vertexOffset   = m.vertex_offset;
         meshlet.triangleOffset = triangleOffset;
         meshlet.vertexCount    = m.vertex_count;
         meshlet.triangleCount  = m.triangle_count;
-        meshlet.boundingSphere = meshletBounds[i];
+        meshlet.boundingSphere = meshletBounds[meshletIdx];  // FIXED: was using shadowed i
         outMeshlets.push_back(meshlet);
     }
 

@@ -6,6 +6,8 @@
 
 cbuffer cbMeshletParams
 {
+    uint4 gLODMeshletOffsets[5]; // [lodCount] 每个 LOD 的第一个 meshlet 索引
+    uint4 gLODMeshletCounts[5]; // [lodCount] 每个 LOD 的 meshlet 数量
     uint gInstanceCount;
     uint gMeshletCount;
 };
@@ -62,15 +64,24 @@ void TS(
 
     uint instanceIndex = dtid / gMeshletCount;
     uint meshletIndex  = dtid % gMeshletCount;
-
-    if ((instanceIndex < gInstanceCount) && (meshletIndex < gMeshletCount)) 
+    
+    if (instanceIndex < gInstanceCount) 
     {
-        float4x4 M = Instances[instanceIndex].M;
-        float4 meshletBoundingSphere = mul(float4(Meshlets[meshletIndex].BoundingSphere.xyz, 1.0), M);
-        meshletBoundingSphere.w = Meshlets[meshletIndex].BoundingSphere.w;
+        uint lod             = instanceIndex;
+        uint lodMeshletCount = gLODMeshletCounts[lod].x;
 
-        visible = SphereInFrustum(meshletBoundingSphere.xyz, meshletBoundingSphere.w, frustumPlanes);
-        // visible = true;
+        // Use the current LOD's meshlet count for bounds check, not gMeshletCount
+        if (meshletIndex < lodMeshletCount)
+        {
+            meshletIndex += gLODMeshletOffsets[lod].x;
+
+            float4x4 M = Instances[instanceIndex].M;
+            float4 meshletBoundingSphere = mul(float4(Meshlets[meshletIndex].BoundingSphere.xyz, 1.0), M);
+            meshletBoundingSphere.w = Meshlets[meshletIndex].BoundingSphere.w;
+
+            visible = SphereInFrustum(meshletBoundingSphere.xyz, meshletBoundingSphere.w, frustumPlanes);
+            // visible = true;
+        }
     }
 
     if (visible) 

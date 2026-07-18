@@ -29,10 +29,14 @@ using namespace RenderSystem;
 using namespace mathutil;
 
 // cbMeshletParams: 匹配 shader 中 cbuffer cbMeshletParams 布局
+// 注：数组在 cbuffer 中被对齐到 float4 (16字节) — 这里用 uint4 匹配，末尾 padding 保证对齐
 struct cbMeshletParams
 {
+    uint32_t LODMeshletOffsets[5][4]; // 5 × uint4 = 5 × 16 bytes = 80 bytes
+    uint32_t LODMeshletCounts[5][4];  // 同上
     uint32_t instanceCount;
     uint32_t meshletCount;
+    uint32_t pad[2];  // 同上
 };
 
 MeshletFrameWork::MeshletFrameWork(const GNXEngine::WindowProps& props)
@@ -51,34 +55,68 @@ void MeshletFrameWork::Initlize()
     InitCullingData();
     CreatePipeline();
 
-	const uint32_t    kNumInstanceCols = 20;
-#if OS_WINDOWS
-    const uint32_t    kNumInstanceRows = 10;
-#else
-    const uint32_t    kNumInstanceRows = 5;
-#endif
+//	const uint32_t    kNumInstanceCols = 20;
+//#if OS_WINDOWS
+//    const uint32_t    kNumInstanceRows = 10;
+//#else
+//    const uint32_t    kNumInstanceRows = 5;
+//#endif
+    
+    const uint32_t        kNumInstanceCols = 1;
+    const uint32_t        kNumInstanceRows = 5;
 	
 	std::vector<mathutil::Matrix4x4f> instances(kNumInstanceCols * kNumInstanceRows);
 
 	float maxSpan = std::max<float>(mMeshAABB.Width(), mMeshAABB.Depth());
 	float instanceSpanX = 2.0f * maxSpan;
+    instanceSpanX = 4.0f * maxSpan;
 	float instanceSpanZ = 4.5f * maxSpan;
 	float totalSpanX = kNumInstanceCols * instanceSpanX;
 	float totalSpanZ = kNumInstanceRows * instanceSpanZ;
 
-	for (uint32_t j = 0; j < kNumInstanceRows; ++j)
-	{
-		for (uint32_t i = 0; i < kNumInstanceCols; ++i)
-		{
-			float x = i * instanceSpanX - (totalSpanX / 2.0f) + instanceSpanX / 2.0f;
-			float y = 0;
-			float z = j * instanceSpanZ - (totalSpanZ / 2.0f) - 2.15f * instanceSpanZ;
+//	for (uint32_t j = 0; j < kNumInstanceRows; ++j)
+//	{
+//		for (uint32_t i = 0; i < kNumInstanceCols; ++i)
+//		{
+//			float x = i * instanceSpanX - (totalSpanX / 2.0f) + instanceSpanX / 2.0f;
+//			float y = 0;
+//			float z = j * instanceSpanZ - (totalSpanZ / 2.0f) - 2.15f * instanceSpanZ;
+//
+//			uint32_t index = j * kNumInstanceCols + i;
+//            instances[index] = mathutil::Matrix4x4f::CreateTranslate(mathutil::Vector3f(x, y, z)) *
+//                mathutil::Matrix4x4f::CreateRotation(mathutil::Vector3f(0, 1, 0), 0);
+//		}
+//	}
+    
+    // 0
+    {
+        Vector3f P =       Vector3f(0, 0, -static_cast<float>(0 * instanceSpanZ));
+        instances[0] = Matrix4x4f::CreateTranslate(P) * Matrix4x4f::CreateRotation(Vector3f(0, 1, 0), 0);
+    }
 
-			uint32_t index = j * kNumInstanceCols + i;
-            instances[index] = mathutil::Matrix4x4f::CreateTranslate(mathutil::Vector3f(x, y, z)) *
-                mathutil::Matrix4x4f::CreateRotation(mathutil::Vector3f(0, 1, 0), 0);
-		}
-	}
+    // 1
+    {
+        Vector3f P       = Vector3f(0, 0, -static_cast<float>(0.75f * instanceSpanZ));
+        instances[1] = Matrix4x4f::CreateTranslate(P) * Matrix4x4f::CreateRotation(Vector3f(0, 1, 0), 0);
+    }
+
+    // 2
+    {
+        Vector3f P       = Vector3f(0, 0, -static_cast<float>(2.5 * instanceSpanZ));
+        instances[2] = Matrix4x4f::CreateTranslate(P) * Matrix4x4f::CreateRotation(Vector3f(0, 1, 0), 0);
+    }
+
+    // 3
+    {
+        Vector3f P       = Vector3f(0, 0, -static_cast<float>(8 * instanceSpanZ));
+        instances[3] = Matrix4x4f::CreateTranslate(P) * Matrix4x4f::CreateRotation(Vector3f(0, 1, 0), 0);
+    }
+
+    // 4
+    {
+        Vector3f P       = Vector3f(0, 0, -static_cast<float>(40 * instanceSpanZ));
+        instances[4] = Matrix4x4f::CreateTranslate(P) * Matrix4x4f::CreateRotation(Vector3f(0, 1, 0), 0);
+    }
     
     mInstancesCount = kNumInstanceCols * kNumInstanceRows;
 
@@ -87,6 +125,19 @@ void MeshletFrameWork::Initlize()
         cbMeshletParams params;
         params.instanceCount = mInstancesCount;
         params.meshletCount  = mMeshletCount;
+        
+        params.LODMeshletOffsets[0][0] = mMeshletData.lodMeshletOffsets[0];
+        params.LODMeshletOffsets[1][0] = mMeshletData.lodMeshletOffsets[1];
+        params.LODMeshletOffsets[2][0] = mMeshletData.lodMeshletOffsets[2];
+        params.LODMeshletOffsets[3][0] = mMeshletData.lodMeshletOffsets[3];
+        params.LODMeshletOffsets[4][0] = mMeshletData.lodMeshletOffsets[4];
+        
+        params.LODMeshletCounts[0][0] = mMeshletData.lodMeshletCounts[0];
+        params.LODMeshletCounts[1][0] = mMeshletData.lodMeshletCounts[1];
+        params.LODMeshletCounts[2][0] = mMeshletData.lodMeshletCounts[2];
+        params.LODMeshletCounts[3][0] = mMeshletData.lodMeshletCounts[3];
+        params.LODMeshletCounts[4][0] = mMeshletData.lodMeshletCounts[4];
+        
         mMeshletParamsUBO = mRenderDevice->CreateUniformBufferWithSize(sizeof(cbMeshletParams));
         mMeshletParamsUBO->SetData(&params, 0, sizeof(cbMeshletParams));
     }
@@ -244,7 +295,7 @@ void MeshletFrameWork::Resize(uint32_t width, uint32_t height)
         cameraPtr = sceneManager->CreateCamera("MainCamera");
     }
 
-    cameraPtr->LookAt(mathutil::Vector3f(0, 0.7f, 3.0f), mathutil::Vector3f(0, 0.105f, 0), mathutil::Vector3f(0, 1, 0));
+    cameraPtr->LookAt(mathutil::Vector3f(0.3f, 0.125f, 0.525f), mathutil::Vector3f(0, 0.1f, -0.425f), mathutil::Vector3f(0, 1, 0));
     cameraPtr->SetLens(45, width, height, 0.1f, 1000.f);
 }
 
