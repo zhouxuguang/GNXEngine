@@ -190,32 +190,6 @@ void MeshletFrameWork::InitCullingData()
         }
     }
 
-    // ---- 5. Bounding sphere SSBO (float4 per meshlet) ----
-    {
-        std::vector<Vector4f> bounds(mMeshletCount);
-        for (uint32_t i = 0; i < mMeshletCount; ++i)
-        {
-            const auto& m = mMeshletData.meshlets[i];
-            Vector3f center;
-            float radius = 0.0f;
-            ComputeMeshletBounds(
-                mMeshletData.vertexPositions.data(),
-                                 mMeshletData.meshletVertices.data() + m.vertexOffset,
-                                 m.vertexCount,
-                center, radius);
-            bounds[i] = Vector4f(center.x, center.y, center.z, radius);
-        }
-        RCBufferDesc desc((uint32_t)(mMeshletCount * sizeof(Vector4f)), RCBufferUsage::StorageBuffer, StorageModeShared);
-        mMeshletBoundsSSBO = mRenderDevice->CreateBuffer(desc);
-        mMeshletBoundsSSBO->SetName("Meshlet_Bounds");
-        void* dst = mMeshletBoundsSSBO->Map();
-        if (dst)
-        {
-            memcpy(dst, bounds.data(), mMeshletCount * sizeof(Vector4f));
-            mMeshletBoundsSSBO->Unmap();
-        }
-    }
-
     LOG_INFO("Uploaded %u meshlet descriptors, %zu vertex indices, %zu packed triangles",
              mMeshletCount,
              mMeshletData.meshletVertices.size() / 64 * 64,

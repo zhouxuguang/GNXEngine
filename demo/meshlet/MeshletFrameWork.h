@@ -43,9 +43,6 @@ private:
     RenderCore::RCBufferPtr mMeshletVertsSSBO = nullptr;   // meshlet vertex indices (uint32_t[])
     RenderCore::RCBufferPtr mMeshletTriSSBO = nullptr;     // meshlet triangle indices (uint32_t[], packed 3 uint8 per uint32)
     RenderCore::RCBufferPtr mVertexPosSSBO = nullptr;      // vertex positions (float3[])
-
-    // Culling data SSBO
-    RenderCore::RCBufferPtr mMeshletBoundsSSBO = nullptr;  // bounding spheres (float4 per meshlet)
     
     RenderCore::RCBufferPtr mInstanceSSBO = nullptr;  // model matrix instance
 
