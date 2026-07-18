@@ -188,9 +188,10 @@ int main(int argc, char* argv[])
 
     std::vector<uint32_t> lodIndices = indices;  // LOD 0 = 原始去重索引
     const size_t kMinTriangles = 256;             // 终止阈值
+    const int    kMaxLodLevels = 5;               // 最多 5 个 LOD 级别
     int lodLevel = 0;
 
-    while (lodIndices.size() / 3 > kMinTriangles)
+    while ((lodIndices.size() / 3 > kMinTriangles) && (lodLevel < kMaxLodLevels))
     {
         size_t numTriangles = lodIndices.size() / 3;
 
