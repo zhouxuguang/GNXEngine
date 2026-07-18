@@ -60,10 +60,6 @@ struct MeshletVertex
     float position[3];          // 位置（12 字节，紧密对齐）
 };
 
-// -----------------------------------------------------------------------
-// Meshlet 构建辅助函数
-// -----------------------------------------------------------------------
-
 /**
  * 使用 meshopt 从给定的索引和位置数据构建 meshlet
  *
@@ -85,22 +81,6 @@ RENDERSYSTEM_API void BuildMeshlets(
     std::vector<Meshlet>&           outMeshlets,
     std::vector<uint32_t>&          outVertices,
     std::vector<uint32_t>&          outTriangles);
-
-/**
- * 计算 meshlet 的包围球（用于视锥剔除）
- *
- * @param meshVertices   原始网格顶点位置
- * @param meshletVerts   meshlet 的顶点索引映射
- * @param vertexCount    meshlet 顶点数量
- * @param center         [输出] 包围球中心
- * @param radius         [输出] 包围球半径
- */
-RENDERSYSTEM_API void ComputeMeshletBounds(
-    const float*    meshVertices,
-    const uint32_t* meshletVerts,
-    uint32_t        vertexCount,
-    mathutil::Vector3f&       center,
-    float&          radius);
 
 NS_RENDERSYSTEM_END
 
