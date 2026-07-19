@@ -32,7 +32,7 @@ groupshared TerrainPayload terrainPayload;
 [numthreads(32, 1, 1)]
 void TS(uint gid : SV_GroupID, uint gtid : SV_GroupIndex, uint dtid : SV_DispatchThreadID)
 {
-    bool visible = false;
+    uint visible = 0;
 
     if (dtid < gPatchCount)
     {
@@ -46,12 +46,12 @@ void TS(uint gid : SV_GroupID, uint gtid : SV_GroupIndex, uint dtid : SV_Dispatc
     // Compact visible patch indices into payload using WavePrefixCountBits
     if (visible)
     {
-        uint index = WavePrefixCountBits(visible);
+        uint index = WavePrefixSum(visible);
         terrainPayload.patchIndices[index] = dtid;
     }
 
     // Dispatch the required number of MS threadgroups to render the visible patches
-    uint visibleCount = WaveActiveCountBits(visible);
+    uint visibleCount = WaveActiveSum(visible);
 
     DispatchMesh(visibleCount, 1, 1, terrainPayload);
 }
