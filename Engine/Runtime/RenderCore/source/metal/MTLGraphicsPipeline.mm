@@ -431,7 +431,7 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
                         {
                             // 这里shader中指定的numthreads可能超过当前的objExecWidth最大值，需要钳制到objExecWidth和mTaskThreadgroupSize[0]最小值
                             mTaskThreadgroupSize[0] = std::min(objExecWidth, mTaskThreadgroupSize[0]);
-                            mTaskThreadgroupSize[1] = objMaxTotal / mTaskThreadgroupSize[0];
+                            mTaskThreadgroupSize[1] = std::min(objMaxTotal / mTaskThreadgroupSize[0], mTaskThreadgroupSize[1]);
                             mTaskThreadgroupSize[2] = 1;
                         }
                     }
