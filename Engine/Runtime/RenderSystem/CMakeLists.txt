@@ -42,7 +42,7 @@ target_compile_definitions(RenderSystem PRIVATE RENDERSYSTEM_EXPORTS)
 target_include_directories(RenderSystem PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/glm-0.9.9.8)
 
 # meshoptimizer 用于 meshlet 构建
-target_link_libraries(RenderSystem PRIVATE meshoptimizer)
+target_link_libraries(RenderSystem PRIVATE metis meshoptimizer)
 
 #这里后续还需要修改
 #target_link_directories(rendersystem PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/assimp-5.2.4/lib/Mac)
