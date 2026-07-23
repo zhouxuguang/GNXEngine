@@ -41,10 +41,6 @@ MeshletBuilder::~MeshletBuilder()
 {
 }
 
-// =======================================================================
-// Build
-// =======================================================================
-
 bool MeshletBuilder::Build(
     const float*    positions,
     size_t          vertexCount,
@@ -88,13 +84,25 @@ bool MeshletBuilder::Build(
                                indexCount,
                                xadj, adjncy, adjwgt);
 
-        // 按建议的 k = sqrt(|V|) 自动确定分区数
-        metis_idx_t numParts = std::max<metis_idx_t>(1,
-            static_cast<metis_idx_t>(std::sqrt(static_cast<double>(outData.meshlets.size()))));
+        // 分区数：外部指定 > 0 则用指定值，否则自动 sqrt(|V|)
+        metis_idx_t numParts;
+        if (mNumPartitions > 0)
+            numParts = static_cast<metis_idx_t>(mNumPartitions);
+        else
+            numParts = std::max<metis_idx_t>(1,
+                static_cast<metis_idx_t>(std::sqrt(static_cast<double>(outData.meshlets.size()))));
+
         std::vector<metis_idx_t> part(outData.meshlets.size());
         if (PartitionWithMetis(static_cast<metis_idx_t>(outData.meshlets.size()),
                                xadj, adjncy, adjwgt, numParts, part))
         {
+            outData.numPartitions = static_cast<uint32_t>(numParts);
+            outData.meshletPartitions.resize(outData.meshlets.size());
+            for (size_t i = 0; i < outData.meshlets.size(); ++i)
+            {
+                outData.meshletPartitions[i] = static_cast<uint32_t>(part[i]);
+            }
+
             LOG_INFO("METIS partition completed: %lld groups for %lld meshlets.",
                 static_cast<long long>(numParts),
                 static_cast<long long>(outData.meshlets.size()));

@@ -55,10 +55,14 @@ struct MeshletFileData
     // 所有 LOD 的 meshlet 三角形索引 (packed)
     std::vector<uint32_t>  meshletTriangles;
 
-    // LOD 信息 (NEW)
+    // LOD 信息
     uint32_t              lodCount = 0;
-    std::vector<uint32_t> lodMeshletOffsets;   // [lodCount] 每个 LOD 的第一个 meshlet 索引
-    std::vector<uint32_t> lodMeshletCounts;    // [lodCount] 每个 LOD 的 meshlet 数量
+    std::vector<uint32_t> lodMeshletOffsets;   // [lodCount]
+    std::vector<uint32_t> lodMeshletCounts;    // [lodCount]
+
+    // METIS 分区结果: part[i] ∈ [0, numPartitions-1]
+    uint32_t              numPartitions = 0;
+    std::vector<uint32_t> meshletPartitions;   // [meshletCount]
 
     uint32_t GetVertexCount() const { return static_cast<uint32_t>(vertexPositions.size() / 3); }
     uint32_t GetMeshletCount() const { return static_cast<uint32_t>(meshlets.size()); }
@@ -167,6 +171,21 @@ inline bool LoadMeshletFile(const std::string& filePath, MeshletFileData& outDat
     outData.meshletTriangles.resize(meshletTrianglesCount);
     std::memcpy(outData.meshletTriangles.data(), buffer.data() + offset, mtBytes);
     offset += mtBytes;
+
+    // 12. numPartitions
+    if (offset + sizeof(uint32_t) > fileSize) return false;
+    outData.numPartitions = *reinterpret_cast<const uint32_t*>(buffer.data() + offset);
+    offset += sizeof(uint32_t);
+
+    // 13. meshletPartitions (uint32_t[meshletCount])
+    if (outData.numPartitions > 0)
+    {
+        const size_t partBytes = static_cast<size_t>(meshletCount) * sizeof(uint32_t);
+        if (offset + partBytes > fileSize) return false;
+        outData.meshletPartitions.resize(meshletCount);
+        std::memcpy(outData.meshletPartitions.data(), buffer.data() + offset, partBytes);
+        offset += partBytes;
+    }
 
     assert(offset == fileSize);
     return true;

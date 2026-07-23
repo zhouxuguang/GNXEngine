@@ -25,6 +25,8 @@
 #include <iostream>
 
 #include "Runtime/RenderSystem/include/meshlet/MeshLetCommon.h"
+#include "Runtime/RenderSystem/include/meshlet/MeshLetBuilder.h"
+#include "Runtime/RenderSystem/include/meshlet/MeshLetFile.h"
 #include "Runtime/RenderSystem/include/mesh/MeshImporter.h"
 #include "Runtime/RenderSystem/include/mesh/Mesh.h"
 #include "Runtime/BaseLib/include/FileUtil.h"
@@ -69,22 +71,17 @@ static void DeduplicatePositions(
 {
     const size_t vertexCount = expandedPositions.size() / 3;
 
-    // meshopt_generateVertexRemap deduplicates vertices with identical data.
-    // We pass only the position field (float3, stride=12) for comparison,
-    // so vertices with the same position (but different normal/uv) merge.
     std::vector<uint32_t> remap(vertexCount);
     const size_t uniqueCount = meshopt_generateVertexRemap(
         remap.data(),
         expandedIndices.data(), expandedIndices.size(),
         expandedPositions.data(), vertexCount,
-        sizeof(float) * 3);  // stride: only compare float3 positions
+        sizeof(float) * 3);
 
-    // Remap indices: expanded index → unique index
     outIndices.resize(expandedIndices.size());
     meshopt_remapIndexBuffer(outIndices.data(), expandedIndices.data(),
                              expandedIndices.size(), remap.data());
 
-    // Compact the position buffer to unique vertices only
     outPositions.resize(uniqueCount * 3);
     meshopt_remapVertexBuffer(outPositions.data(), expandedPositions.data(),
                               vertexCount, sizeof(float) * 3, remap.data());
@@ -154,157 +151,98 @@ int main(int argc, char* argv[])
 
     std::cout << "  Expanded vertices (from engine MeshImporter): " << expandedVertexCount << std::endl;
 
-    // Deduplicate to unique positions only (matching MeshLab count)
-    std::vector<float>    positions;
-    std::vector<uint32_t> indices;
-    DeduplicatePositions(expandedPositions, expandedIndices, positions, indices);
+    // ===================================================================
+    // 3. Deduplicate to unique positions only
+    // ===================================================================
+    std::vector<float>    dedupPositions;
+    std::vector<uint32_t> dedupIndices;
+    DeduplicatePositions(expandedPositions, expandedIndices, dedupPositions, dedupIndices);
 
-    const uint32_t vertexCount = static_cast<uint32_t>(positions.size() / 3);
-    std::cout << "  Unique positions (after dedup, like MeshLab): " << vertexCount << std::endl;
-    std::cout << "  Indices:                                     " << indices.size() << std::endl;
+    const uint32_t dedupVertexCount = static_cast<uint32_t>(dedupPositions.size() / 3);
+    std::cout << "  Unique positions (after dedup): " << dedupVertexCount << std::endl;
+    std::cout << "  Index count:                    " << dedupIndices.size() << std::endl;
 
     // ===================================================================
-    // 3. 构建所有 LOD 的 meshlet（平坦合并数组）
-    //    参考: chaoticbob mesh-shading-part-5, 所有 LOD 合并到一个数组
+    // 4. 使用 MeshletBuilder 构建 meshlet（含 METIS 连通图分区）
     // ===================================================================
-    std::cout << "\n--- Building LOD Meshlets ---" << std::endl;
+    std::cout << "\n--- Building Meshlets with MeshletBuilder ---" << std::endl;
 
-    std::vector<float>    combinedPositions;      // 顶点位置（所有 LOD 共享同一份）
-    std::vector<Meshlet>  combinedMeshlets;        // 所有 LOD 的 meshlet 平坦数组
-    std::vector<uint32_t> combinedVertexIndices;   // 所有 LOD 的顶点索引平坦数组
-    std::vector<uint32_t> combinedTriangleIndices; // 所有 LOD 的三角形索引平坦数组
-    std::vector<uint32_t> lodMeshletOffsets;       // [lodCount] 每个 LOD 第一个 meshlet 索引
-    std::vector<uint32_t> lodMeshletCounts;        // [lodCount] 每个 LOD meshlet 数量
-
-    // 顶点位置是所有 LOD 共享的（meshopt_simplify 返回的索引指向原始顶点）
-    combinedPositions = positions;
-
-    std::vector<uint32_t> lodIndices = indices;
-    const size_t kMinTriangles = 256;
-    const int    kMaxLodLevels = 5;
-    int lodLevel = 0;
-
-    while ((lodIndices.size() / 3 > kMinTriangles) && (lodLevel < kMaxLodLevels))
+    MeshletBuilder builder;
+    builder.SetNumPartitions(2);  // 分为两组，便于调试验证
+    MeshletFileData outData;
+    if (!builder.Build(dedupPositions.data(), dedupVertexCount,
+                       dedupIndices.data(), dedupIndices.size(),
+                       outData))
     {
-        size_t numTriangles = lodIndices.size() / 3;
-
-        // 构建当前 LOD 的 meshlet
-        std::vector<Meshlet>   lodMeshlets;
-        std::vector<uint32_t>  lodMeshletVerts;
-        std::vector<uint32_t>  lodMeshletTris;
-        BuildMeshlets(lodIndices.data(), lodIndices.size(),
-                      combinedPositions.data(), vertexCount, sizeof(float) * 3,
-                      lodMeshlets, lodMeshletVerts, lodMeshletTris);
-
-        // 记录当前 LOD 的偏移和数量
-        lodMeshletOffsets.push_back(static_cast<uint32_t>(combinedMeshlets.size()));
-        lodMeshletCounts.push_back(static_cast<uint32_t>(lodMeshlets.size()));
-
-        // 记录偏移量用于调整 meshlet 数据
-        uint32_t vertexIndexBase = static_cast<uint32_t>(combinedVertexIndices.size());
-        uint32_t triangleBase    = static_cast<uint32_t>(combinedTriangleIndices.size());
-
-        // 调整 meshlet 的偏移量到合并数组中的位置
-        for (auto& m : lodMeshlets)
-        {
-            m.vertexOffset   += vertexIndexBase;
-            m.triangleOffset += triangleBase;
-            combinedMeshlets.push_back(m);
-        }
-
-        // 合并顶点索引和三角形索引（不需要偏移调整，因为指向的是原始顶点数组）
-        combinedVertexIndices.insert(combinedVertexIndices.end(),
-            lodMeshletVerts.begin(), lodMeshletVerts.end());
-        combinedTriangleIndices.insert(combinedTriangleIndices.end(),
-            lodMeshletTris.begin(), lodMeshletTris.end());
-
-        std::cout << "LOD " << lodLevel << ": " << numTriangles << " triangles -> "
-                  << lodMeshlets.size() << " meshlets "
-                  << "(offset=" << lodMeshletOffsets.back()
-                  << ", count=" << lodMeshletCounts.back() << ")" << std::endl;
-
-        // 简化到 50% 进入下一级
-        size_t targetCount = lodIndices.size() / 2;
-        float error = 0.0f;
-        auto simplified = SimplifyMesh(lodIndices.data(), lodIndices.size(),
-                                       combinedPositions.data(), vertexCount, sizeof(float) * 3,
-                                       targetCount, 1.0f, 0, &error);
-        if (simplified.size() >= lodIndices.size())
-        {
-            std::cout << "  -> cannot simplify further, stopping" << std::endl;
-            break;
-        }
-        std::cout << "  -> simplified to " << (simplified.size() / 3)
-                  << " triangles (error=" << error << ")" << std::endl;
-
-        lodIndices = std::move(simplified);
-        ++lodLevel;
+        std::cerr << "Error: MeshletBuilder::Build failed." << std::endl;
+        return 1;
     }
 
-    const uint32_t totalLodCount = static_cast<uint32_t>(lodMeshletOffsets.size());
-    std::cout << "--- Total: " << totalLodCount << " LODs, "
-              << combinedMeshlets.size() << " total meshlets ---\n" << std::endl;
+    const uint32_t vertexCount = static_cast<uint32_t>(outData.vertexPositions.size() / 3);
+    std::cout << "  Vertex count:   " << vertexCount << std::endl;
+    std::cout << "  Meshlet count:  " << outData.meshlets.size() << std::endl;
+    std::cout << "  LOD count:      " << outData.lodCount << std::endl;
 
     // ===================================================================
-    // 4. Serialize to binary (多 LOD 格式)
+    // 5. Serialize to binary
     // ===================================================================
     std::vector<uint8_t> bytes;
 
     // ---- Header ----
-    AppendToBytes(bytes, static_cast<uint32_t>(vertexCount));         // vertex count
-
+    AppendToBytes(bytes, vertexCount);
     bytes.insert(bytes.end(),
-        reinterpret_cast<const uint8_t*>(combinedPositions.data()),
-        reinterpret_cast<const uint8_t*>(combinedPositions.data())
-            + combinedPositions.size() * sizeof(float));               // vertex positions
+        reinterpret_cast<const uint8_t*>(outData.vertexPositions.data()),
+        reinterpret_cast<const uint8_t*>(outData.vertexPositions.data())
+            + outData.vertexPositions.size() * sizeof(float));
 
-    AppendToBytes(bytes, totalLodCount);                               // lod count
+    AppendToBytes(bytes, outData.lodCount);
 
     // ---- LOD 数组 ----
     bytes.insert(bytes.end(),
-        reinterpret_cast<const uint8_t*>(lodMeshletOffsets.data()),
-        reinterpret_cast<const uint8_t*>(lodMeshletOffsets.data())
-            + lodMeshletOffsets.size() * sizeof(uint32_t));
+        reinterpret_cast<const uint8_t*>(outData.lodMeshletOffsets.data()),
+        reinterpret_cast<const uint8_t*>(outData.lodMeshletOffsets.data())
+            + outData.lodMeshletOffsets.size() * sizeof(uint32_t));
     bytes.insert(bytes.end(),
-        reinterpret_cast<const uint8_t*>(lodMeshletCounts.data()),
-        reinterpret_cast<const uint8_t*>(lodMeshletCounts.data())
-            + lodMeshletCounts.size() * sizeof(uint32_t));
+        reinterpret_cast<const uint8_t*>(outData.lodMeshletCounts.data()),
+        reinterpret_cast<const uint8_t*>(outData.lodMeshletCounts.data())
+            + outData.lodMeshletCounts.size() * sizeof(uint32_t));
 
     // ---- Meshlet 平坦数组 ----
-    AppendToBytes(bytes, static_cast<uint32_t>(combinedMeshlets.size()));
+    AppendToBytes(bytes, static_cast<uint32_t>(outData.meshlets.size()));
     bytes.insert(bytes.end(),
-        reinterpret_cast<const uint8_t*>(combinedMeshlets.data()),
-        reinterpret_cast<const uint8_t*>(combinedMeshlets.data())
-            + combinedMeshlets.size() * sizeof(Meshlet));
+        reinterpret_cast<const uint8_t*>(outData.meshlets.data()),
+        reinterpret_cast<const uint8_t*>(outData.meshlets.data())
+            + outData.meshlets.size() * sizeof(Meshlet));
 
-    AppendToBytes(bytes, static_cast<uint32_t>(combinedVertexIndices.size()));
+    AppendToBytes(bytes, static_cast<uint32_t>(outData.meshletVertices.size()));
     bytes.insert(bytes.end(),
-        reinterpret_cast<const uint8_t*>(combinedVertexIndices.data()),
-        reinterpret_cast<const uint8_t*>(combinedVertexIndices.data())
-            + combinedVertexIndices.size() * sizeof(uint32_t));
+        reinterpret_cast<const uint8_t*>(outData.meshletVertices.data()),
+        reinterpret_cast<const uint8_t*>(outData.meshletVertices.data())
+            + outData.meshletVertices.size() * sizeof(uint32_t));
 
-    AppendToBytes(bytes, static_cast<uint32_t>(combinedTriangleIndices.size()));
+    AppendToBytes(bytes, static_cast<uint32_t>(outData.meshletTriangles.size()));
     bytes.insert(bytes.end(),
-        reinterpret_cast<const uint8_t*>(combinedTriangleIndices.data()),
-        reinterpret_cast<const uint8_t*>(combinedTriangleIndices.data())
-            + combinedTriangleIndices.size() * sizeof(uint32_t));
+        reinterpret_cast<const uint8_t*>(outData.meshletTriangles.data()),
+        reinterpret_cast<const uint8_t*>(outData.meshletTriangles.data())
+            + outData.meshletTriangles.size() * sizeof(uint32_t));
+
+    // ---- METIS 分区数据 ----
+    AppendToBytes(bytes, outData.numPartitions);
+    if (outData.numPartitions > 0)
+    {
+        bytes.insert(bytes.end(),
+            reinterpret_cast<const uint8_t*>(outData.meshletPartitions.data()),
+            reinterpret_cast<const uint8_t*>(outData.meshletPartitions.data())
+                + outData.meshletPartitions.size() * sizeof(uint32_t));
+    }
 
     // ===================================================================
-    // 5. Write to file using engine's FileUtil
+    // 6. Write to file
     // ===================================================================
     if (!baselib::FileUtil::WriteBinaryFile(outputFile, bytes))
         return 1;
 
     std::cout << "Successfully wrote " << bytes.size() << " bytes to " << outputFile << std::endl;
-
-    std::cout << "\nLOD Meshlet summary:" << std::endl;
-    for (uint32_t lod = 0; lod < totalLodCount; ++lod)
-    {
-        uint32_t first = lodMeshletOffsets[lod];
-        uint32_t count = lodMeshletCounts[lod];
-        std::cout << "  LOD " << lod << ": " << count << " meshlets "
-                  << "(offset=" << first << ")" << std::endl;
-    }
 
     return 0;
 }

@@ -55,9 +55,9 @@ public:
     void SetMinTriangles(size_t minTris) { mMinTriangles = minTris; }
     size_t GetMinTriangles() const { return mMinTriangles; }
 
-    // 设置 LOD 简化比例（默认 0.5，即每级减半）
-    void SetLodSimplifyRatio(float ratio) { mLodSimplifyRatio = ratio; }
-    float GetLodSimplifyRatio() const { return mLodSimplifyRatio; }
+    // 设置 METIS 分区数（默认 0=自动 sqrt(|V|)，设为 2=分成两组调试）
+    void SetNumPartitions(uint32_t n) { mNumPartitions = n; }
+    uint32_t GetNumPartitions() const { return mNumPartitions; }
 
     // -------- 构建 --------
 
@@ -144,6 +144,7 @@ private:
     int      mMaxLodLevels     = 20;
     size_t   mMinTriangles     = kMeshletMaxTriangles;
     float    mLodSimplifyRatio = 0.5f;
+    uint32_t mNumPartitions    = 0;    // 0 = auto sqrt(|V|)
 };
 
 NS_RENDERSYSTEM_END

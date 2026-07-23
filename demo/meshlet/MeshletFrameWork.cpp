@@ -127,16 +127,16 @@ void MeshletFrameWork::Initlize()
         params.meshletCount  = mMeshletCount;
         
         params.LODMeshletOffsets[0][0] = mMeshletData.lodMeshletOffsets[0];
-        params.LODMeshletOffsets[1][0] = mMeshletData.lodMeshletOffsets[1];
+        /*params.LODMeshletOffsets[1][0] = mMeshletData.lodMeshletOffsets[1];
         params.LODMeshletOffsets[2][0] = mMeshletData.lodMeshletOffsets[2];
         params.LODMeshletOffsets[3][0] = mMeshletData.lodMeshletOffsets[3];
-        params.LODMeshletOffsets[4][0] = mMeshletData.lodMeshletOffsets[4];
+        params.LODMeshletOffsets[4][0] = mMeshletData.lodMeshletOffsets[4];*/
         
         params.LODMeshletCounts[0][0] = mMeshletData.lodMeshletCounts[0];
-        params.LODMeshletCounts[1][0] = mMeshletData.lodMeshletCounts[1];
+        /*params.LODMeshletCounts[1][0] = mMeshletData.lodMeshletCounts[1];
         params.LODMeshletCounts[2][0] = mMeshletData.lodMeshletCounts[2];
         params.LODMeshletCounts[3][0] = mMeshletData.lodMeshletCounts[3];
-        params.LODMeshletCounts[4][0] = mMeshletData.lodMeshletCounts[4];
+        params.LODMeshletCounts[4][0] = mMeshletData.lodMeshletCounts[4];*/
         
         mMeshletParamsUBO = mRenderDevice->CreateUniformBufferWithSize(sizeof(cbMeshletParams));
         mMeshletParamsUBO->SetData(&params, 0, sizeof(cbMeshletParams));
