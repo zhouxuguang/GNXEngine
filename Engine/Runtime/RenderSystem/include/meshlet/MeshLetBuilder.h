@@ -29,7 +29,7 @@ NS_RENDERSYSTEM_BEGIN
 //   - meshlet 构建（meshopt_buildMeshlets）
 //   - metis 图分区优化
 //   - 包围球计算
-class MeshletBuilder
+class RENDERSYSTEM_API MeshletBuilder
 {
 public:
     MeshletBuilder();
