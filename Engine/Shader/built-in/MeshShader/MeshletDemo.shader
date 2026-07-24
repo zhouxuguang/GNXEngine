@@ -96,13 +96,13 @@ void TS(
         // which maps cleanly to simd_prefix_exclusive_sum in Metal without any ballot emulation.
         // Since visible is 0 or 1, prefix sum == prefix count of bits.
         uint index = WavePrefixSum(visible);
-        sPayload.InstanceIndices[index] = instanceIndex;
-        sPayload.MeshletIndices[index]  = meshletIndex;
+        sPayload.InstanceIndices[gtid] = instanceIndex;
+        sPayload.MeshletIndices[gtid]  = meshletIndex;
     }
 
     // WaveActiveSum(visible): since visible is 0 or 1, sum == count
     uint visibleCount = WaveActiveSum(visible);
-    DispatchMesh(visibleCount, 1, 1, sPayload);
+    DispatchMesh(AS_GROUP_SIZE, 1, 1, sPayload);
 }
 
 [outputtopology("triangle")]
