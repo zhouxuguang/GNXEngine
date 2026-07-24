@@ -1,5 +1,5 @@
-#set(GKLIB_PATH "GKlib" CACHE PATH "path to GKlib")
 set(GKLIB_PATH "GKlib")
+set(METIS_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
 include(${GKLIB_PATH}/GKlibSystem.cmake)
 # Add include directories.

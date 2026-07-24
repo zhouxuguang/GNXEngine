@@ -109,7 +109,7 @@ else()
   if("${HAVE_THREADLOCALSTORAGE}" MATCHES "^${HAVE_THREADLOCALSTORAGE}$")
     try_compile(HAVE_THREADLOCALSTORAGE
       ${CMAKE_BINARY_DIR}
-      ${CMAKE_SOURCE_DIR}/${GKLIB_PATH}/conf/check_thread_storage.c)
+      ${METIS_PATH}/${GKLIB_PATH}/conf/check_thread_storage.c)
     if(HAVE_THREADLOCALSTORAGE)
       message(STATUS "checking for thread-local storage - found")
     else()
