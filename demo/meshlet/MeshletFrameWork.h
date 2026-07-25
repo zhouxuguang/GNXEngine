@@ -43,6 +43,7 @@ private:
     RenderCore::RCBufferPtr mMeshletVertsSSBO = nullptr;   // meshlet vertex indices (uint32_t[])
     RenderCore::RCBufferPtr mMeshletTriSSBO = nullptr;     // meshlet triangle indices (uint32_t[], packed 3 uint8 per uint32)
     RenderCore::RCBufferPtr mVertexPosSSBO = nullptr;      // vertex positions (float3[])
+    RenderCore::RCBufferPtr mMeshletPartitionSSBO = nullptr; // meshlet partition group (uint32_t[], METIS cluster id)
     
     RenderCore::RCBufferPtr mInstanceSSBO = nullptr;  // model matrix instance
 

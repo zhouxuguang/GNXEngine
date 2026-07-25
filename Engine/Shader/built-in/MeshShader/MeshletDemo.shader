@@ -10,6 +10,7 @@ cbuffer cbMeshletParams
     uint4 gLODMeshletCounts[5]; // [lodCount] 每个 LOD 的 meshlet 数量
     uint gInstanceCount;
     uint gMeshletCount;
+    uint gNumPartitions;
 };
 
 struct Vertex 
@@ -30,6 +31,7 @@ StructuredBuffer<Vertex>  Vertices;
 StructuredBuffer<Meshlet> Meshlets;
 StructuredBuffer<uint>    VertexIndices;
 StructuredBuffer<uint>    TriangleIndices;
+StructuredBuffer<uint>    MeshletPartitions; // partitionId per meshlet (METIS cluster group)
 
 struct Instance
 {
@@ -153,10 +155,34 @@ void MS(uint gtid : SV_GroupThreadID,
 
         vertices[gtid].Position = posW;
 
-        float3 color = float3(
-            float(meshletIndex & 1),
-            float(meshletIndex & 3) / 4,
-            float(meshletIndex & 7) / 8);
+        float3 color;
+        if (gNumPartitions > 0)
+        {
+            // 根据 METIS 分区 ID 着色，不同 cluster group 不同颜色
+            uint partitionId = MeshletPartitions[meshletIndex];
+            float hue = frac(float(partitionId) * 0.618033988749895); // golden ratio conjugate for good color distribution
+            // HSV -> RGB 简化版 (S=0.8, V=0.9)
+            float h = hue * 6.0;
+            float c = 0.8 * 0.9;
+            float x = c * (1.0 - abs(fmod(h, 2.0) - 1.0));
+            float m = 0.9 - c;
+            float3 rgb;
+            if (h < 1.0)      rgb = float3(c, x, 0.0);
+            else if (h < 2.0) rgb = float3(x, c, 0.0);
+            else if (h < 3.0) rgb = float3(0.0, c, x);
+            else if (h < 4.0) rgb = float3(0.0, x, c);
+            else if (h < 5.0) rgb = float3(x, 0.0, c);
+            else              rgb = float3(c, 0.0, x);
+            color = rgb + m;
+        }
+        else
+        {
+            // 无分区数据时的回退着色
+            color = float3(
+                float(meshletIndex & 1),
+                float(meshletIndex & 3) / 4,
+                float(meshletIndex & 7) / 8);
+        }
         vertices[gtid].Color = color;
     }
 }

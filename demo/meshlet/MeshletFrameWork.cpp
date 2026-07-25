@@ -36,7 +36,8 @@ struct cbMeshletParams
     uint32_t LODMeshletCounts[5][4];  // 同上
     uint32_t instanceCount;
     uint32_t meshletCount;
-    uint32_t pad[2];  // 同上
+    uint32_t numPartitions;
+    uint32_t pad[1];  // 对齐到 16 字节边界
 };
 
 MeshletFrameWork::MeshletFrameWork(const GNXEngine::WindowProps& props)
@@ -125,6 +126,7 @@ void MeshletFrameWork::Initlize()
         cbMeshletParams params;
         params.instanceCount = mInstancesCount;
         params.meshletCount  = mMeshletCount;
+        params.numPartitions = mMeshletData.numPartitions;
         
         params.LODMeshletOffsets[0][0] = mMeshletData.lodMeshletOffsets[0];
         /*params.LODMeshletOffsets[1][0] = mMeshletData.lodMeshletOffsets[1];
@@ -241,6 +243,23 @@ void MeshletFrameWork::InitCullingData()
         }
     }
 
+    // ---- 5. Meshlet partition SSBO (uint32_t[]) ----
+    if (mMeshletData.numPartitions > 0 && !mMeshletData.meshletPartitions.empty())
+    {
+        size_t partBytes = mMeshletData.meshletPartitions.size() * sizeof(uint32_t);
+        RCBufferDesc desc((uint32_t)partBytes, RCBufferUsage::StorageBuffer, StorageModeShared);
+        mMeshletPartitionSSBO = mRenderDevice->CreateBuffer(desc);
+        mMeshletPartitionSSBO->SetName("Meshlet_Partitions");
+        void* dst = mMeshletPartitionSSBO->Map();
+        if (dst)
+        {
+            memcpy(dst, mMeshletData.meshletPartitions.data(), partBytes);
+            mMeshletPartitionSSBO->Unmap();
+        }
+        LOG_INFO("Uploaded %u meshlet partitions (%u groups)",
+                 (uint32_t)mMeshletData.meshletPartitions.size(), mMeshletData.numPartitions);
+    }
+
     LOG_INFO("Uploaded %u meshlet descriptors, %zu vertex indices, %zu packed triangles",
              mMeshletCount,
              mMeshletData.meshletVertices.size() / 64 * 64,
@@ -335,7 +354,9 @@ void MeshletFrameWork::RenderFrame()
         renderEncoder->SetMeshUniformBuffer("cbPerCamera", renderInfo.cameraUBO);
 
         // Bind cbMeshletParams UBO (instanceCount, meshletCount → Task Shader)
+        // 同时绑定到 Mesh Shader，因为 MS 需要读取 gNumPartitions 来做分区着色
         renderEncoder->SetTaskUniformBuffer("cbMeshletParams", mMeshletParamsUBO);
+        renderEncoder->SetMeshUniformBuffer("cbMeshletParams", mMeshletParamsUBO);
 
         // Fill and bind per-object UBO (cbPerObject: model matrix)
         {
@@ -376,6 +397,11 @@ void MeshletFrameWork::RenderFrame()
             // Instances 在 Task Shader 中用于变换包围球，在 Mesh Shader 中用于变换顶点
             renderEncoder->SetStorageBuffer("Instances", mInstanceSSBO, ShaderStage_Task);
             renderEncoder->SetStorageBuffer("Instances", mInstanceSSBO, ShaderStage_Mesh);
+        }
+        if (mMeshletPartitionSSBO)
+        {
+            // MeshletPartitions 仅在 Mesh Shader 中用于着色
+            renderEncoder->SetStorageBuffer("MeshletPartitions", mMeshletPartitionSSBO, ShaderStage_Mesh);
         }
 
         // Dispatch one task group per meshlet
