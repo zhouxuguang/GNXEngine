@@ -184,7 +184,73 @@ int main(int argc, char* argv[])
     std::cout << "  LOD count:      " << outData.lodCount << std::endl;
 
     // ===================================================================
-    // 5. Serialize to binary
+    // 5. 测试合并：将同组 meshlet 合并为一个网格，然后简化
+    // ===================================================================
+    if (outData.numPartitions > 0)
+    {
+        std::cout << "\n--- Merging meshlet groups ---" << std::endl;
+
+        std::vector<MergedGroup> mergedGroups;
+        builder.MergeGroups(outData, mergedGroups);
+
+        // ---- 对每组合并网格做 meshopt 简化（锁定组边界） ----
+        std::cout << "\n--- Simplifying merged groups (lock border) ---" << std::endl;
+        for (size_t g = 0; g < mergedGroups.size(); ++g)
+        {
+            MergedGroup& group = mergedGroups[g];
+            const uint32_t triCount = static_cast<uint32_t>(group.triangleIndices.size() / 3);
+            if (triCount == 0) continue;
+
+            // 从全局顶点池构建紧凑的局部数据（meshopt 需要连续的 local index）
+            std::vector<float>    localPositions;
+            std::vector<uint32_t> localIndices;
+            std::vector<uint32_t> localToGlobal;
+            group.CompactForMeshopt(outData.vertexPositions.data(),
+                                    localPositions, localIndices, localToGlobal);
+
+            const uint32_t vtxCount = static_cast<uint32_t>(localPositions.size() / 3);
+
+            // 目标：保留约 50% 的三角形
+            size_t targetIndexCount = localIndices.size() / 2;
+            targetIndexCount = (targetIndexCount / 3) * 3;
+            if (targetIndexCount < 3) targetIndexCount = 3;
+
+            std::vector<uint32_t> simplifiedLocal(localIndices.size());
+            float simplifyError = 0.0f;
+            size_t simplifiedCount = meshopt_simplify(
+                simplifiedLocal.data(),
+                localIndices.data(),
+                localIndices.size(),
+                localPositions.data(),
+                vtxCount,
+                sizeof(float) * 3,
+                targetIndexCount,
+                0.01f,
+                meshopt_SimplifyLockBorder,
+                &simplifyError);
+
+            simplifiedLocal.resize(simplifiedCount);
+
+            // 将简化后的 local 索引映射回 global 索引
+            std::vector<uint32_t> simplifiedGlobal;
+            simplifiedGlobal.reserve(simplifiedCount);
+            for (uint32_t idx : simplifiedLocal)
+            {
+                simplifiedGlobal.push_back(localToGlobal[idx]);
+            }
+
+            std::cout << "  group " << g << ": "
+                      << triCount << " tri"
+                      << " -> " << simplifiedCount / 3 << " tri"
+                      << " (keep " << (100.0 * simplifiedCount / localIndices.size()) << "%)"
+                      << ", error=" << simplifyError
+                      << ", unique vtx=" << vtxCount
+                      << std::endl;
+        }
+    }
+
+    // ===================================================================
+    // 6. Serialize to binary
     // ===================================================================
     std::vector<uint8_t> bytes;
 

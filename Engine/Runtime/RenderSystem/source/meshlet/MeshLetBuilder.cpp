@@ -342,4 +342,58 @@ bool MeshletBuilder::PartitionWithMetis(
     return (result == METIS_OK);
 }
 
+// =======================================================================
+// MergeGroups
+// =======================================================================
+
+void MeshletBuilder::MergeGroups(
+    const MeshletFileData&   inData,
+    std::vector<MergedGroup>& outGroups)
+{
+    const uint32_t numGroups = inData.numPartitions;
+    if (numGroups == 0 || inData.meshletPartitions.empty())
+        return;
+
+    outGroups.resize(numGroups);
+
+    const size_t meshletCount = inData.meshlets.size();
+
+    for (uint32_t g = 0; g < numGroups; ++g)
+    {
+        MergedGroup& group = outGroups[g];
+        group.groupId = g;
+
+        // 遍历该组所有 meshlet 的所有三角形
+        for (size_t m = 0; m < meshletCount; ++m)
+        {
+            if (inData.meshletPartitions[m] != g)
+                continue;
+
+            const Meshlet& meshlet = inData.meshlets[m];
+
+            for (uint32_t t = 0; t < meshlet.triangleCount; ++t)
+            {
+                // 解码 packed triangle → 3 个 local 顶点索引
+                uint32_t packed    = inData.meshletTriangles[meshlet.triangleOffset + t];
+                uint32_t localIdx0 = (packed >>  0) & 0xFF;
+                uint32_t localIdx1 = (packed >>  8) & 0xFF;
+                uint32_t localIdx2 = (packed >> 16) & 0xFF;
+
+                // local → global 顶点索引，直接存入（无需去重——重复出现的顶点就是共享顶点）
+                uint32_t globalIdx0 = inData.meshletVertices[meshlet.vertexOffset + localIdx0];
+                uint32_t globalIdx1 = inData.meshletVertices[meshlet.vertexOffset + localIdx1];
+                uint32_t globalIdx2 = inData.meshletVertices[meshlet.vertexOffset + localIdx2];
+
+                group.triangleIndices.push_back(globalIdx0);
+                group.triangleIndices.push_back(globalIdx1);
+                group.triangleIndices.push_back(globalIdx2);
+            }
+        }
+
+        LOG_INFO("Merged group %u: %zu triangles (global indices)",
+            g,
+            group.triangleIndices.size() / 3);
+    }
+}
+
 NS_RENDERSYSTEM_END

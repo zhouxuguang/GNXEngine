@@ -20,6 +20,55 @@ using metis_idx_t = int64_t;
 NS_RENDERSYSTEM_BEGIN
 
 // -----------------------------------------------------------------------
+// MergedGroup 合并后的组网格数据
+//
+// 将同一 METIS 分区内的所有 meshlet 合并为一个连通网格。
+// triangleIndices 直接存储全局 vertexPositions 的索引，不复制顶点数据。
+//
+// 组边界（与其他组的共享边）在合并后自然变成 mesh border（只被 1 个三角形引用），
+// meshopt_simplify 配合 meshopt_SimplifyLockBorder 即可自动锁定。
+struct MergedGroup
+{
+    std::vector<uint32_t> triangleIndices;   // 三角形索引，直接指向全局 vertexPositions
+    uint32_t groupId = 0;                    // 所属分区编号
+
+    // 辅助：从全局 vertexPositions 构建紧凑的局部位置数组（用于 meshopt_simplify）
+    // 返回 globalIndex -> localIndex 的映射表，
+    // 同时将 triangleIndices 中的 global 索引替换为 local 索引。
+    void CompactForMeshopt(
+        const float*              globalPositions,
+        std::vector<float>&       outLocalPositions,
+        std::vector<uint32_t>&    outLocalIndices,
+        std::vector<uint32_t>&    outLocalToGlobal) const
+    {
+        std::unordered_map<uint32_t, uint32_t> globalToLocal;
+        outLocalPositions.clear();
+        outLocalToGlobal.clear();
+        outLocalIndices.resize(triangleIndices.size());
+
+        for (size_t i = 0; i < triangleIndices.size(); ++i)
+        {
+            uint32_t gi = triangleIndices[i];
+            auto it = globalToLocal.find(gi);
+            if (it == globalToLocal.end())
+            {
+                uint32_t li = static_cast<uint32_t>(outLocalToGlobal.size());
+                globalToLocal[gi] = li;
+                outLocalToGlobal.push_back(gi);
+                outLocalPositions.push_back(globalPositions[gi * 3 + 0]);
+                outLocalPositions.push_back(globalPositions[gi * 3 + 1]);
+                outLocalPositions.push_back(globalPositions[gi * 3 + 2]);
+                outLocalIndices[i] = li;
+            }
+            else
+            {
+                outLocalIndices[i] = it->second;
+            }
+        }
+    }
+};
+
+// -----------------------------------------------------------------------
 // MeshletBuilder
 // -----------------------------------------------------------------------
 // 负责从原始网格数据构建 meshlet 的构建器。
@@ -74,6 +123,26 @@ public:
         const uint32_t* indices,
         size_t          indexCount,
         struct MeshletFileData& outData);
+
+    /**
+     * 将同组 meshlet 合并为一个完整网格
+     *
+     * @param inData      已分区好的 meshlet 数据（含 meshletPartitions）
+     * @param outGroups   输出的各组合并网格，大小 = numPartitions
+     *
+     * 合并过程：
+     *   1. 遍历指定组的每个 meshlet 的所有三角形
+     *   2. 使用全局顶点索引（通过 meshletVertices 映射）去重顶点
+     *   3. 输出紧凑的 position + index buffer
+     *
+     * 组边界识别：
+     *   合并后，跨组的共享边变成只被 1 个三角形引用的 border edge。
+     *   后续对 outGroups[g] 调用 meshopt_simplify(SimplifyLockBorder)
+     *   即可自动锁定组边界，只化简内部区域。
+     */
+    void MergeGroups(
+        const struct MeshletFileData&    inData,
+        std::vector<MergedGroup>&        outGroups);
 
 private:
 
