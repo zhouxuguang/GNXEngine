@@ -11,6 +11,7 @@
 #include "../RSDefine.h"
 #include "MeshLetCommon.h"
 #include <cstdint>
+#include <meshoptimizer.h>
 #include <unordered_map>
 #include <vector>
 
@@ -25,17 +26,75 @@ NS_RENDERSYSTEM_BEGIN
 // 将同一 METIS 分区内的所有 meshlet 合并为一个连通网格。
 // triangleIndices 直接存储全局 vertexPositions 的索引，不复制顶点数据。
 //
-// 组边界（与其他组的共享边）在合并后自然变成 mesh border（只被 1 个三角形引用），
-// meshopt_simplify 配合 meshopt_SimplifyLockBorder 即可自动锁定。
+// 组边界（与其他组的共享边）在内部 compact 后自然变成 mesh border，
+// Simplify() 内部使用 meshopt_SimplifyLockBorder 自动锁定。
 struct MergedGroup
 {
     std::vector<uint32_t> triangleIndices;   // 三角形索引，直接指向全局 vertexPositions
     uint32_t groupId = 0;                    // 所属分区编号
 
-    // 辅助：从全局 vertexPositions 构建紧凑的局部位置数组（用于 meshopt_simplify）
-    // 返回 globalIndex -> localIndex 的映射表，
-    // 同时将 triangleIndices 中的 global 索引替换为 local 索引。
-    void CompactForMeshopt(
+    // -----------------------------------------------------------------------
+    // Simplify：一步完成 compact → meshopt_simplify(LockBorder) → map back
+    //
+    // @param globalPositions  全局顶点位置池 (float[totalVertices * 3])
+    // @param globalVertexCount 全局顶点总数
+    // @param targetIndexCount 目标三角形索引数（简化后保留的索引数量）
+    // @param targetError      目标几何误差 (默认 0.01f)
+    // @param outError         输出实际误差（可传 nullptr）
+    //
+    // 返回值：简化后的全局三角形索引数组。组边界自动锁定。
+    // -----------------------------------------------------------------------
+    std::vector<uint32_t> Simplify(
+        const float*        globalPositions,
+        size_t              globalVertexCount,
+        size_t              targetIndexCount,
+        float               targetError = 0.01f,
+        float*              outError = nullptr) const
+    {
+        if (triangleIndices.empty())
+            return {};
+
+        // ---- Step 1: compact global → local（组边界自然变成 border edge）----
+        std::vector<float>    localPositions;
+        std::vector<uint32_t> localIndices;
+        std::vector<uint32_t> localToGlobal;
+
+        Compact(globalPositions, localPositions, localIndices, localToGlobal);
+
+        // ---- Step 2: meshopt_simplify (LockBorder) ----
+        size_t targetCount = std::min(targetIndexCount, localIndices.size());
+        targetCount = (targetCount / 3) * 3;  // align to triangle
+        if (targetCount < 3) targetCount = 3;
+
+        std::vector<uint32_t> simplifiedLocal(localIndices.size());
+        float error = 0.0f;
+        size_t simplifiedCount = meshopt_simplify(
+            simplifiedLocal.data(),
+            localIndices.data(),
+            localIndices.size(),
+            localPositions.data(),
+            localPositions.size() / 3,
+            sizeof(float) * 3,
+            targetCount,
+            targetError,
+            meshopt_SimplifyLockBorder,
+            &error);
+
+        if (outError) *outError = error;
+        simplifiedLocal.resize(simplifiedCount);
+
+        // ---- Step 3: map back local → global ----
+        std::vector<uint32_t> simplifiedGlobal;
+        simplifiedGlobal.reserve(simplifiedCount);
+        for (uint32_t li : simplifiedLocal)
+            simplifiedGlobal.push_back(localToGlobal[li]);
+
+        return simplifiedGlobal;
+    }
+
+private:
+    // 内部 compact：去重 global 索引 → 紧凑 local 数组
+    void Compact(
         const float*              globalPositions,
         std::vector<float>&       outLocalPositions,
         std::vector<uint32_t>&    outLocalIndices,
