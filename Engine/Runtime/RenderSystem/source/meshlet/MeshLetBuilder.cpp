@@ -319,6 +319,7 @@ bool MeshletBuilder::PartitionWithMetis(
     options[METIS_OPTION_OBJTYPE]   = METIS_OBJTYPE_CUT;
 	options[METIS_OPTION_CCORDER]   = 1; // identify connected components first
 	options[METIS_OPTION_NUMBERING] = 0;
+    options[METIS_OPTION_UFACTOR]   = 5;
     METIS_SetDefaultOptions(options.data());
 
     int result = METIS_PartGraphKway(
