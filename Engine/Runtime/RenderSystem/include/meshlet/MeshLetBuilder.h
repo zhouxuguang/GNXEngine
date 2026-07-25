@@ -203,6 +203,23 @@ public:
         const struct MeshletFileData&    inData,
         std::vector<MergedGroup>&        outGroups);
 
+    /**
+     * 从已有 meshlet 数据构建下一级 LOD 的 meshlet
+     *
+     * 流程（对每个 group）：
+     *   MergeGroups → Simplify(LockBorder) → BuildMeshlets
+     *   → 追加到 inOutData 的 meshlets/meshletVertices/meshletTriangles 末尾
+     *   → 更新 lodMeshletOffsets/Counts、lodCount++
+     *
+     * 所有 LOD 共享同一份 vertexPositions。
+     * 简化比例由 mLodSimplifyRatio 控制（默认 0.5）。
+     *
+     * @param inOutData  输入已有 LOD 数据，新 LOD meshlet 追加到数组末尾
+     * @return 是否成功生成下一级 LOD
+     */
+    bool BuildNextLOD(
+        struct MeshletFileData& inOutData);
+
 private:
 
     // 单 LOD meshlet 构建

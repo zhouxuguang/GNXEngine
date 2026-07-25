@@ -396,4 +396,122 @@ void MeshletBuilder::MergeGroups(
     }
 }
 
+// =======================================================================
+// BuildNextLOD
+// =======================================================================
+
+bool MeshletBuilder::BuildNextLOD(
+    MeshletFileData& inOutData)
+{
+    return false;
+    const size_t currentMeshletCount = inOutData.meshlets.size();
+    if (currentMeshletCount < 2)
+    {
+        LOG_INFO("BuildNextLOD: only %zu meshlet(s), stop.", currentMeshletCount);
+        return false;
+    }
+
+    // --- Step 1: 合并同组 meshlet ---
+    std::vector<MergedGroup> mergedGroups;
+    MergeGroups(inOutData, mergedGroups);
+
+    const size_t numGroups = mergedGroups.size();
+    if (numGroups == 0) return false;
+
+    // --- Step 2: 每组合并后简化，再重新切 meshlet ---
+    const uint32_t globalVtxCount = inOutData.GetVertexCount();
+    const float*   globalPositions = inOutData.vertexPositions.data();
+
+    // 收集 LOD N+1 的所有 meshlet 数据
+    std::vector<Meshlet>    nextLodMeshlets;
+    std::vector<uint32_t>   nextLodVertices;
+    std::vector<uint32_t>   nextLodTriangles;
+
+    for (size_t g = 0; g < numGroups; ++g)
+    {
+        MergedGroup& group = mergedGroups[g];
+        if (group.triangleIndices.size() < 3)
+            continue;
+
+        // 简化目标：保留 mLodSimplifyRatio 比例的三角形
+        size_t targetIdxCount = static_cast<size_t>(
+            group.triangleIndices.size() * mLodSimplifyRatio);
+        if (targetIdxCount < 3) targetIdxCount = 3;
+
+        float error = 0.0f;
+        std::vector<uint32_t> simplifiedGlobal = group.Simplify(
+            globalPositions, globalVtxCount,
+            targetIdxCount, mTargetError, &error);
+
+        if (simplifiedGlobal.size() < 3) continue;
+
+        // 在简化后的 group 内部重新切 meshlet
+        // 注意：直接传入 global 索引 + global 顶点池，所有 LOD 共享同一份顶点数据
+        std::vector<Meshlet>    groupMeshlets;
+        std::vector<uint32_t>   groupVertices;
+        std::vector<uint32_t>   groupTriangles;
+        BuildMeshlets(
+            simplifiedGlobal.data(),
+            simplifiedGlobal.size(),
+            globalPositions,
+            globalVtxCount,
+            sizeof(float) * 3,
+            groupMeshlets,
+            groupVertices,
+            groupTriangles);
+
+        // 合并进 LOD N+1 数组
+        for (auto& m : groupMeshlets)
+        {
+            m.vertexOffset   += static_cast<uint32_t>(nextLodVertices.size());
+            m.triangleOffset += static_cast<uint32_t>(nextLodTriangles.size());
+            nextLodMeshlets.push_back(m);
+        }
+        nextLodVertices.insert(nextLodVertices.end(),
+            groupVertices.begin(), groupVertices.end());
+        nextLodTriangles.insert(nextLodTriangles.end(),
+            groupTriangles.begin(), groupTriangles.end());
+
+        LOG_INFO("  Group %zu: %zu tri → %zu tri (err=%.4f) → %zu meshlets",
+            g, group.triangleIndices.size() / 3,
+            simplifiedGlobal.size() / 3,
+            error,
+            groupMeshlets.size());
+    }
+
+    if (nextLodMeshlets.empty())
+    {
+        LOG_INFO("BuildNextLOD: no meshlets generated.");
+        return false;
+    }
+
+    // --- Step 3: 追加到 inOutData（更新全局偏移）---
+    uint32_t lodMeshletOffset = static_cast<uint32_t>(inOutData.meshlets.size());
+    uint32_t lodVertOffset    = static_cast<uint32_t>(inOutData.meshletVertices.size());
+    uint32_t lodTriOffset     = static_cast<uint32_t>(inOutData.meshletTriangles.size());
+
+    for (auto& m : nextLodMeshlets)
+    {
+        m.vertexOffset   += lodVertOffset;
+        m.triangleOffset += lodTriOffset;
+    }
+
+    inOutData.meshlets.insert(inOutData.meshlets.end(),
+        nextLodMeshlets.begin(), nextLodMeshlets.end());
+    inOutData.meshletVertices.insert(inOutData.meshletVertices.end(),
+        nextLodVertices.begin(), nextLodVertices.end());
+    inOutData.meshletTriangles.insert(inOutData.meshletTriangles.end(),
+        nextLodTriangles.begin(), nextLodTriangles.end());
+
+    uint32_t nextLodCount = static_cast<uint32_t>(nextLodMeshlets.size());
+    inOutData.lodMeshletOffsets.push_back(lodMeshletOffset);
+    inOutData.lodMeshletCounts.push_back(nextLodCount);
+    inOutData.lodCount++;
+
+    LOG_INFO("BuildNextLOD: generated %u LOD %u meshlets (total LODs: %u)",
+        nextLodCount, inOutData.lodCount - 1, inOutData.lodCount);
+
+    return true;
+}
+
 NS_RENDERSYSTEM_END

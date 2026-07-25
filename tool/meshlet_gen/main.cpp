@@ -180,43 +180,23 @@ int main(int argc, char* argv[])
 
     const uint32_t vertexCount = static_cast<uint32_t>(outData.vertexPositions.size() / 3);
     std::cout << "  Vertex count:   " << vertexCount << std::endl;
-    std::cout << "  Meshlet count:  " << outData.meshlets.size() << std::endl;
-    std::cout << "  LOD count:      " << outData.lodCount << std::endl;
+    std::cout << "  LOD 0 meshlets: " << outData.meshlets.size() << std::endl;
+    std::cout << "  Groups:         " << outData.numPartitions << std::endl;
 
     // ===================================================================
-    // 5. 测试合并：将同组 meshlet 合并为一个网格，然后简化
+    // 5. 递归构建 LOD 层级：MergeGroups → Simplify → BuildMeshlets
     // ===================================================================
     if (outData.numPartitions > 0)
     {
-        std::cout << "\n--- Merging meshlet groups ---" << std::endl;
+        std::cout << "\n--- Building LOD Hierarchy ---" << std::endl;
 
-        std::vector<MergedGroup> mergedGroups;
-        builder.MergeGroups(outData, mergedGroups);
-
-        // ---- 对每组合并网格做简化（锁定组边界） ----
-        std::cout << "\n--- Simplifying merged groups (lock border) ---" << std::endl;
-        for (size_t g = 0; g < mergedGroups.size(); ++g)
+        int lodLevel = 1;
+        while (builder.BuildNextLOD(outData))
         {
-            MergedGroup& group = mergedGroups[g];
-            const uint32_t triCount = static_cast<uint32_t>(group.triangleIndices.size() / 3);
-            if (triCount == 0) continue;
-
-            // 一行封装：compact → meshopt_simplify(LockBorder) → map back
-            size_t targetIdxCount = group.triangleIndices.size() / 2;  // 保留 50%
-            float error = 0.0f;
-            std::vector<uint32_t> simplifiedGlobal = group.Simplify(
-                outData.vertexPositions.data(),
-                outData.GetVertexCount(),
-                targetIdxCount,
-                0.01f,
-                &error);
-
-            std::cout << "  group " << g << ": "
-                      << triCount << " tri"
-                      << " -> " << simplifiedGlobal.size() / 3 << " tri"
-                      << " (keep " << (100.0 * simplifiedGlobal.size() / group.triangleIndices.size()) << "%)"
-                      << ", error=" << error
-                      << std::endl;
+            std::cout << "  LOD " << lodLevel << ": "
+                      << outData.lodMeshletCounts.back() << " meshlets" << std::endl;
+            lodLevel++;
+            if (lodLevel >= 1) break;  // 最多 5 层 LOD（含 LOD 0）
         }
     }
 
@@ -274,7 +254,7 @@ int main(int argc, char* argv[])
     }
 
     // ===================================================================
-    // 6. Write to file
+    // 7. Write to file
     // ===================================================================
     if (!baselib::FileUtil::WriteBinaryFile(outputFile, bytes))
         return 1;
