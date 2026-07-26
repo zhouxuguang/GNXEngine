@@ -25,6 +25,10 @@ struct Meshlet
 	uint VertexCount;
 	uint TriangleCount;
     float4 BoundingSphere;
+    float  LodError;              // LOD 误差（简化引入）
+    float  ParentLodError;        // 父级最大误差（单调不减）
+    float2 _pad;                  // HLSL 对齐填充
+    float4 ParentBoundingSphere;  // 父级包围球
 };
 
 StructuredBuffer<Vertex>  Vertices;

@@ -44,7 +44,11 @@ struct Meshlet
     uint32_t triangleOffset;    // meshletTrianglesBuffer 中的偏移量（以 uint32_t 为单位，每个 uint32_t 打包了 3 个 uint8_t 索引）
     uint32_t vertexCount;       // 本 meshlet 使用的顶点数（≤ kMeshletMaxVertices）
     uint32_t triangleCount;     // 本 meshlet 使用的三角形数（≤ kMeshletMaxTriangles）
-    mathutil::Vector4f boundingSphere;    // 包围球
+    mathutil::Vector4f boundingSphere;    // 包围球（16 bytes）
+    float              lodError = 0.0f;   // 本 meshlet 的 LOD 几何误差（简化引入的误差）
+    float              parentLodError = 0.0f; // 父级最大 LOD 误差（单调不减，≥ 所有子节点）
+    float              pad[2];            // 对齐到 float4（16 字节边界）
+    mathutil::Vector4f parentBoundingSphere; // 父级包围球（所有子 meshlet 包围球合并）
 };
 
 // -----------------------------------------------------------------------
