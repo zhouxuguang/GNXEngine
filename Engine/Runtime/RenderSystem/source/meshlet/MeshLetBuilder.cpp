@@ -11,6 +11,7 @@
 #include <metis.h>
 
 #include "Runtime/BaseLib/include/LogService.h"
+#include "Runtime/MathUtil/include/Sphere.h"
 
 #include <algorithm>
 #include <cassert>
@@ -459,42 +460,38 @@ bool MeshletBuilder::BuildNextLOD(
         if (group.triangleIndices.size() < 3)
             continue;
 
-        // ---- 算法 4.4 Step 1-8: 计算 group 的 parent LOD 信息 ----
+        // ---- Step 1-8: 计算 group 的 parent LOD 信息 ----
         // 遍历该 group 所有子 meshlet，合并包围球 + 取最大 lodError
         float              groupParentLodError = 0.0f;
         mathutil::Vector4f groupParentBounds = {0, 0, 0, 0};
         {
-            // 计算所有子包围球的中心平均值作为合并球心
-            mathutil::Vector3f centerSum = {0, 0, 0};
-            size_t childCount = 0;
+            // 使用 Spheref::Merge() 逐个累积合并子包围球（Ritter 精确算法）
+            mathutil::Spheref merged;
+            bool firstChild = true;
             for (size_t ci = lodStart; ci < currentMeshletCount; ++ci)
             {
                 if (inOutData.meshletPartitions[ci] != g) continue;
                 const Meshlet& child = inOutData.meshlets[ci];
                 groupParentLodError = std::max(groupParentLodError, child.lodError);
-                centerSum.x += child.boundingSphere.x;
-                centerSum.y += child.boundingSphere.y;
-                centerSum.z += child.boundingSphere.z;
-                childCount++;
-            }
-            if (childCount > 0)
-            {
-                centerSum.x /= static_cast<float>(childCount);
-                centerSum.y /= static_cast<float>(childCount);
-                centerSum.z /= static_cast<float>(childCount);
-                // 合并包围球半径 = 离中心最远的子球外缘
-                float maxDist = 0.0f;
-                for (size_t ci = lodStart; ci < currentMeshletCount; ++ci)
+
+                mathutil::Spheref childSphere(
+                    mathutil::Vector3f(child.boundingSphere.x, child.boundingSphere.y, child.boundingSphere.z),
+                    child.boundingSphere.w);
+
+                if (firstChild)
                 {
-                    if (inOutData.meshletPartitions[ci] != g) continue;
-                    const Meshlet& child = inOutData.meshlets[ci];
-                    float dx = child.boundingSphere.x - centerSum.x;
-                    float dy = child.boundingSphere.y - centerSum.y;
-                    float dz = child.boundingSphere.z - centerSum.z;
-                    float dist = std::sqrt(dx*dx + dy*dy + dz*dz) + child.boundingSphere.w;
-                    maxDist = std::max(maxDist, dist);
+                    merged = childSphere;
+                    firstChild = false;
                 }
-                groupParentBounds = mathutil::Vector4f(centerSum.x, centerSum.y, centerSum.z, maxDist);
+                else
+                {
+                    merged = mathutil::Spheref::Merge(merged, childSphere);
+                }
+            }
+            if (!firstChild)
+            {
+                groupParentBounds = mathutil::Vector4f(
+                    merged.mCenter.x, merged.mCenter.y, merged.mCenter.z, merged.mRadius);
             }
         }
 
