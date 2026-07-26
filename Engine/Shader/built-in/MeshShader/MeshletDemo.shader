@@ -11,6 +11,7 @@ cbuffer cbMeshletParams
     uint gInstanceCount;
     uint gMeshletCount;
     uint gNumPartitions;
+    uint pad;
 };
 
 struct Vertex 
