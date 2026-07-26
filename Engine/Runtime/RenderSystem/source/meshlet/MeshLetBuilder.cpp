@@ -327,11 +327,11 @@ bool MeshletBuilder::PartitionWithMetis(
 
     // 选项数组
     std::vector<idx_t> options(METIS_NOPTIONS);
-    options[METIS_OPTION_OBJTYPE]   = METIS_OBJTYPE_CUT;
-	options[METIS_OPTION_CCORDER]   = 1; // identify connected components first
-	options[METIS_OPTION_NUMBERING] = 0;
-    options[METIS_OPTION_UFACTOR]   = 5;
     METIS_SetDefaultOptions(options.data());
+	options[METIS_OPTION_OBJTYPE] = METIS_OBJTYPE_CUT;
+	options[METIS_OPTION_CCORDER] = 1; // identify connected components first
+	options[METIS_OPTION_NUMBERING] = 0;
+	options[METIS_OPTION_UFACTOR] = 5;
 
     int result = METIS_PartGraphKway(
         &nvtxs, &ncon,
