@@ -80,9 +80,9 @@ void TS(
         float3 instanceWorldPos = Instances[instanceIndex].M[3].xyz;
         float dist = length(_WorldSpaceCameraPos - instanceWorldPos);
 
-        lod = 0;
-        if (dist > 10.0) lod = 1;
-        // if (dist > 30.0) lod = 2;  // 后续 LOD 扩展
+        // 强制：Instance0 → LOD 0, Instance1 → LOD 1
+        lod = instanceIndex;
+        // lod = 0; if (dist > 2.0) lod = 1;  // 距离模式（备用）  // 后续 LOD 扩展
 
         uint lodMeshletCount = gLODMeshletCounts[lod].x;
 
