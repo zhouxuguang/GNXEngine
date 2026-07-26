@@ -70,6 +70,14 @@ bool MeshletBuilder::Build(
     outData.meshletTriangles = std::move(lodMeshletTris);
     outData.lodCount = 1;
 
+    // ---- LOD 0 叶节点初始化：lodError=0, 父信息=自身 ----
+    for (auto& m : outData.meshlets)
+    {
+        m.lodError = 0.0f;
+        m.parentLodError = 0.0f;
+        m.parentBoundingSphere = m.boundingSphere;
+    }
+
     LOG_INFO("Original mesh: %zu triangles -> %zu meshlets",
         indexCount / 3, outData.meshlets.size());
 
@@ -451,6 +459,45 @@ bool MeshletBuilder::BuildNextLOD(
         if (group.triangleIndices.size() < 3)
             continue;
 
+        // ---- 算法 4.4 Step 1-8: 计算 group 的 parent LOD 信息 ----
+        // 遍历该 group 所有子 meshlet，合并包围球 + 取最大 lodError
+        float              groupParentLodError = 0.0f;
+        mathutil::Vector4f groupParentBounds = {0, 0, 0, 0};
+        {
+            // 计算所有子包围球的中心平均值作为合并球心
+            mathutil::Vector3f centerSum = {0, 0, 0};
+            size_t childCount = 0;
+            for (size_t ci = lodStart; ci < currentMeshletCount; ++ci)
+            {
+                if (inOutData.meshletPartitions[ci] != g) continue;
+                const Meshlet& child = inOutData.meshlets[ci];
+                groupParentLodError = std::max(groupParentLodError, child.lodError);
+                centerSum.x += child.boundingSphere.x;
+                centerSum.y += child.boundingSphere.y;
+                centerSum.z += child.boundingSphere.z;
+                childCount++;
+            }
+            if (childCount > 0)
+            {
+                centerSum.x /= static_cast<float>(childCount);
+                centerSum.y /= static_cast<float>(childCount);
+                centerSum.z /= static_cast<float>(childCount);
+                // 合并包围球半径 = 离中心最远的子球外缘
+                float maxDist = 0.0f;
+                for (size_t ci = lodStart; ci < currentMeshletCount; ++ci)
+                {
+                    if (inOutData.meshletPartitions[ci] != g) continue;
+                    const Meshlet& child = inOutData.meshlets[ci];
+                    float dx = child.boundingSphere.x - centerSum.x;
+                    float dy = child.boundingSphere.y - centerSum.y;
+                    float dz = child.boundingSphere.z - centerSum.z;
+                    float dist = std::sqrt(dx*dx + dy*dy + dz*dz) + child.boundingSphere.w;
+                    maxDist = std::max(maxDist, dist);
+                }
+                groupParentBounds = mathutil::Vector4f(centerSum.x, centerSum.y, centerSum.z, maxDist);
+            }
+        }
+
         // 简化目标：保留 mLodSimplifyRatio 比例的三角形
         size_t targetIdxCount = static_cast<size_t>(
             group.triangleIndices.size() * mLodSimplifyRatio);
@@ -464,7 +511,6 @@ bool MeshletBuilder::BuildNextLOD(
         if (simplifiedGlobal.size() < 3) continue;
 
         // 在简化后的 group 内部重新切 meshlet
-        // 注意：直接传入 global 索引 + global 顶点池，所有 LOD 共享同一份顶点数据
         std::vector<Meshlet>    groupMeshlets;
         std::vector<uint32_t>   groupVertices;
         std::vector<uint32_t>   groupTriangles;
@@ -477,6 +523,15 @@ bool MeshletBuilder::BuildNextLOD(
             groupMeshlets,
             groupVertices,
             groupTriangles);
+
+        // ---- 算法 4.4 Step 9-12: 赋 parent 值给所有父 meshlet ----
+        groupParentLodError = std::max(groupParentLodError, error);  // max(子error, 本层简化error)
+        for (auto& m : groupMeshlets)
+        {
+            m.lodError             = error;
+            m.parentLodError       = groupParentLodError;
+            m.parentBoundingSphere = groupParentBounds;
+        }
 
         // 合并进 LOD N+1 数组
         for (auto& m : groupMeshlets)

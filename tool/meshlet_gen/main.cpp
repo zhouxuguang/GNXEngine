@@ -20,6 +20,7 @@
 //
 
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -192,12 +193,25 @@ int main(int argc, char* argv[])
         std::cout << "\n--- Building LOD Hierarchy ---" << std::endl;
 
         int lodLevel = 1;
-        while (builder.BuildNextLOD(outData))  // 自动停止：meshlet 数不够分区时返回 false
+        while (builder.BuildNextLOD(outData))
         {
             std::cout << "  LOD " << lodLevel << ": "
                       << outData.lodMeshletCounts.back() << " meshlets"
                       << std::endl;
             lodLevel++;
+        }
+
+        // ---- 根节点特殊处理：最后一级 LOD 的 meshlet 设置 lodError = INF ----
+        if (outData.lodCount > 1)
+        {
+            uint32_t lastLodStart = outData.lodMeshletOffsets.back();
+            uint32_t lastLodCount = outData.lodMeshletCounts.back();
+            for (uint32_t i = lastLodStart; i < lastLodStart + lastLodCount; ++i)
+            {
+                outData.meshlets[i].lodError = std::numeric_limits<float>::infinity();
+            }
+            std::cout << "  Root LOD (" << outData.lodCount - 1 << "): "
+                      << lastLodCount << " meshlets, lodError=inf" << std::endl;
         }
     }
 
