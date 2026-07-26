@@ -51,6 +51,7 @@ struct Payload
 {
     uint InstanceIndices[AS_GROUP_SIZE];
     uint MeshletIndices[AS_GROUP_SIZE];
+    uint LodIndices[AS_GROUP_SIZE];  // 每个 meshlet 的 LOD 级别（用于可视化着色）
 };
 
 groupshared Payload sPayload;
@@ -68,13 +69,21 @@ void TS(
     // bool visible generates mismatched SPIR-V instructions that fail pattern matching,
     // resulting in broken MSL code.
     uint visible = 0;
+    uint lod = 0;  // 在 if 块外声明，Payload 赋值时需要访问
 
     uint instanceIndex = dtid / gMeshletCount;
     uint meshletIndex  = dtid % gMeshletCount;
     
     if (instanceIndex < gInstanceCount) 
     {
-        uint lod             = instanceIndex;
+        // ---- 距离选 LOD ----
+        float3 instanceWorldPos = Instances[instanceIndex].M[3].xyz;
+        float dist = length(_WorldSpaceCameraPos - instanceWorldPos);
+
+        lod = 0;
+        if (dist > 10.0) lod = 1;
+        // if (dist > 30.0) lod = 2;  // 后续 LOD 扩展
+
         uint lodMeshletCount = gLODMeshletCounts[lod].x;
 
         if (meshletIndex < lodMeshletCount)
@@ -91,15 +100,10 @@ void TS(
 
     if (visible) 
     {
-        // Use WavePrefixSum/WaveActiveSum instead of WavePrefixCountBits/WaveActiveCountBits.
-        // WavePrefixCountBits generates OpGroupNonUniformBallot + OpGroupNonUniformBallotBitCount
-        // in SPIR-V, which SPIRV-Cross translates to spvSubgroupBallot + spvSubgroupBallotExclusiveBitCount
-        // (with threadgroup_barrier!). WavePrefixSum generates OpGroupNonUniformIAdd(ExclusiveScan),
-        // which maps cleanly to simd_prefix_exclusive_sum in Metal without any ballot emulation.
-        // Since visible is 0 or 1, prefix sum == prefix count of bits.
         uint index = WavePrefixSum(visible);
         sPayload.InstanceIndices[gtid] = instanceIndex;
         sPayload.MeshletIndices[gtid]  = meshletIndex;
+        sPayload.LodIndices[gtid]      = lod;  // 传到 MS 用于着色
     }
 
     // WaveActiveSum(visible): since visible is 0 or 1, sum == count
@@ -118,6 +122,7 @@ void MS(uint gtid : SV_GroupThreadID,
     // 这里gid相当于只是一个索引，mesh shader中一个work group 对应一个meshlet
     uint meshletIndex = payload.MeshletIndices[gid];
     uint instanceIndex = payload.InstanceIndices[gid];
+    uint lod           = payload.LodIndices[gid];
 
     Meshlet m = Meshlets[meshletIndex];
 
@@ -158,22 +163,20 @@ void MS(uint gtid : SV_GroupThreadID,
         float3 color;
         if (gNumPartitions > 0)
         {
-            // 根据 METIS 分区 ID 着色，不同 cluster group 不同颜色
+            // 每个 instance 的不同 group 用不同颜色
+            // hue = instanceIndex + groupId, 每个 instance 偏移不同色相
             uint partitionId = MeshletPartitions[meshletIndex];
-            float hue = frac(float(partitionId) * 0.618033988749895); // golden ratio conjugate for good color distribution
-            // HSV -> RGB 简化版 (S=0.8, V=0.9)
+            float hue = frac(float(instanceIndex) * 0.333 + float(partitionId) * 0.618033988749895);
             float h = hue * 6.0;
             float c = 0.8 * 0.9;
             float x = c * (1.0 - abs(fmod(h, 2.0) - 1.0));
             float m = 0.9 - c;
-            float3 rgb;
-            if (h < 1.0)      rgb = float3(c, x, 0.0);
-            else if (h < 2.0) rgb = float3(x, c, 0.0);
-            else if (h < 3.0) rgb = float3(0.0, c, x);
-            else if (h < 4.0) rgb = float3(0.0, x, c);
-            else if (h < 5.0) rgb = float3(x, 0.0, c);
-            else              rgb = float3(c, 0.0, x);
-            color = rgb + m;
+            if (h < 1.0)      color = float3(c, x, 0.0) + m;
+            else if (h < 2.0) color = float3(x, c, 0.0) + m;
+            else if (h < 3.0) color = float3(0.0, c, x) + m;
+            else if (h < 4.0) color = float3(0.0, x, c) + m;
+            else if (h < 5.0) color = float3(x, 0.0, c) + m;
+            else              color = float3(c, 0.0, x) + m;
         }
         else
         {

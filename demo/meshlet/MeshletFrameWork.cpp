@@ -64,7 +64,7 @@ void MeshletFrameWork::Initlize()
 //#endif
     
     const uint32_t        kNumInstanceCols = 1;
-    const uint32_t        kNumInstanceRows = 5;
+    const uint32_t        kNumInstanceRows = 2;
 	
 	std::vector<mathutil::Matrix4x4f> instances(kNumInstanceCols * kNumInstanceRows);
 
@@ -104,19 +104,19 @@ void MeshletFrameWork::Initlize()
     // 2
     {
         Vector3f P       = Vector3f(0, 0, -static_cast<float>(2.5 * instanceSpanZ));
-        instances[2] = Matrix4x4f::CreateTranslate(P) * Matrix4x4f::CreateRotation(Vector3f(0, 1, 0), 0);
+        //instances[2] = Matrix4x4f::CreateTranslate(P) * Matrix4x4f::CreateRotation(Vector3f(0, 1, 0), 0);
     }
 
     // 3
     {
         Vector3f P       = Vector3f(0, 0, -static_cast<float>(8 * instanceSpanZ));
-        instances[3] = Matrix4x4f::CreateTranslate(P) * Matrix4x4f::CreateRotation(Vector3f(0, 1, 0), 0);
+        //instances[3] = Matrix4x4f::CreateTranslate(P) * Matrix4x4f::CreateRotation(Vector3f(0, 1, 0), 0);
     }
 
     // 4
     {
         Vector3f P       = Vector3f(0, 0, -static_cast<float>(40 * instanceSpanZ));
-        instances[4] = Matrix4x4f::CreateTranslate(P) * Matrix4x4f::CreateRotation(Vector3f(0, 1, 0), 0);
+        //instances[4] = Matrix4x4f::CreateTranslate(P) * Matrix4x4f::CreateRotation(Vector3f(0, 1, 0), 0);
     }
     
     mInstancesCount = kNumInstanceCols * kNumInstanceRows;
@@ -129,14 +129,14 @@ void MeshletFrameWork::Initlize()
         params.numPartitions = mMeshletData.numPartitions;
         
         params.LODMeshletOffsets[0][0] = mMeshletData.lodMeshletOffsets[0];
-        /*params.LODMeshletOffsets[1][0] = mMeshletData.lodMeshletOffsets[1];
-        params.LODMeshletOffsets[2][0] = mMeshletData.lodMeshletOffsets[2];
+        params.LODMeshletOffsets[1][0] = mMeshletData.lodMeshletOffsets[1];
+        /*params.LODMeshletOffsets[2][0] = mMeshletData.lodMeshletOffsets[2];
         params.LODMeshletOffsets[3][0] = mMeshletData.lodMeshletOffsets[3];
         params.LODMeshletOffsets[4][0] = mMeshletData.lodMeshletOffsets[4];*/
         
         params.LODMeshletCounts[0][0] = mMeshletData.lodMeshletCounts[0];
-        /*params.LODMeshletCounts[1][0] = mMeshletData.lodMeshletCounts[1];
-        params.LODMeshletCounts[2][0] = mMeshletData.lodMeshletCounts[2];
+        params.LODMeshletCounts[1][0] = mMeshletData.lodMeshletCounts[1];
+        /*params.LODMeshletCounts[2][0] = mMeshletData.lodMeshletCounts[2];
         params.LODMeshletCounts[3][0] = mMeshletData.lodMeshletCounts[3];
         params.LODMeshletCounts[4][0] = mMeshletData.lodMeshletCounts[4];*/
         
