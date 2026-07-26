@@ -168,7 +168,8 @@ int main(int argc, char* argv[])
     std::cout << "\n--- Building Meshlets with MeshletBuilder ---" << std::endl;
 
     MeshletBuilder builder;
-    builder.SetNumPartitions(2);  // 分为两组，便于调试验证
+    builder.SetGroupTargetSize(120);          // 每组约 120 个 meshlet，自适应分区数
+    builder.SetMinMeshletsForPartition(120);    // 最后一个 LOD 少于 4 个 meshlet 就停止
     MeshletFileData outData;
     if (!builder.Build(dedupPositions.data(), dedupVertexCount,
                        dedupIndices.data(), dedupIndices.size(),
@@ -190,10 +191,13 @@ int main(int argc, char* argv[])
     {
         std::cout << "\n--- Building LOD Hierarchy ---" << std::endl;
 
-        // 目前只支持生成 LOD 1（LOD 2+ 需要对 LOD 1 meshlet 重新 METIS 分区）
-        if (builder.BuildNextLOD(outData))
+        int lodLevel = 1;
+        while (builder.BuildNextLOD(outData))  // 自动停止：meshlet 数不够分区时返回 false
         {
-            std::cout << "  LOD 1: " << outData.lodMeshletCounts.back() << " meshlets" << std::endl;
+            std::cout << "  LOD " << lodLevel << ": "
+                      << outData.lodMeshletCounts.back() << " meshlets"
+                      << std::endl;
+            lodLevel++;
         }
     }
 

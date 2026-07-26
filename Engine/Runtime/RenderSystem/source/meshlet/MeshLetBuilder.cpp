@@ -84,10 +84,12 @@ bool MeshletBuilder::Build(
                                indexCount,
                                xadj, adjncy, adjwgt);
 
-        // 分区数：外部指定 > 0 则用指定值，否则自动 sqrt(|V|)
+        // 分区数：按每组目标 meshlet 数自适应
         metis_idx_t numParts;
         if (mNumPartitions > 0)
-            numParts = static_cast<metis_idx_t>(mNumPartitions);
+            // mNumPartitions = 每组目标 meshlet 数, 实际分区 = ceil(N / target), 至少 2
+            numParts = std::max<metis_idx_t>(2,
+                static_cast<metis_idx_t>(outData.meshlets.size()) / static_cast<metis_idx_t>(mNumPartitions));
         else
             numParts = std::max<metis_idx_t>(1,
                 static_cast<metis_idx_t>(std::sqrt(static_cast<double>(outData.meshlets.size()))));
@@ -348,6 +350,8 @@ bool MeshletBuilder::PartitionWithMetis(
 
 void MeshletBuilder::MergeGroups(
     const MeshletFileData&   inData,
+    size_t                   meshletStart,
+    size_t                   meshletCount,
     std::vector<MergedGroup>& outGroups)
 {
     const uint32_t numGroups = inData.numPartitions;
@@ -356,15 +360,15 @@ void MeshletBuilder::MergeGroups(
 
     outGroups.resize(numGroups);
 
-    const size_t meshletCount = inData.meshlets.size();
+    const size_t endIdx = meshletStart + meshletCount;
 
     for (uint32_t g = 0; g < numGroups; ++g)
     {
         MergedGroup& group = outGroups[g];
         group.groupId = g;
 
-        // 遍历该组所有 meshlet 的所有三角形
-        for (size_t m = 0; m < meshletCount; ++m)
+        // 只遍历指定范围内的 meshlet
+        for (size_t m = meshletStart; m < endIdx; ++m)
         {
             if (inData.meshletPartitions[m] != g)
                 continue;
@@ -405,15 +409,29 @@ bool MeshletBuilder::BuildNextLOD(
 {
     //return false;
     const size_t currentMeshletCount = inOutData.meshlets.size();
-    if (currentMeshletCount < 2)
+
+    // 获取最后一级 LOD 的 meshlet 数量
+    size_t lastLodCount = currentMeshletCount;
+    if (inOutData.lodMeshletOffsets.size() > 0)
+        lastLodCount = currentMeshletCount - inOutData.lodMeshletOffsets.back();
+
+    // 停止条件：最后一级 LOD 的 meshlet 数量低于阈值
+    if (lastLodCount < mMinMeshletsForPartition || currentMeshletCount < 2)
     {
-        LOG_INFO("BuildNextLOD: only %zu meshlet(s), stop.", currentMeshletCount);
+        LOG_INFO("BuildNextLOD: only %zu meshlets in last LOD (< %u), stop.",
+            lastLodCount, mMinMeshletsForPartition);
         return false;
     }
 
     // --- Step 1: 合并同组 meshlet ---
+    // 找到当前 LOD 的 meshlet slice：最后一个 LOD 的起始偏移
+    size_t lodStart = currentMeshletCount;  // 默认：所有 meshlet
+    if (inOutData.lodMeshletOffsets.size() > 0)
+        lodStart = inOutData.lodMeshletOffsets.back();
+    size_t lodMeshletCount = currentMeshletCount - lodStart;
+
     std::vector<MergedGroup> mergedGroups;
-    MergeGroups(inOutData, mergedGroups);
+    MergeGroups(inOutData, lodStart, lodMeshletCount, mergedGroups);
 
     const size_t numGroups = mergedGroups.size();
     if (numGroups == 0) return false;
@@ -508,10 +526,53 @@ bool MeshletBuilder::BuildNextLOD(
     inOutData.lodMeshletCounts.push_back(nextLodCount);
     inOutData.lodCount++;
 
-    // 补齐 meshletPartitions（新 LOD 的 meshlet 暂不分区，填 0 占位）
-    inOutData.meshletPartitions.resize(inOutData.meshlets.size(), 0);
-    // LOD 1 没有分区信息，numPartitions 仅对 LOD 0 有效
-    // TODO: 后续对 LOD 1 meshlet 做 METIS 分区后再更新
+    // --- Step 4: 对新生成的 LOD 做 METIS 分区，为下一轮递归做准备 ---
+    if (nextLodCount > 1)
+    {
+        // 复用 BuildConnectivityGraph，传入新 LOD 的 meshlet 切片
+        // meshletVertices/meshletTriangles 已在全局 flat arrays 中
+        std::vector<metis_idx_t> xadj, adjncy, adjwgt;
+        BuildConnectivityGraph(
+            nextLodMeshlets,
+            inOutData.meshletVertices,
+            inOutData.meshletTriangles,
+            nullptr, 0,  // 原始三角形索引不需要（函数体内不使用）
+            xadj, adjncy, adjwgt);
+
+        // 分区数同上
+        metis_idx_t numPartsForNext;
+        if (mNumPartitions > 0)
+            numPartsForNext = std::max<metis_idx_t>(2,
+                static_cast<metis_idx_t>(nextLodCount) / static_cast<metis_idx_t>(mNumPartitions));
+        else
+            numPartsForNext = std::max<metis_idx_t>(2,
+                static_cast<metis_idx_t>(std::sqrt(static_cast<double>(nextLodCount))));
+
+        std::vector<metis_idx_t> newPart(nextLodCount);
+        if (PartitionWithMetis(static_cast<metis_idx_t>(nextLodCount),
+                               xadj, adjncy, adjwgt, numPartsForNext, newPart))
+        {
+            inOutData.numPartitions = static_cast<uint32_t>(numPartsForNext);
+            inOutData.meshletPartitions.resize(inOutData.meshlets.size(), 0);
+            for (size_t i = 0; i < newPart.size(); ++i)
+            {
+                inOutData.meshletPartitions[lodMeshletOffset + i] = static_cast<uint32_t>(newPart[i]);
+            }
+
+            LOG_INFO("  Re-partitioned LOD %u meshlets into %lld groups for next level.",
+                inOutData.lodCount - 1, static_cast<long long>(numPartsForNext));
+        }
+        else
+        {
+            inOutData.meshletPartitions.resize(inOutData.meshlets.size(), 0);
+            inOutData.numPartitions = 0;
+        }
+    }
+    else
+    {
+        inOutData.meshletPartitions.resize(inOutData.meshlets.size(), 0);
+        inOutData.numPartitions = 0;
+    }
 
     LOG_INFO("BuildNextLOD: generated %u LOD %u meshlets (total LODs: %u)",
         nextLodCount, inOutData.lodCount - 1, inOutData.lodCount);

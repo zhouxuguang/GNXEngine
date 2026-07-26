@@ -163,9 +163,14 @@ public:
     void SetMinTriangles(size_t minTris) { mMinTriangles = minTris; }
     size_t GetMinTriangles() const { return mMinTriangles; }
 
-    // 设置 METIS 分区数（默认 0=自动 sqrt(|V|)，设为 2=分成两组调试）
-    void SetNumPartitions(uint32_t n) { mNumPartitions = n; }
-    uint32_t GetNumPartitions() const { return mNumPartitions; }
+    // 设置 METIS 分区参数（默认 120=每组约 120 个 meshlet）
+    // 实际分区数 = max(2, meshletCount / mNumPartitions)
+    void SetGroupTargetSize(uint32_t targetSize) { mNumPartitions = targetSize; }
+    uint32_t GetGroupTargetSize() const { return mNumPartitions; }
+
+    // 设置停止分区的最小 meshlet 数（低于此值不再递归，默认 64）
+    void SetMinMeshletsForPartition(uint32_t minCount) { mMinMeshletsForPartition = minCount; }
+    uint32_t GetMinMeshletsForPartition() const { return mMinMeshletsForPartition; }
 
     // -------- 构建 --------
 
@@ -201,6 +206,8 @@ public:
      */
     void MergeGroups(
         const struct MeshletFileData&    inData,
+        size_t                           meshletStart,   // 起始 meshlet 索引
+        size_t                           meshletCount,   // 处理的 meshlet 数
         std::vector<MergedGroup>&        outGroups);
 
     /**
@@ -289,7 +296,8 @@ private:
     int      mMaxLodLevels     = 20;
     size_t   mMinTriangles     = kMeshletMaxTriangles;
     float    mLodSimplifyRatio = 0.5f;
-    uint32_t mNumPartitions    = 0;    // 0 = auto sqrt(|V|)
+    uint32_t mNumPartitions    = 0;    // 0 = auto sqrt(|V|), >0 = 每组目标 meshlet 数
+    uint32_t mMinMeshletsForPartition = 64;  // 低于此数量不再递归分区
 };
 
 NS_RENDERSYSTEM_END
