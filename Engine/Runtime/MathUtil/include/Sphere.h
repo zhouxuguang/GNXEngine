@@ -21,7 +21,6 @@ public:
     T       mRadius;
 
 public:
-
     Sphere() {}
     Sphere(const Vector3<T>& p0, T r)
     {
@@ -47,6 +46,10 @@ public:
     const T& GetRadius() const { return mRadius; }
 
     bool IsInside(const Sphere& inSphere) const;
+
+    // 合并两个包围球，返回恰好同时包含二者的最小球
+    // 参考：Jack Ritter. "An Efficient Bounding Sphere." 1990
+    static Sphere Merge(const Sphere& a, const Sphere& b);
 };
 
 typedef Sphere<float> Spheref;
