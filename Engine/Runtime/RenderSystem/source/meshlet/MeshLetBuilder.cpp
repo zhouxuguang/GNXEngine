@@ -403,7 +403,7 @@ void MeshletBuilder::MergeGroups(
 bool MeshletBuilder::BuildNextLOD(
     MeshletFileData& inOutData)
 {
-    return false;
+    //return false;
     const size_t currentMeshletCount = inOutData.meshlets.size();
     if (currentMeshletCount < 2)
     {
@@ -507,6 +507,11 @@ bool MeshletBuilder::BuildNextLOD(
     inOutData.lodMeshletOffsets.push_back(lodMeshletOffset);
     inOutData.lodMeshletCounts.push_back(nextLodCount);
     inOutData.lodCount++;
+
+    // 补齐 meshletPartitions（新 LOD 的 meshlet 暂不分区，填 0 占位）
+    inOutData.meshletPartitions.resize(inOutData.meshlets.size(), 0);
+    // LOD 1 没有分区信息，numPartitions 仅对 LOD 0 有效
+    // TODO: 后续对 LOD 1 meshlet 做 METIS 分区后再更新
 
     LOG_INFO("BuildNextLOD: generated %u LOD %u meshlets (total LODs: %u)",
         nextLodCount, inOutData.lodCount - 1, inOutData.lodCount);

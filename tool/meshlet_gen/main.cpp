@@ -190,13 +190,10 @@ int main(int argc, char* argv[])
     {
         std::cout << "\n--- Building LOD Hierarchy ---" << std::endl;
 
-        int lodLevel = 1;
-        while (builder.BuildNextLOD(outData))
+        // 目前只支持生成 LOD 1（LOD 2+ 需要对 LOD 1 meshlet 重新 METIS 分区）
+        if (builder.BuildNextLOD(outData))
         {
-            std::cout << "  LOD " << lodLevel << ": "
-                      << outData.lodMeshletCounts.back() << " meshlets" << std::endl;
-            lodLevel++;
-            if (lodLevel >= 1) break;  // 最多 5 层 LOD（含 LOD 0）
+            std::cout << "  LOD 1: " << outData.lodMeshletCounts.back() << " meshlets" << std::endl;
         }
     }
 
