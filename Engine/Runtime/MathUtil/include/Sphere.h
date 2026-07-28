@@ -47,6 +47,14 @@ public:
 
     bool IsInside(const Sphere& inSphere) const;
 
+    /**
+     * @brief 从一系列点创建包围球
+     *
+     * @param positions The positions.
+     * @returns An axis-aligned bounding sphere derived from input positions.
+     */
+    static Sphere FromPositions(const std::vector<Vector3<T>>& positions);
+
     // 合并两个包围球，返回恰好同时包含二者的最小球
     // 参考：Jack Ritter. "An Efficient Bounding Sphere." 1990
     static Sphere Merge(const Sphere& a, const Sphere& b);

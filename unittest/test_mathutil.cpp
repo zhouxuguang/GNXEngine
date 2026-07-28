@@ -10,6 +10,7 @@
 #include "Runtime/MathUtil/include/HalfFloat.h"
 #include "Runtime/MathUtil/include/MathUtil.h"
 #include "Runtime/MathUtil/include/AABB.h"
+#include "Runtime/MathUtil/include/Sphere.h"
 
 using namespace mathutil;
 using Catch::Matchers::WithinAbs;
@@ -1383,4 +1384,95 @@ TEST_CASE("MathUtil constants", "[mathutil][mathutil]")
     REQUIRE_THAT(kPi, WithinAbs(3.14159265f, 1e-5f));
     REQUIRE_THAT(k2Pi, WithinAbs(2.0f * 3.14159265f, 1e-4f));
     REQUIRE_THAT(kPiOver2, WithinAbs(1.57079632f, 1e-5f));
+}
+
+// ==================== Sphere 测试 ====================
+
+TEST_CASE("Sphere FromPositions single point", "[mathutil][sphere]")
+{
+    std::vector<Vector3f> positions;
+    positions.emplace_back(1.0f, 2.0f, 3.0f);
+
+    Spheref s = Spheref::FromPositions(positions);
+
+    REQUIRE_THAT(s.mCenter.x, WithinAbs(1.0f, 1e-5f));
+    REQUIRE_THAT(s.mCenter.y, WithinAbs(2.0f, 1e-5f));
+    REQUIRE_THAT(s.mCenter.z, WithinAbs(3.0f, 1e-5f));
+    REQUIRE_THAT(s.mRadius, WithinAbs(0.0f, 1e-5f));
+}
+
+TEST_CASE("Sphere FromPositions two points", "[mathutil][sphere]")
+{
+    std::vector<Vector3f> positions;
+    positions.emplace_back(-1.0f, 0.0f, 0.0f);
+    positions.emplace_back(1.0f, 0.0f, 0.0f);
+
+    Spheref s = Spheref::FromPositions(positions);
+
+    // center at midpoint
+    REQUIRE_THAT(s.mCenter.x, WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(s.mCenter.y, WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(s.mCenter.z, WithinAbs(0.0f, 1e-5f));
+    // radius = half the distance between the two points
+    REQUIRE_THAT(s.mRadius, WithinAbs(1.0f, 1e-5f));
+}
+
+TEST_CASE("Sphere FromPositions axis-aligned cube corners", "[mathutil][sphere]")
+{
+    // 8 corners of a unit cube centered at origin
+    std::vector<Vector3f> positions;
+    positions.emplace_back(-1.0f, -1.0f, -1.0f);
+    positions.emplace_back(1.0f, -1.0f, -1.0f);
+    positions.emplace_back(-1.0f, 1.0f, -1.0f);
+    positions.emplace_back(1.0f, 1.0f, -1.0f);
+    positions.emplace_back(-1.0f, -1.0f, 1.0f);
+    positions.emplace_back(1.0f, -1.0f, 1.0f);
+    positions.emplace_back(-1.0f, 1.0f, 1.0f);
+    positions.emplace_back(1.0f, 1.0f, 1.0f);
+
+    Spheref s = Spheref::FromPositions(positions);
+
+    // Ritter algorithm gives an approximate sphere; verify all points enclosed
+    // and radius is within reasonable bounds (optimal = sqrt(3) ≈ 1.732 for unit cube,
+    // Ritter can overestimate by ~35%)
+    REQUIRE(s.mRadius >= 1.7f);
+    REQUIRE(s.mRadius <= 2.5f);
+
+    for (const auto& p : positions)
+    {
+        float d = p.Distance(s.mCenter);
+        REQUIRE(d <= s.mRadius + 1e-4f);
+    }
+}
+
+TEST_CASE("Sphere FromPositions all points enclosed", "[mathutil][sphere]")
+{
+    // Random-ish set of points
+    std::vector<Vector3f> positions;
+    positions.emplace_back(2.0f, -1.0f, 3.0f);
+    positions.emplace_back(-4.0f, 2.0f, -1.0f);
+    positions.emplace_back(0.0f, 0.0f, 0.0f);
+    positions.emplace_back(3.0f, 3.0f, 3.0f);
+    positions.emplace_back(-2.0f, -3.0f, 1.0f);
+
+    Spheref s = Spheref::FromPositions(positions);
+
+    // every input point must be inside (or on) the sphere
+    for (const auto& p : positions)
+    {
+        float d = p.Distance(s.mCenter);
+        REQUIRE(d <= s.mRadius + 1e-4f);
+    }
+}
+
+TEST_CASE("Sphere FromPositions empty vector", "[mathutil][sphere]")
+{
+    std::vector<Vector3f> positions;
+    Spheref s = Spheref::FromPositions(positions);
+
+    // empty input → default-constructed (origin, radius 0)
+    REQUIRE_THAT(s.mCenter.x, WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(s.mCenter.y, WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(s.mCenter.z, WithinAbs(0.0f, 1e-5f));
+    REQUIRE_THAT(s.mRadius, WithinAbs(0.0f, 1e-5f));
 }
