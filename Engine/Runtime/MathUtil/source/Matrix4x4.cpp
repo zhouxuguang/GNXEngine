@@ -533,7 +533,7 @@ Matrix4x4<T> Matrix4x4<T>::CreateRotationZ(T angle)
 	T sinTheta = sin(theta);
 	T cosTheta = cos(theta);
 	values[0] = cosTheta;
-	values[2] = -sinTheta;
+	values[1] = -sinTheta;
 	values[4] = sinTheta;
 	values[5] = cosTheta;
 
