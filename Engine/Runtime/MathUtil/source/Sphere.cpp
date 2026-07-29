@@ -78,8 +78,9 @@ static void ComputeBoundingSphere(T result[4], const T points[][3], size_t count
 template <typename T>
 bool Sphere<T>::IsInside(const Sphere<T>& inSphere) const
 {
-    T sqrDist = (GetCenter() - inSphere.GetCenter()).Length();
-    if (GetRadius() * GetRadius() > sqrDist + inSphere.GetRadius() * inSphere.GetRadius())
+    T sqrDist = (GetCenter() - inSphere.GetCenter()).LengthSq();
+    T radiusSum = GetRadius() + inSphere.GetRadius();
+    if (sqrDist < radiusSum * radiusSum)
     {
         return true;
     }
