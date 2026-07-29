@@ -659,7 +659,7 @@ Matrix4x4<T> Matrix4x4<T>::CreateLookAt(const Vector3<T>& eyePosition, const Vec
 	// 参考GLM实现
 
 	Vector3<T> const f((targetPosition - eyePosition).Normalize());
-	Vector3<T> const s(Vector3<T>::CrossProduct(f, up));
+	Vector3<T> const s(Vector3<T>::CrossProduct(f, up).Normalize());
 	Vector3<T> const u(Vector3<T>::CrossProduct(s, f));
 
 
