@@ -29,9 +29,16 @@ bool IntersectRayTriangle(const Rayf& ray, const Vector3f& v0, const Vector3f& v
     Vector3f s2 = Vector3f::CrossProduct(s, e1);
     
     float det = s1.DotProduct(e1);
-    
+
+    // Ray is parallel to the triangle plane
+    if (fabs(det) < 1e-12f)
+    {
+        return false;
+    }
+
+    float invDet = 1.0f / det;
     Vector3f result = Vector3f(s2.DotProduct(e2), s1.DotProduct(s), s2.DotProduct(ray.GetDirection()));
-    result = result / det;
+    result = result * invDet;
     
     if (result.x <= 0)
     {
@@ -76,44 +83,37 @@ bool IntersectRayAABBInner(const Ray<T>& ray, const AxisAlignedBox<T>& inAABB, T
     T t0, t1, f;
     
     Vector3<T> p = inAABB.center - ray.GetOrigin();
-    Vector3<T> extent = inAABB.length;
+    Vector3<T> halfExtent = inAABB.length * T(0.5);
     for (int i = 0; i < 3; i++)
     {
-        // ray and plane are paralell so no valid intersection can be found
+        // ray direction component near zero: ray parallel to this slab
+        T dir = ray.GetDirection()[i];
+        if (fabs(dir) < T(1e-12))
         {
-            f = 1.0f / ray.GetDirection()[i];
-            t0 = (p[i] + extent[i]) * f;
-            t1 = (p[i] - extent[i]) * f;
-            // Ray leaves on Right, Top, Back Side
-            if (t0 < t1)
-            {
-                if (t0 > tmin)
-                    tmin = t0;
-                
-                if (t1 < tmax)
-                    tmax = t1;
-                
-                if (tmin > tmax)
-                    return false;
-                
-                if (tmax < 0.0F)
-                    return false;
-            }
-            // Ray leaves on Left, Bottom, Front Side
-            else
-            {
-                if (t1 > tmin)
-                    tmin = t1;
-                
-                if (t0 < tmax)
-                    tmax = t0;
-                
-                if (tmin > tmax)
-                    return false;
-                
-                if (tmax < 0.0F)
-                    return false;
-            }
+            // if the ray origin is outside the slab, no intersection
+            if (p[i] < -halfExtent[i] || p[i] > halfExtent[i])
+                return false;
+            continue;
+        }
+
+        f = T(1.0) / dir;
+        t0 = (p[i] + halfExtent[i]) * f;
+        t1 = (p[i] - halfExtent[i]) * f;
+        // Ray leaves on Right, Top, Back Side
+        if (t0 < t1)
+        {
+            if (t0 > tmin) tmin = t0;
+            if (t1 < tmax) tmax = t1;
+            if (tmin > tmax) return false;
+            if (tmax < T(0)) return false;
+        }
+        // Ray leaves on Left, Bottom, Front Side
+        else
+        {
+            if (t1 > tmin) tmin = t1;
+            if (t0 < tmax) tmax = t0;
+            if (tmin > tmax) return false;
+            if (tmax < T(0)) return false;
         }
     }
     
@@ -160,16 +160,14 @@ bool IntersectSphereOBB(const Sphere<T>& sphere, const OrientedBoundingBox<T>& o
 template<typename T>
 bool IntersectAABBAABB(const AxisAlignedBox<T>& aabb1, const AxisAlignedBox<T>& aabb2)
 {
-//	Vector3f aMin = aabb1.mMin;
-//    Vector3f aMax = aabb1.mMax;
-//    Vector3f bMin = aabb2.mMin;
-//    Vector3f bMax = aabb2.mMax;
-//
-//	return	(aMin.x <= bMax.x && aMax.x >= bMin.x) &&
-//		(aMin.y <= bMax.y && aMax.y >= bMin.y) &&
-//		(aMin.z <= bMax.z && aMax.z >= bMin.z);
-    
-    return false;
+	const Vector3<T>& aMin = aabb1.minimum;
+    const Vector3<T>& aMax = aabb1.maximum;
+    const Vector3<T>& bMin = aabb2.minimum;
+    const Vector3<T>& bMax = aabb2.maximum;
+
+	return (aMin.x <= bMax.x && aMax.x >= bMin.x) &&
+		(aMin.y <= bMax.y && aMax.y >= bMin.y) &&
+		(aMin.z <= bMax.z && aMax.z >= bMin.z);
 }
 
 #if 0

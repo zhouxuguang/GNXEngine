@@ -454,12 +454,12 @@ Quaternion<T> Quaternion<T>::Conjugate(const Quaternion<T> &q)
 template <typename T>
 Quaternion<T> Quaternion<T>::Pow(const Quaternion<T> &q, T fExponent)
 {
-    if (q.w > T(1.0) - MathEpsilonHigh<T>())
+    if (std::abs(q.w) > T(1.0) - MathEpsilonHigh<T>())
     {
         return q;
     }
 
-    T alpha = acos(q.w);
+    T alpha = acos(Clamp(q.w, T(-1.0), T(1.0)));
     T newAlpha = alpha * fExponent;
 
     Quaternion result;

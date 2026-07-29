@@ -69,8 +69,8 @@ void TableInit()
 		CosTable[i] = cos(dbAngle);
 	}
 
-	SinTable[360] = SinTable[359];
-	CosTable[360] = CosTable[359];
+	SinTable[360] = SinTable[0];
+	CosTable[360] = CosTable[0];
 
 	g_bTableInit = true;
 }
