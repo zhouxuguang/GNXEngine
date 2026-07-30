@@ -46,11 +46,11 @@
 #endif
 
 #ifdef INCLUDE_NEON32
-#include "MathUtil/MathUtilNeon.h"
+#include "MathUtilNeon.h"
 #endif
 
 #ifdef INCLUDE_NEON64
-#include "MathUtil/MathUtilNeon64.h"
+#include "MathUtilNeon64.h"
 #endif
 
 #ifdef INCLUDE_SSE

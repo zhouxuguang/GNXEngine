@@ -7,7 +7,7 @@ file(GLOB_RECURSE MATHUTIL_INCLUDES CONFIGURE_DEPENDS ${mathutil_include_dir}/*.
 
 # 设置源码文件列表
 if(ANDROID)
-    set(SOURCE_FILES ${MATHUTIL_SOURCES} ${MATHUTIL_INCLUDES} ${ANDROID_NDK}/sources/android/cpufeatures/cpu-features.c)
+    set(SOURCE_FILES ${MATHUTIL_SOURCES} ${MATHUTIL_INCLUDES} ${CMAKE_ANDROID_NDK}/sources/android/cpufeatures/cpu-features.c)
 else()
     set(SOURCE_FILES ${MATHUTIL_SOURCES} ${MATHUTIL_INCLUDES})
 endif()
@@ -19,7 +19,7 @@ source_group(TREE ${mathutil_include_dir} PREFIX include FILES ${MATHUTIL_INCLUD
 
 target_include_directories(MathUtil PRIVATE ${mathutil_include_dir})
 if(ANDROID)
-    target_include_directories(MathUtil PRIVATE ${ANDROID_NDK}/sources/android/cpufeatures)
+    target_include_directories(MathUtil PRIVATE ${CMAKE_ANDROID_NDK}/sources/android/cpufeatures)
 endif()
 
 target_compile_definitions(MathUtil PRIVATE MATH3D_EXPORTS)
