@@ -137,7 +137,7 @@ void VKComputeEncoder::SetTexture(RCTexturePtr texture, uint32_t index)
     VkDescriptorImageInfo imageInfo = {};
     imageInfo.imageView = vkTexture2D->GetImageView()->GetHandle();
     imageInfo.imageLayout = imageLayout;
-    imageInfo.sampler = nullptr;
+    imageInfo.sampler = VK_NULL_HANDLE;
     
     // 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
     VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetImageWriteDescriptorSet(VK_NULL_HANDLE,

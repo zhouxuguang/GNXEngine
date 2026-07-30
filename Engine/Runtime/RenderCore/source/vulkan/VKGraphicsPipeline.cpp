@@ -500,7 +500,7 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
         renderingCreateInfos.push_back(pipelineRenderingCreateInfo);
         
         // 动态渲染需要把renderpass设置为空
-        mPipeCreateInfo.renderPass = nullptr;
+        mPipeCreateInfo.renderPass = VK_NULL_HANDLE;
     }
     mPipeCreateInfo.pNext = renderingCreateInfos.data();
     

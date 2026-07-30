@@ -222,7 +222,7 @@ std::shared_ptr<VKShaderFunction> VKShaderFunction::initWithShaderSourceInner(co
     VkResult res = vkCreateShaderModule(mContext->device, &shaderModuleCreateInfo, nullptr, &computeShaderModule);
     if (res != VK_SUCCESS)
     {
-        mShaderFunction = nullptr;
+        mShaderFunction = VK_NULL_HANDLE;
         return nullptr;
     }
     mShaderFunction = computeShaderModule;

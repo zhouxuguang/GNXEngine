@@ -567,7 +567,7 @@ VkCommandPool VulkanContext::GetCommandPool()
             LOG_INFO("vkCreateCommandPool error");
         }
         
-        commandPoolTls.set(commandPool);
+        commandPoolTls.set((void*)(uintptr_t)commandPool);
         return commandPool;
     }
 }
@@ -597,7 +597,7 @@ VkCommandPool VulkanContext::GetTransferCommandPool()
             LOG_INFO("vkCreateCommandPool error");
 		}
 
-		transferCommandPoolTls.set(commandPool);
+		transferCommandPoolTls.set((void*)(uintptr_t)commandPool);
 		return commandPool;
 	}
 }
@@ -627,7 +627,7 @@ VkCommandPool VulkanContext::GetComputeCommandPool()
 			LOG_INFO("vkCreateCommandPool error");
 		}
 
-		computeCommandPoolTls.set(commandPool);
+		computeCommandPoolTls.set((void*)(uintptr_t)commandPool);
 		return commandPool;
 	}
 }
