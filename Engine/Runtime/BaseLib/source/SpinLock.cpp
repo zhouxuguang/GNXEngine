@@ -107,7 +107,11 @@ void SpinLock::Lock()
     {
         if (k < 32)
         {
+#if TARGET_X86 || TARGET_X86_64
             __asm__ __volatile__("pause");
+#elif TARGET_ARM || TARGET_ARM64
+            __asm__ __volatile__("yield");
+#endif
         }
         else
         {

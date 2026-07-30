@@ -196,14 +196,6 @@ bool MutexLock::TryLock()
 #ifdef __ANDROID__
 bool MutexLock::TryLock(unsigned long msecs)
 {
-#ifndef __LP64__
-    int ret = pthread_mutex_lock_timeout_np(&mLock, (unsigned)msecs);
-    return ret;
-    
-#else
-    
-    //ANDROID标准实现方法  //pthread_mutex_timedlock  armeabi-v7a不支持pthread_mutex_timedlock
-    
     struct timespec timeToWait;
     struct timeval now;
     
@@ -221,9 +213,6 @@ bool MutexLock::TryLock(unsigned long msecs)
     }
     
     return pthread_mutex_timedlock(&mLock, &timeToWait) == 0;
-    
-#endif
-
 }
 
 #else

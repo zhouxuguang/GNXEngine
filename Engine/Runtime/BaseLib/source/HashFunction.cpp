@@ -9,16 +9,12 @@ extern void MurmurHash3_x86_32 ( const void * key, const int len,
 extern void MurmurHash3_x86_128 ( const void * key, const int len,
                                  uint32_t seed, void * out );
 
-size_t HashFunction(const void* pKey, size_t keySize)
+uint64_t HashFunction(const void* pKey, size_t keySize)
 {
-#if defined(BASE_IS_64_BIT_CPU)
 	return XXH3_64bits(pKey, keySize);
-#else
-	return XXH32(pKey, keySize);
-#endif  // defined(BASE_IS_64_BIT_CPU)
 }
 
-size_t GetHashCode(const std::string& key)
+uint64_t GetHashCode(const std::string& key)
 {
 	return HashFunction(key.data(), key.size());
 }

@@ -134,7 +134,7 @@ void Log::LogPrint(LogLevel lev, const char* msg, va_list args)
 	vprintf(msg, args);
     printf("\n");
 #elif defined __ANDROID__
-	Android_Print(m_logLevel, msg, args);
+	Android_Print(lev, msg, args);
 #elif defined WIN32
 	if (HasConsole())
 	{

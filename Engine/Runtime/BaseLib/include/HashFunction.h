@@ -9,12 +9,12 @@
 
 NS_BASELIB_BEGIN
 
-BASELIB_API size_t HashFunction(const void* pKey, size_t keySize);
+BASELIB_API uint64_t HashFunction(const void* pKey, size_t keySize);
 
-BASELIB_API size_t GetHashCode(const std::string& key);
+BASELIB_API uint64_t GetHashCode(const std::string& key);
 
 template<typename KEY>
-size_t GetHashCode(const KEY& key)
+uint64_t GetHashCode(const KEY& key)
 {
 	return HashFunction(&key, sizeof(key));
 }
