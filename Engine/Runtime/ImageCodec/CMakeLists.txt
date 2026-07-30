@@ -131,9 +131,9 @@ endif()
 
 target_include_directories(ImageCodec PRIVATE ${imagecodec_include_dir})
 target_include_directories(ImageCodec PRIVATE ${imagecodec_dir}/libwebp ${imagecodec_dir}/libjpeg)
-# if(ANDROID)
-#     target_include_directories(ImageCodec PRIVATE ${ANDROID_NDK}/sources/android/cpufeatures)
-# endif()
+if(ANDROID)
+    target_include_directories(ImageCodec PRIVATE ${CMAKE_ANDROID_NDK}/sources/android/cpufeatures)
+endif()
 target_link_libraries(ImageCodec PRIVATE BaseLib MathUtil)
 
 set_property(TARGET ImageCodec PROPERTY FOLDER "Runtime")
