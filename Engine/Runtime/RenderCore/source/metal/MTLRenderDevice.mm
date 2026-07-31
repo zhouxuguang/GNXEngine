@@ -523,7 +523,7 @@ void MTLRenderDevice::InitializeFeatures()
     }
 
     // Apple Silicon 全是 SoC 集成 GPU；Intel Mac 可通过名称判断
-#if TARGET_OS_MAC
+#if TARGET_OS_OSX
     bool isDiscrete = ([device.name containsString:@"Radeon"] ||
                        [device.name containsString:@"Radeon Pro"] ||
                        [device.name containsString:@"GeForce"] ||
@@ -543,7 +543,7 @@ void MTLRenderDevice::InitializeFeatures()
     // ================================================================
 
     // --- 2a. macOS 平台 ---
-#if TARGET_OS_MAC
+#if TARGET_OS_OSX
     // macOS GPU Family 2 (Apple Silicon M1+/AMD RDNA2+/NVIDIA Ampere+)
     //   覆盖所有 Apple Silicon (M1/M2/M3/M4) 以及现代桌面独立显卡
     //   注: 未来 SDK 若分离出 MTLGPUFamilyAppleM1/M2/M3/M4 可在此处做更细粒度区分
@@ -635,7 +635,7 @@ void MTLRenderDevice::InitializeFeatures()
         SetWorkGroupSize(L, 256, 256, 64);
         L.maxSampleCountMaskBits           = (1u << 2) | (1u << 1) | (1u << 0);
     }
-#endif /* TARGET_OS_MAC / TARGET_OS_IPHONE */
+#endif /* TARGET_OS_OSX / TARGET_OS_IPHONE */
 
     // ================================================================
     // 三、通用字段（不随 Feature Set 变化，或由运行时 API 直接返回）
@@ -688,7 +688,7 @@ void MTLRenderDevice::InitializeFeatures()
     //   要求: macOS 14+ (M3+) 或 iOS 17+ (A17+), 且需 Apple GPU (Mac2 family)
     mFeatures.shader.meshShader = false;
     mFeatures.shader.taskShader = false;
-#if TARGET_OS_MAC
+#if TARGET_OS_OSX
     #if defined(__MAC_OS_X_VERSION_MAX_ALLOWED) && __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000
     if (@available(macOS 14.0, *))
     {
@@ -715,7 +715,7 @@ void MTLRenderDevice::InitializeFeatures()
 
     // Ray Tracing: MPSAccelerationStructure (macOS 12+ / iOS 16+, Apple Silicon)
     mFeatures.shader.rayTracing = false;
-#if TARGET_OS_MAC
+#if TARGET_OS_OSX
     if (@available(macOS 12.0, *))
     {
         mFeatures.shader.rayTracing = [device supportsFamily:MTLGPUFamilyMac2];
@@ -734,7 +734,7 @@ void MTLRenderDevice::InitializeFeatures()
 
     // BC 压缩: Apple GPU 不原生支持 BC；Intel/AMD/NVIDIA Mac 通过硬件解码支持
     mFeatures.resource.textureCompressionBC = false;
-#if TARGET_OS_MAC
+#if TARGET_OS_OSX
     if (@available(macOS 11.0, *))
     {
         // Mac2 中非 Apple Silicon 的设备（Intel AMD NVIDIA GPU）通常支持 BC 硬件解码
@@ -752,7 +752,7 @@ void MTLRenderDevice::InitializeFeatures()
 
     // ASTC: Apple GPU 全家族原生支持 ASTC（HDR/LDR Sliced/Full block）
     mFeatures.resource.textureCompressionASTC = false;
-#if TARGET_OS_MAC
+#if TARGET_OS_OSX
     // macOS 上仅 Apple Silicon 支持 ASTC（通过 Mac2 family + 设备名判断）
     if (@available(macOS 11.0, *))
     {
@@ -832,11 +832,15 @@ void MTLRenderDevice::ShutdownPipelineCache()
 
 void MTLRenderDevice::SetVSync(bool enable)
 {
-    mVSync = enable;
     // CAMetalLayer.displaySyncEnabled 控制垂直同步
     // YES = 垂直同步开启（等 VBlank 呈现）
     // NO  = 垂直同步关闭（立即呈现，不等待 VBlank）
+    // 需要 iOS 16.0+ / macOS 14.0+
+#if (OS_MACOS && __MAC_OS_X_VERSION_MIN_REQUIRED >= 140000) || \
+    (OS_IOS  && __IPHONE_OS_VERSION_MIN_REQUIRED >= 160000)
     mMetalLayer.displaySyncEnabled = enable;
+    mVSync = enable;
+#endif
 }
 
 bool MTLRenderDevice::IsVSync() const
