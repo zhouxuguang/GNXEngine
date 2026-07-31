@@ -157,6 +157,12 @@ endif()
 
 add_subdirectory(assimp-5.2.4)
 
+# Fix NDK 26+ 32-bit arches: fstream uses fseeko/ftello which don't exist on 32-bit Android.
+# NDK defaults to _FILE_OFFSET_BITS=64; override to 32 so libc++ uses fseek/ftell.
+if(ANDROID AND (CMAKE_ANDROID_ARCH_ABI STREQUAL "armeabi-v7a" OR CMAKE_ANDROID_ARCH_ABI STREQUAL "x86"))
+    target_compile_options(assimp PRIVATE -U_FILE_OFFSET_BITS -D_FILE_OFFSET_BITS=32)
+endif()
+
 set_property(TARGET assimp PROPERTY FOLDER "ThirdParty")
 set_property(TARGET zlibstatic PROPERTY FOLDER "ThirdParty")
 set_property(TARGET uninstall PROPERTY FOLDER "ThirdParty")
