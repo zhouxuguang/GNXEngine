@@ -9,7 +9,7 @@
 #include "ImageDecoderApple.h"
 #include "ImageDecoderImpl.h"
 #import <Foundation/Foundation.h>
-#if (TARGET_OS_MAC & !TARGET_OS_SIMULATOR)
+#if TARGET_OS_OSX
     #import <AppKit/AppKit.h>
 #elif TARGET_OS_IOS
     #import <UIKit/UIKit.h>
@@ -182,7 +182,7 @@ uint8_t* DecodeImageData_APPLE(const uint8_t* pImageData,
     {
         NSData *data = [NSData dataWithBytesNoCopy: (void *)pImageData length: dataLen freeWhenDone: NO];
         
-#if TARGET_OS_MAC
+#if TARGET_OS_OSX
         CGImageSourceRef imageSource = CGImageSourceCreateWithData((CFDataRef)data, NULL);
         CGImageRef imageRef = CGImageSourceCreateImageAtIndex(imageSource, 0, NULL);
 #elif TARGET_OS_IOS
