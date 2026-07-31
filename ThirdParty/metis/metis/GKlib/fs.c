@@ -13,6 +13,10 @@ the filesystem in a portable way.
 
 #include <GKlib.h>
 
+#ifdef __APPLE__
+#include <TargetConditionals.h>
+#endif
+
 
 
 /*************************************************************************
@@ -206,10 +210,15 @@ char *getpathname(char *path)
 **************************************************************************/
 int gk_mkpath(char *pathname)
 {
+#if TARGET_OS_IPHONE
+  // system() is not available on iOS
+  return -1;
+#else
   char tmp[2048];
 
   sprintf(tmp, "mkdir -p %s", pathname);
   return system(tmp);
+#endif
 }
 
 
@@ -218,8 +227,13 @@ int gk_mkpath(char *pathname)
 **************************************************************************/
 int gk_rmpath(char *pathname)
 {
+#if TARGET_OS_IPHONE
+  // system() is not available on iOS
+  return -1;
+#else
   char tmp[2048];
 
   sprintf(tmp, "rm -r %s", pathname);
   return system(tmp);
+#endif
 }
