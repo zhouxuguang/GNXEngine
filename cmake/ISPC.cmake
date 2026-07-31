@@ -24,14 +24,16 @@ function(add_ispc_target ISPC_OUTPUT_FILES ISPC_HEADER_DIR)
     endif()
 
     # error : Unsupported value for --arch, supported values are: x86, x86-64, arm, aarch64, xe64 ispc
-    # CMAKE_SYSTEM_PROCESSOR在windows上输出AMD64
-    # 检查目标处理器架构
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
-        set(ISPC_ARCH "x86-64")
-        message(STATUS "Building for x86-64 architecture")
-    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm|ARM")
+    # Apple 平台用 CMAKE_OSX_ARCHITECTURES，其他平台用 CMAKE_SYSTEM_PROCESSOR
+    message(STATUS "ISPC arch detect: CMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}, CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
+    if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm|ARM")
         set(ISPC_ARCH "aarch64")
-        message(STATUS "Building for ARM architecture")
+        message(STATUS "ISPC: Building for ARM (aarch64) architecture")
+    elseif(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+        set(ISPC_ARCH "x86-64")
+        message(STATUS "ISPC: Building for x86-64 architecture")
+    else()
+        message(FATAL_ERROR "ISPC: Unsupported architecture. CMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}, CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
     endif()
 
     set(ISPC_KNOWN_TARGETS "sse2" "sse4" "avx1-" "avx2" "avx512skx" "avx512knl" "neon")
