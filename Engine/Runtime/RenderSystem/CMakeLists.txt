@@ -60,6 +60,10 @@ target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler Ass
     assimp
     ktx
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/win/dxcompiler.lib)
+elseif(ANDROID)
+target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler AssetManager nanopb TracyClient
+    assimp
+    ktx)
 elseif(LINUX)
 target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler AssetManager nanopb TracyClient
     assimp

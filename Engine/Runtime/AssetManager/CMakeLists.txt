@@ -24,9 +24,10 @@ target_include_directories(AssetManager PUBLIC
 
 # 链接依赖
 target_link_libraries(AssetManager
+    PUBLIC
+    nanopb
     PRIVATE
     BaseLib
-    nanopb
     ImageCodec
 )
 

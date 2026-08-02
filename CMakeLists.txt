@@ -29,6 +29,11 @@ set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
+# Android 强制所有代码编译为位置无关代码 (PIC)
+if(ANDROID)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
 include(cmake/ISPC.cmake)
 
 message("ISPC: ${CMAKE_ISPC_COMPILER}")

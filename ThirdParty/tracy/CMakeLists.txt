@@ -23,7 +23,7 @@ endif()
 # Platform-specific link dependencies for Tracy
 if(WIN32)
     target_link_libraries(TracyClient PUBLIC ws2_32 advapi32 user32 dbghelp)
-elseif(UNIX AND NOT APPLE)
+elseif(UNIX AND NOT APPLE AND NOT ANDROID)
     target_link_libraries(TracyClient PUBLIC pthread dl)
 endif()
 
