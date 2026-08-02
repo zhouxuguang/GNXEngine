@@ -1,1 +1,2 @@
 add_subdirectory(meshlet_gen)
+add_subdirectory(shader_compile)

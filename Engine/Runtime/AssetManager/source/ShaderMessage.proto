@@ -1,0 +1,98 @@
+syntax = "proto3";
+import "Common.proto";
+
+// ==================== Shader 阶段 ====================
+enum GnxShaderStage
+{
+    GnxShaderStage_Vertex = 0;
+    GnxShaderStage_Fragment = 1;
+    GnxShaderStage_Compute = 2;
+    GnxShaderStage_Task = 3;
+    GnxShaderStage_Mesh = 4;
+}
+
+// ==================== Shader 运行时格式 ====================
+// 编译后可直接在对应平台加载的 shader 数据格式
+enum GnxShaderFormat
+{
+    GnxShaderFormat_SPIRV      = 0;  // SPIR-V 二进制（Android Vulkan / macOS MoltenVK）
+    GnxShaderFormat_MSL_iOS    = 1;  // Metal Shading Language for iOS（Apple GPU Family）
+    GnxShaderFormat_MSL_macOS  = 2;  // Metal Shading Language for macOS（Mac GPU Family）
+    GnxShaderFormat_DXIL       = 3;  // DXIL 字节码（Windows D3D12）
+    GnxShaderFormat_GLSL       = 4;  // GLSL 源码（OpenGL ES / 兼容层）
+}
+
+// ==================== Uniform Buffer 成员 ====================
+message UniformMemberMessage
+{
+    string name = 1;            // 成员名
+    uint32 offset = 2;          // buffer 内字节偏移
+    uint32 size = 3;            // 成员大小（字节）
+    VertexDataFormat format = 4;   // 数据格式（复用 Common.proto）
+}
+
+// ==================== Uniform Buffer 布局 ====================
+message UniformBufferLayoutMessage
+{
+    string name = 1;            // cbuffer 名
+    uint32 dataSize = 2;        // buffer 总大小（字节）
+    uint32 set = 3;             // descriptor set
+    uint32 binding = 4;         // descriptor binding
+    repeated UniformMemberMessage members = 5;
+}
+
+// ==================== Push Constant ====================
+message PushConstantMessage
+{
+    string name = 1;            // 原始 cbuffer 名
+    uint32 size = 2;            // padded size（字节）
+    uint32 set = 3;             // 原始 descriptor set（反向查表）
+    uint32 binding = 4;         // 原始 descriptor binding（反向查表）
+}
+
+// ==================== 采样器/纹理反射资源 ====================
+message ShaderResourceMessage
+{
+    string name = 1;
+    uint32 set = 2;
+    uint32 binding = 3;
+    uint32 msl_texture = 4;     // Metal 重映射后的纹理槽位（MSL 专用）
+    uint32 msl_sampler = 5;     // Metal 重映射后的采样器槽位（MSL 专用）
+}
+
+// ==================== 顶点输入属性 ====================
+message VertexInputMessage
+{
+    string semantic = 1;            // 语义名（"POSITION" / "NORMAL" / "TEXCOORD"）
+    uint32 location = 2;            // attribute location
+    VertexDataFormat format = 3;    // 数据格式
+    uint32 offset = 4;              // vertex stride 内字节偏移
+}
+
+// ==================== 编译后的 Shader ====================
+// 一个 ShaderMessage 对应一个 stage 在当前平台的一份编译结果
+message ShaderMessage
+{
+    // ====== 标识 ======
+    GnxShaderStage shaderStage = 1;     // VS / PS / CS / TS / MS
+    GnxShaderFormat shaderFormat = 2;   // SPIRV / MSL_iOS / MSL_macOS / DXIL / GLSL
+    string entryPoint = 3;              // 入口函数名（Metal 需要）
+    uint64 sourceHash = 4;              // HLSL 源码 hash（增量编译 / 版本追踪）
+
+    // ====== 编译后的 shader 数据 ======
+    bytes compiledShader = 5;           // 格式由 shaderFormat 决定
+
+    // ====== 反射元数据 ======
+    repeated UniformBufferLayoutMessage uniformBuffers = 6;
+    repeated PushConstantMessage pushConstants = 7;
+    repeated ShaderResourceMessage resources = 8;        // sampled images + separate samplers
+    repeated VertexInputMessage vertexInputs = 9;
+
+    // ====== Threadgroup 大小（TS / MS / CS 有效） ======
+    uint32 threadgroupSizeX = 10;
+    uint32 threadgroupSizeY = 11;
+    uint32 threadgroupSizeZ = 12;
+
+    // ====== 顶点 stride ======
+    uint32 vertexStride = 13;           // MTLVertexDescriptor.layouts[0].stride
+}
