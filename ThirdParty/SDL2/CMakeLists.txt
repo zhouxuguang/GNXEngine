@@ -3,11 +3,19 @@ set(SDL_EVENTS ON)
 set(SDL_THREADS ON)
 set(SDL_LOADSO ON)
 
+# Android: SDL_android.c unconditionally calls joystick/haptic functions,
+# so these subsystems must be enabled on Android.
+if(ANDROID)
+    set(SDL_JOYSTICK ON)
+    set(SDL_HAPTIC ON)
+else()
+    set(SDL_JOYSTICK OFF)
+    set(SDL_HAPTIC OFF)
+endif()
+
 # 禁用所有其他功能
 set(SDL2_DISABLE_INSTALL OFF)
 set(SDL_AUDIO OFF)
-set(SDL_JOYSTICK OFF)
-set(SDL_HAPTIC OFF)
 set(SDL_SENSOR OFF)
 set(SDL_POWER OFF)
 set(SDL_FILE OFF)
