@@ -2,8 +2,10 @@
 //  InputGLFW.cpp
 //  GNXEngine
 //
-//  Created by zhouxuguang on 2025/11/2.
+//  GLFW 输入后端（Windows / macOS / Linux）
 //
+
+#if !GNX_WINDOW_SDL
 
 #include "Input.h"
 #include "InputState.h"
@@ -86,3 +88,5 @@ float Input::GetMouseY()
 }
 
 NAMESPACE_GNXENGINE_END
+
+#endif // !GNX_WINDOW_SDL

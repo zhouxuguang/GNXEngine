@@ -9,8 +9,12 @@
 #include "Events/MouseEvent.h"
 #include "KeyCodes.h"
 
+#if GNX_WINDOW_SDL
+#include <SDL.h>
+#else
 #define GLFW_INCLUDE_NONE
 #include "GLFW/glfw3.h"
+#endif
 
 NAMESPACE_GNXENGINE_BEGIN
 
@@ -108,6 +112,7 @@ mathutil::Vector2f InputState::GetMousePosition() const
 
 void InputState::PollFromGLFW(void* glfwWindow)
 {
+#if !GNX_WINDOW_SDL
     if (!glfwWindow)
     {
         return;
@@ -116,26 +121,64 @@ void InputState::PollFromGLFW(void* glfwWindow)
     GLFWwindow* window = static_cast<GLFWwindow*>(glfwWindow);
     std::lock_guard<std::mutex> lock(mMutex);
 
-    // 轮询所有可能键的状态
-    // 这里只轮询常用键，可以根据需要扩展
     for (KeyCodeIndex i = 0; i < mKeyStates.size(); ++i)
     {
         int state = glfwGetKey(window, static_cast<int>(i));
         mKeyStates[i] = (state == GLFW_PRESS);
     }
 
-    // 轮询鼠标按钮状态
     for (size_t i = 0; i < mMouseButtonStates.size(); ++i)
     {
         int state = glfwGetMouseButton(window, static_cast<int>(i));
         mMouseButtonStates[i] = (state == GLFW_PRESS);
     }
 
-    // 轮询鼠标位置
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
     mMousePosition.x = static_cast<float>(xpos);
     mMousePosition.y = static_cast<float>(ypos);
+#endif // !GNX_WINDOW_SDL
+}
+
+void InputState::PollFromSDL()
+{
+#if GNX_WINDOW_SDL
+    SDL_PumpEvents();
+    const uint8_t* keyState = SDL_GetKeyboardState(nullptr);
+    std::lock_guard<std::mutex> lock(mMutex);
+
+    for (KeyCodeIndex i = 0; i < mKeyStates.size(); ++i)
+    {
+        int sdlScancode = static_cast<int>(i);
+        mKeyStates[i] = (sdlScancode < SDL_NUM_SCANCODES) && keyState[sdlScancode];
+    }
+
+    uint32_t mouseState = SDL_GetMouseState(nullptr, nullptr);
+    for (size_t i = 0; i < mMouseButtonStates.size(); ++i)
+    {
+        mMouseButtonStates[i] = (mouseState & SDL_BUTTON(i + 1)) != 0;
+    }
+
+    // 轮询触摸/鼠标位置
+    int x, y;
+    if (SDL_GetMouseState(&x, &y) != 0 || (x == 0 && y == 0))
+    {
+        // 移动端：用触摸坐标兜底
+        SDL_Finger* finger = SDL_GetTouchFinger(0, 0);
+        if (finger)
+        {
+            int winW, winH;
+            SDL_GetWindowSize(SDL_GetMouseFocus(), &winW, &winH);
+            mMousePosition.x = finger->x * static_cast<float>(winW);
+            mMousePosition.y = finger->y * static_cast<float>(winH);
+        }
+    }
+    else
+    {
+        mMousePosition.x = static_cast<float>(x);
+        mMousePosition.y = static_cast<float>(y);
+    }
+#endif // GNX_WINDOW_SDL
 }
 
 void InputState::Clear()

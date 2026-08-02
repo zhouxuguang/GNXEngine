@@ -1,3 +1,5 @@
+#if !GNX_WINDOW_SDL
+
 #include "DefaultRenderWindow.h"
 
 #include <Metal/Metal.h>
@@ -23,3 +25,5 @@ void* GetPlatformWindow(GLFWwindow *window)
 }
 
 NAMESPACE_GNXENGINE_END
+
+#endif // !GNX_WINDOW_SDL

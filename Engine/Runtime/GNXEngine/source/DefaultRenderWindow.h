@@ -2,8 +2,10 @@
 //  DefaultRenderWindow.h
 //  GNXEngine
 //
-//  Created by zhouxuguang on 2025/11/2.
+//  GLFW 窗口实现（Windows / macOS / Linux）
 //
+
+#if !GNX_WINDOW_SDL
 
 #ifndef GNX_ENGINE_DEFAULT_RENDER_WINDOW_INCLUDE_NFJS
 #define GNX_ENGINE_DEFAULT_RENDER_WINDOW_INCLUDE_NFJS
@@ -91,3 +93,5 @@ private:
 NAMESPACE_GNXENGINE_END
 
 #endif /* GNX_ENGINE_DEFAULT_RENDER_WINDOW_INCLUDE_NFJS */
+
+#endif // !GNX_WINDOW_SDL

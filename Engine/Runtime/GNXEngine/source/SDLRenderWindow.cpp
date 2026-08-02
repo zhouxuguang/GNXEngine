@@ -1,0 +1,313 @@
+//
+//  SDLRenderWindow.cpp
+//  GNXEngine
+//
+//  SDL2 窗口实现（Android / iOS）
+//  仅负责窗口创建 + 输入事件 + 渲染设备初始化
+//
+
+#if GNX_WINDOW_SDL
+
+#include "SDLRenderWindow.h"
+
+#include "Runtime/RenderSystem/include/SceneManager.h"
+#include "Events/ApplicationEvent.h"
+#include "Events/KeyEvent.h"
+#include "Events/MouseEvent.h"
+#include "InputState.h"
+#include "Runtime/BaseLib/include/LogService.h"
+
+#include <SDL.h>
+
+#if TARGET_OS_IOS
+#include <SDL_metal.h>
+#endif
+
+NAMESPACE_GNXENGINE_BEGIN
+
+// —— 将 SDL Keycode 映射到引擎 KeyCode ——
+static KeyCode MapSDLKeyToKeyCode(SDL_Keycode sdlKey)
+{
+    // 字母/数字键直接映射（SDL Keycode 和 KeyCode 都用 ASCII 兼容值）
+    if (sdlKey >= 'A' && sdlKey <= 'Z')   return static_cast<KeyCode>(sdlKey);
+    if (sdlKey >= '0' && sdlKey <= '9')   return static_cast<KeyCode>(sdlKey);
+    // 功能键
+    switch (sdlKey) {
+    case SDLK_RETURN:    return Enter;
+    case SDLK_ESCAPE:    return Escape;
+    case SDLK_BACKSPACE: return Backspace;
+    case SDLK_TAB:       return Tab;
+    case SDLK_SPACE:     return Space;
+    case SDLK_LEFT:      return Left;
+    case SDLK_RIGHT:     return Right;
+    case SDLK_UP:        return Up;
+    case SDLK_DOWN:      return Down;
+    default:             return static_cast<KeyCode>(0);
+    }
+}
+
+static MouseCode MapSDLButtonToMouseCode(uint8_t sdlButton)
+{
+    switch (sdlButton) {
+    case SDL_BUTTON_LEFT:   return Button0;
+    case SDL_BUTTON_MIDDLE: return Button2;
+    case SDL_BUTTON_RIGHT:  return Button1;
+    default:                return Button0;
+    }
+}
+
+// ========================================================================
+// 构造
+// ========================================================================
+SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
+{
+    mData.width  = props.width;
+    mData.height = props.height;
+    mData.title  = props.title;
+
+    // 初始化 SDL（仅 Video + Events 子系统）
+    const uint32_t sdlInitFlags = SDL_INIT_VIDEO | SDL_INIT_EVENTS;
+    if (SDL_Init(sdlInitFlags) != 0)
+    {
+        LOG_ERROR("SDLRenderWindow: SDL_Init failed: %s", SDL_GetError());
+        return;
+    }
+
+    // 窗口标志
+    uint32_t windowFlags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+
+#if TARGET_OS_IOS
+    windowFlags |= SDL_WINDOW_METAL;
+#elif defined(__ANDROID__)
+    windowFlags |= SDL_WINDOW_VULKAN;
+#endif
+
+    mWindow = SDL_CreateWindow(
+        mData.title.c_str(),
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        static_cast<int>(mData.width), static_cast<int>(mData.height),
+        windowFlags);
+
+    if (!mWindow)
+    {
+        LOG_ERROR("SDLRenderWindow: SDL_CreateWindow failed: %s", SDL_GetError());
+        return;
+    }
+
+    // —— 创建渲染设备 ——
+    void* nativeWnd = nullptr;
+
+#if TARGET_OS_IOS
+    // iOS: SDL_Metal_CreateView → CAMetalLayer
+    SDL_MetalView metalView = SDL_Metal_CreateView(mWindow);
+    if (metalView)
+    {
+        nativeWnd = SDL_Metal_GetLayer(metalView);
+    }
+#elif defined(__ANDROID__)
+    // Android: 暂时为 nullptr，后续通过 SDL_GetWindowWMInfo 获取 ANativeWindow
+    nativeWnd = nullptr;
+#endif
+
+#if TARGET_OS_IOS
+    if (nativeWnd)
+    {
+        mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nativeWnd);
+        if (mRenderDevice)
+        {
+            mRenderDevice->Resize(mData.width, mData.height);
+        }
+    }
+#elif defined(__ANDROID__)
+    {
+        // TODO: Vulkan on Android
+    }
+#endif
+
+    SetVSync(false);
+    Init();
+
+    // 相机初始化
+    auto* sceneManager = RenderSystem::SceneManager::GetInstance();
+    auto cameraPtr = sceneManager->CreateCamera("MainCamera");
+    cameraPtr->LookAt(mathutil::Vector3f(0, 0, 5), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
+    cameraPtr->SetLens(60, mData.width, mData.height, 0.1f, 1000.f);
+}
+
+// ========================================================================
+// 析构
+// ========================================================================
+SDLRenderWindow::~SDLRenderWindow()
+{
+    Shutdown();
+}
+
+// ========================================================================
+// 公共接口
+// ========================================================================
+
+void SDLRenderWindow::OnUpdate()
+{
+    HandleSDLEvents();
+}
+
+bool SDLRenderWindow::ShouldClose() const
+{
+    return mWindow == nullptr;  // 在处理 SDL_QUIT 时会置 null
+}
+
+void SDLRenderWindow::SetEventCallback(const EventCallbackFunc& callback)
+{
+    mData.eventCallback = callback;
+}
+
+void SDLRenderWindow::SetVSync(bool enabled)
+{
+    // SDL 本身没有直接的 VSync API，Metal 端控制
+    mData.VSync = enabled;
+    if (mRenderDevice)
+    {
+        mRenderDevice->SetVSync(enabled);
+    }
+}
+
+void SDLRenderWindow::Resize(uint32_t width, uint32_t height)
+{
+    mData.width  = width;
+    mData.height = height;
+
+    if (mRenderDevice)
+    {
+        mRenderDevice->Resize(width, height);
+    }
+}
+
+void SDLRenderWindow::Shutdown()
+{
+    if (mWindow)
+    {
+        SDL_DestroyWindow(mWindow);
+        mWindow = nullptr;
+    }
+    SDL_Quit();
+}
+
+void SDLRenderWindow::TriggerEventCallback(Event& event)
+{
+    if (mData.eventCallback)
+    {
+        mData.eventCallback(event);
+    }
+}
+
+// ========================================================================
+// 初始化事件回调
+// ========================================================================
+void SDLRenderWindow::Init()
+{
+    // SDL 事件通过 HandleSDLEvents() 在 OnUpdate() 中轮询
+}
+
+// ========================================================================
+// SDL 事件处理（在 OnUpdate 中每帧调用）
+// ========================================================================
+void SDLRenderWindow::HandleSDLEvents()
+{
+    SDL_Event sdlEvent;
+    while (SDL_PollEvent(&sdlEvent))
+    {
+        switch (sdlEvent.type)
+        {
+        // —— 键盘 ——
+        case SDL_KEYDOWN:
+        {
+            if (!sdlEvent.key.repeat)
+            {
+                KeyPressedEvent event(MapSDLKeyToKeyCode(sdlEvent.key.keysym.sym), 0);
+                mData.eventCallback(event);
+            }
+            break;
+        }
+        case SDL_KEYUP:
+        {
+            KeyReleasedEvent event(MapSDLKeyToKeyCode(sdlEvent.key.keysym.sym));
+            mData.eventCallback(event);
+            break;
+        }
+
+        // —— 触摸 / 鼠标按钮 ——
+        case SDL_MOUSEBUTTONDOWN:
+#if TARGET_OS_IOS || defined(__ANDROID__)
+        case SDL_FINGERDOWN:
+#endif
+        {
+            MouseButtonPressedEvent event(
+                (sdlEvent.type == SDL_FINGERDOWN) ? Button0
+                                                  : MapSDLButtonToMouseCode(sdlEvent.button.button));
+            mData.eventCallback(event);
+            break;
+        }
+        case SDL_MOUSEBUTTONUP:
+#if TARGET_OS_IOS || defined(__ANDROID__)
+        case SDL_FINGERUP:
+#endif
+        {
+            MouseButtonReleasedEvent event(
+                (sdlEvent.type == SDL_FINGERUP) ? Button0
+                                                : MapSDLButtonToMouseCode(sdlEvent.button.button));
+            mData.eventCallback(event);
+            break;
+        }
+
+        // —— 触摸/鼠标移动 ——
+        case SDL_MOUSEMOTION:
+        {
+            MouseMovedEvent event(
+                static_cast<float>(sdlEvent.motion.x),
+                static_cast<float>(sdlEvent.motion.y));
+            mData.eventCallback(event);
+            break;
+        }
+#if TARGET_OS_IOS || defined(__ANDROID__)
+        case SDL_FINGERMOTION:
+        {
+            int winW, winH;
+            SDL_GetWindowSize(mWindow, &winW, &winH);
+            MouseMovedEvent event(
+                sdlEvent.tfinger.x * winW,
+                sdlEvent.tfinger.y * winH);
+            mData.eventCallback(event);
+            break;
+        }
+#endif
+
+        // —— 窗口大小变化 ——
+        case SDL_WINDOWEVENT:
+        {
+            if (sdlEvent.window.event == SDL_WINDOWEVENT_RESIZED)
+            {
+                mData.width  = static_cast<uint32_t>(sdlEvent.window.data1);
+                mData.height = static_cast<uint32_t>(sdlEvent.window.data2);
+                WindowResizeEvent event(mData.width, mData.height);
+                mData.eventCallback(event);
+            }
+            break;
+        }
+
+        // —— 退出 ——
+        case SDL_QUIT:
+        {
+            WindowCloseEvent event;
+            mData.eventCallback(event);
+            // 关闭窗口
+            SDL_DestroyWindow(mWindow);
+            mWindow = nullptr;
+            break;
+        }
+        }
+    }
+}
+
+NAMESPACE_GNXENGINE_END
+
+#endif // GNX_WINDOW_SDL

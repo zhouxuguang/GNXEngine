@@ -2,8 +2,10 @@
 //  DefaultRenderWindow.cpp
 //  GNXEngine
 //
-//  Created by zhouxuguang on 2025/11/2.
+//  GLFW 窗口实现（Windows / macOS / Linux）
 //
+
+#if !GNX_WINDOW_SDL
 
 #include "DefaultRenderWindow.h"
 #include "Runtime/RenderSystem/include/SceneManager.h"
@@ -247,3 +249,5 @@ void DefaultRenderWindow::TriggerEventCallback(Event& event)
 }
 
 NAMESPACE_GNXENGINE_END
+
+#endif // !GNX_WINDOW_SDL

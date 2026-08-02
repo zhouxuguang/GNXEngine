@@ -79,6 +79,9 @@ public:
     // 从 GLFW 窗口轮询并更新状态
     void PollFromGLFW(void* glfwWindow);
 
+    // 从 SDL 轮询并更新状态（Android / iOS）
+    void PollFromSDL();
+
     // 清空状态（用于测试或重置）
     void Clear();
 
