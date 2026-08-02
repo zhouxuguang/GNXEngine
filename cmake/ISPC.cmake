@@ -26,14 +26,30 @@ function(add_ispc_target ISPC_OUTPUT_FILES ISPC_HEADER_DIR)
     # error : Unsupported value for --arch, supported values are: x86, x86-64, arm, aarch64, xe64 ispc
     # Apple 平台用 CMAKE_OSX_ARCHITECTURES，其他平台用 CMAKE_SYSTEM_PROCESSOR
     message(STATUS "ISPC arch detect: CMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}, CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
-    if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm|ARM")
+    if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm|ARM|aarch64|arm64|armv7|armv8)")
         set(ISPC_ARCH "aarch64")
         message(STATUS "ISPC: Building for ARM (aarch64) architecture")
-    elseif(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+    elseif(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64)")
         set(ISPC_ARCH "x86-64")
         message(STATUS "ISPC: Building for x86-64 architecture")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(i.86|x86)")
+        set(ISPC_ARCH "x86")
+        message(STATUS "ISPC: Building for x86 architecture")
     else()
         message(FATAL_ERROR "ISPC: Unsupported architecture. CMAKE_OSX_ARCHITECTURES=${CMAKE_OSX_ARCHITECTURES}, CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+
+    # ISPC target OS: must match cross-compilation target, not host
+    if(ANDROID)
+        set(ISPC_TARGET_OS "linux")
+    elseif(APPLE)
+        set(ISPC_TARGET_OS "macos")
+    elseif(WIN32)
+        set(ISPC_TARGET_OS "windows")
+    elseif(UNIX)
+        set(ISPC_TARGET_OS "linux")
+    else()
+        set(ISPC_TARGET_OS "linux")
     endif()
 
     set(ISPC_KNOWN_TARGETS "sse2" "sse4" "avx1-" "avx2" "avx512skx" "avx512knl" "neon")
@@ -75,7 +91,8 @@ function(add_ispc_target ISPC_OUTPUT_FILES ISPC_HEADER_DIR)
                 -h ${ISPC_HEADER_NAME}
                 --arch=${ISPC_ARCH}
                 --target=${ISPC_TARGET}
-                --pic 
+                --target-os=${ISPC_TARGET_OS}
+                --pic
                 ${ISPC_FLAGS}
             DEPENDS ${ispc_src} ${ISPC_HEADER_DEPENDENCIES}
             COMMENT "Compiling ISPC file: ${ispc_src}"
