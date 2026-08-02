@@ -67,6 +67,14 @@ std::string getBuiltInShaderDir()
 
 // /Users/zhouxuguang/work/mycode/GNXEngine/GNXEditor/media
 
+std::string getCompiledShaderDir()
+{
+    fs::path path = __FILE__;
+    fs::path parentDir = path.parent_path();
+    path = (parentDir / fs::path("../../../../data_asset/Shader/")).lexically_normal();
+    return path.string();
+}
+
 std::string getMediaDir()
 {
     fs::path path = __FILE__;

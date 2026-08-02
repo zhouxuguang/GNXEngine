@@ -48,6 +48,9 @@ public:
 
     // ====== Shader 专属 ======
 
+    /** 从 .gnxasset 文件加载 shader 资产 */
+    bool LoadFromFile(const std::string& filepath);
+
     /** 获取反序列化后的 ShaderMessage */
     const ShaderMessage& GetShaderMessage() const { return mShaderMessage; }
 
@@ -67,8 +70,6 @@ public:
     const char* GetEntryPoint() const { return mEntryPoint.c_str(); }
 
 private:
-    bool LoadFromFile(const std::string& filepath);
-
     std::string mFilePath;
     std::string mName;
     std::string mGUID;

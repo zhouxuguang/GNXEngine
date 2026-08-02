@@ -51,17 +51,17 @@ target_link_libraries(RenderSystem PRIVATE metis meshoptimizer)
 #         /Users/zhouxuguang/work/mycode/GNXEngine/source/thirdparty/DirectXShaderCompiler/lib/mac)
 
 if(APPLE)
-target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler TracyClient
+target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler AssetManager nanopb TracyClient
     assimp
     ktx
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/mac/libdxcompiler.dylib)
 elseif(WIN32)
-target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler TracyClient
+target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler AssetManager nanopb TracyClient
     assimp
     ktx
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/win/dxcompiler.lib)
 elseif(LINUX)
-target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler TracyClient
+target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler AssetManager nanopb TracyClient
     assimp
     ktx
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/linux/libdxcompiler.so)
