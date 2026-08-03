@@ -9,7 +9,9 @@
 #include "spirv_cross/spirv_glsl.hpp"
 #include "spirv_cross/spirv_msl.hpp"
 #include "spirv_reflection.h"
+#if !defined(__ANDROID__) && !TARGET_OS_EMBEDDED
 #include "DXCompilerUtil.h"
+#endif
 #include "ReflectionInfo.h"
 #include <unordered_set>
 #include <unordered_map>
@@ -485,7 +487,11 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
 //HLSL shader脚本字符串转换
 ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType)
 {
+#if !defined(__ANDROID__) && !defined(__APPLE_EMBEDDED__)
     return DXCompilerUtil::GetInstance()->compileHLSLToSPIRV(shaderFile, shaderStage, renderType);
+#else
+    return nullptr;
+#endif
 }
 
 CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType)

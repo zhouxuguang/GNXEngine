@@ -608,7 +608,7 @@ void TerrainComponent::SetWireframe(bool wireframe)
     mWireframe = wireframe;
 }
 
-inline bool TerrainComponent::IsUsingMeshShader() const 
+bool TerrainComponent::IsUsingMeshShader() const 
 { 
     return (mUseMeshShader && mTerrainMSPipeline != nullptr) || (mUseMeshShader && mTerrainDepthMSPipeline != nullptr);
 }

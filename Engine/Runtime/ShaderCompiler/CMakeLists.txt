@@ -11,6 +11,11 @@ file(GLOB_RECURSE SHADERCOMPILER_INCLUDES CONFIGURE_DEPENDS ${shadercompiler_inc
 
 set(SOURCE_FILES ${SHADERCOMPILER_SOURCES} ${SHADERCOMPILER_INCLUDES})
 
+# Android/iOS use precompiled shaders; exclude DXC host tool
+if(ANDROID OR IOS)
+    list(FILTER SOURCE_FILES EXCLUDE REGEX ".*DXCompilerUtil\\.(cpp|h)$")
+endif()
+
 add_library(ShaderCompiler OBJECT ${SOURCE_FILES})
 source_group(TREE ${shadercompiler_dir} PREFIX source FILES ${SHADERCOMPILER_SOURCES})
 source_group(TREE ${shadercompiler_include_dir} PREFIX include FILES ${SHADERCOMPILER_INCLUDES})

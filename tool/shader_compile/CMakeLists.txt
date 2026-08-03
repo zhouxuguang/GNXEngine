@@ -24,14 +24,6 @@ target_link_directories(shader_compile PRIVATE
 )
 target_link_libraries(shader_compile PRIVATE
     dxcompiler
-    "-framework QuartzCore"
-    "-framework Metal"
-    "-framework GameController"
-    "-framework CoreGraphics"
-    "-framework ImageIO"
-    "-framework CoreServices"
-    "-framework Foundation"
-    "-framework Accelerate"
 )
 
 set_property(TARGET shader_compile PROPERTY FOLDER "Tool")
