@@ -984,7 +984,7 @@ inline void GetArrayCopy(Type *&dest, ai_uint num) {
     Type *old = dest;
 
     dest = new Type[num];
-    ::memcpy(dest, old, sizeof(Type) * num);
+    ::memcpy((void *)dest, (void *)old, sizeof(Type) * num);
 }
 
 // ------------------------------------------------------------------------------------------------

@@ -94,6 +94,9 @@ if(ANDROID AND CMAKE_ANDROID_ARCH_ABI STREQUAL "arm64-v8a")
 elseif(ANDROID AND CMAKE_ANDROID_ARCH_ABI STREQUAL "armeabi-v7a")
     enable_language(ASM)
     list(APPEND JPEG_FILES ${imagecodec_dir}/libjpeg/jsimd_neon.c ${imagecodec_dir}/libjpeg/jsimd_arm_neon.S)
+elseif(APPLE AND CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
+    enable_language(ASM)
+    list(APPEND JPEG_FILES ${imagecodec_dir}/libjpeg/jsimd_neon.c ${imagecodec_dir}/libjpeg/jsimd_arm64_neon.S)
 endif()
 
 
