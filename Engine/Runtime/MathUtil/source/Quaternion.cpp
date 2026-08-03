@@ -369,6 +369,7 @@ Quaternion<T> Quaternion<T>::Inverse(const Quaternion<T>& rotation)
         result.x = -rotation.x;
         result.y = -rotation.y;
         result.z = -rotation.z;
+        result.w = rotation.w;
         
         return result;
     }
@@ -409,12 +410,10 @@ Quaternion<T> Quaternion<T>::Slerp(const Quaternion<T> &p, const Quaternion<T> &
         cosOmega = -cosOmega;
     }
 
-    assert(cosOmega < 1.0);
-
     T k0, k1;
-    if (cosOmega > 0.999999) 
+    if (cosOmega > T(0.999999)) 
     {
-        k0 = 1.0 - t;
+        k0 = T(1.0) - t;
         k1 = t;
 
     } 

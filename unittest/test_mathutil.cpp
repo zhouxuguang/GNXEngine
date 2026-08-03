@@ -11,6 +11,9 @@
 #include "Runtime/MathUtil/include/MathUtil.h"
 #include "Runtime/MathUtil/include/AABB.h"
 #include "Runtime/MathUtil/include/Sphere.h"
+#include "Runtime/MathUtil/include/Plane.h"
+#include "Runtime/MathUtil/include/Intersection.h"
+#include "Runtime/MathUtil/include/Ray.h"
 
 using namespace mathutil;
 using Catch::Matchers::WithinAbs;
@@ -1331,7 +1334,8 @@ TEST_CASE("MathUtil Sign", "[mathutil][mathutil]")
 {
     REQUIRE_THAT(Sign(5.0f), WithinAbs(1.0f, 1e-5f));
     REQUIRE_THAT(Sign(-5.0f), WithinAbs(-1.0f, 1e-5f));
-    REQUIRE_THAT(Sign(0.0f), WithinAbs(-1.0f, 1e-5f));  // Sign returns -1 for 0 per implementation
+    // Fix #3: Sign(0) returns 0 now
+    REQUIRE_THAT(Sign(0.0f), WithinAbs(0.0f, 1e-5f));
 }
 
 TEST_CASE("MathUtil Mix", "[mathutil][mathutil]")
@@ -1475,4 +1479,142 @@ TEST_CASE("Sphere FromPositions empty vector", "[mathutil][sphere]")
     REQUIRE_THAT(s.mCenter.y, WithinAbs(0.0f, 1e-5f));
     REQUIRE_THAT(s.mCenter.z, WithinAbs(0.0f, 1e-5f));
     REQUIRE_THAT(s.mRadius, WithinAbs(0.0f, 1e-5f));
+}
+
+// ==================== Regression Tests for Bug Fixes ====================
+
+TEST_CASE("Matrix3x3 determinant regression", "[mathutil][regression][determinant]")
+{
+    Matrix3x3f m(2, 1, 0, 1, 3, 1, 0, 1, 2);
+    REQUIRE_THAT(m.Determinant(), WithinAbs(8.0f, 1e-5f));
+
+    Matrix3x3f inv = m.Inverse();
+    Matrix3x3f product = m * inv;
+    REQUIRE_THAT(product[0][0], WithinAbs(1.0f, 1e-3f));
+    REQUIRE_THAT(product[1][1], WithinAbs(1.0f, 1e-3f));
+    REQUIRE_THAT(product[2][2], WithinAbs(1.0f, 1e-3f));
+    REQUIRE_THAT(product[0][1], WithinAbs(0.0f, 1e-3f));
+}
+
+TEST_CASE("Matrix4x4 CreateRotationZ regression", "[mathutil][regression][rotation]")
+{
+    Matrix4x4f m = Matrix4x4f::CreateRotationZ(90.0f);
+    Vector3f v(1.0f, 0.0f, 0.0f);
+    Vector3f r = m * v;
+    REQUIRE_THAT(r.x, WithinAbs(0.0f, 1e-3f));
+    REQUIRE_THAT(r.y, WithinAbs(1.0f, 1e-3f));
+    REQUIRE_THAT(r.z, WithinAbs(0.0f, 1e-3f));
+}
+
+TEST_CASE("Quaternion Inverse unit regression", "[mathutil][regression][inverse]")
+{
+    Quaternionf q;
+    q.FromAngleAxis(45.0f, Vector3f(0.0f, 1.0f, 0.0f));
+    q.Normalize();
+    Quaternionf inv = Quaternionf::Inverse(q);
+    REQUIRE_THAT(inv.w, WithinAbs(q.w, 1e-5f));
+    REQUIRE_THAT(inv.x, WithinAbs(-q.x, 1e-5f));
+    REQUIRE_THAT(inv.y, WithinAbs(-q.y, 1e-5f));
+    REQUIRE_THAT(inv.z, WithinAbs(-q.z, 1e-5f));
+}
+
+TEST_CASE("Sphere IsInside regression", "[mathutil][regression][sphere]")
+{
+    Spheref s1(Vector3f(0.0f, 0.0f, 0.0f), 1.0f);
+    Spheref s2(Vector3f(0.0f, 0.0f, 0.0f), 1.0f);
+    REQUIRE(s1.IsInside(s2));
+
+    Spheref big(Vector3f(0.0f, 0.0f, 0.0f), 10.0f);
+    Spheref small(Vector3f(5.0f, 0.0f, 0.0f), 2.0f);
+    REQUIRE(big.IsInside(small));
+
+    Spheref far(Vector3f(100.0f, 0.0f, 0.0f), 1.0f);
+    REQUIRE(!big.IsInside(far));
+}
+
+TEST_CASE("Intersection regression tests", "[mathutil][regression][intersection]")
+{
+    Vector3f v0(0.0f, 0.0f, 0.0f), v1(1.0f, 0.0f, 0.0f), v2(0.0f, 0.0f, 1.0f);
+    Rayf parallel(Vector3f(0.3f, 1.0f, 0.3f), Vector3f(1.0f, 0.0f, 0.0f));
+    float t;
+    REQUIRE(!IntersectRayTriangle(parallel, v0, v1, v2, &t));
+
+    AxisAlignedBoxf a(Vector3f(0.0f, 0.0f, 0.0f), Vector3f(2.0f, 2.0f, 2.0f));
+    AxisAlignedBoxf b(Vector3f(1.0f, 1.0f, 1.0f), Vector3f(3.0f, 3.0f, 3.0f));
+    REQUIRE(IntersectAABBAABB(a, b));
+    AxisAlignedBoxf c(Vector3f(5.0f, 5.0f, 5.0f), Vector3f(6.0f, 6.0f, 6.0f));
+    REQUIRE(!IntersectAABBAABB(a, c));
+}
+
+TEST_CASE("Matrix4x4 CreateLookAt regression", "[mathutil][regression][lookat]")
+{
+    Matrix4x4f view = Matrix4x4f::CreateLookAt(
+        Vector3f(0.0f, 0.0f, 5.0f), Vector3f(0.0f, 0.0f, 0.0f), Vector3f(0.0f, 1.0f, 0.0f));
+    Matrix3x3f rot = view.GetMatrix3();
+    REQUIRE_THAT(rot.Determinant(), WithinAbs(1.0f, 1e-1f));
+    Vector3f row0(rot[0][0], rot[0][1], rot[0][2]);
+    REQUIRE_THAT(row0.Length(), WithinAbs(1.0f, 1e-3f));
+}
+
+TEST_CASE("MathUtil FastSin FastCos table regression", "[mathutil][regression][fasttrig]")
+{
+    float s0 = MathUtil::FastSin(0.0f);
+    float s360 = MathUtil::FastSin(360.0f);
+    REQUIRE_THAT(s0, WithinAbs(s360, 1e-5f));
+    REQUIRE_THAT(s0, WithinAbs(0.0f, 1e-5f));
+}
+
+TEST_CASE("PlaneInitPlane Vector4 regression", "[mathutil][regression][plane]")
+{
+    // Verify plane constructed from unnormalized Vector4 properly normalizes
+    // Vector4(2,0,0,10) -> normal=(1,0,0), dist=5 (w normalized too)
+    Vector4<float> coff(2.0f, 0.0f, 0.0f, 10.0f);
+    Plane<float> localplane(coff);
+    REQUIRE(localplane.GetNormal().x > 0.99f);
+    REQUIRE(localplane.GetNormal().x < 1.01f);
+    REQUIRE(localplane.GetNormal().y > -0.01f);
+    REQUIRE(localplane.GetNormal().y < 0.01f);
+    REQUIRE(localplane.GetNormal().z > -0.01f);
+    REQUIRE(localplane.GetNormal().z < 0.01f);
+}
+
+TEST_CASE("MathUtil Sign function regression", "[mathutil][regression][sign]")
+{
+    REQUIRE_THAT(Sign(5.0f), WithinAbs(1.0f, 1e-5f));
+    REQUIRE_THAT(Sign(-5.0f), WithinAbs(-1.0f, 1e-5f));
+    REQUIRE_THAT(Sign(0.0f), WithinAbs(0.0f, 1e-5f));
+}
+
+TEST_CASE("Quaternion Pow regression", "[mathutil][regression][pow]")
+{
+    Quaternionf q;
+    q.FromAngleAxis(0.01f, Vector3f(1.0f, 0.0f, 0.0f));
+    q.Normalize();
+    Quaternionf p = Quaternionf::Pow(q, 2.0f);
+    p.Normalize();
+    REQUIRE_THAT(p.Norm(), WithinAbs(1.0f, 1e-3f));
+}
+
+TEST_CASE("Matrix4x4 MakeIdentity regression", "[mathutil][regression][identity]")
+{
+    Matrix4x4f m = Matrix4x4f::CreateTranslate(10.0f, 20.0f, 30.0f);
+    m.MakeIdentity();
+    REQUIRE(m.IsIdentity());
+    Vector3f v(5.0f, 6.0f, 7.0f);
+    Vector3f r = m * v;
+    REQUIRE_THAT(r.x, WithinAbs(v.x, 1e-5f));
+    REQUIRE_THAT(r.y, WithinAbs(v.y, 1e-5f));
+    REQUIRE_THAT(r.z, WithinAbs(v.z, 1e-5f));
+}
+
+TEST_CASE("Quaternion Slerp near-parallel regression", "[mathutil][regression][slerp]")
+{
+    Quaternionf q1, q2;
+    q1.FromAngleAxis(30.0f, Vector3f(0.0f, 1.0f, 0.0f));
+    q1.Normalize();
+    q2.FromAngleAxis(30.001f, Vector3f(0.0f, 1.0f, 0.0f));
+    q2.Normalize();
+    Quaternionf mid = Quaternionf::Slerp(q1, q2, 0.5f);
+    mid.Normalize();
+    REQUIRE_THAT(mid.Norm(), WithinAbs(1.0f, 1e-3f));
 }

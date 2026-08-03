@@ -76,12 +76,15 @@ Vector3<T> Vector3<T>::Reflection(const Vector3& incident, const Vector3& normal
 template <typename T>
 Vector3<T> Vector3<T>::Refraction(const Vector3& incident, const Vector3& normal, T eta)
 {
-    T k = 1.0 - eta * eta * (1.0 - normal.DotProduct(incident) * normal.DotProduct(incident));
+    T nDotI = normal.DotProduct(incident);
+    T k = 1.0 - eta * eta * (1.0 - nDotI * nDotI);
     if (k < 0)
     {
-        return Vector3<T>(0, 0, 0);
+        // Total internal reflection: no refraction ray exists,
+        // return the reflected direction instead.
+        return Vector3<T>::Reflection(incident, normal);
     }
-    return incident * eta - normal * (eta * normal.DotProduct(incident) + sqrt(k));
+    return incident * eta - normal * (eta * nDotI + sqrt(k));
 }
 
 template <typename T>

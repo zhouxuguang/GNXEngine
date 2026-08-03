@@ -251,8 +251,8 @@ Matrix3x3<T> Matrix3x3<T>::operator-(const Matrix3x3<T>& rhs) const
 template <typename T>
 T Matrix3x3<T>::Determinant() const
 {
-	return mValues[0][0]*(mValues[1][1]*mValues[2][2] - mValues[1][2]*mValues[2][1]) +
-		mValues[0][1]*(mValues[1][2]*mValues[2][0] - mValues[1][0]*mValues[2][2]) + 
+	return mValues[0][0]*(mValues[1][1]*mValues[2][2] - mValues[1][2]*mValues[2][1]) -
+		mValues[0][1]*(mValues[1][0]*mValues[2][2] - mValues[1][2]*mValues[2][0]) + 
 		mValues[0][2]*(mValues[1][0]*mValues[2][1] - mValues[1][1]*mValues[2][0]);
 }
 

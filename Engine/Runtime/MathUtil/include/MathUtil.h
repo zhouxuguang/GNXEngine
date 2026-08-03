@@ -57,11 +57,15 @@ inline T Mix(const T& x, const T& y, const T& a)
 template <class T>
 inline const T Sign(const T& value)
 {
-	if (value > 0)
+	if (value > T(0))
 	{
-		return 1.0;
+		return T(1);
 	}
-	return -1.0;
+	if (value < T(0))
+	{
+		return T(-1);
+	}
+	return T(0);
 }
 
 float GetClamp(float x,float fMin,float fMax);
