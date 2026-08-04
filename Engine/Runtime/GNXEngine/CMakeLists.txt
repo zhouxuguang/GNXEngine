@@ -83,7 +83,8 @@ elseif(MSVC)
 endif()
 
 if(APPLE)
-    target_link_libraries(GNXEngine PRIVATE "-framework QuartzCore" "-framework Metal" "-framework GameController")
+    target_link_libraries(GNXEngine PRIVATE "-framework QuartzCore" "-framework Metal" "-framework GameController"
+        "-framework CoreGraphics" "-framework ImageIO" "-framework CoreServices" "-framework Foundation")
     target_compile_options(GNXEngine PRIVATE "-fobjc-arc")
     set_target_properties(GNXEngine PROPERTIES LINK_FLAGS "-fobjc-arc")
 endif()

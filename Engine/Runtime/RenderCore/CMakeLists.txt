@@ -69,7 +69,7 @@ target_link_libraries(RenderCore PRIVATE MathUtil spirv_reflect TracyClient)
 
 if(APPLE)
     target_compile_options(RenderCore PRIVATE "-fobjc-arc")
-    target_link_libraries(RenderCore PUBLIC "-framework QuartzCore" "-framework Metal")
+    target_link_libraries(RenderCore PUBLIC "-framework QuartzCore" "-framework Metal" "-framework Foundation")
 endif()
 
 set_property(TARGET RenderCore PROPERTY FOLDER "Runtime")

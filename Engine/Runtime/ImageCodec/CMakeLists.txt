@@ -128,7 +128,8 @@ source_group(TREE ${imagecodec_dir} PREFIX source FILES ${IMAGECODEC_SOURCES} ${
 source_group(TREE ${imagecodec_include_dir} PREFIX include FILES ${IMAGECODEC_INCLUDES})
 
 if(APPLE)
-    target_link_libraries(ImageCodec PRIVATE "-framework Accelerate")
+    target_link_libraries(ImageCodec PRIVATE "-framework Accelerate"
+        "-framework Foundation" "-framework CoreGraphics" "-framework ImageIO" "-framework CoreServices")
     target_compile_options(ImageCodec PRIVATE "-fobjc-arc")
 endif()
 
