@@ -1,11 +1,24 @@
 # 查找 ISPC 编译器
-find_program(CMAKE_ISPC_COMPILER ispc
-    PATHS
-        "$ENV{ISPC_HOME}/bin"
-        "$ENV{HOME}/ispc/bin"
-        "/usr/local/bin"
-    DOC "Intel ISPC compiler"
-)
+# 优先用 fetch-deps.ps1 下载到 buildtools/ 的本地版本
+# 路径: buildtools/ispc/{win|mac|linux}/ispc(.exe)
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+    set(_ispc_host_exe "${CMAKE_SOURCE_DIR}/buildtools/ispc/win/ispc.exe")
+elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    set(_ispc_host_exe "${CMAKE_SOURCE_DIR}/buildtools/ispc/mac/ispc")
+else()
+    set(_ispc_host_exe "${CMAKE_SOURCE_DIR}/buildtools/ispc/linux/ispc")
+endif()
+
+# find_program(CMAKE_ISPC_COMPILER ${_ispc_exe}
+#     PATHS
+#         "${_ispc_host_exe}"
+#     DOC "Intel ISPC compiler"
+# )
+
+set(CMAKE_ISPC_COMPILER ${_ispc_host_exe})
+
+#message(STATUS "ISPC host exe: ${_ispc_host_exe}")
+message(STATUS "ISPC found:    ${CMAKE_ISPC_COMPILER}")
 
 if(NOT CMAKE_ISPC_COMPILER)
     message(FATAL_ERROR "ISPC compiler not found. Please install ISPC and set ISPC_HOME.")
