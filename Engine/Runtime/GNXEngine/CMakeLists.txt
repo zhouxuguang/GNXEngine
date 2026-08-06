@@ -70,8 +70,8 @@ if(APPLE)
     # target_link_libraries(GNXEngine PRIVATE
     #     "-Wl,-force_load,$<TARGET_FILE:ISPCCompress>"
     # )
-elseif(UNIX AND NOT ANDROID)
-    # Linux使用 --whole-archive
+elseif(ANDROID)
+    # ANDROID使用 --whole-archive
     target_link_libraries(GNXEngine PRIVATE 
         -Wl,--whole-archive
         ISPCCompress

@@ -27,7 +27,7 @@ NS_ASSETPROCESS_BEGIN
  *   importer.SetOutputPath("data_asset/shaders/pbr_vs.ios.gnxasset");
  *   importer.Import();
  */
-class ShaderImporter : public AssetImporter
+class ASSET_PROCESS_API ShaderImporter : public AssetImporter
 {
 public:
     ShaderImporter();
