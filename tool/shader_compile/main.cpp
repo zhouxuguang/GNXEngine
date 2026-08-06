@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
 
     if (inputPath.empty())
     {
-        std::cerr << "错误: 未指定输入文件" << std::endl;
+        std::cerr << "ERROR: No input file specified" << std::endl;
         return 1;
     }
 
@@ -89,10 +89,10 @@ int main(int argc, char* argv[])
         outputPath = inputPath + ".gnxasset";
     }
 
-    std::cout << "=== Shader 离线编译 ===" << std::endl;
-    std::cout << "  输入:  " << inputPath << std::endl;
-    std::cout << "  目标格式: " << format << std::endl;
-    std::cout << "  输出:  " << outputPath << std::endl;
+    std::cout << "=== Shader Offline Compilation ===" << std::endl;
+    std::cout << "  Input:  " << inputPath << std::endl;
+    std::cout << "  Target: " << format << std::endl;
+    std::cout << "  Output: " << outputPath << std::endl;
 
     AssetProcess::ShaderImporter importer;
     importer.SetSourcePath(inputPath);
@@ -102,10 +102,10 @@ int main(int argc, char* argv[])
 
     if (!importer.ImportAndSave())
     {
-        std::cerr << "编译失败!" << std::endl;
+        std::cerr << "Compilation failed!" << std::endl;
         return 1;
     }
 
-    std::cout << "编译成功: " << outputPath << std::endl;
+    std::cout << "Compilation succeeded: " << outputPath << std::endl;
     return 0;
 }
