@@ -72,11 +72,11 @@ if(APPLE)
     # )
 elseif(ANDROID)
     # ANDROID使用 --whole-archive
-    target_link_libraries(GNXEngine PRIVATE 
-        -Wl,--whole-archive
-        ISPCCompress
-        -Wl,--no-whole-archive
-    )
+    # target_link_libraries(GNXEngine PRIVATE 
+    #     -Wl,--whole-archive
+    #     ISPCCompress
+    #     -Wl,--no-whole-archive
+    # )
 elseif(MSVC)
     # Windows 使用 /WHOLEARCHIVE
     target_link_options(GNXEngine PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:ISPCCompress>")
