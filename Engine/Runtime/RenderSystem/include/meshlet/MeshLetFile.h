@@ -32,6 +32,7 @@
 #include <vector>
 #include <string>
 #include <cassert>
+#include <cstring>
 
 #include "MeshLetCommon.h"
 

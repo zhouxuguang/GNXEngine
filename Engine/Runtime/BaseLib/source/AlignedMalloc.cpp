@@ -62,7 +62,7 @@ size_t GetAllocationSize(void* ptr)
 #elif OS_MACOS
     return malloc_size(ptr);
 #elif OS_LINUX
-    return = malloc_usable_size(ptr);
+    return malloc_usable_size(ptr);
 #endif
 }
 

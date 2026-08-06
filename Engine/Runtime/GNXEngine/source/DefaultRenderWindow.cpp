@@ -25,6 +25,23 @@ void* GetPlatformWindow(GLFWwindow *window)
 }
 #endif
 
+#if OS_LINUX
+#include <X11/Xlib.h>
+struct GNX_X11ViewHandle
+{
+    Display* display;
+    ::Window window;
+};
+
+void* GetPlatformWindow(GLFWwindow *window)
+{
+    GNX_X11ViewHandle* h = new GNX_X11ViewHandle();
+    h->display = glfwGetX11Display();
+    h->window = (::Window)glfwGetX11Window(window);
+    return (void*)h;
+}
+#endif
+
 DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
 {
     mData.width = props.width;

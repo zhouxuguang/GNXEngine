@@ -155,6 +155,10 @@ void MutexLock::UnLock()
 #else
 #include <pthread.h>
 
+#include <sys/time.h>
+#include <time.h>
+#include <errno.h>
+
 extern unsigned long GetTickCount(void);
 
 //NDK pthread_mutex_timedlock代替pthread_mutex_lock_timeout_np
@@ -216,6 +220,9 @@ bool MutexLock::TryLock(unsigned long msecs)
 }
 
 #else
+
+#if !defined(_POSIX_TIMEOUTS) || ((_POSIX_TIMEOUTS - 200112L) < 0L)
+
 #include <sys/time.h>
 #include <errno.h>
 
@@ -244,13 +251,15 @@ static int pthread_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec
     return retcode;
 }
 
+#endif
+
 bool MutexLock::TryLock(unsigned long mills)
 {
 #if defined(_POSIX_TIMEOUTS) && (_POSIX_TIMEOUTS - 200112L) >= 0L
     struct timespec timeToWait;
     struct timeval now;
     
-    gettimeofday(&now,NULL);
+    gettimeofday(&now, NULL);
     
     long seconds = mills/1000;
     long nanoseconds = (mills - seconds * 1000) * 1000000;

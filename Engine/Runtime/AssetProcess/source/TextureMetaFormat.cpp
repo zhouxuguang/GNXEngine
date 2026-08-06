@@ -72,7 +72,7 @@ namespace YAML
 
     // MipmapMode 转换
     template<>
-    struct YAML::convert<AssetProcess::MipmapMode>
+    struct convert<AssetProcess::MipmapMode>
     {
         static Node encode(const AssetProcess::MipmapMode& rhs)
         {

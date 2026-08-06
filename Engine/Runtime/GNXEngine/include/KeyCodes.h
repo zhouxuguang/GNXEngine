@@ -3,6 +3,26 @@
 
 #include "PreDefine.h"
 
+/*
+ * X11 headers (pulled in via glfw native headers) define macros Button1..Button5
+ * which collide with our MouseCode enum identifiers. Undefine them if present.
+ */
+#ifdef Button1
+#undef Button1
+#endif
+#ifdef Button2
+#undef Button2
+#endif
+#ifdef Button3
+#undef Button3
+#endif
+#ifdef Button4
+#undef Button4
+#endif
+#ifdef Button5
+#undef Button5
+#endif
+
 NAMESPACE_GNXENGINE_BEGIN
 
 using KeyCode = uint16_t;
