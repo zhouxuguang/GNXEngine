@@ -1,6 +1,6 @@
 # GNXEngine
 
-轻量级跨平台游戏引擎，使用 C++17 开发，CMake 构建，目前支持 macOS 和 Windows。
+轻量级跨平台游戏引擎，使用 C++17 开发，CMake 构建，支持 **Windows / macOS / Linux**，并已打通 **iOS / Android** 交叉编译（当前仅编译通过，尚未完整运行验证）。
 
 ## 特性
 
@@ -13,6 +13,18 @@
 - **HLSL Shader 管线**：DXC → SPIR-V → Spirv-Cross → 各后端 Shader 语言
 - **Mesh Shader**：支持 Task + Mesh Shader 管线（Metal / Vulkan）
 - **Entity-Component 架构**：传统的 Entity-Component 模式构造上层业务
+
+## 平台支持
+
+### 图形后端
+
+| 平台 | 图形后端 | 窗口系统 | 说明 |
+|------|---------|---------|------|
+| **macOS** | Metal | GLFW | 原生 Metal 渲染 |
+| **iOS** | Metal | SDL2 | 交叉编译已打通（编译通过） |
+| **Windows** | Vulkan | GLFW | — |
+| **Linux** | Vulkan | GLFW | — |
+| **Android** | Vulkan | SDL2 | 交叉编译已打通（编译通过） |
 
 ## 架构
 
@@ -79,7 +91,7 @@
 
 | 模块 | 说明 | 依赖 |
 |------|------|------|
-| **GNXEngine** | 引擎核心库，事件系统、输入、序列化 | RenderSystem, AssetProcess, AssetManager, Allocator |
+| **GNXEngine** | 引擎核心库，事件系统、输入、序列化（窗口：GLFW/SDL2） | RenderSystem, AssetProcess, AssetManager, Allocator |
 | **RenderSystem** | 渲染系统上层，场景、相机、光照、帧图、后处理 | RenderCore, ShaderCompiler |
 | **AssetProcess** | 资源处理，模型导入(Assimp)、IBL、纹理压缩转换 | RenderSystem, AssetManager, ImageCodec |
 | **AssetManager** | 资源管理器，资源加载、缓存、生命周期 | ImageCodec |
@@ -99,8 +111,10 @@
 | 工具 | 版本要求 | 说明 |
 |------|---------|------|
 | **CMake** | 3.17+ | 构建系统 |
-| **C++17 编译器** | — | macOS: Xcode Command Line Tools；Windows: MSVC 2019+ |
+| **C++17 编译器** | — | macOS: Xcode Command Line Tools；Windows: MSVC 2019+；Linux: GCC 9+ / Clang |
 | **Intel ISPC** | 1.x+ | 纹理压缩编译所需，需安装并设置环境变量 |
+
+> **注**：Linux 编译还需安装 Vulkan SDK（渲染后端）与 X11/Wayland 开发库（GLFW 窗口依赖）。
 
 #### ISPC 安装
 
@@ -136,13 +150,13 @@ echo 'export ISPC_HOME=/path/to/ispc' >> ~/.zshrc
 
 | 工具 | 说明 |
 |------|------|
-| **Qt6** (或 Qt5) | 编辑器所需，仅需 Widgets 模块，编译时加 `-DENABLE_EDITOR=ON` |
+| **Qt6** (或 Qt5) | 编辑器所需，仅需 Widgets 模块，编译时加 `-DENABLE_EDITOR=ON`；Linux 需额外安装 `qtbase5-dev` / `libqt6widgets6` |
 
 #### 已内嵌的依赖
 
 以下依赖已在 `ThirdParty/` 目录中，无需单独安装：
 
-DXC (Shader 编译), Assimp (模型导入), SPIRV-Reflect, TBB, GLFW, KTX, nlohmann_json, nanopb, yaml-cpp, mimalloc, meshoptimizer, zlib, miniz, pvrtc, Vulkan Headers
+DXC (Shader 编译), Assimp (模型导入), SPIRV-Reflect, TBB, GLFW, SDL2 (iOS/Android 窗口), KTX, nlohmann_json, nanopb, yaml-cpp, mimalloc, meshoptimizer, zlib, miniz, pvrtc, Vulkan Headers
 
 ### 编译步骤
 
