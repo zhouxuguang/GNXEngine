@@ -11,11 +11,10 @@
 #   ./fetch-deps.sh "https://github.com/zhouxuguang/engine-dep/releases/download/1.0/ispc.zip"
 #   ./fetch-deps.sh "https://example.com/tools.tar.gz" "$PWD/tools"
 #
-# 镜像加速（国内直连 GitHub 很慢/不稳时使用）:
-#   FETCH_MIRROR=ghfast   ./fetch-deps.sh          # 指定镜像名
-#   FETCH_MIRROR="https://gh-proxy.com/" ./fetch-deps.sh
-#   FETCH_MIRROR=""       ./fetch-deps.sh          # 禁用镜像，强制直连
-#   （默认 auto：对 github.com 链接自动依次尝试内置镜像，失败后回退直连）
+# 代理说明:
+#   macOS 上 curl 默认不读取系统代理，脚本会自动检测系统代理（scutil --proxy）
+#   并走代理下载，保证与 Windows 的 Invoke-WebRequest 一致的速度。
+#   如需手动指定代理: HTTPS_PROXY=http://127.0.0.1:7897 ./fetch-deps.sh
 #
 set -euo pipefail
 
@@ -26,7 +25,6 @@ DEFAULT_DEST_DIR="${SCRIPT_DIR}/buildtools"
 
 URL="${1:-$DEFAULT_URL}"
 DEST_DIR="${2:-$DEFAULT_DEST_DIR}"
-MIRROR="${FETCH_MIRROR:-auto}"
 
 # ---------------- 检测 7z 命令（p7zip: 7zz / 7z / 7za） ----------------
 SZIP_CMD=""
@@ -37,41 +35,36 @@ for c in 7zz 7z 7za; do
     fi
 done
 
-# ---------------- 内置 GitHub 镜像表（兼容 bash 3.2，不用关联数组） ----------------
-# 将镜像名解析为完整前缀；若是完整 URL 则原样返回
-resolve_mirror() {
-    local name="$1"
-    case "${name}" in
-        ghfast)   echo "https://ghfast.top/" ;;
-        gh-proxy) echo "https://gh-proxy.com/" ;;
-        ghproxy)  echo "https://ghproxy.net/" ;;
-        ghps)     echo "https://ghps.cc/" ;;
-        *)        echo "${name}" ;;
-    esac
-}
-
-# 生成候选下载地址列表（按优先级，最后直连兜底）
-build_candidates() {
-    local candidates=()
-    local m prefix
-    if [[ "${MIRROR}" == "auto" ]]; then
-        if [[ "${URL}" == *github.com* ]]; then
-            for m in ghfast gh-proxy ghproxy; do
-                candidates+=("$(resolve_mirror "$m")${URL}")
-            done
-        fi
-        candidates+=("${URL}")          # 直连兜底
-    elif [[ -z "${MIRROR}" ]]; then
-        candidates+=("${URL}")          # 禁用镜像
-    else
-        prefix="$(resolve_mirror "${MIRROR}")"
-        if [[ -n "${prefix}" && "${URL}" == *github.com* ]]; then
-            candidates+=("${prefix}${URL}")
-        fi
-        candidates+=("${URL}")
+# ---------------- macOS 系统代理自动检测 ----------------
+# 关键：curl 默认不读取 macOS 系统设置里的代理（GUI 配置），
+# 必须通过 scutil --proxy 读取后显式传给 curl。
+# 这样 Mac 上已开启代理（Clash/Surge 等）时，下载走代理，速度与 Windows 一致。
+CURL_PROXY_ARGS=()
+detect_system_proxy() {
+    # 若用户已显式设置环境变量，优先使用（不覆盖用户选择）
+    if [[ -n "${HTTPS_PROXY:-}" || -n "${https_proxy:-}" ]]; then
+        return
     fi
-    printf '%s\n' "${candidates[@]}"
+    # 仅 macOS 需要；Linux/其他平台没有 scutil
+    if [[ "$(uname)" != "Darwin" ]]; then
+        return
+    fi
+    if ! command -v scutil >/dev/null 2>&1; then
+        return
+    fi
+
+    # 读取系统代理配置（HTTPEnable/HTTPSEnable/HTTPProxy/HTTPPort）
+    local proxy_info proxy_enable proxy_host proxy_port
+    proxy_info="$(scutil --proxy 2>/dev/null || true)"
+    proxy_enable="$(echo "${proxy_info}" | grep -i 'HTTPEnable' | awk -F: '{print $2}' | tr -d ' ')"
+    proxy_host="$(echo "${proxy_info}" | grep -i 'HTTPProxy' | awk -F: '{print $2}' | tr -d ' ')"
+    proxy_port="$(echo "${proxy_info}" | grep -i 'HTTPPort' | awk -F: '{print $2}' | tr -d ' ')"
+
+    if [[ "${proxy_enable}" == "1" && -n "${proxy_host}" && -n "${proxy_port}" ]]; then
+        CURL_PROXY_ARGS=(-x "http://${proxy_host}:${proxy_port}")
+    fi
 }
+detect_system_proxy
 
 # ---------------- 辅助输出函数 ----------------
 echo_info()  { printf "\033[32m[*]\033[0m %s\n" "$1"; }
@@ -110,35 +103,25 @@ if [[ ! -d "${DEST_DIR}" ]]; then
     echo_info "Created: ${DEST_DIR}"
 fi
 
-# ---------------- 下载（多镜像回退 + 断点续传） ----------------
-CANDIDATES=()
-while IFS= read -r cand; do
-    CANDIDATES+=("${cand}")
-done < <(build_candidates)
-echo_step "1" "Downloading ${ARCHIVE_NAME} (共 ${#CANDIDATES[@]} 个候选地址) ..."
+# ---------------- 下载（直连 + 系统代理） ----------------
+echo_step "1" "Downloading ${ARCHIVE_NAME} ..."
+if [[ ${#CURL_PROXY_ARGS[@]} -gt 0 ]]; then
+    echo_info "使用系统代理: ${CURL_PROXY_ARGS[*]}"
+fi
+echo "    -> ${URL}"
 
-downloaded=0
-for cand in "${CANDIDATES[@]}"; do
-    echo "    -> ${cand}"
-    # -C - 断点续传；--speed-time/--speed-limit 超时中止死连接；--retry 失败重试
-    if curl -fSL --retry 3 --connect-timeout 15 \
-             --speed-time 30 --speed-limit 1024 \
-             -C - -o "${ARCHIVE_PATH}" "${cand}"; then
-        if verify_archive "${ARCHIVE_PATH}"; then
-            downloaded=1
-            echo "    Done: ${ARCHIVE_PATH}"
-            break
-        else
-            echo_error "下载内容不是有效的归档文件，尝试下一个镜像..."
-            rm -f "${ARCHIVE_PATH}"
-        fi
-    else
-        echo_error "下载失败，尝试下一个镜像..."
+if curl -fSL --retry 3 --connect-timeout 10 \
+         --speed-time 10 --speed-limit 4096 \
+         "${CURL_PROXY_ARGS[@]}" \
+         -o "${ARCHIVE_PATH}" "${URL}"; then
+    if ! verify_archive "${ARCHIVE_PATH}"; then
+        echo_error "下载内容不是有效的归档文件: ${ARCHIVE_NAME}"
+        rm -f "${ARCHIVE_PATH}"
+        exit 1
     fi
-done
-
-if [[ "${downloaded}" -ne 1 ]]; then
-    echo_error "所有下载地址均失败: ${URL}"
+    echo "    Done: ${ARCHIVE_PATH}"
+else
+    echo_error "下载失败: ${URL}"
     rm -f "${ARCHIVE_PATH}"
     exit 1
 fi
