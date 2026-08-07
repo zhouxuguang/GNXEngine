@@ -57,7 +57,9 @@ function(add_ispc_target ISPC_OUTPUT_FILES ISPC_HEADER_DIR)
 
     # ISPC target OS: must match cross-compilation target, not host
     if(ANDROID)
-        set(ISPC_TARGET_OS "linux")
+        set(ISPC_TARGET_OS "android")
+    elseif(IOS)
+        set(ISPC_TARGET_OS "ios")
     elseif(APPLE)
         set(ISPC_TARGET_OS "macos")
     elseif(WIN32)
@@ -67,6 +69,7 @@ function(add_ispc_target ISPC_OUTPUT_FILES ISPC_HEADER_DIR)
     else()
         set(ISPC_TARGET_OS "linux")
     endif()
+    message(STATUS "ISPC: target-os=${ISPC_TARGET_OS}")
 
     set(ISPC_KNOWN_TARGETS "sse2" "sse4" "avx1-" "avx2" "avx512skx" "avx512knl" "neon")
     

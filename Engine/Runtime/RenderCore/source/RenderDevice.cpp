@@ -96,7 +96,9 @@ RenderDevicePtr CreateRenderDevice(RenderDeviceType deviceType, ViewHandle viewH
     }
     else if (VULKAN == deviceType)
     {
+    #if !OS_IOS
         renderDevicePtr = std::make_shared<VKRenderDevice>(viewHandle);
+    #endif
     }
     return renderDevicePtr;
 }

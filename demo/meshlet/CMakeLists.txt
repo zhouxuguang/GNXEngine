@@ -6,11 +6,11 @@ MeshletFrameWork.h
 
 target_link_libraries(meshlet GNXEngine ShaderCompiler spirv_reflect)
 
-if(APPLE)
+if(APPLE AND NOT IOS)
     target_link_libraries(meshlet ${CMAKE_CURRENT_SOURCE_DIR}/../../ThirdParty/DirectXShaderCompiler/lib/mac/libdxcompiler.dylib)
 elseif(WIN32)
     target_link_libraries(meshlet ${CMAKE_CURRENT_SOURCE_DIR}/../../ThirdParty/DirectXShaderCompiler/lib/win/dxcompiler.lib)
-elseif(LINUX)
+elseif(LINUX AND NOT ANDROID)
     target_link_libraries(meshlet ${CMAKE_CURRENT_SOURCE_DIR}/../../ThirdParty/DirectXShaderCompiler/lib/linux/libdxcompiler.so)
 endif()
 
