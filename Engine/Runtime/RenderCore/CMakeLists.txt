@@ -47,8 +47,11 @@ add_library(RenderCore OBJECT ${SOURCE_FILES})
 source_group(TREE ${rendercore_dir} PREFIX source FILES ${RENDERCORE_SOURCES})
 source_group(TREE ${rendercore_include_dir} PREFIX include FILES ${RENDERCORE_INCLUDES})
 
+# vulkan-headers 路径：从 RenderCore 目录向上到仓库根（Engine/Runtime/RenderCore → 仓库根 = 3 层）
+# 不用 PROJECT_SOURCE_DIR（在 Android 的 jni 子工程里会指向错误位置）
+get_filename_component(GNX_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
 target_include_directories(RenderCore PRIVATE ${rendercore_include_dir}
-                                               ${PROJECT_SOURCE_DIR}/ThirdParty/vulkan-headers)
+                                               ${GNX_REPO_ROOT}/ThirdParty/vulkan-headers)
 target_compile_definitions(RenderCore PRIVATE RENDERCORE_EXPORTS)
 
 # NVIDIA Nsight Aftermath GPU 崩溃转储集成

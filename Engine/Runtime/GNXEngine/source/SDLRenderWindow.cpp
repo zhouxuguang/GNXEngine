@@ -18,6 +18,7 @@
 #include "Runtime/BaseLib/include/LogService.h"
 
 #include <SDL.h>
+#include <SDL_syswm.h>
 
 #if TARGET_OS_IOS
 #include <SDL_metal.h>
@@ -110,12 +111,6 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
     {
         nativeWnd = SDL_Metal_GetLayer(metalView);
     }
-#elif OS_ANDROID
-    // Android: 暂时为 nullptr，后续通过 SDL_GetWindowWMInfo 获取 ANativeWindow
-    nativeWnd = nullptr;
-#endif
-
-#if OS_IOS
     if (nativeWnd)
     {
         mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nativeWnd);
@@ -125,8 +120,19 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
         }
     }
 #elif OS_ANDROID
+    // Android通过 SDL_GetWindowWMInfo 获取 ANativeWindow
+    struct SDL_SysWMinfo sysWMinfo;
+    SDL_VERSION(&sysWMinfo.version);
+    bool success = SDL_GetWindowWMInfo(mWindow, &sysWMinfo);
+    nativeWnd = sysWMinfo.info.android.window;
+
+    if (nativeWnd)
     {
-        // TODO: Vulkan on Android
+        mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, nativeWnd);
+        if (mRenderDevice)
+        {
+            mRenderDevice->Resize(mData.width, mData.height);
+        }
     }
 #endif
 

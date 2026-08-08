@@ -265,7 +265,7 @@ namespace graphviz
 
 		[[nodiscard]] auto makeKey(const PassNode& node)
 		{
-#if __cplusplus >= 202002L && !defined(__APPLE__)
+#if __cplusplus >= 202002L && !defined(__APPLE__) && !defined(__ANDROID__)
 			return std::format("P{}", node.getId());
 #else
 			return "P" + std::to_string(node.getId());
@@ -274,7 +274,7 @@ namespace graphviz
 
 		[[nodiscard]] auto makeKey(const ResourceNode& node) 
 		{
-#if __cplusplus >= 202002L && !defined(__APPLE__)
+#if __cplusplus >= 202002L && !defined(__APPLE__) && !defined(__ANDROID__)
 			return std::format("R{}_{}", node.getResourceId(), node.getVersion());
 #else
 			return "R" + std::to_string(node.getResourceId()) + "_" +
