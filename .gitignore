@@ -108,6 +108,9 @@ lint/tmp/
 # lint/reports/
 demo/ios/testNX.xcworkspace/xcuserdata/zhouxuguang.xcuserdatad/UserInterfaceState.xcuserstate
 demo/ios/testNX.xcworkspace/xcuserdata/zhouxuguang.xcuserdatad/xcdebugger/Breakpoints_v2.xcbkptlist
+
+# 引擎数据资源目录（由 fetch-deps / 构建流程单独拉取，不入库）
+data_asset/
 demo/ios/testNX/testNX.xcodeproj/project.xcworkspace/xcuserdata/zhouxuguang.xcuserdatad/UserInterfaceState.xcuserstate
 demo/ios/testNX/testNX.xcodeproj/xcuserdata/zhouxuguang.xcuserdatad/xcschemes/xcschememanagement.plist
 project/ios/GNXEngine.xcodeproj/project.xcworkspace/xcuserdata/zhouxuguang.xcuserdatad/UserInterfaceState.xcuserstate

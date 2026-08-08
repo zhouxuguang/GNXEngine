@@ -1,3 +1,0 @@
-[submodule "data_asset"]
-	path = data_asset
-	url = ../gnx_data.git
