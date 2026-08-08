@@ -74,12 +74,10 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
     }
 
     // 窗口标志
-    uint32_t windowFlags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+    uint32_t windowFlags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_FULLSCREEN;
 
-#if TARGET_OS_IOS
+#if OS_IOS
     windowFlags |= SDL_WINDOW_METAL;
-#elif defined(__ANDROID__)
-    windowFlags |= SDL_WINDOW_VULKAN;
 #endif
 
     mWindow = SDL_CreateWindow(
@@ -93,23 +91,31 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
         LOG_ERROR("SDLRenderWindow: SDL_CreateWindow failed: %s", SDL_GetError());
         return;
     }
+    
+    int realW = 0, realH = 0;
+    SDL_GetWindowSizeInPixels(mWindow, &realW, &realH);
+    if (realW > 0 && realH > 0)
+    {
+        mData.width  = (uint32_t)realW;
+        mData.height = (uint32_t)realH;
+    }
 
     // —— 创建渲染设备 ——
     void* nativeWnd = nullptr;
 
-#if TARGET_OS_IOS
+#if OS_IOS
     // iOS: SDL_Metal_CreateView → CAMetalLayer
     SDL_MetalView metalView = SDL_Metal_CreateView(mWindow);
     if (metalView)
     {
         nativeWnd = SDL_Metal_GetLayer(metalView);
     }
-#elif defined(__ANDROID__)
+#elif OS_ANDROID
     // Android: 暂时为 nullptr，后续通过 SDL_GetWindowWMInfo 获取 ANativeWindow
     nativeWnd = nullptr;
 #endif
 
-#if TARGET_OS_IOS
+#if OS_IOS
     if (nativeWnd)
     {
         mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nativeWnd);
@@ -118,7 +124,7 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
             mRenderDevice->Resize(mData.width, mData.height);
         }
     }
-#elif defined(__ANDROID__)
+#elif OS_ANDROID
     {
         // TODO: Vulkan on Android
     }
@@ -126,12 +132,6 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
 
     SetVSync(false);
     Init();
-
-    // 相机初始化
-    auto* sceneManager = RenderSystem::SceneManager::GetInstance();
-    auto cameraPtr = sceneManager->CreateCamera("MainCamera");
-    cameraPtr->LookAt(mathutil::Vector3f(0, 0, 5), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
-    cameraPtr->SetLens(60, mData.width, mData.height, 0.1f, 1000.f);
 }
 
 // ========================================================================
@@ -286,8 +286,17 @@ void SDLRenderWindow::HandleSDLEvents()
         {
             if (sdlEvent.window.event == SDL_WINDOWEVENT_RESIZED)
             {
-                mData.width  = static_cast<uint32_t>(sdlEvent.window.data1);
-                mData.height = static_cast<uint32_t>(sdlEvent.window.data2);
+                // 用像素尺寸（而非事件里的逻辑点），确保高分屏(Retina)下渲染分辨率正确
+                int pxW = 0, pxH = 0;
+                SDL_GetWindowSizeInPixels(mWindow, &pxW, &pxH);
+                if (pxW <= 0 || pxH <= 0)
+                {
+                    // 回退到事件携带的尺寸（非高分屏场景）
+                    pxW = sdlEvent.window.data1;
+                    pxH = sdlEvent.window.data2;
+                }
+                mData.width  = static_cast<uint32_t>(pxW);
+                mData.height = static_cast<uint32_t>(pxH);
                 WindowResizeEvent event(mData.width, mData.height);
                 mData.eventCallback(event);
             }
