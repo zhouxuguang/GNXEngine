@@ -47,6 +47,14 @@ NAMESPACE_RENDERCORE_BEGIN
 
 typedef void* ViewHandle;
 
+// X11 原生窗口句柄（Display* + Window）
+// Linux 下传给 CreateRenderDevice 的 ViewHandle 应指向本结构体
+struct X11ViewHandle
+{
+    void* display;   // Display*
+    void* window;    // ::Window (XID)
+};
+
 typedef enum RenderDeviceType
 {
     METAL,

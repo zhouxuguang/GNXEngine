@@ -97,6 +97,8 @@ bool CreateInstance(VulkanContext& context, uint32_t apiVersion)
     instanceExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #elif defined VK_USE_PLATFORM_WIN32_KHR
     instanceExtensions.push_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
+#elif defined VK_USE_PLATFORM_XLIB_KHR
+    instanceExtensions.push_back(VK_KHR_XLIB_SURFACE_EXTENSION_NAME);
 #endif
 
     instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -702,6 +704,25 @@ bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
 	createInfo.hinstance = GetModuleHandle(nullptr);
     PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(context.instance, "vkCreateWin32SurfaceKHR");
     VkResult result = vkCreateWin32SurfaceKHR(context.instance, &createInfo, nullptr, &context.surfaceKhr);
+#elif defined VK_USE_PLATFORM_XLIB_KHR
+    // X11 需要 (Display*, Window) 两个参数，通过 X11ViewHandle 结构体传递
+    X11ViewHandle* x11Handle = static_cast<X11ViewHandle*>(nativeWidow);
+    if (nullptr == x11Handle || nullptr == x11Handle->display)
+    {
+        LOG_INFO("CreateSurfaceKHR: X11ViewHandle is invalid");
+        return false;
+    }
+    VkXlibSurfaceCreateInfoKHR createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
+    createInfo.dpy = static_cast<Display*>(x11Handle->display);
+    createInfo.window = static_cast<::Window>(reinterpret_cast<uintptr_t>(x11Handle->window));
+    PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR = (PFN_vkCreateXlibSurfaceKHR)vkGetInstanceProcAddr(context.instance, "vkCreateXlibSurfaceKHR");
+    if (nullptr == vkCreateXlibSurfaceKHR)
+    {
+        LOG_INFO("CreateSurfaceKHR: vkCreateXlibSurfaceKHR not found");
+        return false;
+    }
+    VkResult result = vkCreateXlibSurfaceKHR(context.instance, &createInfo, nullptr, &context.surfaceKhr);
 #elif defined VK_USE_PLATFORM_ANDROID_KHR
     VkAndroidSurfaceCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;

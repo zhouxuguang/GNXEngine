@@ -27,17 +27,11 @@ void* GetPlatformWindow(GLFWwindow *window)
 
 #if OS_LINUX
 #include <X11/Xlib.h>
-struct GNX_X11ViewHandle
-{
-    Display* display;
-    ::Window window;
-};
-
 void* GetPlatformWindow(GLFWwindow *window)
 {
-    GNX_X11ViewHandle* h = new GNX_X11ViewHandle();
+    RenderCore::X11ViewHandle* h = new RenderCore::X11ViewHandle();
     h->display = glfwGetX11Display();
-    h->window = (::Window)glfwGetX11Window(window);
+    h->window = (void*)(uintptr_t)glfwGetX11Window(window);
     return (void*)h;
 }
 #endif
@@ -55,7 +49,7 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
     void* nativeWnd = GetPlatformWindow(mWindow);
 
     // 在这里选择底层的渲染器类型，创建它
-#if OS_WINDOWS
+#if OS_WINDOWS | OS_LINUX
     mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, nativeWnd);
 #elif OS_MACOS
     mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nativeWnd);
@@ -98,6 +92,8 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props, void* externa
         mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, externalWindowHandle);
 #elif OS_MACOS
         mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, externalWindowHandle);
+#elif OS_LINUX
+		mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, externalWindowHandle);
 #endif
 
         mRenderDevice->Resize(mData.width, mData.height);
