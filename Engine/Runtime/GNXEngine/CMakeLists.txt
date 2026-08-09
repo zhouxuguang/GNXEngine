@@ -37,7 +37,7 @@ target_include_directories(GNXEngine PUBLIC ${GNXEngine_include_dir} ${CMAKE_CUR
 # 窗口后端链接
 if(GNX_WINDOW_SDL)
     # SDL2 路径（Android / iOS）
-    target_link_libraries(GNXEngine PUBLIC SDL2-static SDL2main)
+    target_link_libraries(GNXEngine PRIVATE SDL2-static SDL2main)
 else()
     # GLFW 路径（Windows / macOS / Linux）
     target_link_libraries(GNXEngine PRIVATE glfw)

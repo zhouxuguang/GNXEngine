@@ -39,6 +39,8 @@
 	#endif
 #endif
 
-#include "GNXMain.h"
+// 注意：GNXMain.h（入口宏 #define main SDL_main）不应在这里 include，
+// 因为它会在所有包含本头文件的翻译单元中重定向 main 标识符。
+// 应改为由应用的 main.cpp 显式 include GNXMain.h，只在应用入口生效。
 
 #endif
