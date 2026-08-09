@@ -1,12 +1,19 @@
 # 查找 ISPC 编译器
 # 优先用 fetch-deps.ps1 下载到 buildtools/ 的本地版本
 # 路径: buildtools/ispc/{win|mac|linux}/ispc(.exe)
+#
+# 注意：不要用 CMAKE_SOURCE_DIR 定位，因为 Android/iOS 等子构建
+# （如 demo/*/android/app/jni）会让 CMAKE_SOURCE_DIR 指向子目录，导致路径错位。
+# 这里用 CMAKE_CURRENT_LIST_DIR（本文件所在 cmake/ 目录）推导项目根，
+# 无论从哪个构建入口 include 都能正确定位到 ${项目根}/buildtools/ispc/...
+get_filename_component(_gnx_project_root "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-    set(_ispc_host_exe "${CMAKE_SOURCE_DIR}/buildtools/ispc/win/ispc.exe")
+    set(_ispc_host_exe "${_gnx_project_root}/buildtools/ispc/win/ispc.exe")
 elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
-    set(_ispc_host_exe "${CMAKE_SOURCE_DIR}/buildtools/ispc/mac/ispc")
+    set(_ispc_host_exe "${_gnx_project_root}/buildtools/ispc/mac/ispc")
 else()
-    set(_ispc_host_exe "${CMAKE_SOURCE_DIR}/buildtools/ispc/linux/ispc")
+    set(_ispc_host_exe "${_gnx_project_root}/buildtools/ispc/linux/ispc")
 endif()
 
 # find_program(CMAKE_ISPC_COMPILER ${_ispc_exe}
