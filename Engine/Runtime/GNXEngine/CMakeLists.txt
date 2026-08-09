@@ -62,7 +62,7 @@ target_link_libraries(GNXEngine PRIVATE
 )
 
 # 窗口后端宏定义（控制 #if GNX_WINDOW_SDL）
-target_compile_definitions(GNXEngine PUBLIC 
+target_compile_definitions(GNXEngine PRIVATE 
     ${GNX_WINDOW_SDL_DEFINE}
     GNXENGINE_EXPORTS
     RENDERCORE_EXPORTS
