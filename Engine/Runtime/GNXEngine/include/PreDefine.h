@@ -39,4 +39,6 @@
 	#endif
 #endif
 
+#include "GNXMain.h"
+
 #endif

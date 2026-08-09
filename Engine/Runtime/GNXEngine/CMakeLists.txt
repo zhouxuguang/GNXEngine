@@ -24,7 +24,11 @@ if(APPLE)
    list(APPEND GNXEngine_Source ${GNXEngine_dir}/PlatformWindowMisc.mm)
 endif(APPLE)
 
-add_library(GNXEngine SHARED ${GNXEngine_Source} ${GNXEngine_Include})
+if(IOS)
+    add_library(GNXEngine STATIC ${GNXEngine_Source} ${GNXEngine_Include})
+else()
+    add_library(GNXEngine SHARED ${GNXEngine_Source} ${GNXEngine_Include})
+endif()
 source_group(TREE ${GNXEngine_dir} PREFIX source FILES ${GNXEngine_Source})
 source_group(TREE ${GNXEngine_include_dir} PREFIX include FILES ${GNXEngine_Include})
 
@@ -33,7 +37,7 @@ target_include_directories(GNXEngine PUBLIC ${GNXEngine_include_dir} ${CMAKE_CUR
 # 窗口后端链接
 if(GNX_WINDOW_SDL)
     # SDL2 路径（Android / iOS）
-    target_link_libraries(GNXEngine PRIVATE SDL2-static)
+    target_link_libraries(GNXEngine PUBLIC SDL2-static SDL2main)
 else()
     # GLFW 路径（Windows / macOS / Linux）
     target_link_libraries(GNXEngine PRIVATE glfw)
@@ -58,7 +62,7 @@ target_link_libraries(GNXEngine PRIVATE
 )
 
 # 窗口后端宏定义（控制 #if GNX_WINDOW_SDL）
-target_compile_definitions(GNXEngine PRIVATE 
+target_compile_definitions(GNXEngine PUBLIC 
     ${GNX_WINDOW_SDL_DEFINE}
     GNXENGINE_EXPORTS
     RENDERCORE_EXPORTS
@@ -88,11 +92,5 @@ if(APPLE)
     target_compile_options(GNXEngine PRIVATE "-fobjc-arc")
     set_target_properties(GNXEngine PROPERTIES LINK_FLAGS "-fobjc-arc")
 endif()
-
-# if(UNIX)
-#     target_link_options(GNXEngine PRIVATE "LINKER:--exclude-libs,ALL")
-# elseif(WIN32)
-#     target_link_options(GNXEngine PRIVATE "/NODEFAULTLIB")
-# endif()
 
 set_property(TARGET GNXEngine PROPERTY FOLDER "Runtime")
