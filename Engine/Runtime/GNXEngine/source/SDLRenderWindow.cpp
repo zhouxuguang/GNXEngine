@@ -33,27 +33,29 @@ static KeyCode MapSDLKeyToKeyCode(SDL_Keycode sdlKey)
     if (sdlKey >= 'A' && sdlKey <= 'Z')   return static_cast<KeyCode>(sdlKey);
     if (sdlKey >= '0' && sdlKey <= '9')   return static_cast<KeyCode>(sdlKey);
     // 功能键
-    switch (sdlKey) {
-    case SDLK_RETURN:    return Enter;
-    case SDLK_ESCAPE:    return Escape;
-    case SDLK_BACKSPACE: return Backspace;
-    case SDLK_TAB:       return Tab;
-    case SDLK_SPACE:     return Space;
-    case SDLK_LEFT:      return Left;
-    case SDLK_RIGHT:     return Right;
-    case SDLK_UP:        return Up;
-    case SDLK_DOWN:      return Down;
-    default:             return static_cast<KeyCode>(0);
+    switch (sdlKey)
+    {
+        case SDLK_RETURN:    return Enter;
+        case SDLK_ESCAPE:    return Escape;
+        case SDLK_BACKSPACE: return Backspace;
+        case SDLK_TAB:       return Tab;
+        case SDLK_SPACE:     return Space;
+        case SDLK_LEFT:      return Left;
+        case SDLK_RIGHT:     return Right;
+        case SDLK_UP:        return Up;
+        case SDLK_DOWN:      return Down;
+        default:             return static_cast<KeyCode>(0);
     }
 }
 
 static MouseCode MapSDLButtonToMouseCode(uint8_t sdlButton)
 {
-    switch (sdlButton) {
-    case SDL_BUTTON_LEFT:   return Button0;
-    case SDL_BUTTON_MIDDLE: return Button2;
-    case SDL_BUTTON_RIGHT:  return Button1;
-    default:                return Button0;
+    switch (sdlButton)
+    {
+        case SDL_BUTTON_LEFT:   return Button0;
+        case SDL_BUTTON_MIDDLE: return Button2;
+        case SDL_BUTTON_RIGHT:  return Button1;
+        default:                return Button0;
     }
 }
 
@@ -79,6 +81,9 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
 
 #if OS_IOS
     windowFlags |= SDL_WINDOW_METAL;
+    // 代码层面控制方向（需与 Info.plist 的 UISupportedInterfaceOrientations 取交集）
+    // 这里显式声明支持横屏左右 + 竖屏，避免仅凭 main.cpp 的横屏尺寸推断方向
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight Portrait");
 #endif
 
     mWindow = SDL_CreateWindow(
