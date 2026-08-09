@@ -6,6 +6,7 @@
 //
 
 #include "VulkanSwapChain.h"
+#include "Runtime/BaseLib/include/LogService.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -52,11 +53,16 @@ void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t w
     res = vkGetPhysicalDeviceSurfaceFormatsKHR(vulkanContext->physicalDevice, vulkanContext->surfaceKhr, &formatCount, formats.data());
     
     uint32_t chosenFormat = 0;
+    // 优先选择常见的 B8G8R8A8_UNORM，找不到则用第一个可用格式
     for (chosenFormat = 0; chosenFormat < formatCount; chosenFormat++)
     {
         if (formats[chosenFormat].format == VK_FORMAT_B8G8R8A8_UNORM) break;
     }
-    assert(chosenFormat <= formatCount);
+    if (chosenFormat >= formatCount && formatCount > 0)
+    {
+        chosenFormat = 0;  // 回退到第一个可用格式
+    }
+    assert(formatCount > 0 && chosenFormat < formatCount);
     
     mDisplaySize = chooseSwapExtent(mSurfaceCapabilities, width, height);
     mDisplayFormat = formats[chosenFormat].format;
@@ -84,13 +90,37 @@ void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t w
     swapchainCreateInfo.pNext = nullptr;
     swapchainCreateInfo.flags = 0;
     swapchainCreateInfo.surface = vulkanContext->surfaceKhr;
-    swapchainCreateInfo.minImageCount = mSurfaceCapabilities.minImageCount < mSurfaceCapabilities.maxImageCount ?
-                            mSurfaceCapabilities.minImageCount + 1 : mSurfaceCapabilities.minImageCount;
+
+    // 规范要求 minImageCount 必须在 [minImageCount, maxImageCount] 范围内
+    // maxImageCount == 0 表示无上限
+    uint32_t minImageCount = mSurfaceCapabilities.minImageCount;
+    if (mSurfaceCapabilities.maxImageCount > 0 &&
+        minImageCount + 1 > mSurfaceCapabilities.maxImageCount)
+    {
+        minImageCount = mSurfaceCapabilities.maxImageCount;
+    }
+    else if (mSurfaceCapabilities.maxImageCount == 0 ||
+             minImageCount + 1 <= mSurfaceCapabilities.maxImageCount)
+    {
+        minImageCount = minImageCount + 1;  // 双缓冲
+    }
+    swapchainCreateInfo.minImageCount = minImageCount;
+
     swapchainCreateInfo.imageFormat = formats[chosenFormat].format;
     swapchainCreateInfo.imageColorSpace = formats[chosenFormat].colorSpace;
     swapchainCreateInfo.imageExtent = mDisplaySize;
-    swapchainCreateInfo.imageUsage = mSurfaceCapabilities.supportedUsageFlags;
-    swapchainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+
+    // 使用安全的基础 usage：渲染目标 + 可选采样/传输
+    // 不要直接用 supportedUsageFlags（某些组合驱动不支持，导致 INITIALIZATION_FAILED）
+    swapchainCreateInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    if (mSurfaceCapabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_SRC_BIT)
+        swapchainCreateInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    if (mSurfaceCapabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+        swapchainCreateInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    // 必须用 currentTransform（Android/小米设备旋转时非 IDENTITY，硬编码 IDENTITY 会失败）
+    swapchainCreateInfo.preTransform = mSurfaceCapabilities.currentTransform;
+
     swapchainCreateInfo.imageArrayLayers = 1;
     swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     swapchainCreateInfo.queueFamilyIndexCount = 1;
@@ -98,8 +128,15 @@ void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t w
     swapchainCreateInfo.compositeAlpha = mCompositeAlpha;
     swapchainCreateInfo.presentMode = selectedPresentMode;
     swapchainCreateInfo.oldSwapchain = mSwapchain;
-    swapchainCreateInfo.clipped = VK_FALSE;
+    swapchainCreateInfo.clipped = VK_TRUE;
     res = vkCreateSwapchainKHR(vulkanContext->device, &swapchainCreateInfo, nullptr, &mSwapchain);
+
+    if (res != VK_SUCCESS)
+    {
+        char szBuf[64] = {0};
+        snprintf(szBuf, 64, "%d (0x%x)", (int)res, (uint32_t)res);
+        LOG_INFO("VulkanSwapChain: vkCreateSwapchainKHR failed: %s", szBuf);
+    }
     
     // 获得交换链图像
     res = vkGetSwapchainImagesKHR(vulkanContext->device, mSwapchain, &mSwapchainImageCount, nullptr);
