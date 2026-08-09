@@ -311,6 +311,37 @@ void SDLRenderWindow::HandleSDLEvents()
                 WindowResizeEvent event(mData.width, mData.height);
                 mData.eventCallback(event);
             }
+            // —— 窗口进入后台（Android: 底层 Surface 可能被销毁） ——
+            else if (sdlEvent.window.event == SDL_WINDOWEVENT_MINIMIZED)
+            {
+                if (mRenderDevice)
+                {
+                    mRenderDevice->OnWindowMinimized();
+                }
+            }
+            // —— 窗口从后台恢复（Android: 必须用新 ANativeWindow 重建 surface + swapchain） ——
+            else if (sdlEvent.window.event == SDL_WINDOWEVENT_RESTORED)
+            {
+#if defined(__ANDROID__)
+                // 重新获取最新的 ANativeWindow（SDL 内部已在 onNativeSurfaceCreated 更新）
+                struct SDL_SysWMinfo sysWMinfo;
+                SDL_VERSION(&sysWMinfo.version);
+                if (SDL_GetWindowWMInfo(mWindow, &sysWMinfo))
+                {
+                    void* nativeWnd = sysWMinfo.info.android.window;
+                    if (nativeWnd && mRenderDevice)
+                    {
+                        // 用新的 ANativeWindow 重建 surface + swapchain
+                        mRenderDevice->OnWindowRestored(nativeWnd);
+                    }
+                }
+#else
+                if (mRenderDevice)
+                {
+                    mRenderDevice->OnWindowRestored(nullptr);
+                }
+#endif
+            }
             break;
         }
 

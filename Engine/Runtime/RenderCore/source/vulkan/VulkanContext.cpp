@@ -713,6 +713,24 @@ bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
     return context.surfaceKhr != VK_NULL_HANDLE;
 }
 
+// 销毁 Surface（在窗口重建/从后台恢复时，需用新的 native window 重新创建）
+// 注意：必须在 vkDestroyDevice 之前调用（Android 上 surface 依赖 device）
+bool DestroySurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
+{
+    (void)nativeWidow;  // 平台相关的原生窗口句柄在创建 surface 时使用，销毁时不需要
+
+    if (context.surfaceKhr != VK_NULL_HANDLE)
+    {
+        if (context.instance != VK_NULL_HANDLE)
+        {
+            vkDestroySurfaceKHR(context.instance, context.surfaceKhr, nullptr);
+        }
+        context.surfaceKhr = VK_NULL_HANDLE;
+        return true;
+    }
+    return false;
+}
+
 void CreateGraphicsDescriptorPool(VulkanContext& context)
 {
 	constexpr int maxCount = 16;

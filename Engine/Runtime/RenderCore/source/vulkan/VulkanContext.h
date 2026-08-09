@@ -105,6 +105,8 @@ void CreateVMA(VulkanContext& context);
 // 创建Surface对象
 bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow);
 
+bool DestroySurfaceKHR(VulkanContext& context, ViewHandle nativeWidow);
+
 // 创建图形描述符的pool
 void CreateGraphicsDescriptorPool(VulkanContext& context);
 

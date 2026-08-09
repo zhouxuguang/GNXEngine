@@ -306,6 +306,7 @@ void VKRenderDevice::Resize(uint32_t width, uint32_t height)
     {
         mSwapChain->Release();
         mSwapChain->CreateSwapChain(mVulkanContext, width, height, vSync);
+        //mVulkanContext
     }
     
     // 创建命令缓冲区
@@ -321,6 +322,100 @@ void VKRenderDevice::Resize(uint32_t width, uint32_t height)
     
     // 创建相关同步对象
     CreateSyncObject();
+}
+
+// Android 等平台：后台→前台时底层 Surface 可能被销毁重建，
+// 必须销毁旧的 VkSurfaceKHR，用新的 ANativeWindow 重建 surface + swapchain
+void VKRenderDevice::OnWindowRestored(void* nativeWindow)
+{
+    if (!mVulkanContext)
+    {
+        return;
+    }
+
+    // 等待所有 GPU 工作完成，避免销毁正在使用的资源
+    if (mVulkanContext->graphicsQueue != VK_NULL_HANDLE)
+    {
+        vkQueueWaitIdle(mVulkanContext->graphicsQueue);
+    }
+    vkDeviceWaitIdle(mVulkanContext->device);
+
+    // 销毁旧 swapchain（它的图像/视图都绑定在旧 surface 上）
+    if (mSwapChain)
+    {
+        mSwapChain->Release();
+    }
+
+    // 销毁旧 surface，用新 native window 重建
+    if (mVulkanContext->surfaceKhr != VK_NULL_HANDLE)
+    {
+        DestroySurfaceKHR(*mVulkanContext, nativeWindow);
+    }
+
+    if (nativeWindow == nullptr)
+    {
+        LOG_INFO("VKRenderDevice::OnWindowRestored: null native window, skip surface recreate");
+        return;
+    }
+
+    // 用新的 ANativeWindow 重建 surface
+    if (!CreateSurfaceKHR(*mVulkanContext, nativeWindow))
+    {
+        LOG_INFO("VKRenderDevice::OnWindowRestored: CreateSurfaceKHR ERROR");
+        return;
+    }
+
+    // 重建 swapchain（复用 vSync 设置）
+    uint32_t width = mSwapChain ? mSwapChain->GetWidth() : 0;
+    uint32_t height = mSwapChain ? mSwapChain->GetHeight() : 0;
+    bool vSync = mSwapChain ? mSwapChain->IsVSync() : false;
+
+    if (width == 0 || height == 0)
+    {
+        // surface 尺寸未知，从 capabilities 查询
+        VkSurfaceCapabilitiesKHR caps;
+        if (vkGetPhysicalDeviceSurfaceCapabilitiesKHR(mVulkanContext->physicalDevice, mVulkanContext->surfaceKhr, &caps) == VK_SUCCESS)
+        {
+            width = caps.currentExtent.width != 0xFFFFFFFFu ? caps.currentExtent.width : caps.minImageExtent.width;
+            height = caps.currentExtent.height != 0xFFFFFFFFu ? caps.currentExtent.height : caps.minImageExtent.height;
+        }
+    }
+
+    if (!mSwapChain)
+    {
+        mSwapChain = std::make_shared<VulkanSwapChain>(mVulkanContext, width, height);
+    }
+    else
+    {
+        mSwapChain->CreateSwapChain(mVulkanContext, width, height, vSync);
+    }
+
+    // 重建命令缓冲区与同步对象（旧的可能引用了失效的 swapchain 图像）
+    ReleaseCommandBuffers();
+    DestroySyncObject();
+
+    if (mCommandBuffers.empty())
+    {
+        CreateCommandBufers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetCommandPool());
+    }
+    if (mComputeCommandBuffers.empty())
+    {
+        CreateComputeCommandBuffers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetComputeCommandPool());
+    }
+    mCurrentFrame = 0;
+    mNextFrameIndex = 0;
+    CreateSyncObject();
+
+    LOG_INFO("VKRenderDevice::OnWindowRestored: surface+swapchain rebuilt (%ux%u)", width, height);
+}
+
+// 进入后台：等待 GPU 空闲即可（surface 的销毁由系统/下一次恢复处理）
+void VKRenderDevice::OnWindowMinimized()
+{
+    if (mVulkanContext && mVulkanContext->graphicsQueue != VK_NULL_HANDLE)
+    {
+        vkQueueWaitIdle(mVulkanContext->graphicsQueue);
+    }
 }
 
 VertexBufferPtr VKRenderDevice::CreateVertexBufferWithLength(uint32_t size) const

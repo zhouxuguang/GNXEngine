@@ -30,6 +30,24 @@ public:
     virtual ~RenderDevice();
     
     virtual void Resize(uint32_t width, uint32_t height) = 0;
+
+    /**
+     * @brief 窗口从后台恢复到前台时调用（移动端生命周期）
+     *
+     * 某些平台（如 Android）在后台→前台时可能销毁并重建了底层 Surface，
+     * 需要重新获取 native window、重建 VkSurfaceKHR 和 swapchain。
+     * 基类默认空实现；桌面端无需处理。
+     *
+     * @param nativeWindow 重新获取的平台原生窗口句柄（如 ANativeWindow*）
+     */
+    virtual void OnWindowRestored(void* nativeWindow) {}
+
+    /**
+     * @brief 窗口进入后台时调用（移动端生命周期）
+     *
+     * 可用于暂停渲染等。基类默认空实现。
+     */
+    virtual void OnWindowMinimized() {}
     
     /**
      * @brief 获取设备硬件特性与能力集合（结构化查询，推荐使用）

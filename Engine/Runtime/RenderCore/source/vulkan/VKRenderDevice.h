@@ -28,6 +28,10 @@ public:
     
     virtual void Resize(uint32_t width, uint32_t height);
     
+    // 窗口生命周期（移动端后台→前台重建 surface + swapchain）
+    virtual void OnWindowRestored(void* nativeWindow) override;
+    virtual void OnWindowMinimized() override;
+    
     virtual const RenderDeviceFeatures& GetFeatures() const override
     {
         return mFeatures;
