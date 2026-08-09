@@ -702,6 +702,12 @@ bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
 	createInfo.hinstance = GetModuleHandle(nullptr);
     PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(context.instance, "vkCreateWin32SurfaceKHR");
     VkResult result = vkCreateWin32SurfaceKHR(context.instance, &createInfo, nullptr, &context.surfaceKhr);
+#elif defined VK_USE_PLATFORM_ANDROID_KHR
+    VkAndroidSurfaceCreateInfoKHR createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
+    createInfo.window = (ANativeWindow *)nativeWidow;
+    PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR = (PFN_vkCreateAndroidSurfaceKHR)vkGetInstanceProcAddr(context.instance, "vkCreateAndroidSurfaceKHR");
+    VkResult result = vkCreateAndroidSurfaceKHR(context.instance, &createInfo, nullptr, &context.surfaceKhr);
 #endif
 
     return context.surfaceKhr != VK_NULL_HANDLE;
