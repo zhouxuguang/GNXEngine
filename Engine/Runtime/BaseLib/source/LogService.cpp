@@ -25,7 +25,7 @@ static std::string InfoPrintEx(Log::LogLevel lev,
 
 	// 转换时间为本地时间
 	std::tm local_tm;
-#if OS_WINDOWS
+#if GNX_OS_WINDOWS
 	localtime_s(&local_tm, &now_time);  // Windows安全版本
 #else
 	localtime_r(&now_time, &local_tm);  // POSIX安全版本
@@ -49,7 +49,7 @@ static std::string InfoPrintEx(Log::LogLevel lev,
 		<< "." << std::setfill('0') << std::setw(3) << ms.count()
 		<< "][" << base_name
 		<< ":" << func << ":" << line << "]";
-#if OS_ANDROID == 0
+#if GNX_OS_ANDROID == 0
 	switch (lev)
 	{
 	case Log::LogLevel::Debug:

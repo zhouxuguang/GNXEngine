@@ -67,7 +67,7 @@ inline MTLPixelFormat ConvertTextureFormatToMetal(uint32_t textureFormat)
             
         case kTexFormatDepth24Stencil8:
         {
-#if OS_MACOS
+#if GNX_OS_MACOS
             if (@available(macos 10.11, *)) 
             {
                 return MTLPixelFormatDepth24Unorm_Stencil8;
@@ -213,11 +213,11 @@ struct FrameBufferFormat
     MTLPixelFormat stencilFormat;
 };
 
-#if OS_MACOS
+#if GNX_OS_MACOS
     #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
         #define SUPPORTED_NEW_REFLECT 1
     #endif
-#elif OS_IOS
+#elif GNX_OS_IOS
     #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_16_0
         #define SUPPORTED_NEW_REFLECT 1
     #endif
@@ -230,11 +230,11 @@ struct FrameBufferFormat
 //   Note: Even when SDK supports it, the actual runtime availability is checked
 //   via @available() at call sites.
 // ============================================================================
-#if OS_MACOS
+#if GNX_OS_MACOS
     #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 110000
         #define SUPPORTED_BINARY_ARCHIVE 1
     #endif
-#elif OS_IOS
+#elif GNX_OS_IOS
     #if __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_14_0
         #define SUPPORTED_BINARY_ARCHIVE 1
     #endif

@@ -10,7 +10,7 @@
 #include "spirv_cross/spirv_msl.hpp"
 #include "spirv_reflection.h"
 #include "Runtime/BaseLib/include/PreCompile.h"
-#if (OS_WINDOWS || OS_LINUX || OS_MACOS)
+#if (GNX_OS_WINDOWS || GNX_OS_LINUX || GNX_OS_MACOS)
 #include "DXCompilerUtil.h"
 #endif
 #include "ReflectionInfo.h"
@@ -449,7 +449,7 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
     }
 
     spirv_cross::CompilerMSL::Options options;
-#if OS_IOS
+#if GNX_OS_IOS
     options.platform = spirv_cross::CompilerMSL::Options::iOS;
 #else
     options.platform = spirv_cross::CompilerMSL::Options::macOS;
@@ -488,7 +488,7 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
 //HLSL shader脚本字符串转换
 ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType)
 {
-#if (OS_WINDOWS || OS_LINUX || OS_MACOS)
+#if (GNX_OS_WINDOWS || GNX_OS_LINUX || GNX_OS_MACOS)
     return DXCompilerUtil::GetInstance()->compileHLSLToSPIRV(shaderFile, shaderStage, renderType);
 #else
     return nullptr;

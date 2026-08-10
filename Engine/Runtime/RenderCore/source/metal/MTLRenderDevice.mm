@@ -836,8 +836,8 @@ void MTLRenderDevice::SetVSync(bool enable)
     // YES = 垂直同步开启（等 VBlank 呈现）
     // NO  = 垂直同步关闭（立即呈现，不等待 VBlank）
     // 需要 iOS 16.0+ / macOS 14.0+
-#if (OS_MACOS && __MAC_OS_X_VERSION_MIN_REQUIRED >= 140000) || \
-    (OS_IOS  && __IPHONE_OS_VERSION_MIN_REQUIRED >= 160000)
+#if (GNX_OS_MACOS && __MAC_OS_X_VERSION_MIN_REQUIRED >= 140000) || \
+    (GNX_OS_IOS  && __IPHONE_OS_VERSION_MIN_REQUIRED >= 160000)
     mMetalLayer.displaySyncEnabled = enable;
     mVSync = enable;
 #endif

@@ -9,11 +9,11 @@
 #include "ThreadUtil.h"
 #include "Thread.h"
 
-#if OS_ANDROID
+#if GNX_OS_ANDROID
 #include <sys/prctl.h>
 #include <sys/types.h>
 #include <unistd.h>
-#elif OS_LINUX
+#elif GNX_OS_LINUX
 #include <unistd.h>
 #endif
 

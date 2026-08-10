@@ -79,7 +79,7 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
     // 窗口标志
     uint32_t windowFlags = SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_FULLSCREEN;
 
-#if OS_IOS
+#if GNX_OS_IOS
     windowFlags |= SDL_WINDOW_METAL;
     // 代码层面控制方向（需与 Info.plist 的 UISupportedInterfaceOrientations 取交集）
     // 这里显式声明支持横屏左右 + 竖屏，避免仅凭 main.cpp 的横屏尺寸推断方向
@@ -109,7 +109,7 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
     // —— 创建渲染设备 ——
     void* nativeWnd = nullptr;
 
-#if OS_IOS
+#if GNX_OS_IOS
     // iOS: SDL_Metal_CreateView → CAMetalLayer
     SDL_MetalView metalView = SDL_Metal_CreateView(mWindow);
     if (metalView)
@@ -124,7 +124,7 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
             mRenderDevice->Resize(mData.width, mData.height);
         }
     }
-#elif OS_ANDROID
+#elif GNX_OS_ANDROID
     // Android通过 SDL_GetWindowWMInfo 获取 ANativeWindow
     struct SDL_SysWMinfo sysWMinfo;
     SDL_VERSION(&sysWMinfo.version);

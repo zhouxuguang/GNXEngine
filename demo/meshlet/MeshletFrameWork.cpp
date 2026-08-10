@@ -57,7 +57,7 @@ void MeshletFrameWork::Initlize()
     CreatePipeline();
 
 //	const uint32_t    kNumInstanceCols = 20;
-//#if OS_WINDOWS
+//#if GNX_OS_WINDOWS
 //    const uint32_t    kNumInstanceRows = 10;
 //#else
 //    const uint32_t    kNumInstanceRows = 5;

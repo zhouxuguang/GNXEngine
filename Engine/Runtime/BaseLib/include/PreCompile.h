@@ -72,21 +72,31 @@ typedef std::basic_string<char16_t> utf16String;
 typedef std::basic_string<char32_t> utf32String;
 
 #if defined _WIN32 || defined WINCE
-	#define OS_WINDOWS 1
+	#ifndef GNX_OS_WINDOWS
+	#define GNX_OS_WINDOWS 1
+	#endif
 #elif defined __ANDROID__
-    #define OS_ANDROID 1
+    #ifndef GNX_OS_ANDROID
+    #define GNX_OS_ANDROID 1
+    #endif
 #elif defined __linux__
-	#define OS_LINUX 1
+	#ifndef GNX_OS_LINUX
+	#define GNX_OS_LINUX 1
+	#endif
 #elif defined(__APPLE__)
 #include <TargetConditionals.h>
 	#if TARGET_OS_OSX
-		#define OS_MACOS 1
+		#ifndef GNX_OS_MACOS
+		#define GNX_OS_MACOS 1
+		#endif
 	#elif TARGET_OS_IOS
-		#define OS_IOS 1
+		#ifndef GNX_OS_IOS
+		#define GNX_OS_IOS 1
+		#endif
 	#endif
 #endif
 
-#if OS_MACOS
+#if GNX_OS_MACOS
 #include <os/lock.h>
 #endif
 
@@ -121,7 +131,7 @@ typedef std::vector<uint8_t> ByteVector;
 typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 
 //导出宏定义
-#if OS_WINDOWS
+#if GNX_OS_WINDOWS
 	#ifdef __GNUC__
 		#define BASELIB_API __attribute__((dllexport))
 	#else
@@ -188,19 +198,19 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
 // - Linux and derivatives (Android, ChromeOS, etc)
 // - Windows 8+
 //
-#if defined(OS_LINUX) || defined(OS_ANDROID)
+#if defined(GNX_OS_LINUX) || defined(GNX_OS_ANDROID)
 	// Linux has had futexes for a very long time.  Assume support.
 	#define USE_FUTEX 1
-#elif OS_WINDOWS
+#elif GNX_OS_WINDOWS
 	// Windows has futexes since version 8, which is already end of life (let alone older versions).
 	// Assume support.
 	#define USE_FUTEX 1
-#elif OS_MACOS
+#elif GNX_OS_MACOS
      #define USE_FUTEX 1
 #endif
 
 // Type detection for wchar_t.
-#if OS_WINDOWS
+#if GNX_OS_WINDOWS
     #define WCHAR_T_IS_UTF16
 #else
     #define WCHAR_T_IS_UTF32

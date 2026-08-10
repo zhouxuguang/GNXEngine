@@ -22,7 +22,7 @@ private:
 	void futexWait();
 	void futexWake();
 
-#if OS_MACOS
+#if GNX_OS_MACOS
     os_unfair_lock mLock = OS_UNFAIR_LOCK_INIT;
 #else
     std::atomic_uint32_t mState = 0;
@@ -69,7 +69,7 @@ public:
     MutexLock(const MutexLock&) = delete;
     MutexLock& operator=(const MutexLock&) = delete;
 private:
-#if OS_WINDOWS
+#if GNX_OS_WINDOWS
     CRITICAL_SECTION mLock;
 #else
     pthread_mutex_t mLock;

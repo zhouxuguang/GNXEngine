@@ -1,6 +1,6 @@
 #include "Timer.h"
 
-#if OS_LINUX
+#if GNX_OS_LINUX
 #include <signal.h>
 #endif
 

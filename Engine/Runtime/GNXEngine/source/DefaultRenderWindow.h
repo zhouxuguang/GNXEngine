@@ -14,15 +14,15 @@
 #include "Runtime/RenderCore/include/RenderDevice.h"
 
 #define GLFW_INCLUDE_NONE
-#if OS_WINDOWS
+#if GNX_OS_WINDOWS
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
-#elif OS_MACOS
+#elif GNX_OS_MACOS
 #define GLFW_EXPOSE_NATIVE_COCOA
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"
-#elif OS_LINUX
+#elif GNX_OS_LINUX
 #define GLFW_EXPOSE_NATIVE_X11
 #include "GLFW/glfw3.h"
 #include "GLFW/glfw3native.h"

@@ -4,7 +4,7 @@ NS_BASELIB_BEGIN
 
 #if USE_FUTEX
 
-#if OS_MACOS
+#if GNX_OS_MACOS
 
 inline void MutexOnFutex::lock()
 {
@@ -70,11 +70,11 @@ inline void MutexOnStd::unlock() { mutex.unlock(); }
 
 #endif
 
-#if defined OS_WINDOWS 
+#if defined GNX_OS_WINDOWS 
 #include <windows.h>
 
 #if USE_FUTEX
-#if OS_WINDOWS
+#if GNX_OS_WINDOWS
 
 #pragma comment(lib, "Synchronization.lib")
 

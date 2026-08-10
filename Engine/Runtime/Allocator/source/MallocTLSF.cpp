@@ -37,7 +37,7 @@ void* MallocTLSF::Alloc(size_t size)
 {
     void* newPtr = nullptr;
     size_t alignment = VOID_PTR_SIZE;
-#if OS_MACOS | OS_IOS
+#if GNX_OS_MACOS | GNX_OS_IOS
     // macOS expects all allocations to be aligned to 16 bytes
     alignment = std::max((size_t)16, alignment);
 #else
@@ -57,7 +57,7 @@ void* MallocTLSF::Alloc(size_t size)
 void* MallocTLSF::AlignedAlloc(size_t size, size_t alignment)
 {
 	void* newPtr = nullptr;
-#if OS_MACOS | OS_IOS
+#if GNX_OS_MACOS | GNX_OS_IOS
 	// macOS expects all allocations to be aligned to 16 bytes
 	alignment = std::max((size_t)16, alignment);
 #else

@@ -18,14 +18,14 @@ NAMESPACE_GNXENGINE_BEGIN
 
 extern void* GetPlatformWindow(GLFWwindow *window);
 
-#if OS_WINDOWS
+#if GNX_OS_WINDOWS
 void* GetPlatformWindow(GLFWwindow *window)
 {
     return glfwGetWin32Window(window);
 }
 #endif
 
-#if OS_LINUX
+#if GNX_OS_LINUX
 #include <X11/Xlib.h>
 void* GetPlatformWindow(GLFWwindow *window)
 {
@@ -49,9 +49,9 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
     void* nativeWnd = GetPlatformWindow(mWindow);
 
     // 在这里选择底层的渲染器类型，创建它
-#if OS_WINDOWS | OS_LINUX
+#if GNX_OS_WINDOWS | GNX_OS_LINUX
     mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, nativeWnd);
-#elif OS_MACOS
+#elif GNX_OS_MACOS
     mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nativeWnd);
 #endif
 
@@ -88,11 +88,11 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props, void* externa
         mWindow = glfwCreateWindow(1, 1, "Hidden GLFW Window", NULL, NULL);
 
         // 使用外部窗口句柄创建 RenderDevice
-#if OS_WINDOWS
+#if GNX_OS_WINDOWS
         mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, externalWindowHandle);
-#elif OS_MACOS
+#elif GNX_OS_MACOS
         mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, externalWindowHandle);
-#elif OS_LINUX
+#elif GNX_OS_LINUX
 		mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, externalWindowHandle);
 #endif
 

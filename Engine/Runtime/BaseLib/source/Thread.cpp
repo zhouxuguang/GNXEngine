@@ -209,7 +209,7 @@ bool Thread::WaitFor() const
 #include <sys/time.h>
 #include <errno.h>
 
-#if OS_LINUX
+#if GNX_OS_LINUX
 #include <signal.h>
 #endif
 

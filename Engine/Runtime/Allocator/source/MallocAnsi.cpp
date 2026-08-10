@@ -7,7 +7,7 @@
 
 #include "MallocAnsi.h"
 
-#if OS_WINDOWS
+#if GNX_OS_WINDOWS
 #include <malloc.h>
 #endif
 
@@ -15,7 +15,7 @@ NS_ALLOCATOR_BEGIN
 
 MallocAnsi::MallocAnsi()
 {
-#if OS_WINDOWS
+#if GNX_OS_WINDOWS
     // Enable low fragmentation heap - http://msdn2.microsoft.com/en-US/library/aa366750.aspx
     intptr_t    CrtHeapHandle = _get_heap_handle();
     ULONG        EnableLFH = 2;
@@ -27,7 +27,7 @@ void* MallocAnsi::Alloc(size_t size)
 {
     void* newPtr = nullptr;
     size_t alignment = VOID_PTR_SIZE;
-#if OS_MACOS | OS_IOS
+#if GNX_OS_MACOS | GNX_OS_IOS
     // macOS expects all allocations to be aligned to 16 bytes, but TBBs default alignment is 8,
     // so on Mac we always have to use scalable_aligned_realloc
     alignment = std::max((size_t)16, alignment);
@@ -40,7 +40,7 @@ void* MallocAnsi::Alloc(size_t size)
 void* MallocAnsi::AlignedAlloc(size_t size, size_t alignment)
 {
 	void* newPtr = nullptr;
-#if OS_MACOS | OS_IOS
+#if GNX_OS_MACOS | GNX_OS_IOS
 	// macOS expects all allocations to be aligned to 16 bytes, but TBBs default alignment is 8,
 	// so on Mac we always have to use scalable_aligned_realloc
 	alignment = std::max((size_t)16, alignment);

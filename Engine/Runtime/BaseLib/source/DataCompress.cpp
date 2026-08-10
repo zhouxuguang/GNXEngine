@@ -1,6 +1,6 @@
 #include "DataCompress.h"
 
-#if OS_WINDOWS
+#if GNX_OS_WINDOWS
 #include "zlib.h"
 #else
 #include <zlib.h>
@@ -120,10 +120,10 @@ bool DataUnCompress(const void* pSrcData, size_t nLen, void* pDstData, size_t* p
 
 		//z_stream strm = {};
 
-		//// 1. ³õÊ¼»¯ zlib Á÷²¢Ö¸¶¨ gzip ¸ñÊ½
+		//// 1. ï¿½ï¿½Ê¼ï¿½ï¿½ zlib ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½ gzip ï¿½ï¿½Ê½
 		//if (inflateInit2(&strm, 16 + MAX_WBITS) != Z_OK)
 		//{
-		//	return Z_ERRNO; // ³õÊ¼»¯Ê§°Ü
+		//	return Z_ERRNO; // ï¿½ï¿½Ê¼ï¿½ï¿½Ê§ï¿½ï¿½
 		//}
 
 		//strm.next_in = (Bytef*)pSrcData;
@@ -136,15 +136,15 @@ bool DataUnCompress(const void* pSrcData, size_t nLen, void* pDstData, size_t* p
 		//do 
 		//{
 		//	ret = inflate(&strm, Z_NO_FLUSH);
-		//	if (ret < 0) break; // ³ö´í
+		//	if (ret < 0) break; // ï¿½ï¿½ï¿½ï¿½
 		//} while (ret != Z_STREAM_END);
 
-		//// 3. ÇåÀí×ÊÔ´
+		//// 3. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô´
 		//inflateEnd(&strm);
 
 		//if (ret == Z_STREAM_END) 
 		//{
-		//	*pOutLen = strm.total_out; // Êµ¼Ê½âÑ¹´óÐ¡
+		//	*pOutLen = strm.total_out; // Êµï¿½Ê½ï¿½Ñ¹ï¿½ï¿½Ð¡
 		//	return true;
 		//}
 

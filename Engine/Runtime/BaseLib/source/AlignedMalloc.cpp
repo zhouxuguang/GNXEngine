@@ -9,11 +9,11 @@
 #include "AlignedMalloc.h"
 #include <assert.h>
 
-#if OS_LINUX
+#if GNX_OS_LINUX
 #include <malloc.h>
 #endif
 
-#if OS_MACOS
+#if GNX_OS_MACOS
 #include <malloc/malloc.h>
 #endif
 
@@ -57,11 +57,11 @@ void AlignedFree(void *ptr)
 
 size_t GetAllocationSize(void* ptr)
 {
-#ifdef OS_WINDOWS
+#ifdef GNX_OS_WINDOWS
     return _aligned_msize(ptr, 16, 0); // TODO: incorrectly assumes alignment of 16
-#elif OS_MACOS
+#elif GNX_OS_MACOS
     return malloc_size(ptr);
-#elif OS_LINUX
+#elif GNX_OS_LINUX
     return malloc_usable_size(ptr);
 #endif
 }
