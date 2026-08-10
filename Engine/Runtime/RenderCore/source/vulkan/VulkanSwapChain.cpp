@@ -12,6 +12,13 @@ NAMESPACE_RENDERCORE_BEGIN
 
 static VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities, uint32_t width, uint32_t height)
 {
+    // 若 currentExtent 为 UINT32_MAX，表示由窗口系统决定实际尺寸（常见于 Wayland / 部分合成器），
+    // 此时应使用 surface capabilities 的 currentExtent，而不是调用方传入的尺寸
+    if (capabilities.currentExtent.width != UINT32_MAX)
+    {
+        return capabilities.currentExtent;
+    }
+
     VkExtent2D actualExtent = {width, height};
 
     actualExtent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actualExtent.width));

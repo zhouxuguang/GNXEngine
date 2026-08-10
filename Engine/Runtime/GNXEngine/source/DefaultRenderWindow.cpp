@@ -55,6 +55,13 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
     mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nativeWnd);
 #endif
 
+    // HiDPI 支持：使用 framebuffer 的物理像素尺寸创建交换链，
+    // 而不是窗口的逻辑尺寸（高 DPI 下两者不同）
+    int fbWidth = 0, fbHeight = 0;
+    glfwGetFramebufferSize(mWindow, &fbWidth, &fbHeight);
+    mData.width = static_cast<uint32_t>(fbWidth);
+    mData.height = static_cast<uint32_t>(fbHeight);
+
     mRenderDevice->Resize(mData.width, mData.height);
     SetVSync(false);
     Init();
@@ -160,11 +167,13 @@ void DefaultRenderWindow::Init()
         glfwSetWindowUserPointer(mWindow, &mData);
 
         // Set GLFW callbacks
-        glfwSetWindowSizeCallback(mWindow, [](GLFWwindow* window, int width, int height)
+        // HiDPI 支持：使用 framebuffer 尺寸回调（物理像素），
+        // 而不是窗口尺寸回调（逻辑像素），确保高 DPI 下渲染分辨率正确
+        glfwSetFramebufferSizeCallback(mWindow, [](GLFWwindow* window, int width, int height)
         {
             WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-            data.width = width;
-            data.height = height;
+            data.width = static_cast<uint32_t>(width);
+            data.height = static_cast<uint32_t>(height);
 
             WindowResizeEvent event(width, height);
             data.eventCallback(event);

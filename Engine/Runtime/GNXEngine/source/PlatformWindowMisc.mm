@@ -13,11 +13,17 @@ void* GetPlatformWindow(GLFWwindow *window)
     CAMetalLayer *metalLayer = [CAMetalLayer layer];
     metalLayer.device = gpu;
     metalLayer.opaque = YES;
-    metalLayer.contentsScale = 1.0;
+
+    NSWindow *nsWindow = glfwGetCocoaWindow(window);
+
+    // HiDPI 支持：让 Metal layer 的 contentsScale 跟随窗口所在屏幕的缩放因子，
+    // 这样 drawableSize（物理像素）才能正确对应 Retina 分辨率
+    CGFloat scale = nsWindow.screen ? nsWindow.screen.backingScaleFactor : 1.0;
+    metalLayer.contentsScale = scale;
+
     metalLayer.framebufferOnly = YES;
     metalLayer.displaySyncEnabled = YES;    // 默认开启垂直同步
     
-    NSWindow *nsWindow = glfwGetCocoaWindow(window);
     nsWindow.contentView.layer = metalLayer;
     nsWindow.contentView.wantsLayer = YES;
 
