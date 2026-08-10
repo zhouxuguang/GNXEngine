@@ -41,6 +41,15 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
     mData.width = props.width;
     mData.height = props.height;
     mData.title = props.title;
+    // 固定 GLFW 后端平台，避免运行时自动探测
+    // Windows→Win32 / macOS→Cocoa / Linux→X11（项目使用 glfwGetX11Display/Win32 原生接口）
+#if GNX_OS_MACOS
+    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_COCOA);
+#elif GNX_OS_WINDOWS
+    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WIN32);
+#elif GNX_OS_LINUX
+    glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+#endif
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
@@ -87,6 +96,14 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props, void* externa
         // 设置输入模式为 Event，由 Qt 事件驱动输入状态
         InputState::GetInstance().SetMode(InputMode::Event);
 
+        // 固定 GLFW 后端平台（与独立窗口保持一致）
+#if GNX_OS_MACOS
+        glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_COCOA);
+#elif GNX_OS_WINDOWS
+        glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WIN32);
+#elif GNX_OS_LINUX
+        glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+#endif
         glfwInit();
 
         // 创建一个隐藏的 GLFW 窗口用于事件轮询
