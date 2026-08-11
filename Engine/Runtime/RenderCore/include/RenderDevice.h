@@ -38,9 +38,9 @@ public:
      * 需要重新获取 native window、重建 VkSurfaceKHR 和 swapchain。
      * 基类默认空实现；桌面端无需处理。
      *
-     * @param nativeWindow 重新获取的平台原生窗口句柄（如 ANativeWindow*）
+     * @param nativeWindow 重新获取的平台原生窗口句柄（NativeWindow 封装）
      */
-    virtual void OnWindowRestored(void* nativeWindow) {}
+    virtual void OnWindowRestored(const NativeWindow& nativeWindow) {}
 
     /**
      * @brief 窗口进入后台时调用（移动端生命周期）
@@ -256,10 +256,10 @@ typedef std::shared_ptr<RenderDevice> RenderDevicePtr;
 /**
  *    创建渲染设备
  *        @param[in] deviceType 渲染平台类型分：GLES/METAL/VULKAN
- *        @param[in] handle 操作系统本地窗口
+ *        @param[in] nativeWindow 操作系统本地窗口（NativeWindow 封装）
  *        @return 渲染设备实例
  */
-RENDERCORE_API RenderDevicePtr CreateRenderDevice(RenderDeviceType deviceType, ViewHandle handle);
+RENDERCORE_API RenderDevicePtr CreateRenderDevice(RenderDeviceType deviceType, const NativeWindow& nativeWindow);
 
 RENDERCORE_API RenderDevicePtr GetRenderDevice();
 

@@ -86,18 +86,18 @@ GraphicsShader::~GraphicsShader()
 
 static RenderDevicePtr renderDevicePtr = nullptr;
 
-RenderDevicePtr CreateRenderDevice(RenderDeviceType deviceType, ViewHandle viewHandle)
+RenderDevicePtr CreateRenderDevice(RenderDeviceType deviceType, const NativeWindow& nativeWindow)
 {
     if (METAL == deviceType)
     {
 #ifdef __APPLE__
-        renderDevicePtr = createMetalRenderDevice(viewHandle);
+        renderDevicePtr = createMetalRenderDevice(nativeWindow);
 #endif
     }
     else if (VULKAN == deviceType)
     {
     #if !GNX_OS_IOS
-        renderDevicePtr = std::make_shared<VKRenderDevice>(viewHandle);
+        renderDevicePtr = std::make_shared<VKRenderDevice>(nativeWindow);
     #endif
     }
     return renderDevicePtr;

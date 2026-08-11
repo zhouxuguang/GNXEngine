@@ -7,7 +7,7 @@
 
 NAMESPACE_GNXENGINE_BEGIN
 
-void* GetPlatformWindow(GLFWwindow *window)
+RenderCore::NativeWindow GetPlatformWindow(GLFWwindow *window)
 {
     const id<MTLDevice> gpu = MTLCreateSystemDefaultDevice();
     CAMetalLayer *metalLayer = [CAMetalLayer layer];
@@ -27,7 +27,9 @@ void* GetPlatformWindow(GLFWwindow *window)
     nsWindow.contentView.layer = metalLayer;
     nsWindow.contentView.wantsLayer = YES;
 
-    return (__bridge void*)metalLayer;
+    RenderCore::NativeWindow nw;
+    nw.viewHandle = (__bridge void*)metalLayer;
+    return nw;
 }
 
 NAMESPACE_GNXENGINE_END

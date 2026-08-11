@@ -16,23 +16,25 @@
 
 NAMESPACE_GNXENGINE_BEGIN
 
-extern void* GetPlatformWindow(GLFWwindow *window);
+extern RenderCore::NativeWindow GetPlatformWindow(GLFWwindow *window);
 
 #if GNX_OS_WINDOWS
-void* GetPlatformWindow(GLFWwindow *window)
+RenderCore::NativeWindow GetPlatformWindow(GLFWwindow *window)
 {
-    return glfwGetWin32Window(window);
+    RenderCore::NativeWindow nw;
+    nw.viewHandle = glfwGetWin32Window(window);
+    return nw;
 }
 #endif
 
 #if GNX_OS_LINUX
 #include <X11/Xlib.h>
-void* GetPlatformWindow(GLFWwindow *window)
+RenderCore::NativeWindow GetPlatformWindow(GLFWwindow *window)
 {
-    RenderCore::X11ViewHandle* h = new RenderCore::X11ViewHandle();
-    h->display = glfwGetX11Display();
-    h->window = (void*)(uintptr_t)glfwGetX11Window(window);
-    return (void*)h;
+    RenderCore::NativeWindow nw;
+    nw.display = glfwGetX11Display();
+    nw.viewHandle = reinterpret_cast<void*>(static_cast<uintptr_t>(glfwGetX11Window(window)));
+    return nw;
 }
 #endif
 
@@ -55,7 +57,7 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
     glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
     mWindow = glfwCreateWindow(mData.width, mData.height, mData.title.c_str(), NULL, NULL);
 
-    void* nativeWnd = GetPlatformWindow(mWindow);
+    RenderCore::NativeWindow nativeWnd = GetPlatformWindow(mWindow);
 
     // 在这里选择底层的渲染器类型，创建它
 #if GNX_OS_WINDOWS | GNX_OS_LINUX
@@ -112,12 +114,14 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props, void* externa
         mWindow = glfwCreateWindow(1, 1, "Hidden GLFW Window", NULL, NULL);
 
         // 使用外部窗口句柄创建 RenderDevice
+        RenderCore::NativeWindow nw;
+        nw.viewHandle = externalWindowHandle;
 #if GNX_OS_WINDOWS
-        mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, externalWindowHandle);
+        mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, nw);
 #elif GNX_OS_MACOS
-        mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, externalWindowHandle);
+        mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nw);
 #elif GNX_OS_LINUX
-		mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, externalWindowHandle);
+		mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, nw);
 #endif
 
         mRenderDevice->Resize(mData.width, mData.height);

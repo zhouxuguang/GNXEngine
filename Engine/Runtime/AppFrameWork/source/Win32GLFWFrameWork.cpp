@@ -18,7 +18,9 @@ Win32GLFWFrameWork::Win32GLFWFrameWork(uint32_t width, uint32_t height, const ch
 
     HWND hWnd = glfwGetWin32Window(mWindow);
     
-    mRenderdevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, hWnd);
+    RenderCore::NativeWindow nw;
+    nw.viewHandle = hWnd;
+    mRenderdevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, nw);
     
     int fbWidth = 0;
     int fbHeight = 0;

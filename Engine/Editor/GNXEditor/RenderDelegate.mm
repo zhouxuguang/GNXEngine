@@ -67,7 +67,9 @@ static RenderDeviceType convertToRenderDeviceType(RenderType renderType)
 
 - (void)initRenderWithHandle:(nonnull CALayer *)layer andType:(RenderType)renderType
 {
-    mRenderdevice = CreateRenderDevice(convertToRenderDeviceType(renderType), (__bridge void*)layer);
+    RenderCore::NativeWindow nw;
+    nw.viewHandle = (__bridge void*)layer;
+    mRenderdevice = CreateRenderDevice(convertToRenderDeviceType(renderType), nw);
     
     mTransientResources = new RenderSystem::TransientResources(mRenderdevice);
 }

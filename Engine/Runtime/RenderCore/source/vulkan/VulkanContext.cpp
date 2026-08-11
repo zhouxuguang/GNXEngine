@@ -684,9 +684,9 @@ void CreateVMA(VulkanContext& context)
     vmaCreateAllocator(&vmaAllocatorCreateInfo, &context.vmaAllocator);
 }
 
-bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
+bool CreateSurfaceKHR(VulkanContext& context, const NativeWindow& nativeWindow)
 {
-    if (nullptr == nativeWidow)
+    if (nullptr == nativeWindow.viewHandle)
     {
         return false;
     }
@@ -694,28 +694,29 @@ bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
 #ifdef VK_USE_PLATFORM_METAL_EXT
     VkMetalSurfaceCreateInfoEXT createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
-    createInfo.pLayer = (const CAMetalLayer*)nativeWidow;
+    createInfo.pLayer = (const CAMetalLayer*)nativeWindow.viewHandle;
     PFN_vkCreateMetalSurfaceEXT vkCreateMetalSurfaceEXT = (PFN_vkCreateMetalSurfaceEXT)vkGetInstanceProcAddr(context.instance, "vkCreateMetalSurfaceEXT");
     VkResult result = vkCreateMetalSurfaceEXT(context.instance, &createInfo, nullptr, &context.surfaceKhr);
 #elif defined VK_USE_PLATFORM_WIN32_KHR
     VkWin32SurfaceCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	createInfo.hwnd = (HWND)nativeWidow;
+	createInfo.hwnd = (HWND)nativeWindow.viewHandle;
 	createInfo.hinstance = GetModuleHandle(nullptr);
     PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(context.instance, "vkCreateWin32SurfaceKHR");
     VkResult result = vkCreateWin32SurfaceKHR(context.instance, &createInfo, nullptr, &context.surfaceKhr);
 #elif defined VK_USE_PLATFORM_XLIB_KHR
-    // X11 需要 (Display*, Window) 两个参数，通过 X11ViewHandle 结构体传递
-    X11ViewHandle* x11Handle = static_cast<X11ViewHandle*>(nativeWidow);
-    if (nullptr == x11Handle || nullptr == x11Handle->display)
+    // X11 需要 (Display*, Window) 两个参数：
+    //   NativeWindow.display    = Display*
+    //   NativeWindow.viewHandle = ::Window (XID)
+    if (nullptr == nativeWindow.display)
     {
-        LOG_INFO("CreateSurfaceKHR: X11ViewHandle is invalid");
+        LOG_INFO("CreateSurfaceKHR: X11 display is invalid");
         return false;
     }
     VkXlibSurfaceCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-    createInfo.dpy = static_cast<Display*>(x11Handle->display);
-    createInfo.window = static_cast<::Window>(reinterpret_cast<uintptr_t>(x11Handle->window));
+    createInfo.dpy = static_cast<Display*>(nativeWindow.display);
+    createInfo.window = static_cast<::Window>(reinterpret_cast<uintptr_t>(nativeWindow.viewHandle));
     PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR = (PFN_vkCreateXlibSurfaceKHR)vkGetInstanceProcAddr(context.instance, "vkCreateXlibSurfaceKHR");
     if (nullptr == vkCreateXlibSurfaceKHR)
     {
@@ -726,7 +727,7 @@ bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
 #elif defined VK_USE_PLATFORM_ANDROID_KHR
     VkAndroidSurfaceCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
-    createInfo.window = (ANativeWindow *)nativeWidow;
+    createInfo.window = (ANativeWindow *)nativeWindow.viewHandle;
     PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR = (PFN_vkCreateAndroidSurfaceKHR)vkGetInstanceProcAddr(context.instance, "vkCreateAndroidSurfaceKHR");
     VkResult result = vkCreateAndroidSurfaceKHR(context.instance, &createInfo, nullptr, &context.surfaceKhr);
 #endif
@@ -736,10 +737,8 @@ bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
 
 // 销毁 Surface（在窗口重建/从后台恢复时，需用新的 native window 重新创建）
 // 注意：必须在 vkDestroyDevice 之前调用（Android 上 surface 依赖 device）
-bool DestroySurfaceKHR(VulkanContext& context, ViewHandle nativeWidow)
+bool DestroySurfaceKHR(VulkanContext& context)
 {
-    (void)nativeWidow;  // 平台相关的原生窗口句柄在创建 surface 时使用，销毁时不需要
-
     if (context.surfaceKhr != VK_NULL_HANDLE)
     {
         if (context.instance != VK_NULL_HANDLE)

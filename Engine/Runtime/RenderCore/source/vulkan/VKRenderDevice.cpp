@@ -29,7 +29,7 @@ NAMESPACE_RENDERCORE_BEGIN
 
 USING_NS_BASELIB
 
-VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
+VKRenderDevice::VKRenderDevice(const NativeWindow& nativeWindow)
 {
 //    const char* env_p = std::getenv("PATH");
 //    putenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS");
@@ -113,7 +113,7 @@ VKRenderDevice::VKRenderDevice(ViewHandle nativeWidow)
     mVulkanContext->upLoadPool.Start();
     
     // 创建交换链
-    if (!CreateSurfaceKHR(*mVulkanContext, nativeWidow))
+    if (!CreateSurfaceKHR(*mVulkanContext, nativeWindow))
     {
         LOG_INFO("CreateSurfaceKHR ERROR");
         return;
@@ -325,8 +325,8 @@ void VKRenderDevice::Resize(uint32_t width, uint32_t height)
 }
 
 // Android 等平台：后台→前台时底层 Surface 可能被销毁重建，
-// 必须销毁旧的 VkSurfaceKHR，用新的 ANativeWindow 重建 surface + swapchain
-void VKRenderDevice::OnWindowRestored(void* nativeWindow)
+// 必须销毁旧的 VkSurfaceKHR，用新的 native window 重建 surface + swapchain
+void VKRenderDevice::OnWindowRestored(const NativeWindow& nativeWindow)
 {
     if (!mVulkanContext)
     {
@@ -349,16 +349,16 @@ void VKRenderDevice::OnWindowRestored(void* nativeWindow)
     // 销毁旧 surface，用新 native window 重建
     if (mVulkanContext->surfaceKhr != VK_NULL_HANDLE)
     {
-        DestroySurfaceKHR(*mVulkanContext, nativeWindow);
+        DestroySurfaceKHR(*mVulkanContext);
     }
 
-    if (nativeWindow == nullptr)
+    if (nativeWindow.viewHandle == nullptr)
     {
         LOG_INFO("VKRenderDevice::OnWindowRestored: null native window, skip surface recreate");
         return;
     }
 
-    // 用新的 ANativeWindow 重建 surface
+    // 用新的 native window 重建 surface
     if (!CreateSurfaceKHR(*mVulkanContext, nativeWindow))
     {
         LOG_INFO("VKRenderDevice::OnWindowRestored: CreateSurfaceKHR ERROR");

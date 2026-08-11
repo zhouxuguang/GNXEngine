@@ -118,7 +118,9 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
     }
     if (nativeWnd)
     {
-        mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nativeWnd);
+        RenderCore::NativeWindow nw;
+        nw.viewHandle = nativeWnd;
+        mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nw);
         if (mRenderDevice)
         {
             mRenderDevice->Resize(mData.width, mData.height);
@@ -133,7 +135,9 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
 
     if (nativeWnd)
     {
-        mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, nativeWnd);
+        RenderCore::NativeWindow nw;
+        nw.viewHandle = nativeWnd;
+        mRenderDevice = CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, nw);
         if (mRenderDevice)
         {
             mRenderDevice->Resize(mData.width, mData.height);
@@ -332,13 +336,15 @@ void SDLRenderWindow::HandleSDLEvents()
                     if (nativeWnd && mRenderDevice)
                     {
                         // 用新的 ANativeWindow 重建 surface + swapchain
-                        mRenderDevice->OnWindowRestored(nativeWnd);
+                        RenderCore::NativeWindow nw;
+                        nw.viewHandle = nativeWnd;
+                        mRenderDevice->OnWindowRestored(nw);
                     }
                 }
 #else
                 if (mRenderDevice)
                 {
-                    mRenderDevice->OnWindowRestored(nullptr);
+                    mRenderDevice->OnWindowRestored(RenderCore::NativeWindow());
                 }
 #endif
             }

@@ -176,7 +176,9 @@ bool WindowsVulkanView::createWindow(int width, int height)
 
 bool WindowsVulkanView::createRenderDevice()
 {
-	mRenderDevice = RenderCore::CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, mWindow);
+	RenderCore::NativeWindow nw;
+	nw.viewHandle = mWindow;
+	mRenderDevice = RenderCore::CreateRenderDevice(RenderCore::RenderDeviceType::VULKAN, nw);
 
 	{
 		baselib::ThreadPool threadPool(32);

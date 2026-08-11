@@ -10,9 +10,9 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-RenderDevicePtr createMetalRenderDevice(void* windowPtr)
+RenderDevicePtr createMetalRenderDevice(const NativeWindow& nativeWindow)
 {
-    return std::make_shared<MTLRenderDevice>((__bridge CAMetalLayer*)windowPtr);
+    return std::make_shared<MTLRenderDevice>((__bridge CAMetalLayer*)nativeWindow.viewHandle);
 }
 
 NAMESPACE_RENDERCORE_END

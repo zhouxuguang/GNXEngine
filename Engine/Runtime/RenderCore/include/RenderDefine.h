@@ -13,6 +13,10 @@
 #include <vector>
 #include <string>
 
+// 引入平台宏（GNX_OS_WINDOWS / GNX_OS_LINUX / GNX_OS_ANDROID / GNX_OS_MACOS / GNX_OS_IOS）
+// NativeWindow 结构体依赖 GNX_OS_LINUX 来选择字段，必须保证该宏在结构体定义前已展开
+#include "Runtime/BaseLib/include/PreCompile.h"
+
 #if _WIN32
 	#ifdef RENDERCORE_EXPORTS
 		#ifdef __GNUC__
@@ -45,14 +49,12 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-typedef void* ViewHandle;
-
-// X11 原生窗口句柄（Display* + Window）
-// Linux 下传给 CreateRenderDevice 的 ViewHandle 应指向本结构体
-struct X11ViewHandle
+struct NativeWindow
 {
-    void* display;   // Display*
-    void* window;    // ::Window (XID)
+#if GNX_OS_LINUX
+    void *display = nullptr;   // Display*
+#endif
+    void* viewHandle = nullptr;  // 平台原生窗口句柄（如 Windows HWND / macOS NSView* / Android ANativeWindow*）   
 };
 
 typedef enum RenderDeviceType

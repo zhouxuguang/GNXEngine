@@ -103,9 +103,9 @@ bool CreateVirtualDevice(VulkanContext& context);
 void CreateVMA(VulkanContext& context);
 
 // 创建Surface对象
-bool CreateSurfaceKHR(VulkanContext& context, ViewHandle nativeWidow);
+bool CreateSurfaceKHR(VulkanContext& context, const NativeWindow& nativeWindow);
 
-bool DestroySurfaceKHR(VulkanContext& context, ViewHandle nativeWidow);
+bool DestroySurfaceKHR(VulkanContext& context);
 
 // 创建图形描述符的pool
 void CreateGraphicsDescriptorPool(VulkanContext& context);

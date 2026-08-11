@@ -29,7 +29,9 @@ MTLGLFWFramework::MTLGLFWFramework(uint32_t width, uint32_t height, const char* 
     nswindow.contentView.layer = mMetalLayer;
     nswindow.contentView.wantsLayer = YES;
     
-    mRenderdevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, (__bridge void*)mMetalLayer);
+    RenderCore::NativeWindow nw;
+    nw.viewHandle = (__bridge void*)mMetalLayer;
+    mRenderdevice = CreateRenderDevice(RenderCore::RenderDeviceType::METAL, nw);
     
     int fbWidth = 0;
     int fbHeight = 0;

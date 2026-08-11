@@ -12,7 +12,7 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-RenderDevicePtr createMetalRenderDevice(void* windowPtr);
+RenderDevicePtr createMetalRenderDevice(const NativeWindow& nativeWindow);
 
 NAMESPACE_RENDERCORE_END
 
