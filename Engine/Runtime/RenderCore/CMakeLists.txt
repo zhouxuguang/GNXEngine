@@ -54,6 +54,22 @@ target_include_directories(RenderCore PRIVATE ${rendercore_include_dir}
                                                ${GNX_REPO_ROOT}/ThirdParty/vulkan-headers)
 target_compile_definitions(RenderCore PRIVATE RENDERCORE_EXPORTS)
 
+# 平台宏必须以编译定义的形式下发到整个 RenderCore 目标（包括 volk.c）
+# volk.c 只 include <vulkan/vulkan.h>，不会包含 VKRenderDefine.h；
+# 若此处不定义，vulkan.h 不会 include vulkan_xlib.h / vulkan_win32.h 等，
+# 导致 volk.c 里的 vkCreateXlibSurfaceKHR / vkCreateWin32SurfaceKHR 等符号不会被编译出来，
+# 进而在链接阶段出现 undefined reference。
+if(WIN32)
+    target_compile_definitions(RenderCore PRIVATE VK_USE_PLATFORM_WIN32_KHR)
+elseif(ANDROID)
+    target_compile_definitions(RenderCore PRIVATE VK_USE_PLATFORM_ANDROID_KHR)
+elseif(APPLE)
+    target_compile_definitions(RenderCore PRIVATE VK_USE_PLATFORM_METAL_EXT)
+elseif(UNIX AND NOT APPLE)
+    # Linux 桌面：X11
+    target_compile_definitions(RenderCore PRIVATE VK_USE_PLATFORM_XLIB_KHR)
+endif()
+
 # NVIDIA Nsight Aftermath GPU 崩溃转储集成
 if(ENABLE_NSIGHT_AFTERMATH)
     target_compile_definitions(RenderCore PRIVATE ENABLE_NSIGHT_AFTERMATH)

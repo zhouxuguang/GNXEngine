@@ -695,14 +695,12 @@ bool CreateSurfaceKHR(VulkanContext& context, const NativeWindow& nativeWindow)
     VkMetalSurfaceCreateInfoEXT createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_METAL_SURFACE_CREATE_INFO_EXT;
     createInfo.pLayer = (const CAMetalLayer*)nativeWindow.viewHandle;
-    PFN_vkCreateMetalSurfaceEXT vkCreateMetalSurfaceEXT = (PFN_vkCreateMetalSurfaceEXT)vkGetInstanceProcAddr(context.instance, "vkCreateMetalSurfaceEXT");
     VkResult result = vkCreateMetalSurfaceEXT(context.instance, &createInfo, nullptr, &context.surfaceKhr);
 #elif defined VK_USE_PLATFORM_WIN32_KHR
     VkWin32SurfaceCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
 	createInfo.hwnd = (HWND)nativeWindow.viewHandle;
 	createInfo.hinstance = GetModuleHandle(nullptr);
-    PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddr(context.instance, "vkCreateWin32SurfaceKHR");
     VkResult result = vkCreateWin32SurfaceKHR(context.instance, &createInfo, nullptr, &context.surfaceKhr);
 #elif defined VK_USE_PLATFORM_XLIB_KHR
     // X11 需要 (Display*, Window) 两个参数：
@@ -715,9 +713,8 @@ bool CreateSurfaceKHR(VulkanContext& context, const NativeWindow& nativeWindow)
     }
     VkXlibSurfaceCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR;
-    createInfo.dpy = static_cast<Display*>(nativeWindow.display);
-    createInfo.window = static_cast<::Window>(reinterpret_cast<uintptr_t>(nativeWindow.viewHandle));
-    PFN_vkCreateXlibSurfaceKHR vkCreateXlibSurfaceKHR = (PFN_vkCreateXlibSurfaceKHR)vkGetInstanceProcAddr(context.instance, "vkCreateXlibSurfaceKHR");
+    createInfo.dpy = (Display*)nativeWindow.display;
+    createInfo.window = (::Window)nativeWindow.viewHandle;
     if (nullptr == vkCreateXlibSurfaceKHR)
     {
         LOG_INFO("CreateSurfaceKHR: vkCreateXlibSurfaceKHR not found");
@@ -728,7 +725,6 @@ bool CreateSurfaceKHR(VulkanContext& context, const NativeWindow& nativeWindow)
     VkAndroidSurfaceCreateInfoKHR createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR;
     createInfo.window = (ANativeWindow *)nativeWindow.viewHandle;
-    PFN_vkCreateAndroidSurfaceKHR vkCreateAndroidSurfaceKHR = (PFN_vkCreateAndroidSurfaceKHR)vkGetInstanceProcAddr(context.instance, "vkCreateAndroidSurfaceKHR");
     VkResult result = vkCreateAndroidSurfaceKHR(context.instance, &createInfo, nullptr, &context.surfaceKhr);
 #endif
 

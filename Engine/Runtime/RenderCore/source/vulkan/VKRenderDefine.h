@@ -8,14 +8,24 @@
 #ifndef GNX_ENGINE_VK_RENDER_DEFINE_INCLUDE_GKDFGJ
 #define GNX_ENGINE_VK_RENDER_DEFINE_INCLUDE_GKDFGJ
 
+// 平台宏同时由 RenderCore/CMakeLists.txt 以编译定义形式下发给整个目标（含 volk.c）。
+// 此处用 #ifndef 保护，避免与编译定义重复定义产生重定义警告。
 #if defined(_WIN32)
+    #ifndef VK_USE_PLATFORM_WIN32_KHR
     #define VK_USE_PLATFORM_WIN32_KHR
+    #endif
 #elif __ANDROID__
+    #ifndef VK_USE_PLATFORM_ANDROID_KHR
     #define VK_USE_PLATFORM_ANDROID_KHR
+    #endif
 #elif defined(__linux__) || defined(__unix__)
+    #ifndef VK_USE_PLATFORM_XLIB_KHR
     #define VK_USE_PLATFORM_XLIB_KHR
+    #endif
 #elif defined(__APPLE__)
+    #ifndef VK_USE_PLATFORM_METAL_EXT
     #define VK_USE_PLATFORM_METAL_EXT
+    #endif
 #else
 #endif
 
