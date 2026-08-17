@@ -5,6 +5,7 @@ if(LINUX)
     set(GLFW_BUILD_WAYLAND OFF CACHE BOOL "" FORCE)
     set(GLFW_BUILD_X11 ON CACHE BOOL "" FORCE)
 endif()
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(glfw)
 
