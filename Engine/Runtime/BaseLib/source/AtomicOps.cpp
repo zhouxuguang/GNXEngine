@@ -6,29 +6,30 @@
 
 NS_BASELIB_BEGIN
 
-bool CBLAtomicSwapPtr( void *volatile *oneValue, void *volatile *otherValue )
+bool CBLAtomicSwapPtr(void *volatile *oneValue, void *volatile *otherValue)
 {
 	if (NULL == oneValue || NULL == otherValue)
 	{
 		return false;
 	}
 
-#ifdef WIN32
-	void *volatile * ptr = oneValue;
-	*otherValue = InterlockedCompareExchangePointerAcquire(ptr,*otherValue,*oneValue);
-	void* pTmp = NULL;
-	ptr = &pTmp;
-	InterlockedCompareExchangePointerRelease(ptr,NULL,NULL);
-
-#elif defined __GNUC__
-	void *volatile * ptr = oneValue;
-	*otherValue = __sync_lock_test_and_set(ptr, *otherValue);
-    void* pTmp = NULL;
-	ptr = &pTmp;
-	__sync_lock_release(ptr);
-#endif
-    
-    return true;
+	// 基于 CAS 循环的原子交换：
+	//   1) 记录 oneValue 的当前值 a，读取 otherValue 的当前值 b
+	//   2) 尝试把 oneValue 从 a 原子替换为 b
+	//   3) 成功则把 otherValue 写为 a，完成交换；失败（期间 oneValue 被并发修改）
+	//      则用返回的最新值重试，直至成功
+	void *a = *oneValue;
+	for (;;)
+	{
+		void *b = *otherValue;
+		void *expected = a;
+		if (CBLAtomicCompareAndSwapPtr(expected, b, oneValue))
+		{
+			*otherValue = a;
+			return true;
+		}
+		a = *oneValue;
+	}
 }
 
 
@@ -51,9 +52,9 @@ int CBLAtomicDecrement(volatile int* ptrValue)
     return OSAtomicDecrement32(ptrValue);
 }
 
-int CBLAtomicCompareSwap(volatile int* ptrValue, int nExchange,int nCompare)
+int CBLAtomicCompareSwap(volatile int* ptrValue, int nExchange, int nCompare)
 {
-    if (OSAtomicCompareAndSwapInt(nCompare,nExchange,ptrValue) )
+    if (OSAtomicCompareAndSwapInt(nCompare, nExchange, ptrValue))
     {
         return nCompare;
     }
@@ -61,7 +62,7 @@ int CBLAtomicCompareSwap(volatile int* ptrValue, int nExchange,int nCompare)
         return *ptrValue;
 }
 
-bool CBLAtomicCompareAndSwapPtr( void *oldValue, void *newValue, void * volatile *theValue )
+bool CBLAtomicCompareAndSwapPtr(void *oldValue, void *newValue, void * volatile *theValue)
 {
     return OSAtomicCompareAndSwapPtr(oldValue, newValue, theValue);
 }
@@ -69,9 +70,10 @@ bool CBLAtomicCompareAndSwapPtr( void *oldValue, void *newValue, void * volatile
 //windows实现
 #elif defined(WIN32) || defined(_WIN64)
 
-int CBLAtomicCompareSwap(volatile int* ptrValue, int nExchange,int nCompare)
+int CBLAtomicCompareSwap(volatile int* ptrValue, int nExchange, int nCompare)
 {
-    return InterlockedCompareExchange((volatile LONG*)ptrValue,nCompare,nExchange);
+    // InterlockedCompareExchange(目标, 新值, 旧值) —— 参数顺序与 GCC/OSAtomic 对齐
+    return InterlockedCompareExchange((volatile LONG*)ptrValue, nExchange, nCompare);
 }
 
 int CBLAtomicIncrement(volatile int* ptrValue)
@@ -84,10 +86,11 @@ int CBLAtomicDecrement(volatile int* ptrValue)
 	return InterlockedDecrement((volatile LONG *)ptrValue);
 }
 
-bool CBLAtomicCompareAndSwapPtr( void *oldValue, void *newValue, void * volatile *theValue )
+bool CBLAtomicCompareAndSwapPtr(void *oldValue, void *newValue, void * volatile *theValue)
 {
     void *pRet = InterlockedCompareExchangePointer(theValue, newValue, oldValue);
-	return pRet != (void*)oldValue;
+	// pRet 是交换前 *theValue 的值；若等于 oldValue 说明 CAS 成功，返回 true
+	return pRet == (void*)oldValue;
 }
 
 #if defined(_MSC_VER) && (defined(_M_IX86) || defined(_M_X64))
