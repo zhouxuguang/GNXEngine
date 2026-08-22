@@ -233,165 +233,165 @@ void SDLRenderWindow::HandleSDLEvents()
     {
         switch (sdlEvent.type)
         {
-        // —— 键盘 ——
-        case SDL_KEYDOWN:
-        {
-            if (!sdlEvent.key.repeat)
+            // —— 键盘 ——
+            case SDL_KEYDOWN:
             {
-                KeyPressedEvent event(MapSDLKeyToKeyCode(sdlEvent.key.keysym.sym), 0);
-                mData.eventCallback(event);
-            }
-            break;
-        }
-        case SDL_KEYUP:
-        {
-            KeyReleasedEvent event(MapSDLKeyToKeyCode(sdlEvent.key.keysym.sym));
-            mData.eventCallback(event);
-            break;
-        }
-
-        // —— 触摸 / 鼠标按钮 ——
-        case SDL_MOUSEBUTTONDOWN:
-#if TARGET_OS_IOS || defined(__ANDROID__)
-        case SDL_FINGERDOWN:
-#endif
-        {
-            MouseButtonPressedEvent event(
-                (sdlEvent.type == SDL_FINGERDOWN) ? Button0
-                                                  : MapSDLButtonToMouseCode(sdlEvent.button.button));
-            mData.eventCallback(event);
-            break;
-        }
-        case SDL_MOUSEBUTTONUP:
-#if TARGET_OS_IOS || defined(__ANDROID__)
-        case SDL_FINGERUP:
-#endif
-        {
-            MouseButtonReleasedEvent event(
-                (sdlEvent.type == SDL_FINGERUP) ? Button0
-                                                : MapSDLButtonToMouseCode(sdlEvent.button.button));
-            mData.eventCallback(event);
-            break;
-        }
-
-        // —— 触摸/鼠标移动 ——
-        case SDL_MOUSEMOTION:
-        {
-            MouseMovedEvent event(
-                static_cast<float>(sdlEvent.motion.x),
-                static_cast<float>(sdlEvent.motion.y));
-            mData.eventCallback(event);
-            break;
-        }
-#if TARGET_OS_IOS || defined(__ANDROID__)
-        case SDL_FINGERMOTION:
-        {
-            int winW, winH;
-            SDL_GetWindowSize(mWindow, &winW, &winH);
-            MouseMovedEvent event(
-                sdlEvent.tfinger.x * winW,
-                sdlEvent.tfinger.y * winH);
-            mData.eventCallback(event);
-            break;
-        }
-#endif
-
-        // —— 窗口大小变化 / 生命周期 ——
-        case SDL_WINDOWEVENT:
-        {
-            if (sdlEvent.window.event == SDL_WINDOWEVENT_RESIZED)
-            {
-                // 用像素尺寸（而非事件里的逻辑点），确保高分屏(Retina)下渲染分辨率正确
-                int pxW = 0, pxH = 0;
-                SDL_GetWindowSizeInPixels(mWindow, &pxW, &pxH);
-                if (pxW <= 0 || pxH <= 0)
+                if (!sdlEvent.key.repeat)
                 {
-                    // 回退到事件携带的尺寸（非高分屏场景）
-                    pxW = sdlEvent.window.data1;
-                    pxH = sdlEvent.window.data2;
+                    KeyPressedEvent event(MapSDLKeyToKeyCode(sdlEvent.key.keysym.sym), 0);
+                    mData.eventCallback(event);
                 }
-                mData.width  = static_cast<uint32_t>(pxW);
-                mData.height = static_cast<uint32_t>(pxH);
-                WindowResizeEvent event(mData.width, mData.height);
-                mData.eventCallback(event);
+                break;
             }
-            // —— 窗口进入后台 ——
-            // 注意：MINIMIZED 时底层 Surface 还没销毁（真正销毁发生在 surfaceDestroyed），
-            //       只需暂停渲染、等待 GPU 空闲即可，绝不能在这里重建 surface+swapchain。
-            else if (sdlEvent.window.event == SDL_WINDOWEVENT_MINIMIZED)
+            case SDL_KEYUP:
             {
+                KeyReleasedEvent event(MapSDLKeyToKeyCode(sdlEvent.key.keysym.sym));
+                mData.eventCallback(event);
+                break;
+            }
+
+            // —— 触摸 / 鼠标按钮 ——
+            case SDL_MOUSEBUTTONDOWN:
+    #if TARGET_OS_IOS || defined(__ANDROID__)
+            case SDL_FINGERDOWN:
+    #endif
+            {
+                MouseButtonPressedEvent event(
+                    (sdlEvent.type == SDL_FINGERDOWN) ? Button0
+                                                      : MapSDLButtonToMouseCode(sdlEvent.button.button));
+                mData.eventCallback(event);
+                break;
+            }
+            case SDL_MOUSEBUTTONUP:
+    #if TARGET_OS_IOS || defined(__ANDROID__)
+            case SDL_FINGERUP:
+    #endif
+            {
+                MouseButtonReleasedEvent event(
+                    (sdlEvent.type == SDL_FINGERUP) ? Button0
+                                                    : MapSDLButtonToMouseCode(sdlEvent.button.button));
+                mData.eventCallback(event);
+                break;
+            }
+
+            // —— 触摸/鼠标移动 ——
+            case SDL_MOUSEMOTION:
+            {
+                MouseMovedEvent event(
+                    static_cast<float>(sdlEvent.motion.x),
+                    static_cast<float>(sdlEvent.motion.y));
+                mData.eventCallback(event);
+                break;
+            }
+    #if TARGET_OS_IOS || defined(__ANDROID__)
+            case SDL_FINGERMOTION:
+            {
+                int winW, winH;
+                SDL_GetWindowSize(mWindow, &winW, &winH);
+                MouseMovedEvent event(
+                    sdlEvent.tfinger.x * winW,
+                    sdlEvent.tfinger.y * winH);
+                mData.eventCallback(event);
+                break;
+            }
+    #endif
+
+            // —— 窗口大小变化 / 生命周期 ——
+            case SDL_WINDOWEVENT:
+            {
+                if (sdlEvent.window.event == SDL_WINDOWEVENT_RESIZED)
+                {
+                    // 用像素尺寸（而非事件里的逻辑点），确保高分屏(Retina)下渲染分辨率正确
+                    int pxW = 0, pxH = 0;
+                    SDL_GetWindowSizeInPixels(mWindow, &pxW, &pxH);
+                    if (pxW <= 0 || pxH <= 0)
+                    {
+                        // 回退到事件携带的尺寸（非高分屏场景）
+                        pxW = sdlEvent.window.data1;
+                        pxH = sdlEvent.window.data2;
+                    }
+                    mData.width  = static_cast<uint32_t>(pxW);
+                    mData.height = static_cast<uint32_t>(pxH);
+                    WindowResizeEvent event(mData.width, mData.height);
+                    mData.eventCallback(event);
+                }
+                // —— 窗口进入后台 ——
+                // 注意：MINIMIZED 时底层 Surface 还没销毁（真正销毁发生在 surfaceDestroyed），
+                //       只需暂停渲染、等待 GPU 空闲即可，绝不能在这里重建 surface+swapchain。
+                else if (sdlEvent.window.event == SDL_WINDOWEVENT_MINIMIZED)
+                {
+                    mAppActive = false;
+                    if (mRenderDevice)
+                    {
+                        mRenderDevice->OnWindowMinimized();
+                    }
+                }
+                // —— 窗口从后台恢复 ——
+                // 恢复时底层 ANativeWindow 已被 surfaceCreated 重建，必须用新句柄
+                // 重建 VkSurfaceKHR + swapchain（Android 核心路径）。
+                else if (sdlEvent.window.event == SDL_WINDOWEVENT_RESTORED)
+                {
+                    mAppActive = true;
+    #if defined(__ANDROID__)
+                    // 重新获取最新的 ANativeWindow（SDL 内部已在 onNativeSurfaceCreated 更新）
+                    struct SDL_SysWMinfo sysWMinfo;
+                    SDL_VERSION(&sysWMinfo.version);
+                    if (SDL_GetWindowWMInfo(mWindow, &sysWMinfo))
+                    {
+                        void* nativeWnd = sysWMinfo.info.android.window;
+                        if (nativeWnd && mRenderDevice)
+                        {
+                            // 用新的 ANativeWindow 重建 surface + swapchain
+                            RenderCore::NativeWindow nw;
+                            nw.viewHandle = nativeWnd;
+                            mRenderDevice->OnWindowRestored(nw);
+                        }
+                    }
+    #else
+                    if (mRenderDevice)
+                    {
+                        mRenderDevice->OnWindowRestored(RenderCore::NativeWindow());
+                    }
+    #endif
+                }
+                break;
+            }
+
+            // —— 应用生命周期事件（Android/iOS） ——
+            case SDL_APP_WILLENTERBACKGROUND:
+            {
+                // 即将进入后台：暂停渲染
                 mAppActive = false;
                 if (mRenderDevice)
                 {
                     mRenderDevice->OnWindowMinimized();
                 }
+                break;
             }
-            // —— 窗口从后台恢复 ——
-            // 恢复时底层 ANativeWindow 已被 surfaceCreated 重建，必须用新句柄
-            // 重建 VkSurfaceKHR + swapchain（Android 核心路径）。
-            else if (sdlEvent.window.event == SDL_WINDOWEVENT_RESTORED)
+            case SDL_APP_DIDENTERBACKGROUND:
             {
+                // 已进入后台：确保暂停
+                mAppActive = false;
+                break;
+            }
+            case SDL_APP_WILLENTERFOREGROUND:
+            case SDL_APP_DIDENTERFOREGROUND:
+            {
+                // 回到前台：恢复渲染（surface 由 RESTORED 事件重建）
                 mAppActive = true;
-#if defined(__ANDROID__)
-                // 重新获取最新的 ANativeWindow（SDL 内部已在 onNativeSurfaceCreated 更新）
-                struct SDL_SysWMinfo sysWMinfo;
-                SDL_VERSION(&sysWMinfo.version);
-                if (SDL_GetWindowWMInfo(mWindow, &sysWMinfo))
-                {
-                    void* nativeWnd = sysWMinfo.info.android.window;
-                    if (nativeWnd && mRenderDevice)
-                    {
-                        // 用新的 ANativeWindow 重建 surface + swapchain
-                        RenderCore::NativeWindow nw;
-                        nw.viewHandle = nativeWnd;
-                        mRenderDevice->OnWindowRestored(nw);
-                    }
-                }
-#else
-                if (mRenderDevice)
-                {
-                    mRenderDevice->OnWindowRestored(RenderCore::NativeWindow());
-                }
-#endif
+                break;
             }
-            break;
-        }
 
-        // —— 应用生命周期事件（Android/iOS） ——
-        case SDL_APP_WILLENTERBACKGROUND:
-        {
-            // 即将进入后台：暂停渲染
-            mAppActive = false;
-            if (mRenderDevice)
+            // —— 退出 ——
+            case SDL_QUIT:
             {
-                mRenderDevice->OnWindowMinimized();
+                WindowCloseEvent event;
+                mData.eventCallback(event);
+                // 关闭窗口
+                SDL_DestroyWindow(mWindow);
+                mWindow = nullptr;
+                break;
             }
-            break;
-        }
-        case SDL_APP_DIDENTERBACKGROUND:
-        {
-            // 已进入后台：确保暂停
-            mAppActive = false;
-            break;
-        }
-        case SDL_APP_WILLENTERFOREGROUND:
-        case SDL_APP_DIDENTERFOREGROUND:
-        {
-            // 回到前台：恢复渲染（surface 由 RESTORED 事件重建）
-            mAppActive = true;
-            break;
-        }
-
-        // —— 退出 ——
-        case SDL_QUIT:
-        {
-            WindowCloseEvent event;
-            mData.eventCallback(event);
-            // 关闭窗口
-            SDL_DestroyWindow(mWindow);
-            mWindow = nullptr;
-            break;
-        }
         }
     }
 }
