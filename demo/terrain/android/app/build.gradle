@@ -35,6 +35,11 @@ android {
             path 'jni/CMakeLists.txt'
         }
     }
+    packagingOptions {
+        jniLibs {
+            keepDebugSymbols += '**/*.so'
+        }
+    }
 }
 
 dependencies {
