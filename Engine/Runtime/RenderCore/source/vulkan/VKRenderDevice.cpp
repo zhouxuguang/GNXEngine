@@ -344,6 +344,7 @@ void VKRenderDevice::OnWindowRestored(const NativeWindow& nativeWindow)
     if (mSwapChain)
     {
         mSwapChain->Release();
+        mSwapChain = nullptr;
     }
 
     // 销毁旧 surface，用新 native window 重建
@@ -412,9 +413,14 @@ void VKRenderDevice::OnWindowRestored(const NativeWindow& nativeWindow)
 // 进入后台：等待 GPU 空闲即可（surface 的销毁由系统/下一次恢复处理）
 void VKRenderDevice::OnWindowMinimized()
 {
-    if (mVulkanContext && mVulkanContext->graphicsQueue != VK_NULL_HANDLE)
+//    if (mVulkanContext && mVulkanContext->graphicsQueue != VK_NULL_HANDLE)
+//    {
+//        vkQueueWaitIdle(mVulkanContext->graphicsQueue);
+//    }
+
+    if (mVulkanContext && mVulkanContext->device != VK_NULL_HANDLE)
     {
-        vkQueueWaitIdle(mVulkanContext->graphicsQueue);
+        vkDeviceWaitIdle(mVulkanContext->device);
     }
 }
 
@@ -681,6 +687,15 @@ CommandBufferPtr VKRenderDevice::CreateCommandBuffer()
 	{
 		Resize(mSwapChain->GetWidth(), mSwapChain->GetHeight());
         //res = vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]);
+        return nullptr;
+	}
+
+	if (res == VK_ERROR_SURFACE_LOST_KHR)
+	{
+        // 底层 Surface 已被销毁（Android 切后台等），旧 swapchain 已失效。
+        // 不能在这里直接 Resize 重建（native window 已失效），等 RESTORED 事件
+        // 用新 ANativeWindow 调用 OnWindowRestored() 重建。此处跳过本帧即可。
+        LOG_WARN("VKRenderDevice: VK_ERROR_SURFACE_LOST_KHR, skip frame (wait OnWindowRestored)");
         return nullptr;
 	}
 

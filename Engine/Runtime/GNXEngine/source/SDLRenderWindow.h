@@ -47,6 +47,9 @@ public:
 
     virtual void Resize(uint32_t width, uint32_t height) override;
 
+    // 应用是否处于前台（移动端生命周期：SDL_APP_DIDENTERBACKGROUND 后为 false）
+    virtual bool IsAppActive() const override { return mAppActive; }
+
     // 手动触发事件回调（用于外部事件系统）
     virtual void TriggerEventCallback(Event& event) override;
 
@@ -59,6 +62,7 @@ private:
     WindowData mData;
     SDL_Window* mWindow = nullptr;
     RenderCore::RenderDevicePtr mRenderDevice = nullptr;
+    bool mAppActive = true;   // 是否处于前台（后台时主循环暂停渲染）
 };
 
 NAMESPACE_GNXENGINE_END

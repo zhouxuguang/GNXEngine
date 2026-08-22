@@ -360,6 +360,12 @@ void VulkanCommandBuffer::PresentFrameBuffer()
         {
             mCommandInfo->renderDevice->Resize(mCommandInfo->swapChain->GetWidth(), mCommandInfo->swapChain->GetHeight());
         }
+        else if (res == VK_ERROR_SURFACE_LOST_KHR)
+        {
+            // 底层 Surface 已失效（Android 切后台），不能在这里重建（native window 已失效），
+            // 等 RESTORED 事件触发 OnWindowRestored() 用新 ANativeWindow 重建。
+            LOG_WARN("VulkanCommandBuffer: VK_ERROR_SURFACE_LOST_KHR, skip present (wait OnWindowRestored)");
+        }
         else
         {
             return;

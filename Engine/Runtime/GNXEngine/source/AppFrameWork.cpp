@@ -26,7 +26,13 @@ void AppFrameWork::RunLoop()
     while (mRenderWindow && !mRenderWindow->ShouldClose())
     {
         mRenderWindow->OnUpdate();
-        RenderFrame();
+
+        // 移动端后台时暂停渲染（SDL_APP_DIDENTERBACKGROUND 时 IsAppActive() == false），
+        // 避免在失效的 swapchain / surface 上执行 vkAcquireNextImageKHR / vkQueuePresentKHR
+        if (mRenderWindow->IsAppActive())
+        {
+            RenderFrame();
+        }
         FrameMark;
     }
 

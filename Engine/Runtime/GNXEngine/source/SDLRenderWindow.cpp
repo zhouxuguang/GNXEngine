@@ -296,7 +296,7 @@ void SDLRenderWindow::HandleSDLEvents()
         }
 #endif
 
-        // —— 窗口大小变化 ——
+        // —— 窗口大小变化 / 生命周期 ——
         case SDL_WINDOWEVENT:
         {
             if (sdlEvent.window.event == SDL_WINDOWEVENT_RESIZED)
@@ -315,17 +315,23 @@ void SDLRenderWindow::HandleSDLEvents()
                 WindowResizeEvent event(mData.width, mData.height);
                 mData.eventCallback(event);
             }
-            // —— 窗口进入后台（Android: 底层 Surface 可能被销毁） ——
+            // —— 窗口进入后台 ——
+            // 注意：MINIMIZED 时底层 Surface 还没销毁（真正销毁发生在 surfaceDestroyed），
+            //       只需暂停渲染、等待 GPU 空闲即可，绝不能在这里重建 surface+swapchain。
             else if (sdlEvent.window.event == SDL_WINDOWEVENT_MINIMIZED)
             {
+                mAppActive = false;
                 if (mRenderDevice)
                 {
                     mRenderDevice->OnWindowMinimized();
                 }
             }
-            // —— 窗口从后台恢复（Android: 必须用新 ANativeWindow 重建 surface + swapchain） ——
+            // —— 窗口从后台恢复 ——
+            // 恢复时底层 ANativeWindow 已被 surfaceCreated 重建，必须用新句柄
+            // 重建 VkSurfaceKHR + swapchain（Android 核心路径）。
             else if (sdlEvent.window.event == SDL_WINDOWEVENT_RESTORED)
             {
+                mAppActive = true;
 #if defined(__ANDROID__)
                 // 重新获取最新的 ANativeWindow（SDL 内部已在 onNativeSurfaceCreated 更新）
                 struct SDL_SysWMinfo sysWMinfo;
@@ -348,6 +354,31 @@ void SDLRenderWindow::HandleSDLEvents()
                 }
 #endif
             }
+            break;
+        }
+
+        // —— 应用生命周期事件（Android/iOS） ——
+        case SDL_APP_WILLENTERBACKGROUND:
+        {
+            // 即将进入后台：暂停渲染
+            mAppActive = false;
+            if (mRenderDevice)
+            {
+                mRenderDevice->OnWindowMinimized();
+            }
+            break;
+        }
+        case SDL_APP_DIDENTERBACKGROUND:
+        {
+            // 已进入后台：确保暂停
+            mAppActive = false;
+            break;
+        }
+        case SDL_APP_WILLENTERFOREGROUND:
+        case SDL_APP_DIDENTERFOREGROUND:
+        {
+            // 回到前台：恢复渲染（surface 由 RESTORED 事件重建）
+            mAppActive = true;
             break;
         }
 
