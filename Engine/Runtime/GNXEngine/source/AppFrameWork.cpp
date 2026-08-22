@@ -57,11 +57,27 @@ void AppFrameWork::Resize(uint32_t width, uint32_t height)
 void AppFrameWork::RenderFrame()
 {
     RenderCore::RenderDevicePtr renderDevice = RenderCore::GetRenderDevice();
+    if (!renderDevice)
+    {
+        return;
+    }
     // 从Graphics队列创建命令缓冲区
     RenderCore::CommandQueuePtr graphicsQueue = renderDevice->GetCommandQueue(RenderCore::QueueType::Graphics, 0);
+    if (!graphicsQueue)
+    {
+        return;
+    }
     RenderCore::CommandBufferPtr commandBuffer = graphicsQueue->CreateCommandBuffer();
+    if (!commandBuffer)
+    {
+        // Android 前后台切换时 swapchain/surface 未就绪，本帧跳过（等 OnWindowRestored）
+        return;
+    }
     RenderCore::RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
-    renderEncoder->EndEncode();
+    if (renderEncoder)
+    {
+        renderEncoder->EndEncode();
+    }
     commandBuffer->PresentFrameBuffer();
 }
 
