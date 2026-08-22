@@ -30,42 +30,47 @@ static void _split_whole_name(const char *whole_name, char *fname, char *ext);
 
 static void _splitpath(const char *path, char *drive, char *dir, char *fname, char *ext)
 {
-    if (strcmp(path,"") == 1)
+    if (drive)
     {
+        drive[0] = '\0';
+    }
+
+    // 先判空，避免在 NULL 上调用 strcmp/strlen
+    if (NULL == path || path[0] == '\0')
+    {
+        if (dir)  dir[0]  = '\0';
+        if (fname) fname[0] = '\0';
+        if (ext)  ext[0]  = '\0';
         return;
     }
-    
-    char *p_whole_name;
-    
-    drive[0] = '\0';
-    if (NULL == path)
+
+    // 以 '/' 结尾：整个路径都是目录部分
+    if ('/' == path[strlen(path) - 1])
     {
-        dir[0] = '\0';
-        fname[0] = '\0';
-        ext[0] = '\0';
+        if (dir) strcpy(dir, path);
+        if (fname) fname[0] = '\0';
+        if (ext)  ext[0]  = '\0';
         return;
     }
-    
-    if ('/' == path[strlen(path)])
-    {
-        strcpy(dir, path);
-        fname[0] = '\0';
-        ext[0] = '\0';
-        return;
-    }
-    
-    p_whole_name = strrchr((char*)path, '/');
+
+    const char *p_whole_name = strrchr(path, '/');
     if (NULL != p_whole_name)
     {
         p_whole_name++;
         _split_whole_name(p_whole_name, fname, ext);
-        
-        snprintf(dir, p_whole_name - path, "%s", path);
+
+        if (dir)
+        {
+            // 目录部分：从 path 到最后一个 '/'（含），需为 NUL 结尾留一个字节
+            size_t dir_len = (size_t)(p_whole_name - path);
+            memcpy(dir, path, dir_len);
+            dir[dir_len] = '\0';
+        }
     }
     else
     {
         _split_whole_name(path, fname, ext);
-        dir[0] = '\0';
+        if (dir) dir[0] = '\0';
     }
 }
 
