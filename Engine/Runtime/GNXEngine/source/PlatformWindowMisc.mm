@@ -1,6 +1,6 @@
 #if !GNX_WINDOW_SDL
 
-#include "DefaultRenderWindow.h"
+#include "GLFWRenderWindow.h"
 
 #include <Metal/Metal.h>
 #include <QuartzCore/CAMetalLayer.h>

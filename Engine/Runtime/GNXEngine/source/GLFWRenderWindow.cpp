@@ -1,5 +1,5 @@
 //
-//  DefaultRenderWindow.cpp
+//  GLFWRenderWindow.cpp
 //  GNXEngine
 //
 //  GLFW 窗口实现（Windows / macOS / Linux）
@@ -7,7 +7,7 @@
 
 #if !GNX_WINDOW_SDL
 
-#include "DefaultRenderWindow.h"
+#include "GLFWRenderWindow.h"
 #include "Runtime/RenderSystem/include/SceneManager.h"
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyEvent.h"
@@ -38,7 +38,7 @@ RenderCore::NativeWindow GetPlatformWindow(GLFWwindow *window)
 }
 #endif
 
-DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
+GLFWRenderWindow::GLFWRenderWindow(const WindowProps& props)
 {
     mData.width = props.width;
     mData.height = props.height;
@@ -85,7 +85,7 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props)
     cameraPtr->SetLens(60, mData.width, mData.height, 0.1f, 1000.f);
 }
 
-DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props, void* externalWindowHandle)
+GLFWRenderWindow::GLFWRenderWindow(const WindowProps& props, void* externalWindowHandle)
 {
     mData.width = props.width;
     mData.height = props.height;
@@ -137,17 +137,17 @@ DefaultRenderWindow::DefaultRenderWindow(const WindowProps& props, void* externa
     }
 }
 
-DefaultRenderWindow::~DefaultRenderWindow()
+GLFWRenderWindow::~GLFWRenderWindow()
 {
     Shutdown();
 }
 
-void DefaultRenderWindow::SetEventCallback(const EventCallbackFunc& callback)
+void GLFWRenderWindow::SetEventCallback(const EventCallbackFunc& callback)
 {
     mData.eventCallback = callback;
 }
 
-inline void DefaultRenderWindow::SetVSync(bool enabled)
+inline void GLFWRenderWindow::SetVSync(bool enabled)
 {
     if (enabled)
     {
@@ -161,7 +161,7 @@ inline void DefaultRenderWindow::SetVSync(bool enabled)
     mData.VSync = enabled;
 }
 
-void DefaultRenderWindow::Resize(uint32_t width, uint32_t height)
+void GLFWRenderWindow::Resize(uint32_t width, uint32_t height)
 {
     mData.width = width;
     mData.height = height;
@@ -169,18 +169,18 @@ void DefaultRenderWindow::Resize(uint32_t width, uint32_t height)
     mRenderDevice->Resize(width, height);
 }
 
-void DefaultRenderWindow::Shutdown()
+void GLFWRenderWindow::Shutdown()
 {
     glfwDestroyWindow(mWindow);
     glfwTerminate();
 }
 
-bool DefaultRenderWindow::ShouldClose() const
+bool GLFWRenderWindow::ShouldClose() const
 {
     return glfwWindowShouldClose(mWindow);
 }
 
-void DefaultRenderWindow::Init()
+void GLFWRenderWindow::Init()
 {
     // 只在使用 GLFW 窗口时才设置回调
     if (!mUseExternalWindow)
@@ -283,7 +283,7 @@ void DefaultRenderWindow::Init()
     }
 }
 
-void DefaultRenderWindow::TriggerEventCallback(Event& event)
+void GLFWRenderWindow::TriggerEventCallback(Event& event)
 {
     if (mData.eventCallback) 
     {

@@ -1,5 +1,5 @@
 //
-//  DefaultRenderWindow.h
+//  GLFWRenderWindow.h
 //  GNXEngine
 //
 //  GLFW 窗口实现（Windows / macOS / Linux）
@@ -7,8 +7,8 @@
 
 #if !GNX_WINDOW_SDL
 
-#ifndef GNX_ENGINE_DEFAULT_RENDER_WINDOW_INCLUDE_NFJS
-#define GNX_ENGINE_DEFAULT_RENDER_WINDOW_INCLUDE_NFJS
+#ifndef GNX_ENGINE_GLFW_RENDER_WINDOW_INCLUDE_NFJS
+#define GNX_ENGINE_GLFW_RENDER_WINDOW_INCLUDE_NFJS
 
 #include "RenderWindow.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
@@ -39,14 +39,14 @@ struct WindowData
     RenderWindow::EventCallbackFunc eventCallback = nullptr;
 };
 
-class DefaultRenderWindow : public RenderWindow
+class GLFWRenderWindow : public RenderWindow
 {
 public:
     // 默认构造函数，创建独立的窗口
-    DefaultRenderWindow(const WindowProps& props);
+    GLFWRenderWindow(const WindowProps& props);
     // 构造函数，使用外部窗口句柄（用于 Qt 嵌入）
-    DefaultRenderWindow(const WindowProps& props, void* externalWindowHandle);
-    ~DefaultRenderWindow();
+    GLFWRenderWindow(const WindowProps& props, void* externalWindowHandle);
+    ~GLFWRenderWindow();
 
     virtual void OnUpdate()
     {
@@ -96,6 +96,6 @@ private:
 
 NAMESPACE_GNXENGINE_END
 
-#endif /* GNX_ENGINE_DEFAULT_RENDER_WINDOW_INCLUDE_NFJS */
+#endif /* GNX_ENGINE_GLFW_RENDER_WINDOW_INCLUDE_NFJS */
 
 #endif // !GNX_WINDOW_SDL

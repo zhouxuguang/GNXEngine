@@ -332,7 +332,7 @@ void RenderWindowWidget::ForwardEventToRenderWindow(GNXEngine::Event& event)
     if (mRenderWindow)
     {
         // 直接调用 RenderWindow 基类的 TriggerEventCallback 方法
-        // 这样不依赖于具体的 DefaultRenderWindow 实现，未来可以支持 SDL 等其他窗口系统
+        // 这样不依赖于具体的 GLFWRenderWindow 实现，未来可以支持 SDL 等其他窗口系统
         mRenderWindow->TriggerEventCallback(event);
     }
 
