@@ -138,6 +138,20 @@ int CBLAtomicDecrement(volatile int* ptrValue)
     return __sync_sub_and_fetch(ptrValue,1);
 }
 
+int CBLAtomicCompareSwap(volatile int* ptrValue, int nExchange, int nCompare)
+{
+    return __sync_val_compare_and_swap(ptrValue, nCompare, nExchange);
+}
+
+// x86_64 的 CBLAtomicCompareAndSwapPtr 定义（i386 由下方独立 #if 块提供，
+// 避免重复定义）
+#if defined(__x86_64__)
+bool CBLAtomicCompareAndSwapPtr( void *oldValue, void *newValue, void * volatile *theValue )
+{
+    return __sync_bool_compare_and_swap(theValue, oldValue, newValue);
+}
+#endif
+
 #else //defined(HAVE_GCC_ATOMIC_BUILTINS)
 /* Starting with GCC 4.1.0, built-in functions for atomic memory access are provided. */
 /* see http://gcc.gnu.org/onlinedocs/gcc-4.1.0/gcc/Atomic-Builtins.html */

@@ -96,4 +96,14 @@ if(APPLE)
     set_target_properties(GNXEngine PROPERTIES LINK_FLAGS "-fobjc-arc")
 endif()
 
+# 16 KB 页大小兼容（Android 15+ / Google Play 要求）：
+# NDK 26 工具链默认 max-page-size=4096，这里强制把 LOAD 段对齐到 16384，
+# 否则 APK 无法在 16 KB 页大小设备上运行。
+if(ANDROID)
+    target_link_options(GNXEngine PRIVATE
+        "-Wl,-z,max-page-size=16384"
+        "-Wl,-z,common-page-size=16384"
+    )
+endif()
+
 set_property(TARGET GNXEngine PROPERTY FOLDER "Runtime")

@@ -36,3 +36,12 @@ set_target_properties(terrain PROPERTIES
     DEBUG_POSTFIX ""
     OUTPUT_NAME "terrain"
 )
+
+# 16 KB 页大小兼容（Android 15+ / Google Play 要求）：
+# 强制把 terrain 的 LOAD 段对齐到 16384，与 libGNXEngine 保持一致。
+if(ANDROID)
+    target_link_options(terrain PRIVATE
+        "-Wl,-z,max-page-size=16384"
+        "-Wl,-z,common-page-size=16384"
+    )
+endif()
