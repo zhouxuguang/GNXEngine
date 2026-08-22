@@ -62,8 +62,11 @@ target_link_libraries(GNXEngine PRIVATE
 )
 
 # 窗口后端宏定义（控制 #if GNX_WINDOW_SDL）
+# 注意：GNX_WINDOW_SDL 必须是 PUBLIC，demo 的 main.cpp 通过 GNXMain.h
+# 依赖该宏决定是否把 main 重命名为 SDL_main（iOS/Android 必需，
+# 否则 SDL_Init 会报 "did you include SDL_main.h"）。
+target_compile_definitions(GNXEngine PUBLIC ${GNX_WINDOW_SDL_DEFINE})
 target_compile_definitions(GNXEngine PRIVATE 
-    ${GNX_WINDOW_SDL_DEFINE}
     GNXENGINE_EXPORTS
     RENDERCORE_EXPORTS
     RENDERSYSTEM_EXPORTS
