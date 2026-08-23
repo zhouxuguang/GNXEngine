@@ -85,6 +85,9 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
     // 这里显式声明支持横屏左右 + 竖屏，避免仅凭 main.cpp 的横屏尺寸推断方向
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight Portrait");
 #endif
+    
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
+    SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 
     mWindow = SDL_CreateWindow(
         mData.title.c_str(),
