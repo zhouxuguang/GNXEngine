@@ -3,6 +3,7 @@
 
 #include "Asset.h"
 #include "TextureAsset.h"
+#include "ShaderAsset.h"
 #include "AssetType.h"
 #include <string>
 #include <unordered_map>
@@ -62,6 +63,23 @@ public:
 	 * @return 加载的纹理资源，失败返回nullptr
 	 */
 	TextureAsset* LoadTextureByHash(uint64_t hash);
+
+	// ==================== Shader 资源 ====================
+
+	/**
+	 * 加载预编译 shader 资源（.gnxasset）
+	 * @param filePath .gnxasset 文件完整路径
+	 * @return 加载的 shader 资源，失败返回nullptr
+	 * 已缓存则直接返回并 AddRef；未缓存则加载并加入缓存
+	 */
+	ShaderAsset* LoadShader(const std::string& filePath);
+
+	/**
+	 * 通过文件名（GUID）查找 shader 资源
+	 * @param name 文件名（含扩展名，如 "GBufferPBR.vs.spirv.gnxasset"）
+	 * @return 找到的 shader，不存在返回nullptr
+	 */
+	ShaderAsset* FindShader(const std::string& name);
 
 	// ==================== 资源查找 ====================
 
@@ -156,15 +174,15 @@ private:
 	TextureAsset* LoadTextureInternal(const std::string& path, bool async);
 
 	/**
-	 * 将资源添加到缓存
+	 * 将资源添加到缓存（按运行时类型分发到 mTextures / mShaders）
 	 */
-	template<typename T>
-	void AddToCache(const std::string& guid, T* asset);
+	void AddToCache(const std::string& guid, Asset* asset);
 
 	std::string mRootPath;                              // 资根目录
 
 	std::unordered_map<std::string, Asset*> mAssets;        // GUID到资源的映射
 	std::unordered_map<std::string, TextureAsset*> mTextures;  // 名称到纹理的映射
+	std::unordered_map<std::string, ShaderAsset*> mShaders;   // 名称到shader的映射
 
 	static AssetManager* sInstance;
 	bool mInitialized;

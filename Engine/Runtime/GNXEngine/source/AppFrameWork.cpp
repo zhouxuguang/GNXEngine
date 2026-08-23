@@ -1,6 +1,8 @@
 #include "AppFrameWork.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/RenderSystem/include/SceneManager.h"
+#include "Runtime/RenderSystem/include/RenderEngine.h"
+#include "Runtime/AssetManager/include/AssetManager.h"
 #include <tracy/Tracy.hpp>
 
 NAMESPACE_GNXENGINE_BEGIN
@@ -14,6 +16,14 @@ RenderWindowPtr GetRenderWindow()
 
 AppFrameWork::AppFrameWork(const WindowProps& props)
 {
+    // 初始化 AssetManager（统一管理 .gnxasset 资源，含预编译 shader）
+    // 必须在 RenderWindow 创建之前，因为 GLFWRenderWindow 构造时会触发
+    // SceneManager/PostProcessing 初始化 → LoadShaderAsset，需要 AssetManager 已就绪
+    if (!AssetManager::AssetManager::GetInstance())
+    {
+        AssetManager::AssetManager::Initialize(GetProjectAssetDir());
+    }
+
     mRenderWindow = RenderWindow::Create(props);
     gRenderWindow = mRenderWindow;
     mRenderWindow->SetEventCallback(GNX_BIND_EVENT_FN(OnEventImpl));

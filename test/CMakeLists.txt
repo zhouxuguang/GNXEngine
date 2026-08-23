@@ -18,6 +18,13 @@ target_link_libraries(AssetFileHeaderTest PRIVATE GNXEngine)
 
 set_property(TARGET AssetFileHeaderTest PROPERTY FOLDER "test")
 
+# 预编译 shader 资产序列化往返验证
+add_executable(TestShaderAsset TestShaderAsset.cpp)
+
+target_link_libraries(TestShaderAsset PRIVATE GNXEngine AssetManager nanopb)
+
+set_property(TARGET TestShaderAsset PROPERTY FOLDER "test")
+
 add_executable(YamlTest YamlTest.cpp)
 
 target_link_libraries(YamlTest PRIVATE yaml-cpp)

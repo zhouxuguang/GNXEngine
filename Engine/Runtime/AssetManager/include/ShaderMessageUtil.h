@@ -15,15 +15,28 @@ NS_ASSETMANAGER_BEGIN
  * Encode:  ShaderMessage 结构体 → protobuf 字节流
  * Decode:  protobuf 字节流     → ShaderMessage 结构体
  */
+
+// 携带 ShaderMessage 中 repeated 反射字段的容器（由调用方填充后传入 Encode）
+// nanopb 的回调 arg 需要指向调用方的数据，故不能由 Encode 内部持有局部空 vector
+struct ShaderMessageEncodeData
+{
+    std::vector<UniformBufferLayoutMessage> uniformBuffers;
+    std::vector<PushConstantMessage> pushConstants;
+    std::vector<ShaderResourceMessage> resources;
+    std::vector<VertexInputMessage> vertexInputs;
+};
+
 class ShaderMessageUtil
 {
 public:
     /**
      * 将 ShaderMessage 序列化为 protobuf 字节流
-     * @param msg  已填充的 ShaderMessage
+     * @param msg  已填充的 ShaderMessage（标量 + bytes 字段）
+     * @param data 反射 repeated 字段数据（uniformBuffers/pushConstants/resources/vertexInputs）
      * @return     序列化后的字节数组，失败返回 nullptr
      */
-    static ByteVectorPtr EncodeShaderMessage(const ShaderMessage& msg);
+    static ByteVectorPtr EncodeShaderMessage(const ShaderMessage& msg,
+                                             const ShaderMessageEncodeData& data);
 
     /**
      * 将 protobuf 字节流反序列化为 ShaderMessage

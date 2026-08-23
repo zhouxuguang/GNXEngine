@@ -201,6 +201,11 @@ void AssetManager::UnloadAsset(Asset* asset)
 		TextureAsset* texture = static_cast<TextureAsset*>(asset);
 		mTextures.erase(texture->GetName());
 	}
+	else if (asset->GetType() == AssetType::Shader)
+	{
+		ShaderAsset* shader = static_cast<ShaderAsset*>(asset);
+		mShaders.erase(shader->GetName());
+	}
 
 	// 从GPU释放并卸载
 	asset->ReleaseFromGPU();
@@ -255,6 +260,7 @@ void AssetManager::UnloadAllAssets()
 
 	mAssets.clear();
 	mTextures.clear();
+	mShaders.clear();
 
 	std::cout << "Unloaded all assets" << std::endl;
 }
@@ -340,18 +346,90 @@ void AssetManager::PrintStatistics() const
 	std::cout << "=============================" << std::endl;
 }
 
-template<typename T>
-void AssetManager::AddToCache(const std::string& guid, T* asset)
+void AssetManager::AddToCache(const std::string& guid, Asset* asset)
 {
 	// 添加到主资源映射
 	mAssets[guid] = asset;
 
-	// 根据类型添加到特定映射
+	// 根据运行时类型添加到特定映射
 	if (asset->GetType() == AssetType::Texture)
 	{
 		TextureAsset* texture = static_cast<TextureAsset*>(asset);
 		mTextures[texture->GetName()] = texture;
 	}
+	else if (asset->GetType() == AssetType::Shader)
+	{
+		ShaderAsset* shader = static_cast<ShaderAsset*>(asset);
+		mShaders[shader->GetName()] = shader;
+	}
+}
+
+ShaderAsset* AssetManager::LoadShader(const std::string& filePath)
+{
+	if (!mInitialized)
+	{
+		std::cerr << "AssetManager not initialized!" << std::endl;
+		return nullptr;
+	}
+
+	// 用完整路径作为缓存 key（同一 shader 的多个 stage 是不同文件）
+	// 提取文件名作为 name（GUID = 文件名）
+	std::string fileName = filePath;
+	auto pos = fileName.find_last_of("/\\");
+	if (pos != std::string::npos)
+	{
+		fileName = fileName.substr(pos + 1);
+	}
+
+	// 检查是否已加载（按文件名查）
+	ShaderAsset* existing = FindShader(fileName);
+	if (existing)
+	{
+		existing->AddRef();
+		return existing;
+	}
+
+	// 新建并加载
+	ShaderAsset* shader = new ShaderAsset();
+	if (!shader->LoadFromFile(filePath))
+	{
+		std::cerr << "Failed to load shader: " << filePath << std::endl;
+		delete shader;
+		return nullptr;
+	}
+
+	// 添加到缓存
+	AddToCache(shader->GetGUID(), shader);
+
+	// 为调用方持有引用（调用方用后需 Release，对称于命中缓存的 AddRef）
+	shader->AddRef();
+
+	return shader;
+}
+
+ShaderAsset* AssetManager::FindShader(const std::string& name)
+{
+	// 先直接查找
+	auto it = mShaders.find(name);
+	if (it != mShaders.end())
+	{
+		return it->second;
+	}
+
+	// 如果没找到，尝试去掉 .gnxasset 扩展名后查找
+	std::string nameNoExt = name;
+	size_t extPos = nameNoExt.find(".gnxasset");
+	if (extPos != std::string::npos)
+	{
+		nameNoExt = nameNoExt.substr(0, extPos);
+	}
+	it = mShaders.find(nameNoExt);
+	if (it != mShaders.end())
+	{
+		return it->second;
+	}
+
+	return nullptr;
 }
 
 TextureAsset* AssetManager::LoadTextureByHash(uint64_t hash)

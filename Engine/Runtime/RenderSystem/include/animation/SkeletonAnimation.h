@@ -39,6 +39,12 @@ public:
 private:
     virtual void Update(float deltaTime) 
     {
+        // 防御：模型可能没有动画片段（无骨骼动画），此时跳过采样避免越界崩溃
+        if (mAnimationClips.empty() || mClip >= mAnimationClips.size() || !mAnimationClips[mClip])
+        {
+            return;
+        }
+
         mPlayback = mAnimationClips[mClip]->Sample(mAnimatedPose, mPlayback + deltaTime);
         LOG_INFO("SkeletonAnimation Update mPlayback = %f\n", mPlayback);
         

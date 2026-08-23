@@ -67,6 +67,7 @@ message VertexInputMessage
     uint32 location = 2;            // attribute location
     VertexDataFormat format = 3;    // 数据格式
     uint32 offset = 4;              // vertex stride 内字节偏移
+    uint32 stride = 5;              // 该 attribute 对应 buffer layout 的 stride（Metal 每 attribute 一个 layout）
 }
 
 // ==================== 编译后的 Shader ====================

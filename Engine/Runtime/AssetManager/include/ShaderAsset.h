@@ -69,6 +69,20 @@ public:
     /** 获取入口点名称 */
     const char* GetEntryPoint() const { return mEntryPoint.c_str(); }
 
+    // ====== 反射元数据 Getter ======
+
+    /** 顶点输入属性列表（每个 attribute：location/format/offset/stride） */
+    const std::vector<VertexInputMessage>* GetVertexInputs() const { return mVertexInputs; }
+
+    /** 顶点 stride（兼容字段，可能为 0） */
+    uint32_t GetVertexStride() const { return mShaderMessage.vertexStride; }
+
+    /** push constant 列表 */
+    const std::vector<PushConstantMessage>* GetPushConstants() const { return mPushConstants; }
+
+    /** uniform buffer 布局列表 */
+    const std::vector<UniformBufferLayoutMessage>* GetUniformBuffers() const { return mUniformBuffers; }
+
 private:
     std::string mFilePath;
     std::string mName;

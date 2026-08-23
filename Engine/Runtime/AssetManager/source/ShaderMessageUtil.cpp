@@ -168,34 +168,24 @@ static bool nanopb_decode_vertex_input(pb_istream_t* stream, const pb_field_t* f
 // ShaderMessageUtil 实现
 // ====================================================================
 
-ByteVectorPtr ShaderMessageUtil::EncodeShaderMessage(const ShaderMessage& msg)
+ByteVectorPtr ShaderMessageUtil::EncodeShaderMessage(const ShaderMessage& msg,
+                                                     const ShaderMessageEncodeData& data)
 {
     // 将 repeated 字段挂到回调 arg 上
     ShaderMessage encMsg = msg;
 
-    std::vector<UniformBufferLayoutMessage> layouts;
-    std::vector<PushConstantMessage> pushConsts;
-    std::vector<ShaderResourceMessage> resources;
-    std::vector<VertexInputMessage> vertexInputs;
-
-    // 为每个 uniformBuffer 设置它的 members 回调（因为 UniformBufferLayoutMessage
-    // 内部有 repeated UniformMemberMessage，nanopb 需要回调）
-    // 这里简化处理：nanopb 对嵌套 repeated submessage 的限制较大，
-    // 实际上我们是平铺序列化，所有回调 arg 用动态 vector。
-    // 注意：当前 proto 设计的 uniformBuffers 直接包含 repeated UniformMemberMessage，
-    // 这在 nanopb 中需要逐层处理回调。为保持一致性，我们在调用前分配好数据。
-
+    // 使用调用方填充的数据（避免局部空 vector 覆盖调用方内容）
     encMsg.uniformBuffers.funcs.encode = nanopb_encode_uniform_buffer_layout;
-    encMsg.uniformBuffers.arg = &layouts;
+    encMsg.uniformBuffers.arg = const_cast<void*>(static_cast<const void*>(&data.uniformBuffers));
 
     encMsg.pushConstants.funcs.encode = nanopb_encode_push_constant;
-    encMsg.pushConstants.arg = &pushConsts;
+    encMsg.pushConstants.arg = const_cast<void*>(static_cast<const void*>(&data.pushConstants));
 
     encMsg.resources.funcs.encode = nanopb_encode_shader_resource;
-    encMsg.resources.arg = &resources;
+    encMsg.resources.arg = const_cast<void*>(static_cast<const void*>(&data.resources));
 
     encMsg.vertexInputs.funcs.encode = nanopb_encode_vertex_input;
-    encMsg.vertexInputs.arg = &vertexInputs;
+    encMsg.vertexInputs.arg = const_cast<void*>(static_cast<const void*>(&data.vertexInputs));
 
     // 计算编码大小
     size_t encodedSize = 0;
@@ -221,22 +211,29 @@ bool ShaderMessageUtil::DecodeShaderMessage(const uint8_t* pData, uint32_t dataS
 
     msg = ShaderMessage_init_default;
 
-    std::vector<UniformBufferLayoutMessage> layouts;
-    std::vector<PushConstantMessage> pushConsts;
-    std::vector<ShaderResourceMessage> resources;
-    std::vector<VertexInputMessage> vertexInputs;
+    // 注意：所有 repeated 回调的 arg 必须设为 nullptr，让 nanopb 回调自分配并挂到 msg 上。
+    // 若传入局部 vector 的地址，decode 完成后局部对象销毁，msg 里的 arg 变悬垂指针（崩溃）。
+    // 自分配的内存由 ReleaseShaderMessage 释放。
+
+    // compiledShader bytes 解码回调（分配 pb_bytes_array_t）
+    msg.compiledShader.funcs.decode = nanopb_decode_gnx_bytes;
+    msg.compiledShader.arg = nullptr;
+
+    // entryPoint string 解码回调
+    msg.entryPoint.funcs.decode = nanopb_decode_gnx_bytes;   // string 也用 bytes 回调（读入 pb_bytes_array_t）
+    msg.entryPoint.arg = nullptr;
 
     msg.uniformBuffers.funcs.decode = nanopb_decode_uniform_buffer_layout;
-    msg.uniformBuffers.arg = &layouts;
+    msg.uniformBuffers.arg = nullptr;
 
     msg.pushConstants.funcs.decode = nanopb_decode_push_constant;
-    msg.pushConstants.arg = &pushConsts;
+    msg.pushConstants.arg = nullptr;
 
     msg.resources.funcs.decode = nanopb_decode_shader_resource;
-    msg.resources.arg = &resources;
+    msg.resources.arg = nullptr;
 
     msg.vertexInputs.funcs.decode = nanopb_decode_vertex_input;
-    msg.vertexInputs.arg = &vertexInputs;
+    msg.vertexInputs.arg = nullptr;
 
     pb_istream_t decStream = pb_istream_from_buffer(pData, dataSize);
     if (!pb_decode(&decStream, ShaderMessage_fields, &msg))
@@ -277,6 +274,11 @@ void ShaderMessageUtil::ReleaseShaderMessage(ShaderMessage& msg)
     {
         free(msg.compiledShader.arg);
         msg.compiledShader.arg = nullptr;
+    }
+    if (msg.entryPoint.arg)
+    {
+        free(msg.entryPoint.arg);
+        msg.entryPoint.arg = nullptr;
     }
 
     pb_release(ShaderMessage_fields, &msg);

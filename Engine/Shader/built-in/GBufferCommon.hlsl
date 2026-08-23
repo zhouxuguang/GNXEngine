@@ -81,4 +81,31 @@ GBufferData UnpackGBuffer(float4 albedoOpacity, float4 normalRoughness,
     return data;
 }
 
+// ==================== G-Buffer 输出结构（编码端） ====================
+// 与 DeferredLighting.shader 的消费端布局一致：
+//   RT0  (SceneColor) : emissive.rgb
+//   GBufferA (RT1)    : float4(EncodeNormalOctahedron(normal), roughness)   → normal + roughness
+//   GBufferB (RT2)    : float4(metallic, ao, 0, 0)                          → metallic + ao
+//   GBufferC (RT3)    : float4(albedo, opacity)                             → albedo + opacity
+struct GBufferOutput
+{
+    float4 emissive   : SV_Target0;
+    float4 gBufferA   : SV_Target1;
+    float4 gBufferB   : SV_Target2;
+    float4 gBufferC   : SV_Target3;
+};
+
+// 打包 PBR 材质到 G-Buffer（与 UnpackGBuffer 互逆）
+GBufferOutput PackGBuffer(float3 albedo, float opacity, float3 normal,
+                          float roughness, float metallic, float ao,
+                          float3 emissive, float3 position)
+{
+    GBufferOutput output;
+    output.emissive = float4(emissive, 1.0);
+    output.gBufferA = float4(EncodeNormalOctahedron(normal), roughness);
+    output.gBufferB = float4(metallic, ao, 0.0, 0.0);
+    output.gBufferC = float4(albedo, opacity);
+    return output;
+}
+
 #endif // GNX_ENGINE_GBUFFER_COMMON_H
