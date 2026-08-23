@@ -17,9 +17,9 @@ public:
     
     ~MTLGLFWFramework();
 
-    virtual void exec();
+    void exec() override;
     
-    virtual void renderFrame();
+    void renderFrame() override;
     
 private:
     GLFWwindow *mWindow = nullptr;

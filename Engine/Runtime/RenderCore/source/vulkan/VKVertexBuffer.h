@@ -22,20 +22,20 @@ public:
 
     ~VKVertexBuffer();
 
-    virtual uint32_t GetBufferLength() const;
+    uint32_t GetBufferLength() const override;
     
-    virtual void* MapBufferData() const;
+    void* MapBufferData() const override;
 
-    virtual void UnmapBufferData(void* bufferData) const;
+    void UnmapBufferData(void* bufferData) const override;
     
-    virtual bool IsValid() const;
+    bool IsValid() const override;
 
     VkBuffer GetGpuBuffer() const;
     
     /**
       设置名字
      */
-    virtual void SetName(const char* name);
+    void SetName(const char* name) override;
 private:
     VulkanContextPtr mContext;
     VkBuffer mBuffer = VK_NULL_HANDLE;

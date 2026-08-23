@@ -72,11 +72,11 @@ public:
         mMeshDescriptorSetLayouts.clear();
     }
     
-    virtual void AttachVertexShader(ShaderFunctionPtr shaderFunction);
+    void AttachVertexShader(ShaderFunctionPtr shaderFunction) override;
     
-    virtual void AttachFragmentShader(ShaderFunctionPtr shaderFunction);
+    void AttachFragmentShader(ShaderFunctionPtr shaderFunction) override;
 
-    virtual void AttachGraphicsShader(GraphicsShaderPtr graphicsShader);
+    void AttachGraphicsShader(GraphicsShaderPtr graphicsShader) override;
     
     virtual void AttachTaskShader(ShaderFunctionPtr shaderFunction) override;
     virtual void AttachMeshShader(ShaderFunctionPtr shaderFunction) override;

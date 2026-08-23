@@ -37,7 +37,7 @@ public:
         return mMaterials;
     }
     
-    void Update(float deltaTime);
+    void Update(float deltaTime) override;
     
     void Render(RenderInfo &renderInfo, bool isCPUSkin);
 private:

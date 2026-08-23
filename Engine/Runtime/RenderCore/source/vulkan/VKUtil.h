@@ -174,7 +174,7 @@ public:
 
 	void CleanUpResource();
 private:
-	virtual void Run();
+	void Run() override;
 
 	VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
 	VkCommandPool commandPool = VK_NULL_HANDLE;

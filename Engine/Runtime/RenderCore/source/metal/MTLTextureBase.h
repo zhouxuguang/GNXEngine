@@ -50,22 +50,22 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow);
     
-    virtual bool IsValid() const
+    bool IsValid() const override
     {
         return mTexture != nil;
     }
     
-    virtual uint32_t GetWidth() const;
+    uint32_t GetWidth() const override;
     
-    virtual uint32_t GetHeight() const;
+    uint32_t GetHeight() const override;
     
-    virtual uint32_t GetDepth() const;
+    uint32_t GetDepth() const override;
     
-    virtual uint32_t GetMipLevels() const;
+    uint32_t GetMipLevels() const override;
     
-    virtual uint32_t GetLayerCount() const;
+    uint32_t GetLayerCount() const override;
 
-    virtual void SetName(const char* name);
+    void SetName(const char* name) override;
     
     id<MTLTexture> getMTLTexture() {return mTexture;};
 
@@ -128,7 +128,7 @@ public:
     virtual void ReplaceRegion(const Rect2D& rect,
                         uint32_t level,
                         const uint8_t* pixelBytes,
-                        uint32_t bytesPerRow);
+                        uint32_t bytesPerRow) override;
 };
 
 using MTLRCTexture2DPtr = std::shared_ptr<MTLRCTexture2D>;
@@ -147,7 +147,7 @@ public:
                         uint32_t slice,
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
-                        uint32_t bytesPerImage);
+                        uint32_t bytesPerImage) override;
 };
 
 using MTLRCTexture3DPtr = std::shared_ptr<MTLRCTexture3D>;
@@ -166,7 +166,7 @@ public:
                         uint32_t slice,
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
-                        uint32_t bytesPerImage);
+                        uint32_t bytesPerImage) override;
 };
 
 using MTLRCTextureCubePtr = std::shared_ptr<MTLRCTextureCube>;
@@ -185,7 +185,7 @@ public:
                         uint32_t slice,
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
-                        uint32_t bytesPerImage);
+                        uint32_t bytesPerImage) override;
 };
 
 using MTLRCTexture2DArrayPtr = std::shared_ptr<MTLRCTexture2DArray>;

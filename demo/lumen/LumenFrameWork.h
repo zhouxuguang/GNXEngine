@@ -18,13 +18,13 @@ class LumenFrameWork : public GNXEngine::AppFrameWork
 public:
     LumenFrameWork(const GNXEngine::WindowProps& props);
     
-    virtual void Initlize();
+    void Initlize() override;
     
-    virtual void Resize(uint32_t width, uint32_t height);
+    void Resize(uint32_t width, uint32_t height) override;
     
-    virtual void RenderFrame();
+    void RenderFrame() override;
     
-    virtual void OnEvent(GNXEngine::Event& e);
+    void OnEvent(GNXEngine::Event& e) override;
     
 private:
     

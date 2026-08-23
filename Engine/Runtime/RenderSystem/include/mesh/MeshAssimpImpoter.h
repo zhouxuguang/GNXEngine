@@ -31,7 +31,7 @@ public:
     
     ~MeshAssimpImpoter();
     
-    virtual bool ImportFromFile(const std::string &fileName, Mesh* mesh, SkinnedMesh* skinnedMesh);
+    bool ImportFromFile(const std::string &fileName, Mesh* mesh, SkinnedMesh* skinnedMesh) override;
     
     std::vector<std::shared_ptr<Material>> GetMaterials() const
     {

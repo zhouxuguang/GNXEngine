@@ -38,19 +38,19 @@ public:
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage);
     
-    virtual bool IsValid() const;
+    bool IsValid() const override;
     
-    virtual uint32_t GetWidth() const;
+    uint32_t GetWidth() const override;
     
-    virtual uint32_t GetHeight() const;
+    uint32_t GetHeight() const override;
     
-    virtual uint32_t GetDepth() const;
+    uint32_t GetDepth() const override;
     
-    virtual uint32_t GetMipLevels() const;
+    uint32_t GetMipLevels() const override;
     
-    virtual uint32_t GetLayerCount() const;
+    uint32_t GetLayerCount() const override;
 
-    virtual void SetName(const char* name);
+    void SetName(const char* name) override;
     
     VulkanImageViewPtr GetImageView() const
     {
@@ -129,7 +129,7 @@ public:
     virtual void ReplaceRegion(const Rect2D& rect,
                         uint32_t level,
                         const uint8_t* pixelBytes,
-                        uint32_t bytesPerRow);
+                        uint32_t bytesPerRow) override;
 };
 
 using VKRCTexture2DPtr = std::shared_ptr<VKRCTexture2D>;
@@ -143,12 +143,12 @@ public:
     
     ~VKRCTexture3D();
     
-    virtual void ReplaceRegion(const Rect2D& rect,
+    void ReplaceRegion(const Rect2D& rect,
                         uint32_t level,
                         uint32_t slice,
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
-                        uint32_t bytesPerImage);
+                        uint32_t bytesPerImage) override;
 };
 
 using VKRCTexture3DPtr = std::shared_ptr<VKRCTexture3D>;
@@ -162,12 +162,12 @@ public:
     
     ~VKRCTextureCube();
     
-    virtual void ReplaceRegion(const Rect2D& rect,
+    void ReplaceRegion(const Rect2D& rect,
                         uint32_t level,
                         uint32_t slice,
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
-                        uint32_t bytesPerImage);
+                        uint32_t bytesPerImage) override;
 };
 
 using VKRCTextureCubePtr = std::shared_ptr<VKRCTextureCube>;
@@ -181,12 +181,12 @@ public:
     
     ~VKRCTexture2DArray();
     
-    virtual void ReplaceRegion(const Rect2D& rect,
+    void ReplaceRegion(const Rect2D& rect,
                         uint32_t level,
                         uint32_t slice,
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
-                        uint32_t bytesPerImage);
+                        uint32_t bytesPerImage) override;
 };
 
 using VKRCTexture2DArrayPtr = std::shared_ptr<VKRCTexture2DArray>;

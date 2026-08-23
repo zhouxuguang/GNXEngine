@@ -22,17 +22,17 @@ public:
     
     ~MTLRenderEncoder();
     
-    virtual void EndEncode();
+    void EndEncode() override;
     
     /**
      设置图形管线
      */
-    virtual void SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline);
+    void SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline) override;
 
     /**
      设置多边形填充模式（实心/线框）
      */
-    virtual void SetFillMode(FillMode fillMode);
+    void SetFillMode(FillMode fillMode) override;
     
     /**
      Description
@@ -40,24 +40,24 @@ public:
      @param buffer buffer对象
      @param index 绑定的索引
      */
-    virtual void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index);
+    void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index) override;
     
     // RCBuffer接口
-    virtual void SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index);
+    void SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index) override;
     
-    virtual void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer, ShaderStage stage);
+    void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer, ShaderStage stage) override;
     
-    virtual void DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
-        uint32_t drawCount, uint32_t stride);
+    void DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
+        uint32_t drawCount, uint32_t stride) override;
 
-    virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+    void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
         int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
-        uint32_t drawCount, uint32_t stride);
+        uint32_t drawCount, uint32_t stride) override;
 
-    virtual void DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+    void DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, IndexBufferPtr indexBuffer,
         int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
         RCBufferPtr countBuffer, uint32_t countBufferOffset,
-        uint32_t maxDrawCount, uint32_t stride);
+        uint32_t maxDrawCount, uint32_t stride) override;
     
     /**
      设置uniformbuffer的索引
@@ -65,7 +65,7 @@ public:
      @param buffer buffer description
      @param index index description
      */
-    virtual void SetVertexUniformBuffer(UniformBufferPtr buffer, int index);
+    void SetVertexUniformBuffer(UniformBufferPtr buffer, int index) override;
     
     /**
      设置uniformbuffer的索引
@@ -73,9 +73,9 @@ public:
      @param buffer buffer description
      @param index index description
      */
-    virtual void SetFragmentUniformBuffer(UniformBufferPtr buffer, int index);
+    void SetFragmentUniformBuffer(UniformBufferPtr buffer, int index) override;
     
-    virtual void SetFragmentStorageTexture(const std::string& resourceName, RCTexturePtr texture);
+    void SetFragmentStorageTexture(const std::string& resourceName, RCTexturePtr texture) override;
     
     /**
      设置顶点uniformbuffer
@@ -83,7 +83,7 @@ public:
      @param buffer buffer description
      @param index index description
      */
-    virtual void SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+    void SetVertexUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer) override;
 
     /**
      设置片元uniformbuffer
@@ -91,7 +91,7 @@ public:
      @param buffer buffer description
      @param index index description
      */
-    virtual void SetFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+    void SetFragmentUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer) override;
 
     /**
      设置mesh shader的uniformbuffer
@@ -99,7 +99,7 @@ public:
      @param buffer buffer description
      @param index index description
      */
-    virtual void SetMeshUniformBuffer(UniformBufferPtr buffer, int index);
+    void SetMeshUniformBuffer(UniformBufferPtr buffer, int index) override;
 
     /**
      设置task shader的uniformbuffer
@@ -107,7 +107,7 @@ public:
      @param buffer buffer description
      @param index index description
      */
-    virtual void SetTaskUniformBuffer(UniformBufferPtr buffer, int index);
+    void SetTaskUniformBuffer(UniformBufferPtr buffer, int index) override;
 
     /**
      设置mesh shader的uniformbuffer（按资源名绑定）
@@ -115,7 +115,7 @@ public:
      @param resourceName shader中的资源名
      @param buffer buffer description
      */
-    virtual void SetMeshUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+    void SetMeshUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer) override;
 
     /**
      设置task shader的uniformbuffer（按资源名绑定）
@@ -123,7 +123,7 @@ public:
      @param resourceName shader中的资源名
      @param buffer buffer description
      */
-    virtual void SetTaskUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+    void SetTaskUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer) override;
 
     /**
      draw function
@@ -132,9 +132,9 @@ public:
      @param offset offset description
      @param size size description
      */
-    virtual void DrawPrimitives(PrimitiveMode mode, int offset, int size);
+    void DrawPrimitives(PrimitiveMode mode, int offset, int size) override;
     
-    virtual void DrawInstancePrimitives(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount);
+    void DrawInstancePrimitives(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount) override;
     
     /**
      draw funton with index
@@ -144,7 +144,7 @@ public:
      @param buffer buffer description
      @param offset offset description
      */
-    virtual void DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, int baseVertex = 0);
+    void DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, int baseVertex = 0) override;
     
     /**
      draw function with index instance
@@ -156,23 +156,23 @@ public:
      @param offset firstInstance 第一个实例的索引
      @param offset instanceCount 实例的个数
      */
-    virtual void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
-                                               uint32_t firstInstance, uint32_t instanceCount);
+    void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
+                                               uint32_t firstInstance, uint32_t instanceCount) override;
     
-    virtual void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
-    virtual void SetVertexTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
-    virtual void SetMeshTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
-    virtual void SetTaskTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler);
+    void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler) override;
+    void SetVertexTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler) override;
+    void SetMeshTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler) override;
+    void SetTaskTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler) override;
 
     // ===== Mesh Shader 绘制接口 =====
-    virtual void DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
-    virtual void DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset,
-                                       uint32_t drawCount, uint32_t stride);
+    void DrawMeshTasks(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) override;
+    void DrawMeshTasksIndirect(RCBufferPtr buffer, uint32_t offset,
+                                       uint32_t drawCount, uint32_t stride) override;
 
     // ===== 动态渲染状态接口 =====
-    virtual void SetScissorRect(int x, int y, uint32_t width, uint32_t height);
-    virtual void SetDepthBias(float bias, float slopeScale, float clamp);
-    virtual void SetStencilReference(uint32_t frontRef, uint32_t backRef);
+    void SetScissorRect(int x, int y, uint32_t width, uint32_t height) override;
+    void SetDepthBias(float bias, float slopeScale, float clamp) override;
+    void SetStencilReference(uint32_t frontRef, uint32_t backRef) override;
 
 private:
     id <MTLRenderCommandEncoder> mRenderEncoder = nil;

@@ -41,28 +41,28 @@ public:
     ~VulkanCommandBuffer();
     
     //创建默认的encoder，也就是屏幕渲染的encoder
-    virtual RenderEncoderPtr CreateDefaultRenderEncoder(const ClearColor& clearColor = MakeClearColor(0, 0, 0, 1)) const;
+    RenderEncoderPtr CreateDefaultRenderEncoder(const ClearColor& clearColor = MakeClearColor(0, 0, 0, 1)) const override;
     
-    virtual RenderEncoderPtr CreateRenderEncoder(const RenderPass& renderPass) const;
+    RenderEncoderPtr CreateRenderEncoder(const RenderPass& renderPass) const override;
     
-    virtual ComputeEncoderPtr CreateComputeEncoder() const;
+    ComputeEncoderPtr CreateComputeEncoder() const override;
     
-    virtual BlitEncoderPtr CreateBlitEncoder() const;
+    BlitEncoderPtr CreateBlitEncoder() const override;
     
     //呈现到屏幕上，上屏
-    virtual void PresentFrameBuffer();
+    void PresentFrameBuffer() override;
     
     //等待命令缓冲区执行完成
-    virtual void WaitUntilCompleted();
+    void WaitUntilCompleted() override;
     
     //提交命令缓冲区（用于计算命令缓冲区）
-    virtual void Submit();
+    void Submit() override;
     
     // 开始调试标记
-    virtual void BeginDebugGroup(const char* name, const float color[4]);
+    void BeginDebugGroup(const char* name, const float color[4]) override;
     
     // 结束调试标记
-    virtual void EndDebugGroup();
+    void EndDebugGroup() override;
 
     /**
      * 通知命令缓冲区纹理资源即将被访问

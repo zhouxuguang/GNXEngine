@@ -48,44 +48,44 @@ public:
     GLFWRenderWindow(const WindowProps& props, void* externalWindowHandle);
     ~GLFWRenderWindow();
 
-    virtual void OnUpdate()
+    void OnUpdate() override
     {
         glfwPollEvents();
     }
 
-    virtual bool ShouldClose() const;
+    bool ShouldClose() const override;
 
-    virtual uint32_t GetWidth() const
+    uint32_t GetWidth() const override
     {
         return mData.width;
     }
 
-    virtual uint32_t GetHeight() const
+    uint32_t GetHeight() const override
     {
         return mData.height;
     }
 
-    virtual void SetEventCallback(const EventCallbackFunc& callback);
+    void SetEventCallback(const EventCallbackFunc& callback) override;
 
-    virtual void SetVSync(bool enabled);
-    virtual bool IsVSync() const
+    void SetVSync(bool enabled) override;
+    bool IsVSync() const override
     {
         return mData.VSync;
     }
 
-    virtual void* GetNativeWindow() const
+    void* GetNativeWindow() const override
     {
         return mWindow;
     }
 
-    virtual void Resize(uint32_t width, uint32_t height);
+    void Resize(uint32_t width, uint32_t height) override;
 
     virtual void Shutdown();
 
     void Init();
 
     // 手动触发事件回调（用于 Qt 事件转发）
-    void TriggerEventCallback(Event& event);
+    void TriggerEventCallback(Event& event) override;
 
 private:
     WindowData mData;

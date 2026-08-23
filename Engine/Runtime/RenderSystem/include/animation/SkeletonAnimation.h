@@ -37,7 +37,7 @@ public:
     bool mCPUSkin = true;
     
 private:
-    virtual void Update(float deltaTime) 
+    void Update(float deltaTime) override 
     {
         // 防御：模型可能没有动画片段（无骨骼动画），此时跳过采样避免越界崩溃
         if (mAnimationClips.empty() || mClip >= mAnimationClips.size() || !mAnimationClips[mClip])

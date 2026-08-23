@@ -22,7 +22,7 @@ public:
     ~VKComputePipeline();
     
     //获得计算着色器的线程组的大小
-    virtual void GetThreadGroupSizes(uint32_t &x, uint32_t &y, uint32_t &z);
+    void GetThreadGroupSizes(uint32_t &x, uint32_t &y, uint32_t &z) override;
     
     VkPipeline GetPipeline() const
     {

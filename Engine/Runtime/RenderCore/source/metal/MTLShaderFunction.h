@@ -22,9 +22,9 @@ public:
     
     ~MTLShaderFunction();
     
-    virtual ShaderFunctionPtr InitWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage);
+    ShaderFunctionPtr InitWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage) override;
     
-    virtual ShaderStage GetShaderStage() const;
+    ShaderStage GetShaderStage() const override;
     
     id<MTLFunction> GetShaderFunction() const;
     
@@ -79,7 +79,7 @@ public:
         return mMeshFunction != nil;
     }
     
-    virtual std::string GetName() const
+    std::string GetName() const override
     {
         return "";
     }
@@ -127,21 +127,21 @@ public:
     }
 
     // ---- Mesh/Task shader threadgroup size (from SPIR-V ExecutionModeLocalSize) ----
-    void SetMeshThreadgroupSize(uint32_t x, uint32_t y, uint32_t z)
+    void SetMeshThreadgroupSize(uint32_t x, uint32_t y, uint32_t z) override
     {
         mMeshThreadgroupSize[0] = x;
         mMeshThreadgroupSize[1] = y;
         mMeshThreadgroupSize[2] = z;
     }
-    void SetTaskThreadgroupSize(uint32_t x, uint32_t y, uint32_t z)
+    void SetTaskThreadgroupSize(uint32_t x, uint32_t y, uint32_t z) override
     {
         mTaskThreadgroupSize[0] = x;
         mTaskThreadgroupSize[1] = y;
         mTaskThreadgroupSize[2] = z;
     }
-    const uint32_t* GetMeshThreadgroupSize() const { return mMeshThreadgroupSize; }
-    const uint32_t* GetTaskThreadgroupSize() const { return mTaskThreadgroupSize; }
-    bool HasMeshThreadgroupSize() const { return mMeshThreadgroupSize[0] > 0; }
+    const uint32_t* GetMeshThreadgroupSize() const override { return mMeshThreadgroupSize; }
+    const uint32_t* GetTaskThreadgroupSize() const override { return mTaskThreadgroupSize; }
+    bool HasMeshThreadgroupSize() const override { return mMeshThreadgroupSize[0] > 0; }
     bool HasTaskThreadgroupSize() const { return mTaskThreadgroupSize[0] > 0; }
 
 private:

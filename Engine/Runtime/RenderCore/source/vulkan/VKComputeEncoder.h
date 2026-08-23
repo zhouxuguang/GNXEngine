@@ -23,38 +23,38 @@ public:
     
     ~VKComputeEncoder();
     
-    virtual void SetComputePipeline(ComputePipelinePtr computePipeline);
+    void SetComputePipeline(ComputePipelinePtr computePipeline) override;
     
-    virtual void SetUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer);
+    void SetUniformBuffer(const std::string& resourceName, UniformBufferPtr buffer) override;
     
     // RCBuffer接口
-    virtual void SetStorageBuffer(RCBufferPtr buffer, uint32_t index);
+    void SetStorageBuffer(RCBufferPtr buffer, uint32_t index) override;
     
-    virtual void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer);
+    void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer) override;
     
     // SetTexture - 通过索引
-    virtual void SetTexture(RCTexturePtr texture, uint32_t index);
+    void SetTexture(RCTexturePtr texture, uint32_t index) override;
     
-    virtual void SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint32_t index);
+    void SetTexture(RCTexturePtr texture, uint32_t mipLevel, uint32_t index) override;
     
     // SetTexture - 通过资源名
-    virtual void SetTexture(const std::string& resourceName, RCTexturePtr texture);
+    void SetTexture(const std::string& resourceName, RCTexturePtr texture) override;
     
-    virtual void SetTexture(const std::string& resourceName, RCTexturePtr texture, uint32_t mipLevel);
+    void SetTexture(const std::string& resourceName, RCTexturePtr texture, uint32_t mipLevel) override;
     
     // SetOutTexture - 通过索引
-    virtual void SetOutTexture(RCTexturePtr texture, uint32_t index);
+    void SetOutTexture(RCTexturePtr texture, uint32_t index) override;
     
-    virtual void SetOutTexture(RCTexturePtr texture, uint32_t mipLevel, uint32_t index);
+    void SetOutTexture(RCTexturePtr texture, uint32_t mipLevel, uint32_t index) override;
     
     // SetOutTexture - 通过资源名
-    virtual void SetOutTexture(const std::string& resourceName, RCTexturePtr texture);
+    void SetOutTexture(const std::string& resourceName, RCTexturePtr texture) override;
     
-    virtual void SetOutTexture(const std::string& resourceName, RCTexturePtr texture, uint32_t mipLevel);
+    void SetOutTexture(const std::string& resourceName, RCTexturePtr texture, uint32_t mipLevel) override;
     
-    virtual void Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ);
+    void Dispatch(uint32_t threadGroupsX, uint32_t threadGroupsY, uint32_t threadGroupsZ) override;
     
-    virtual void EndEncode();
+    void EndEncode() override;
     
 private:
     VulkanContextPtr mContext = nullptr;

@@ -18,11 +18,11 @@ NAMESPACE_IMAGECODEC_BEGIN
 class ImageDecoderPNG : public ImageDecoderImpl
 {
 private:
-    virtual bool onDecode(const void* buffer, size_t size, VImage* bitmap);
+    bool onDecode(const void* buffer, size_t size, VImage* bitmap) override;
 
-    virtual bool IsFormat(const void* buffer, size_t size);
+    bool IsFormat(const void* buffer, size_t size) override;
 
-    virtual ImageStoreFormat GetFormat() const;
+    ImageStoreFormat GetFormat() const override;
 };
 
 NAMESPACE_IMAGECODEC_END

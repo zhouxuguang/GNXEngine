@@ -23,9 +23,9 @@ public:
     
     ~MTLRenderDevice();
     
-    virtual void Resize(uint32_t width, uint32_t height);
+    void Resize(uint32_t width, uint32_t height) override;
     
-    virtual RenderDeviceType GetRenderDeviceType() const;
+    RenderDeviceType GetRenderDeviceType() const override;
     
     virtual const RenderDeviceFeatures& GetFeatures() const override
     {
@@ -38,7 +38,7 @@ public:
      @param size 申请buffer长度，单位（byte）
      @return 成功申请buffer句柄，失败返回0；
      */
-    virtual VertexBufferPtr CreateVertexBufferWithLength(uint32_t size) const;
+    VertexBufferPtr CreateVertexBufferWithLength(uint32_t size) const override;
     
     /**
      以指定buffer和长度以内存拷贝方式创建顶点buffer
@@ -48,7 +48,7 @@ public:
      @param mode 申请Buffer类型
      @return 成功申请buffer句柄，失败返回0；
      */
-    virtual VertexBufferPtr CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const;
+    VertexBufferPtr CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const override;
     
     /**
      以指定buffer和长度以内存拷贝方式创建索引buffer
@@ -58,7 +58,7 @@ public:
      @param indexType 索引类型
      @return 成功申请buffer句柄，失败返回0；
      */
-    virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const;
+    IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const override;
     
     // 统一Buffer接口
     virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc) const override;
@@ -70,65 +70,65 @@ public:
      @param des the description for sampler to be created.
      @return shared pointer to sampler object.
      */
-    virtual TextureSamplerPtr CreateSamplerWithDescriptor(const SamplerDesc& des) const;
+    TextureSamplerPtr CreateSamplerWithDescriptor(const SamplerDesc& des) const override;
     
     /**
      创建uniform buffer
      */
-    virtual UniformBufferPtr CreateUniformBufferWithSize(uint32_t bufSize) const;
+    UniformBufferPtr CreateUniformBufferWithSize(uint32_t bufSize) const override;
     
     /**
      创建ShaderFunctionPtr
      */
-    virtual ShaderFunctionPtr CreateShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const;
+    ShaderFunctionPtr CreateShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const override;
     
     /**
     创建图形shader
      */
-    virtual GraphicsShaderPtr CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const;
+    GraphicsShaderPtr CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const override;
     
     /**
     创建Mesh图形shader (Task + Mesh + Fragment)
      */
-    virtual GraphicsShaderPtr CreateMeshGraphicsShader(const ShaderCode& taskShader, const ShaderCode& meshShader, const ShaderCode& fragmentShader) const;
+    GraphicsShaderPtr CreateMeshGraphicsShader(const ShaderCode& taskShader, const ShaderCode& meshShader, const ShaderCode& fragmentShader) const override;
     
     /**
      创建图形管线
      */
-    virtual GraphicsPipelinePtr CreateGraphicsPipeline(const GraphicsPipelineDesc& des) const;
+    GraphicsPipelinePtr CreateGraphicsPipeline(const GraphicsPipelineDesc& des) const override;
     
     /**
      创建计算管线
      */
-    virtual ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderSource) const;
+    ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderSource) const override;
     
     CommandBufferPtr CreateCommandBuffer();
     
-    virtual RCTexture2DPtr CreateTexture2D(TextureFormat format,
+    RCTexture2DPtr CreateTexture2D(TextureFormat format,
                                         TextureUsage usage,
                                         uint32_t width,
                                         uint32_t height,
-                                        uint32_t levels) const;
+                                        uint32_t levels) const override;
     
-    virtual RCTexture3DPtr CreateTexture3D(TextureFormat format,
+    RCTexture3DPtr CreateTexture3D(TextureFormat format,
                                         TextureUsage usage,
                                         uint32_t width,
                                         uint32_t height,
                                         uint32_t depth,
-                                        uint32_t levels) const;
+                                        uint32_t levels) const override;
 
-    virtual RCTextureCubePtr CreateTextureCube(TextureFormat format,
+    RCTextureCubePtr CreateTextureCube(TextureFormat format,
                                         TextureUsage usage,
                                         uint32_t width,
                                         uint32_t height,
-                                        uint32_t levels) const;
+                                        uint32_t levels) const override;
 
-    virtual RCTexture2DArrayPtr CreateTexture2DArray(TextureFormat format,
+    RCTexture2DArrayPtr CreateTexture2DArray(TextureFormat format,
                                         TextureUsage usage,
                                         uint32_t width,
                                         uint32_t height,
                                         uint32_t levels,
-                                        uint32_t arraySize) const;
+                                        uint32_t arraySize) const override;
 
     // RHI队列接口实现
     virtual CommandQueuePtr GetCommandQueue(QueueType type, uint32_t index = 0) const override;

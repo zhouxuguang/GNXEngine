@@ -102,11 +102,11 @@ public:
     VKShaderFunction(VulkanContextPtr context);
     ~VKShaderFunction();
     
-    virtual ShaderFunctionPtr InitWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage);
+    ShaderFunctionPtr InitWithShaderSource(const ShaderCode& shaderSource, ShaderStage shaderStage) override;
     
     virtual std::shared_ptr<VKShaderFunction> initWithShaderSourceInner(const ShaderCode& shaderSource, ShaderStage shaderStage);
     
-    virtual ShaderStage GetShaderStage() const;
+    ShaderStage GetShaderStage() const override;
     
     VkShaderModule GetShaderModule() const
     {
@@ -188,7 +188,7 @@ public:
 
     ~VKGraphicsShader();
 
-    virtual std::string GetName() const
+    std::string GetName() const override
     {
         return "";
     }
@@ -261,8 +261,8 @@ public:
     const std::vector<PushConstantMeta>& GetPushConstants() const { return mPushConstants; }
     const PushConstantBindingMap& GetPushConstantBindings() const { return mPushConstantBindings; }
 
-    const uint32_t* GetMeshThreadgroupSize() const { return mMeshThreadgroupSize; }
-    const uint32_t* GetTaskThreadgroupSize() const { return mTaskThreadgroupSize; }
+    const uint32_t* GetMeshThreadgroupSize() const override { return mMeshThreadgroupSize; }
+    const uint32_t* GetTaskThreadgroupSize() const override { return mTaskThreadgroupSize; }
 
 private:
     void CollectResource(SpvReflectShaderModule shaderModule, ShaderStage shaderStage);
