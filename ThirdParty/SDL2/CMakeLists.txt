@@ -18,10 +18,17 @@ set(SDL2_DISABLE_INSTALL OFF)
 set(SDL_AUDIO OFF)
 set(SDL_SENSOR OFF)
 set(SDL_POWER OFF)
-set(SDL_FILE OFF)
+# SDL_FILE：包内文件读取（SDL_RWFromFile）必需。
+#   - iOS：控制 src/file/cocoa/*.m（SDL_rwopsbundlesupport.m）编译，关闭则
+#     SDL_RWFromFile 的 bundle 分支（SDL_rwops.c #if !defined(SDL_FILE_DISABLED)）
+#     被排除 → iOS 包内资源读取失效。必须 ON。
+set(SDL_FILE ON)
 set(SDL_TIMERS OFF)
 set(SDL_CPUINFO OFF)
-set(SDL_FILESYSTEM OFF)
+# SDL_FILESYSTEM：Android SDL_RWFromFile 内部存储回退（SDL_rwops.c 调
+#   SDL_AndroidGetInternalStoragePath，实现在 src/filesystem/android）必需。关闭则
+#   该符号未定义 → Android 链接风险。必须 ON。
+set(SDL_FILESYSTEM ON)
 set(SDL_DLOPEN OFF)
 set(SDL_LOCALE OFF)
 set(SDL_MISC OFF)

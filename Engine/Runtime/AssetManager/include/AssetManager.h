@@ -40,6 +40,23 @@ public:
 	 */
 	static void Shutdown();
 
+	// ==================== 包内资源读取（跨平台） ====================
+
+	/**
+	 * 读取包内资源到内存（跨平台：Android assets / iOS bundle / PC 文件系统）
+	 * @param relPath 包内相对路径（如 "Shader/BasePass.spirv.gnxasset"）
+	 * @param outData 输出的字节数据
+	 * @return 成功返回 true
+	 */
+	static bool LoadResource(const std::string& relPath, std::vector<uint8_t>& outData);
+
+	/**
+	 * 判断包内资源是否存在
+	 * @param relPath 包内相对路径
+	 * @return 存在返回 true
+	 */
+	static bool ResourceExists(const std::string& relPath);
+
 	// ==================== 资源加载 ====================
 
 	/**

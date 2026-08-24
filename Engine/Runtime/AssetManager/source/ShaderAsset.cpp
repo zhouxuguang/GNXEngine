@@ -1,7 +1,9 @@
 ﻿#include "ShaderAsset.h"
+#include "AssetManager.h"
 #include "AssetFileHeader.h"
 #include "ShaderMessageUtil.h"
 #include "ShaderMessage.pb.h"
+#include "Runtime/BaseLib/include/PreCompile.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include <fstream>
 
@@ -166,17 +168,42 @@ bool ShaderAsset::LoadFromFile(const std::string& filepath)
 {
     mFilePath = filepath;
 
-    std::ifstream file(filepath, std::ios::binary);
+    // 平台宏双语义（漏洞10/14）：
+    //   - 移动端（GNX_OS_IOS/ANDROID）：包内相对路径，用 LoadResource 读入内存
+    //     （Android assets 非文件系统，std::ifstream 必失败）
+    //   - 桌面端：绝对路径，std::ifstream（保持现状）
+    std::vector<uint8_t> fileData;
+
+#if GNX_OS_IOS || GNX_OS_ANDROID
+    if (!AssetManager::LoadResource(filepath, fileData))
+    {
+        LOG_ERROR("ShaderAsset: cannot load resource %s", filepath.c_str());
+        return false;
+    }
+#else
+    std::ifstream file(filepath, std::ios::binary | std::ios::ate);
     if (!file.is_open())
     {
         LOG_ERROR("ShaderAsset: cannot open %s", filepath.c_str());
         return false;
     }
+    std::streamsize fsize = file.tellg();
+    file.seekg(0, std::ios::beg);
+    fileData.resize((size_t)fsize);
+    file.read((char*)fileData.data(), fsize);
+    file.close();
+#endif
+
+    if (fileData.size() < sizeof(AssetFileHeader))
+    {
+        LOG_ERROR("ShaderAsset: file too small %s", filepath.c_str());
+        return false;
+    }
 
     // 读取 AssetFileHeader（128 字节）
     AssetFileHeader header;
-    file.read(reinterpret_cast<char*>(&header), sizeof(AssetFileHeader));
-    if (file.fail() || !AssetFileHeaderUtil::ValidateHeader(header))
+    memcpy(&header, fileData.data(), sizeof(AssetFileHeader));
+    if (!AssetFileHeaderUtil::ValidateHeader(header))
     {
         LOG_ERROR("ShaderAsset: invalid asset header in %s", filepath.c_str());
         return false;
@@ -190,8 +217,7 @@ bool ShaderAsset::LoadFromFile(const std::string& filepath)
 
     // 读取 protobuf 数据
     std::vector<uint8_t> pbData(header.dataSize);
-    file.read(reinterpret_cast<char*>(pbData.data()), header.dataSize);
-    file.close();
+    memcpy(pbData.data(), fileData.data() + sizeof(AssetFileHeader), header.dataSize);
 
     // 反序列化容器 ShaderPackageMessage
     ShaderPackageMessage pkg = ShaderPackageMessage_init_default;

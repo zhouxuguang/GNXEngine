@@ -1,8 +1,17 @@
 #include "AssetManager.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
+#include "Runtime/BaseLib/include/PreCompile.h"
 #include <iostream>
 #include <algorithm>
 #include <filesystem>
+#include <fstream>
+#include <vector>
+
+// 移动端包内资源读取：SDL_RWFromFile（Android 自动 AAssetManager / iOS 自动 bundle）。
+// SDL 头仅在 .cpp 内部 include，不外泄到任何头文件。
+#if GNX_OS_IOS || GNX_OS_ANDROID
+#include "SDL_rwops.h"
+#endif
 
 NS_ASSETMANAGER_BEGIN
 
@@ -33,7 +42,14 @@ bool AssetManager::Initialize(const std::string& rootPath)
 	sInstance = new AssetManager();
 	sInstance->mRootPath = rootPath;
 
-	// 确保根目录存在
+#if GNX_OS_IOS || GNX_OS_ANDROID
+	// 移动端：rootPath 是 GetProjectAssetDir() 基于 __FILE__ 推导的构建机路径，
+	// FileUtil::IsDir 用 _stat/stat 检查真实文件系统必然失败（设备上不存在）。
+	// 包内资源通过 LoadResource（SDL_RWFromFile）读取，不依赖 mRootPath，
+	// 因此移动端跳过 IsDir 校验（漏洞13）。
+	(void)rootPath;
+#else
+	// 桌面端：确保根目录存在
 	if (!baselib::FileUtil::IsDir(rootPath))
 	{
 		std::cerr << "AssetManager: Root directory does not exist: " << rootPath << std::endl;
@@ -41,6 +57,7 @@ bool AssetManager::Initialize(const std::string& rootPath)
 		sInstance = nullptr;
 		return false;
 	}
+#endif
 
 	std::cout << "AssetManager initialized with root: " << rootPath << std::endl;
 	sInstance->mInitialized = true;
@@ -56,6 +73,62 @@ void AssetManager::Shutdown()
 
 	delete sInstance;
 	sInstance = nullptr;
+}
+
+bool AssetManager::LoadResource(const std::string& relPath, std::vector<uint8_t>& outData)
+{
+	outData.clear();
+
+#if GNX_OS_IOS || GNX_OS_ANDROID
+	// 移动端：SDL_RWFromFile 相对路径自动走包内（Android AAssetManager / iOS NSBundle）。
+	// 用 SDL_LoadFile_RW（内部处理 size 未知/读满/分配），读完整文件到内存（漏洞7）。
+	SDL_RWops* rw = SDL_RWFromFile(relPath.c_str(), "rb");
+	if (!rw)
+	{
+		return false;
+	}
+
+	size_t dataSize = 0;
+	void* data = SDL_LoadFile_RW(rw, &dataSize, 1);   // freesrc=1，内部 close 并释放
+	if (!data || dataSize == 0)
+	{
+		if (data) SDL_free(data);
+		return false;
+	}
+
+	outData.assign((const uint8_t*)data, (const uint8_t*)data + dataSize);
+	SDL_free(data);
+	return true;
+#else
+	// 桌面端：直接文件系统读取（保持现状）
+	std::ifstream file(relPath, std::ios::binary | std::ios::ate);
+	if (!file.is_open())
+	{
+		return false;
+	}
+	std::streamsize size = file.tellg();
+	file.seekg(0, std::ios::beg);
+	outData.resize((size_t)size);
+	file.read((char*)outData.data(), size);
+	return file.good() || file.eof();
+#endif
+}
+
+bool AssetManager::ResourceExists(const std::string& relPath)
+{
+#if GNX_OS_IOS || GNX_OS_ANDROID
+	// SDL 无"文件存在"API，通过尝试打开判断
+	SDL_RWops* rw = SDL_RWFromFile(relPath.c_str(), "rb");
+	if (!rw)
+	{
+		return false;
+	}
+	SDL_RWclose(rw);
+	return true;
+#else
+	std::ifstream f(relPath, std::ios::binary);
+	return f.good();
+#endif
 }
 
 TextureAsset* AssetManager::LoadTexture(const std::string& path)

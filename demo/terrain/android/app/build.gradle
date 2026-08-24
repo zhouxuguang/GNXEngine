@@ -1,5 +1,21 @@
 apply plugin: 'com.android.application'
 
+// ---- 打包预编译 shader（SPIRV 容器）到 assets/Shader/ ----
+// 移动端运行时通过 AssetManager::LoadResource("Shader/xxx.spirv.gnxasset") 读取，
+// Android 端这些文件必须随 APK 打进 assets 目录（AAssetManager 才能读到）。
+// 只拷贝 spirv 格式，输出到 build/generated 不污染仓库。
+def shaderSrcDir = file('../../../../data_asset/Shader')
+def shaderOutDir = file("$buildDir/generated/assets/Shader")
+
+task copyShaderAssets(type: Copy) {
+    from(shaderSrcDir) {
+        include '*.spirv.gnxasset'
+    }
+    into shaderOutDir
+}
+
+preBuild.dependsOn copyShaderAssets
+
 android {
     namespace "com.gnxengine.terrain"
     compileSdkVersion 35
@@ -29,6 +45,7 @@ android {
     }
     sourceSets.main {
         jniLibs.srcDir 'libs'
+        assets.srcDirs += shaderOutDir
     }
     externalNativeBuild {
         cmake {

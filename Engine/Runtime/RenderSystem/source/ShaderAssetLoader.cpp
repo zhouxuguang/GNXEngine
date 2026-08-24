@@ -12,6 +12,7 @@
 #include "Runtime/RenderCore/include/ShaderStageData.h"
 #include "Runtime/AssetManager/include/ShaderAsset.h"
 #include "Runtime/AssetManager/include/AssetManager.h"
+#include "Runtime/BaseLib/include/PreCompile.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include <fstream>
 
@@ -105,9 +106,35 @@ static CompiledShaderInfoPtr LoadCompiledShaderFromAsset(AssetManager::ShaderAss
 }
 
 // Check container file existence ({name}.{format}.gnxasset)
+// 移动端（iOS/Android）判定：用引擎宏（非 __APPLE__，避免误伤 macOS 桌面，漏洞14）
+static bool IsMobilePlatform()
+{
+#if GNX_OS_IOS || GNX_OS_ANDROID
+    return true;
+#else
+    return false;
+#endif
+}
+
+// 构造容器文件路径：移动端 = 包内相对路径（Shader/xxx），桌面端 = getCompiledShaderDir() 绝对路径
+static std::string MakeShaderContainerPath(const std::string& shaderName, const std::string& formatSuffix)
+{
+    if (IsMobilePlatform())
+    {
+        return std::string("Shader/") + shaderName + "." + formatSuffix + ".gnxasset";
+    }
+    return getCompiledShaderDir() + shaderName + "." + formatSuffix + ".gnxasset";
+}
+
 // Stage completeness is checked via GetStage in LoadShaderAsset after loading
 static bool HasContainerFile(const std::string& shaderName, const std::string& formatSuffix)
 {
+    if (IsMobilePlatform())
+    {
+        // 移动端跳过探测（漏洞6）：SDL 无 exists API，ResourceExists 需真打开文件（开销），
+        // 且探测失败会走运行时编译（DXC 移动端返回 nullptr → 白忙）。直接尝试加载。
+        return true;
+    }
     std::string filePath = getCompiledShaderDir() + shaderName + "." + formatSuffix + ".gnxasset";
     std::ifstream f(filePath, std::ios::binary);
     return f.good();
@@ -136,7 +163,7 @@ ShaderAssetString LoadShaderAsset(const std::string &shaderName)
         return LoadCustomShaderAsset(shaderFilePath);
     }
 
-    std::string filePath = getCompiledShaderDir() + shaderName + "." + formatSuffix + ".gnxasset";
+    std::string filePath = MakeShaderContainerPath(shaderName, formatSuffix);
 
     AssetManager::AssetManager* assetMgr = AssetManager::AssetManager::GetInstance();
     AssetManager::ShaderAsset* shaderAsset = nullptr;
@@ -148,6 +175,7 @@ ShaderAssetString LoadShaderAsset(const std::string &shaderName)
         if (!localAsset.LoadFromFile(filePath))
         {
             LOG_WARN("LoadShaderAsset: asset not found: %s", filePath.c_str());
+            if (IsMobilePlatform()) return shaderAssetString;  // 移动端无 DXC，不尝试运行时编译（漏洞8）
             std::string shaderFilePath = getBuiltInShaderDir() + shaderName + ".shader";
             return LoadCustomShaderAsset(shaderFilePath);
         }
@@ -159,6 +187,7 @@ ShaderAssetString LoadShaderAsset(const std::string &shaderName)
         if (!shaderAsset)
         {
             LOG_WARN("LoadShaderAsset: asset not found: %s", filePath.c_str());
+            if (IsMobilePlatform()) return shaderAssetString;  // 移动端无 DXC，不尝试运行时编译（漏洞8）
             std::string shaderFilePath = getBuiltInShaderDir() + shaderName + ".shader";
             return LoadCustomShaderAsset(shaderFilePath);
         }
@@ -170,6 +199,7 @@ ShaderAssetString LoadShaderAsset(const std::string &shaderName)
         LOG_WARN("LoadShaderAsset: format mismatch for %s (expected %d, got %d), falling back to runtime compile",
                  shaderName.c_str(), (int)format, (int)shaderAsset->GetFormat());
         if (assetMgr && shaderAsset) shaderAsset->Release();
+        if (IsMobilePlatform()) return shaderAssetString;  // 移动端无 DXC，不尝试运行时编译（漏洞8）
         std::string shaderFilePath = getBuiltInShaderDir() + shaderName + ".shader";
         return LoadCustomShaderAsset(shaderFilePath);
     }
@@ -195,6 +225,7 @@ ShaderAssetString LoadShaderAsset(const std::string &shaderName)
         LOG_WARN("LoadShaderAsset: required stages missing in container for %s, falling back to runtime compile",
                  shaderName.c_str());
         if (assetMgr && shaderAsset) shaderAsset->Release();
+        if (IsMobilePlatform()) return shaderAssetString;  // 移动端无 DXC，不尝试运行时编译（漏洞8）
         std::string shaderFilePath = getBuiltInShaderDir() + shaderName + ".shader";
         return LoadCustomShaderAsset(shaderFilePath);
     }
