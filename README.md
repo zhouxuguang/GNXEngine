@@ -112,39 +112,35 @@
 |------|---------|------|
 | **CMake** | 3.17+ | 构建系统 |
 | **C++17 编译器** | — | macOS: Xcode Command Line Tools；Windows: MSVC 2019+；Linux: GCC 9+ / Clang |
-| **Intel ISPC** | 1.x+ | 纹理压缩编译所需，需安装并设置环境变量 |
+| **PowerShell / curl + unzip** | — | 用于自动拉取依赖（见下文） |
 
 > **注**：Linux 编译还需安装 Vulkan SDK（渲染后端）与 X11/Wayland 开发库（GLFW 窗口依赖）。
 
-#### ISPC 安装
+#### 自动拉取依赖（推荐）
 
-1. 从 [Intel ISPC Releases](https://github.com/ispc/ispc/releases) 下载对应平台版本
-2. 解压到本地目录
-3. 设置环境变量，CMake 会通过以下路径查找 ISPC：
+无需手动安装 ISPC。首次构建前运行仓库根目录下的脚本，即可自动下载并解压构建工具（含 ISPC）到 `buildtools/`，CMake 会自动从 `buildtools/ispc/{win|mac|linux}/ispc` 找到它：
+
+**Windows：**
+
+```powershell
+# 在仓库根目录下运行
+./fetch-deps.ps1
+
+# 可选：自定义下载地址 / 解压目录
+./fetch-deps.ps1 -Url "https://..." -DestDir "C:\buildtools"
+```
 
 **macOS / Linux：**
 
 ```bash
-# 方式一：设置 ISPC_HOME 环境变量
-export ISPC_HOME=/path/to/ispc
+# 在仓库根目录下运行
+./fetch-deps.sh
 
-# 方式二：将 ispc 放入 PATH
-export PATH=/path/to/ispc/bin:$PATH
-
-# 方式三：安装到 /usr/local/bin（CMake 默认搜索路径）
-cp /path/to/ispc/bin/ispc /usr/local/bin/
+# 可选：自定义下载地址 / 解压目录
+./fetch-deps.sh "https://..." "$PWD/buildtools"
 ```
 
-建议将环境变量写入 `~/.zshrc` 或 `~/.bashrc` 使其永久生效：
-
-```bash
-echo 'export ISPC_HOME=/path/to/ispc' >> ~/.zshrc
-```
-
-**Windows：**
-
-1. 下载 `ispc-vX.X.X-windows.zip` 并解压（如 `C:\ispc`）
-2. 设置系统环境变量 `ISPC_HOME` 指向解压目录（如 `C:\ispc`）
+> **注**：macOS 上 `fetch-deps.sh` 会自动检测系统代理（`scutil --proxy`），确保下载速度与 Windows 一致。下载内容会校验是否为有效归档，解压后会统一恢复可执行权限。
 
 #### 可选依赖（仅编辑器）
 
