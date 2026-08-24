@@ -11,6 +11,7 @@
 #include "ShaderCompilerDefine.h"
 #include "Runtime/RenderCore/include/RenderDescriptor.h"
 #include "Runtime/RenderCore/include/ShaderFunction.h"
+#include "Runtime/RenderCore/include/ShaderStageData.h"
 
 NAMESPACE_SHADERCOMPILER_BEGIN
 
@@ -34,20 +35,19 @@ struct UniformLayout
 
 typedef std::vector<UniformLayout> UniformBuffersLayout;
 
-// 单个 push constant block 的元数据（从 SPIR-V 编译阶段收集）
-struct CompiledPushConstantInfo
-{
-    std::string name;     // cbuffer 名称
-    uint32_t size = 0;    // padded_size（已对齐）
-    uint32_t set = 0;     // 原始 descriptor set（用于按 index 绑定时的反向查表）
-    uint32_t binding = 0; // 原始 descriptor binding
-};
+// CompiledPushConstantInfo moved to RenderCore (ShaderStageData.h).
+// Alias keeps shader_compiler::CompiledPushConstantInfo usable so AssetManager
+// does not depend on ShaderCompiler.h.
+using RenderCore::CompiledPushConstantInfo;
 
 // 编译后的shader信息以及一些反射的元数据信息
 struct CompiledShaderInfo
 {
     ShaderCodePtr shaderSource = nullptr;
     RenderCore::VertexDesc vertexDescriptor;
+
+    // Target format (records compile target, for packaging/runtime validation)
+    RenderCore::ShaderFormat format = RenderCore::ShaderFormat_SPIRV;
 
     // mesh/task shader 的 threadgroup 大小（来自 SPIR-V LocalSize）
     uint32_t threadgroupSizeX = 0;
@@ -61,14 +61,14 @@ struct CompiledShaderInfo
 
 using CompiledShaderInfoPtr = std::shared_ptr<CompiledShaderInfo>;
 
-ShaderCode compileToESSL30(ShaderCodePtr spirvCode, ShaderStage shaderStage);
+SHADERCOMPILER_API ShaderCode compileToESSL30(ShaderCodePtr spirvCode, ShaderStage shaderStage);
 
-CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderStage);
+SHADERCOMPILER_API CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderStage, RenderCore::ShaderFormat targetFormat);
 
 //HLSL shader脚本字符串转换
 ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType);
 
-CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType);
+SHADERCOMPILER_API CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage shaderStage, RenderCore::ShaderFormat targetFormat);
 
 NAMESPACE_SHADERCOMPILER_END
 

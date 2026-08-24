@@ -81,6 +81,34 @@ enum ShaderStage
     ShaderStage_Max = 5,
 };
 
+// Target shader format (explicit parameterization across tool/script/compiler/runtime)
+// Mirrors GnxShaderFormat in ShaderMessage.proto, but independent of pb to avoid
+// exposing nanopb in public headers.
+enum ShaderFormat
+{
+    ShaderFormat_SPIRV     = 0,  // SPIR-V binary (Vulkan)
+    ShaderFormat_MSL_iOS   = 1,  // Metal Shading Language for iOS
+    ShaderFormat_MSL_macOS = 2,  // Metal Shading Language for macOS
+    ShaderFormat_DXIL      = 3,  // DXIL bytecode (D3D12)
+    ShaderFormat_GLSL      = 4,  // GLSL source (OpenGL ES / compat layer)
+    ShaderFormat_Max       = 5,
+};
+
+// ShaderFormat -> file suffix (e.g. "spirv" / "msl_ios" / "msl_macos" / "dxil" / "glsl")
+// Used by runtime GetShaderFormatSuffix and tools.
+inline const char* ShaderFormatToString(ShaderFormat format)
+{
+    switch (format)
+    {
+        case ShaderFormat_SPIRV:     return "spirv";
+        case ShaderFormat_MSL_iOS:   return "msl_ios";
+        case ShaderFormat_MSL_macOS: return "msl_macos";
+        case ShaderFormat_DXIL:      return "dxil";
+        case ShaderFormat_GLSL:      return "glsl";
+        default:                     return "spirv";
+    }
+}
+
 //清除缓冲区的模式
 enum ClearBufferMode
 {

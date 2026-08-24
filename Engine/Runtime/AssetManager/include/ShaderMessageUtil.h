@@ -52,6 +52,48 @@ public:
      */
     static void ReleaseShaderMessage(ShaderMessage& msg);
 
+    // ==================== 容器（ShaderPackageMessage） ====================
+
+    /**
+     * 编码 stages 的辅助条目：一个 stage 的 ShaderMessage + 其反射 repeated 数据。
+     * 反射字段的 encode 回调需要指向调用方持有的 vector，故打包成一条。
+     * 调用方构造后填入 ShaderPackageMessage.stages（用 set 接口）。
+     */
+    struct ShaderStageEncodeEntry
+    {
+        ShaderMessage msg;
+        ShaderMessageEncodeData encodeData;
+    };
+
+    /**
+     * 将 ShaderPackageMessage 序列化为 protobuf 字节流
+     * @param pkg 已填充的 ShaderPackageMessage（含 shaderName/format）
+     * @param stages std::vector<ShaderStageEncodeEntry>，每个 stage 的 msg + encodeData
+     * @return    序列化后的字节数组，失败返回 nullptr
+     */
+    static ByteVectorPtr EncodeShaderPackage(const ShaderPackageMessage& pkg,
+                                             const std::vector<ShaderStageEncodeEntry>& stages);
+
+    /**
+     * 将 protobuf 字节流反序列化为 ShaderPackageMessage
+     *
+     * 注意：stages 是 nested repeated submessage，其内部每个 ShaderMessage 的
+     * callback 字段（compiledShader/entryPoint/反射）必须在解码前设置 decode 回调，
+     * 由内部的 stages 回调逐 stage 配置（nanopb 对无回调的 callback 字段直接跳过）。
+     *
+     * @param pData   protobuf 数据指针
+     * @param dataSize 数据大小
+     * @param pkg      输出的 ShaderPackageMessage（调用者需初始化）
+     * @return         是否成功
+     */
+    static bool DecodeShaderPackage(const uint8_t* pData, uint32_t dataSize, ShaderPackageMessage& pkg);
+
+    /**
+     * 释放 DecodeShaderPackage 中动态分配的内存
+     * 递归释放每个 stage 的 ShaderMessage（复用 ReleaseShaderMessage）+ stages 容器
+     */
+    static void ReleaseShaderPackage(ShaderPackageMessage& pkg);
+
 private:
     ShaderMessageUtil();
     ~ShaderMessageUtil();

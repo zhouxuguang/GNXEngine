@@ -143,29 +143,27 @@ foreach ($shaderFile in $shaderFiles) {
 
     $shaderCount++
 
-    foreach ($stage in $stages) {
-        $stageLower = $stage.ToLower()
-        foreach ($fmt in $Format) {
-            $outFile = Join-Path $OutputRoot "$shaderName.$stageLower.$fmt.gnxasset"
-            $outDir  = Split-Path -Parent $outFile
-            if ($outDir -and -not (Test-Path $outDir)) {
-                New-Item -ItemType Directory -Path $outDir -Force | Out-Null
-            }
+    # 容器格式：每个 shader × 每个格式产出 1 个 {name}.{format}.gnxasset（含全部 stage）
+    foreach ($fmt in $Format) {
+        $outFile = Join-Path $OutputRoot "$shaderName.$fmt.gnxasset"
+        $outDir  = Split-Path -Parent $outFile
+        if ($outDir -and -not (Test-Path $outDir)) {
+            New-Item -ItemType Directory -Path $outDir -Force | Out-Null
+        }
 
-            Write-Host "  [编译] $shaderName [$stage/$fmt]"
-            & $ShaderCompile $shaderFile.FullName -s $stageLower -f $fmt -o $outFile 2>&1 | Out-Null
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "    !! 失败: $relPath ($stage/$fmt)" -ForegroundColor Red
-                $failed++
-            } else {
-                $total++
-            }
+        Write-Host "  [编译] $shaderName [$($stages -join '+')/$fmt]"
+        & $ShaderCompile $shaderFile.FullName -a -f $fmt -o $outFile 2>&1 | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "    !! 失败: $relPath ($fmt)" -ForegroundColor Red
+            $failed++
+        } else {
+            $total++
         }
     }
 }
 
 Write-Host "=============================================="
-Write-Host " 完成: 编译 $shaderCount 个 shader, 生成 $total 个产物, 失败 $failed"
+Write-Host " 完成: 编译 $shaderCount 个 shader, 生成 $total 个合并产物, 失败 $failed"
 if ($failed -gt 0) {
     Write-Host " !! 有 $failed 个编译失败，请检查日志" -ForegroundColor Red
     exit 1

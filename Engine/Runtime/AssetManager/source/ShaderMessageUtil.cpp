@@ -15,6 +15,17 @@ NS_ASSETMANAGER_BEGIN
 // Encode callbacks - 序列化 repeated submessages
 // ====================================================================
 
+// String field encode callback (entryPoint / shaderName etc. for pb_callback_t)
+static bool shader_string_encode_callback(pb_ostream_t* stream, const pb_field_t* field, void* const* arg)
+{
+    const std::string* str = static_cast<const std::string*>(*arg);
+    if (!str || str->empty())
+    {
+        return pb_encode_tag_for_field(stream, field) && pb_encode_string(stream, (const uint8_t*)"", 0);
+    }
+    return pb_encode_tag_for_field(stream, field) && pb_encode_string(stream, (const uint8_t*)str->c_str(), str->length());
+}
+
 static bool nanopb_encode_uniform_member(pb_ostream_t* stream, const pb_field_t* field, void* const* arg)
 {
     auto* pMembers = (std::vector<UniformMemberMessage>*)*arg;
@@ -282,6 +293,162 @@ void ShaderMessageUtil::ReleaseShaderMessage(ShaderMessage& msg)
     }
 
     pb_release(ShaderMessage_fields, &msg);
+}
+
+// ====================================================================
+// Container (ShaderPackageMessage) encode/decode
+// ====================================================================
+// IMPORTANT (vuln-29): stages is a nested repeated submessage. On decode, nanopb
+// calls the callback per stage, but the stage's ShaderMessage callback fields
+// (compiledShader/entryPoint/reflection) have funcs.decode == NULL by default,
+// so nanopb skips them. Therefore the stages decode callback must set those
+// decode callbacks per stage before pb_decode.
+
+// Encode stages: arg points to std::vector<ShaderStageEncodeEntry>
+static bool nanopb_encode_shader_stage(pb_ostream_t* stream, const pb_field_t* field, void* const* arg)
+{
+    using StageEntry = ShaderMessageUtil::ShaderStageEncodeEntry;
+    auto* pStages = (std::vector<StageEntry>*)*arg;
+    if (!pStages) return true;
+
+    for (auto& entry : *pStages)
+    {
+        ShaderMessage& stage = entry.msg;
+
+        // Attach reflection repeated-field callbacks (pointing to this stage's encodeData vectors)
+        stage.uniformBuffers.funcs.encode = nanopb_encode_uniform_buffer_layout;
+        stage.uniformBuffers.arg = const_cast<void*>(static_cast<const void*>(&entry.encodeData.uniformBuffers));
+
+        stage.pushConstants.funcs.encode = nanopb_encode_push_constant;
+        stage.pushConstants.arg = const_cast<void*>(static_cast<const void*>(&entry.encodeData.pushConstants));
+
+        stage.resources.funcs.encode = nanopb_encode_shader_resource;
+        stage.resources.arg = const_cast<void*>(static_cast<const void*>(&entry.encodeData.resources));
+
+        stage.vertexInputs.funcs.encode = nanopb_encode_vertex_input;
+        stage.vertexInputs.arg = const_cast<void*>(static_cast<const void*>(&entry.encodeData.vertexInputs));
+
+        if (!pb_encode_tag_for_field(stream, field)) return false;
+        if (!pb_encode_submessage(stream, ShaderMessage_fields, &stage)) return false;
+    }
+    return true;
+}
+
+// Set all callback-field decode callbacks for a ShaderMessage (reuses existing callbacks)
+static void SetupShaderMessageDecodeCallbacks(ShaderMessage& msg)
+{
+    msg.compiledShader.funcs.decode = nanopb_decode_gnx_bytes;
+    msg.compiledShader.arg = nullptr;
+
+    msg.entryPoint.funcs.decode = nanopb_decode_gnx_bytes;
+    msg.entryPoint.arg = nullptr;
+
+    msg.uniformBuffers.funcs.decode = nanopb_decode_uniform_buffer_layout;
+    msg.uniformBuffers.arg = nullptr;
+
+    msg.pushConstants.funcs.decode = nanopb_decode_push_constant;
+    msg.pushConstants.arg = nullptr;
+
+    msg.resources.funcs.decode = nanopb_decode_shader_resource;
+    msg.resources.arg = nullptr;
+
+    msg.vertexInputs.funcs.decode = nanopb_decode_vertex_input;
+    msg.vertexInputs.arg = nullptr;
+}
+
+// Decode stages: arg points to std::vector<ShaderMessage>* (self-allocated),
+// configures per-stage callbacks then decodes
+static bool nanopb_decode_shader_stage(pb_istream_t* stream, const pb_field_t* field, void** arg)
+{
+    auto* pStages = (std::vector<ShaderMessage>*)*arg;
+    if (!pStages)
+    {
+        pStages = new std::vector<ShaderMessage>();
+        *arg = pStages;
+    }
+
+    ShaderMessage stage = ShaderMessage_init_default;
+    SetupShaderMessageDecodeCallbacks(stage);
+
+    if (!pb_decode(stream, ShaderMessage_fields, &stage))
+        return false;
+    pStages->push_back(stage);
+    return true;
+}
+
+ByteVectorPtr ShaderMessageUtil::EncodeShaderPackage(const ShaderPackageMessage& pkg,
+                                                     const std::vector<ShaderStageEncodeEntry>& stages)
+{
+    ShaderPackageMessage encPkg = pkg;
+
+    // shaderName string encode callback: caller sets pkg.shaderName.arg to std::string*
+    encPkg.shaderName.funcs.encode = shader_string_encode_callback;
+
+    // stages repeated encode callback
+    encPkg.stages.funcs.encode = nanopb_encode_shader_stage;
+    encPkg.stages.arg = const_cast<void*>(static_cast<const void*>(&stages));
+
+    size_t encodedSize = 0;
+    pb_get_encoded_size(&encodedSize, ShaderPackageMessage_fields, &encPkg);
+
+    ByteVectorPtr buffer = std::make_shared<ByteVector>();
+    buffer->resize(encodedSize);
+
+    pb_ostream_t encStream = pb_ostream_from_buffer(buffer->data(), buffer->size());
+    if (!pb_encode(&encStream, ShaderPackageMessage_fields, &encPkg))
+    {
+        LOG_INFO("pb encode error in EncodeShaderPackage [%s]\n", PB_GET_ERROR(&encStream));
+        buffer->clear();
+    }
+    return buffer;
+}
+
+bool ShaderMessageUtil::DecodeShaderPackage(const uint8_t* pData, uint32_t dataSize, ShaderPackageMessage& pkg)
+{
+    if (!pData || dataSize == 0)
+        return false;
+
+    pkg = ShaderPackageMessage_init_default;
+
+    // shaderName string decode callback
+    pkg.shaderName.funcs.decode = nanopb_decode_gnx_bytes;
+    pkg.shaderName.arg = nullptr;
+
+    // stages repeated decode callback (self-allocating + per-stage callback setup)
+    pkg.stages.funcs.decode = nanopb_decode_shader_stage;
+    pkg.stages.arg = nullptr;
+
+    pb_istream_t decStream = pb_istream_from_buffer(pData, dataSize);
+    if (!pb_decode(&decStream, ShaderPackageMessage_fields, &pkg))
+    {
+        LOG_INFO("pb decode error in DecodeShaderPackage %s [%s]\n", __func__, decStream.errmsg);
+        return false;
+    }
+    return true;
+}
+
+void ShaderMessageUtil::ReleaseShaderPackage(ShaderPackageMessage& pkg)
+{
+    // Recursively release each stage's ShaderMessage
+    if (pkg.stages.arg)
+    {
+        auto* pStages = (std::vector<ShaderMessage>*)pkg.stages.arg;
+        for (auto& stage : *pStages)
+        {
+            ReleaseShaderMessage(stage);
+        }
+        delete pStages;
+        pkg.stages.arg = nullptr;
+    }
+
+    // Release shaderName bytes
+    if (pkg.shaderName.arg)
+    {
+        free(pkg.shaderName.arg);
+        pkg.shaderName.arg = nullptr;
+    }
+
+    pb_release(ShaderPackageMessage_fields, &pkg);
 }
 
 NS_ASSETMANAGER_END

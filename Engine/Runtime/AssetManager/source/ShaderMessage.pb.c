@@ -24,6 +24,9 @@ PB_BIND(VertexInputMessage, VertexInputMessage, AUTO)
 PB_BIND(ShaderMessage, ShaderMessage, AUTO)
 
 
+PB_BIND(ShaderPackageMessage, ShaderPackageMessage, AUTO)
+
+
 
 
 

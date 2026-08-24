@@ -1,18 +1,18 @@
-// TestShaderAsset.cpp — 验证 .gnxasset 预编译 shader 资产的序列化往返
-// 用法: TestShaderAsset <path.gnxasset> [--expect-vertex-inputs <count>]
+// TestShaderAsset.cpp - verify .gnxasset precompiled shader asset round-trip
+// Usage: TestShaderAsset <path.gnxasset> [--expect-vertex-inputs <count>]
 //
-// 验证:
-//   1. ShaderAsset::LoadFromFile 能成功反序列化
-//   2. vertexInputs / vertexStride / pushConstants / threadgroup 等反射字段正确恢复
+// Verifies:
+//   1. ShaderAsset::LoadFromFile succeeds (container format)
+//   2. Each stage's sourceData non-empty / entryPoint / threadgroup / reflection correct
+//   3. No nanopb / pb structs used (public getter only)
 #include "Runtime/AssetManager/include/ShaderAsset.h"
-#include "Runtime/AssetManager/include/ShaderMessage.pb.h"
-#include "Runtime/AssetManager/include/ShaderMessageUtil.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include <iostream>
 #include <string>
 #include <cstring>
 
 using namespace AssetManager;
+using namespace RenderCore;
 
 static const char* kStageNames[] = { "Vertex", "Fragment", "Compute", "Task", "Mesh" };
 
@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 {
     if (argc < 2)
     {
-        std::cerr << "用法: TestShaderAsset <path.gnxasset> [--expect-vertex-inputs <count>]" << std::endl;
+        std::cerr << "Usage: TestShaderAsset <path.gnxasset> [--expect-vertex-inputs <count>]" << std::endl;
         return 1;
     }
 
@@ -41,43 +41,68 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    const ShaderMessage& msg = asset.GetShaderMessage();
-    uint32_t stage = static_cast<uint32_t>(msg.shaderStage);
-    std::string stageName = (stage < 5) ? kStageNames[stage] : "Unknown";
+    std::cout << "=== ShaderAsset verify: " << filePath << " ===" << std::endl;
+    std::cout << "  shaderName: " << asset.GetShaderName() << std::endl;
+    std::cout << "  format: " << (int)asset.GetFormat() << std::endl;
+    std::cout << "  stage count: " << asset.GetStages().size() << std::endl;
 
-    std::cout << "=== ShaderAsset 验证: " << filePath << " ===" << std::endl;
-    std::cout << "  阶段: " << stageName << std::endl;
-    std::cout << "  格式: " << (int)msg.shaderFormat << std::endl;
-    std::cout << "  入口点: " << asset.GetEntryPoint() << std::endl;
-    std::cout << "  shader 数据大小: " << asset.GetShaderDataSize() << " bytes" << std::endl;
-    std::cout << "  threadgroup: " << msg.threadgroupSizeX << "x"
-              << msg.threadgroupSizeY << "x" << msg.threadgroupSizeZ << std::endl;
-
-    const auto* vInputs = asset.GetVertexInputs();
-    int count = (vInputs ? (int)vInputs->size() : 0);
-    std::cout << "  vertexInputs: " << count << std::endl;
-
-    if (vInputs)
+    if (asset.GetStages().empty())
     {
-        for (size_t i = 0; i < vInputs->size(); ++i)
+        std::cerr << "[FAIL] container has no stages" << std::endl;
+        return 1;
+    }
+
+    // Verify each stage (vuln-29: ensure sourceData non-empty, prevent nested callback data loss)
+    int totalVertexInputs = 0;
+    for (const auto& stage : asset.GetStages())
+    {
+        uint32_t stageIdx = static_cast<uint32_t>(stage.stage);
+        std::string stageName = (stageIdx < 5) ? kStageNames[stageIdx] : "Unknown";
+        std::cout << "  --- stage: " << stageName << " ---" << std::endl;
+        std::cout << "    entryPoint: " << stage.entryPoint << std::endl;
+        std::cout << "    sourceData size: " << stage.sourceData.size() << " bytes" << std::endl;
+        std::cout << "    threadgroup: " << stage.threadgroupSizeX << "x"
+                  << stage.threadgroupSizeY << "x" << stage.threadgroupSizeZ << std::endl;
+
+        if (stage.sourceData.empty())
         {
-            const auto& vi = (*vInputs)[i];
-            std::cout << "    [" << i << "] location=" << vi.location
-                      << " format=" << (int)vi.format
-                      << " offset=" << vi.offset
-                      << " stride=" << vi.stride << std::endl;
+            std::cerr << "[FAIL] stage " << stageName << " shader data empty (container decode may have lost data)" << std::endl;
+            return 1;
+        }
+
+        int count = (int)stage.vertexDescriptor.attributes.size();
+        totalVertexInputs += count;
+        std::cout << "    vertexInputs: " << count << std::endl;
+        for (size_t i = 0; i < stage.vertexDescriptor.attributes.size(); ++i)
+        {
+            const auto& attr = stage.vertexDescriptor.attributes[i];
+            uint32_t stride = (i < stage.vertexDescriptor.layouts.size())
+                              ? stage.vertexDescriptor.layouts[i].stride : 0;
+            std::cout << "      [" << i << "] location=" << attr.index
+                      << " format=" << (int)attr.format
+                      << " offset=" << attr.offset
+                      << " stride=" << stride << std::endl;
+        }
+        std::cout << "    pushConstants: " << stage.pushConstants.size() << std::endl;
+    }
+
+    // Check expected vertexInputs (first stage only)
+    if (expectVertexInputs >= 0)
+    {
+        int count = (int)asset.GetStages().front().vertexDescriptor.attributes.size();
+        if (count != expectVertexInputs)
+        {
+            std::cerr << "[FAIL] vertexInputs count mismatch: expected " << expectVertexInputs
+                      << ", got " << count << std::endl;
+            return 1;
         }
     }
 
-    std::cout << "  vertexStride: " << asset.GetVertexStride() << std::endl;
-    std::cout << "  pushConstants: " << (asset.GetPushConstants() ? asset.GetPushConstants()->size() : 0) << std::endl;
-
-    // 校验期望的 vertexInputs 数量
-    if (expectVertexInputs >= 0 && count != expectVertexInputs)
+    // Verify GetStage / HasStage work
+    const auto* vs = asset.GetStage(ShaderStage_Vertex);
+    if (vs)
     {
-        std::cerr << "[FAIL] vertexInputs 数量不匹配: 期望 " << expectVertexInputs
-                  << ", 实际 " << count << std::endl;
-        return 1;
+        std::cout << "  [GetStage(Vertex)] hit, format=" << (int)vs->format << std::endl;
     }
 
     std::cout << "[PASS] " << filePath << std::endl;

@@ -1,28 +1,30 @@
-#ifndef GNX_ENGINE_SHADER_ASSET_INCLUDE
+﻿#ifndef GNX_ENGINE_SHADER_ASSET_INCLUDE
 #define GNX_ENGINE_SHADER_ASSET_INCLUDE
 
 #include "Asset.h"
-#include "ShaderMessage.pb.h"
+#include "Runtime/RenderCore/include/ShaderStageData.h"
+#include <memory>
 #include <vector>
 #include <string>
 
 NS_ASSETMANAGER_BEGIN
 
 /**
- * 编译后的 Shader 资源
+ * 编译后的 Shader 资源（容器门面）
  *
- * 运行时从 .gnxasset 文件加载，提供：
- *   - 编译后的 shader 二进制（MSL 文本 / SPIR-V 二进制）
- *   - 反射元数据（uniform buffer 布局、采样器、顶点输入）
- *   - threadgroup 大小（compute/mesh/task）
+ * 一个 .gnxasset 文件对应一个 .shader 源文件在当前目标格式下的全部 stage。
+ * 公开接口只暴露纯 C++ 值类型（RenderCore::ShaderStageData），
+ * 不暴露 nanopb / pb 结构体。
+ *
+ * 生命周期：GetStage() 返回的指针在 ShaderAsset 存活期间有效，
+ * Reload() / Unload() / Release() 后失效，调用方须在 Release 前用完。
  *
  * 使用方式：
  *   ShaderAsset asset;
- *   asset.LoadFromFile("data_asset/shaders/pbr_vs.ios.gnxasset");
- *   const auto* msg = asset.GetShaderMessage();
- *   // msg->compiledShader  → Metal MSL 文本 或 SPIR-V 二进制
- *   // msg->uniformBuffers  → UBO 布局
- *   // msg->vertexInputs    → 顶点输入布局
+ *   asset.LoadFromFile("data_asset/Shader/GBufferPBR.spirv.gnxasset");
+ *   if (const auto* vs = asset.GetStage(ShaderStage_Vertex)) {
+ *       // vs->sourceData / vs->vertexDescriptor / vs->threadgroupSizeX ...
+ *   }
  */
 class ASSET_MANAGER_API ShaderAsset : public Asset
 {
@@ -46,57 +48,35 @@ public:
     virtual void ReleaseFromGPU() override;
     virtual bool IsOnGPU() const override;
 
-    // ====== Shader 专属 ======
+    // ====== Shader 容器专属 ======
 
-    /** 从 .gnxasset 文件加载 shader 资产 */
+    /** 从 .gnxasset 文件加载 shader 容器资产 */
     bool LoadFromFile(const std::string& filepath);
 
-    /** 获取反序列化后的 ShaderMessage */
-    const ShaderMessage& GetShaderMessage() const { return mShaderMessage; }
+    /** 获取容器内 shader 名（相对 data_asset/Shader，如 "vt/GBufferVTPBR"） */
+    const std::string& GetShaderName() const { return mShaderName; }
 
-    /** 获取编译后的 shader 数据指针 */
-    const uint8_t* GetShaderData() const;
+    /** 获取容器目标格式 */
+    RenderCore::ShaderFormat GetFormat() const { return mFormat; }
 
-    /** 获取编译后的 shader 数据大小 */
-    uint32_t GetShaderDataSize() const;
+    /** 按阶段获取编译数据（无该 stage 返回 nullptr；指针生命周期见类注释） */
+    const RenderCore::ShaderStageData* GetStage(RenderCore::ShaderStage stage) const;
 
-    /** 获取 shader 阶段 */
-    GnxShaderStage GetShaderStage() const { return mShaderMessage.shaderStage; }
+    /** 是否包含指定阶段 */
+    bool HasStage(RenderCore::ShaderStage stage) const;
 
-    /** 获取 shader 格式 */
-    GnxShaderFormat GetShaderFormat() const { return mShaderMessage.shaderFormat; }
-
-    /** 获取入口点名称 */
-    const char* GetEntryPoint() const { return mEntryPoint.c_str(); }
-
-    // ====== 反射元数据 Getter ======
-
-    /** 顶点输入属性列表（每个 attribute：location/format/offset/stride） */
-    const std::vector<VertexInputMessage>* GetVertexInputs() const { return mVertexInputs; }
-
-    /** 顶点 stride（兼容字段，可能为 0） */
-    uint32_t GetVertexStride() const { return mShaderMessage.vertexStride; }
-
-    /** push constant 列表 */
-    const std::vector<PushConstantMessage>* GetPushConstants() const { return mPushConstants; }
-
-    /** uniform buffer 布局列表 */
-    const std::vector<UniformBufferLayoutMessage>* GetUniformBuffers() const { return mUniformBuffers; }
+    /** 获取全部 stage 数据 */
+    const std::vector<RenderCore::ShaderStageData>& GetStages() const { return mStages; }
 
 private:
     std::string mFilePath;
     std::string mName;
     std::string mGUID;
-    std::string mEntryPoint;
-    ShaderMessage mShaderMessage;
+    std::string mShaderName;
+    RenderCore::ShaderFormat mFormat = RenderCore::ShaderFormat_SPIRV;
+    std::vector<RenderCore::ShaderStageData> mStages;  // 解码即转换后的常驻值类型
     bool mLoaded = false;
     bool mOnGPU = false;
-
-    // 持有解码后的动态数据，确保生命周期
-    std::vector<UniformBufferLayoutMessage>* mUniformBuffers = nullptr;
-    std::vector<PushConstantMessage>* mPushConstants = nullptr;
-    std::vector<ShaderResourceMessage>* mResources = nullptr;
-    std::vector<VertexInputMessage>* mVertexInputs = nullptr;
 };
 
 NS_ASSETMANAGER_END

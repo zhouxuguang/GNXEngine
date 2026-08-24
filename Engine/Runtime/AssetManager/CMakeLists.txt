@@ -17,14 +17,17 @@ add_library(AssetManager OBJECT ${SOURCE_FILES})
 source_group(TREE ${assetmanager_dir} PREFIX source FILES ${ASSETMANAGER_SOURCES})
 source_group(TREE ${assetmanager_include_dir} PREFIX include FILES ${ASSETMANAGER_INCLUDES})
 
-target_include_directories(AssetManager PUBLIC
+target_include_directories(AssetManager
+    PUBLIC
     ${assetmanager_include_dir}
-    ${assetmanager_dir}
+    PRIVATE
+    ${assetmanager_dir}     # 内部 pb 头 / PBUtils 等，不暴露给依赖方
 )
 
 # 链接依赖
 target_link_libraries(AssetManager
     PUBLIC
+    RenderCore
     nanopb
     PRIVATE
     BaseLib

@@ -2,6 +2,7 @@
 #define GNX_ENGINE_SHADER_IMPORTER_INCLUDE_FHDS
 
 #include "AssetImporter.h"
+#include "Runtime/RenderCore/include/ShaderStageData.h"
 #include "Runtime/ShaderCompiler/include/ShaderCompiler.h"
 #include <string>
 #include <vector>
@@ -14,18 +15,17 @@ NS_ASSETPROCESS_BEGIN
  *
  * 流程：
  *   1. 读取 HLSL 源文件
- *   2. 调用 ShaderCompiler::compileHLSLToSPIRV() → SPIR-V
- *   3. 调用 ShaderCompiler::compileToMSL() 或直接打包 SPIR-V
- *   4. 填充 ShaderMessage proto
- *   5. 序列化为 .gnxasset 文件
+ *   2. 调用 ShaderCompiler::CompileShader(..., ShaderFormat) 编译目标格式
+ *   3. 通过 ShaderPackageBuilder 组装 ShaderPackageMessage 容器
+ *   4. 序列化为 .gnxasset 文件（含 AssetFileHeader）
  *
  * 用法：
  *   ShaderImporter importer;
  *   importer.SetSourcePath("shaders/pbr_vs.hlsl");
- *   importer.SetShaderStage(ShaderStage_Vertex);
- *   importer.SetTargetFormat(ShaderFormat_MSL_iOS);  // 选择目标平台
+ *   importer.SetShaderStage(RenderCore::ShaderStage_Vertex);
+ *   importer.SetTargetFormat(RenderCore::ShaderFormat_MSL_iOS);
  *   importer.SetOutputPath("data_asset/shaders/pbr_vs.ios.gnxasset");
- *   importer.Import();
+ *   importer.ImportAndSave();
  */
 class ASSET_PROCESS_API ShaderImporter : public AssetImporter
 {
@@ -39,13 +39,16 @@ public:
     void SetSourcePath(const std::string& path) { mSourcePath = path; }
 
     /** 设置 shader 阶段 */
-    void SetShaderStage(uint32_t stage) { mShaderStage = stage; }
+    void SetShaderStage(RenderCore::ShaderStage stage) { mShaderStage = stage; }
 
     /** 设置目标格式 */
-    void SetTargetFormat(uint32_t format) { mTargetFormat = format; }
+    void SetTargetFormat(RenderCore::ShaderFormat format) { mTargetFormat = format; }
 
     /** 设置输出路径 */
     void SetOutputPath(const std::string& path) { mOutputPath = path; }
+
+    /** 设置 shader 名（相对 data_asset/Shader 的路径，如 "vt/GBufferVTPBR"） */
+    void SetShaderName(const std::string& name) { mShaderName = name; }
 
     // ====== 保存 ======
 
@@ -55,20 +58,12 @@ public:
      */
     bool ImportAndSave();
 
-    /**
-     * 保存编译完成的 shader 到文件
-     * @param shaderInfo 编译结果
-     * @param sourceHash HLSL 源码 hash
-     * @return 成功/失败
-     */
-    bool SaveShaderFile(const shader_compiler::CompiledShaderInfoPtr& shaderInfo,
-                        uint64_t sourceHash);
-
 private:
-    uint32_t mShaderStage = 0;    // ShaderStage proto enum value
-    uint32_t mTargetFormat = 0;   // ShaderFormat proto enum value
+    RenderCore::ShaderStage mShaderStage = RenderCore::ShaderStage_Vertex;
+    RenderCore::ShaderFormat mTargetFormat = RenderCore::ShaderFormat_SPIRV;
     std::string mSourcePath;
     std::string mOutputPath;
+    std::string mShaderName;
     float mProgress = 0.0f;
     bool mCancelled = false;
 };

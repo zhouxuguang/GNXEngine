@@ -103,38 +103,26 @@ while IFS= read -r shaderFile; do
 
     shader_count=$((shader_count + 1))
 
-    for stage in $stages; do
-        # 转小写作为文件后缀（运行时 LoadCompiledShaderFromAsset 用 vs/ps/cs/ts/ms）
-        stageLower=$(echo "$stage" | tr '[:upper:]' '[:lower:]')
-        for format in $FORMATS; do
-            outFile="$OUTPUT_ROOT/$shaderName.$stageLower.$format.gnxasset"
-            outDir="$(dirname "$outFile")"
-            mkdir -p "$outDir"
+    # 容器格式：每个 shader × 每个格式产出 1 个 {name}.{format}.gnxasset（含全部 stage）
+    for format in $FORMATS; do
+        outFile="$OUTPUT_ROOT/$shaderName.$format.gnxasset"
+        outDir="$(dirname "$outFile")"
+        mkdir -p "$outDir"
 
-            # 阶段简写映射到工具参数
-            case "$stage" in
-                VS) stageArg="vs" ;;
-                PS) stageArg="ps" ;;
-                CS) stageArg="cs" ;;
-                TS) stageArg="ts" ;;
-                MS) stageArg="ms" ;;
-            esac
-
-            echo "  [编译] $shaderName [$stage/$format]"
-            if ! DYLD_LIBRARY_PATH="$DYLIB_DIR" "$SHADER_COMPILE" \
-                    "$shaderFile" -s "$stageArg" -f "$format" -o "$outFile" \
-                    >/dev/null 2>&1; then
-                echo "    !! 失败: $relPath ($stage/$format)" >&2
-                failed=$((failed + 1))
-            else
-                total=$((total + 1))
-            fi
-        done
+        echo "  [编译] $shaderName [$format]"
+        if ! DYLD_LIBRARY_PATH="$DYLIB_DIR" "$SHADER_COMPILE" \
+                "$shaderFile" -a -f "$format" -o "$outFile" \
+                >/dev/null 2>&1; then
+            echo "    !! 失败: $relPath ($format)" >&2
+            failed=$((failed + 1))
+        else
+            total=$((total + 1))
+        fi
     done
 done < <(find "$BUILTIN_SHADER_DIR" -name "*.shader" | sort)
 
 echo "=============================================="
-echo " 完成: 编译 $shader_count 个 shader, 生成 $total 个产物, 失败 $failed"
+echo " 完成: 编译 $shader_count 个 shader, 生成 $total 个合并产物, 失败 $failed"
 if [ "$failed" -gt 0 ]; then
     echo " !! 有 $failed 个编译失败，请检查日志" >&2
     exit 1

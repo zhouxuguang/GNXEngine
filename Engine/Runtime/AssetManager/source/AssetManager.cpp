@@ -409,21 +409,9 @@ ShaderAsset* AssetManager::LoadShader(const std::string& filePath)
 
 ShaderAsset* AssetManager::FindShader(const std::string& name)
 {
-	// 先直接查找
+	// 只按完整文件名（含 format 后缀，如 GBufferPBR.spirv.gnxasset）精确查找。
+	// 不同 format 是不同资源，不能去扩展名回退（防跨格式串缓存，漏洞15）。
 	auto it = mShaders.find(name);
-	if (it != mShaders.end())
-	{
-		return it->second;
-	}
-
-	// 如果没找到，尝试去掉 .gnxasset 扩展名后查找
-	std::string nameNoExt = name;
-	size_t extPos = nameNoExt.find(".gnxasset");
-	if (extPos != std::string::npos)
-	{
-		nameNoExt = nameNoExt.substr(0, extPos);
-	}
-	it = mShaders.find(nameNoExt);
 	if (it != mShaders.end())
 	{
 		return it->second;

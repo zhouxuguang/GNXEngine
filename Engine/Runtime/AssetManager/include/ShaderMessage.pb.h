@@ -11,6 +11,7 @@
 #endif
 
 /* Enum definitions */
+/* ==================== Shader 阶段 ==================== */
 typedef enum _GnxShaderStage {
     GnxShaderStage_GnxShaderStage_Vertex = 0,
     GnxShaderStage_GnxShaderStage_Fragment = 1,
@@ -19,68 +20,91 @@ typedef enum _GnxShaderStage {
     GnxShaderStage_GnxShaderStage_Mesh = 4
 } GnxShaderStage;
 
+/* ==================== Shader 运行时格式 ====================
+ 编译后可直接在对应平台加载的 shader 数据格式 */
 typedef enum _GnxShaderFormat {
-    GnxShaderFormat_GnxShaderFormat_SPIRV = 0,
-    GnxShaderFormat_GnxShaderFormat_MSL_iOS = 1,
-    GnxShaderFormat_GnxShaderFormat_MSL_macOS = 2,
-    GnxShaderFormat_GnxShaderFormat_DXIL = 3,
-    GnxShaderFormat_GnxShaderFormat_GLSL = 4
+    GnxShaderFormat_GnxShaderFormat_SPIRV = 0, /* SPIR-V 二进制（Android Vulkan / macOS MoltenVK） */
+    GnxShaderFormat_GnxShaderFormat_MSL_iOS = 1, /* Metal Shading Language for iOS（Apple GPU Family） */
+    GnxShaderFormat_GnxShaderFormat_MSL_macOS = 2, /* Metal Shading Language for macOS（Mac GPU Family） */
+    GnxShaderFormat_GnxShaderFormat_DXIL = 3, /* DXIL 字节码（Windows D3D12） */
+    GnxShaderFormat_GnxShaderFormat_GLSL = 4 /* GLSL 源码（OpenGL ES / 兼容层） */
 } GnxShaderFormat;
 
 /* Struct definitions */
+/* ==================== Uniform Buffer 成员 ==================== */
 typedef struct _UniformMemberMessage {
-    pb_callback_t name;
-    uint32_t offset;
-    uint32_t size;
-    VertexDataFormat format;
+    pb_callback_t name; /* 成员名 */
+    uint32_t offset; /* buffer 内字节偏移 */
+    uint32_t size; /* 成员大小（字节） */
+    VertexDataFormat format; /* 数据格式（复用 Common.proto） */
 } UniformMemberMessage;
 
+/* ==================== Uniform Buffer 布局 ==================== */
 typedef struct _UniformBufferLayoutMessage {
-    pb_callback_t name;
-    uint32_t dataSize;
-    uint32_t set;
-    uint32_t binding;
+    pb_callback_t name; /* cbuffer 名 */
+    uint32_t dataSize; /* buffer 总大小（字节） */
+    uint32_t set; /* descriptor set */
+    uint32_t binding; /* descriptor binding */
     pb_callback_t members;
 } UniformBufferLayoutMessage;
 
+/* ==================== Push Constant ==================== */
 typedef struct _PushConstantMessage {
-    pb_callback_t name;
-    uint32_t size;
-    uint32_t set;
-    uint32_t binding;
+    pb_callback_t name; /* 原始 cbuffer 名 */
+    uint32_t size; /* padded size（字节） */
+    uint32_t set; /* 原始 descriptor set（反向查表） */
+    uint32_t binding; /* 原始 descriptor binding（反向查表） */
 } PushConstantMessage;
 
+/* ==================== 采样器/纹理反射资源 ==================== */
 typedef struct _ShaderResourceMessage {
     pb_callback_t name;
     uint32_t set;
     uint32_t binding;
-    uint32_t msl_texture;
-    uint32_t msl_sampler;
+    uint32_t msl_texture; /* Metal 重映射后的纹理槽位（MSL 专用） */
+    uint32_t msl_sampler; /* Metal 重映射后的采样器槽位（MSL 专用） */
 } ShaderResourceMessage;
 
+/* ==================== 顶点输入属性 ==================== */
 typedef struct _VertexInputMessage {
-    pb_callback_t semantic;
-    uint32_t location;
-    VertexDataFormat format;
-    uint32_t offset;
-    uint32_t stride;
+    pb_callback_t semantic; /* 语义名（"POSITION" / "NORMAL" / "TEXCOORD"） */
+    uint32_t location; /* attribute location */
+    VertexDataFormat format; /* 数据格式 */
+    uint32_t offset; /* vertex stride 内字节偏移 */
+    uint32_t stride; /* 该 attribute 对应 buffer layout 的 stride（Metal 每 attribute 一个 layout） */
 } VertexInputMessage;
 
+/* ==================== 编译后的 Shader ====================
+ 一个 ShaderMessage 对应一个 stage 在当前平台的一份编译结果 */
 typedef struct _ShaderMessage {
-    GnxShaderStage shaderStage;
-    GnxShaderFormat shaderFormat;
-    pb_callback_t entryPoint;
-    uint64_t sourceHash;
-    pb_callback_t compiledShader;
+    /* ====== 标识 ====== */
+    GnxShaderStage shaderStage; /* VS / PS / CS / TS / MS */
+    GnxShaderFormat shaderFormat; /* SPIRV / MSL_iOS / MSL_macOS / DXIL / GLSL */
+    pb_callback_t entryPoint; /* 入口函数名（Metal 需要） */
+    uint64_t sourceHash; /* HLSL 源码 hash（增量编译 / 版本追踪） */
+    /* ====== 编译后的 shader 数据 ====== */
+    pb_callback_t compiledShader; /* 格式由 shaderFormat 决定 */
+    /* ====== 反射元数据 ====== */
     pb_callback_t uniformBuffers;
     pb_callback_t pushConstants;
-    pb_callback_t resources;
+    pb_callback_t resources; /* sampled images + separate samplers */
     pb_callback_t vertexInputs;
+    /* ====== Threadgroup 大小（TS / MS / CS 有效） ====== */
     uint32_t threadgroupSizeX;
     uint32_t threadgroupSizeY;
     uint32_t threadgroupSizeZ;
-    uint32_t vertexStride;
+    /* ====== 顶点 stride ====== */
+    uint32_t vertexStride; /* MTLVertexDescriptor.layouts[0].stride */
 } ShaderMessage;
+
+/* ==================== 编译后的 Shader 容器 ====================
+ 一个 ShaderPackageMessage 对应一个 .shader 源文件在当前目标格式下的
+ 全部 stage 编译结果，序列化后写入单个 {name}.{format}.gnxasset 文件。 */
+typedef struct _ShaderPackageMessage {
+    pb_callback_t shaderName; /* 相对 data_asset/Shader 的 shader 名（如 "vt/GBufferVTPBR"） */
+    GnxShaderFormat format; /* 目标格式（SPIRV / MSL_iOS / MSL_macOS / DXIL / GLSL） */
+    pb_callback_t stages; /* 各 stage 编译结果（VS/PS/CS/TS/MS，可能缺部分 stage） */
+} ShaderPackageMessage;
 
 
 #ifdef __cplusplus
@@ -106,6 +130,8 @@ extern "C" {
 #define ShaderMessage_shaderStage_ENUMTYPE GnxShaderStage
 #define ShaderMessage_shaderFormat_ENUMTYPE GnxShaderFormat
 
+#define ShaderPackageMessage_format_ENUMTYPE GnxShaderFormat
+
 
 /* Initializer values for message structs */
 #define UniformMemberMessage_init_default        {{{NULL}, NULL}, 0, 0, _VertexDataFormat_MIN}
@@ -114,12 +140,14 @@ extern "C" {
 #define ShaderResourceMessage_init_default       {{{NULL}, NULL}, 0, 0, 0, 0}
 #define VertexInputMessage_init_default          {{{NULL}, NULL}, 0, _VertexDataFormat_MIN, 0, 0}
 #define ShaderMessage_init_default               {_GnxShaderStage_MIN, _GnxShaderFormat_MIN, {{NULL}, NULL}, 0, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, 0, 0, 0, 0}
+#define ShaderPackageMessage_init_default        {{{NULL}, NULL}, _GnxShaderFormat_MIN, {{NULL}, NULL}}
 #define UniformMemberMessage_init_zero           {{{NULL}, NULL}, 0, 0, _VertexDataFormat_MIN}
 #define UniformBufferLayoutMessage_init_zero     {{{NULL}, NULL}, 0, 0, 0, {{NULL}, NULL}}
 #define PushConstantMessage_init_zero            {{{NULL}, NULL}, 0, 0, 0}
 #define ShaderResourceMessage_init_zero          {{{NULL}, NULL}, 0, 0, 0, 0}
 #define VertexInputMessage_init_zero             {{{NULL}, NULL}, 0, _VertexDataFormat_MIN, 0, 0}
 #define ShaderMessage_init_zero                  {_GnxShaderStage_MIN, _GnxShaderFormat_MIN, {{NULL}, NULL}, 0, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, {{NULL}, NULL}, 0, 0, 0, 0}
+#define ShaderPackageMessage_init_zero           {{{NULL}, NULL}, _GnxShaderFormat_MIN, {{NULL}, NULL}}
 
 /* Field tags (for use in manual encoding/decoding) */
 #define UniformMemberMessage_name_tag            1
@@ -158,6 +186,9 @@ extern "C" {
 #define ShaderMessage_threadgroupSizeY_tag       11
 #define ShaderMessage_threadgroupSizeZ_tag       12
 #define ShaderMessage_vertexStride_tag           13
+#define ShaderPackageMessage_shaderName_tag      1
+#define ShaderPackageMessage_format_tag          2
+#define ShaderPackageMessage_stages_tag          3
 
 /* Struct field encoding specification for nanopb */
 #define UniformMemberMessage_FIELDLIST(X, a) \
@@ -225,12 +256,21 @@ X(a, STATIC,   SINGULAR, UINT32,   vertexStride,     13)
 #define ShaderMessage_resources_MSGTYPE ShaderResourceMessage
 #define ShaderMessage_vertexInputs_MSGTYPE VertexInputMessage
 
+#define ShaderPackageMessage_FIELDLIST(X, a) \
+X(a, CALLBACK, SINGULAR, STRING,   shaderName,        1) \
+X(a, STATIC,   SINGULAR, UENUM,    format,            2) \
+X(a, CALLBACK, REPEATED, MESSAGE,  stages,            3)
+#define ShaderPackageMessage_CALLBACK pb_default_field_callback
+#define ShaderPackageMessage_DEFAULT NULL
+#define ShaderPackageMessage_stages_MSGTYPE ShaderMessage
+
 extern const pb_msgdesc_t UniformMemberMessage_msg;
 extern const pb_msgdesc_t UniformBufferLayoutMessage_msg;
 extern const pb_msgdesc_t PushConstantMessage_msg;
 extern const pb_msgdesc_t ShaderResourceMessage_msg;
 extern const pb_msgdesc_t VertexInputMessage_msg;
 extern const pb_msgdesc_t ShaderMessage_msg;
+extern const pb_msgdesc_t ShaderPackageMessage_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
 #define UniformMemberMessage_fields &UniformMemberMessage_msg
@@ -239,6 +279,7 @@ extern const pb_msgdesc_t ShaderMessage_msg;
 #define ShaderResourceMessage_fields &ShaderResourceMessage_msg
 #define VertexInputMessage_fields &VertexInputMessage_msg
 #define ShaderMessage_fields &ShaderMessage_msg
+#define ShaderPackageMessage_fields &ShaderPackageMessage_msg
 
 /* Maximum encoded size of messages (where known) */
 /* UniformMemberMessage_size depends on runtime parameters */
@@ -247,6 +288,7 @@ extern const pb_msgdesc_t ShaderMessage_msg;
 /* ShaderResourceMessage_size depends on runtime parameters */
 /* VertexInputMessage_size depends on runtime parameters */
 /* ShaderMessage_size depends on runtime parameters */
+/* ShaderPackageMessage_size depends on runtime parameters */
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -10,6 +10,7 @@
 #include "spirv_cross/spirv_msl.hpp"
 #include "spirv_reflection.h"
 #include "Runtime/BaseLib/include/PreCompile.h"
+#include "Runtime/BaseLib/include/LogService.h"
 #if (GNX_OS_WINDOWS || GNX_OS_LINUX || GNX_OS_MACOS)
 #include "DXCompilerUtil.h"
 #endif
@@ -291,7 +292,7 @@ static std::vector<CompiledPushConstantInfo> patchUniformToPushConstant(
     return result;
 }
 
-CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderStage)
+CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderStage, RenderCore::ShaderFormat targetFormat)
 {
     spirv_cross::CompilerMSL msl((const uint32_t*)spirvCode->data(), spirvCode->size() / 4);
 
@@ -449,11 +450,11 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
     }
 
     spirv_cross::CompilerMSL::Options options;
-#if GNX_OS_IOS
-    options.platform = spirv_cross::CompilerMSL::Options::iOS;
-#else
-    options.platform = spirv_cross::CompilerMSL::Options::macOS;
-#endif
+    // MSL platform is decided explicitly by target format (no more compile-time macro):
+    // ShaderFormat_MSL_iOS -> iOS, ShaderFormat_MSL_macOS -> macOS
+    options.platform = (targetFormat == RenderCore::ShaderFormat_MSL_iOS)
+                           ? spirv_cross::CompilerMSL::Options::iOS
+                           : spirv_cross::CompilerMSL::Options::macOS;
 
     // 关键：使用 MSLResourceBinding 代替 decoration binding
     options.enable_decoration_binding = false;
@@ -464,6 +465,7 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
     std::string shaderSource = msl.compile();
     
     CompiledShaderInfoPtr shaderInfo = std::make_shared<CompiledShaderInfo>();
+    shaderInfo->format = targetFormat;
     if (shaderStage == ShaderStage_Vertex)
     {
         shaderInfo->vertexDescriptor = GetMetalReflectionInfo(msl, resources);
@@ -495,8 +497,19 @@ ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shad
 #endif
 }
 
-CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType)
+CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage shaderStage, RenderCore::ShaderFormat targetFormat)
 {
+    // Target format decides the compile pipeline:
+    //   SPIRV: DXC HLSL -> SPIR-V
+    //   MSL_*: DXC HLSL -> SPIR-V -> Spirv-Cross -> MSL (platform from parameter)
+    //   GLSL : DXC HLSL -> SPIR-V -> Spirv-Cross -> GLSL (ES 3.0)
+    //   DXIL : not implemented, returns explicit error
+    RenderDeviceType renderType = (targetFormat == RenderCore::ShaderFormat_SPIRV ||
+                                   targetFormat == RenderCore::ShaderFormat_GLSL ||
+                                   targetFormat == RenderCore::ShaderFormat_DXIL)
+                                      ? RenderDeviceType::VULKAN
+                                      : RenderDeviceType::METAL;
+
     ShaderCodePtr shaderCode = compileHLSLToSPIRV(shaderFile, shaderStage, renderType);
     if (!shaderCode)
     {
@@ -506,31 +519,57 @@ CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage s
     // Fix DXC mesh shader payload storage class bug for both Metal and Vulkan
     patchDXCMeshShaderPayloadBug(shaderCode, shaderStage);
 
-    if (renderType == RenderDeviceType::METAL)
+    switch (targetFormat)
     {
-        return compileToMSL(shaderCode, shaderStage);
-    }
-    
-    else if (renderType == RenderDeviceType::VULKAN)
-    {
-        CompiledShaderInfoPtr compileShader = std::make_shared<CompiledShaderInfo>();
-        compileShader->shaderSource = shaderCode;
-
-        // 将 ≤256B 的 UBO 自动改写为 push constant（SPIR-V 二进制 patching）
-        compileShader->pushConstants = patchUniformToPushConstant(shaderCode, shaderStage);
-
-        // 提取 mesh/task/compute shader 的 threadgroup 大小
-        if (shaderStage == ShaderStage_Task || shaderStage == ShaderStage_Mesh || shaderStage == ShaderStage_Compute)
+        case RenderCore::ShaderFormat_MSL_iOS:
+        case RenderCore::ShaderFormat_MSL_macOS:
         {
-            spirv_cross::Compiler reflection((const uint32_t*)shaderCode->data(), shaderCode->size() / 4);
-            compileShader->threadgroupSizeX = reflection.get_execution_mode_argument(spv::ExecutionModeLocalSize, 0);
-            compileShader->threadgroupSizeY = reflection.get_execution_mode_argument(spv::ExecutionModeLocalSize, 1);
-            compileShader->threadgroupSizeZ = reflection.get_execution_mode_argument(spv::ExecutionModeLocalSize, 2);
+            CompiledShaderInfoPtr result = compileToMSL(shaderCode, shaderStage, targetFormat);
+            if (result)
+                result->format = targetFormat;
+            return result;
         }
 
-        return compileShader;
+        case RenderCore::ShaderFormat_GLSL:
+        {
+            CompiledShaderInfoPtr compileShader = std::make_shared<CompiledShaderInfo>();
+            compileShader->format = targetFormat;
+            ShaderCode glslCode = compileToESSL30(shaderCode, shaderStage);
+            compileShader->shaderSource = std::make_shared<ShaderCode>();
+            compileShader->shaderSource->resize(glslCode.size());
+            memcpy(compileShader->shaderSource->data(), glslCode.data(), glslCode.size());
+            return compileShader;
+        }
+
+        case RenderCore::ShaderFormat_DXIL:
+        {
+            LOG_ERROR("CompileShader: DXIL format not implemented yet");
+            return nullptr;
+        }
+
+        case RenderCore::ShaderFormat_SPIRV:
+        default:
+        {
+            CompiledShaderInfoPtr compileShader = std::make_shared<CompiledShaderInfo>();
+            compileShader->format = targetFormat;
+            compileShader->shaderSource = shaderCode;
+
+            // 将 ≤256B 的 UBO 自动改写为 push constant（SPIR-V 二进制 patching）
+            compileShader->pushConstants = patchUniformToPushConstant(shaderCode, shaderStage);
+
+            // 提取 mesh/task/compute shader 的 threadgroup 大小
+            if (shaderStage == ShaderStage_Task || shaderStage == ShaderStage_Mesh || shaderStage == ShaderStage_Compute)
+            {
+                spirv_cross::Compiler reflection((const uint32_t*)shaderCode->data(), shaderCode->size() / 4);
+                compileShader->threadgroupSizeX = reflection.get_execution_mode_argument(spv::ExecutionModeLocalSize, 0);
+                compileShader->threadgroupSizeY = reflection.get_execution_mode_argument(spv::ExecutionModeLocalSize, 1);
+                compileShader->threadgroupSizeZ = reflection.get_execution_mode_argument(spv::ExecutionModeLocalSize, 2);
+            }
+
+            return compileShader;
+        }
     }
-    
+
     return nullptr;
 }
 

@@ -97,3 +97,13 @@ message ShaderMessage
     // ====== 顶点 stride ======
     uint32 vertexStride = 13;           // MTLVertexDescriptor.layouts[0].stride
 }
+
+// ==================== 编译后的 Shader 容器 ====================
+// 一个 ShaderPackageMessage 对应一个 .shader 源文件在当前目标格式下的
+// 全部 stage 编译结果，序列化后写入单个 {name}.{format}.gnxasset 文件。
+message ShaderPackageMessage
+{
+    string shaderName = 1;              // 相对 data_asset/Shader 的 shader 名（如 "vt/GBufferVTPBR"）
+    GnxShaderFormat format = 2;         // 目标格式（SPIRV / MSL_iOS / MSL_macOS / DXIL / GLSL）
+    repeated ShaderMessage stages = 3;  // 各 stage 编译结果（VS/PS/CS/TS/MS，可能缺部分 stage）
+}

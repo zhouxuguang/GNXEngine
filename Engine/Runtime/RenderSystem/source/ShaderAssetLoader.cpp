@@ -9,9 +9,9 @@
 #include "Runtime/ShaderCompiler/include/ShaderCompiler.h"
 #include "RenderEngine.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/RenderCore/include/ShaderStageData.h"
 #include "Runtime/AssetManager/include/ShaderAsset.h"
 #include "Runtime/AssetManager/include/AssetManager.h"
-#include "Runtime/AssetManager/include/ShaderMessage.pb.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include <fstream>
 
@@ -23,180 +23,94 @@ NS_RENDERSYSTEM_BEGIN
 // 内部辅助：从 .gnxasset 加载预编译 shader
 // ============================================================================
 
-// 根据渲染设备类型返回对应的 ShaderFormat 后缀
-static std::string GetShaderFormatSuffix(RenderDeviceType renderType)
+// Map render device type to ShaderFormat (explicit parameterization source at runtime)
+static RenderCore::ShaderFormat GetShaderFormat(RenderDeviceType renderType)
 {
     switch (renderType)
     {
         case RenderDeviceType::METAL:
 #if TARGET_OS_OSX
-            return "msl_macos";
+            return RenderCore::ShaderFormat_MSL_macOS;
 #else
-            return "msl_ios";
+            return RenderCore::ShaderFormat_MSL_iOS;
 #endif
         case RenderDeviceType::VULKAN:
-            return "spirv";
         default:
-            return "spirv";
+            return RenderCore::ShaderFormat_SPIRV;
     }
 }
 
-// 从 ShaderAsset（.gnxasset 文件）构造 CompiledShaderInfo
-// 优先通过 AssetManager 统一加载（缓存 + 引用计数，用后 Release）
-// 若 AssetManager 未初始化（如 SceneManager 早期初始化时），回退局部加载保证功能
-
-// 从已加载的 ShaderAsset 构造 CompiledShaderInfo（shaderSource + threadgroup + 反射）
-static CompiledShaderInfoPtr BuildCompiledShaderInfo(const AssetManager::ShaderAsset& shaderAsset,
-                                                     uint32_t shaderStage)
+// Format suffix (used in file naming)
+static std::string GetShaderFormatSuffix(RenderCore::ShaderFormat format)
 {
-    const ShaderMessage& msg = shaderAsset.GetShaderMessage();
+    return RenderCore::ShaderFormatToString(format);
+}
 
-    // 校验阶段匹配
-    if (static_cast<uint32_t>(msg.shaderStage) != shaderStage)
+// Build CompiledShaderInfo from ShaderStageData (RenderCore value type, not pb)
+static CompiledShaderInfoPtr BuildCompiledShaderInfo(const RenderCore::ShaderStageData& stageData,
+                                                     ShaderStage shaderStage)
+{
+    // Validate stage match
+    if (stageData.stage != shaderStage)
     {
-        LOG_WARN("LoadCompiledShader: stage mismatch (expected %u, got %u)", shaderStage, (uint32_t)msg.shaderStage);
+        LOG_WARN("LoadCompiledShader: stage mismatch (expected %u, got %u)",
+                 (uint32_t)shaderStage, (uint32_t)stageData.stage);
         return nullptr;
     }
 
-    // 构造 CompiledShaderInfo
+    // Build CompiledShaderInfo
     auto info = std::make_shared<CompiledShaderInfo>();
+    info->format = stageData.format;
     info->shaderSource = std::make_shared<ShaderCode>();
-    if (shaderAsset.GetShaderData() && shaderAsset.GetShaderDataSize() > 0)
+    if (!stageData.sourceData.empty())
     {
-        info->shaderSource->resize(shaderAsset.GetShaderDataSize());
-        memcpy(info->shaderSource->data(), shaderAsset.GetShaderData(), shaderAsset.GetShaderDataSize());
+        info->shaderSource->resize(stageData.sourceData.size());
+        memcpy(info->shaderSource->data(), stageData.sourceData.data(), stageData.sourceData.size());
     }
 
-    info->threadgroupSizeX = msg.threadgroupSizeX;
-    info->threadgroupSizeY = msg.threadgroupSizeY;
-    info->threadgroupSizeZ = msg.threadgroupSizeZ;
+    info->threadgroupSizeX = stageData.threadgroupSizeX;
+    info->threadgroupSizeY = stageData.threadgroupSizeY;
+    info->threadgroupSizeZ = stageData.threadgroupSizeZ;
 
-    // 反序列化顶点描述符（Metal 重建 MTLVertexDescriptor 必需）
-    // 从 .gnxasset 的 vertexInputs（含 stride）重建 RenderCore::VertexDesc
-    const auto* vertexInputs = shaderAsset.GetVertexInputs();
-    if (vertexInputs && !vertexInputs->empty())
-    {
-        RenderCore::VertexDesc& vd = info->vertexDescriptor;
-        vd.attributes.clear();
-        vd.layouts.clear();
-        vd.attributes.reserve(vertexInputs->size());
-        vd.layouts.reserve(vertexInputs->size());
+    // Vertex descriptor (already decoded by ShaderAsset from pb vertexInputs)
+    info->vertexDescriptor = stageData.vertexDescriptor;
 
-        for (const auto& vi : *vertexInputs)
-        {
-            RenderCore::VertextAttributesDesc attr;
-            attr.index  = vi.location;
-            attr.format = static_cast<RenderCore::VertexFormat>(static_cast<uint32_t>(vi.format));
-            attr.offset = vi.offset;
-            vd.attributes.push_back(attr);
-
-            RenderCore::VertexBufferLayoutDesc layout;
-            layout.stride = vi.stride;
-            layout.stepRate = 1;
-            layout.stepFunction = RenderCore::VertexStepFunctionPerVertex;
-            vd.layouts.push_back(layout);
-        }
-    }
-
-    // 反序列化 push constants（Vulkan 管线布局需要；当前预编译产物恒空，为将来启用预留）
-    const auto* pushConstants = shaderAsset.GetPushConstants();
-    if (pushConstants)
-    {
-        info->pushConstants.clear();
-        for (const auto& pcm : *pushConstants)
-        {
-            CompiledPushConstantInfo pc;
-            pc.name    = "";   // nanopb string 解码为 pb_bytes，暂不保留 name（运行时按 set/binding 路由）
-            pc.size    = pcm.size;
-            pc.set     = pcm.set;
-            pc.binding = pcm.binding;
-            info->pushConstants.push_back(pc);
-        }
-    }
+    // Push constants (already decoded)
+    info->pushConstants = stageData.pushConstants;
 
     return info;
 }
 
-static CompiledShaderInfoPtr LoadCompiledShaderFromAsset(const std::string& shaderName,
-                                                          uint32_t shaderStage,
+// Load a single stage compile result from a container file
+// File naming: {shaderName}.{format}.gnxasset (one file per shader, all stages inside)
+static CompiledShaderInfoPtr LoadCompiledShaderFromAsset(AssetManager::ShaderAsset* shaderAsset,
+                                                          ShaderStage shaderStage,
                                                           const std::string& formatSuffix)
 {
-    // 文件命名：{shaderName}.{stage}.{format}.gnxasset
-    // 例如: GBufferPBR.vs.spirv.gnxasset / GBufferPBR.vs.msl_ios.gnxasset
-    static const char* stageSuffixes[] = { "vs", "ps", "cs", "ts", "ms" };
-
-    std::string filePath = getCompiledShaderDir()
-        + shaderName + "."
-        + stageSuffixes[shaderStage] + "."
-        + formatSuffix + ".gnxasset";
-
-    AssetManager::AssetManager* assetMgr = AssetManager::AssetManager::GetInstance();
-    if (!assetMgr)
+    // Get stage from container (ShaderAsset already decoded to ShaderStageData value type)
+    const RenderCore::ShaderStageData* stageData = shaderAsset->GetStage(shaderStage);
+    if (!stageData)
     {
-        LOG_WARN("LoadCompiledShader: AssetManager not initialized, local fallback: %s", filePath.c_str());
-        AssetManager::ShaderAsset localAsset;
-        if (!localAsset.LoadFromFile(filePath))
-        {
-            LOG_WARN("LoadCompiledShader: asset not found: %s", filePath.c_str());
-            return nullptr;
-        }
-        return BuildCompiledShaderInfo(localAsset, shaderStage);
-    }
-
-    AssetManager::ShaderAsset* shaderAsset = assetMgr->LoadShader(filePath);
-    if (!shaderAsset)
-    {
-        LOG_WARN("LoadCompiledShader: asset not found: %s", filePath.c_str());
+        // Stage not present in container (normal: e.g. pure compute has no vs/ps)
         return nullptr;
     }
 
-    CompiledShaderInfoPtr info = BuildCompiledShaderInfo(*shaderAsset, shaderStage);
+    CompiledShaderInfoPtr info = BuildCompiledShaderInfo(*stageData, shaderStage);
 
-    LOG_INFO("LoadCompiledShader: loaded %s (%u bytes)", filePath.c_str(), shaderAsset->GetShaderDataSize());
-
-    // 数据已拷贝到 CompiledShaderInfo，ShaderAsset 不再需要长期持有
-    // Release 使引用计数归零，可由 AssetManager::UnloadUnusedAssets 回收
-    shaderAsset->Release();
+    LOG_INFO("LoadCompiledShader: loaded stage %u from %s.%s.gnxasset (%zu bytes)",
+             (uint32_t)shaderStage, shaderAsset->GetShaderName().c_str(),
+             formatSuffix.c_str(), stageData->sourceData.size());
 
     return info;
 }
 
-// 平台 + 格式后缀映射
-// 由具体后端决定：Metal → msl_ios/msl_macos，Vulkan → spirv
-
-// 检查一个 shader 的必需 stage 预编译产物是否齐全
-// 传统管线需要 vs+ps；mesh 管线需要 ms+ps（TerrainMS/TerrainMSDepth/MeshShaderDemo）
-// 纯 compute 管线只需 cs（HiZGeneration/TerrainCull/TestADD 等）
-// 任一必需 stage 缺失则整体回退运行时编译（避免混合来源）
-static bool HasRequiredGraphicsStages(const std::string& shaderName, const std::string& formatSuffix)
+// Check container file existence ({name}.{format}.gnxasset)
+// Stage completeness is checked via GetStage in LoadShaderAsset after loading
+static bool HasContainerFile(const std::string& shaderName, const std::string& formatSuffix)
 {
-    static const char* stageSuffixes[] = { "vs", "ps", "cs", "ts", "ms" };
-
-    // mesh 管线：ms + ps
-    std::string msFile = getCompiledShaderDir() + shaderName + ".ms." + formatSuffix + ".gnxasset";
-    std::ifstream msF(msFile, std::ios::binary);
-    if (msF.good())
-    {
-        // mesh 管线要求 ms + ps
-        std::string psFile = getCompiledShaderDir() + shaderName + ".ps." + formatSuffix + ".gnxasset";
-        std::ifstream psF(psFile, std::ios::binary);
-        return psF.good();
-    }
-
-    // 传统管线：vs + ps
-    std::string vsFile = getCompiledShaderDir() + shaderName + ".vs." + formatSuffix + ".gnxasset";
-    std::ifstream vsF(vsFile, std::ios::binary);
-    if (vsF.good())
-    {
-        std::string psFile = getCompiledShaderDir() + shaderName + ".ps." + formatSuffix + ".gnxasset";
-        std::ifstream psF(psFile, std::ios::binary);
-        return psF.good();
-    }
-
-    // 纯 compute 管线：只需 cs（无 vs/ps/ms）
-    std::string csFile = getCompiledShaderDir() + shaderName + ".cs." + formatSuffix + ".gnxasset";
-    std::ifstream csF(csFile, std::ios::binary);
-    return csF.good();
+    std::string filePath = getCompiledShaderDir() + shaderName + "." + formatSuffix + ".gnxasset";
+    std::ifstream f(filePath, std::ios::binary);
+    return f.good();
 }
 
 ShaderAssetString LoadShaderAsset(const std::string &shaderName)
@@ -209,11 +123,12 @@ ShaderAssetString LoadShaderAsset(const std::string &shaderName)
     }
 
     RenderDeviceType renderType = GetRenderDevice()->GetRenderDeviceType();
-    std::string formatSuffix = GetShaderFormatSuffix(renderType);
+    RenderCore::ShaderFormat format = GetShaderFormat(renderType);
+    std::string formatSuffix = GetShaderFormatSuffix(format);
 
-    // 全平台统一从 data_asset/Shader/ 加载预编译产物
-    // fallback: 若必需图形 stage 预编译产物缺失（开发期尚未跑批量编译），整体回退运行时编译
-    if (!HasRequiredGraphicsStages(shaderName, formatSuffix))
+    // Load precompiled asset from data_asset/Shader/ ({name}.{format}.gnxasset)
+    // fallback: if container file missing, fall back to runtime compile
+    if (!HasContainerFile(shaderName, formatSuffix))
     {
         LOG_WARN("LoadShaderAsset: precompiled shader missing for %s (format %s), falling back to runtime compile",
                  shaderName.c_str(), formatSuffix.c_str());
@@ -221,16 +136,85 @@ ShaderAssetString LoadShaderAsset(const std::string &shaderName)
         return LoadCustomShaderAsset(shaderFilePath);
     }
 
-    shaderAssetString.vertexShader = LoadCompiledShaderFromAsset(shaderName, ShaderStage_Vertex, formatSuffix);
+    std::string filePath = getCompiledShaderDir() + shaderName + "." + formatSuffix + ".gnxasset";
+
+    AssetManager::AssetManager* assetMgr = AssetManager::AssetManager::GetInstance();
+    AssetManager::ShaderAsset* shaderAsset = nullptr;
+    AssetManager::ShaderAsset localAsset;
+
+    if (!assetMgr)
+    {
+        LOG_WARN("LoadShaderAsset: AssetManager not initialized, local fallback: %s", filePath.c_str());
+        if (!localAsset.LoadFromFile(filePath))
+        {
+            LOG_WARN("LoadShaderAsset: asset not found: %s", filePath.c_str());
+            std::string shaderFilePath = getBuiltInShaderDir() + shaderName + ".shader";
+            return LoadCustomShaderAsset(shaderFilePath);
+        }
+        shaderAsset = &localAsset;
+    }
+    else
+    {
+        shaderAsset = assetMgr->LoadShader(filePath);
+        if (!shaderAsset)
+        {
+            LOG_WARN("LoadShaderAsset: asset not found: %s", filePath.c_str());
+            std::string shaderFilePath = getBuiltInShaderDir() + shaderName + ".shader";
+            return LoadCustomShaderAsset(shaderFilePath);
+        }
+    }
+
+    // Validate container format matches expected (prevent "right filename, wrong content")
+    if (shaderAsset->GetFormat() != format)
+    {
+        LOG_WARN("LoadShaderAsset: format mismatch for %s (expected %d, got %d), falling back to runtime compile",
+                 shaderName.c_str(), (int)format, (int)shaderAsset->GetFormat());
+        if (assetMgr && shaderAsset) shaderAsset->Release();
+        std::string shaderFilePath = getBuiltInShaderDir() + shaderName + ".shader";
+        return LoadCustomShaderAsset(shaderFilePath);
+    }
+
+    // Required-stage check via GetStage: mesh pipeline needs ms+ps; traditional needs vs+ps;
+    // pure compute needs cs. Equivalent to old HasRequiredGraphicsStages but container-based.
+    bool hasRequired = false;
+    if (shaderAsset->HasStage(ShaderStage_Mesh))
+    {
+        hasRequired = shaderAsset->HasStage(ShaderStage_Fragment);
+    }
+    else if (shaderAsset->HasStage(ShaderStage_Vertex))
+    {
+        hasRequired = shaderAsset->HasStage(ShaderStage_Fragment);
+    }
+    else
+    {
+        hasRequired = shaderAsset->HasStage(ShaderStage_Compute);
+    }
+
+    if (!hasRequired)
+    {
+        LOG_WARN("LoadShaderAsset: required stages missing in container for %s, falling back to runtime compile",
+                 shaderName.c_str());
+        if (assetMgr && shaderAsset) shaderAsset->Release();
+        std::string shaderFilePath = getBuiltInShaderDir() + shaderName + ".shader";
+        return LoadCustomShaderAsset(shaderFilePath);
+    }
+
+    shaderAssetString.vertexShader = LoadCompiledShaderFromAsset(shaderAsset, ShaderStage_Vertex, formatSuffix);
     if (shaderAssetString.vertexShader)
     {
         shaderAssetString.vertexDescriptor = shaderAssetString.vertexShader->vertexDescriptor;
     }
 
-    shaderAssetString.fragmentShader = LoadCompiledShaderFromAsset(shaderName, ShaderStage_Fragment, formatSuffix);
-    shaderAssetString.computeShader   = LoadCompiledShaderFromAsset(shaderName, ShaderStage_Compute, formatSuffix);
-    shaderAssetString.taskShader      = LoadCompiledShaderFromAsset(shaderName, ShaderStage_Task, formatSuffix);
-    shaderAssetString.meshShader      = LoadCompiledShaderFromAsset(shaderName, ShaderStage_Mesh, formatSuffix);
+    shaderAssetString.fragmentShader = LoadCompiledShaderFromAsset(shaderAsset, ShaderStage_Fragment, formatSuffix);
+    shaderAssetString.computeShader   = LoadCompiledShaderFromAsset(shaderAsset, ShaderStage_Compute, formatSuffix);
+    shaderAssetString.taskShader      = LoadCompiledShaderFromAsset(shaderAsset, ShaderStage_Task, formatSuffix);
+    shaderAssetString.meshShader      = LoadCompiledShaderFromAsset(shaderAsset, ShaderStage_Mesh, formatSuffix);
+
+    // Data already copied into CompiledShaderInfo; ShaderAsset no longer needed long-term
+    if (assetMgr && shaderAsset)
+    {
+        shaderAsset->Release();
+    }
 
     return shaderAssetString;
 }
@@ -244,8 +228,9 @@ ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName)
     }
     
     RenderDeviceType renderType = GetRenderDevice()->GetRenderDeviceType();
+    RenderCore::ShaderFormat format = GetShaderFormat(renderType);
     
-    CompiledShaderInfoPtr vertexShaderInfo = CompileShader(shaderName, ShaderStage_Vertex, renderType);
+    CompiledShaderInfoPtr vertexShaderInfo = CompileShader(shaderName, ShaderStage_Vertex, format);
     
     if (vertexShaderInfo)
     {
@@ -253,25 +238,25 @@ ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName)
         shaderAssetString.vertexDescriptor = vertexShaderInfo->vertexDescriptor;
     }
     
-    CompiledShaderInfoPtr fragmentShaderInfo = CompileShader(shaderName, ShaderStage_Fragment, renderType);
+    CompiledShaderInfoPtr fragmentShaderInfo = CompileShader(shaderName, ShaderStage_Fragment, format);
     if (fragmentShaderInfo)
     {
         shaderAssetString.fragmentShader = fragmentShaderInfo;
     }
     
-    CompiledShaderInfoPtr computeShaderInfo = CompileShader(shaderName, ShaderStage_Compute, renderType);
+    CompiledShaderInfoPtr computeShaderInfo = CompileShader(shaderName, ShaderStage_Compute, format);
     if (computeShaderInfo)
     {
         shaderAssetString.computeShader = computeShaderInfo;
     }
     
-    CompiledShaderInfoPtr taskShaderInfo = CompileShader(shaderName, ShaderStage_Task, renderType);
+    CompiledShaderInfoPtr taskShaderInfo = CompileShader(shaderName, ShaderStage_Task, format);
     if (taskShaderInfo)
     {
         shaderAssetString.taskShader = taskShaderInfo;
     }
     
-    CompiledShaderInfoPtr meshShaderInfo = CompileShader(shaderName, ShaderStage_Mesh, renderType);
+    CompiledShaderInfoPtr meshShaderInfo = CompileShader(shaderName, ShaderStage_Mesh, format);
     if (meshShaderInfo)
     {
         shaderAssetString.meshShader = meshShaderInfo;
