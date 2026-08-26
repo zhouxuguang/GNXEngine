@@ -84,8 +84,19 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
     // 代码层面控制方向（需与 Info.plist 的 UISupportedInterfaceOrientations 取交集）
     // 这里显式声明支持横屏左右 + 竖屏，避免仅凭 main.cpp 的横屏尺寸推断方向
     SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight Portrait");
+#elif GNX_OS_ANDROID
+    // 引擎自行管理图形上下文（不走 SDL_GL_* / SDL_Vulkan_*）。
+    // 若不指定SDL_SetHint(SDL_HINT_VIDEO_EXTERNAL_CONTEXT, "1");，SDL 在 Android 上默认给窗口加 SDL_WINDOW_OPENGL，
+    // 并在 ANativeWindow 上创建 EGL surface（native_window_api_connect API=1），
+    // 导致后续 vkCreateAndroidSurfaceKHR 报
+    //   connect: already connected (cur=1 req=1)
+    //   native_window_api_connect() failed: Invalid argument (-22)
+
+    // 声明渲染上下文由外部（引擎）管理：SDL 不创建/备份 EGL 上下文，
+    // 且后台恢复时不会尝试恢复 EGL context（该逻辑只针对 SDL_GL 路径）。
+    SDL_SetHint(SDL_HINT_VIDEO_EXTERNAL_CONTEXT, "1");
 #endif
-    
+
     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
 
