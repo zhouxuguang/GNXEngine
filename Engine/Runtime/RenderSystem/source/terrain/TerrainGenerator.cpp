@@ -7,6 +7,7 @@
 //
 
 #include "terrain/TerrainGenerator.h"
+#include "ImageTextureUtil.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/ImageCodec/include/VImage.h"
 #include "Runtime/ImageCodec/include/ImageDecoder.h"
@@ -474,7 +475,8 @@ RenderCore::RCTexture2DPtr TerrainGenerator::LoadDiffuseTexture(const char* text
     auto renderDevice = GetRenderDevice();
 
     VImage textureImage;
-    if (!ImageDecoder::DecodeFile(texturePath, &textureImage))
+    // 移动端（Android/iOS）assets 非文件系统，用跨平台解码（AssetManager::LoadResource）
+    if (!ImageTextureUtil::LoadImageResource(texturePath ? texturePath : "", textureImage))
     {
         LOG_ERROR("Failed to load terrain diffuse texture: %s", texturePath);
         return nullptr;

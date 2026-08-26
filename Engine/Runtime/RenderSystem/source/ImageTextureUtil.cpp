@@ -7,11 +7,55 @@
 
 #include "ImageTextureUtil.h"
 #include "Runtime/BaseLib/include/LogService.h"
+#include "Runtime/BaseLib/include/PreCompile.h"
+#include "Runtime/AssetManager/include/AssetManager.h"
 #include "Runtime/AssetProcess/source/IBLBaker/PBRBase.h"
 #include <ktx.h>
 #include <cstring>
+#include <algorithm>
 
 NS_RENDERSYSTEM_BEGIN
+
+// ============================================================================
+// 跨平台图片解码（移动端 assets/bundle 兼容）
+// ============================================================================
+
+bool ImageTextureUtil::LoadImageResource(const std::string& path, VImage& image)
+{
+    using namespace imagecodec;
+
+    // 剥离 data_asset 前缀，得到包内相对路径（移动端用）
+    // 传入的 path 通常是 GetProjectAssetDir() + "terrain/xx.png" 拼出的
+    // 构建机全路径（桌面可用），移动端需要转成 "terrain/xx.png"。
+    auto findDataAsset = [](const std::string& p) -> std::string
+    {
+        const std::string kMarker = "data_asset/";
+        std::string normalized = p;
+        std::replace(normalized.begin(), normalized.end(), '\\', '/');
+        size_t pos = normalized.find(kMarker);
+        if (pos != std::string::npos)
+        {
+            return normalized.substr(pos + kMarker.size());
+        }
+        // 已经是相对路径（不含 data_asset 前缀），原样返回
+        return normalized;
+    };
+
+#if GNX_OS_IOS || GNX_OS_ANDROID
+    // 移动端：assets/bundle 非文件系统，必须走 AssetManager::LoadResource（SDL_RWFromFile）。
+    std::string relPath = findDataAsset(path);
+    std::vector<uint8_t> fileData;
+    if (!AssetManager::AssetManager::LoadResource(relPath, fileData))
+    {
+        LOG_ERROR("LoadImageResource: cannot load asset %s", relPath.c_str());
+        return false;
+    }
+    return ImageDecoder::DecodeMemory(fileData.data(), fileData.size(), &image);
+#else
+    // 桌面端：直接文件系统解码
+    return ImageDecoder::DecodeFile(path.c_str(), &image);
+#endif
+}
 
 TextureDesc ImageTextureUtil::getTextureDescriptor(const VImage& image)
 {

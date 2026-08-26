@@ -8,6 +8,7 @@
 //
 
 #include "terrain/QuadTreeTerrain.h"
+#include "ImageTextureUtil.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/RenderCore/include/TextureFormat.h"
 #include "Runtime/RenderCore/include/RCBuffer.h"
@@ -58,9 +59,9 @@ QuadTreeTerrain* QuadTreeTerrain::CreateFromHeightMap(
 {
     using namespace imagecodec;
 
-    // 加载高度图
+    // 加载高度图（移动端 assets 非文件系统，用跨平台解码 AssetManager::LoadResource）
     VImage heightmapImage;
-    if (!ImageDecoder::DecodeFile(heightmapPath, &heightmapImage))
+    if (!ImageTextureUtil::LoadImageResource(heightmapPath ? heightmapPath : "", heightmapImage))
     {
         LOG_ERROR("QuadTreeTerrain: Failed to load heightmap: %s", heightmapPath);
         return nullptr;
