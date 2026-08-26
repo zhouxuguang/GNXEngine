@@ -44,7 +44,7 @@ VKRenderDevice::VKRenderDevice(const NativeWindow& nativeWindow)
     }
     mVulkanContext = std::make_shared<VulkanContext>();
     
-    uint32_t apiVersions[] = {VK_API_VERSION_1_3, VK_API_VERSION_1_2, VK_API_VERSION_1_1, VK_API_VERSION_1_0};
+    uint32_t apiVersions[] = {VK_API_VERSION_1_4, VK_API_VERSION_1_3, VK_API_VERSION_1_2, VK_API_VERSION_1_1, VK_API_VERSION_1_0};
     
     for (int i = 0; i < sizeof(apiVersions) / sizeof(apiVersions[0]); i ++)
     {
