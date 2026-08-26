@@ -74,8 +74,6 @@ inline void MutexOnStd::unlock() { mutex.unlock(); }
 #include <windows.h>
 
 #if USE_FUTEX
-#if GNX_OS_WINDOWS
-
 #pragma comment(lib, "Synchronization.lib")
 
 void MutexOnFutex::futexWait()
@@ -88,25 +86,6 @@ void MutexOnFutex::futexWake()
 {
 	WakeByAddressSingle(&mState);
 }
-
-#else
-//Linux实现
-{
-inline void SysFutex(void* addr, int op, int val, int val3)
-{
-	syscall(SYS_futex, addr, op, val, nullptr, nullptr, val3);
-}
-}
-
-void MutexOnFutex::futexWait()
-{
-	SysFutex(&mState, FUTEX_WAIT_BITSET | FUTEX_PRIVATE_FLAG, kBlocked, FUTEX_BITSET_MATCH_ANY);
-}
-void MutexOnFutex::futexWake()
-{
-	SysFutex(&mState, FUTEX_WAKE | FUTEX_PRIVATE_FLAG, kLocked, 0);
-}
-#endif
 #endif
 
 MutexLock::MutexLock(void)
@@ -158,6 +137,29 @@ void MutexLock::UnLock()
 #include <sys/time.h>
 #include <time.h>
 #include <errno.h>
+
+#if USE_FUTEX && !GNX_OS_MACOS
+// Linux/Android futex 实现。原实现被错误地嵌套在 Windows 分支内，
+// 导致 Linux 平台链接不到 futexWait/futexWake，这里移到 POSIX 分支。
+#include <sys/syscall.h>
+#include <unistd.h>
+#include <linux/futex.h>
+
+static inline void SysFutex(void* addr, int op, int val, int val3)
+{
+	syscall(SYS_futex, addr, op, val, nullptr, nullptr, val3);
+}
+
+void MutexOnFutex::futexWait()
+{
+	SysFutex(&mState, FUTEX_WAIT_BITSET | FUTEX_PRIVATE_FLAG, kBlocked, FUTEX_BITSET_MATCH_ANY);
+}
+
+void MutexOnFutex::futexWake()
+{
+	SysFutex(&mState, FUTEX_WAKE | FUTEX_PRIVATE_FLAG, kLocked, 0);
+}
+#endif
 
 extern unsigned long GetTickCount(void);
 

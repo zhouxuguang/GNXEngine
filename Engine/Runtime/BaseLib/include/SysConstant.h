@@ -73,7 +73,7 @@ enum ByteOrder
 #if defined _WIN32 || defined _WIN64
     #define BASELIB_ALIGNED(x) __declspec(align(x))
 #elif defined __linux__ || (defined(__MACH__) && defined(__APPLE__) )
-    #define BASELIB_ALIGNED(x) __attribute__(__aligned__(x)))
+    #define BASELIB_ALIGNED(x) __attribute__((__aligned__(x)))
 #endif
 
 

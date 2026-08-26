@@ -1,7 +1,7 @@
 #include "EnvironmentUtility.h"
 #include <sstream>
 
-#ifdef  __APPLE__
+#if defined(__APPLE__) || defined(__OpenBSD__)
 #include <sys/sysctl.h>
 #endif
 
@@ -95,15 +95,15 @@ int EnvironmentUtility::GetProcessorCount() const
 	if (count <= 0) count = 1;
 	return count;
 
-#elif __open_bsd__
+#elif defined(__OpenBSD__)
 	int mib[2] = { CTL_HW, HW_NCPU };
-	int mib[2];
-	mib[0] = CTL_HW;
-	size_t length = 2;
-	if (sysctlnametomib("hw.logicalcpu", mib, &length) == -1) 
+	int nCores = 0;
+	size_t size = sizeof(nCores);
+	if (sysctl(mib, 2, &nCores, &size, NULL, 0) == -1)
 	{
 		return 2;
 	}
+	return nCores;
 #else
 	int nCores = 0;
 	size_t size = sizeof(nCores);
@@ -172,7 +172,8 @@ typedef NTSTATUS(WINAPI* RtlGetVersionPtr)(RtlOSVERSIONINFO*);
 NTOS_VERSION OsNtVersion()
 {
 	RtlOSVERSIONINFO info = { sizeof(RtlOSVERSIONINFO) };
-	HMODULE hNtdll = GetModuleHandle("ntdll.dll");
+	// 使用 GetModuleHandleA 避免 UNICODE 下窄字符串与 LPCWSTR 不兼容
+	HMODULE hNtdll = GetModuleHandleA("ntdll.dll");
 	if (nullptr == hNtdll) 
 	{
 		return NTOS_UNKNOWN;

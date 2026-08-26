@@ -50,20 +50,6 @@ static void SetThreadName(DWORD dwThreadID, const char* threadName)
     }
 }
 
-static const char* GetThreadName(void)
-{
-    //char* pszName = NULL;
-    //__asm
-    //{
-    //    mov eax, fs:[0x18]    //    Locate the caller's TIB
-    //    mov eax, [eax+0x14]    //    Read the pvArbitary field in the TIB
-    //    mov [pszName], eax    //    pszName = pTIB->pvArbitary
-    //}
-    //return pszName ? pszName : "Win32 Thread";
-
-    return "Win32 Thread";
-}
-
 #include <intrin.h>
 
 namespace windows_pthread
@@ -210,14 +196,46 @@ void ThreadUtil::SetName(const char *pszName)
 
 void ThreadUtil::GetName(char *pszName, int len)
 {
+    if (pszName == nullptr || len <= 0)
+    {
+        return;
+    }
+
 #ifdef __APPLE__
     pthread_getname_np(pthread_self(), pszName, len);
 #elif __ANDROID__
     prctl(PR_GET_NAME, pszName);
 #elif WIN32
-    const char *pszNameWin = GetThreadName();
+    // Windows 10 1607+ 提供 GetThreadDescription 读取真实线程名。
+    // 为避免依赖 _WIN32_WINNT >= 0x0A00 的编译期宏，这里运行时动态加载，
+    // 加载失败（老系统）时回退到默认名称。
     memset(pszName, 0, len);
-    memcpy(pszName, pszNameWin, strlen(pszNameWin));
+
+    typedef HRESULT(WINAPI* PFN_GetThreadDescription)(HANDLE, PWSTR*);
+    static PFN_GetThreadDescription pfnGetThreadDescription =
+        (PFN_GetThreadDescription)GetProcAddress(GetModuleHandleA("kernel32.dll"), "GetThreadDescription");
+
+    bool bGotName = false;
+    if (pfnGetThreadDescription != nullptr)
+    {
+        PWSTR pszDesc = nullptr;
+        if (SUCCEEDED(pfnGetThreadDescription(GetCurrentThread(), &pszDesc)) && pszDesc != nullptr)
+        {
+            int nLen = WideCharToMultiByte(CP_UTF8, 0, pszDesc, -1, nullptr, 0, nullptr, nullptr);
+            if (nLen > 1 && nLen <= len)
+            {
+                WideCharToMultiByte(CP_UTF8, 0, pszDesc, -1, pszName, len, nullptr, nullptr);
+                bGotName = true;
+            }
+            LocalFree(pszDesc);
+        }
+    }
+
+    if (!bGotName)
+    {
+        strncpy(pszName, "Win32 Thread", len - 1);
+        pszName[len - 1] = 0;
+    }
 #endif
 }
 

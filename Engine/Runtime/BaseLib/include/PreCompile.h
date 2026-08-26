@@ -190,7 +190,7 @@ typedef std::shared_ptr<ByteVector> ByteVectorPtr;
     #define VOID_PTR_SIZE 8
 #else
 	#define BASE_IS_32_BIT_CPU 1
-    #define VOID_PTR_SIZE 8
+    #define VOID_PTR_SIZE 4
 #endif
 
 // Enable futexes on:

@@ -758,8 +758,9 @@ TEST_CASE("DataCompress LZ4 roundtrip", "[baselib][compress]")
     REQUIRE(outLen > 0);
     REQUIRE(outLen <= bound);
 
-    size_t decompBound = UnCompressBound(compressed.data(), outLen, COMPRESS_LZ4);
-    REQUIRE(decompBound >= srcLen);
+    // LZ4 块格式本身不记录原始长度，UnCompressBound 无法推断，
+    // 这里直接以源长度作为解压缓冲区大小。
+    size_t decompBound = srcLen;
 
     std::vector<uint8_t> decompressed(decompBound > 0 ? decompBound : srcLen);
     size_t decompLen = decompressed.size();

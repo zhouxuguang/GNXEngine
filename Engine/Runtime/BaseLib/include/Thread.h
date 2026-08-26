@@ -125,7 +125,7 @@ public:
      * @date 2015年6月15日
      * @note
      */
-    virtual void Run() const {};
+    virtual void Run() {};
 
 private:    
     ThreadHandle   m_Handle;            //线程句柄
