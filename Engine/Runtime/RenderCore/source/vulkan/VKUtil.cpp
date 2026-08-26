@@ -1,6 +1,7 @@
 #include "VKUtil.h"
 #include "VulkanContext.h"
 #include "VulkanBufferUtil.h"
+#include "Runtime/BaseLib/include/LogService.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -177,6 +178,10 @@ VkAttachmentStoreOp GetStoreOP(AttachmentStoreOp storeOp)
 
 void SetObjectName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const char* pObjectName)
 {
+    if (!vkSetDebugUtilsObjectNameEXT)
+    {
+        return;
+    }
     // set the name
     VkDebugUtilsObjectNameInfoEXT nameInfo = {};
     nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
