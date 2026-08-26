@@ -34,4 +34,12 @@ target_link_libraries(AssetManager
     ImageCodec
 )
 
+# 移动端：AssetManager.cpp 在 GNX_OS_IOS || GNX_OS_ANDROID 下直接
+# #include "SDL_rwops.h"（包内资源读取 SDL_RWFromFile），需要 SDL2 头文件。
+# SDL2-static 仅在 ANDROID/IOS 下由 ThirdParty 编译，故加平台判断。
+# 头文件只在 .cpp 内部使用，不外泄到 AssetManager 公共头，故用 PRIVATE。
+if(ANDROID OR IOS)
+    target_link_libraries(AssetManager PRIVATE SDL2-static)
+endif()
+
 set_property(TARGET AssetManager PROPERTY FOLDER "Runtime")
