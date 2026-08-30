@@ -1,6 +1,6 @@
 # GNXEngine
 
-轻量级跨平台游戏引擎，使用 C++17 开发，CMake 构建，支持 **Windows / macOS / Linux**，并已打通 **iOS / Android** 交叉编译（当前仅编译通过，尚未完整运行验证）。
+轻量级跨平台游戏引擎，使用 C++20 开发，CMake 构建，支持 **Windows / macOS / Linux**，并已打通 **iOS / Android** 交叉编译与真机运行验证。
 
 ## 特性
 
@@ -21,10 +21,10 @@
 | 平台 | 图形后端 | 窗口系统 | 说明 |
 |------|---------|---------|------|
 | **macOS** | Metal | GLFW | 原生 Metal 渲染 |
-| **iOS** | Metal | SDL2 | 交叉编译已打通（编译通过） |
+| **iOS** | Metal | SDL2 | 原生 Metal 渲染（真机可运行） |
 | **Windows** | Vulkan | GLFW | — |
 | **Linux** | Vulkan | GLFW | — |
-| **Android** | Vulkan | SDL2 | 交叉编译已打通（编译通过） |
+| **Android** | Vulkan | SDL2 | 原生 Vulkan 渲染（真机可运行） |
 
 ## 架构
 
