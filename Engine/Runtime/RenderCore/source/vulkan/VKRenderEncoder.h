@@ -101,6 +101,7 @@ public:
 private:
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
     VKGraphicsPipeline *mGraphicsPipieline = nullptr;
+    FillMode mCurrentFillMode = FillModeSolid;   // 当前填充模式（驱动不支持动态 polygonMode 时用于选择 PSO 变体）
     VulkanRenderPassPtr mRenderPass = nullptr;
     VkFramebuffer mFrameBuffer = VK_NULL_HANDLE;
     RenderPassFormat mPassFormat;

@@ -57,6 +57,11 @@ public:
             SafeDestroyPipeline(*mContext, mPipeline);
             mPipeline = VK_NULL_HANDLE;
         }
+        if (mWireframePipeline != VK_NULL_HANDLE)
+        {
+            SafeDestroyPipeline(*mContext, mWireframePipeline);
+            mWireframePipeline = VK_NULL_HANDLE;
+        }
         if (mPipelineLayout != VK_NULL_HANDLE)
         {
             vkDestroyPipelineLayout(mContext->device, mPipelineLayout, nullptr);
@@ -84,6 +89,18 @@ public:
     VkPipeline GetPipeline() const
     {
         return mPipeline;
+    }
+    
+    // 获取线框变体 PSO（静态 polygonMode=LINE，用于不支持动态 polygonMode 时）
+    VkPipeline GetWireframePipeline() const
+    {
+        return mWireframePipeline;
+    }
+    
+    // 是否已创建线框变体
+    bool HasWireframePipeline() const
+    {
+        return mWireframePipeline != VK_NULL_HANDLE;
     }
     
     void Generate(const RenderPassFormat& passFormat);
@@ -168,6 +185,7 @@ public:
     
 private:
     VkPipeline mPipeline = VK_NULL_HANDLE;
+    VkPipeline mWireframePipeline = VK_NULL_HANDLE;  // 线框变体（静态 polygonMode=LINE）
     VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;
     VulkanContextPtr mContext = nullptr;
     VkGraphicsPipelineCreateInfo mPipeCreateInfo;

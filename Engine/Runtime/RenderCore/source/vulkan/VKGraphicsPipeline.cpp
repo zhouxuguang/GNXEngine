@@ -506,6 +506,24 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     
     VkResult result = vkCreateGraphicsPipelines(mContext->device, mContext->pipelineCache, 1, &mPipeCreateInfo, nullptr, &mPipeline);
     assert(result == VK_SUCCESS);
+
+    // 当 VK_EXT_extended_dynamic_state3 不可用（Adreno 等移动 GPU）时，运行时无法动态切换
+    // polygonMode，必须创建静态 polygonMode=LINE 的线框变体 PSO。SetFillMode 时切换到这个变体。
+    if (!mContext->vulkanExtension.enableExtendedDynamicState3 && rasterInfo.polygonMode != VK_POLYGON_MODE_LINE)
+    {
+        // 复用当前 createInfo，仅把 polygonMode 改为 LINE 创建线框变体
+        VkGraphicsPipelineCreateInfo wireCreateInfo = mPipeCreateInfo;
+        VkPipelineRasterizationStateCreateInfo wireRasterInfo = rasterInfo;
+        wireRasterInfo.polygonMode = VK_POLYGON_MODE_LINE;
+        wireCreateInfo.pRasterizationState = &wireRasterInfo;
+
+        VkResult wfResult = vkCreateGraphicsPipelines(mContext->device, mContext->pipelineCache, 1, &wireCreateInfo, nullptr, &mWireframePipeline);
+        if (wfResult != VK_SUCCESS)
+        {
+            LOG_WARN("VKGraphicsPipeline: create wireframe variant failed: %d", (int)wfResult);
+            mWireframePipeline = VK_NULL_HANDLE;
+        }
+    }
 }
 
 void VKGraphicsPipeline::CreatePipelineLayout()

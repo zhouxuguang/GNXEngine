@@ -404,7 +404,15 @@ void VKRenderEncoder::BindPipeline()
     {
         mGraphicsPipieline->Generate(mPassFormat);
     }
-    vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mGraphicsPipieline->GetPipeline());
+    // 选择 PSO：驱动不支持动态 polygonMode（Adreno 等）时，线框模式用静态 LINE 变体；
+    // 否则用默认 PSO（polygonMode 由 vkCmdSetPolygonModeEXT 动态设置）。
+    VkPipeline pso = mGraphicsPipieline->GetPipeline();
+    if (!mContext->vulkanExtension.enableExtendedDynamicState3)
+    {
+        if (mCurrentFillMode == FillModeWireframe && mGraphicsPipieline->HasWireframePipeline())
+            pso = mGraphicsPipieline->GetWireframePipeline();
+    }
+    vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pso);
 
 	// Provided by VK_VERSION_1_0
 	/*void vkCmdBindDescriptorSets(
@@ -442,6 +450,8 @@ void VKRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     assert(vkGraphicsPipieline);
     mGraphicsPipieline = vkGraphicsPipieline;
     mGraphicsPipieline->SetCurrentFrameIndex(mCurrentFrameIndex);
+    // 重置填充模式为 pipeline 的默认值（驱动不支持动态 polygonMode 时用 PSO 变体）
+    mCurrentFillMode = vkGraphicsPipieline->GetDesc().fillMode;
     
     // 没有动态渲染时需要设置renderpass
     if (!mContext->vulkanExtension.enableDynamicRendering)
@@ -455,7 +465,7 @@ void VKRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
     // 必须在绑定管线后动态设置，否则后续绘制会使用未定义的填充模式
     if (mContext->vulkanExtension.enableExtendedDynamicState3)
     {
-        VkPolygonMode polygonMode = (mGraphicsPipieline->GetDesc().fillMode == FillModeWireframe)
+        VkPolygonMode polygonMode = (mCurrentFillMode == FillModeWireframe)
             ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
         vkCmdSetPolygonModeEXT(mCommandBuffer, polygonMode);
     }
@@ -463,10 +473,21 @@ void VKRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
 
 void VKRenderEncoder::SetFillMode(FillMode fillMode)
 {
+    mCurrentFillMode = fillMode;
+
     if (mContext->vulkanExtension.enableExtendedDynamicState3)
     {
+        // 支持动态 polygonMode：直接设置
         VkPolygonMode polygonMode = (fillMode == FillModeWireframe) ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
         vkCmdSetPolygonModeEXT(mCommandBuffer, polygonMode);
+    }
+    else
+    {
+        // 不支持动态 polygonMode（Adreno 等移动 GPU）：切换到静态 LINE/FILL PSO 变体
+        if (mGraphicsPipieline)
+        {
+            BindPipeline();
+        }
     }
 }
 
