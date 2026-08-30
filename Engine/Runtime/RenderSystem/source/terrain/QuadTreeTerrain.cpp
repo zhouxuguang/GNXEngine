@@ -325,6 +325,11 @@ QuadTreeTerrain* QuadTreeTerrain::Create(
     // 在首次 Update() 之前构建静态索引池
     terrain->BuildStaticIndexPool();
 
+    // 将程序化高度图上传为 GPU 纹理 + 创建模板网格（供 mesh shader / GPU 驱动渲染）
+    // 与 CreateFromHeightMap 路径一致；缺失会导致 mesh shader 无 gHeightmap/模板网格 → 地形不渲染。
+    terrain->CreateHeightMapTexture();
+    terrain->CreateTemplateMesh();
+
     // 初始更新（此时安全 — 索引池已就绪）
     terrain->Update(Vector3f(0, 0, 0));
 
