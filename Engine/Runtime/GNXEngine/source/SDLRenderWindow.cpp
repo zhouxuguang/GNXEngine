@@ -81,9 +81,6 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
 
 #if GNX_OS_IOS
     windowFlags |= SDL_WINDOW_METAL;
-    // 代码层面控制方向（需与 Info.plist 的 UISupportedInterfaceOrientations 取交集）
-    // 这里显式声明支持横屏左右 + 竖屏，避免仅凭 main.cpp 的横屏尺寸推断方向
-    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight Portrait");
 #elif GNX_OS_ANDROID
     // 引擎自行管理图形上下文（不走 SDL_GL_* / SDL_Vulkan_*）。
     // 若不指定SDL_SetHint(SDL_HINT_VIDEO_EXTERNAL_CONTEXT, "1");，SDL 在 Android 上默认给窗口加 SDL_WINDOW_OPENGL，
@@ -99,6 +96,7 @@ SDLRenderWindow::SDLRenderWindow(const WindowProps& props)
 
     SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
     SDL_SetHint(SDL_HINT_MOUSE_TOUCH_EVENTS, "0");
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
 
     mWindow = SDL_CreateWindow(
         mData.title.c_str(),
