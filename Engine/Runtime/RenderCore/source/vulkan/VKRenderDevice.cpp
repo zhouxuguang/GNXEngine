@@ -308,20 +308,20 @@ void VKRenderDevice::Resize(uint32_t width, uint32_t height)
         mSwapChain->CreateSwapChain(mVulkanContext, width, height, vSync);
         //mVulkanContext
     }
-    
-    // 创建命令缓冲区
-    if (mCommandBuffers.empty())
-    {
-        CreateCommandBufers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetCommandPool());
-    }
-    if (mComputeCommandBuffers.empty())
-    {
-        CreateComputeCommandBuffers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetComputeCommandPool());
-    }
-    mCurrentFrame = 0;
-    
-    // 创建相关同步对象
+
+    // 重建命令缓冲区：swapchain 重建后 image count 可能变化，必须释放旧 command
+    // buffer 并按新 image count 重新分配，否则 mCommandBuffers 数量与
+    // GetSwapChainImageCount() 不一致 → mCurrentFrame 取模越界 → 每帧跳过（卡住）。
+    ReleaseCommandBuffers();
+    CreateCommandBufers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetCommandPool());
+    CreateComputeCommandBuffers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetComputeCommandPool());
+
+    // 重建同步对象（fence/semaphore）并按新 image count 分配
+    DestroySyncObject();
     CreateSyncObject();
+
+    mCurrentFrame = 0;
+    mNextFrameIndex = 0;
 }
 
 // Android 等平台：后台→前台时底层 Surface 可能被销毁重建，
@@ -395,14 +395,9 @@ void VKRenderDevice::OnWindowRestored(const NativeWindow& nativeWindow)
     ReleaseCommandBuffers();
     DestroySyncObject();
 
-    if (mCommandBuffers.empty())
-    {
-        CreateCommandBufers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetCommandPool());
-    }
-    if (mComputeCommandBuffers.empty())
-    {
-        CreateComputeCommandBuffers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetComputeCommandPool());
-    }
+    // 按新 image count 重建（不能依赖 empty 判断，image count 可能变化）
+    CreateCommandBufers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetCommandPool());
+    CreateComputeCommandBuffers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetComputeCommandPool());
     mCurrentFrame = 0;
     mNextFrameIndex = 0;
     CreateSyncObject();
@@ -652,9 +647,35 @@ CommandBufferPtr VKRenderDevice::CreateCommandBuffer()
         return nullptr;
     }
 
-    //VkResult res = vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]);
+    // 防御（放在最前面）：mCurrentFrame 必须落在所有按帧槽位索引的数组范围内，
+    // 否则 mFlightFences/mImageAvailableSemaphores/mCommandBuffers 越界访问会崩溃或
+    // 读到垃圾句柄。swapchain 重建后 image count 变化时，Resize/OnWindowRestored
+    // 会重建这些数组并重置 mCurrentFrame=0；这里兜底防止不一致。
+    if (mCurrentFrame >= mFlightFences.size() ||
+        mCurrentFrame >= mImageAvailableSemaphores.size() ||
+        mCurrentFrame >= mRenderFinishedSemaphores.size() ||
+        mCurrentFrame >= mCommandBuffers.size() ||
+        mFlightFences[mCurrentFrame] == VK_NULL_HANDLE)
+    {
+        LOG_ERROR("VKRenderDevice: frame index %u out of range (fences=%zu, sems=%zu, cmdbufs=%zu)",
+                  mCurrentFrame, mFlightFences.size(), mImageAvailableSemaphores.size(), mCommandBuffers.size());
+        return nullptr;
+    }
 
-    VkResult res = vkWaitForFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame], VK_TRUE, UINT64_MAX);
+    // 等待当前帧槽位的上一帧完成（有限超时，防止 fence 泄漏导致永久死锁/卡住）。
+    // 注意：不能在这里 reset fence —— 必须等 vkAcquireNextImageKHR 成功之后再 reset，
+    // 否则 acquire 返回 OUT_OF_DATE/SUBOPTIMAL/SURFACE_LOST/TIMEOUT 提前 return 时，
+    // fence 已被 reset 却没有任何 submit 会 signal 它，下一帧 vkWaitForFences 将永久阻塞
+    // （表现为"卡住"）。改用有限超时：超时则跳过本帧，下一帧重试。
+    const uint64_t kFenceTimeoutNanos = 5000000000ULL; // 5s
+    VkResult res = vkWaitForFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame], VK_TRUE, kFenceTimeoutNanos);
+
+    if (res == VK_TIMEOUT)
+    {
+        // 上一帧还没完成（GPU 繁忙或 fence 异常）。跳过本帧，避免阻塞渲染循环。
+        LOG_WARN("VKRenderDevice: wait fence timeout on frame %u, skip frame", mCurrentFrame);
+        return nullptr;
+    }
 
 #ifdef ENABLE_NSIGHT_AFTERMATH
     if (res == VK_ERROR_DEVICE_LOST && mVulkanContext->vulkanExtension.enableAftermath)
@@ -678,15 +699,21 @@ CommandBufferPtr VKRenderDevice::CreateCommandBuffer()
         exit(1);
     }
 #endif
-    VK_CHECK(vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]));
+
+    if (res != VK_SUCCESS)
+    {
+        LOG_ERROR("VKRenderDevice: vkWaitForFences failed with error: %d", (int)res);
+        return nullptr;
+    }
 
     res = vkAcquireNextImageKHR(mVulkanContext->device, mSwapChain->GetSwapChain(), UINT64_MAX,
             mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE, &mNextFrameIndex);
 
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 	{
+        // swapchain 尺寸过时：重建 swapchain（会重建 fence/semaphore 为 signaled 状态）。
+        // 这里不能 reset 旧 fence（它仍是 signaled，等待已通过），直接重建后跳过本帧。
 		Resize(mSwapChain->GetWidth(), mSwapChain->GetHeight());
-        //res = vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]);
         return nullptr;
 	}
 
@@ -703,9 +730,27 @@ CommandBufferPtr VKRenderDevice::CreateCommandBuffer()
     {
         return nullptr;
 	}
+    if (res != VK_SUCCESS)
+    {
+        LOG_ERROR("VKRenderDevice: vkAcquireNextImageKHR failed with error: %d", (int)res);
+        return nullptr;
+    }
+
+    // acquire 成功，此时才 reset fence（本帧 submit 会重新 signal 它）
+    VK_CHECK(vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]));
+
+    // 防御：command buffer 未分配/越界时不能继续，否则会把无效句柄传给
+    // vkBeginCommandBuffer，在移动 GPU 驱动（Adreno）上直接崩溃。
+    if (mCommandBuffers.empty() ||
+        mCurrentFrame >= mCommandBuffers.size() ||
+        mCommandBuffers[mCurrentFrame] == VK_NULL_HANDLE)
+    {
+        LOG_ERROR("VKRenderDevice: command buffer %u not allocated (size=%zu)",
+                  mCurrentFrame, mCommandBuffers.size());
+        return nullptr;
+    }
 
     VkCommandBuffer commandBuffer = mCommandBuffers[mCurrentFrame];
-    //res = vkResetCommandBuffer(commandBuffer, 0);
     CommandBufferInfoPtr commandBufferInfo = std::make_shared<CommandBufferInfo>();
     commandBufferInfo->flightFence = mFlightFences[mCurrentFrame];
     commandBufferInfo->imageAvailableSemaphore = mImageAvailableSemaphores[mCurrentFrame];
@@ -764,14 +809,16 @@ void VKRenderDevice::CreateSyncObject()
 
 void VKRenderDevice::DestroySyncObject()
 {
-    assert(mSwapChain->GetSwapChainImageCount());
-    size_t imageCount = mSwapChain->GetSwapChainImageCount();
-    
-    for (size_t i = 0; i < imageCount; i++)
+    // 用数组实际大小循环，避免与 swapchain image count 不一致时越界
+    size_t semCount = mImageAvailableSemaphores.size();
+    for (size_t i = 0; i < semCount; i++)
     {
-        vkDestroySemaphore(mVulkanContext->device, mImageAvailableSemaphores[i], nullptr);
-        vkDestroySemaphore(mVulkanContext->device, mRenderFinishedSemaphores[i], nullptr);
-        vkDestroyFence(mVulkanContext->device, mFlightFences[i], nullptr);
+        if (mImageAvailableSemaphores[i] != VK_NULL_HANDLE)
+            vkDestroySemaphore(mVulkanContext->device, mImageAvailableSemaphores[i], nullptr);
+        if (i < mRenderFinishedSemaphores.size() && mRenderFinishedSemaphores[i] != VK_NULL_HANDLE)
+            vkDestroySemaphore(mVulkanContext->device, mRenderFinishedSemaphores[i], nullptr);
+        if (i < mFlightFences.size() && mFlightFences[i] != VK_NULL_HANDLE)
+            vkDestroyFence(mVulkanContext->device, mFlightFences[i], nullptr);
     }
     mImageAvailableSemaphores.clear();
     mRenderFinishedSemaphores.clear();
@@ -794,7 +841,12 @@ void VKRenderDevice::CreateCommandBufers(VkDevice device, size_t nImageCount, Vk
     cmdBufferCreateInfo.commandPool = commandPool;
     cmdBufferCreateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmdBufferCreateInfo.commandBufferCount = (uint32_t)nImageCount;
-    vkAllocateCommandBuffers(device, &cmdBufferCreateInfo, mCommandBuffers.data());
+    VkResult res = vkAllocateCommandBuffers(device, &cmdBufferCreateInfo, mCommandBuffers.data());
+    if (res != VK_SUCCESS)
+    {
+        LOG_ERROR("VKRenderDevice: vkAllocateCommandBuffers failed with error: %d", (int)res);
+        mCommandBuffers.clear();
+    }
 }
 
 
@@ -807,7 +859,12 @@ void VKRenderDevice::CreateComputeCommandBuffers(VkDevice device, size_t nImageC
     cmdBufferCreateInfo.commandPool = commandPool;
     cmdBufferCreateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmdBufferCreateInfo.commandBufferCount = (uint32_t)nImageCount;
-    vkAllocateCommandBuffers(device, &cmdBufferCreateInfo, mComputeCommandBuffers.data());
+    VkResult res = vkAllocateCommandBuffers(device, &cmdBufferCreateInfo, mComputeCommandBuffers.data());
+    if (res != VK_SUCCESS)
+    {
+        LOG_ERROR("VKRenderDevice: vkAllocateComputeCommandBuffers failed with error: %d", (int)res);
+        mComputeCommandBuffers.clear();
+    }
 }
 
 void VKRenderDevice::InitializeCommandQueues()

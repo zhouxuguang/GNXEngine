@@ -24,16 +24,27 @@ VulkanCommandBuffer::VulkanCommandBuffer(VkCommandBuffer commandBuffer, CommandB
 {
     mCommandBuffer = commandBuffer;
     mCommandInfo = commandInfo;
-    VkCommandBufferBeginInfo cmdBufferBeginInfo;
+    VkCommandBufferBeginInfo cmdBufferBeginInfo = {};
     cmdBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     cmdBufferBeginInfo.pNext = nullptr;
-    cmdBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
     cmdBufferBeginInfo.pInheritanceInfo = nullptr;
 
-    vkResetCommandBuffer(commandBuffer, 0);
+    // 注意：不能在这里显式调用 vkResetCommandBuffer。
+    // 1) vkBeginCommandBuffer 本身会把 command buffer 从 Initial/Executable 状态
+    //    隐式重置到 Recording（丢弃旧录制内容），显式 reset 是多余的。
+    // 2) 在 Adreno 驱动（OPPO/红米 等）上，vkResetCommandBuffer 配合
+    //    VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT 会在驱动内部崩溃
+    //    （qglinternal::vkResetCommandBuffer 空指针，SIGSEGV）。
+    // 3) 每帧都在 CreateCommandBuffer 中 vkWaitForFences 等待当前帧槽位的
+    //    上一帧完成后再 begin，同一 command buffer 不会同时被 GPU 使用，
+    //    因此不需要 SIMULTANEOUS_USE_BIT，flags 用 0 最安全。
+    cmdBufferBeginInfo.flags = 0;
 
     VkResult res = vkBeginCommandBuffer(mCommandBuffer, &cmdBufferBeginInfo);
-    assert(res == VK_SUCCESS);
+    if (res != VK_SUCCESS)
+    {
+        LOG_ERROR("VulkanCommandBuffer: vkBeginCommandBuffer failed with error: %d", (int)res);
+    }
 }
 
 VulkanCommandBuffer::~VulkanCommandBuffer()
