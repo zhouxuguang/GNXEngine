@@ -27,9 +27,11 @@ public:
      * @brief 跨平台解码图片（移动端兼容）
      *   - 移动端（Android/iOS）：assets/bundle 非文件系统，fopen 必失败。
      *     path 通常是 GetProjectAssetDir() + 子路径 拼出的构建机全路径，
-     *     这里会剥离 data_asset 前缀得到包内相对路径（如 terrain/ps_height_1k.png），
+     *     这里会剥离 data_asset 前缀得到包内相对路径（如 terrain_assets/ps_height_1k.png），
      *     再用 AssetManager::LoadResource（SDL_RWFromFile → AAssetManager/NSBundle）读入内存，
      *     最后 ImageDecoder::DecodeMemory 解码。
+     *     注意：资源目录不要叫 terrain（iOS bundle 根下 terrain 是可执行文件名，
+     *     同名资源目录会冲突，见 demo/terrain/TerrainFrameWork.cpp）。
      *   - 桌面端：直接 ImageDecoder::DecodeFile。
      * @param path 图片路径（桌面：文件系统绝对/相对路径；移动端：包内相对路径或构建机全路径）
      * @param image 输出解码后的图像

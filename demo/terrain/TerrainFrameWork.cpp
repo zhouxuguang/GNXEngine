@@ -161,8 +161,12 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
     }
 
     // ---- Terrain (QuadTree with adaptive LOD, TerrainComponent) ----
-    std::string heightmapPath = GetProjectAssetDir() + "terrain/ps_height_1k.png";
-    std::string texturePath   = GetProjectAssetDir() + "terrain/ps_texture_1k.png";
+    // 资源目录用 terrain_assets 而非 terrain：
+    // iOS bundle 根下 "terrain" 是可执行文件名，data_asset 里同名资源目录会
+    // 与之冲突（打包时把可执行文件覆盖成目录 → errno=21 EISDIR）。
+    // 因此地形资源放在 data_asset/terrain_assets/ 下，Android/iOS/桌面路径一致。
+    std::string heightmapPath = GetProjectAssetDir() + "terrain_assets/ps_height_1k.png";
+    std::string texturePath   = GetProjectAssetDir() + "terrain_assets/ps_texture_1k.png";
 
     LOG_INFO("Generating QuadTree terrain (worldSize=%.0f, heightScale=%.1f, maxLevel=%u)...",
              kTerrainWorldSize, kTerrainHeightScale, kMaxQuadTreeLevel);

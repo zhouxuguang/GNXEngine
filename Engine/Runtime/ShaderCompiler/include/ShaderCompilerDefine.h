@@ -23,7 +23,11 @@ using namespace RenderCore;
 
 // 导出宏：ShaderCompiler 是 OBJECT 库，符号进入 GNXEngine SHARED dll，
 // 供 tool/demo 等外部可执行文件链接使用。
-// 与 ASSET_MANAGER_API 一致：Windows 下无条件 dllexport（OBJECT 库在 dll 内）。
+// 与 ASSET_MANAGER_API 一致：
+//  - Windows：无条件 dllexport（OBJECT 库在 dll 内）
+//  - macOS/Linux：顶层 CMake 设置了 CMAKE_CXX_VISIBILITY_PRESET hidden，
+//    必须显式 visibility("default") 才能导出符号（否则链接外部工具会
+//    "Undefined symbols" 失败）
 #if defined(_WIN32) || defined(_WIN64)
     #ifdef __GNUC__
         #define SHADERCOMPILER_API __attribute__((dllexport))
@@ -31,7 +35,11 @@ using namespace RenderCore;
         #define SHADERCOMPILER_API __declspec(dllexport)
     #endif
 #else
-    #define SHADERCOMPILER_API
+    #if __GNUC__ >= 4
+        #define SHADERCOMPILER_API __attribute__((visibility("default")))
+    #else
+        #define SHADERCOMPILER_API
+    #endif
 #endif
 
 NAMESPACE_SHADERCOMPILER_BEGIN
