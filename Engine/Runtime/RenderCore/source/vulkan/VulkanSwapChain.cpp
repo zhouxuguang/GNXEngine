@@ -125,8 +125,12 @@ void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t w
     if (mSurfaceCapabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT)
         swapchainCreateInfo.imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-    // 必须用 currentTransform（Android/小米设备旋转时非 IDENTITY，硬编码 IDENTITY 会失败）
-    swapchainCreateInfo.preTransform = mSurfaceCapabilities.currentTransform;
+    // preTransform 处理：强制 IDENTITY，让 swapchain 图像按原始方向呈现，不做旋转。
+    // 这样渲染视口/相机都用 imageExtent(2400x1080) 横屏比例，画面直接正确横屏。
+    // 若用 currentTransform（OPPO 横屏时 ROTATE_90），swapchain 图像会被驱动旋转，
+    // 渲染必须额外做旋转/交换处理，否则画面方向错乱（"横屏但内容像竖屏/被旋转"）。
+    // 注意：部分设备要求 preTransform 必须是 supportedTransforms 中的值，IDENTITY 通常被支持。
+    swapchainCreateInfo.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 
     swapchainCreateInfo.imageArrayLayers = 1;
     swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -177,6 +181,8 @@ void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t w
         vkCreateImageView(vulkanContext->device, &viewCreateInfo, nullptr, &mDisplayViews[i]);
     }
 
+    // 深度缓冲必须与 swapchain 图像同尺寸（render pass 附件尺寸一致），
+    // 旋转通过相机 aspect（GetWidth/GetHeight）处理，深度缓冲用原始 extent。
     mDSBuffer->CreateDepthStencilBuffer(mVulkanContext, mDisplaySize.width, mDisplaySize.height);
     
 }

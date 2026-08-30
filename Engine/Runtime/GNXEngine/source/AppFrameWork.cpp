@@ -141,7 +141,10 @@ bool AppFrameWork::OnWindowResize(WindowResizeEvent& e)
     }
 
     mMinimized = false;
-    mRenderWindow->Resize(e.GetWidth(), e.GetHeight());
+    // 调用虚函数 Resize()（会触发子类 TerrainFrameWork::Resize 更新相机纵横比），
+    // 而不是只调 mRenderWindow->Resize() —— 否则横屏旋转后窗口/swapchain 尺寸
+    // 更新了但相机 aspect 仍是旧的，画面比例不对（"横屏但内容像竖屏"）。
+    Resize(e.GetWidth(), e.GetHeight());
 
     return false;
 }
