@@ -306,18 +306,30 @@ void VKRenderDevice::Resize(uint32_t width, uint32_t height)
     {
         mSwapChain->Release();
         mSwapChain->CreateSwapChain(mVulkanContext, width, height, vSync);
-        //mVulkanContext
     }
 
     // 重建命令缓冲区：swapchain 重建后 image count 可能变化，必须释放旧 command
     // buffer 并按新 image count 重新分配，否则 mCommandBuffers 数量与
     // GetSwapChainImageCount() 不一致 → mCurrentFrame 取模越界 → 每帧跳过（卡住）。
     ReleaseCommandBuffers();
-    CreateCommandBufers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetCommandPool());
-    CreateComputeCommandBuffers(mVulkanContext->device, mSwapChain->GetSwapChainImageCount(), mVulkanContext->GetComputeCommandPool());
-
     // 重建同步对象（fence/semaphore）并按新 image count 分配
     DestroySyncObject();
+    
+    // 创建命令缓冲区
+    size_t swapImageCount = mSwapChain->GetSwapChainImageCount();
+    LOG_INFO("VKRenderDevice::Resize: swapchain images=%zu, cmdBuffers=%zu, size=%ux%u",
+             swapImageCount, mCommandBuffers.size(), width, height);
+    if (mCommandBuffers.empty() && swapImageCount > 0)
+    {
+        CreateCommandBufers(mVulkanContext->device, swapImageCount, mVulkanContext->GetCommandPool());
+    }
+    if (mComputeCommandBuffers.empty() && swapImageCount > 0)
+    {
+        CreateComputeCommandBuffers(mVulkanContext->device, swapImageCount, mVulkanContext->GetComputeCommandPool());
+    }
+    mCurrentFrame = 0;
+    
+    // 创建相关同步对象
     CreateSyncObject();
 
     mCurrentFrame = 0;
@@ -661,6 +673,28 @@ CommandBufferPtr VKRenderDevice::CreateCommandBuffer()
                   mCurrentFrame, mFlightFences.size(), mImageAvailableSemaphores.size(), mCommandBuffers.size());
         return nullptr;
     }
+    
+    // 防御性检查：命令缓冲区必须已分配（swapchain 重建后可能为空）
+    size_t imageCount = mSwapChain->GetSwapChainImageCount();
+    if (mCommandBuffers.size() < imageCount)
+    {
+        LOG_WARN("VKRenderDevice: command buffers (%zu) < swapchain images (%zu), reallocating",
+                 mCommandBuffers.size(), imageCount);
+        ReleaseCommandBuffers();
+        CreateCommandBufers(mVulkanContext->device, imageCount, mVulkanContext->GetCommandPool());
+    }
+    if (mCurrentFrame >= mCommandBuffers.size() || mCommandBuffers.empty())
+    {
+        LOG_ERROR("VKRenderDevice: invalid current frame %u (buffers=%zu), reset to 0",
+                  mCurrentFrame, mCommandBuffers.size());
+        mCurrentFrame = 0;
+        if (mCommandBuffers.empty())
+        {
+            return nullptr;
+        }
+    }
+
+    //VkResult res = vkResetFences(mVulkanContext->device, 1, &mFlightFences[mCurrentFrame]);
 
     // 等待当前帧槽位的上一帧完成（有限超时，防止 fence 泄漏导致永久死锁/卡住）。
     // 注意：不能在这里 reset fence —— 必须等 vkAcquireNextImageKHR 成功之后再 reset，

@@ -20,6 +20,23 @@ struct RenderPassFormat
     std::vector<VkFormat> colorFormats;
     VkFormat depthFormat = VK_FORMAT_UNDEFINED;
     VkFormat stencilFormat = VK_FORMAT_UNDEFINED;
+    bool isPresentStage = false;   // 是否上屏 pass（决定颜色附件 finalLayout）
+
+    // 颜色附件 loadOp/storeOp（默认 CLEAR/STORE）。
+    // 中间 RT 复用（如 Skybox 保留 DeferredLighting 结果）时 loadOp 应为 LOAD。
+    std::vector<VkAttachmentLoadOp> colorLoadOps;
+    std::vector<VkAttachmentStoreOp> colorStoreOps;
+
+    // 深度/模板附件在 renderpass 中使用的布局（读写 vs 只读）。
+    // 默认读写布局；只读深度（如 GBuffer 复用 PreDepth）时由 CreateRenderEncoder 置为 READ_ONLY。
+    VkImageLayout depthLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    VkImageLayout stencilLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    // 深度/模板附件 loadOp（默认 CLEAR；只读深度复用时应为 LOAD）
+    VkAttachmentLoadOp depthLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    VkAttachmentStoreOp depthStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
+    VkAttachmentLoadOp stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    VkAttachmentStoreOp stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
 };
 
 struct RenderPassImage

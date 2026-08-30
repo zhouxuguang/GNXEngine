@@ -114,6 +114,7 @@ RenderEncoderPtr VulkanCommandBuffer::CreateDefaultRenderEncoder(const ClearColo
     passImageView.stencilImage = mCommandInfo->depthStencilBuffer->GetImageView();
     
     passImage.isPresentStage = true;
+    passFormat.isPresentStage = true;
 
     return std::make_shared<VKRenderEncoder>(mCommandInfo->vulkanContext, mCommandBuffer, render_info,
         passFormat, passImage, RenderPassTexture{}, clearValues, passImageView, mCommandInfo->currentFrameIndex);
@@ -170,6 +171,8 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         
         colorAttachments.push_back(colorAttachment);
         passFormat.colorFormats.push_back(vkRenderTexture->GetVKFormat());
+        passFormat.colorLoadOps.push_back(GetLoadOP(iter->loadOp));
+        passFormat.colorStoreOps.push_back(GetStoreOP(iter->storeOp));
         passImage.colorImages.push_back(vkRenderTexture->GetVKImage());
         passTexture.colorTextures.push_back(vkRenderTexture);
         passImageView.colorImages.push_back(imageView);
@@ -203,6 +206,9 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         depthAttachmentInfo.clearValue.depthStencil.depth = renderPass.depthAttachment->clearDepth;
         depthAttachments.push_back(depthAttachmentInfo);
         passFormat.depthFormat = vkRenderTexture->GetVKFormat();
+        passFormat.depthLayout = depthAttachmentInfo.imageLayout;
+        passFormat.depthLoadOp = depthAttachmentInfo.loadOp;
+        passFormat.depthStoreOp = depthAttachmentInfo.storeOp;
         passImage.depthImage = vkRenderTexture->GetVKImage();
         passTexture.depthTexture = vkRenderTexture;
         passImageView.depthImage = imageView;
@@ -238,6 +244,9 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
         stencilAttachmentInfo.clearValue.depthStencil.stencil = renderPass.stencilAttachment->clearStencil;
         stencilAttachments.push_back(stencilAttachmentInfo);
         passFormat.stencilFormat = vkRenderTexture->GetVKFormat();
+        passFormat.stencilLayout = stencilAttachmentInfo.imageLayout;
+        passFormat.stencilLoadOp = stencilAttachmentInfo.loadOp;
+        passFormat.stencilStoreOp = stencilAttachmentInfo.storeOp;
         passImage.stencilImage = vkRenderTexture->GetVKImage();
         passTexture.stencilTexture = vkRenderTexture;
         passImageView.stencilImage = imageView;
@@ -260,6 +269,7 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
     
     passImage.isPresentStage = false;
     passTexture.isPresentStage = false;
+    passFormat.isPresentStage = false;
 
     return std::make_shared<VKRenderEncoder>(mCommandInfo->vulkanContext, mCommandBuffer, renderingInfo, passFormat, passImage, passTexture,
         clearValues, passImageView, mCommandInfo->currentFrameIndex);
@@ -590,29 +600,41 @@ void VulkanCommandBuffer::ResourceBarrier(RCTexturePtr texture, ResourceAccessTy
         VkAccessFlags writeAccessFlags = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT |
             VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
         
-        // 根据当前layout推断src访问类型
+        // 根据当前layout推断src访问类型 + 对应的 src 管线阶段。
+        // 注意：srcAccessMask 必须与 srcStageMask 匹配，
+        // 否则 vkCmdPipelineBarrier2KHR 报 VUID-VkMemoryBarrier2-srcAccessMask-*。
         VkAccessFlags srcAccessMask = 0;
         VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
         if (currentLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
         {
             srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
+        else if (currentLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL)
+        {
+            srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+            srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
         else if (currentLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         {
             srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
         }
         else if (currentLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
         {
             srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         }
         else if (currentLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
         {
             srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            srcStageMask = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
         }
         else if (currentLayout == VK_IMAGE_LAYOUT_GENERAL)
         {
             srcAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_TRANSFER_READ_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+            srcStageMask = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
         }
         
         // 没有写操作，不需要memory barrier

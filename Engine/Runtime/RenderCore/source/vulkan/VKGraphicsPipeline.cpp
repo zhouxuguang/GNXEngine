@@ -487,22 +487,26 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     mPipeCreateInfo.layout = mPipelineLayout;
 
     //12、例如dynamic rendering相关的
-    std::vector<VkPipelineRenderingCreateInfoKHR> renderingCreateInfos;
+    VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo = {};
     if (mContext->vulkanExtension.enableDynamicRendering)
     {
         // New create info to define color, depth and stencil attachments at pipeline create time
-        VkPipelineRenderingCreateInfoKHR pipelineRenderingCreateInfo = {};
         pipelineRenderingCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR;
         pipelineRenderingCreateInfo.colorAttachmentCount = (uint32_t)passFormat.colorFormats.size();
         pipelineRenderingCreateInfo.pColorAttachmentFormats = passFormat.colorFormats.data();
         pipelineRenderingCreateInfo.depthAttachmentFormat = passFormat.depthFormat;
         pipelineRenderingCreateInfo.stencilAttachmentFormat = passFormat.stencilFormat;
-        renderingCreateInfos.push_back(pipelineRenderingCreateInfo);
-        
-        // 动态渲染需要把renderpass设置为空
+
+        // 动态渲染需要把renderpass设置为空，并把 rendering info 挂到 pNext
         mPipeCreateInfo.renderPass = VK_NULL_HANDLE;
+        mPipeCreateInfo.pNext = &pipelineRenderingCreateInfo;
     }
-    mPipeCreateInfo.pNext = renderingCreateInfos.data();
+    else
+    {
+        // 传统 renderpass 路径：renderPass 由 SetGraphicsPipeline 通过 SetRenderPass 注入，
+        // 这里必须把 pNext 置空，否则会指向空 vector 的悬空指针导致 vkCreateGraphicsPipelines 崩溃
+        mPipeCreateInfo.pNext = nullptr;
+    }
     
     VkResult result = vkCreateGraphicsPipelines(mContext->device, mContext->pipelineCache, 1, &mPipeCreateInfo, nullptr, &mPipeline);
     assert(result == VK_SUCCESS);

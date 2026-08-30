@@ -284,6 +284,40 @@ void VKRenderEncoder::BeginRenderPass(const VkRenderingInfoKHR& renderInfo,
     
     vkCreateFramebuffer(mContext->device, &fbCreateInfo, nullptr, &mFrameBuffer);
     
+    // 更新纹理 layout 追踪：renderpass 会把附件转换到 attachment optimal。
+    // 必须与动态渲染路径一致，否则 FrameGraph 后续 barrier 会按错误的 currentLayout
+    // 做转换 → VUID-VkImageMemoryBarrier2-oldLayout-01197 → 黑屏。
+    for (size_t i = 0; i < mPassTexture.colorTextures.size(); ++i)
+    {
+        if (mPassTexture.colorTextures[i])
+        {
+            mPassTexture.colorTextures[i]->SetCurrentLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        }
+    }
+
+    // 深度/模板附件布局：必须尊重 renderInfo 中指定的实际布局
+    // （只读深度 → DEPTH_STENCIL_READ_ONLY_OPTIMAL，读写 → DEPTH_STENCIL_ATTACHMENT_OPTIMAL）。
+    // 否则若把只读深度错误标记为 ATTACHMENT，后续 barrier 会按错误布局转换 →
+    // VUID-VkDescriptorImageInfo-imageLayout-00344 → 采样深度时黑屏。
+    if (mPassTexture.depthTexture)
+    {
+        VkImageLayout depthLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        if (renderInfo.pDepthAttachment)
+        {
+            depthLayout = renderInfo.pDepthAttachment->imageLayout;
+        }
+        mPassTexture.depthTexture->SetCurrentLayout(depthLayout);
+    }
+    if (mPassTexture.stencilTexture)
+    {
+        VkImageLayout stencilLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        if (renderInfo.pStencilAttachment)
+        {
+            stencilLayout = renderInfo.pStencilAttachment->imageLayout;
+        }
+        mPassTexture.stencilTexture->SetCurrentLayout(stencilLayout);
+    }
+    
     // Now we start a renderpass. Any draw command has to be recorded in a renderpass
     VkRenderPassBeginInfo renderPassBeginInfo = {};
     renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -305,6 +339,32 @@ void VKRenderEncoder::EndRenderPass()
 {
     //结束renderpass
     vkCmdEndRenderPass(mCommandBuffer);
+
+    // 与动态渲染路径一致：renderpass 结束后颜色附件已转换到 finalLayout
+    // （present pass → PRESENT_SRC_KHR，中间 RT → SHADER_READ_ONLY_OPTIMAL），
+    // 需要同步更新纹理 layout 追踪，否则后续 barrier 布局不匹配。
+    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    if (!mPassImage.isPresentStage)
+    {
+        imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    }
+
+    for (size_t i = 0; i < mPassTexture.colorTextures.size(); ++i)
+    {
+        if (mPassTexture.colorTextures[i])
+        {
+            mPassTexture.colorTextures[i]->SetCurrentLayout(imageLayout);
+        }
+    }
+    if (mPassTexture.depthTexture)
+    {
+        // renderpass 的 finalLayout 由 passFormat.depthLayout 决定（只读 → READ_ONLY）
+        mPassTexture.depthTexture->SetCurrentLayout(mPassFormat.depthLayout);
+    }
+    if (mPassTexture.stencilTexture)
+    {
+        mPassTexture.stencilTexture->SetCurrentLayout(mPassFormat.stencilLayout);
+    }
 }
 
 VKRenderEncoder::VKRenderEncoder(VulkanContextPtr context,
