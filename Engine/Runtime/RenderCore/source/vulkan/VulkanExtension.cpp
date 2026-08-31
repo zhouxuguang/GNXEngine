@@ -60,6 +60,14 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
 
     enableSynchronization2 = IsExtensionSupported(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
 
+    // VK_EXT_astc_decode_mode：允许在创建 ASTC 纹理的 ImageView 时指定解码模式
+    // （例如把 ASTC sRGB 数据按线性 UNORM 解码用于颜色计算）。
+    // 该扩展存在即可启用（仅用于 ASTC LDR 的 sRGB/UNORM 互转，不需要额外特性）。
+    enableAstcDecodeMode = IsExtensionSupported(VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME);
+    // decodeModeSharedExponent 特性仅在把 ASTC HDR (SFLOAT) 解码为共享指数格式时需要，
+    // 本引擎目前只处理 ASTC LDR，仅记录设备是否支持该能力。
+    astcDecodeModeSharedExponent = deviceExtFeatures.astcDecodeFeatures.decodeModeSharedExponent == VK_TRUE;
+
     // 如下三个字段同时满足，才能启用 Bindless 特性
 	enableDescriptorIndexing = IsExtensionSupported(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) && enableMaintenance3 &&
 	    deviceExtFeatures.descriptorIndexingFeatures.runtimeDescriptorArray && 

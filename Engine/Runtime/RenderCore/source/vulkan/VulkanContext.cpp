@@ -403,6 +403,13 @@ void VulkanContext::CollectDeviceExtension()
 		AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.hostImageCopyFeatures);
     }
 
+    // VK_EXT_astc_decode_mode：用于创建 ASTC LDR 纹理 ImageView 时指定 sRGB/UNORM 解码模式
+    if (vulkanExtension.enableAstcDecodeMode)
+    {
+        deviceEnableExtensions.push_back(VK_EXT_ASTC_DECODE_MODE_EXTENSION_NAME);
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.astcDecodeFeatures);
+    }
+
     // NVIDIA Nsight Aftermath 扩展
 #ifdef ENABLE_NSIGHT_AFTERMATH
     if (vulkanExtension.enableAftermath)

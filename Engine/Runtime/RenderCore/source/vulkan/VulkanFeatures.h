@@ -28,6 +28,7 @@ struct DeviceExtFeature
     VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extendedDynamicState3FeaturesEXT = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT};
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT};
     VkPhysicalDeviceHostImageCopyFeaturesEXT hostImageCopyFeatures = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES_EXT};
+    VkPhysicalDeviceASTCDecodeFeaturesEXT astcDecodeFeatures = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ASTC_DECODE_FEATURES_EXT};
 	
 #ifdef ENABLE_NSIGHT_AFTERMATH
     VkDeviceDiagnosticsConfigCreateInfoNV diagnosticsConfigCreateInfo = {
@@ -52,6 +53,7 @@ struct DeviceExtFeature
         AddToPNextChain(&features2, &extendedDynamicState3FeaturesEXT);
         AddToPNextChain(&features2, &descriptorIndexingFeatures);
         AddToPNextChain(&features2, &hostImageCopyFeatures);
+        AddToPNextChain(&features2, &astcDecodeFeatures);
 #ifdef ENABLE_NSIGHT_AFTERMATH
         AddToPNextChain(&features2, &diagnosticsConfigCreateInfo);
 #endif
@@ -70,6 +72,7 @@ struct DeviceExtFeature
         extendedDynamicState3FeaturesEXT.pNext = nullptr;
         descriptorIndexingFeatures.pNext = nullptr;
         hostImageCopyFeatures.pNext = nullptr;
+        astcDecodeFeatures.pNext = nullptr;
 #ifdef ENABLE_NSIGHT_AFTERMATH
         diagnosticsConfigCreateInfo.pNext = nullptr;
 #endif

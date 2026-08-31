@@ -82,6 +82,77 @@ bool VulkanBufferUtil::IsDepthStencilFormat(VkFormat format)
     return false;
 }
 
+bool VulkanBufferUtil::IsASTCLDRFormat(VkFormat format)
+{
+    switch (format)
+    {
+    // ASTC LDR UNORM 格式
+    case VK_FORMAT_ASTC_4x4_UNORM_BLOCK:
+    case VK_FORMAT_ASTC_5x4_UNORM_BLOCK:
+    case VK_FORMAT_ASTC_5x5_UNORM_BLOCK:
+    case VK_FORMAT_ASTC_6x5_UNORM_BLOCK:
+    case VK_FORMAT_ASTC_6x6_UNORM_BLOCK:
+    case VK_FORMAT_ASTC_8x5_UNORM_BLOCK:
+    case VK_FORMAT_ASTC_8x6_UNORM_BLOCK:
+    case VK_FORMAT_ASTC_8x8_UNORM_BLOCK:
+    case VK_FORMAT_ASTC_10x5_UNORM_BLOCK:
+    case VK_FORMAT_ASTC_10x6_UNORM_BLOCK:
+    case VK_FORMAT_ASTC_10x8_UNORM_BLOCK:
+    case VK_FORMAT_ASTC_10x10_UNORM_BLOCK:
+    case VK_FORMAT_ASTC_12x10_UNORM_BLOCK:
+    case VK_FORMAT_ASTC_12x12_UNORM_BLOCK:
+    // ASTC LDR SRGB 格式
+    case VK_FORMAT_ASTC_4x4_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_5x4_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_5x5_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_6x5_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_6x6_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_8x5_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_8x6_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_8x8_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_10x5_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_10x6_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_10x8_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_10x10_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_12x10_SRGB_BLOCK:
+    case VK_FORMAT_ASTC_12x12_SRGB_BLOCK:
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
+bool VulkanBufferUtil::IsASTCFormat(VkFormat format)
+{
+    if (IsASTCLDRFormat(format))
+    {
+        return true;
+    }
+    switch (format)
+    {
+    // ASTC HDR SFLOAT 格式
+    case VK_FORMAT_ASTC_4x4_SFLOAT_BLOCK:
+    case VK_FORMAT_ASTC_5x4_SFLOAT_BLOCK:
+    case VK_FORMAT_ASTC_5x5_SFLOAT_BLOCK:
+    case VK_FORMAT_ASTC_6x5_SFLOAT_BLOCK:
+    case VK_FORMAT_ASTC_6x6_SFLOAT_BLOCK:
+    case VK_FORMAT_ASTC_8x5_SFLOAT_BLOCK:
+    case VK_FORMAT_ASTC_8x6_SFLOAT_BLOCK:
+    case VK_FORMAT_ASTC_8x8_SFLOAT_BLOCK:
+    case VK_FORMAT_ASTC_10x5_SFLOAT_BLOCK:
+    case VK_FORMAT_ASTC_10x6_SFLOAT_BLOCK:
+    case VK_FORMAT_ASTC_10x8_SFLOAT_BLOCK:
+    case VK_FORMAT_ASTC_10x10_SFLOAT_BLOCK:
+    case VK_FORMAT_ASTC_12x10_SFLOAT_BLOCK:
+    case VK_FORMAT_ASTC_12x12_SFLOAT_BLOCK:
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
 bool VulkanBufferUtil::IsSRGBFormat(VkFormat format)
 {
     switch (format)
@@ -300,7 +371,8 @@ void VulkanBufferUtil::CopyBuffer(VulkanContext& context, VkQueue queue, VkComma
 
 VkImageView VulkanBufferUtil::CreateImageView(VkDevice device, VkImage image,
                                               VkFormat format, const VkComponentMapping* componentMapping,
-                                              VkImageAspectFlags aspectFlags, uint32_t levelCount)
+                                              VkImageAspectFlags aspectFlags, uint32_t levelCount,
+                                              const VkImageViewASTCDecodeModeEXT* astcDecodeMode)
 {
     if (VK_NULL_HANDLE == device || VK_NULL_HANDLE == image)
     {
@@ -320,6 +392,12 @@ VkImageView VulkanBufferUtil::CreateImageView(VkDevice device, VkImage image,
     if (componentMapping)
     {
         viewInfo.components = *componentMapping;
+    }
+
+    // 仅当格式为 ASTC LDR 且调用方提供了解码模式时才挂载 pNext 扩展结构
+    if (astcDecodeMode && IsASTCLDRFormat(format))
+    {
+        viewInfo.pNext = astcDecodeMode;
     }
     
     VkImageView imageView;

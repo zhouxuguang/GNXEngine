@@ -90,6 +90,13 @@ public:
         mCurrentLayout = layout;
     }
 
+    /**
+     构建 ASTC LDR 解码模式扩展结构（VK_EXT_astc_decode_mode）。
+     仅当扩展已启用且纹理格式为 ASTC LDR（UNORM/SRGB block）时返回 true，
+     并填充 astcDecodeMode 结构供 VkImageViewCreateInfo::pNext 使用。
+     */
+    bool GetASTCDecodeMode(VkImageViewASTCDecodeModeEXT& astcDecodeMode) const;
+
 private:
     VkImage mImage = VK_NULL_HANDLE;
     VmaAllocation mAllocation = VK_NULL_HANDLE;

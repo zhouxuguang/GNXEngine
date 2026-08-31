@@ -32,18 +32,31 @@ public:
     static bool IsDepthStencilFormat(VkFormat format);
     
     static bool IsSRGBFormat(VkFormat format);
-    
+
+    /// 判断是否为 ASTC LDR（UNORM/SRGB block）格式
+    static bool IsASTCLDRFormat(VkFormat format);
+
+    /// 判断是否为 ASTC 格式（LDR 或 HDR）
+    static bool IsASTCFormat(VkFormat format);
+
     /**
-     @param vmaAllocator 设备句柄
-     @param storageMode  访问模式
-     @param size  缓冲区大小
-     @param usage 缓冲区用途
-     @param properties  内存属性
-     @param buffer  返回的buffer
-     @param allocation  内存分配的信息
-     @param allocationInfo  内存分配的信息
-     @return 返回的buffer句柄
+     创建图像视图
+     @param device 设备句柄
+     @param image 图像
+     @param format 图像格式
+     @param componentMapping 组件映射
+     @param aspectFlags 方面标记
+     @param levelCount mip 等级数
+     @param astcDecodeMode 非空时，为 ASTC LDR 格式指定解码模式（VK_EXT_astc_decode_mode）
      */
+    static VkImageView CreateImageView(VkDevice device,
+                                       VkImage image,
+                                       VkFormat format,
+                                       const VkComponentMapping* componentMapping,
+                                       VkImageAspectFlags aspectFlags,
+                                       uint32_t levelCount,
+                                       const VkImageViewASTCDecodeModeEXT* astcDecodeMode = nullptr);
+
     static void CreateBufferVMA(VmaAllocator vmaAllocator,
                                 StorageMode storageMode,
                                     VkDeviceSize size,
@@ -92,13 +105,6 @@ public:
     //buffer之间的拷贝
     static void CopyBuffer(VulkanContext& context, VkQueue queue, VkCommandPool cmdPool,
                     VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-
-    //创建图像视图
-    static VkImageView CreateImageView(VkDevice device,
-                                       VkImage image,
-                                       VkFormat format,
-                                       const VkComponentMapping* componentMapping,
-                                       VkImageAspectFlags aspectFlags, uint32_t levelCount);
 
     //图像布局格式之间的转换
     static void TransitionImageLayout(VkDevice device, VkCommandBuffer commandBuffer,

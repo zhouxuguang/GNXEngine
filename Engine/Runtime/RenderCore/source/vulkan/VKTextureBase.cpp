@@ -11,16 +11,45 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+bool VKTextureBase::GetASTCDecodeMode(VkImageViewASTCDecodeModeEXT& astcDecodeMode) const
+{
+    // 只有扩展已启用且纹理是 ASTC LDR 格式时才需要/允许指定解码模式
+    if (!mContext->vulkanExtension.enableAstcDecodeMode)
+    {
+        return false;
+    }
+    if (!VulkanBufferUtil::IsASTCLDRFormat(mFormat))
+    {
+        return false;
+    }
+
+    astcDecodeMode = {};
+    astcDecodeMode.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_ASTC_DECODE_MODE_EXT;
+    astcDecodeMode.pNext = nullptr;
+    // 按纹理格式的 sRGB 属性选择解码模式：
+    //   - SRGB 格式 → SRGB 解码（默认行为，显式指定）
+    //   - UNORM 格式 → UNORM（线性）解码
+    astcDecodeMode.decodeMode = VulkanBufferUtil::IsSRGBFormat(mFormat)
+        ? VK_FORMAT_R8G8B8A8_SRGB
+        : VK_FORMAT_R8G8B8A8_UNORM;
+    return true;
+}
+
 void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
 {
     //创建图像视图
     VkImageAspectFlags imageAspectFlags = VulkanBufferUtil::GetImageAspectFlags(mFormat);
 
+    // ASTC LDR 解码模式（VK_EXT_astc_decode_mode），非 ASTC LDR 或扩展不可用时为 nullptr
+    VkImageViewASTCDecodeModeEXT astcDecodeMode = {};
+    const VkImageViewASTCDecodeModeEXT* astcDecodeModePtr =
+        GetASTCDecodeMode(astcDecodeMode) ? &astcDecodeMode : nullptr;
+
     VkImageView imageView = VK_NULL_HANDLE;
     if (GetTextureType() == TextureType_2D)
     {
         imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat,
-            nullptr, imageAspectFlags, 1);
+            nullptr, imageAspectFlags, 1, astcDecodeModePtr);
     }
 
     else if (GetTextureType() == TextureType_3D)
@@ -35,6 +64,7 @@ void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
 		viewCreateInfo.subresourceRange.baseArrayLayer = 0;
 		viewCreateInfo.subresourceRange.layerCount = 1;
 		viewCreateInfo.subresourceRange.levelCount = imageCreateInfo.mipLevels;
+        viewCreateInfo.pNext = astcDecodeModePtr;
         vkCreateImageView(mContext->device, &viewCreateInfo, nullptr, &imageView);
     }
 
@@ -51,6 +81,7 @@ void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
         // Set number of mip levels
         viewCreateInfo.subresourceRange.levelCount = imageCreateInfo.mipLevels;
         viewCreateInfo.image = mImage;
+        viewCreateInfo.pNext = astcDecodeModePtr;
         vkCreateImageView(mContext->device, &viewCreateInfo, nullptr, &imageView);
     }
 
@@ -66,6 +97,7 @@ void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
 		viewCreateInfo.subresourceRange.baseArrayLayer = 0;
 		viewCreateInfo.subresourceRange.layerCount = imageCreateInfo.arrayLayers;
 		viewCreateInfo.subresourceRange.levelCount = imageCreateInfo.mipLevels;
+        viewCreateInfo.pNext = astcDecodeModePtr;
 		vkCreateImageView(mContext->device, &viewCreateInfo, nullptr, &imageView);
     }
      
@@ -103,6 +135,7 @@ void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
                 viewCreateInfo.subresourceRange.levelCount = 1;
 				viewCreateInfo.subresourceRange.baseArrayLayer = nLayer;
 				viewCreateInfo.subresourceRange.layerCount = 1;
+                viewCreateInfo.pNext = astcDecodeModePtr;
 
                 VkImageView imageView = VK_NULL_HANDLE;
 				vkCreateImageView(mContext->device, &viewCreateInfo, nullptr, &imageView);
@@ -218,7 +251,12 @@ VulkanImageViewPtr VKTextureBase::GetMipLevelImageView(uint32_t mipLevel)
     
     // 创建新的单 mip level 视图
     VkImageAspectFlags imageAspectFlags = VulkanBufferUtil::GetImageAspectFlags(mFormat);
-    
+
+    // ASTC LDR 解码模式（VK_EXT_astc_decode_mode）
+    VkImageViewASTCDecodeModeEXT astcDecodeMode = {};
+    const VkImageViewASTCDecodeModeEXT* astcDecodeModePtr =
+        GetASTCDecodeMode(astcDecodeMode) ? &astcDecodeMode : nullptr;
+
     VkImageViewCreateInfo viewCreateInfo = {};
     viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewCreateInfo.image = mImage;
@@ -229,6 +267,7 @@ VulkanImageViewPtr VKTextureBase::GetMipLevelImageView(uint32_t mipLevel)
     viewCreateInfo.subresourceRange.levelCount = 1;
     viewCreateInfo.subresourceRange.baseArrayLayer = 0;
     viewCreateInfo.subresourceRange.layerCount = mLayerCount;
+    viewCreateInfo.pNext = astcDecodeModePtr;
     
     VkImageView imageView = VK_NULL_HANDLE;
     VkResult result = vkCreateImageView(mContext->device, &viewCreateInfo, nullptr, &imageView);

@@ -55,6 +55,10 @@ struct VulkanExtension
 
     bool enableDescriptorIndexing = false;
 
+    // VK_EXT_astc_decode_mode（ASTC LDR 格式的 sRGB/UNORM 解码模式切换）
+    bool enableAstcDecodeMode = false;
+    bool astcDecodeModeSharedExponent = false;   // 是否支持 decodeMode=SHARED_EXPONENT（HDR 解码）
+
     std::vector<VkExtensionProperties> mDeviceExtensions;
     
     void Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties physicalDeviceProperties,
