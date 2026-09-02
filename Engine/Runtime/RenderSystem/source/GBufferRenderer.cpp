@@ -328,9 +328,13 @@ void GBufferRenderer::CreateGBufferPipeline()
     mGBufferVTPipeline->AttachGraphicsShader(shaderInfoVT.graphicsShader);
 
     // Terrain-specific G-buffer PSO (VS reads SSBO + heightmap)
+    // 地形 GBuffer 用 GetGBufferDepthCompareFunc()（Reverse-Z → GreaterThanOrEqual）：
+    // PreDepth（TerrainDepth）与 GBuffer（Terrain）是两个独立编译 shader，移动 GPU 上
+    // 两者光栅化深度可能存在极小（1 ULP）差异。用"同面或更近"的比较容忍该差异，
+    // 避免严格 Equal 把差一点的像素剔除 → 黑块/闪烁。
     GraphicsShaderInfo shaderInfoTerrain = CreateGraphicsShaderInfo("Terrain");
     shaderInfoTerrain.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
-    shaderInfoTerrain.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionEqual;
+    shaderInfoTerrain.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetGBufferDepthCompareFunc();
     shaderInfoTerrain.graphicsPipelineDesc.renderTargetCount = 5;
     mTerrainGBufferPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shaderInfoTerrain.graphicsPipelineDesc);
     mTerrainGBufferPipeline->AttachGraphicsShader(shaderInfoTerrain.graphicsShader);
@@ -340,7 +344,7 @@ void GBufferRenderer::CreateGBufferPipeline()
     {
         GraphicsShaderInfo shaderInfoTerrainMS = CreateGraphicsShaderInfo("TerrainMS");
         shaderInfoTerrainMS.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
-        shaderInfoTerrainMS.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionEqual;
+        shaderInfoTerrainMS.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetGBufferDepthCompareFunc();
         shaderInfoTerrainMS.graphicsPipelineDesc.renderTargetCount = 5;
         mTerrainMSPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shaderInfoTerrainMS.graphicsPipelineDesc);
         if (mTerrainMSPipeline)

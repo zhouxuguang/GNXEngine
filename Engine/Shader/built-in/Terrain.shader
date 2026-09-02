@@ -109,6 +109,7 @@ struct FragmentOutput
     float4 outRT2 : SV_TARGET2;   // Metallic + Specular + Roughness + ShadingModel
     float4 outRT3 : SV_TARGET3;   // BaseColor + AO
     float4 outRT4 : SV_TARGET4;   // Motion Vector
+    float  outDepth : SV_Depth;   // 显式输出片元深度
 };
 
 FragmentOutput PS(VertexOutput input)
@@ -149,6 +150,12 @@ FragmentOutput PS(VertexOutput input)
         motionVector = curNDC - prevNDC;
     }
     output.outRT4 = float4(motionVector, 0.0, 0.0);
+
+    // 显式输出片元深度（NDC 深度 = position.z / position.w）。
+    // 参考 PPSSPP Vulkan 驱动 bug 文档：Adreno/Mali 对"光栅化写深度 vs 比深度"
+    // 存在内部不一致时，shader 显式写 SV_Depth 可让驱动用确定性的深度参与测试，
+    // 规避 PreDepth/GBuffer 两趟光栅化深度 1 ULP 差异导致的剔除/闪烁。
+    output.outDepth = input.position.z / input.position.w;
 
     return output;
 }

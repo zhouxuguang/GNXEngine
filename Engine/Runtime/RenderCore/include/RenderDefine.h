@@ -435,6 +435,28 @@ struct RENDERCORE_API DepthConfig
         return UseReverseZ ? CompareFunctionGreaterThanOrEqual : CompareFunctionLessThanOrEqual;
     }
     
+    // 获取 GBuffer（重新光栅化 vs PreDepth）的深度比较函数。
+    // PreDepth 已写入场景最近深度；GBuffer 想表达"该片元就是 PreDepth 记录的那个可见表面"，
+    // 故应接受"同面或更近"的片元：
+    //   Reverse-Z: 近处深度大 → GreaterThanOrEqual
+    //   传统 Z:    近处深度小 → LessThanOrEqual
+    // 不要用 LessOrEqual（Reverse-Z）/ GreaterOrEqual（传统 Z），那会接受被遮挡的更远片元，
+    // 把物体后面的地形错误地写入 GBuffer 颜色。
+    //
+    // 平台差异：移动 GPU（尤其 Android Adreno/Mali）上，PreDepth 与 GBuffer 是两个
+    // 独立编译的 shader，同一地形片元的光栅化深度可能有 1 ULP 级差异；若用严格 Equal，
+    // 差一点的像素会被剔除 → 黑块/闪烁。因此 Android 上放宽为"同面或更近"（GE/LE）。
+    // 桌面等其他平台两趟深度一致，无需放宽，保持 Equal（更精确）。
+    static CompareFunction GetGBufferDepthCompareFunc() 
+    {
+#if defined(GNX_OS_ANDROID)
+        return UseReverseZ ? CompareFunctionGreaterThanOrEqual : CompareFunctionLessThanOrEqual;
+#else
+        //return CompareFunctionEqual;
+        return UseReverseZ ? CompareFunctionGreaterThanOrEqual : CompareFunctionLessThanOrEqual;
+#endif
+    }
+    
     // 获取默认深度清除值
     // Reverse-Z: 清除为 0.0（远处）
     // 传统 Z: 清除为 1.0（远处）

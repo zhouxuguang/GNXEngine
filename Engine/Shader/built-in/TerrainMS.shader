@@ -204,6 +204,7 @@ struct FragmentOutput
     float4 outRT2 : SV_TARGET2;
     float4 outRT3 : SV_TARGET3;
     float4 outRT4 : SV_TARGET4;
+    float  outDepth : SV_Depth;   // 显式输出片元深度
 };
 
 FragmentOutput PS(VertexOutput input)
@@ -236,6 +237,11 @@ FragmentOutput PS(VertexOutput input)
         mv = cNDC - pNDC;
     }
     o.outRT4 = float4(mv, 0.0, 0.0);
+
+    // 显式输出片元深度（NDC 深度 = position.z / position.w）。
+    // 与 Terrain.shader 的 PS 一致：让驱动用确定性的深度参与测试，
+    // 规避 PreDepth/GBuffer 两趟光栅化深度 1 ULP 差异导致的剔除/闪烁。
+    o.outDepth = input.position.z / input.position.w;
 
     return o;
 }
