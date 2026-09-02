@@ -123,13 +123,16 @@ if(WIN32 OR APPLE OR (LINUX AND NOT ANDROID))
     elseif(LINUX)
         set(DXC_RUNTIME_LIB "${GNX_REPO_ROOT}/ThirdParty/DirectXShaderCompiler/lib/linux/libdxcompiler.so")
     endif()
-    add_custom_target(CopyDXCompilerDLL ALL
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${DXC_RUNTIME_LIB}"
-            "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$<CONFIG>"
-        COMMENT "Copying ${DXC_RUNTIME_LIB} to output directory"
-    )
-    add_dependencies(GNXEngine CopyDXCompilerDLL)
+    if(EXISTS "${DXC_RUNTIME_LIB}")
+        add_custom_command(TARGET GNXEngine POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${DXC_RUNTIME_LIB}"
+                "$<TARGET_FILE_DIR:GNXEngine>"
+            COMMENT "Copying ${DXC_RUNTIME_LIB} to $<TARGET_FILE_DIR:GNXEngine>"
+        )
+    else()
+        message(WARNING "DXC runtime library not found: ${DXC_RUNTIME_LIB}")
+    endif()
 endif()
 
 set_property(TARGET GNXEngine PROPERTY FOLDER "Runtime")
