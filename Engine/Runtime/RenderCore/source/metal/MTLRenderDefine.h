@@ -65,6 +65,24 @@ inline MTLPixelFormat ConvertTextureFormatToMetal(uint32_t textureFormat)
         case kTexFormatDepth32Float:
             return MTLPixelFormatDepth32Float;
             
+        case kTexFormatDepth16Stencil8:
+        {
+#if GNX_OS_MACOS
+            // MTLPixelFormatDepth16Unorm_Stencil8 需要 macOS 10.15+
+            if (@available(macos 10.15, *))
+            {
+                return MTLPixelFormatDepth16Unorm_Stencil8;
+            }
+            else
+            {
+                return MTLPixelFormatInvalid;
+            }
+#else
+            // iOS 不支持 Depth16Unorm_Stencil8，使用 Depth32Float_Stencil8 代替
+            return MTLPixelFormatDepth32Float_Stencil8;
+#endif
+        }
+
         case kTexFormatDepth24Stencil8:
         {
 #if GNX_OS_MACOS

@@ -125,6 +125,7 @@ RenderCore::ResourceAccessType FrameGraphTexture::DetermineAccessFlags(const Des
 	{
 		// Write operation: determine if it's depth stencil attachment or color attachment based on texture format
 		if (desc.format == RenderCore::kTexFormatDepth16 ||
+			desc.format == RenderCore::kTexFormatDepth16Stencil8 ||
 			desc.format == RenderCore::kTexFormatDepth24Stencil8 ||
 			desc.format == RenderCore::kTexFormatDepth32Float ||
 			desc.format == RenderCore::kTexFormatDepth24 ||

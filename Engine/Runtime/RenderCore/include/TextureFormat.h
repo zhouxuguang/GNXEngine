@@ -94,8 +94,9 @@ enum
     kTexFormatDepth24 = 71,            // 24 bit depth buffer
     kTexFormatDepth32Float = 73,       // 32 bit float depth buffer
     
-    kTexFormatDepth24Stencil8 = 74,
-    kTexFormatDepth32FloatStencil8 = 75,
+    kTexFormatDepth16Stencil8 = 74,
+    kTexFormatDepth24Stencil8 = 75,
+    kTexFormatDepth32FloatStencil8 = 76,
     
     
     //浮点格式纹理

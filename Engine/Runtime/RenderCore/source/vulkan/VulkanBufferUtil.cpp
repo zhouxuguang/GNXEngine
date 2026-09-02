@@ -411,7 +411,8 @@ VkImageView VulkanBufferUtil::CreateImageView(VkDevice device, VkImage image,
 
 static bool hasStencilComponent(VkFormat format)
 {
-    return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
+    return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT
+        || format == VK_FORMAT_D16_UNORM_S8_UINT;
 }
 
 void VulkanBufferUtil::TransitionImageLayout(VkDevice device, VkCommandBuffer commandBuffer,
@@ -737,6 +738,10 @@ case kTexFormatRGBA32Float:
             
         case kTexFormatDepth24Stencil8:
             format = VK_FORMAT_D24_UNORM_S8_UINT;
+            break;
+
+        case kTexFormatDepth16Stencil8:
+            format = VK_FORMAT_D16_UNORM_S8_UINT;
             break;
 
         case kTexFormatDepth16:
