@@ -438,15 +438,21 @@ void DeferredSceneRenderer::RenderPresentPass(FrameGraph& frameGraph, CommandBuf
     {
         RenderSystem::FrameGraphTexture &colorTexture = resources.Get<RenderSystem::FrameGraphTexture>(depthResource);
         
-        float color[4] = {1.0, 0.0, 0.0, 1.0};
-        SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), color);
+        RenderEncoderPtr renderEncoder;
+        {
+            // 用花括号把 SCOPED_DEBUGMARKER_EVENT 限制在 PresentFrameBuffer() 之前释放，
+            // 否则其析构里的 vkCmdEndDebugUtilsLabelEXT 会在 vkEndCommandBuffer 之后调用
+            // （PresentFrameBuffer 内部结束录制）→ VUID-vkCmdEndDebugUtilsLabelEXT-commandBuffer-recording
+            float color[4] = {1.0, 0.0, 0.0, 1.0};
+            SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), color);
 
-        RenderEncoderPtr renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
-        
-        mPostProcessing->SetRenderTexture(colorTexture.texture);
-        mPostProcessing->Process(renderEncoder);
-        
-        renderEncoder->EndEncode();
+            renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
+
+            mPostProcessing->SetRenderTexture(colorTexture.texture);
+            mPostProcessing->Process(renderEncoder);
+
+            renderEncoder->EndEncode();
+        }
         commandBuffer->PresentFrameBuffer();
     });
 }

@@ -298,6 +298,23 @@ bool SelectPhysicalDevice(VulkanContext& context)
 }
 void VulkanContext::CollectDeviceExtension()
 {
+    // 设备实际生效的 Vulkan API 版本 = min(实例版本, 物理设备版本)。
+    // 用于决定被提升为核心的特性（timeline semaphore / descriptor indexing → 1.2，
+    // dynamic rendering → 1.3）是写在 features12/features13 核心结构里，还是走对应的
+    // KHR/EXT 独立结构（老设备）。避免写死核心结构导致老设备上不生效。
+    const uint32_t effectiveApiVersion = std::min(
+        apiVersion ? apiVersion : VK_API_VERSION_1_0,
+        physicalDeviceProperties.apiVersion ? physicalDeviceProperties.apiVersion : VK_API_VERSION_1_0);
+
+    const auto supportsCoreVersion = [effectiveApiVersion](uint32_t major, uint32_t minor) -> bool
+    {
+        if (VK_API_VERSION_MAJOR(effectiveApiVersion) > major) return true;
+        if (VK_API_VERSION_MAJOR(effectiveApiVersion) < major) return false;
+        return VK_API_VERSION_MINOR(effectiveApiVersion) >= minor;
+    };
+    const bool supportsVulkan12 = supportsCoreVersion(1, 2);
+    const bool supportsVulkan13 = supportsCoreVersion(1, 3);
+
     deviceEnableExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     deviceEnableExtensions.push_back(VK_KHR_BIND_MEMORY_2_EXTENSION_NAME);
     deviceEnableExtensions.push_back(VK_KHR_MAINTENANCE1_EXTENSION_NAME);
@@ -314,13 +331,45 @@ void VulkanContext::CollectDeviceExtension()
     if (vulkanExtension.enableDynamicRendering)
     {
         deviceEnableExtensions.push_back(VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME);
-        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.dynamicRenderingFeatures);
+        if (supportsVulkan13)
+        {
+            // 设备 >= Vulkan 1.3：dynamicRendering 是核心特性，写在 features13 里。
+            // 不要再挂独立的 VkPhysicalDeviceDynamicRenderingFeatures，否则与 features13
+            // 里的同名特性重复 → VUID-VkDeviceCreateInfo-pNext-06532。
+            deviceExtFeatures.features13.dynamicRendering = VK_TRUE;
+        }
+        else
+        {
+            // 设备 < 1.3（如 1.2 走 VK_KHR_dynamic_rendering 扩展）：
+            // 用独立特性结构启用，此时 features13 不会挂进创建链（见函数末尾）。
+            deviceExtFeatures.dynamicRenderingFeatures.dynamicRendering = VK_TRUE;
+            AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.dynamicRenderingFeatures);
+        }
     }
 
     if (vulkanExtension.enableDescriptorIndexing)
     {
         deviceEnableExtensions.push_back(VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME);
-        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.descriptorIndexingFeatures);
+        if (supportsVulkan12)
+        {
+            // 设备 >= Vulkan 1.2：descriptor indexing 是核心特性，写在 features12 里，
+            // 避免再挂独立的 VkPhysicalDeviceDescriptorIndexingFeatures(EXT)
+            // → VUID-VkDeviceCreateInfo-pNext-02830。
+            auto& f12 = deviceExtFeatures.features12;
+            f12.descriptorIndexing = VK_TRUE;
+            f12.runtimeDescriptorArray = VK_TRUE;
+            f12.descriptorBindingVariableDescriptorCount = VK_TRUE;
+            f12.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+        }
+        else
+        {
+            // 设备 < 1.2：走 VK_EXT_descriptor_indexing 扩展的独立结构。
+            auto& di = deviceExtFeatures.descriptorIndexingFeatures;
+            di.runtimeDescriptorArray = VK_TRUE;
+            di.descriptorBindingVariableDescriptorCount = VK_TRUE;
+            di.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+            AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.descriptorIndexingFeatures);
+        }
     }
 
     if (vulkanExtension.enablePortabilitySubset)
@@ -387,6 +436,17 @@ void VulkanContext::CollectDeviceExtension()
     if (vulkanExtension.enableMeshShaderEXT)
     {
         deviceEnableExtensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+
+        // 只显式启用引擎实际使用的 task/mesh shader，不要把
+        // vkGetPhysicalDeviceFeatures2 查询结果（含 primitiveFragmentShadingRateMeshShader）
+        // 原样带入 vkCreateDevice，否则若驱动支持 FSR mesh shader 就会报
+        // VUID-VkPhysicalDeviceMeshShaderFeaturesEXT-primitiveFragmentShadingRateMeshShader-07033
+        auto& msf = deviceExtFeatures.meshShaderFeatures;
+        msf.taskShader                       = VK_TRUE;
+        msf.meshShader                       = VK_TRUE;
+        msf.multiviewMeshShader              = VK_FALSE;
+        msf.primitiveFragmentShadingRateMeshShader = VK_FALSE;
+        msf.meshShaderQueries                = VK_FALSE;
         AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.meshShaderFeatures);
     }
 
@@ -394,7 +454,19 @@ void VulkanContext::CollectDeviceExtension()
     if (vulkanExtension.enableTimelineSemaphore)
     {
         deviceEnableExtensions.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
-        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.timelineSemaphoreFeatures);
+        if (supportsVulkan12)
+        {
+            // 设备 >= Vulkan 1.2：timeline semaphore 是核心特性，写在 features12 里，
+            // 避免挂独立的 VkPhysicalDeviceTimelineSemaphoreFeatures
+            // → VUID-VkDeviceCreateInfo-pNext-02830。
+            deviceExtFeatures.features12.timelineSemaphore = VK_TRUE;
+        }
+        else
+        {
+            // 设备 < 1.2：走 VK_KHR_timeline_semaphore 扩展的独立结构。
+            deviceExtFeatures.timelineSemaphoreFeatures.timelineSemaphore = VK_TRUE;
+            AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.timelineSemaphoreFeatures);
+        }
     }
 
     if (vulkanExtension.enableHostImageCopy)
@@ -430,8 +502,17 @@ void VulkanContext::CollectDeviceExtension()
 	}
 #endif
 
-    AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.features12);
-    AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.features13);
+    // 根据设备实际核心版本把 features12/features13 挂进创建链。
+    // 只有设备支持对应核心版本时才挂：老设备不认识这些核心结构，里面设置的核心特性
+    // 不会生效（相关特性已在上面通过 KHR/EXT 独立结构启用，避免重复 → 相关 VUID）。
+    if (supportsVulkan12)
+    {
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.features12);
+    }
+    if (supportsVulkan13)
+    {
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.features13);
+    }
 }
 
 
