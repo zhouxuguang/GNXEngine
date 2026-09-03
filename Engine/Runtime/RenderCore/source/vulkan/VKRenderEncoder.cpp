@@ -474,17 +474,6 @@ void VKRenderEncoder::BindPipeline()
     }
     vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pso);
 
-	// Provided by VK_VERSION_1_0
-	/*void vkCmdBindDescriptorSets(
-		VkCommandBuffer                             commandBuffer,
-		VkPipelineBindPoint                         pipelineBindPoint,
-		VkPipelineLayout                            layout,
-		uint32_t                                    firstSet,
-		uint32_t                                    descriptorSetCount,
-		const VkDescriptorSet * pDescriptorSets,
-		uint32_t                                    dynamicOffsetCount,
-		const uint32_t * pDynamicOffsets);*/
-
     if (!mContext->vulkanExtension.enablePushDesDescriptor)
     {
 		VKGraphicsShaderPtr shader = mGraphicsPipieline->GetCurrentShader();
@@ -553,12 +542,6 @@ void VKRenderEncoder::SetFillMode(FillMode fillMode)
 
 void VKRenderEncoder::SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index)
 {
-//    void vkCmdBindVertexBuffers(
-//        VkCommandBuffer                             commandBuffer,
-//        uint32_t                                    firstBinding,
-//        uint32_t                                    bindingCount,
-//        const VkBuffer*                             pBuffers,
-//        const VkDeviceSize*                         pOffsets);
     if (!buffer)
     {
         return;
@@ -899,17 +882,6 @@ void VKRenderEncoder::SetTaskUniformBuffer(const std::string& resourceName, Unif
 void VKRenderEncoder::DrawPrimitives(PrimitiveMode mode, int offset, int size)
 {
     //设置图元拓扑类型，需要使用扩展动态状态
-#if 0
-    // Provided by VK_VERSION_1_3
-    void vkCmdSetPrimitiveTopology(
-        VkCommandBuffer                             commandBuffer,
-        VkPrimitiveTopology                         primitiveTopology);
-    
-    // Provided by VK_EXT_extended_dynamic_state, VK_EXT_shader_object
-    void vkCmdSetPrimitiveTopologyEXT(
-        VkCommandBuffer                             commandBuffer,
-        VkPrimitiveTopology                         primitiveTopology);
-#endif
     if (mContext->vulkanExtension.enableExtendedDynamicState)
     {
         vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
@@ -919,16 +891,6 @@ void VKRenderEncoder::DrawPrimitives(PrimitiveMode mode, int offset, int size)
         //mGraphicsPipieline->SetPrimitiveType(ConvertToVulkanPrimitiveTopology(mode));
     }
     //BindPipeline();
-    
-#if 0
-    // Provided by VK_VERSION_1_0
-    void vkCmdDraw(
-        VkCommandBuffer                             commandBuffer,
-        uint32_t                                    vertexCount,
-        uint32_t                                    instanceCount,
-        uint32_t                                    firstVertex,
-        uint32_t                                    firstInstance);
-#endif
     
     vkCmdDraw(mCommandBuffer, size, 1, offset, 0);
 }
@@ -945,16 +907,6 @@ void VKRenderEncoder::DrawInstancePrimitives(PrimitiveMode mode, int offset, int
 		//mGraphicsPipieline->SetPrimitiveType(ConvertToVulkanPrimitiveTopology(mode));
 	}
 
-#if 0
-	// Provided by VK_VERSION_1_0
-	void vkCmdDraw(
-		VkCommandBuffer                             commandBuffer,
-		uint32_t                                    vertexCount,
-		uint32_t                                    instanceCount,
-		uint32_t                                    firstVertex,
-		uint32_t                                    firstInstance);
-#endif
-
 	vkCmdDraw(mCommandBuffer, size, instanceCount, offset, firstInstance);
 }
 
@@ -965,15 +917,6 @@ void VKRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexB
     {
         return;
     }
-    
-#if 0
-    // Provided by VK_VERSION_1_0
-    void vkCmdBindIndexBuffer(
-        VkCommandBuffer                             commandBuffer,
-        VkBuffer                                    buffer,
-        VkDeviceSize                                offset,
-        VkIndexType                                 indexType);
-#endif
     
     // vkCmdBindIndexBuffer 的 offset is the starting offset in bytes within buffer used in index buffer address calculations.
     
@@ -986,17 +929,6 @@ void VKRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexB
         byteOffset = offset * sizeof(uint32_t);
         indexType = VK_INDEX_TYPE_UINT32;
     }
-    
-#if 0
-    // Provided by VK_VERSION_1_0
-    void vkCmdDrawIndexed(
-        VkCommandBuffer                             commandBuffer,
-        uint32_t                                    indexCount,
-        uint32_t                                    instanceCount,
-        uint32_t                                    firstIndex,
-        int32_t                                     vertexOffset,
-        uint32_t                                    firstInstance);
-#endif
     
     vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer->GetBuffer(), 0, indexType);
     if (mContext->vulkanExtension.enableExtendedDynamicState)
@@ -1031,17 +963,6 @@ void VKRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size
 		byteOffset = offset * sizeof(uint32_t);
 		indexType = VK_INDEX_TYPE_UINT32;
 	}
-
-#if 0
-	// Provided by VK_VERSION_1_0
-	void vkCmdDrawIndexed(
-		VkCommandBuffer                             commandBuffer,
-		uint32_t                                    indexCount,
-		uint32_t                                    instanceCount,
-		uint32_t                                    firstIndex,
-		int32_t                                     vertexOffset,
-		uint32_t                                    firstInstance);
-#endif
 
 	vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer->GetBuffer(), 0, indexType);
 	if (mContext->vulkanExtension.enableExtendedDynamicState)
