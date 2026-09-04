@@ -71,7 +71,7 @@ inline MTLPixelFormat ConvertTextureFormatToMetal(uint32_t textureFormat)
             // MTLPixelFormatDepth16Unorm_Stencil8 需要 macOS 10.15+
             if (@available(macos 10.15, *))
             {
-                return MTLPixelFormatDepth16Unorm_Stencil8;
+                return MTLPixelFormatDepth24Unorm_Stencil8;
             }
             else
             {
