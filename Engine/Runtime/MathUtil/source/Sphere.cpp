@@ -78,14 +78,11 @@ static void ComputeBoundingSphere(T result[4], const T points[][3], size_t count
 template <typename T>
 bool Sphere<T>::IsInside(const Sphere<T>& inSphere) const
 {
-    T sqrDist = (GetCenter() - inSphere.GetCenter()).LengthSq();
-    T radiusSum = GetRadius() + inSphere.GetRadius();
-    if (sqrDist < radiusSum * radiusSum)
-    {
-        return true;
-    }
-
-    return false;
+    // 判断 inSphere 是否完全包含在 *this* 内（包含关系，而非相交）。
+    // BUG 修复：原实现是"球心距离 < 半径之和"，等价于两个球是否相交(IntersectSphereSphere)，
+    // 与 IsInside 的语义不符。
+    const T dist = (GetCenter() - inSphere.GetCenter()).Length();
+    return dist + inSphere.GetRadius() <= GetRadius();
 }
 
 template <typename T>

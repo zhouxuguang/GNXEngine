@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <stdlib.h>
+#include <mutex>
 
 #include "MathUtil.h"
 #include "Vector3.h"
@@ -58,7 +59,7 @@ void Rand_Seed(const unsigned int seed)
 
 double SinTable[361] = {0};
 double CosTable[361] = {0};
-bool g_bTableInit = false;
+std::once_flag g_tableInitFlag;
 
 void TableInit()
 {
@@ -71,8 +72,6 @@ void TableInit()
 
 	SinTable[360] = SinTable[0];
 	CosTable[360] = CosTable[0];
-
-	g_bTableInit = true;
 }
 
 
@@ -148,10 +147,9 @@ Real MathUtil::ATan(Real fValue)
 
 Real MathUtil::FastSin(Real fValue)
 {
-	if (!g_bTableInit)
-	{
-		TableInit();
-	}
+	// BUG 修复：原来用非原子的 bool g_bTableInit 做懒初始化，多线程并发调用会数据竞争。
+	// 改用 std::call_once 保证只初始化一次且线程安全。
+	std::call_once(g_tableInitFlag, TableInit);
 
 	fValue = fmod(fValue,360);
 
@@ -169,10 +167,7 @@ Real MathUtil::FastSin(Real fValue)
 
 Real MathUtil::FastCos(Real fValue)
 {
-	if (!g_bTableInit)
-	{
-		TableInit();
-	}
+	std::call_once(g_tableInitFlag, TableInit);
 
 	fValue = fmod(fValue,360);
 
@@ -248,18 +243,44 @@ uint32_t convertRGBFloatToRGB9E5(float red, float green, float blue)
 	const float blue_c = std::max<float>(0, std::min(g_sharedexp_max, blue));
 
 	const float max_c = std::max<float>({ red_c, green_c, blue_c });
+
+	RGB9E5Data output;
+
+	// 全零（或极小）输入编码为 0
+	if (max_c < 1e-32f)
+	{
+		output.R = 0;
+		output.G = 0;
+		output.B = 0;
+		output.E = 0;
+		return bitCast<unsigned int>(output);
+	}
+
+	// 共享指数必须使用以 2 为底的对数（log2）。
+	// BUG 修复：原来这里用的是自然对数 log()，导致对较大的 HDR 值严重低估指数，
+	// 9 bit 尾数溢出被截断，编码结果错误（例如 100.0 -> 36.0，8192.0 -> 0.0）。
+	//
+	// 使用 frexp 精确拆分：max_c = mantissa * 2^exp，其中 mantissa∈[0.5,1)，
+	// 因此 floor(log2(max_c)) == exp - 1。相比 log2() 浮点近似，在 2 的整数次幂
+	// 附近不会因为舍入误差导致 floor 取值错误。
+	int binExp = 0;
+	frexp(max_c, &binExp);
 	const float exp_p =
-		std::max<float>(-g_sharedexp_bias - 1, floor(log(max_c))) + 1 + g_sharedexp_bias;
+		std::max<float>(-g_sharedexp_bias - 1, static_cast<float>(binExp - 1)) + 1 + g_sharedexp_bias;
 	const int max_s = static_cast<int>(
 		floor((max_c / (pow(2.0f, exp_p - g_sharedexp_biased_mantissabits))) + 0.5f));
 	const int exp_s =
 		static_cast<int>((max_s < pow(2.0f, g_sharedexp_mantissabits)) ? exp_p : exp_p + 1);
 	const float pow2_exp = pow(2.0f, static_cast<float>(exp_s) - g_sharedexp_biased_mantissabits);
 
-	RGB9E5Data output;
-	output.R = static_cast<unsigned int>(floor((red_c / pow2_exp) + 0.5f));
-	output.G = static_cast<unsigned int>(floor((green_c / pow2_exp) + 0.5f));
-	output.B = static_cast<unsigned int>(floor((blue_c / pow2_exp) + 0.5f));
+	// 防止浮点舍入导致 9 bit 尾数溢出（field 只有 9 bit，赋值会截断）
+	auto quantize = [pow2_exp](float c) -> unsigned int {
+		unsigned int v = static_cast<unsigned int>(floor((c / pow2_exp) + 0.5f));
+		return v < 511u ? v : 511u;
+	};
+	output.R = quantize(red_c);
+	output.G = quantize(green_c);
+	output.B = quantize(blue_c);
 	output.E = exp_s;
 
 	return bitCast<unsigned int>(output);

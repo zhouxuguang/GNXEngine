@@ -84,33 +84,32 @@ public:
     template<typename T>
     static bool PointInOBB(const Vector3<T>& point, const OrientedBoundingBox<T>& obb)
     {
-//        Vector3f dir = point - obb.mCenter;
-//
-//        for (int i = 0; i < 3; ++i)
-//        {
-//            const float* orientation = &obb.orientation.asArray[i * 3];
-//            vec3 axis(orientation[0], orientation[1], orientation[2]);
-//
-//            float distance = Dot(dir, axis);
-//
-//            if (distance > obb.size.asArray[i])
-//            {
-//                return false;
-//            }
-//            if (distance < -obb.size.asArray[i])
-//            {
-//                return false;
-//            }
-//        }
+        // BUG 修复：原实现为被注释掉的代码并直接 return true（永远命中）。
+        // 将点变换到 OBB 局部空间（单位盒 [-1,1]^3），再判断每个轴向上的分量是否越界。
+        const Vector3<T> dir = point - obb.mCenter;
+        const Vector3<T> local = obb.mInverseHalfAxes * dir;
 
-        return true;
+        return (local.x >= -T(1)) && (local.x <= T(1)) &&
+               (local.y >= -T(1)) && (local.y <= T(1)) &&
+               (local.z >= -T(1)) && (local.z <= T(1));
     }
 
 	//计算点离OBB最近的点
     template<typename T>
 	static Vector3<T> ClosestPoint(const OrientedBoundingBox<T>& obb, const Vector3<T>& point)
     {
-        return Vector3<T>();
+        // BUG 修复：原实现直接返回原点 (0,0,0)，导致所有基于它的测试（如
+        // IntersectSphereOBB）把球心与整个世界原点比较。
+        // 正确做法：将点到中心的向量变换到 OBB 局部空间，clamp 到 [-1,1]^3，
+        // 再变换回世界空间并加上中心。
+        const Vector3<T> dir = point - obb.mCenter;
+        Vector3<T> local = obb.mInverseHalfAxes * dir;
+
+        local.x = (local.x < -T(1)) ? -T(1) : (local.x > T(1) ? T(1) : local.x);
+        local.y = (local.y < -T(1)) ? -T(1) : (local.y > T(1) ? T(1) : local.y);
+        local.z = (local.z < -T(1)) ? -T(1) : (local.z > T(1) ? T(1) : local.z);
+
+        return obb.mCenter + obb.mHalfAxes * local;
     }
 };
 

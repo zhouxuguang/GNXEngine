@@ -269,4 +269,15 @@ template bool IntersectRayAABB<double>(const Ray<double>& ray, const AxisAligned
 template bool IntersectSphereSphere<float>(const Sphere<float>& s1, const Sphere<float>& s2);
 template bool IntersectSphereSphere<double>(const Sphere<double>& s1, const Sphere<double>& s2);
 
+// BUG 修复：以下三个模板函数在 .cpp 中定义，但没有显式实例化，
+// 导致在其它翻译单元调用时报链接错误（无法解析的外部符号）。
+template bool IntersectSphereAABB<float>(const Sphere<float>& sphere, const AxisAlignedBox<float>& aabb);
+template bool IntersectSphereAABB<double>(const Sphere<double>& sphere, const AxisAlignedBox<double>& aabb);
+
+template bool IntersectSphereOBB<float>(const Sphere<float>& sphere, const OrientedBoundingBox<float>& obb);
+template bool IntersectSphereOBB<double>(const Sphere<double>& sphere, const OrientedBoundingBox<double>& obb);
+
+template bool IntersectAABBAABB<float>(const AxisAlignedBox<float>& aabb1, const AxisAlignedBox<float>& aabb2);
+template bool IntersectAABBAABB<double>(const AxisAlignedBox<double>& aabb1, const AxisAlignedBox<double>& aabb2);
+
 NS_MATHUTIL_END

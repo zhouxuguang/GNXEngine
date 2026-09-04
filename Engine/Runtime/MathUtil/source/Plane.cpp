@@ -41,7 +41,10 @@ Plane<T>::Plane(const Vector4<T>& coff)
 template<typename T>
 T Plane<T>::Dist2Plane(const Vector3<T>& p) const
 {
-    return mNormal.DotProduct(p) - mDist;
+    // 与 GetPointDistance 保持一致（带符号距离 = n·P + mDist）
+    // BUG 修复：原来是 n·P - mDist，与 GetPointDistance 相差 2*mDist，
+    // 导致平面内部自相矛盾（用哪个构造函数创建平面，结果都对不上）。
+    return mNormal.DotProduct(p) + mDist;
 }
 
 template<typename T>
@@ -63,7 +66,9 @@ void Plane<T>::InitPlane(const Vector3<T>& p1, const Vector3<T>& p2, const Vecto
 	Vector3<T> p32 = p3 - p2;
 	mNormal = Vector3<T>::CrossProduct(p21, p32);
 	mNormal.Normalize();
-	mDist = mNormal.DotProduct(p1);
+	// 平面方程 n·P + mDist = 0，mDist = -n·p1
+	// BUG 修复：原来写成 +n·p1，导致 GetPointDistance/ProjectPointOntoPlane 结果错误。
+	mDist = -mNormal.DotProduct(p1);
 }
 
 template<typename T>
@@ -85,8 +90,12 @@ template<typename T>
 void Plane<T>::InitPlane(const Vector4<T>& coff)
 {
 	mNormal = Vector3<T>(coff.x, coff.y, coff.z);
-	mNormal.Normalize();
-	mDist = coff.w;
+	T oneOverLength = T(1.0 / mNormal.Length());
+	mNormal = mNormal * oneOverLength;
+	// BUG 修复：原来只归一化法线却不缩放 w。
+	// 平面方程 n·P + d = 0 两侧同除 |n|，d 也必须按相同比例缩放，
+	// 否则用未归一化 Vector4 构造的平面距离/投影全是错的。
+	mDist = coff.w * oneOverLength;
 }
 
 template<typename T>
