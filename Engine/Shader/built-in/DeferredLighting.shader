@@ -220,52 +220,67 @@ float ComputePCSSShadow(float3 worldPos, float3 normal, float3 lightDir)
 }
 
 // 计算单个光源的贡献
+// 实现与 glTF-Sample-Viewer / Khronos glTF PBR 参考一致：
+//   dielectric / metal 分开计算后按 metallic 混合（metal 用 baseColor 作 F0，
+//   dielectric 用 F0=0.04），roughness 取 perceptual，进入 GGX 前平方为 alphaRoughness。
 float3 ComputeLighting(GBufferData gBufferData, float3 lightDir, float3 lightColor, float lightIntensity)
 {
-    // 标准PBR光照计算
-    
     float3 N = normalize(gBufferData.normal);
     float3 V = normalize(_WorldSpaceCameraPos - gBufferData.position);
     float3 L = normalize(lightDir);
     float3 H = normalize(V + L);
-    
+
     float nDotL = saturate(dot(N, L));
     float nDotV = saturate(dot(N, V));
     float nDotH = saturate(dot(N, H));
     float lDotH = saturate(dot(L, H));
-    
-    // 基础反射率
-    float3 F0 = float3(0.04, 0.04, 0.04);
-    F0 = lerp(F0, gBufferData.albedo, gBufferData.metallic);
-    
-    // Cook-Torrance BRDF
-    float NDF = DistributionGGX(nDotH, gBufferData.roughness);
-    float G = GeometrySchlickGGX(nDotL, gBufferData.roughness) * GeometrySchlickGGX(nDotV, gBufferData.roughness);
-    float3 F = FresnelTerm(F0, lDotH);
-    
-    float3 kS = F;
-    float3 kD = float3(1.0, 1.0, 1.0) - kS;
-    kD *= 1.0 - gBufferData.metallic;
-    
-    float3 numerator = NDF * G * F;
-    float denominator = 4.0 * nDotV * nDotL + 0.001;
-    float3 specular = numerator / denominator;
-    
-    // 漫反射
-    float3 diffuse = (gBufferData.albedo / UNITY_PI);
-    
-    // Disney漫反射（更精确）
-    float diffuseCoff = DisneyDiffuse(nDotV, nDotL, lDotH, gBufferData.roughness);
-    
-    float3 Lo = (diffuseCoff * kD * gBufferData.albedo / UNITY_PI + specular) * lightColor * lightIntensity * nDotL;
-    
-    return Lo;
+    float vDotH = saturate(dot(V, H));
+
+    // GBuffer 存 perceptual roughness；GGX 需要 alphaRoughness = perceptual^2
+    float perceptualRoughness = saturate(gBufferData.roughness);
+    float alphaRoughness = perceptualRoughness * perceptualRoughness;
+    float metallic = saturate(gBufferData.metallic);
+
+    // 基础反射率：非金属(电介质) F0=0.04，金属 F0=baseColor
+    float3 dielectricF0 = float3(0.04, 0.04, 0.04);
+    float3 metalF0 = gBufferData.albedo;
+
+    // Cook-Torrance 镜面（参考: BRDF_specularGGX = V_GGX * D_GGX）
+    float V_GGX = SmithJointGGXVisibilityTerm(nDotL, nDotV, alphaRoughness);
+    float D_GGX = DistributionGGX(nDotH, alphaRoughness);
+
+    // Schlick Fresnel（用 VdotH，参考用 abs(VdotH)）
+    float3 dielectricF = FresnelTerm(dielectricF0, vDotH);   // f0=0.04, f90=1
+    float3 metalF = FresnelTerm(metalF0, vDotH);             // f0=baseColor, f90=1
+
+    // 漫反射：Lambertian baseColor/π，乘 NdotL 与光源强度（参考: BRDF_lambertian）
+    float3 diffuseTerm = lightColor * lightIntensity * nDotL * (gBufferData.albedo / UNITY_PI);
+
+    // 镜面高光 = intensity * NdotL * (V * D)，再乘各自 Fresnel
+    float3 specFactor = lightColor * lightIntensity * nDotL * (V_GGX * D_GGX);
+
+    // 电介质：diffuse 与 specular 按 fresnel 能量守恒混合
+    float3 lDielectric = lerp(diffuseTerm, specFactor, dielectricF);
+    // 金属：纯镜面（用 baseColor 作 F0）
+    float3 lMetal = metalF * specFactor;
+
+    // 按 metallic 混合
+    float3 lColor = lerp(lDielectric, lMetal, metallic);
+
+    return lColor;
 }
 
 // 像素着色器 - 延迟光照
 // IBL 环境光照：漫反射辐照度图 + 预过滤镜面反射图 + BRDF LUT
 // 纹理 texEnvMapIrradiance / texEnvMap / texBRDF_LUT 在 StandardBRDF.hlsl 中声明，
 // 由 DeferredLightingPass 按名称绑定（enableIBL 时）。
+//
+// 实现与 glTF-Sample-Viewer 的 IBL 一致：
+//   f_diffuse = irradiance(n) * baseColor                    (irradiance 已含 1/π)
+//   f_specular = prefiltered(R, lod)                          (lod=perceptual*(mips-1))
+//   dielectric_ibl = mix(diffuse, specular, F_dielectric_ibl)
+//   metal_ibl      = F_metal(baseColor) * specular
+//   color = mix(dielectric_ibl, metal_ibl, metallic)
 float3 ComputeIBL(GBufferData gBufferData)
 {
     float3 N = normalize(gBufferData.normal);
@@ -278,12 +293,8 @@ float3 ComputeIBL(GBufferData gBufferData)
 
     float metallic = saturate(gBufferData.metallic);
 
-    // 反射率 F0：非金属用 0.04，金属用 albedo
-    float3 F0 = float3(0.04, 0.04, 0.04);
-    F0 = lerp(F0, gBufferData.albedo, metallic);
-
-    float3 diffuseColor = gBufferData.albedo * (1.0 - metallic) * (1.0 - F0);
-    float3 specularColor = lerp(F0, gBufferData.albedo, metallic);
+    float3 dielectricF0 = float3(0.04, 0.04, 0.04);   // 电介质 F0（IOR=1.5 → 4%）
+    float3 metalF0 = gBufferData.albedo;              // 金属 F0 = baseColor
 
     // 预过滤环境图 mip 数
     uint width, height, levels;
@@ -296,14 +307,36 @@ float3 ComputeIBL(GBufferData gBufferData)
     float3 irradiance = texEnvMapIrradiance.Sample(texEnvMapIrradianceSam, N).rgb;
     float3 prefiltered = texEnvMap.SampleLevel(texEnvMapSam, R, lod).rgb;
 
-    // BRDF LUT uses U=NdotV and V=roughness, matching GenerateBRDFLUT.
+    // BRDF LUT uses U=NdotV and V=roughness(perceptual), matching GenerateBRDFLUT.
     float2 brdfSample = clamp(float2(NdotV, perceptualRoughness), float2(0.0, 0.0), float2(1.0, 1.0));
     float2 brdf = texBRDF_LUT.SampleLevel(texBRDF_LUTSam, brdfSample, 0).rg;
 
-    float3 diffuseIBL = irradiance * diffuseColor;
-    float3 specularIBL = prefiltered * (specularColor * brdf.x + brdf.y);
+    // 粗糙度相关 Fresnel（Fdez-Aguera），对电介质/金属分别求 FssEss
+    float3 FrDielectric = max(float3(1.0 - perceptualRoughness, 1.0 - perceptualRoughness, 1.0 - perceptualRoughness), dielectricF0) - dielectricF0;
+    float3 kSDielectric = dielectricF0 + FrDielectric * pow(1.0 - NdotV, 5.0);
+    float3 Fdielectric = kSDielectric * brdf.x + brdf.y;   // FssEss(电介质)
 
-    return (diffuseIBL + specularIBL) * gBufferData.ao;
+    float3 FrMetal = max(float3(1.0 - perceptualRoughness, 1.0 - perceptualRoughness, 1.0 - perceptualRoughness), metalF0) - metalF0;
+    float3 kSMetal = metalF0 + FrMetal * pow(1.0 - NdotV, 5.0);
+    float3 Fmetal = kSMetal * brdf.x + brdf.y;             // FssEss(金属)
+
+    // 漫反射 IBL（只对电介质贡献；金属无漫反射）
+    float3 diffuseIBL = irradiance * gBufferData.albedo;
+    // 镜面 IBL
+    float3 specularIBL = prefiltered;
+
+    // 电介质：diffuse 与 specular 按 rough-fresnel 能量守恒混合
+    float3 dielectricIBL = lerp(diffuseIBL, specularIBL, Fdielectric);
+    // 金属：纯镜面（F0=baseColor 已体现 tint），用 Fmetal 缩放
+    float3 metalIBL = specularIBL * Fmetal;
+
+    float3 iblColor = lerp(dielectricIBL, metalIBL, metallic);
+
+    // IBL 强度系数（glTF-Sample-Viewer 中对应 iblIntensity；默认 1.0 全强度）。
+    // 当前环境 HDR 亮度较高，金属镜面反射过强导致帽顶接近纯白，先压到 0.6 观察。
+    const float kEnvIntensity = 0.8;
+
+    return iblColor * kEnvIntensity * gBufferData.ao;
 }
 
 // 像素着色器 - 延迟光照

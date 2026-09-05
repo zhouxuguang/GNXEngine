@@ -76,8 +76,9 @@ GBufferOutput PS(VertexOut pin)
     float3 normal = NormalSampleToWorldSpace(normalSample, n, pin.tangent);
     
     // 3. 采样Metallic-Roughness纹理
+    // glTF 约定: G 通道 = roughness, B 通道 = metallic (R 留给可选 occlusion)
     float4 mrSample = gMetalRoughMap.Sample(gMetalRoughMapSam, pin.texCoord0);
-    float metallic = mrSample.r;
+    float metallic = mrSample.b;
     float roughness = mrSample.g;
     
     // 4. 采样AO纹理
@@ -102,7 +103,7 @@ GBufferOutput PS_NoNormalMap(VertexOut pin)
     float3 normal = normalize(pin.worldNormal);
     
     float4 mrSample = gMetalRoughMap.Sample(gMetalRoughMapSam, pin.texCoord0);
-    float metallic = mrSample.r;
+    float metallic = mrSample.b;
     float roughness = mrSample.g;
     
     float4 Kao = gAmbientMap.Sample(gAmbientMapSam, pin.texCoord0);

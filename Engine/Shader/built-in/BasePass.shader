@@ -84,6 +84,16 @@ FragmentOutput PS(VertexOutput input)
     float4 metalRough = gMetalRoughMap.Sample(gMetalRoughMapSam, input.texCoord);
     float ao = gAmbientMap.Sample(gAmbientMapSam, input.texCoord).r;
     float3 emissive = gEmissiveMap.Sample(gEmissiveMapSam, input.texCoord).rgb;
+
+    // glTF metallic-roughness 约定（与 glTF-Sample-Viewer / Khronos 一致）：
+    //   R 通道保留给 (可选) occlusion；G 通道 = roughness；B 通道 = metallic
+    // 注意：DamagedHelmet 的 Default_metalRoughness 贴图 R≈0, G=roughness, B=metallic。
+    float metallic = metalRough.b;
+    float perceptualRoughness = metalRough.g;
+
+    // G-Buffer 存储“感知粗糙度”(perceptual)，延迟光照阶段再平方为 alphaRoughness。
+    // 避免在 8bit RT 中丢失精度，也保证 IBL 的 lod/LUT 直接使用 perceptual。
+    float packedRoughness = perceptualRoughness;
     
     FragmentOutput output;
 
@@ -94,9 +104,10 @@ FragmentOutput PS(VertexOutput input)
     normal = EncodeNormalOctahedron(normalize(normal));
     output.outRT1 = float4(normal, 0.333333f);
 
-    // RT2: Metallic(0) + Specular(0.5) + Roughness(g通道) + [4 bit 0b1010 | 4 bit ShadingModel]
+    // RT2: Metallic + Specular(0.5) + Roughness(g通道) + [4 bit 0b1010 | 4 bit ShadingModel]
+    // （shadingModel 字节第 3 通道；metallic 存 R，roughness 存 B）
     uint lastCompoent = (10 << 4) | (1);
-    output.outRT2 = float4(metalRough.r, 0.5f, metalRough.g, float(lastCompoent) / 255.0f);
+    output.outRT2 = float4(metallic, 0.5f, packedRoughness, float(lastCompoent) / 255.0f);
 
     // RT3: BaseColor + AO
     output.outRT3 = float4(baseColor.rgb, ao);

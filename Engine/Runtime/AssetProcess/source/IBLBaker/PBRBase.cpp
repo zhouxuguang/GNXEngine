@@ -309,16 +309,18 @@ std::vector<imagecodec::VImagePtr> GenerateIrradianceMap(
                 mathutil::Vector3f tangent, bitangent;
                 BuildOrthonormalBasis(N, tangent, bitangent);
 
-                // 半球余弦加权积分
+                // 半球余弦加权积分（irradiance）
                 mathutil::Vector3f irradiance(0.0f, 0.0f, 0.0f);
 
                 for (uint32_t i = 0; i < samples; ++i)
                 {
-                    // 均匀采样半球并做余弦加权
+                    // 余弦加权半球采样（Malley's method）
+                    // rand1 = 方位角均匀，rand2 = Hammersley 序列
                     float rand1 = (float)i / samples + 0.5f / samples;
                     float rand2 = RadicalInverse_VdC(i);
 
-                    // 余弦加权半球采样
+                    // 余弦加权半球采样：pdf(θ) = cosθ/π
+                    // 方向分布由 cosθ = sqrt(1-rand2) 保证（圆盘均匀投影）
                     float phi = 2.0f * PI * rand1;
                     float cosTheta = std::sqrt(1.0f - rand2);
                     float sinTheta = std::sqrt(rand2);
@@ -333,10 +335,16 @@ std::vector<imagecodec::VImagePtr> GenerateIrradianceMap(
 
                     // 从环境贴图采样
                     mathutil::Vector3f color = SampleCubemap(faces, sampleDir);
-                    irradiance = irradiance + color * cosTheta; // cosTheta * L_i
+
+                    // 重要采样估计 E/π = ∫L(ω)cosθdω / π：
+                    //   用 pdf=cosθ/π 的余弦加权采样，E = (1/N)Σ L/pdf = (π/N)Σ L，
+                    //   而漫反射 IBL 需要 E/π，故 irradiance += L（cosθ 与 pdf 已抵消），
+                    //   最后除以 samples。
+                    // ⚠️ 旧实现误乘 cosθ 再乘 π/N，导致 irradiance 偏大约 2.09 倍 → 画面发白。
+                    irradiance = irradiance + color;
                 }
 
-                irradiance = irradiance * (PI / samples);
+                irradiance = irradiance * (1.0f / (float)samples);
 
                 uint32_t pixelOffset = (y * imageSize + x) * 3;
                 pOutData[pixelOffset + 0] = irradiance.x;

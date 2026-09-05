@@ -172,7 +172,9 @@ void PBRFrameWork::CreateScene(uint32_t width, uint32_t height)
     RenderSystem::DirectionLight* dirLight = static_cast<RenderSystem::DirectionLight*>(
         sceneManager->CreateLight("sun", RenderSystem::Light::DirectionLight));
     dirLight->setColor(Vector3f(1.0f, 0.95f, 0.9f));
-    dirLight->setDirection(Vector3f(-0.6f, -0.7f, -0.4f).Normalize());
+    // getDirection() 语义 = "表面指向光源"。原 (-0.6,-0.7,-0.4) 的 y<0 意味着光源在
+    // 头盔下方，顶部金属面 nDotL<0 完全不受光 → 头盔几乎只靠 IBL。改为从上前方照射。
+    dirLight->setDirection(Vector3f(0.45f, 0.65f, 0.6f).Normalize());
     dirLight->setStrength(Vector3f(3.0f, 3.0f, 3.0f));
 
     // ---- IBL 环境贴图（1.hdr 烘焙产物）+ 天空盒 ----

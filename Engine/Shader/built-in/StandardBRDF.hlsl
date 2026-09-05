@@ -345,7 +345,7 @@ float3 calculatePBRInputsMetallicRoughness(float4 albedo, float3 normal, float3 
 	// Roughness is stored in the 'g' channel, metallic is stored in the 'b' channel.
 	// This layout intentionally reserves the 'r' channel for (optional) occlusion map data
 	perceptualRoughness = mrSample.g * perceptualRoughness;
-	metallic = mrSample.r * metallic;
+	metallic = mrSample.b * metallic;
 
 	const float c_MinRoughness = 0.04;
 

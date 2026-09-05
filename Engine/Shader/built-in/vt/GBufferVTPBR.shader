@@ -119,6 +119,10 @@ FragmentOutput PS(VertexOutput input)
     float4 metalRough = gMetalRoughMap.Sample(gMetalRoughMapSam, input.texCoord);
     float ao = gAmbientMap.Sample(gAmbientMapSam, input.texCoord).r;
     float3 emissive = gEmissiveMap.Sample(gEmissiveMapSam, input.texCoord).rgb;
+
+    // glTF metallic-roughness 约定：G = roughness，B = metallic
+    float metallic = metalRough.b;
+    float perceptualRoughness = metalRough.g;
     
     FragmentOutput output;
 
@@ -129,9 +133,9 @@ FragmentOutput PS(VertexOutput input)
     normal = EncodeNormalOctahedron(normalize(normal));
     output.outRT1 = float4(normal, 0.333333f);
 
-    // RT2: Metallic(0) + Specular(0.5) + Roughness(g通道) + [4 bit 0b1010 | 4 bit ShadingModel]
+    // RT2: Metallic + Specular(0.5) + Roughness(g通道) + [4 bit 0b1010 | 4 bit ShadingModel]
     uint lastCompoent = (10 << 4) | (1);
-    output.outRT2 = float4(metalRough.r, 0.5f, metalRough.g, float(lastCompoent) / 255.0f);
+    output.outRT2 = float4(metallic, 0.5f, perceptualRoughness, float(lastCompoent) / 255.0f);
 
     // RT3: BaseColor + AO
     output.outRT3 = float4(baseColor.rgb, ao);
