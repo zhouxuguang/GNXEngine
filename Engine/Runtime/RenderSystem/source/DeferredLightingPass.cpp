@@ -50,6 +50,9 @@ bool DeferredLightingPass::Initialize(const DeferredLightingConfig& config)
     
     // 创建光源UBO
     CreateLightUniformBuffers();
+
+    // 创建阴影UBO
+    CreateShadowUniformBuffer();
     
     mInitialized = true;
     return true;
@@ -89,6 +92,17 @@ void DeferredLightingPass::CreateLightingPipeline()
     iblSamplerDesc.wrapR = CLAMP_TO_EDGE;
     iblSamplerDesc.maxLod = 12;
     mIBLCubeSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(iblSamplerDesc);
+
+    // ShadowMap 采样器：PCSS 需要手动读取深度并做比较，因此使用非比较的最近点采样
+    // 越界采样在 shader 端手动判定为"无阴影"，因此 wrap 用 CLAMP_TO_EDGE 即可
+    SamplerDesc shadowSamplerDesc;
+    shadowSamplerDesc.filterMin = MIN_NEAREST;
+    shadowSamplerDesc.filterMag = MAG_NEAREST;
+    shadowSamplerDesc.filterMip = MIN_NEAREST_MIPMAP_NEAREST;
+    shadowSamplerDesc.wrapS = CLAMP_TO_EDGE;
+    shadowSamplerDesc.wrapT = CLAMP_TO_EDGE;
+    shadowSamplerDesc.wrapR = CLAMP_TO_EDGE;
+    mShadowSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(shadowSamplerDesc);
 }
 
 //=============================================================================
@@ -169,6 +183,50 @@ void DeferredLightingPass::UpdateLightData(const DeferredLightingParams& params)
 }
 
 //=============================================================================
+// 创建阴影UBO
+//=============================================================================
+
+void DeferredLightingPass::CreateShadowUniformBuffer()
+{
+    // 创建阴影数据UBO - 使用引擎统一的cbShadow结构
+    mShadowUBO = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbShadow));
+}
+
+//=============================================================================
+// 更新阴影数据
+//=============================================================================
+
+void DeferredLightingPass::UpdateShadowData(const DeferredLightingParams& params)
+{
+    if (!mShadowUBO)
+    {
+        return;
+    }
+
+    cbShadow shadowData;
+    memset(&shadowData, 0, sizeof(shadowData));
+
+    if (params.enableShadow)
+    {
+        shadowData.LightView = params.shadowLightView;
+        shadowData.LightProj = params.shadowLightProj;
+        shadowData.ShadowMapSize = params.shadowMapSize;
+        shadowData.ShadowParams  = params.shadowParams;
+        shadowData.ShadowFlags   = mathutil::make_simd_float4(1.0f, 0.0f, 0.0f, 0.0f);
+    }
+    else
+    {
+        shadowData.LightView = mathutil::Matrix4x4f::ZERO;
+        shadowData.LightProj = mathutil::Matrix4x4f::ZERO;
+        shadowData.ShadowMapSize = mathutil::make_simd_float4(0.0f, 0.0f, 0.0f, 0.0f);
+        shadowData.ShadowParams  = mathutil::make_simd_float4(0.0f, 0.0f, 0.0f, 0.0f);
+        shadowData.ShadowFlags   = mathutil::make_simd_float4(0.0f, 0.0f, 0.0f, 0.0f);
+    }
+
+    mShadowUBO->SetData(&shadowData, 0, sizeof(shadowData));
+}
+
+//=============================================================================
 // 添加到FrameGraph
 //=============================================================================
 
@@ -198,9 +256,14 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
         FrameGraphResource ssaoTexture;
         bool hasSSAO;
         
+        // ShadowMap（FrameGraph 资源）
+        FrameGraphResource shadowMap;
+        bool enableShadow;
+
         // Uniform Buffers
         UniformBufferPtr cameraUBO;
         UniformBufferPtr lightUBO;
+        UniformBufferPtr shadowUBO;
         
         // IBL资源
         bool enableIBL;
@@ -237,10 +300,22 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             {
                 data.ssaoTexture = builder.Read(params.ssaoTexture, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
             }
+
+            // ShadowMap 深度纹理（作为只读采样）
+            data.enableShadow = params.enableShadow && (params.shadowMap != -1);
+            if (data.enableShadow)
+            {
+                data.shadowMap = builder.Read(params.shadowMap, (uint32_t)RenderCore::ResourceAccessType::ShaderRead);
+            }
+            else
+            {
+                data.shadowMap = -1;
+            }
             
             // 保存Uniform Buffers
             data.cameraUBO = params.cameraUBO;
             data.lightUBO = mLightDataUBO;
+            data.shadowUBO = mShadowUBO;
             
             // 保存IBL参数
             data.enableIBL = params.enableIBL;
@@ -253,6 +328,9 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             ZoneScopedN("DeferredLightingPass");
             // 更新光源数据
             UpdateLightData(params);
+
+            // 更新阴影数据
+            UpdateShadowData(params);
             
             // 获取纹理资源
             FrameGraphTexture& gSceneColor = resources.Get<FrameGraphTexture>(data.gSceneColor);
@@ -312,6 +390,16 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             {
                 renderEncoder->SetFragmentUniformBuffer("cbLighting", data.lightUBO);
             }
+
+            // 绑定阴影UBO - 使用名称绑定匹配cbShadow
+            // 无论是否启用阴影都始终绑定：UpdateShadowData 在未启用时写入 flags=0 的
+            // 全零数据，shader 中 _ShadowFlags.x<=0.5 不会进入 PCSS 分支。
+            // （若只在启用时绑定，未绑定的 cbuffer 在 Metal/Vulkan 上是未初始化内存，
+            //   _ShadowFlags.x 可能读到垃圾值 >0.5 而错误触发 PCSS。）
+            if (data.shadowUBO)
+            {
+                renderEncoder->SetFragmentUniformBuffer("cbShadow", data.shadowUBO);
+            }
             
             // 绑定G-Buffer纹理（RT0: Emissive from BasePass）
             renderEncoder->SetFragmentTextureAndSampler("gGBufferSceneColor", gSceneColor.texture, mGBufferSampler);
@@ -326,6 +414,17 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
             if (ssaoTexture)
             {
                 renderEncoder->SetFragmentTextureAndSampler("gSSAO", ssaoTexture->texture, mGBufferSampler);
+            }
+
+            // 绑定ShadowMap纹理（如果启用）
+            if (data.enableShadow)
+            {
+                FrameGraphTexture& shadowMapTex = resources.Get<FrameGraphTexture>(data.shadowMap);
+                if (shadowMapTex.texture)
+                {
+                    renderEncoder->SetFragmentTextureAndSampler("gShadowMap", shadowMapTex.texture,
+                                                                mShadowSampler ? mShadowSampler : mGBufferSampler);
+                }
             }
             
             // 绑定IBL纹理（如果启用）

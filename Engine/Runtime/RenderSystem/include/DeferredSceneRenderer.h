@@ -11,6 +11,7 @@
 #include "SceneRenderer.h"
 #include "GBufferRenderer.h"
 #include "DepthRenderer.h"
+#include "ShadowMapModule.h"
 #include "DeferredLightingPass.h"
 #include "HiZPass.h"
 #include "SSAOPass.h"
@@ -110,7 +111,8 @@ private:
         FrameGraphResource depthTexture,
         UniformBufferPtr cameraUBO,
         const HiZOutput& hiZOutput = HiZOutput(),
-        const SSAOOutput& ssaoOutput = SSAOOutput());
+        const SSAOOutput& ssaoOutput = SSAOOutput(),
+        const ShadowMapModuleOutput& shadowOutput = ShadowMapModuleOutput());
 
     /**
      * 收集场景中的光源
@@ -119,6 +121,17 @@ private:
         std::vector<DirectionLight*>& directionalLights,
         std::vector<PointLight*>& pointLights,
         std::vector<SpotLight*>& spotLights);
+
+    /**
+     * 渲染阴影 Pass（ShadowMap）
+     * 在所有几何体在光源相机参数下绘制深度，供延迟光照阶段 PCSS 采样
+     * @return 阴影输出（ShadowMap 资源 + 光源矩阵/参数）
+     */
+    ShadowMapModuleOutput RenderShadowMapPass(
+        FrameGraph& frameGraph,
+        CommandBufferPtr commandBuffer,
+        const std::vector<DepthMeshItem>& meshItems,
+        const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems);
 
     /**
      * 执行前向渲染Pass（用于半透明物体）
@@ -167,6 +180,7 @@ private:
     MotionBlurPassPtr mMotionBlurPass = nullptr;
     PostProcessing* mPostProcessing = nullptr;
     FeedbackRendererUniPtr mFeedbackRender = nullptr;
+    ShadowMapModuleUniPtr mShadowMapModule = nullptr;   // 阴影模块（PCSS）
     bool mEnableMotionBlur = false;
     
     uint32_t mWidth = 1;

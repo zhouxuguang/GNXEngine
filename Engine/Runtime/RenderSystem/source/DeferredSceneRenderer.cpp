@@ -19,6 +19,7 @@
 #include "BuildSetting.h"
 #include <algorithm>
 #include <functional>
+#include <cstdlib>
 #include <tracy/Tracy.hpp>
 
 NS_RENDERSYSTEM_BEGIN
@@ -32,6 +33,7 @@ DeferredSceneRenderer::DeferredSceneRenderer()
     mHiZPass = std::make_shared<HiZPass>();
     mSSAOPass = std::make_shared<SSAOPass>();
     mMotionBlurPass = std::make_shared<MotionBlurPass>();
+    mShadowMapModule = std::make_unique<ShadowMapModule>(GetRenderDevice().get());
     
     mPostProcessing = new PostProcessing(GetRenderDevice());
     
@@ -179,6 +181,15 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     FrameGraphResource depthResource = RenderPreDepthPass(
         frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, terrainItems, frustum);
 
+    // ShadowMap Pass（在 PreDepth 之后、BasePass 之前生成光源视角深度）
+    // 所有投射阴影的几何体在光源相机参数下绘制
+    ShadowMapModuleOutput shadowOutput;
+    if (mShadowMapModule)
+    {
+        shadowOutput = RenderShadowMapPass(
+            frameGraph, commandBuffer, meshItems, skinnedMeshItems);
+    }
+
     // Hi-Z Pass（在PreDepth之后、BasePass之前）
     HiZOutput hiZOutput;
     if (depthResource != -1)
@@ -225,7 +236,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // Deferred Lighting Pass
     FrameGraphResource lightingResult = RenderDeferredLightingPass(
-        frameGraph, commandBuffer, gbufferData, depthResource, cameraUBO, hiZOutput, ssaoOutput);
+        frameGraph, commandBuffer, gbufferData, depthResource, cameraUBO, hiZOutput, ssaoOutput, shadowOutput);
 
     // Skybox Pass（在 Deferred Lighting 之后、MotionBlur 之前）
     // 天空盒通过深度测试 LEQUAL 只填充远平面区域（无几何体覆盖的部分）
@@ -464,7 +475,8 @@ FrameGraphResource DeferredSceneRenderer::RenderDeferredLightingPass(
     FrameGraphResource depthTexture,
     UniformBufferPtr cameraUBO,
     const HiZOutput& hiZOutput,
-    const SSAOOutput& ssaoOutput)
+    const SSAOOutput& ssaoOutput,
+    const ShadowMapModuleOutput& shadowOutput)
 {
     // 初始化延迟光照Pass（如果需要）
     if (!mDeferredLightingPass->IsInitialized())
@@ -497,7 +509,7 @@ FrameGraphResource DeferredSceneRenderer::RenderDeferredLightingPass(
     params.width = mWidth;
     params.height = mHeight;
     params.ssaoTexture = ssaoOutput.ssaoResult;
-    
+
     // 传递 IBL 资源到延迟光照 Pass
     if (mIBLBRDFLUT || mIBLIrradianceMap || mIBLPrefilteredMap)
     {
@@ -506,7 +518,27 @@ FrameGraphResource DeferredSceneRenderer::RenderDeferredLightingPass(
         params.irradianceMap = mIBLIrradianceMap;
         params.prefilteredMap = mIBLPrefilteredMap;
     }
-    
+
+    // 传递阴影资源到延迟光照 Pass（PCSS）
+    if (shadowOutput.valid && shadowOutput.shadowMap != -1 && !directionalLights.empty())
+    {
+        params.enableShadow = true;
+        params.shadowMap = shadowOutput.shadowMap;
+        params.shadowLightView = shadowOutput.lightView;
+        params.shadowLightProj = shadowOutput.lightProj;
+        params.shadowMapSize = shadowOutput.shadowMapSize;
+        params.shadowParams = mathutil::make_simd_float4(
+            shadowOutput.depthBias,
+            shadowOutput.normalBias,
+            shadowOutput.lightSize,
+            shadowOutput.filterRadius);
+    }
+    else
+    {
+        params.enableShadow = false;
+        params.shadowMap = -1;
+    }
+
     // 传递Hi-Z资源（如果可用）
     // 注意：这里需要在DeferredLightingParams中添加hiZTexture字段
     // 现在先预留接口，等实现SSR时使用
@@ -612,6 +644,98 @@ FrameGraphResource DeferredSceneRenderer::RenderFeedbackPass(
                                     externalFeedbackTexture, externalFeedbackDepth);
 }
 
+ShadowMapModuleOutput DeferredSceneRenderer::RenderShadowMapPass(
+    FrameGraph& frameGraph,
+    CommandBufferPtr commandBuffer,
+    const std::vector<DepthMeshItem>& meshItems,
+    const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems)
+{
+    ShadowMapModuleOutput output;
+    if (!mShadowMapModule)
+    {
+        return output;
+    }
+
+    // 运行时调试/对比开关：GNX_DISABLE_SHADOW=1 时关闭阴影（默认开启）
+    // 用于性能对比 / 问题排查（每帧关闭阴影渲染，但光照阶段 cbShadow 仍以
+    // flags=0 绑定，shader 不会走 PCSS 分支）。
+    static const bool kShadowEnabled = []() {
+        const char* env = getenv("GNX_DISABLE_SHADOW");
+        bool enabled = !(env && env[0] == '1');
+        if (!enabled)
+        {
+            LOG_WARN("Shadow disabled by GNX_DISABLE_SHADOW=1 (only once)");
+        }
+        return enabled;
+    }();
+    if (!kShadowEnabled)
+    {
+        return output;
+    }
+
+    // 取主方向光（平行光是当前阴影系统支持的光源类型）
+    SceneManager* sceneManager = SceneManager::GetInstance();
+    if (!sceneManager)
+    {
+        return output;
+    }
+
+    DirectionLight* dirLight = nullptr;
+    const std::vector<Light*>& allLights = sceneManager->GetAllLights();
+    for (Light* light : allLights)
+    {
+        if (light && light->getLightType() == Light::LightType::DirectionLight)
+        {
+            dirLight = static_cast<DirectionLight*>(light);
+            break;
+        }
+    }
+    if (!dirLight)
+    {
+        return output;
+    }
+
+    // 主相机（用于确定阴影覆盖范围 / 注视中心）
+    CameraPtr camera = sceneManager->GetCamera("MainCamera");
+
+    // 蒙皮网格骨骼矩阵 UBO
+    UniformBufferPtr skinnedMatrixUBO = nullptr;
+    if (!skinnedMeshItems.empty())
+    {
+        skinnedMatrixUBO = skinnedMeshItems[0].mesh->GetSkinnedMatrixBuffer();
+    }
+
+    // 组装阴影渲染参数
+    // 只把 castShadow=true 的网格作为投射体（caster）画进 ShadowMap。
+    // 地面/墙体等纯接收者（castShadow=false）不应进入 ShadowMap，
+    // 否则会作为大平面 caster 造成大面积自阴影痤疮/伪影。
+    ShadowMapRenderParams params;
+    params.width = 2048;
+    params.height = 2048;
+    params.camera = camera.get();
+    params.light = dirLight;
+    params.skinnedMatrixUBO = skinnedMatrixUBO;
+    for (const auto& item : meshItems)
+    {
+        if (item.castShadow)
+        {
+            params.staticMeshes.push_back(item);
+        }
+    }
+    for (const auto& item : skinnedMeshItems)
+    {
+        if (item.castShadow)
+        {
+            params.skinnedMeshes.push_back(item);
+        }
+    }
+
+    // 渲染阴影深度
+    output = mShadowMapModule->Render("ShadowMapPass", frameGraph, commandBuffer, params);
+
+    return output;
+}
+
 void DeferredSceneRenderer::CollectLights(
     std::vector<DirectionLight*>& directionalLights,
     std::vector<PointLight*>& pointLights,
@@ -682,6 +806,7 @@ void DeferredSceneRenderer::CollectMeshesRecursive(
             item.mesh = mesh;
             item.objectUBO = node->GetOrCreateModelUBO(renderDevice);
             item.materials = meshRenderer->GetMaterials();
+            item.castShadow = meshRenderer->GetCastShadow();
             meshItems.push_back(item);
         }
     }
@@ -697,6 +822,7 @@ void DeferredSceneRenderer::CollectMeshesRecursive(
             item.mesh = mesh;
             item.objectUBO = node->GetOrCreateModelUBO(renderDevice);
             item.materials = skinnedMeshRenderer->GetMaterials();
+            item.castShadow = skinnedMeshRenderer->GetCastShadow();
             skinnedMeshItems.push_back(item);
         }
     }

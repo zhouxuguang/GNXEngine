@@ -13,6 +13,8 @@
 #include "FrameGraph/FrameGraph.h"
 #include "FrameGraph/FrameGraphTexture.h"
 #include "Runtime/RenderCore/include/GraphicsPipeline.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
+#include "Runtime/MathUtil/include/SimdMath.h"
 #include <memory>
 #include <vector>
 
@@ -60,6 +62,17 @@ struct DeferredLightingParams
     RCTexturePtr irradianceMap = nullptr;
     RCTexturePtr prefilteredMap = nullptr;
     RCTexturePtr brdfLUT = nullptr;
+
+    // ========== 阴影（PCSS） ==========
+    // ShadowMap 深度纹理（FrameGraph 资源，-1 表示无阴影）
+    FrameGraphResource shadowMap = -1;
+
+    // 阴影数据（光源视图/投影矩阵 + 参数），供 shader 端 PCSS 采样
+    mathutil::Matrix4x4f shadowLightView;                  // 光源视图矩阵
+    mathutil::Matrix4x4f shadowLightProj;                  // 光源投影矩阵（Reverse-Z 正交）
+    mathutil::simd_float4 shadowMapSize = mathutil::make_simd_float4(0, 0, 0, 0); // (w, h, 1/w, 1/h)
+    mathutil::simd_float4 shadowParams = mathutil::make_simd_float4(0.0005f, 0.02f, 0.02f, 3.0f); // (bias, normalBias, lightSize, filterRadius)
+    bool enableShadow = false;
 };
 
 /**
@@ -135,7 +148,17 @@ private:
      * @brief 创建光源Uniform Buffer
      */
     void CreateLightUniformBuffers();
-    
+
+    /**
+     * @brief 创建阴影Uniform Buffer
+     */
+    void CreateShadowUniformBuffer();
+
+    /**
+     * @brief 更新阴影数据到UBO
+     */
+    void UpdateShadowData(const DeferredLightingParams& params);
+
     /**
      * @brief 更新光源数据到UBO
      */
@@ -152,9 +175,15 @@ private:
 
     // IBL cubemap 采样器（带 mip trilinear，用于预过滤环境贴图的 roughness LOD 采样）
     TextureSamplerPtr mIBLCubeSampler = nullptr;
+
+    // ShadowMap 采样器（PCSS 需要非比较采样，手动做深度比较）
+    TextureSamplerPtr mShadowSampler = nullptr;
     
     // 光源数据UBO
     UniformBufferPtr mLightDataUBO = nullptr;
+
+    // 阴影数据UBO
+    UniformBufferPtr mShadowUBO = nullptr;
     
     bool mInitialized = false;
     

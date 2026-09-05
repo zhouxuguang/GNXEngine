@@ -50,6 +50,175 @@ SamplerState gDepthSam;
 Texture2D gSSAO;
 SamplerState gSSAOSam;
 
+// ============================================================
+// 阴影（PCSS）
+// ============================================================
+// ShadowMap 深度纹理 + 光源矩阵/参数
+Texture2D gShadowMap;
+SamplerState gShadowMapSam;
+
+cbuffer cbShadow
+{
+    float4x4 _LightV;          // 光源视图矩阵
+    float4x4 _LightP;          // 光源投影矩阵（Reverse-Z 正交）
+    float4 _ShadowMapSize;     // (width, height, 1/width, 1/height)
+    float4 _ShadowParams;      // (depthBias, normalBias, lightSize, filterRadius)
+    float4 _ShadowFlags;       // (enable=1, 0, 0, 0)
+};
+
+// 低差异随机数（Poisson 旋转用）
+float ShadowRand(float2 co)
+{
+    return frac(sin(dot(co, float2(12.9898, 78.233))) * 43758.5453);
+}
+
+// 把世界坐标变换到光源 NDC，返回 (shadowUV.xy, receiverForwardDepth)
+// 说明：阴影深度使用 Reverse-Z（近=1 远=0），这里统一转为"正向"线性深度
+// (近=0 远=1) 以便 PCSS 按常规方向推导（blocker 深度更小 = 更靠近光源）。
+float3 WorldToShadowUV(float3 worldPos)
+{
+    float4 lightClip = mul(float4(worldPos, 1.0), _LightV);
+    lightClip = mul(lightClip, _LightP);
+
+    // 正交投影：clip.w == 1，NDC z 即反向深度（近=1 远=0）
+    float2 shadowUV = lightClip.xy * 0.5 + 0.5;
+    float reverseZ = lightClip.z;
+
+    // 越界时返回无效标记（用 z = -1 表示）
+    if (any(shadowUV < 0.0) || any(shadowUV > 1.0))
+    {
+        return float3(shadowUV, -1.0);
+    }
+
+    // 转为正向深度：近=0 远=1
+    float forwardDepth = 1.0 - reverseZ;
+    return float3(shadowUV, forwardDepth);
+}
+
+// 从 ShadowMap 采样某 UV 处的正向深度（近=0 远=1）
+float SampleShadowForwardDepth(float2 uv)
+{
+    float reverseZ = gShadowMap.Sample(gShadowMapSam, uv).r;
+    return 1.0 - reverseZ;
+}
+
+// Blocker 搜索：在给定半径内，找到比接收点更靠近光源（正向深度更小）的遮挡者平均深度
+// 返回平均 blocker 正向深度；找不到则返回 -1
+float FindBlockerDepth(float2 uv, float receiverDepth, float searchRadius, float bias)
+{
+    const int kBlockerSamples = 16;
+    const float PI2 = 6.28318530718;
+
+    float blockerSum = 0.0;
+    int blockerCount = 0;
+
+    float angleOffset = ShadowRand(uv * 7.13 + 1.7);
+    float radiusOffset = ShadowRand(uv * 3.71 + 0.5);
+
+    for (int i = 0; i < kBlockerSamples; i++)
+    {
+        float angle = angleOffset + (float)i * (PI2 / (float)kBlockerSamples);
+        // 泊松盘（均匀分布 + 随机半径），避免规则锯齿
+        float r = (radiusOffset + (float)i / (float)kBlockerSamples) * searchRadius;
+        float2 offset = float2(cos(angle), sin(angle)) * r;
+
+        float2 sampleUV = uv + offset * _ShadowMapSize.zw;  // zw = 1/width, 1/height
+        float sampleDepth = SampleShadowForwardDepth(sampleUV);
+
+        // blocker = 比接收点更靠近光源（正向深度更小）
+        if (sampleDepth < receiverDepth - bias)
+        {
+            blockerSum += sampleDepth;
+            blockerCount++;
+        }
+    }
+
+    return blockerCount > 0 ? blockerSum / (float)blockerCount : -1.0;
+}
+
+// PCSS 阴影可见度
+// 返回 1.0 = 完全照亮，0.0 = 完全阴影
+float ComputePCSSShadow(float3 worldPos, float3 normal, float3 lightDir)
+{
+    float3 shadowData = WorldToShadowUV(worldPos);
+    float2 uv = shadowData.xy;
+    float receiverDepth = shadowData.z;
+
+    // 不在阴影贴图覆盖范围内 → 无阴影
+    if (receiverDepth < 0.0)
+    {
+        return 1.0;
+    }
+
+    float bias = _ShadowParams.x;
+    float normalBias = _ShadowParams.y;
+    float lightSize = _ShadowParams.z;    // 光源大小（决定软阴影）
+    float baseRadius = _ShadowParams.w;   // 基础搜索半径（纹素）
+
+    // 法线偏移：沿法线把接收点向"靠近光源"的一侧推，缓解自阴影痤疮。
+    // lightDir 是"表面→光源"方向，因此沿 normal 推离表面即靠近光源。
+    // normalBias 以世界单位表示（C++ 端按 ShadowMap 正交覆盖范围/分辨率换算，
+    // 覆盖 12 世界单位 / 2048 纹素 ≈ 0.006 单位每纹素；0.02 ≈ 3 纹素）。
+    // 掠射角（nDotL 小）时痤疮更明显，用 lerp 适当放大偏移。
+    float nDotL = saturate(dot(normal, lightDir));   // 表面→光源
+    float biasScale = lerp(2.0f, 1.0f, nDotL);       // 掠射角放大偏移
+    float3 worldPosBias = worldPos + normal * (normalBias * biasScale);
+
+    float3 shadowDataBias = WorldToShadowUV(worldPosBias);
+    uv = shadowDataBias.xy;
+    receiverDepth = shadowDataBias.z;
+    if (receiverDepth < 0.0)
+    {
+        return 1.0;
+    }
+
+    // PCSS 第一步：Blocker 搜索，得到平均 blocker 深度
+    // 搜索半径随光源大小（正交阴影下近似恒定，用 lightSize 放大）
+    float blockerSearchRadius = baseRadius * (0.5 + lightSize * 50.0);
+    float avgBlockerDepth = FindBlockerDepth(uv, receiverDepth, blockerSearchRadius, bias);
+
+    // 没有找到 blocker → 不在阴影中
+    if (avgBlockerDepth < 0.0)
+    {
+        return 1.0;
+    }
+
+    // PCSS 第二步：估算半影大小（penumbra）
+    // blocker 离接收点越近 → 阴影越锐利；越远 → 越软
+    float penumbra = lightSize * (receiverDepth - avgBlockerDepth) / max(avgBlockerDepth, 1e-4);
+    float pcfRadius = baseRadius * (0.3 + penumbra * 40.0);
+    pcfRadius = clamp(pcfRadius, 0.5, baseRadius * 2.0);
+
+    // PCSS 第三步：PCF 过滤
+    const int kPCFSamples = 24;
+    const float PI2 = 6.28318530718;
+
+    float shadow = 0.0;
+    float angleOffset = ShadowRand(uv * 11.31 + 2.9);
+    float radiusOffset = ShadowRand(uv * 5.17 + 0.3);
+
+    for (int i = 0; i < kPCFSamples; i++)
+    {
+        float angle = angleOffset + (float)i * (PI2 / (float)kPCFSamples);
+        float r = (radiusOffset + (float)i / (float)kPCFSamples) * pcfRadius;
+        float2 offset = float2(cos(angle), sin(angle)) * r;
+        float2 sampleUV = uv + offset * _ShadowMapSize.zw;
+
+        // 采样点越界视为无阴影（保持软边缘自然）
+        if (sampleUV.x < 0.0 || sampleUV.x > 1.0 || sampleUV.y < 0.0 || sampleUV.y > 1.0)
+        {
+            shadow += 1.0;
+            continue;
+        }
+
+        float sampleDepth = SampleShadowForwardDepth(sampleUV);
+        // sampleDepth 更小 = 更靠近光源 = 该采样点在光中
+        shadow += (sampleDepth < receiverDepth - bias) ? 0.0 : 1.0;
+    }
+
+    return shadow / (float)kPCFSamples;
+}
+
 // 计算单个光源的贡献
 float3 ComputeLighting(GBufferData gBufferData, float3 lightDir, float3 lightColor, float lightIntensity)
 {
@@ -163,6 +332,7 @@ float4 PS(VertexOut pin) : SV_Target0
     // w = 1: 点光源，xyz 是光源位置
     float3 lightDir;
     float attenuation = 1.0;
+    float shadowFactor = 1.0;
     
     if (_WorldSpaceLightPos.w < 0.5)
     {
@@ -170,6 +340,12 @@ float4 PS(VertexOut pin) : SV_Target0
         lightDir = normalize(_WorldSpaceLightPos.xyz);
         // 方向光没有距离衰减
         attenuation = 1.0;
+
+        // PCSS 阴影（仅主方向光，需 ShadowMap 有效）
+        if (_ShadowFlags.x > 0.5)
+        {
+            shadowFactor = ComputePCSSShadow(gBufferData.position, gBufferData.normal, lightDir);
+        }
     }
     else
     {
@@ -191,6 +367,7 @@ float4 PS(VertexOut pin) : SV_Target0
     
     float3 Lo = ComputeLighting(gBufferData, lightDir, _LightColor.rgb, _Strength.x);
     Lo *= attenuation;
+    Lo *= shadowFactor;
     
     // IBL 环境光（漫反射辐照度 + 预过滤镜面反射）
     float3 ambient = ComputeIBL(gBufferData);

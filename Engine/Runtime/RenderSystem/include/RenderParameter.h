@@ -1,3 +1,6 @@
+#ifndef GNXENGINE_RENDER_PARAMETER_H
+#define GNXENGINE_RENDER_PARAMETER_H
+
 #include "RSDefine.h"
 #include "Runtime/RenderCore/include/VertexBuffer.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
@@ -61,6 +64,17 @@ struct cbLighting
     float SpotPower;    // spot light only
 };
 
+// 阴影相关 UBO（与 DeferredLighting.shader 中的 cbuffer cbShadow 一一对应）
+// 用于延迟光照阶段对 ShadowMap 做 PCSS 采样
+struct cbShadow
+{
+    mathutil::Matrix4x4f LightView;   // 光源视图矩阵（世界 → 光源视图空间）
+    mathutil::Matrix4x4f LightProj;   // 光源投影矩阵（Reverse-Z 正交，视图 → 裁剪/NDC）
+    mathutil::simd_float4 ShadowMapSize;  // (width, height, 1/width, 1/height)
+    mathutil::simd_float4 ShadowParams;   // (depthBias, normalBias, lightSize, filterRadius)
+    mathutil::simd_float4 ShadowFlags;    // (enable=1, 0, 0, 0)
+};
+
 //每一个物体的结构
 struct cbPerObject
 {
@@ -70,3 +84,5 @@ struct cbPerObject
 };
 
 NS_RENDERSYSTEM_END
+
+#endif // GNXENGINE_RENDER_PARAMETER_H

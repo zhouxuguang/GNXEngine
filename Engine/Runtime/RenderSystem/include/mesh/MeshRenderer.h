@@ -37,11 +37,19 @@ public:
     {
         return mMaterials;
     }
+
+    // 是否投射阴影（默认 true）。接收阴影的地面/墙体等应设为 false，
+    // 避免其作为 caster 画进 ShadowMap 造成大面积自阴影痤疮。
+    void SetCastShadow(bool cast) { mCastShadow = cast; }
+    bool GetCastShadow() const { return mCastShadow; }
+
 private:
     MeshPtr mMeshPtr = nullptr;
     
     typedef std::vector<MaterialPtr> MaterialPtrVector;
     MaterialPtrVector mMaterials;
+
+    bool mCastShadow = true;   // 是否投射阴影（默认投射）
 };
 
 typedef std::shared_ptr<MeshRenderer> MeshRendererPtr;
