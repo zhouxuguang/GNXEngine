@@ -153,6 +153,24 @@ inline MTLPixelFormat ConvertTextureFormatToMetal(uint32_t textureFormat)
         case kTexFormatDXT1_SRGB:
             return MTLPixelFormatBC1_RGBA_sRGB;
 
+        // BC6H / BC7 —— 仅 macOS 支持（Apple Silicon/AMD/Intel GPU 均支持 BC 压缩）。
+        // iOS 用 ASTC/ETC2，不支持 BC6H/BC7，返回 Invalid 由上层回退。
+#if GNX_OS_MACOS
+        case kTexFormatBC6H:
+            return MTLPixelFormatBC6H_RGBFloat;
+
+        case kTexFormatBC7_RGB:
+            return MTLPixelFormatBC7_RGBAUnorm;
+
+        case kTexFormatBC7_SRGB:
+            return MTLPixelFormatBC7_RGBAUnorm_sRGB;
+#else
+        case kTexFormatBC6H:
+        case kTexFormatBC7_RGB:
+        case kTexFormatBC7_SRGB:
+            return MTLPixelFormatInvalid;
+#endif
+
         case kTexFormatR32Float:
             return MTLPixelFormatR32Float;
             
