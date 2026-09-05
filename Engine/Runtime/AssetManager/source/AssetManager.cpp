@@ -166,34 +166,66 @@ TextureAsset* AssetManager::LoadTextureInternal(const std::string& path, bool as
 	{
 		texturePath = path + ".texture";
 	}
-	std::string fullPath = mRootPath + "/" + texturePath;
-
-	// 检查是否已加载（使用hash作为key）
-	std::string hashKey = path;
-	if (hashKey.find(".texture") != std::string::npos)
+	// 统一去掉扩展名作为缓存 key / name
+	std::string baseName = texturePath;
 	{
-		hashKey = hashKey.substr(0, hashKey.find(".texture"));
+		size_t slash = baseName.find_last_of("/\\");
+		if (slash != std::string::npos)
+		{
+			baseName = baseName.substr(slash + 1);
+		}
+		size_t ext = baseName.find(".texture");
+		if (ext != std::string::npos)
+		{
+			baseName = baseName.substr(0, ext);
+		}
 	}
-	
-	TextureAsset* existing = FindTexture(hashKey);
+
+	// 检查是否已加载
+	TextureAsset* existing = FindTexture(baseName);
 	if (existing)
 	{
 		existing->AddRef();
 		return existing;
 	}
 
-	// 加载纹理（使用CreateFromTextureMessageFile替代CreateFromFiles）
-    TextureAsset* texture = nullptr;
-	if (!texture)
+	// 读取 .texture 完整文件内容（移动端走包内资源）
+	std::vector<uint8_t> fileData;
+	bool readOK = false;
+#if GNX_OS_IOS || GNX_OS_ANDROID
+	readOK = LoadResource(texturePath, fileData);
+#else
+	std::string fullPath = mRootPath + "/" + texturePath;
+	fileData = baselib::FileUtil::ReadBinaryFile(fullPath);
+	readOK = !fileData.empty();
+#endif
+
+	if (!readOK)
 	{
-		std::cerr << "Failed to load texture: " << path << std::endl;
+		std::cerr << "Failed to read texture asset file: " << texturePath << std::endl;
 		return nullptr;
 	}
 
-	// 添加到缓存
-	AddToCache(texture->GetGUID(), texture);
+	// 新建 TextureAsset 并加载（LoadFromMemory 解析 AssetFileHeader + TextureMessage）
+	TextureAsset* texture = new TextureAsset();
+	if (!texture->LoadFromMemory(fileData.data(), fileData.size()))
+	{
+		std::cerr << "Failed to parse texture asset: " << texturePath << std::endl;
+		delete texture;
+		return nullptr;
+	}
 
-	std::cout << "Loaded texture: " << path << std::endl;
+#if GNX_OS_IOS || GNX_OS_ANDROID
+	texture->SetAssetInfo(baseName, texturePath);
+#else
+	texture->SetAssetInfo(baseName, mRootPath + "/" + texturePath);
+#endif
+
+	// 添加到缓存（缓存持有引用）
+	AddToCache(baseName, texture);
+	texture->AddRef();
+
+	std::cout << "Loaded texture asset: " << texturePath << std::endl;
 	return texture;
 }
 

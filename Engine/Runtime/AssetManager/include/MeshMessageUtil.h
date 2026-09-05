@@ -8,7 +8,7 @@ NS_ASSETMANAGER_BEGIN
 
 USING_NS_RENDERSYSTEM
 
-class MeshMessageUtil
+class ASSET_MANAGER_API MeshMessageUtil
 {
 public:
 	MeshMessageUtil();

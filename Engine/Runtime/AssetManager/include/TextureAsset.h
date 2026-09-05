@@ -90,6 +90,11 @@ public:
 	bool LoadFromFile(const std::string& filePath);
 
 	bool LoadFromMemory(const void* pData, size_t dataSize);
+
+	/**
+	 * @brief 设置资源的名称/GUID/文件路径（加载后由 AssetManager 调用）
+	 */
+	void SetAssetInfo(const std::string& name, const std::string& filePath);
 private:
 	ByteVector mTextureData;
 

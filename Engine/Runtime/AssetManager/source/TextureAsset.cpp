@@ -216,6 +216,13 @@ bool TextureAsset::LoadFromFile(const std::string& filePath)
 	return LoadFromMemory(imageData.data(), imageData.size());
 }
 
+void TextureAsset::SetAssetInfo(const std::string& name, const std::string& filePath)
+{
+	mGuid = name;
+	mName = name;
+	mFilePath = filePath;
+}
+
 bool TextureAsset::LoadFromMemory(const void* pData, size_t dataSize)
 {
 	if (!pData || 0 == dataSize)

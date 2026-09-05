@@ -11,7 +11,7 @@ NS_ASSETMANAGER_BEGIN
  * TextureMessage 工具类
  * 提供 TextureMessage 的序列化和反序列化功能
  */
-class TextureMessageUtil
+class ASSET_MANAGER_API TextureMessageUtil
 {
 public:
 	/**
