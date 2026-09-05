@@ -8,11 +8,15 @@
 #include "ImageTextureUtil.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/BaseLib/include/PreCompile.h"
+#include "Runtime/BaseLib/include/FileUtil.h"
 #include "Runtime/AssetManager/include/AssetManager.h"
+#include "Runtime/AssetManager/include/AssetFileHeader.h"
+#include "Runtime/AssetManager/include/TextureMessageUtil.h"
 #include "Runtime/AssetProcess/source/IBLBaker/PBRBase.h"
 #include <ktx.h>
 #include <cstring>
 #include <algorithm>
+#include <vector>
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -311,6 +315,7 @@ RCTexture2DPtr ImageTextureUtil::CreateBRDFLUTTexture(uint32_t imageSize, uint32
 // GL 内部格式常量（ktx.h 不提供这些定义）
 static const uint32_t KTX_GL_RG16F   = 0x822F;
 static const uint32_t KTX_GL_RGBA8   = 0x8058;
+static const uint32_t KTX_GL_SRGB8_ALPHA8 = 0x8C43;
 static const uint32_t KTX_GL_RGBA32F = 0x8814;
 static const uint32_t KTX_GL_R32F    = 0x822E;
 static const uint32_t KTX_GL_RG32F   = 0x8230;
@@ -327,6 +332,7 @@ static TextureFormat ConvertGLInternalFormatToEngine(uint32_t glFormat)
     {
         case KTX_GL_RG16F:   return kTexFormatRG16Float;
         case KTX_GL_RGBA8:   return kTexFormatRGBA8;
+        case KTX_GL_SRGB8_ALPHA8: return kTexFormatSRGB8_ALPHA8;
         case KTX_GL_RGBA32F: return kTexFormatRGBA32Float;
         case KTX_GL_R32F:    return kTexFormatR32Float;
         case KTX_GL_RG32F:   return kTexFormatRG32Float;
@@ -539,6 +545,265 @@ RCTextureCubePtr ImageTextureUtil::LoadKTXCubemapTexture(const char* filename)
 
     LOG_INFO("KTX cubemap loaded: %s -> %dx%d (%d mips, 6 faces)", filename, width, height, mipLevels);
     return texture;
+}
+
+// ============================================================================
+// 内存版 KTX 加载（供 .texture 资产容器与内存 KTX 字节使用）
+// ============================================================================
+
+// 从内存 KTX1 字节创建 2D GPU 纹理（非压缩/压缩均支持）
+static RCTexture2DPtr Create2DFromKtxTexture(ktxTexture* ktx, const char* tag)
+{
+    if (ktx->numDimensions != 2 || ktx->numFaces != 1 || ktx->isArray != 0)
+    {
+        LOG_ERROR("LoadKTXTextureFromMemory only supports non-array 2D textures: %s", tag ? tag : "");
+        return nullptr;
+    }
+
+    uint32_t width     = ktx->baseWidth;
+    uint32_t height    = ktx->baseHeight;
+    uint32_t mipLevels = ktx->numLevels;
+
+    uint32_t glInternalFormat = 0;
+    if (ktx->classId == ktxTexture1_c)
+    {
+        glInternalFormat = reinterpret_cast<ktxTexture1*>(ktx)->glInternalformat;
+    }
+    else
+    {
+        LOG_ERROR("KTX v2 not yet supported (2D): %s", tag ? tag : "");
+        return nullptr;
+    }
+
+    TextureFormat engineFormat = ConvertGLInternalFormatToEngine(glInternalFormat);
+    if (engineFormat == kTexFormatInvalid)
+    {
+        LOG_ERROR("Unsupported KTX internal format: 0x%X (%s)", glInternalFormat, tag ? tag : "");
+        return nullptr;
+    }
+
+    RCTexture2DPtr texture = GetRenderDevice()->CreateTexture2D(
+        engineFormat, TextureUsage::TextureUsageShaderRead, width, height, mipLevels);
+    if (!texture)
+    {
+        LOG_ERROR("Failed to create GPU 2D texture (%s)", tag ? tag : "");
+        return nullptr;
+    }
+
+    bool isCompressed = IsAnyCompressedTextureFormat(engineFormat);
+    for (uint32_t level = 0; level < mipLevels; ++level)
+    {
+        ktx_size_t offset = 0;
+        if (ktxTexture_GetImageOffset(ktx, level, 0, 0, &offset) != KTX_SUCCESS)
+        {
+            continue;
+        }
+        const uint8_t* imageData = ktxTexture_GetData(ktx) + offset;
+        ktx_size_t imgSize       = ktxTexture_GetImageSize(ktx, level);
+        uint32_t mipWidth        = std::max(1u, width >> level);
+        uint32_t mipHeight       = std::max(1u, height >> level);
+
+        uint32_t bytesPerRow;
+        if (isCompressed)
+        {
+            uint32_t blockRows = (mipHeight + 3) / 4;
+            bytesPerRow = (blockRows > 0) ? (uint32_t)(imgSize / blockRows) : (uint32_t)imgSize;
+            if (bytesPerRow == 0) bytesPerRow = (uint32_t)imgSize;
+        }
+        else
+        {
+            bytesPerRow = (mipHeight > 0) ? (uint32_t)(imgSize / mipHeight) : (uint32_t)imgSize;
+            if (bytesPerRow == 0) bytesPerRow = (uint32_t)imgSize;
+        }
+
+        texture->ReplaceRegion(Rect2D(0, 0, mipWidth, mipHeight), level, imageData, bytesPerRow);
+    }
+
+    return texture;
+}
+
+// 从内存 KTX1 字节创建 Cubemap GPU 纹理
+static RCTextureCubePtr CreateCubeFromKtxTexture(ktxTexture* ktx, const char* tag)
+{
+    if (ktx->numDimensions != 2 || ktx->numFaces != 6 || ktx->isArray != 0)
+    {
+        LOG_ERROR("LoadKTXCubemapTextureFromMemory only supports cubemap: %s (faces=%d)", tag ? tag : "", ktx->numFaces);
+        return nullptr;
+    }
+
+    uint32_t width     = ktx->baseWidth;
+    uint32_t height    = ktx->baseHeight;
+    uint32_t mipLevels = ktx->numLevels;
+
+    uint32_t glInternalFormat = 0;
+    if (ktx->classId == ktxTexture1_c)
+    {
+        glInternalFormat = reinterpret_cast<ktxTexture1*>(ktx)->glInternalformat;
+    }
+    else
+    {
+        LOG_ERROR("KTX v2 not yet supported (cubemap): %s", tag ? tag : "");
+        return nullptr;
+    }
+
+    TextureFormat engineFormat = ConvertGLInternalFormatToEngine(glInternalFormat);
+    if (engineFormat == kTexFormatInvalid)
+    {
+        LOG_ERROR("Unsupported KTX cubemap internal format: 0x%X (%s)", glInternalFormat, tag ? tag : "");
+        return nullptr;
+    }
+
+    RCTextureCubePtr texture = GetRenderDevice()->CreateTextureCube(
+        engineFormat, TextureUsage::TextureUsageShaderRead, width, height, mipLevels);
+    if (!texture)
+    {
+        LOG_ERROR("Failed to create GPU cubemap texture (%s)", tag ? tag : "");
+        return nullptr;
+    }
+
+    bool isCompressed = IsAnyCompressedTextureFormat(engineFormat);
+    for (uint32_t level = 0; level < mipLevels; ++level)
+    {
+        ktx_size_t imageSize = ktxTexture_GetImageSize(ktx, level);
+        uint32_t mipWidth    = std::max(1u, width >> level);
+        uint32_t mipHeight   = std::max(1u, height >> level);
+
+        uint32_t bytesPerRow;
+        if (isCompressed)
+        {
+            uint32_t blockRows = (mipHeight + 3) / 4;
+            bytesPerRow = (blockRows > 0) ? (uint32_t)(imageSize / blockRows) : (uint32_t)imageSize;
+            if (bytesPerRow == 0) bytesPerRow = (uint32_t)imageSize;
+        }
+        else
+        {
+            bytesPerRow = (mipHeight > 0) ? (uint32_t)(imageSize / mipHeight) : (uint32_t)imageSize;
+            if (bytesPerRow == 0) bytesPerRow = (uint32_t)imageSize;
+        }
+
+        for (uint32_t face = 0; face < 6; ++face)
+        {
+            ktx_size_t offset = 0;
+            if (ktxTexture_GetImageOffset(ktx, level, 0, face, &offset) != KTX_SUCCESS)
+            {
+                continue;
+            }
+            const uint8_t* imageData = ktxTexture_GetData(ktx) + offset;
+            texture->ReplaceRegion(Rect2D(0, 0, mipWidth, mipHeight), level, face,
+                                   imageData, bytesPerRow, (uint32_t)imageSize);
+        }
+    }
+
+    return texture;
+}
+
+RCTexture2DPtr ImageTextureUtil::LoadKTXTextureFromMemory(const uint8_t* ktxBytes, size_t byteSize)
+{
+    if (!ktxBytes || byteSize == 0)
+    {
+        return nullptr;
+    }
+
+    ktxTexture* ktx = nullptr;
+    KTX_error_code result = ktxTexture_CreateFromMemory(ktxBytes, byteSize,
+                                                        KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktx);
+    if (result != KTX_SUCCESS || !ktx)
+    {
+        LOG_ERROR("Failed to create KTX texture from memory (error %d)", (int)result);
+        return nullptr;
+    }
+
+    RCTexture2DPtr texture = Create2DFromKtxTexture(ktx, "memory");
+    ktxTexture_Destroy(ktx);
+    return texture;
+}
+
+RCTextureCubePtr ImageTextureUtil::LoadKTXCubemapTextureFromMemory(const uint8_t* ktxBytes, size_t byteSize)
+{
+    if (!ktxBytes || byteSize == 0)
+    {
+        return nullptr;
+    }
+
+    ktxTexture* ktx = nullptr;
+    KTX_error_code result = ktxTexture_CreateFromMemory(ktxBytes, byteSize,
+                                                        KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktx);
+    if (result != KTX_SUCCESS || !ktx)
+    {
+        LOG_ERROR("Failed to create KTX cubemap from memory (error %d)", (int)result);
+        return nullptr;
+    }
+
+    RCTextureCubePtr texture = CreateCubeFromKtxTexture(ktx, "memory");
+    ktxTexture_Destroy(ktx);
+    return texture;
+}
+
+// 从 .texture 容器解出完整 KTX 字节
+static bool ReadTextureAssetKTX(const std::string& filePath, std::vector<uint8_t>& outKTX)
+{
+    // 读取文件（桌面：文件系统；移动端：包内资源）
+    std::vector<uint8_t> fileData;
+#if GNX_OS_IOS || GNX_OS_ANDROID
+    if (!AssetManager::AssetManager::LoadResource(filePath, fileData))
+    {
+        LOG_ERROR("ReadTextureAssetKTX: cannot load %s", filePath.c_str());
+        return false;
+    }
+#else
+    fileData = baselib::FileUtil::ReadBinaryFile(filePath);
+    if (fileData.empty())
+    {
+        LOG_ERROR("ReadTextureAssetKTX: cannot read %s", filePath.c_str());
+        return false;
+    }
+#endif
+
+    // 解析 AssetFileHeader（固定 128 字节）
+    const size_t kHeaderSize = sizeof(AssetManager::AssetFileHeader);
+    if (fileData.size() <= kHeaderSize)
+    {
+        LOG_ERROR("ReadTextureAssetKTX: file too small: %s", filePath.c_str());
+        return false;
+    }
+
+    const uint8_t* pbData = fileData.data() + kHeaderSize;
+    size_t pbSize = fileData.size() - kHeaderSize;
+
+    // 解码 TextureMessage -> 完整 KTX 字节
+    ByteVector ktxBytes;
+    if (!AssetManager::TextureMessageUtil::DecodeTextureMessage(pbData, (uint32_t)pbSize, ktxBytes))
+    {
+        LOG_ERROR("ReadTextureAssetKTX: pb decode failed: %s", filePath.c_str());
+        return false;
+    }
+
+    outKTX.assign(ktxBytes.begin(), ktxBytes.end());
+    return !outKTX.empty();
+}
+
+RCTexture2DPtr ImageTextureUtil::LoadTextureAsset2D(const std::string& filePath)
+{
+    std::vector<uint8_t> ktxBytes;
+    if (!ReadTextureAssetKTX(filePath, ktxBytes))
+    {
+        return nullptr;
+    }
+    RCTexture2DPtr tex = LoadKTXTextureFromMemory(ktxBytes.data(), ktxBytes.size());
+    LOG_INFO("TextureAsset 2D loaded: %s -> %s", filePath.c_str(), tex ? "OK" : "FAILED");
+    return tex;
+}
+
+RCTextureCubePtr ImageTextureUtil::LoadTextureAssetCube(const std::string& filePath)
+{
+    std::vector<uint8_t> ktxBytes;
+    if (!ReadTextureAssetKTX(filePath, ktxBytes))
+    {
+        return nullptr;
+    }
+    RCTextureCubePtr tex = LoadKTXCubemapTextureFromMemory(ktxBytes.data(), ktxBytes.size());
+    LOG_INFO("TextureAsset cube loaded: %s -> %s", filePath.c_str(), tex ? "OK" : "FAILED");
+    return tex;
 }
 
 NS_RENDERSYSTEM_END

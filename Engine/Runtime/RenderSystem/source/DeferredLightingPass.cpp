@@ -78,6 +78,17 @@ void DeferredLightingPass::CreateLightingPipeline()
     samplerDesc.wrapS = CLAMP_TO_EDGE;
     samplerDesc.wrapT = CLAMP_TO_EDGE;
     mGBufferSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(samplerDesc);
+
+    // IBL cubemap 采样器：mip trilinear + 允许 mip 范围，供预过滤环境贴图 roughness LOD 采样
+    SamplerDesc iblSamplerDesc;
+    iblSamplerDesc.filterMin = MIN_LINEAR;
+    iblSamplerDesc.filterMag = MAG_LINEAR;
+    iblSamplerDesc.filterMip = MIN_LINEAR_MIPMAP_LINEAR;
+    iblSamplerDesc.wrapS = CLAMP_TO_EDGE;
+    iblSamplerDesc.wrapT = CLAMP_TO_EDGE;
+    iblSamplerDesc.wrapR = CLAMP_TO_EDGE;
+    iblSamplerDesc.maxLod = 12;
+    mIBLCubeSampler = RenderCore::GetRenderDevice()->CreateSamplerWithDescriptor(iblSamplerDesc);
 }
 
 //=============================================================================
@@ -326,7 +337,9 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
                 }
                 if (data.prefilteredMap)
                 {
-                    renderEncoder->SetFragmentTextureAndSampler("texEnvMap", data.prefilteredMap, mGBufferSampler);
+                    // 预过滤环境贴图需要按 roughness 采样不同 mip，使用带 mip trilinear 的采样器
+                    renderEncoder->SetFragmentTextureAndSampler("texEnvMap", data.prefilteredMap,
+                                                                mIBLCubeSampler ? mIBLCubeSampler : mGBufferSampler);
                 }
                 if (data.brdfLUT)
                 {

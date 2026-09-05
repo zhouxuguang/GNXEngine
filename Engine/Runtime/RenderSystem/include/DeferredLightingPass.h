@@ -149,6 +149,9 @@ private:
     
     // G-Buffer采样器
     TextureSamplerPtr mGBufferSampler = nullptr;
+
+    // IBL cubemap 采样器（带 mip trilinear，用于预过滤环境贴图的 roughness LOD 采样）
+    TextureSamplerPtr mIBLCubeSampler = nullptr;
     
     // 光源数据UBO
     UniformBufferPtr mLightDataUBO = nullptr;

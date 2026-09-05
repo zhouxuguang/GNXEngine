@@ -74,6 +74,38 @@ public:
      * @return GPU Cubemap 纹理指针，失败返回 nullptr
      */
     static RCTextureCubePtr LoadKTXCubemapTexture(const char* filename);
+
+    /**
+     * @brief 从内存 KTX 字节加载 2D 纹理（KTX1）
+     * 支持 RG16F、RGBA8、RGBA32F、BC7/BC6H 等格式
+     * @param ktxBytes KTX 二进制数据
+     * @param byteSize 数据大小
+     * @return GPU 纹理指针，失败返回 nullptr
+     */
+    static RCTexture2DPtr LoadKTXTextureFromMemory(const uint8_t* ktxBytes, size_t byteSize);
+
+    /**
+     * @brief 从内存 KTX 字节加载 Cubemap 纹理（KTX1，6 面）
+     * @param ktxBytes KTX 二进制数据
+     * @param byteSize 数据大小
+     * @return GPU Cubemap 纹理指针，失败返回 nullptr
+     */
+    static RCTextureCubePtr LoadKTXCubemapTextureFromMemory(const uint8_t* ktxBytes, size_t byteSize);
+
+    /**
+     * @brief 从 .texture 资产容器加载 2D 纹理
+     * 读取 {AssetFileHeader + TextureMessage(KTX)}，解出完整 KTX 字节后上传 GPU
+     * @param filePath .texture 文件完整路径（桌面）或包内相对路径（移动端）
+     * @return GPU 纹理指针，失败返回 nullptr
+     */
+    static RCTexture2DPtr LoadTextureAsset2D(const std::string& filePath);
+
+    /**
+     * @brief 从 .texture 资产容器加载 Cubemap 纹理
+     * @param filePath .texture 文件完整路径（桌面）或包内相对路径（移动端）
+     * @return GPU Cubemap 纹理指针，失败返回 nullptr
+     */
+    static RCTextureCubePtr LoadTextureAssetCube(const std::string& filePath);
 };
 
 NS_RENDERSYSTEM_END
