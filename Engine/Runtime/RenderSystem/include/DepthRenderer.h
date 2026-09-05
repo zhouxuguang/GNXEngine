@@ -48,6 +48,7 @@ struct DepthMeshItem
     MeshPtr mesh;               // 网格指针
     UniformBufferPtr objectUBO; // 该网格的model矩阵UBO
     std::vector<MaterialPtr> materials;  // 每个submesh对应的材质
+    bool castShadow = true;     // 是否投射阴影（阴影 pass 只绘制 castShadow=true 的网格）
 };
 
 /**
@@ -59,6 +60,7 @@ struct DepthSkinnedMeshItem
     SkinnedMeshPtr mesh;        // 蒙皮网格指针
     UniformBufferPtr objectUBO; // 该网格的model矩阵UBO
     std::vector<MaterialPtr> materials;  // 每个submesh对应的材质
+    bool castShadow = true;     // 是否投射阴影（阴影 pass 只绘制 castShadow=true 的网格）
 };
 
 /**
@@ -239,13 +241,15 @@ public:
      * @param frameGraph 帧图
      * @param commandBuffer 命令缓冲
      * @param params 深度渲染参数（包含网格和 UBO 数据）
+     * @param textureName 创建的深度纹理名称（默认 "DepthTexture"；ShadowMap 等需要独立名称以免与 PreDepth 混淆）
      * @return 深度纹理的 FrameGraph 资源 ID
      */
     FrameGraphResource Render(
         const std::string& passName,
         FrameGraph& frameGraph,
         CommandBufferPtr commandBuffer,
-        const DepthRenderParams& params);
+        const DepthRenderParams& params,
+        const std::string& textureName = "DepthTexture");
 
     /**
      * @brief 更新配置参数

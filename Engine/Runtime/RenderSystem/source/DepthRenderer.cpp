@@ -96,7 +96,8 @@ FrameGraphResource DepthRenderer::Render(
     const std::string& passName,
     FrameGraph& frameGraph,
     CommandBufferPtr commandBuffer,
-    const DepthRenderParams& params)
+    const DepthRenderParams& params,
+    const std::string& textureName)
 {
     // 定义 Pass 数据结构
     struct DepthPassData
@@ -114,7 +115,7 @@ FrameGraphResource DepthRenderer::Render(
         {
             // 创建深度纹理
             FrameGraphTexture::Desc depthDesc;
-            depthDesc.SetName("DepthTexture");
+            depthDesc.SetName(textureName);
             depthDesc.extent = RenderCore::Rect2D{0, 0, (int)params.width, (int)params.height};
             depthDesc.depth = 1;
             depthDesc.format = mConfig.depthFormat;
