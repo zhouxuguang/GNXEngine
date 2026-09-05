@@ -35,11 +35,21 @@ public:
     
 private:
     bool OnKeyUp(GNXEngine::KeyReleasedEvent& e);
-    
-    // IBL 资源（BRDF LUT 在启动时预计算一次）
-    RenderCore::RCTexturePtr mBRDFLUT = nullptr;
-    
-    // 天空盒（默认渐变天空，可后续替换为真实环境贴图）
+    void CreateScene(uint32_t width, uint32_t height);
+    void CreateIBL();
+    void CreateSkybox();
+    void CreateHelmet();
+
+private:
+    // 场景只创建一次（避免 Resize 事件重复创建）
+    bool mSceneCreated = false;
+
+    // IBL 资源（来自 .texture 资产）
+    RenderCore::RCTextureCubePtr mIrradianceMap = nullptr;
+    RenderCore::RCTextureCubePtr mPrefilteredMap = nullptr;
+    RenderCore::RCTexture2DPtr   mBRDFLUT = nullptr;
+
+    // 天空盒
     RenderSystem::SkyBox* mSkyBox = nullptr;
 };
 
