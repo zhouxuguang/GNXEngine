@@ -46,6 +46,63 @@ void AssimpMeshImporter::LoadMesh(const baselib::NXGUID& guid)
     AssetManager::MeshMessageUtil::DecodeMeshMessage(encodedBuffer->data(), encodedBuffer->size(), meshDecode.get());
 }
 
+bool AssimpMeshImporter::EncodeMeshToMemory(std::vector<uint8_t>& outData)
+{
+	// 清空上一次解析的状态（复用对象时安全）
+	mVertexCount = 0;
+	mVertexSize = 0;
+	mSubVertexCounts.clear();
+	mSubMeshs.clear();
+	mPosition.clear();
+	mNormal.clear();
+	mColor.clear();
+	mTexCoord0.clear();
+	mTexCoord1.clear();
+	mTangent.clear();
+	mIndices.clear();
+	mSubMeshInfos.clear();
+
+	if (!mScene || !mScene->mRootNode || !mScene->HasMeshes())
+	{
+		return false;
+	}
+
+	getVertexCountAndLayout(mScene->mRootNode, mScene);
+	processMeshVertex(mScene);
+
+	if (mVertexCount == 0)
+	{
+		return false;
+	}
+
+	MeshPtr mesh = std::make_shared<Mesh>();
+	setupLayout(mesh.get());
+	processIndice();
+
+	mesh->GetVertexData().Resize(mVertexCount, mVertexSize);
+	mesh->SetPositions(mPosition.data(), mPosition.size());
+	mesh->SetNormals(mNormal.data(), mNormal.size());
+	mesh->SetColors(mColor.data(), mColor.size());
+	mesh->SetUv(0, mTexCoord0.data(), mTexCoord0.size());
+	mesh->SetUv(1, mTexCoord1.data(), mTexCoord1.size());
+	mesh->SetTangents(mTangent.data(), mTangent.size());
+	mesh->SetIndices(mIndices.data(), mIndices.size());
+
+	for (auto& iter : mSubMeshInfos)
+	{
+		mesh->AddSubMeshInfo(iter);
+	}
+
+	ByteVectorPtr encodedBuffer = AssetManager::MeshMessageUtil::EncodeMeshMessage(mesh.get());
+	if (!encodedBuffer || encodedBuffer->empty())
+	{
+		return false;
+	}
+
+	outData.assign(encodedBuffer->begin(), encodedBuffer->end());
+	return true;
+}
+
 void AssimpMeshImporter::getVertexCountAndLayout(aiNode* node, const aiScene* scene)
 {
 	// 处理节点所有的网格（如果有的话）

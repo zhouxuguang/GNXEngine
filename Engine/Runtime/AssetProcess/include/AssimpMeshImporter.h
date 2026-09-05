@@ -16,13 +16,24 @@ NS_ASSETPROCESS_BEGIN
 
 // Assimp的mesh导入
 
-class AssimpMeshImporter
+class ASSET_PROCESS_API AssimpMeshImporter
 {
 public:
 	AssimpMeshImporter(const aiScene* scene, const std::string& saveDir);
 	~AssimpMeshImporter();
 
 	void LoadMesh(const baselib::NXGUID & guid);
+
+	/**
+	 * @brief 将场景几何数据解析为 RenderSystem::Mesh，并编码为 MeshMessage pb bytes
+	 * 纯 CPU 路径（不写文件、不碰 GPU），供离线 meshasset 打包工具复用
+	 * @param outData 输出的 MeshMessage pb 编码数据
+	 * @return 成功返回 true
+	 */
+	bool EncodeMeshToMemory(std::vector<uint8_t>& outData);
+
+	/// 解析出的顶点总数（EncodeMeshToMemory 后有效）
+	uint32_t GetVertexCount() const { return mVertexCount; }
 
 private:
 	const aiScene* mScene = nullptr;

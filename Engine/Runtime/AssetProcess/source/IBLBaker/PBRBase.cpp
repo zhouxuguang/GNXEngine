@@ -10,9 +10,11 @@
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/ImageCodec/include/ImageUtil.h"
 #include "TextureImporter.h"
+#include <ktx.h>
 #include <fstream>
 #include <cmath>
 #include <algorithm>
+#include <cstring>
 
 NS_ASSETPROCESS_BEGIN
 
@@ -581,6 +583,306 @@ void GeneratePrefilteredEnvMap_Texture(
     outFile.close();
 
     LOG_INFO("Prefiltered environment map saved to: %s (%zu bytes)", fileName.c_str(), ktxData.size());
+}
+
+// ==================== 逐 mip 物理正确的预过滤环境贴图 ====================
+
+/**
+ * 把 6 面 RGB32Float 图像转换为单张 RGBA32Float 数据（w 填充 1.0）
+ */
+static void ConvertRGBFacesToRGBA32F(const std::vector<imagecodec::VImagePtr>& rgbFaces,
+                                     uint32_t faceSize,
+                                     std::vector<uint8_t>& outData)
+{
+    // KTX1 cubemap 的 level 数据布局：连续 6 面，每面 faceSize*faceSize*4 floats
+    const uint32_t kBytesPerPixel = 4 * sizeof(float);   // RGBA32F = 16 bytes
+    const uint32_t faceBytes = faceSize * faceSize * kBytesPerPixel;
+    outData.resize(faceBytes * 6);
+
+    for (uint32_t f = 0; f < 6; ++f)
+    {
+        const imagecodec::VImage* src = rgbFaces[f].get();
+        const float* pSrc = (const float*)src->GetImageData();   // RGB32Float (3 floats)
+        float* pDst = (float*)(outData.data() + (size_t)f * faceBytes);
+
+        uint32_t pixelCount = faceSize * faceSize;
+        for (uint32_t i = 0; i < pixelCount; ++i)
+        {
+            pDst[i * 4 + 0] = pSrc[i * 3 + 0];
+            pDst[i * 4 + 1] = pSrc[i * 3 + 1];
+            pDst[i * 4 + 2] = pSrc[i * 3 + 2];
+            pDst[i * 4 + 3] = 1.0f;
+        }
+    }
+}
+
+bool GeneratePrefilteredEnvMapMipChain_Data(
+    const std::vector<imagecodec::VImagePtr>& faces,
+    uint32_t baseSize, uint32_t samples,
+    std::vector<uint8_t>& outData)
+{
+    if (faces.size() != 6)
+    {
+        LOG_ERROR("GeneratePrefilteredEnvMapMipChain requires exactly 6 faces");
+        return false;
+    }
+
+    // KTX1 常量（与 TextureImporter.cpp 保持一致）
+    const uint32_t kGL_RGBA32F = 0x8814;
+    const uint32_t kVK_R32G32B32A32_SFLOAT = 109;
+
+    uint32_t numMips = imagecodec::ImageUtil::CalcNumMipLevels(baseSize, baseSize);
+    LOG_INFO("Generating prefiltered env map mip-chain: base %ux%u, %u mips, %u samples/texel",
+             baseSize, baseSize, numMips, samples);
+
+    // 创建 KTX1 Cubemap 纹理对象（RGBA32F 非压缩）
+    ktxTextureCreateInfo createInfo = {};
+    createInfo.glInternalformat = kGL_RGBA32F;
+    createInfo.vkFormat = kVK_R32G32B32A32_SFLOAT;
+    createInfo.baseWidth = baseSize;
+    createInfo.baseHeight = baseSize;
+    createInfo.baseDepth = 1u;
+    createInfo.numDimensions = 2u;
+    createInfo.numLevels = numMips;
+    createInfo.numLayers = 1u;
+    createInfo.numFaces = 6u;
+    createInfo.isArray = KTX_FALSE;
+    createInfo.generateMipmaps = KTX_FALSE;
+
+    ktxTexture1* tex = nullptr;
+    KTX_error_code rc = ktxTexture1_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &tex);
+    if (rc != KTX_SUCCESS || !tex)
+    {
+        LOG_ERROR("Failed to create KTX prefiltered cubemap (error %d)", (int)rc);
+        return false;
+    }
+
+    // 每级 mip：尺寸减半，roughness = level/(mips-1)
+    for (uint32_t level = 0; level < numMips; ++level)
+    {
+        uint32_t faceSize = std::max(1u, baseSize >> level);
+        float roughness = (numMips > 1) ? (float)level / (float)(numMips - 1) : 0.0f;
+
+        LOG_INFO("  Prefilter mip %u: %ux%u, roughness=%.3f ...", level, faceSize, faceSize, roughness);
+
+        // 生成 6 面预过滤（GGX 重要性采样）
+        std::vector<imagecodec::VImagePtr> prefilteredFaces;
+        for (uint32_t f = 0; f < 6; ++f)
+        {
+            prefilteredFaces.push_back(PrefilterEnvMapFace(faces, roughness, f, faceSize, samples));
+        }
+
+        // RGB32Float -> RGBA32F
+        std::vector<uint8_t> levelData;
+        ConvertRGBFacesToRGBA32F(prefilteredFaces, faceSize, levelData);
+
+        // 写入 KTX（每面独立 offset）
+        const uint32_t kBytesPerPixel = 4 * sizeof(float);
+        uint32_t rowBytes = faceSize * kBytesPerPixel;
+        for (uint32_t f = 0; f < 6; ++f)
+        {
+            ktx_size_t offset = 0;
+            ktxTexture_GetImageOffset(ktxTexture(tex), level, 0, f, &offset);
+            const uint8_t* faceData = levelData.data() + (size_t)f * faceSize * faceSize * kBytesPerPixel;
+            memcpy(ktxTexture_GetData(ktxTexture(tex)) + offset, faceData,
+                   (size_t)faceSize * faceSize * kBytesPerPixel);
+        }
+        (void)rowBytes;
+    }
+
+    // 序列化
+    ktx_uint8_t* ktxBytes = nullptr;
+    ktx_size_t ktxSize = 0;
+    ktxTexture_WriteToMemory(ktxTexture(tex), &ktxBytes, &ktxSize);
+
+    outData.assign(ktxBytes, ktxBytes + ktxSize);
+
+    free(ktxBytes);
+    ktxTexture_Destroy(ktxTexture(tex));
+
+    LOG_INFO("Prefiltered env map mip-chain KTX generated: %zu bytes", outData.size());
+    return !outData.empty();
+}
+
+bool GenerateRGBA32FCubemap_Data(
+    const std::vector<imagecodec::VImagePtr>& faces,
+    std::vector<uint8_t>& outData)
+{
+    if (faces.size() != 6)
+    {
+        LOG_ERROR("GenerateRGBA32FCubemap requires exactly 6 faces");
+        return false;
+    }
+
+    const uint32_t kGL_RGBA32F = 0x8814;
+    const uint32_t kVK_R32G32B32A32_SFLOAT = 109;
+
+    uint32_t width  = faces[0]->GetWidth();
+    uint32_t height = faces[0]->GetHeight();
+
+    // 强制单 mip（后续可由运行时/工具再降采样）。RGBA32F cubemap 单 mip 保证
+    // 所有 level 都有数据，避免未填充 mip 被采样为 0。
+    const uint32_t numMips = 1;
+
+    ktxTextureCreateInfo createInfo = {};
+    createInfo.glInternalformat = kGL_RGBA32F;
+    createInfo.vkFormat = kVK_R32G32B32A32_SFLOAT;
+    createInfo.baseWidth = width;
+    createInfo.baseHeight = height;
+    createInfo.baseDepth = 1u;
+    createInfo.numDimensions = 2u;
+    createInfo.numLevels = numMips;
+    createInfo.numLayers = 1u;
+    createInfo.numFaces = 6u;
+    createInfo.isArray = KTX_FALSE;
+    createInfo.generateMipmaps = KTX_FALSE;
+
+    ktxTexture1* tex = nullptr;
+    KTX_error_code rc = ktxTexture1_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &tex);
+    if (rc != KTX_SUCCESS || !tex)
+    {
+        LOG_ERROR("Failed to create KTX RGBA32F cubemap (error %d)", (int)rc);
+        return false;
+    }
+
+    // 转换 RGB32Float -> RGBA32F，写 base level 6 面
+    std::vector<uint8_t> levelData;
+    ConvertRGBFacesToRGBA32F(faces, width, levelData);
+
+    const uint32_t kBytesPerPixel = 4 * sizeof(float);
+    for (uint32_t f = 0; f < 6; ++f)
+    {
+        ktx_size_t offset = 0;
+        ktxTexture_GetImageOffset(ktxTexture(tex), 0, 0, f, &offset);
+        const uint8_t* faceData = levelData.data() + (size_t)f * width * height * kBytesPerPixel;
+        memcpy(ktxTexture_GetData(ktxTexture(tex)) + offset, faceData,
+               (size_t)width * height * kBytesPerPixel);
+    }
+
+    ktx_uint8_t* ktxBytes = nullptr;
+    ktx_size_t ktxSize = 0;
+    ktxTexture_WriteToMemory(ktxTexture(tex), &ktxBytes, &ktxSize);
+    outData.assign(ktxBytes, ktxBytes + ktxSize);
+    free(ktxBytes);
+    ktxTexture_Destroy(ktxTexture(tex));
+
+    LOG_INFO("RGBA32F cubemap KTX generated: %ux%u (1 mip, %zu bytes)", width, height, outData.size());
+    return !outData.empty();
+}
+
+// ==================== 未压缩 2D KTX 输出（避免 BC7/BC6H 依赖） ====================
+
+#include "Runtime/AssetProcess/source/TextureProcess/stb_image_resize2.h"
+
+bool GenerateUncompressed2DKTX_Data(
+    imagecodec::VImagePtr image, bool srgb,
+    std::vector<uint8_t>& outData)
+{
+    if (!image || !image->GetImageData())
+    {
+        LOG_ERROR("GenerateUncompressed2DKTX: null image");
+        return false;
+    }
+
+    const uint32_t kGL_RGBA8 = 0x8058;
+    const uint32_t kGL_SRGB8_ALPHA8 = 0x8C43;
+
+    // 统一为 4 通道 uint8 源数据
+    uint32_t srcW = image->GetWidth();
+    uint32_t srcH = image->GetHeight();
+
+    // 源数据必须是 RGBA8/SRGB8_ALPHA8；若其它格式（RGB8 等）先转换
+    std::vector<uint8_t> rgbaData;
+    const uint8_t* srcPixels = image->GetImageData();
+    imagecodec::ImagePixelFormat srcFmt = image->GetFormat();
+    if (srcFmt == imagecodec::FORMAT_RGBA8 || srcFmt == imagecodec::FORMAT_SRGB8_ALPHA8)
+    {
+        uint32_t bytesPerPix = image->GetBytesPerPixels();
+        if (bytesPerPix == 4)
+        {
+            rgbaData.assign(srcPixels, srcPixels + (size_t)srcW * srcH * 4);
+        }
+        else
+        {
+            // 异常通道数，退回转换
+            srcFmt = imagecodec::FORMAT_RGB8;
+        }
+    }
+    if (rgbaData.empty())
+    {
+        // RGB8 -> RGBA8
+        uint32_t bytesPerPix = image->GetBytesPerPixels();
+        rgbaData.resize((size_t)srcW * srcH * 4);
+        for (uint32_t y = 0; y < srcH; ++y)
+        {
+            for (uint32_t x = 0; x < srcW; ++x)
+            {
+                const uint8_t* p = srcPixels + ((size_t)y * srcW + x) * bytesPerPix;
+                uint8_t* d = rgbaData.data() + ((size_t)y * srcW + x) * 4;
+                d[0] = p[0]; d[1] = p[1]; d[2] = p[2];
+                d[3] = (bytesPerPix >= 4) ? p[3] : 255;
+            }
+        }
+    }
+
+    uint32_t numMips = imagecodec::ImageUtil::CalcNumMipLevels(srcW, srcH);
+
+    ktxTextureCreateInfo createInfo = {};
+    createInfo.glInternalformat = srgb ? kGL_SRGB8_ALPHA8 : kGL_RGBA8;
+    createInfo.vkFormat = 0;    // v1 用 glInternalformat
+    createInfo.baseWidth = srcW;
+    createInfo.baseHeight = srcH;
+    createInfo.baseDepth = 1u;
+    createInfo.numDimensions = 2u;
+    createInfo.numLevels = numMips;
+    createInfo.numLayers = 1u;
+    createInfo.numFaces = 1u;
+    createInfo.generateMipmaps = KTX_FALSE;
+
+    ktxTexture1* tex = nullptr;
+    KTX_error_code rc = ktxTexture1_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &tex);
+    if (rc != KTX_SUCCESS || !tex)
+    {
+        LOG_ERROR("Failed to create KTX uncompressed texture (error %d)", (int)rc);
+        return false;
+    }
+
+    // 写 base + 逐级降采样 mip（stbir 线性降采样）
+    {
+        ktx_size_t offset = 0;
+        ktxTexture_GetImageOffset(ktxTexture(tex), 0, 0, 0, &offset);
+        memcpy(ktxTexture_GetData(ktxTexture(tex)) + offset, rgbaData.data(), (size_t)srcW * srcH * 4);
+    }
+
+    uint32_t w = srcW, h = srcH;
+    for (uint32_t m = 1; m < numMips; ++m)
+    {
+        uint32_t nw = std::max(1u, w >> 1);
+        uint32_t nh = std::max(1u, h >> 1);
+        std::vector<uint8_t> tmp((size_t)nw * nh * 4);
+
+        stbir_resize(rgbaData.data(), (int)srcW, (int)srcH, 0,
+                     tmp.data(), (int)nw, (int)nh, 0,
+                     STBIR_RGBA, STBIR_TYPE_UINT8,
+                     STBIR_EDGE_CLAMP, STBIR_FILTER_MITCHELL);
+
+        ktx_size_t offset = 0;
+        ktxTexture_GetImageOffset(ktxTexture(tex), m, 0, 0, &offset);
+        memcpy(ktxTexture_GetData(ktxTexture(tex)) + offset, tmp.data(), (size_t)nw * nh * 4);
+
+        w = nw; h = nh;
+    }
+
+    ktx_uint8_t* ktxBytes = nullptr;
+    ktx_size_t ktxSize = 0;
+    ktxTexture_WriteToMemory(ktxTexture(tex), &ktxBytes, &ktxSize);
+    outData.assign(ktxBytes, ktxBytes + ktxSize);
+    free(ktxBytes);
+    ktxTexture_Destroy(ktxTexture(tex));
+
+    LOG_INFO("Uncompressed 2D KTX generated: %ux%u, %u mips, %s, %zu bytes",
+             srcW, srcH, numMips, srgb ? "sRGB" : "linear", outData.size());
+    return !outData.empty();
 }
 
 NS_ASSETPROCESS_END
