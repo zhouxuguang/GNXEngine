@@ -94,6 +94,50 @@ float3 ComputeLighting(GBufferData gBufferData, float3 lightDir, float3 lightCol
 }
 
 // 像素着色器 - 延迟光照
+// IBL 环境光照：漫反射辐照度图 + 预过滤镜面反射图 + BRDF LUT
+// 纹理 texEnvMapIrradiance / texEnvMap / texBRDF_LUT 在 StandardBRDF.hlsl 中声明，
+// 由 DeferredLightingPass 按名称绑定（enableIBL 时）。
+float3 ComputeIBL(GBufferData gBufferData)
+{
+    float3 N = normalize(gBufferData.normal);
+    float3 V = normalize(_WorldSpaceCameraPos - gBufferData.position);
+    float3 R = reflect(-V, N);
+
+    float NdotV = saturate(dot(N, V));
+    float perceptualRoughness = saturate(gBufferData.roughness);
+    perceptualRoughness = max(perceptualRoughness, 0.045);   // 避免全光滑时 prefilter mip0 闪烁
+
+    float metallic = saturate(gBufferData.metallic);
+
+    // 反射率 F0：非金属用 0.04，金属用 albedo
+    float3 F0 = float3(0.04, 0.04, 0.04);
+    F0 = lerp(F0, gBufferData.albedo, metallic);
+
+    float3 diffuseColor = gBufferData.albedo * (1.0 - metallic) * (1.0 - F0);
+    float3 specularColor = lerp(F0, gBufferData.albedo, metallic);
+
+    // 预过滤环境图 mip 数
+    uint width, height, levels;
+    texEnvMap.GetDimensions(0, width, height, levels);
+    float mipCount = float(levels);
+
+    float lod = perceptualRoughness * max(mipCount - 1.0, 0.0);
+
+    // 采样漫反射辐照度 + 预过滤镜面
+    float3 irradiance = texEnvMapIrradiance.Sample(texEnvMapIrradianceSam, N).rgb;
+    float3 prefiltered = texEnvMap.SampleLevel(texEnvMapSam, R, lod).rgb;
+
+    // BRDF LUT（split-sum 第二项）
+    float2 brdfSample = clamp(float2(NdotV, perceptualRoughness), float2(0.0, 0.0), float2(1.0, 1.0));
+    float2 brdf = texBRDF_LUT.SampleLevel(texBRDF_LUTSam, brdfSample, 0).rg;
+
+    float3 diffuseIBL = irradiance * diffuseColor;
+    float3 specularIBL = prefiltered * (specularColor * brdf.x + brdf.y);
+
+    return (diffuseIBL + specularIBL) * gBufferData.ao;
+}
+
+// 像素着色器 - 延迟光照
 float4 PS(VertexOut pin) : SV_Target0
 {
     // 1. 从G-Buffer中读取材质数据
@@ -148,12 +192,10 @@ float4 PS(VertexOut pin) : SV_Target0
     float3 Lo = ComputeLighting(gBufferData, lightDir, _LightColor.rgb, _Strength.x);
     Lo *= attenuation;
     
-    // 环境光
-    float ssao = 1.0;
-    ssao = gSSAO.Sample(gSSAOSam, pin.texCoord).r;
-    float3 ambient = float3(0.1, 0.1, 0.1) * gBufferData.albedo * gBufferData.ao * ssao;
+    // IBL 环境光（漫反射辐照度 + 预过滤镜面反射）
+    float3 ambient = ComputeIBL(gBufferData);
     
-    // 最终颜色 = 直接光 + 环境光 + 自发光（来自RT0）
+    // 最终颜色 = 直接光 + IBL环境光 + 自发光（来自RT0）
     float3 finalColor = Lo + ambient + emissive;
     return float4(finalColor, 1.0);
 }
