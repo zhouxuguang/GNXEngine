@@ -296,7 +296,7 @@ float3 ComputeIBL(GBufferData gBufferData)
     float3 irradiance = texEnvMapIrradiance.Sample(texEnvMapIrradianceSam, N).rgb;
     float3 prefiltered = texEnvMap.SampleLevel(texEnvMapSam, R, lod).rgb;
 
-    // BRDF LUT（split-sum 第二项）
+    // BRDF LUT uses U=NdotV and V=roughness, matching GenerateBRDFLUT.
     float2 brdfSample = clamp(float2(NdotV, perceptualRoughness), float2(0.0, 0.0), float2(1.0, 1.0));
     float2 brdf = texBRDF_LUT.SampleLevel(texBRDF_LUTSam, brdfSample, 0).rg;
 

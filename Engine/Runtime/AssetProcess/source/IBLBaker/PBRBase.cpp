@@ -223,8 +223,9 @@ imagecodec::VImagePtr GenerateBRDFLUT(uint32_t imageSize, uint32_t samples)
     {
         for (int y = 0; y < imageSize; y++)
         {
-            float NoV = (y + 0.5f) * (1.0f / imageSize);
-            float roughness = (x + 0.5f) * (1.0f / imageSize);
+            // The shader samples the LUT as (NdotV, roughness).
+            float NoV = (x + 0.5f) * (1.0f / imageSize);
+            float roughness = (y + 0.5f) * (1.0f / imageSize);
             
             uint32_t offset = (y * imageSize + x) * 2;
             
@@ -554,23 +555,12 @@ void GeneratePrefilteredEnvMap_Texture(
     const std::vector<imagecodec::VImagePtr>& faces,
     uint32_t imageSize, uint32_t samples)
 {
-    // 为每个 mip level 生成对应的 roughness 预过滤结果
-    // mip0: roughness=0, mip1: roughness=0.25, mip2: roughness=0.5, ...
-    uint32_t numMips = imagecodec::ImageUtil::CalcNumMipLevels(imageSize, imageSize);
-
-    // 生成 base level (roughness=0)，后续 mip 由 KTX 写入时的 stbir 降采样生成
-    // 注意：更精确的做法是为每个 mip level 单独计算预过滤结果
-    // 这里先用 roughness=0 生成 base level，后续 mip 降采样
-    std::vector<imagecodec::VImagePtr> prefilteredFaces;
-    for (uint32_t face = 0; face < 6; ++face)
+    // 每个 mip 都必须使用对应 roughness 的 GGX 卷积，不能用普通降采样替代。
+    std::vector<uint8_t> ktxData;
+    if (!GeneratePrefilteredEnvMapMipChain_Data(faces, imageSize, samples, ktxData))
     {
-        prefilteredFaces.push_back(PrefilterEnvMapFace(faces, 0.0f, face, imageSize, samples));
+        return;
     }
-
-    TextureImporter textureImporter;
-    TextureImportSettings textureImportSettings;
-    textureImportSettings.mipmapMode = MipmapMode::Auto; // 预过滤图需要 mipmap
-    std::vector<uint8_t> ktxData = textureImporter.GenerateKTXCubemapData(prefilteredFaces, textureImportSettings);
 
     std::ofstream outFile(fileName, std::ios::binary);
     if (!outFile.is_open())

@@ -281,7 +281,7 @@ float3 getIBLContribution(PBRInfo pbrInputs, float3 n, float3 reflection)
     texEnvMap.GetDimensions(0, width, height, levels);
 
 	float mipCount = float(levels);
-	float lod = pbrInputs.perceptualRoughness * mipCount;
+	float lod = pbrInputs.perceptualRoughness * max(mipCount - 1.0, 0.0);
 	// retrieve a scale and bias to F0. See [1], Figure 3
 	float2 brdfSamplePoint = clamp(float2(pbrInputs.NdotV, pbrInputs.perceptualRoughness), float2(0.0, 0.0), float2(1.0, 1.0));
 	float3 brdf = texBRDF_LUT.SampleLevel(texBRDF_LUTSam, brdfSamplePoint, 0).rgb;
