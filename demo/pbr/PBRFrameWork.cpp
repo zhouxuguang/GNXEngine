@@ -5,8 +5,8 @@
 //  PBR Demo - Demonstrates Physically Based Rendering with the asset pipeline:
 //  1. Material textures are KTX textures packaged as .texture assets, loaded at runtime
 //  2. Environment lighting (skybox / IBL irradiance + prefilter + BRDF LUT) uses the
-//     1.hdr environment, re-baked from BC6H to RGBA32F assets (from1hdr/) for desktop
-//     Metal compatibility (Intel GPU has no BC6H_UFLOAT support)
+//     existing 1.hdr baking outputs (1_cubemap.ktx / 1_irradiance.ktx / 1_prefilter.ktx,
+//     BC6H_UFLOAT; Metal 后端映射到 BC6H_RGBUfloat 后可直接显示)
 //  3. DamagedHelmet mesh is packaged as .meshasset (custom pb MeshMessage), loaded at runtime
 //  4. IBL evaluated in DeferredLighting.shader (diffuse + specular + BRDF LUT)
 //
@@ -184,34 +184,35 @@ void PBRFrameWork::CreateScene(uint32_t width, uint32_t height)
 }
 
 // ============================================================
-// IBL：从 1.hdr 重新烘焙的 RGBA32F 资产加载 irradiance / prefilter / brdfLUT
-// （原生 1.hdr 烘焙产物为 BC6H，在 Intel+Metal 上无对应格式会花屏，
-//   故改用 RGBA32F 资产以兼容桌面 Metal）
+// IBL：从 1.hdr 对应的烘焙产物（原生 .ktx, BC6H）加载 irradiance / prefilter / brdfLUT
 // ============================================================
 void PBRFrameWork::CreateIBL()
 {
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
-    std::string base = GetProjectAssetDir() + std::string(kAssetRoot) + "from1hdr/";
+    std::string helmetDir = GetProjectAssetDir() + std::string(kAssetRoot) + "DamagedHelmet/";
 
-    // 漫反射辐照度 cubemap
-    mIrradianceMap = RenderSystem::ImageTextureUtil::LoadTextureAssetCube(base + "1_irradiance.texture");
+    // 漫反射辐照度 cubemap（1_irradiance.ktx, BC6H_UFLOAT）
+    mIrradianceMap = RenderSystem::ImageTextureUtil::LoadKTXCubemapTexture(
+        (helmetDir + "1_irradiance.ktx").c_str());
     if (!mIrradianceMap)
     {
-        LOG_WARN("Failed to load irradiance cubemap asset: %s1_irradiance.texture", base.c_str());
+        LOG_WARN("Failed to load irradiance cubemap: %s1_irradiance.ktx", helmetDir.c_str());
     }
 
-    // 预过滤镜面 cubemap
-    mPrefilteredMap = RenderSystem::ImageTextureUtil::LoadTextureAssetCube(base + "1_prefilter.texture");
+    // 预过滤镜面 cubemap（1_prefilter.ktx, BC6H_UFLOAT）
+    mPrefilteredMap = RenderSystem::ImageTextureUtil::LoadKTXCubemapTexture(
+        (helmetDir + "1_prefilter.ktx").c_str());
     if (!mPrefilteredMap)
     {
-        LOG_WARN("Failed to load prefiltered cubemap asset: %s1_prefilter.texture", base.c_str());
+        LOG_WARN("Failed to load prefiltered cubemap: %s1_prefilter.ktx", helmetDir.c_str());
     }
 
-    // BRDF LUT
-    mBRDFLUT = RenderSystem::ImageTextureUtil::LoadTextureAsset2D(base + "1_brdfLUT.texture");
+    // BRDF LUT（顶层 pbr/brdfLUT.ktx, RG16F）
+    std::string brdfPath = GetProjectAssetDir() + std::string(kAssetRoot) + "brdfLUT.ktx";
+    mBRDFLUT = RenderSystem::ImageTextureUtil::LoadKTXTexture(brdfPath.c_str());
     if (!mBRDFLUT)
     {
-        LOG_WARN("Failed to load BRDF LUT asset: %s; falling back to runtime generation", base.c_str());
+        LOG_WARN("Failed to load BRDF LUT: %s; falling back to runtime generation", brdfPath.c_str());
         mBRDFLUT = RenderSystem::ImageTextureUtil::CreateBRDFLUTTexture(512, 1024);
     }
 
@@ -223,15 +224,15 @@ void PBRFrameWork::CreateIBL()
 }
 
 // ============================================================
-// 天空盒：从 1.hdr 重新烘焙的 RGBA32F 环境 cubemap 创建
+// 天空盒：从 1.hdr 对应的环境 cubemap（1_cubemap.ktx, BC6H_UFLOAT）创建
 // ============================================================
 void PBRFrameWork::CreateSkybox()
 {
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
-    std::string cubemapPath = GetProjectAssetDir() + std::string(kAssetRoot) + "from1hdr/1_cubemap.texture";
+    std::string cubemapPath = GetProjectAssetDir() + std::string(kAssetRoot) + "DamagedHelmet/1_cubemap.ktx";
 
     RenderCore::RCTextureCubePtr cubemap =
-        RenderSystem::ImageTextureUtil::LoadTextureAssetCube(cubemapPath.c_str());
+        RenderSystem::ImageTextureUtil::LoadKTXCubemapTexture(cubemapPath.c_str());
     if (!cubemap)
     {
         LOG_WARN("Failed to load skybox cubemap: %s", cubemapPath.c_str());
