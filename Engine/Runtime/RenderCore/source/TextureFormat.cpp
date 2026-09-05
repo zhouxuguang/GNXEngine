@@ -36,9 +36,18 @@ const static int kTextureByteTable[kTexFormatTotalCount] =
 	0,	// 24: kTexFormatDXT3_SRGB (compressed)
 	0,	// 25: kTexFormatDXT5_RGB (compressed)
 	0,	// 26: kTexFormatDXT5_SRGB (compressed)
-	0,	// 27: kTexFormatBC6H (compressed)
-	0,	// 28: kTexFormatBC7_RGB (compressed)
-	0,	// 29: kTexFormatBC7_SRGB (compressed)
+	0,	// 27: kTexFormatBC6H_UFLOAT / kTexFormatBC6H (compressed)
+	0,	// 28: kTexFormatBC6H_SFLOAT (compressed)
+	0,	// 29: kTexFormatBC7_RGB (compressed)
+	0,	// 30: kTexFormatBC7_SRGB (compressed)
+	0,	// 31: kTexFormatPVRTC_RGB2 (compressed)
+	0,	// 32: kTexFormatPVRTC_RGBA2 (compressed)
+	0,	// 33: kTexFormatPVRTC_RGB4 (compressed)
+	0,	// 34: kTexFormatPVRTC_RGBA4 (compressed)
+	0,	// 35: kTexFormatETC_RGB4 (compressed)
+	0,	// 36: kTexFormatATC_RGB4 (compressed)
+	0,	// 37: kTexFormatATC_RGBA8 (compressed)
+	4,	// 38: kTexFormatBGRA32
 };
 
 uint32_t GetBytesFromTextureFormat (TextureFormat inFormat)

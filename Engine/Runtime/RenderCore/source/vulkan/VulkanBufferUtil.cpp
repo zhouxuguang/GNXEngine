@@ -780,8 +780,12 @@ case kTexFormatRGBA32Float:
             format = VK_FORMAT_BC3_SRGB_BLOCK;
             break;
 
-        case kTexFormatBC6H:
+        case kTexFormatBC6H_UFLOAT:
             format = VK_FORMAT_BC6H_UFLOAT_BLOCK;
+            break;
+
+        case kTexFormatBC6H_SFLOAT:
+            format = VK_FORMAT_BC6H_SFLOAT_BLOCK;
             break;
 
         case kTexFormatBC7_RGB:

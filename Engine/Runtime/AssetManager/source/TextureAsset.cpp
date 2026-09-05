@@ -272,8 +272,9 @@ static RenderCore::TextureFormat ConvertGLFormatToEngineFormat(uint32_t glIntern
         case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM:
             return RenderCore::kTexFormatBC7_SRGB;
         case GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT:
+            return RenderCore::kTexFormatBC6H_SFLOAT;
         case GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT:
-            return RenderCore::kTexFormatBC6H;
+            return RenderCore::kTexFormatBC6H_UFLOAT;
         
         // RGTC 压缩格式
         case GL_COMPRESSED_RED_RGTC1:

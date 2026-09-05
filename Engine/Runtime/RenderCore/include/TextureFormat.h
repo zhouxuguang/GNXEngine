@@ -41,24 +41,28 @@ enum
     kTexFormatDXT3_SRGB = 24,
     kTexFormatDXT5_RGB = 25,
     kTexFormatDXT5_SRGB = 26,
-    kTexFormatBC6H = 27,
-    kTexFormatBC7_RGB = 28,
-    kTexFormatBC7_SRGB = 29,
+    // BC6H 分有符号/无符号两种（编码互不兼容）：
+    //   UFLOAT 对应 GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT(0x8E8F)
+    //   SFLOAT 对应 GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT(0x8E8E)
+    kTexFormatBC6H_UFLOAT = 27,   // BC6H 无符号浮点（HDR 环境贴图默认）
+    kTexFormatBC6H_SFLOAT = 28,   // BC6H 有符号浮点
+    kTexFormatBC7_RGB = 29,
+    kTexFormatBC7_SRGB = 30,
 
     // iPhone
-    kTexFormatPVRTC_RGB2 = 30,
-    kTexFormatPVRTC_RGBA2 = 31,
+    kTexFormatPVRTC_RGB2 = 31,
+    kTexFormatPVRTC_RGBA2 = 32,
 
-    kTexFormatPVRTC_RGB4 = 32,
-    kTexFormatPVRTC_RGBA4 = 33,
+    kTexFormatPVRTC_RGB4 = 33,
+    kTexFormatPVRTC_RGBA4 = 34,
 
-    kTexFormatETC_RGB4 = 34,
+    kTexFormatETC_RGB4 = 35,
 
-    kTexFormatATC_RGB4 = 35,
-    kTexFormatATC_RGBA8 = 36,
+    kTexFormatATC_RGB4 = 36,
+    kTexFormatATC_RGBA8 = 37,
 
     // Pixels returned by iPhone camera
-    kTexFormatBGRA32 = 37,
+    kTexFormatBGRA32 = 38,
 
     // EAC and ETC2 compressed formats, mandated by OpenGL ES 3.0
     kTexFormatEAC_R = 41,
@@ -184,7 +188,7 @@ inline bool IsCompressedASTCTextureFormat(TextureFormat format)
 
 inline bool IsCompressedBCTextureFormat(TextureFormat format)
 {
-	return format >= kTexFormatBC6H && format <= kTexFormatBC7_SRGB;
+	return format >= kTexFormatBC6H_UFLOAT && format <= kTexFormatBC7_SRGB;
 }
 
 inline bool IsAnyCompressedTextureFormat(TextureFormat format)

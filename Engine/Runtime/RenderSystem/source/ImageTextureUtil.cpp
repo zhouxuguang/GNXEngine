@@ -319,6 +319,7 @@ static const uint32_t KTX_GL_SRGB8_ALPHA8 = 0x8C43;
 static const uint32_t KTX_GL_RGBA32F = 0x8814;
 static const uint32_t KTX_GL_R32F    = 0x822E;
 static const uint32_t KTX_GL_RG32F   = 0x8230;
+static const uint32_t KTX_GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT   = 0x8E8E;
 static const uint32_t KTX_GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT = 0x8E8F;
 static const uint32_t KTX_GL_COMPRESSED_RGBA_BPTC_UNORM         = 0x8E8C;
 static const uint32_t KTX_GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM   = 0x8E8D;
@@ -336,7 +337,8 @@ static TextureFormat ConvertGLInternalFormatToEngine(uint32_t glFormat)
         case KTX_GL_RGBA32F: return kTexFormatRGBA32Float;
         case KTX_GL_R32F:    return kTexFormatR32Float;
         case KTX_GL_RG32F:   return kTexFormatRG32Float;
-        case KTX_GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT: return kTexFormatBC6H;
+        case KTX_GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT: return kTexFormatBC6H_UFLOAT;
+        case KTX_GL_COMPRESSED_RGB_BPTC_SIGNED_FLOAT:   return kTexFormatBC6H_SFLOAT;
         case KTX_GL_COMPRESSED_RGBA_BPTC_UNORM:         return kTexFormatBC7_RGB;
         case KTX_GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM:   return kTexFormatBC7_SRGB;
         case KTX_GL_COMPRESSED_RGB_S3TC_DXT1_EXT:       return kTexFormatDXT1_RGB;
