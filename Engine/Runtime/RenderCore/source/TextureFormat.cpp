@@ -150,13 +150,13 @@ int GetMinimumTextureMipSizeForFormat( TextureFormat format )
 }
 
 // 压缩格式：返回 (blockWidth, blockHeight, bytesPerBlock)。
-// 说明：
-//  - BC1/DXT1:       8 字节/块
-//  - BC2/BC3/BC4/BC5/BC6H/BC7/ETC2/ETC1/EAC/ASTC/ATC: 16 字节/块（ASTC 固定 16B/块）
-//  - PVRTC:          非按“块”独立寻址（整个 image 按固定 2/4 bpp 算），按 4x4
-//                    区块对齐边界；这里给出便于行对齐的块几何与字节数近似。
-//  - 4x4 块: BC1-7 / DXT / ETC1 / ETC2 / EAC / ATC
-//  - ASTC: 由枚举名直接编码块尺寸 4x4 .. 12x12（RGB 与 RGBA 成对出现）
+// 说明（每块字节数按行业规范，4x4 块并非都是 16B！）：
+//  - 8 字节/块(4x4):  BC1/DXT1、BC4(RGTC1)、ETC1 RGB、ETC2 RGB、ETC2 RGBA1、
+//                     EAC R11(单通道)、ATC RGB
+//  - 16 字节/块(4x4): BC2/DXT3、BC3/DXT5、BC5(RGTC2)、BC6H、BC7、
+//                     ETC2 RGBA8、EAC RG11(双通道)、ATC RGBA
+//  - ASTC: 每块恒 16 字节，块尺寸 4x4..12x12（正方形）
+//  - PVRTC: 无独立块寻址，2bpp≈8x4、4bpp≈4x4（对齐近似，不参与逐块寻址）
 TextureBlockInfo GetCompressedTextureBlockInfo(TextureFormat format)
 {
     TextureBlockInfo info;
@@ -200,14 +200,28 @@ TextureBlockInfo GetCompressedTextureBlockInfo(TextureFormat format)
         IsCompressedETCTextureFormat(format)  ||
         IsCompressedETC2TextureFormat(format) ||
         IsCompressedEACTextureFormat(format)  ||
-        IsCompressedATCTextureFormat(format))
+        IsCompressedATCTextureFormat(format)  ||
+        format == kTexFormatETC1_RGB)
     {
         info.blockWidth  = 4;
         info.blockHeight = 4;
-        if (format == kTexFormatDXT1_RGB || format == kTexFormatDXT1_SRGB)
-            info.bytesPerBlock = 8;   // BC1/DXT1
+
+        // 8 字节/块的 4x4 格式：BC1/DXT1、ETC1 RGB、ETC2 RGB、ETC2 RGBA1、
+        // EAC R11（单通道）、ATC RGB
+        if (format == kTexFormatDXT1_RGB || format == kTexFormatDXT1_SRGB ||   // BC1
+            format == kTexFormatETC_RGB4 || format == kTexFormatETC1_RGB ||     // ETC1 RGB
+            format == kTexFormatETC2_RGB || format == kTexFormatETC2_SRGB ||    // ETC2 RGB
+            format == kTexFormatETC2_RGBA1 || format == kTexFormatETC2_SRGBA1 ||// ETC2 RGBA1(1bit alpha)
+            format == kTexFormatEAC_R || format == kTexFormatEAC_R_SIGNED ||    // EAC R11
+            format == kTexFormatATC_RGB4)                                       // ATC RGB
+        {
+            info.bytesPerBlock = 8;
+        }
         else
-            info.bytesPerBlock = 16;  // BC2/BC3/BC6H/BC7/ETC/ETC2/EAC/ATC/DXT5
+        {
+            // 16 字节/块：BC2/DXT3、BC3/DXT5、BC6H、BC7、ETC2 RGBA8、EAC RG11、ATC RGBA
+            info.bytesPerBlock = 16;
+        }
         return info;
     }
 
