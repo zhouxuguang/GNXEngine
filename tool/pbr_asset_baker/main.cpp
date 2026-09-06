@@ -335,6 +335,8 @@ static bool WriteTextureContainer(const std::string& outPath,
 // ============================================================================
 static bool Pack2DTexture(const std::string& srcFile, const std::string& outFile, const std::string& type)
 {
+    using namespace AssetProcess;
+
     // 1. 解码图片
     VImage image;
     if (!ImageDecoder::DecodeFile(srcFile.c_str(), &image))
@@ -397,11 +399,21 @@ static bool Pack2DTexture(const std::string& srcFile, const std::string& outFile
     //    normal/orm/ao 为线性数据（colorMap 已在上方声明）。
     bool srgb = colorMap;
 
-    // 3. 生成 KTX（未压缩 RGBA8/sRGB，带 mip 链；避免 BC7/BC6H 依赖，兼容 Metal 映射）
-    std::vector<uint8_t> ktxData;
-    if (!AssetProcess::GenerateUncompressed2DKTX_Data(img, srgb, ktxData))
+    // 3. 生成 KTX（BC7 压缩 + mip 链）。
+    //    TextureImporter::GenerateKTXData 会按 VImage 格式自动选压缩格式：
+    //      FORMAT_SRGB8_ALPHA8 -> BC7_SRGB（GPU 硬件采样自动 sRGB->线性）
+    //      FORMAT_RGBA8        -> BC7_UNORM（normal/orm/ao 线性数据）
+    //    并逐 mip 用 stbir 降采样 + BC7 压缩，输出完整 mip 链。
+    TextureImporter importer;
+    TextureImportSettings settings;
+    settings.mipmapMode = MipmapMode::Auto;
+    settings.enableCompression = true;
+    settings.colorSpace = srgb ? TextureColorSpace::sRGB : TextureColorSpace::Linear;
+
+    std::vector<uint8_t> ktxData = importer.GenerateKTXData(img, settings);
+    if (ktxData.empty())
     {
-        LOG_ERROR("Failed to generate uncompressed KTX for %s", srcFile.c_str());
+        LOG_ERROR("Failed to generate BC7 KTX for %s", srcFile.c_str());
         return false;
     }
 
@@ -486,9 +498,12 @@ static bool BakeIBL(const std::string& hdrFile, const std::string& outPrefix,
             LOG_ERROR("Irradiance generation failed");
             return false;
         }
-        // RGBA32F 非压缩（BC6H 压缩在部分后端映射缺失）
-        std::vector<uint8_t> ktx;
-        if (!GenerateRGBA32FCubemap_Data(irrFaces, ktx))
+        // RGB32Float -> BC6H_UFLOAT 压缩（TextureImporter 按 VImage 格式自动选 BC6H）
+        TextureImporter importer;
+        TextureImportSettings s;
+        s.mipmapMode = MipmapMode::None;
+        std::vector<uint8_t> ktx = importer.GenerateKTXCubemapData(irrFaces, s);
+        if (ktx.empty())
         {
             LOG_ERROR("Irradiance KTX encode failed");
             return false;
@@ -525,9 +540,12 @@ static bool PackEnvironmentCubemap(const std::string& hdrFile, const std::string
         return false;
     }
 
-    // RGBA32F 非压缩（BC6H 压缩在部分后端映射缺失）
-    std::vector<uint8_t> ktx;
-    if (!GenerateRGBA32FCubemap_Data(faces, ktx))
+    // RGB32Float -> BC6H_UFLOAT 压缩（TextureImporter 按 VImage 格式自动选 BC6H）
+    TextureImporter importer;
+    TextureImportSettings s;
+    s.mipmapMode = MipmapMode::None;
+    std::vector<uint8_t> ktx = importer.GenerateKTXCubemapData(faces, s);
+    if (ktx.empty())
     {
         LOG_ERROR("Failed to generate skybox cubemap KTX");
         return false;

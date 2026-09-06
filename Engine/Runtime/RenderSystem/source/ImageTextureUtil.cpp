@@ -349,6 +349,31 @@ static TextureFormat ConvertGLInternalFormatToEngine(uint32_t glFormat)
     return kTexFormatInvalid;
 }
 
+// 返回指定 mip level 的行距（bytes/行）。对于压缩纹理，一行 = 一横排块的总字节，
+// 用 ktxTexture_GetRowPitch（已按真实块宽/块高与 GL_UNPACK_ALIGNMENT 计算，兼容
+// ASTC 5x5/6x6/8x8/10x10/12x12、PVRTC 8x4 等不同块尺寸），避免写死 4x4。
+static uint32_t GetKTXMipRowPitch(ktxTexture* ktx, uint32_t level)
+{
+    ktx_uint32_t rowPitch = ktxTexture_GetRowPitch(ktx, level);
+    if (rowPitch != 0)
+    {
+        return rowPitch;
+    }
+    // 极老版本 ktx 可能返回 0：退回按 imageSize/块行数估算（使用真实块高）。
+    ktx_size_t imageSize = ktxTexture_GetImageSize(ktx, level);
+    uint32_t mipHeight   = std::max(1u, ktx->baseHeight >> level);
+    // 从 GL 格式推断引擎格式，再用块几何取块高
+    uint32_t glFormat = 0;
+    if (ktx->classId == ktxTexture1_c)
+    {
+        glFormat = reinterpret_cast<ktxTexture1*>(ktx)->glInternalformat;
+    }
+    TextureFormat engineFormat = ConvertGLInternalFormatToEngine(glFormat);
+    uint32_t blockRows = GetBlockRowCount(engineFormat, mipHeight);
+    uint32_t bpr = (blockRows > 0) ? (uint32_t)(imageSize / blockRows) : (uint32_t)imageSize;
+    return (bpr > 0) ? bpr : (uint32_t)imageSize;
+}
+
 RCTexture2DPtr ImageTextureUtil::LoadKTXTexture(const char* filename)
 {
     if (!filename) return nullptr;
@@ -413,6 +438,7 @@ RCTexture2DPtr ImageTextureUtil::LoadKTXTexture(const char* filename)
     }
 
     // 5. 上传各 mipmap 层数据到 GPU
+    bool isCompressed = IsAnyCompressedTextureFormat(engineFormat);
     for (uint32_t level = 0; level < mipLevels; ++level)
     {
         ktx_size_t offset = 0;
@@ -430,10 +456,19 @@ RCTexture2DPtr ImageTextureUtil::LoadKTXTexture(const char* filename)
         uint32_t mipWidth  = std::max(1u, width >> level);
         uint32_t mipHeight = std::max(1u, height >> level);
 
-        Rect2D rect(0, 0, mipWidth, mipHeight);
-        uint32_t bytesPerRow = static_cast<uint32_t>(imgSize) / mipHeight;
-        if (bytesPerRow == 0) bytesPerRow = static_cast<uint32_t>(imgSize);
+        // 行距：压缩格式用 ktxTexture_GetRowPitch（真实块宽/高），非压缩用像素高。
+        uint32_t bytesPerRow;
+        if (isCompressed)
+        {
+            bytesPerRow = GetKTXMipRowPitch(ktx, level);
+        }
+        else
+        {
+            bytesPerRow = static_cast<uint32_t>(imgSize) / mipHeight;
+            if (bytesPerRow == 0) bytesPerRow = static_cast<uint32_t>(imgSize);
+        }
 
+        Rect2D rect(0, 0, mipWidth, mipHeight);
         texture->ReplaceRegion(rect, level, imageData, bytesPerRow);
     }
 
@@ -513,19 +548,10 @@ RCTextureCubePtr ImageTextureUtil::LoadKTXCubemapTexture(const char* filename)
         uint32_t mipWidth  = std::max(1u, width >> level);
         uint32_t mipHeight = std::max(1u, height >> level);
 
-        // 对于压缩格式（BC等），数据按4x4块组织，bytesPerRow需要按块行计算
-        uint32_t bytesPerRow;
-        if (isCompressed)
-        {
-            uint32_t blockRows = (mipHeight + 3) / 4;
-            bytesPerRow = static_cast<uint32_t>(imageSize) / blockRows;
-            if (bytesPerRow == 0) bytesPerRow = static_cast<uint32_t>(imageSize);
-        }
-        else
-        {
-            bytesPerRow = static_cast<uint32_t>(imageSize) / mipHeight;
-            if (bytesPerRow == 0) bytesPerRow = static_cast<uint32_t>(imageSize);
-        }
+        // 行距用 ktxTexture_GetRowPitch（已按真实块宽/高与对齐规则计算）。
+        // 压缩格式的一行 = 一横排块的总字节，不能按 imageSize/像素高 或写死 4x4。
+        uint32_t bytesPerRow = GetKTXMipRowPitch(ktx, level);
+        if (bytesPerRow == 0) bytesPerRow = static_cast<uint32_t>(imageSize);
 
         for (uint32_t face = 0; face < 6; ++face)
         {
@@ -605,12 +631,12 @@ static RCTexture2DPtr Create2DFromKtxTexture(ktxTexture* ktx, const char* tag)
         uint32_t mipWidth        = std::max(1u, width >> level);
         uint32_t mipHeight       = std::max(1u, height >> level);
 
+        // 行距：压缩格式用 ktxTexture_GetRowPitch（真实块宽/高，适配 ASTC/PVRTC），
+        // 非压缩退回 imageSize/像素高。
         uint32_t bytesPerRow;
         if (isCompressed)
         {
-            uint32_t blockRows = (mipHeight + 3) / 4;
-            bytesPerRow = (blockRows > 0) ? (uint32_t)(imgSize / blockRows) : (uint32_t)imgSize;
-            if (bytesPerRow == 0) bytesPerRow = (uint32_t)imgSize;
+            bytesPerRow = GetKTXMipRowPitch(ktx, level);
         }
         else
         {
@@ -670,12 +696,11 @@ static RCTextureCubePtr CreateCubeFromKtxTexture(ktxTexture* ktx, const char* ta
         uint32_t mipWidth    = std::max(1u, width >> level);
         uint32_t mipHeight   = std::max(1u, height >> level);
 
+        // 行距：压缩格式用 ktxTexture_GetRowPitch（真实块宽/高，适配 ASTC/PVRTC）
         uint32_t bytesPerRow;
         if (isCompressed)
         {
-            uint32_t blockRows = (mipHeight + 3) / 4;
-            bytesPerRow = (blockRows > 0) ? (uint32_t)(imageSize / blockRows) : (uint32_t)imageSize;
-            if (bytesPerRow == 0) bytesPerRow = (uint32_t)imageSize;
+            bytesPerRow = GetKTXMipRowPitch(ktx, level);
         }
         else
         {

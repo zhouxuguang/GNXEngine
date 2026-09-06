@@ -215,6 +215,31 @@ const char* GetTextureFormatString(TextureFormat format);
 
 std::pair<int,int> RoundTextureDimensionsToBlocks(TextureFormat fmt, int w, int h);
 
+// ==================== 压缩格式块几何信息 ====================
+// 块压缩格式按固定大小的“块”(block) 组织数据（如 BC/DXT/ETC=4x4，ASTC 可为
+// 5x5/6x6/8x8/10x10/12x12，PVRTC 2bpp=8x4 等）。计算 mip 链 / 上传 bytesPerRow 时
+// 必须使用真实块尺寸，不能写死 4x4，否则 ASTC/PVRTC 等会算错块行数导致越界。
+struct TextureBlockInfo
+{
+    uint32_t blockWidth  = 1;   // 块宽（texel）
+    uint32_t blockHeight = 1;   // 块高（texel）
+    uint32_t bytesPerBlock = 0; // 每个块的字节数（0 = 非压缩格式）
+};
+
+// 返回压缩格式的块尺寸与每块字节数；非压缩格式返回 bytesPerBlock=0。
+TextureBlockInfo GetCompressedTextureBlockInfo(TextureFormat format);
+
+// 返回某高度（像素行）对应的块行数；非压缩格式返回原值（每像素一行）。
+inline uint32_t GetBlockRowCount(TextureFormat format, uint32_t pixelHeight)
+{
+    TextureBlockInfo info = GetCompressedTextureBlockInfo(format);
+    if (info.bytesPerBlock == 0 || info.blockHeight == 0)
+    {
+        return pixelHeight;
+    }
+    return (pixelHeight + info.blockHeight - 1) / info.blockHeight;
+}
+
 enum TextureType 
 {
     TextureType_Unkown =       -1,

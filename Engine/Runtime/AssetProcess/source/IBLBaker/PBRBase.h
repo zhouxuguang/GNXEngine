@@ -70,13 +70,13 @@ ASSET_PROCESS_API void GeneratePrefilteredEnvMap_Texture(
     uint32_t imageSize = 128, uint32_t samples = 256);
 
 /**
- * @brief 生成逐 mip 物理正确的预过滤环境贴图，编码为 KTX Cubemap 数据
+ * @brief 生成逐 mip 物理正确的预过滤环境贴图，编码为 KTX Cubemap 数据（BC6H_UFLOAT 压缩）
  * 每个 mip level 对应一个 roughness（GGX 重要性采样卷积），而非简单降采样。
  * 结果可直接包装为 .texture 资产供运行时 IBL specular 采样。
  * @param faces 6 个源 Cubemap 面（RGB32Float）
  * @param baseSize 基础面尺寸（默认 128）
  * @param samples 每 texel 采样数（默认 256）
- * @param outData 输出的 KTX1 Cubemap 字节
+ * @param outData 输出的 KTX1 Cubemap 字节（BC6H_UFLOAT，逐 mip 压缩）
  * @return 成功返回 true
  */
 ASSET_PROCESS_API bool GeneratePrefilteredEnvMapMipChain_Data(

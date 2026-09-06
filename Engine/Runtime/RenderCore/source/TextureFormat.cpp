@@ -149,6 +149,72 @@ int GetMinimumTextureMipSizeForFormat( TextureFormat format )
 		return 1;
 }
 
+// 压缩格式：返回 (blockWidth, blockHeight, bytesPerBlock)。
+// 说明：
+//  - BC1/DXT1:       8 字节/块
+//  - BC2/BC3/BC4/BC5/BC6H/BC7/ETC2/ETC1/EAC/ASTC/ATC: 16 字节/块（ASTC 固定 16B/块）
+//  - PVRTC:          非按“块”独立寻址（整个 image 按固定 2/4 bpp 算），按 4x4
+//                    区块对齐边界；这里给出便于行对齐的块几何与字节数近似。
+//  - 4x4 块: BC1-7 / DXT / ETC1 / ETC2 / EAC / ATC
+//  - ASTC: 由枚举名直接编码块尺寸 4x4 .. 12x12（RGB 与 RGBA 成对出现）
+TextureBlockInfo GetCompressedTextureBlockInfo(TextureFormat format)
+{
+    TextureBlockInfo info;
+
+    // ---- ASTC：4x4 / 5x5 / 6x6 / 8x8 / 10x10 / 12x12，每块恒 16 字节 ----
+    if (IsCompressedASTCTextureFormat(format))
+    {
+        // 枚举值连续：kTexFormatASTC_RGB_4x4=54..12x12=59, RGBA_4x4=60..12x12=65。
+        // 块尺寸序列 4,5,6,8,10,12 与枚举偏移对应。
+        static const uint32_t kAstcSizes[] = { 4, 5, 6, 8, 10, 12 };
+        uint32_t idx = (uint32_t)format - kTexFormatASTC_RGB_4x4;
+        uint32_t sizeIdx = idx % 6;
+        info.blockWidth  = kAstcSizes[sizeIdx];
+        info.blockHeight = kAstcSizes[sizeIdx];
+        info.bytesPerBlock = 16;
+        return info;
+    }
+
+    // ---- PVRTC：2bpp 按 8x4 texel 对齐，4bpp 按 4x4 texel 对齐。
+    // PVRTC 没有独立的“块”概念，整个 mip 数据为连续 bit 流；这里为行对齐近似 ----
+    if (IsCompressedPVRTCTextureFormat(format))
+    {
+        if (format == kTexFormatPVRTC_RGB2 || format == kTexFormatPVRTC_RGBA2)
+        {
+            info.blockWidth  = 8;
+            info.blockHeight = 4;
+            info.bytesPerBlock = 8;   // 2bpp: 8x4 块 = 8 texel 行 * 2 字节…用于对齐估算
+        }
+        else
+        {
+            info.blockWidth  = 4;
+            info.blockHeight = 4;
+            info.bytesPerBlock = 8;   // 4bpp: 4x4 块 = 8 字节
+        }
+        return info;
+    }
+
+    // ---- 其余块压缩格式基本都是 4x4 ----
+    if (IsCompressedDXTTextureFormat(format) ||
+        IsCompressedBCTextureFormat(format)   ||
+        IsCompressedETCTextureFormat(format)  ||
+        IsCompressedETC2TextureFormat(format) ||
+        IsCompressedEACTextureFormat(format)  ||
+        IsCompressedATCTextureFormat(format))
+    {
+        info.blockWidth  = 4;
+        info.blockHeight = 4;
+        if (format == kTexFormatDXT1_RGB || format == kTexFormatDXT1_SRGB)
+            info.bytesPerBlock = 8;   // BC1/DXT1
+        else
+            info.bytesPerBlock = 16;  // BC2/BC3/BC6H/BC7/ETC/ETC2/EAC/ATC/DXT5
+        return info;
+    }
+
+    // 未知/非压缩：返回默认（bytesPerBlock=0 表示非块压缩）
+    return info;
+}
+
 bool IsAlphaOnlyTextureFormat( TextureFormat format )
 {
 	return format == kTexFormatAlpha8;

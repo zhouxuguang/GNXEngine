@@ -10,6 +10,7 @@
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/ImageCodec/include/ImageUtil.h"
 #include "TextureImporter.h"
+#include "DXTCompressor.h"
 #include <ktx.h>
 #include <fstream>
 #include <cmath>
@@ -614,6 +615,47 @@ static void ConvertRGBFacesToRGBA32F(const std::vector<imagecodec::VImagePtr>& r
     }
 }
 
+/**
+ * 把 6 面 RGB32Float 图像编码为 BC6H（UFLOAT）数据（KTX1 cubemap level 布局：
+ * 连续 6 面，每面为 4x4 block 压缩后的字节，ceil(faceSize/4)*ceil(faceSize/4)*16）。
+ * BC6H 编码输入要求 RGBA16F（8 字节/像素）；ispc_texcomp 内部会用 fill_borders
+ * 把尺寸补齐到 4 的倍数（ReplicateBorders 复制边缘），因此这里直接传实际面尺寸即可。
+ */
+static void EncodeRGBFacesToBC6H(const std::vector<imagecodec::VImagePtr>& rgbFaces,
+                                 uint32_t faceSize,
+                                 std::vector<uint8_t>& outData)
+{
+    const uint32_t kBlocksPerSide = (faceSize + 3) / 4;
+    const uint32_t kFaceBytes = kBlocksPerSide * kBlocksPerSide * 16;  // BC6H = 16B/block
+    outData.resize(kFaceBytes * 6);
+
+    // RGBA16F 中间缓冲（逐面复用）
+    std::vector<uint16_t> rgba16((size_t)faceSize * faceSize * 4);
+
+    for (uint32_t f = 0; f < 6; ++f)
+    {
+        const imagecodec::VImage* src = rgbFaces[f].get();
+        const float* pSrc = (const float*)src->GetImageData();   // RGB32Float (3 floats)
+
+        for (uint32_t y = 0; y < faceSize; ++y)
+        {
+            for (uint32_t x = 0; x < faceSize; ++x)
+            {
+                uint32_t so = (y * faceSize + x) * 3;
+                uint32_t do_ = (y * faceSize + x) * 4;
+                rgba16[do_ + 0] = mathutil::float_to_half(pSrc[so + 0]);
+                rgba16[do_ + 1] = mathutil::float_to_half(pSrc[so + 1]);
+                rgba16[do_ + 2] = mathutil::float_to_half(pSrc[so + 2]);
+                rgba16[do_ + 3] = mathutil::float_to_half(1.0f);
+            }
+        }
+
+        uint8_t* pFaceOut = outData.data() + (size_t)f * kFaceBytes;
+        CompressBC6H(pFaceOut, (const uint8_t*)rgba16.data(),
+                     faceSize, faceSize, faceSize * 8);
+    }
+}
+
 bool GeneratePrefilteredEnvMapMipChain_Data(
     const std::vector<imagecodec::VImagePtr>& faces,
     uint32_t baseSize, uint32_t samples,
@@ -626,17 +668,17 @@ bool GeneratePrefilteredEnvMapMipChain_Data(
     }
 
     // KTX1 常量（与 TextureImporter.cpp 保持一致）
-    const uint32_t kGL_RGBA32F = 0x8814;
-    const uint32_t kVK_R32G32B32A32_SFLOAT = 109;
+    const uint32_t kGL_BC6H_UFLOAT = 0x8E8F;                 // GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT
+    const uint32_t kVK_BC6H_UFLOAT_BLOCK = 143;              // VK_FORMAT_BC6H_UFLOAT_BLOCK
 
     uint32_t numMips = imagecodec::ImageUtil::CalcNumMipLevels(baseSize, baseSize);
     LOG_INFO("Generating prefiltered env map mip-chain: base %ux%u, %u mips, %u samples/texel",
              baseSize, baseSize, numMips, samples);
 
-    // 创建 KTX1 Cubemap 纹理对象（RGBA32F 非压缩）
+    // 创建 KTX1 Cubemap 纹理对象（BC6H_UFLOAT 压缩）
     ktxTextureCreateInfo createInfo = {};
-    createInfo.glInternalformat = kGL_RGBA32F;
-    createInfo.vkFormat = kVK_R32G32B32A32_SFLOAT;
+    createInfo.glInternalformat = kGL_BC6H_UFLOAT;
+    createInfo.vkFormat = kVK_BC6H_UFLOAT_BLOCK;
     createInfo.baseWidth = baseSize;
     createInfo.baseHeight = baseSize;
     createInfo.baseDepth = 1u;
@@ -670,22 +712,21 @@ bool GeneratePrefilteredEnvMapMipChain_Data(
             prefilteredFaces.push_back(PrefilterEnvMapFace(faces, roughness, f, faceSize, samples));
         }
 
-        // RGB32Float -> RGBA32F
+        // RGB32Float -> BC6H 压缩
         std::vector<uint8_t> levelData;
-        ConvertRGBFacesToRGBA32F(prefilteredFaces, faceSize, levelData);
+        EncodeRGBFacesToBC6H(prefilteredFaces, faceSize, levelData);
 
-        // 写入 KTX（每面独立 offset）
-        const uint32_t kBytesPerPixel = 4 * sizeof(float);
-        uint32_t rowBytes = faceSize * kBytesPerPixel;
+        // 写入 KTX（每面独立 offset）。注意压缩格式下每面大小按 4x4 block 对齐计算，
+        // ktxTexture_GetImageSize 已经返回压缩后的字节数。
+        const uint32_t kBlocksPerRow = (faceSize + 3) / 4;
+        const uint32_t kFaceCompressedBytes = kBlocksPerRow * kBlocksPerRow * 16;
         for (uint32_t f = 0; f < 6; ++f)
         {
             ktx_size_t offset = 0;
             ktxTexture_GetImageOffset(ktxTexture(tex), level, 0, f, &offset);
-            const uint8_t* faceData = levelData.data() + (size_t)f * faceSize * faceSize * kBytesPerPixel;
-            memcpy(ktxTexture_GetData(ktxTexture(tex)) + offset, faceData,
-                   (size_t)faceSize * faceSize * kBytesPerPixel);
+            const uint8_t* faceData = levelData.data() + (size_t)f * kFaceCompressedBytes;
+            memcpy(ktxTexture_GetData(ktxTexture(tex)) + offset, faceData, kFaceCompressedBytes);
         }
-        (void)rowBytes;
     }
 
     // 序列化
