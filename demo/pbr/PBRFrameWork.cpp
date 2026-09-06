@@ -3,12 +3,12 @@
 //  pbr
 //
 //  PBR Demo - Demonstrates Physically Based Rendering with the asset pipeline:
-//  1. Material textures are KTX textures packaged as .texture assets, loaded at runtime
-//  2. Environment lighting (skybox / IBL irradiance + prefilter + BRDF LUT) uses the
-//     existing 1.hdr baking outputs (1_cubemap.ktx / 1_irradiance.ktx / 1_prefilter.ktx,
-//     BC6H_UFLOAT; Metal 后端映射到 BC6H_RGBUfloat 后可直接显示)
-//  3. DamagedHelmet mesh is packaged as .meshasset (custom pb MeshMessage), loaded at runtime
-//  4. IBL evaluated in DeferredLighting.shader (diffuse + specular + BRDF LUT)
+//  1. 模型级资产（data_asset/pbr/DamagedHelmet/）：material textures (.texture, BC7)
+//     + DamagedHelmet mesh (.meshasset)，随模型走
+//  2. 场景级环境资产（data_asset/pbr/env/）：1.hdr 烘焙产物 1_cubemap.ktx /
+//     1_irradiance.ktx / 1_prefilter.ktx / brdfLUT.ktx（BC6H_UFLOAT / RG16F），
+//     与模型资源分开，多模型共享一套环境
+//  3. IBL evaluated in DeferredLighting.shader (diffuse + specular + BRDF LUT)
 //
 
 #include "PBRFrameWork.h"
@@ -186,31 +186,32 @@ void PBRFrameWork::CreateScene(uint32_t width, uint32_t height)
 }
 
 // ============================================================
-// IBL：从 1.hdr 对应的烘焙产物（原生 .ktx, BC6H）加载 irradiance / prefilter / brdfLUT
+// IBL：从 env/1.hdr 对应的烘焙产物（原生 .ktx, BC6H）加载 irradiance / prefilter / brdfLUT
+// （场景级环境资产在 data_asset/pbr/env/，与模型级资源分开）
 // ============================================================
 void PBRFrameWork::CreateIBL()
 {
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
-    std::string helmetDir = GetProjectAssetDir() + std::string(kAssetRoot) + "DamagedHelmet/";
+    std::string envDir = GetProjectAssetDir() + std::string(kAssetRoot) + "env/";
 
     // 漫反射辐照度 cubemap（1_irradiance.ktx, BC6H_UFLOAT）
     mIrradianceMap = RenderSystem::ImageTextureUtil::LoadKTXCubemapTexture(
-        (helmetDir + "1_irradiance.ktx").c_str());
+        (envDir + "1_irradiance.ktx").c_str());
     if (!mIrradianceMap)
     {
-        LOG_WARN("Failed to load irradiance cubemap: %s1_irradiance.ktx", helmetDir.c_str());
+        LOG_WARN("Failed to load irradiance cubemap: %s1_irradiance.ktx", envDir.c_str());
     }
 
     // 预过滤镜面 cubemap（1_prefilter.ktx, BC6H_UFLOAT）
     mPrefilteredMap = RenderSystem::ImageTextureUtil::LoadKTXCubemapTexture(
-        (helmetDir + "1_prefilter.ktx").c_str());
+        (envDir + "1_prefilter.ktx").c_str());
     if (!mPrefilteredMap)
     {
-        LOG_WARN("Failed to load prefiltered cubemap: %s1_prefilter.ktx", helmetDir.c_str());
+        LOG_WARN("Failed to load prefiltered cubemap: %s1_prefilter.ktx", envDir.c_str());
     }
 
-    // BRDF LUT（顶层 pbr/brdfLUT.ktx, RG16F）
-    std::string brdfPath = GetProjectAssetDir() + std::string(kAssetRoot) + "brdfLUT.ktx";
+    // BRDF LUT（env/brdfLUT.ktx, RG16F）
+    std::string brdfPath = envDir + "brdfLUT.ktx";
     mBRDFLUT = RenderSystem::ImageTextureUtil::LoadKTXTexture(brdfPath.c_str());
     if (!mBRDFLUT)
     {
@@ -226,12 +227,12 @@ void PBRFrameWork::CreateIBL()
 }
 
 // ============================================================
-// 天空盒：从 1.hdr 对应的环境 cubemap（1_cubemap.ktx, BC6H_UFLOAT）创建
+// 天空盒：从 env/1.hdr 对应的环境 cubemap（1_cubemap.ktx, BC6H_UFLOAT）创建
 // ============================================================
 void PBRFrameWork::CreateSkybox()
 {
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
-    std::string cubemapPath = GetProjectAssetDir() + std::string(kAssetRoot) + "DamagedHelmet/1_cubemap.ktx";
+    std::string cubemapPath = GetProjectAssetDir() + std::string(kAssetRoot) + "env/1_cubemap.ktx";
 
     RenderCore::RCTextureCubePtr cubemap =
         RenderSystem::ImageTextureUtil::LoadKTXCubemapTexture(cubemapPath.c_str());

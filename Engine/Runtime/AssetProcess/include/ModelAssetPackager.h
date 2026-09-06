@@ -1,20 +1,23 @@
 //
-//  AssetPackager.h
+//  ModelAssetPackager.h
 //  GNXEngine
 //
-//  引擎级离线资产打包封装。
+//  引擎级【模型级】离线资产打包封装。
 //
-//  统一了 pbr_asset_baker 等离线工具所需的资产打包逻辑：
+//  负责把"一个模型及其材质贴图"打包成模型跟随的资源包：
 //    - 模型 (gltf/glb/obj/fbx/3ds) -> .meshasset   (MeshMessage + AssetFileHeader)
-//    - 2D 贴图 (jpg/png/tga/webp/...) -> .texture    (KTX + TextureMessage + header)
-//    - HDR 环境 -> 天空盒 / IBL(irradiance/prefilter/brdfLUT) .texture
-//    - 基础几何 (sphere/plane) -> .meshasset
-//  底层复用引擎的 AssimpMeshImporter / TextureImporter / PBRBase / EnvHdrProcess
-//  与 AssetContainerWriter，打包逻辑在引擎内维护，工具侧只做参数解析。
+//    - 2D 材质贴图 (jpg/png/...)       -> .texture    (KTX + TextureMessage + header)
+//    - 程序化基础几何 (sphere/plane)   -> .meshasset
+//
+//  这些资产属于模型本身（模型换场景也一起走），与场景级环境(天空盒/IBL)解耦，
+//  后者由 EnvironmentAssetBaker 负责。
+//
+//  底层复用引擎的 AssimpMeshImporter / TextureImporter / AssetContainerWriter，
+//  打包逻辑在引擎内维护，工具侧只做参数解析。
 //
 
-#ifndef GNX_ENGINE_ASSET_PACKAGER_INCLUDE
-#define GNX_ENGINE_ASSET_PACKAGER_INCLUDE
+#ifndef GNX_ENGINE_MODEL_ASSET_PACKAGER_INCLUDE
+#define GNX_ENGINE_MODEL_ASSET_PACKAGER_INCLUDE
 
 #include "AssetProcessDefine.h"
 #include <string>
@@ -32,12 +35,10 @@ enum class TextureMapType : uint32_t
     Emissive = 4,   // 自发光 (sRGB)
 };
 
-class ASSET_PROCESS_API AssetPackager
+class ASSET_PROCESS_API ModelAssetPackager
 {
 public:
-    AssetPackager() = delete;
-
-    // ==================== 模型打包 ====================
+    ModelAssetPackager() = delete;
 
     /**
      * 模型文件 -> .meshasset（引擎统一 assimp 预处理参数 + MeshMessage 编码）
@@ -56,8 +57,6 @@ public:
     static bool PackPrimitiveMesh(const std::string& kind,
                                   const std::string& outMeshAsset);
 
-    // ==================== 2D 贴图打包 ====================
-
     /**
      * 图片 -> .texture（自动 RGB->RGBA、按 type 打 sRGB/线性标签、BC7 压缩 + mip 链）
      * @param srcImage 源图片
@@ -70,27 +69,8 @@ public:
                                       const std::string& outTexture,
                                       TextureMapType type,
                                       const std::string& assetName = "");
-
-    // ==================== 环境/IBL 打包 ====================
-
-    /**
-     * HDR 环境 -> 天空盒 cubemap .texture（BC6H 压缩）
-     */
-    static bool PackEnvironmentCubemapFromHDR(const std::string& hdrFile,
-                                              const std::string& outTexture,
-                                              uint32_t faceSize = 512,
-                                              const std::string& assetName = "");
-
-    /**
-     * HDR 环境 -> IBL 资产组（{prefix}_brdfLUT/irradiance/prefilter.texture）
-     * irradiance/prefilter 走 BC6H，brdfLUT 走 RG16F。
-     */
-    static bool BakeIBLFromHDR(const std::string& hdrFile,
-                               const std::string& outPrefix,
-                               uint32_t faceSize = 128,
-                               uint32_t samples = 256);
 };
 
 NS_ASSETPROCESS_END
 
-#endif // !GNX_ENGINE_ASSET_PACKAGER_INCLUDE
+#endif // !GNX_ENGINE_MODEL_ASSET_PACKAGER_INCLUDE

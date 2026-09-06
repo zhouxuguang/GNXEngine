@@ -3,13 +3,15 @@ add_executable(pbr_asset_baker
 )
 
 # pbr_asset_baker is a host-only offline baking tool (macOS/Windows/Linux).
-# All packaging logic lives in the engine's AssetProcess::AssetPackager
-# (model assimp parse, texture RGB->RGBA + BC7/BC6H, IBL bake, primitive meshes)
-# and AssetManager::AssetContainerWriter (AssetFileHeader + pb container write).
+# All packaging logic lives in the engine's AssetProcess wrappers:
+#   - model-level:  ModelAssetPackager   (mesh/primitive/texture, BC7)
+#   - scene-level:  EnvironmentAssetBaker (skybox cubemap / IBL, BC6H)
+# backed by AssetManager::AssetContainerWriter (AssetFileHeader + pb container write).
 # The tool links only GNXEngine and only does CLI parsing.
 target_link_libraries(pbr_asset_baker PRIVATE GNXEngine)
 
-# AssetPackager.h 是 AssetProcess 的 PUBLIC include，从 Engine/ 根解析。
+# ModelAssetPackager.h / EnvironmentAssetBaker.h 是 AssetProcess 的 PUBLIC include，
+# 从 Engine/ 根解析。
 target_include_directories(pbr_asset_baker PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Engine
 )
