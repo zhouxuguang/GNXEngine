@@ -155,23 +155,22 @@ int GetMinimumTextureMipSizeForFormat( TextureFormat format )
 //                     EAC R11(单通道)、ATC RGB
 //  - 16 字节/块(4x4): BC2/DXT3、BC3/DXT5、BC5(RGTC2)、BC6H、BC7、
 //                     ETC2 RGBA8、EAC RG11(双通道)、ATC RGBA
-//  - ASTC: 每块恒 16 字节，块尺寸 4x4..12x12（正方形）
+//  - ASTC: 每块恒 16 字节，块尺寸覆盖 4x4..12x12（含 5x4/6x5/8x5/8x6/10x5/10x6/10x8/12x10 等非正方形）
 //  - PVRTC: 无独立块寻址，2bpp≈8x4、4bpp≈4x4（对齐近似，不参与逐块寻址）
 TextureBlockInfo GetCompressedTextureBlockInfo(TextureFormat format)
 {
     TextureBlockInfo info;
 
-    // ---- ASTC：4x4 / 5x5 / 6x6 / 8x8 / 10x10 / 12x12，每块恒 16 字节 ----
+    // ---- ASTC LDR：14 种块尺寸（正方形 + 非正方形），每块恒 16 字节 ----
     if (IsCompressedASTCTextureFormat(format))
     {
-        // 枚举值连续：kTexFormatASTC_RGB_4x4=54..12x12=59, RGBA_4x4=60..12x12=65。
-        // 块尺寸序列 4,5,6,8,10,12 与枚举偏移对应。
-        static const uint32_t kAstcSizes[] = { 4, 5, 6, 8, 10, 12 };
-        uint32_t idx = (uint32_t)format - kTexFormatASTC_RGB_4x4;
-        uint32_t sizeIdx = idx % 6;
-        info.blockWidth  = kAstcSizes[sizeIdx];
-        info.blockHeight = kAstcSizes[sizeIdx];
-        info.bytesPerBlock = 16;
+        uint32_t bw = 0, bh = 0;
+        if (GetASTCBlockSizeFromFormat(format, bw, bh))
+        {
+            info.blockWidth    = bw;
+            info.blockHeight   = bh;
+            info.bytesPerBlock = 16;
+        }
         return info;
     }
 
@@ -229,6 +228,50 @@ TextureBlockInfo GetCompressedTextureBlockInfo(TextureFormat format)
     return info;
 }
 
+// ==================== ASTC 辅助实现 ====================
+
+// ASTC LDR 全部 14 种块尺寸（顺序与引擎枚举/GL/Vk 常量一致）
+namespace
+{
+struct ASTCBlockDim { uint32_t w, h; };
+const ASTCBlockDim kASTCBlockDims[kASTCBlockSizeCount] = {
+    { 4, 4 }, { 5, 4 }, { 5, 5 }, { 6, 5 }, { 6, 6 },
+    { 8, 5 }, { 8, 6 }, { 8, 8 }, { 10, 5 }, { 10, 6 },
+    { 10, 8 }, { 10, 10 }, { 12, 10 }, { 12, 12 }
+};
+}
+
+// 块尺寸 + sRGB → 引擎 ASTC 枚举
+TextureFormat ConvertASTCBlockToEngineFormat(uint32_t blockWidth, uint32_t blockHeight, bool sRGB)
+{
+    for (uint32_t i = 0; i < kASTCBlockSizeCount; ++i)
+    {
+        if (kASTCBlockDims[i].w == blockWidth && kASTCBlockDims[i].h == blockHeight)
+        {
+            // 枚举成对排列：_SRGB = base + 2*i, _UNORM = base + 2*i + 1
+            return (TextureFormat)(kTexFormatASTC_4x4_SRGB + 2 * i + (sRGB ? 0 : 1));
+        }
+    }
+    return kTexFormatInvalid;
+}
+
+// 引擎 ASTC 枚举 → 块尺寸
+bool GetASTCBlockSizeFromFormat(TextureFormat format, uint32_t& outBlockWidth, uint32_t& outBlockHeight)
+{
+    if (!IsCompressedASTCTextureFormat(format))
+    {
+        return false;
+    }
+    uint32_t idx = ((uint32_t)format - kTexFormatASTC_4x4_SRGB) / 2;
+    if (idx >= kASTCBlockSizeCount)
+    {
+        return false;
+    }
+    outBlockWidth  = kASTCBlockDims[idx].w;
+    outBlockHeight = kASTCBlockDims[idx].h;
+    return true;
+}
+
 bool IsAlphaOnlyTextureFormat( TextureFormat format )
 {
 	return format == kTexFormatAlpha8;
@@ -262,7 +305,7 @@ bool HasAlphaTextureFormat( TextureFormat format )
 	return format == kTexFormatAlpha8 || format == kTexFormatARGB4444 || format == kTexFormatRGBA4444 || format == kTexFormatRGBA8 || format == kTexFormatARGB8
 	|| format == kTexFormatARGBFloat || format == kTexFormatAlphaLum16 || format == kTexFormatDXT5_RGB || format == kTexFormatDXT3_RGB
 	|| format == kTexFormatPVRTC_RGBA2 || format == kTexFormatPVRTC_RGBA4 || format == kTexFormatATC_RGBA8 || format == kTexFormatBGRA32
-	|| format == kTexFormatETC2_RGBA1 || format == kTexFormatETC2_RGBA8 || (format >= kTexFormatASTC_RGBA_4x4 && format <= kTexFormatASTC_RGBA_12x12)
+	|| format == kTexFormatETC2_RGBA1 || format == kTexFormatETC2_RGBA8
 	|| format == kTexFormatSRGB8_ALPHA8 || format == kTexR10G10B10A2;
 }
 
@@ -336,13 +379,21 @@ const char* GetTextureFormatString(TextureFormat format)
 
 #define STR_(x) #x
 #define STR(x) STR_(x)
-#define DO_ASTC(bx,by) case kTexFormatASTC_RGB_##bx##x##by : return "RGB Compressed ASTC " STR(bx) "x" STR(by) " block"; case kTexFormatASTC_RGBA_##bx##x##by : return "RGBA Compressed ASTC " STR(bx) "x" STR(by) " block"
+#define DO_ASTC(bx,by) case kTexFormatASTC_##bx##x##by##_SRGB : return "sRGB Compressed ASTC " STR(bx) "x" STR(by) " block"; case kTexFormatASTC_##bx##x##by##_UNORM : return "UNORM Compressed ASTC " STR(bx) "x" STR(by) " block"
 
 		DO_ASTC(4, 4);
+		DO_ASTC(5, 4);
 		DO_ASTC(5, 5);
+		DO_ASTC(6, 5);
 		DO_ASTC(6, 6);
+		DO_ASTC(8, 5);
+		DO_ASTC(8, 6);
 		DO_ASTC(8, 8);
+		DO_ASTC(10, 5);
+		DO_ASTC(10, 6);
+		DO_ASTC(10, 8);
 		DO_ASTC(10, 10);
+		DO_ASTC(12, 10);
 		DO_ASTC(12, 12);
 
 #undef DO_ASTC

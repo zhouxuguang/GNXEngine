@@ -239,6 +239,39 @@ inline MTLPixelFormat ConvertTextureFormatToMetal(uint32_t textureFormat)
         case kTexFormatRGBA16Sint:
             return MTLPixelFormatRGBA16Sint;
 
+        // ---- ASTC LDR（sRGB / UNORM）----
+        // Metal 像素格式：LDR = 线性(UNORM)，sRGB = sRGB 解码。
+        // ASTC 仅 Apple GPU 原生支持（Apple Silicon / iOS）；Intel/AMD macOS 返回
+        // 的 MTLPixelFormat 存在但无硬件解码，实际可用性由设备特性查询决定。
+        case kTexFormatASTC_4x4_SRGB:    return MTLPixelFormatASTC_4x4_sRGB;
+        case kTexFormatASTC_4x4_UNORM:   return MTLPixelFormatASTC_4x4_LDR;
+        case kTexFormatASTC_5x4_SRGB:    return MTLPixelFormatASTC_5x4_sRGB;
+        case kTexFormatASTC_5x4_UNORM:   return MTLPixelFormatASTC_5x4_LDR;
+        case kTexFormatASTC_5x5_SRGB:    return MTLPixelFormatASTC_5x5_sRGB;
+        case kTexFormatASTC_5x5_UNORM:   return MTLPixelFormatASTC_5x5_LDR;
+        case kTexFormatASTC_6x5_SRGB:    return MTLPixelFormatASTC_6x5_sRGB;
+        case kTexFormatASTC_6x5_UNORM:   return MTLPixelFormatASTC_6x5_LDR;
+        case kTexFormatASTC_6x6_SRGB:    return MTLPixelFormatASTC_6x6_sRGB;
+        case kTexFormatASTC_6x6_UNORM:   return MTLPixelFormatASTC_6x6_LDR;
+        case kTexFormatASTC_8x5_SRGB:    return MTLPixelFormatASTC_8x5_sRGB;
+        case kTexFormatASTC_8x5_UNORM:   return MTLPixelFormatASTC_8x5_LDR;
+        case kTexFormatASTC_8x6_SRGB:    return MTLPixelFormatASTC_8x6_sRGB;
+        case kTexFormatASTC_8x6_UNORM:   return MTLPixelFormatASTC_8x6_LDR;
+        case kTexFormatASTC_8x8_SRGB:    return MTLPixelFormatASTC_8x8_sRGB;
+        case kTexFormatASTC_8x8_UNORM:   return MTLPixelFormatASTC_8x8_LDR;
+        case kTexFormatASTC_10x5_SRGB:   return MTLPixelFormatASTC_10x5_sRGB;
+        case kTexFormatASTC_10x5_UNORM:  return MTLPixelFormatASTC_10x5_LDR;
+        case kTexFormatASTC_10x6_SRGB:   return MTLPixelFormatASTC_10x6_sRGB;
+        case kTexFormatASTC_10x6_UNORM:  return MTLPixelFormatASTC_10x6_LDR;
+        case kTexFormatASTC_10x8_SRGB:   return MTLPixelFormatASTC_10x8_sRGB;
+        case kTexFormatASTC_10x8_UNORM:  return MTLPixelFormatASTC_10x8_LDR;
+        case kTexFormatASTC_10x10_SRGB:  return MTLPixelFormatASTC_10x10_sRGB;
+        case kTexFormatASTC_10x10_UNORM: return MTLPixelFormatASTC_10x10_LDR;
+        case kTexFormatASTC_12x10_SRGB:  return MTLPixelFormatASTC_12x10_sRGB;
+        case kTexFormatASTC_12x10_UNORM: return MTLPixelFormatASTC_12x10_LDR;
+        case kTexFormatASTC_12x12_SRGB:  return MTLPixelFormatASTC_12x12_sRGB;
+        case kTexFormatASTC_12x12_UNORM: return MTLPixelFormatASTC_12x12_LDR;
+
         default:
             return MTLPixelFormatInvalid;
     }

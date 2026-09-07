@@ -326,9 +326,46 @@ static const uint32_t KTX_GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM   = 0x8E8D;
 static const uint32_t KTX_GL_COMPRESSED_RGB_S3TC_DXT1_EXT       = 0x83F0;
 static const uint32_t KTX_GL_COMPRESSED_SRGB_S3TC_DXT1_EXT      = 0x8C4C;
 
+// ASTC LDR GL internal format 基准值：
+//   UNORM: GL_COMPRESSED_RGBA_ASTC_4x4_KHR=0x93B0 .. 12x12=0x93BD
+//   sRGB : GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR=0x93D0 .. 12x12=0x93DD
+// 两种都按同一 14 种块尺寸顺序连续排列。
+static const uint32_t KTX_GL_COMPRESSED_RGBA_ASTC_4x4_KHR      = 0x93B0;
+static const uint32_t KTX_GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR = 0x93D0;
+static const uint32_t KTX_ASTC_GL_FORMAT_COUNT = 14;
+
+// ASTC LDR 块尺寸（与 TextureFormat 的 ASTC 枚举顺序一致）
+static const uint32_t kAstcGLBlockW[] = { 4, 5, 5, 6, 6, 8, 8, 8, 10, 10, 10, 10, 12, 12 };
+static const uint32_t kAstcGLBlockH[] = { 4, 4, 5, 5, 6, 5, 6, 8,  5,  6,  8, 10, 10, 12 };
+
 // GL 内部格式 → 引擎 TextureFormat 映射
 static TextureFormat ConvertGLInternalFormatToEngine(uint32_t glFormat)
 {
+    // ---- ASTC LDR（UNORM / sRGB）----
+    if (glFormat >= KTX_GL_COMPRESSED_RGBA_ASTC_4x4_KHR &&
+        glFormat <  KTX_GL_COMPRESSED_RGBA_ASTC_4x4_KHR + KTX_ASTC_GL_FORMAT_COUNT)
+    {
+        uint32_t idx = glFormat - KTX_GL_COMPRESSED_RGBA_ASTC_4x4_KHR;
+        if (idx < KTX_ASTC_GL_FORMAT_COUNT)
+        {
+            // 引擎 ASTC 枚举按 (尺寸对: SRGB, UNORM) 成对排列；UNORM 对应引擎偶/奇需换算。
+            // 引擎: kTexFormatASTC_<W>x<H>_SRGB = base + 2*idx,  _UNORM = base + 2*idx + 1
+            // 为复用纹理格式查询，直接映射回块尺寸再换算到引擎枚举（避免与后端重复维护）。
+            return ConvertASTCBlockToEngineFormat(kAstcGLBlockW[idx], kAstcGLBlockH[idx], /*sRGB=*/false);
+        }
+        return kTexFormatInvalid;
+    }
+    if (glFormat >= KTX_GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR &&
+        glFormat <  KTX_GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR + KTX_ASTC_GL_FORMAT_COUNT)
+    {
+        uint32_t idx = glFormat - KTX_GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR;
+        if (idx < KTX_ASTC_GL_FORMAT_COUNT)
+        {
+            return ConvertASTCBlockToEngineFormat(kAstcGLBlockW[idx], kAstcGLBlockH[idx], /*sRGB=*/true);
+        }
+        return kTexFormatInvalid;
+    }
+
     switch (glFormat)
     {
         case KTX_GL_RG16F:   return kTexFormatRG16Float;

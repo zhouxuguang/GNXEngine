@@ -870,6 +870,36 @@ case kTexFormatRGBA32Float:
             format = VK_FORMAT_R16G16B16A16_SINT;
             break;
 
+        // ---- ASTC LDR（sRGB / UNORM）----
+        case kTexFormatASTC_4x4_SRGB:    format = VK_FORMAT_ASTC_4x4_SRGB_BLOCK;    break;
+        case kTexFormatASTC_4x4_UNORM:   format = VK_FORMAT_ASTC_4x4_UNORM_BLOCK;   break;
+        case kTexFormatASTC_5x4_SRGB:    format = VK_FORMAT_ASTC_5x4_SRGB_BLOCK;    break;
+        case kTexFormatASTC_5x4_UNORM:   format = VK_FORMAT_ASTC_5x4_UNORM_BLOCK;   break;
+        case kTexFormatASTC_5x5_SRGB:    format = VK_FORMAT_ASTC_5x5_SRGB_BLOCK;    break;
+        case kTexFormatASTC_5x5_UNORM:   format = VK_FORMAT_ASTC_5x5_UNORM_BLOCK;   break;
+        case kTexFormatASTC_6x5_SRGB:    format = VK_FORMAT_ASTC_6x5_SRGB_BLOCK;    break;
+        case kTexFormatASTC_6x5_UNORM:   format = VK_FORMAT_ASTC_6x5_UNORM_BLOCK;   break;
+        case kTexFormatASTC_6x6_SRGB:    format = VK_FORMAT_ASTC_6x6_SRGB_BLOCK;    break;
+        case kTexFormatASTC_6x6_UNORM:   format = VK_FORMAT_ASTC_6x6_UNORM_BLOCK;   break;
+        case kTexFormatASTC_8x5_SRGB:    format = VK_FORMAT_ASTC_8x5_SRGB_BLOCK;    break;
+        case kTexFormatASTC_8x5_UNORM:   format = VK_FORMAT_ASTC_8x5_UNORM_BLOCK;   break;
+        case kTexFormatASTC_8x6_SRGB:    format = VK_FORMAT_ASTC_8x6_SRGB_BLOCK;    break;
+        case kTexFormatASTC_8x6_UNORM:   format = VK_FORMAT_ASTC_8x6_UNORM_BLOCK;   break;
+        case kTexFormatASTC_8x8_SRGB:    format = VK_FORMAT_ASTC_8x8_SRGB_BLOCK;    break;
+        case kTexFormatASTC_8x8_UNORM:   format = VK_FORMAT_ASTC_8x8_UNORM_BLOCK;   break;
+        case kTexFormatASTC_10x5_SRGB:   format = VK_FORMAT_ASTC_10x5_SRGB_BLOCK;   break;
+        case kTexFormatASTC_10x5_UNORM:  format = VK_FORMAT_ASTC_10x5_UNORM_BLOCK;  break;
+        case kTexFormatASTC_10x6_SRGB:   format = VK_FORMAT_ASTC_10x6_SRGB_BLOCK;   break;
+        case kTexFormatASTC_10x6_UNORM:  format = VK_FORMAT_ASTC_10x6_UNORM_BLOCK;  break;
+        case kTexFormatASTC_10x8_SRGB:   format = VK_FORMAT_ASTC_10x8_SRGB_BLOCK;   break;
+        case kTexFormatASTC_10x8_UNORM:  format = VK_FORMAT_ASTC_10x8_UNORM_BLOCK;  break;
+        case kTexFormatASTC_10x10_SRGB:  format = VK_FORMAT_ASTC_10x10_SRGB_BLOCK;  break;
+        case kTexFormatASTC_10x10_UNORM: format = VK_FORMAT_ASTC_10x10_UNORM_BLOCK; break;
+        case kTexFormatASTC_12x10_SRGB:  format = VK_FORMAT_ASTC_12x10_SRGB_BLOCK;  break;
+        case kTexFormatASTC_12x10_UNORM: format = VK_FORMAT_ASTC_12x10_UNORM_BLOCK; break;
+        case kTexFormatASTC_12x12_SRGB:  format = VK_FORMAT_ASTC_12x12_SRGB_BLOCK;  break;
+        case kTexFormatASTC_12x12_UNORM: format = VK_FORMAT_ASTC_12x12_UNORM_BLOCK; break;
+
         default:
             break;
     }

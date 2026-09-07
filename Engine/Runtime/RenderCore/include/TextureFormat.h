@@ -78,59 +78,79 @@ enum
     
     kTexFormatETC1_RGB = 51,
 
-    // ASTC. The RGB and RGBA formats are internally identical, we just need to carry the has-alpha information somehow
-    kTexFormatASTC_RGB_4x4 = 54,
-    kTexFormatASTC_RGB_5x5 = 55,
-    kTexFormatASTC_RGB_6x6 = 56,
-    kTexFormatASTC_RGB_8x8 = 57,
-    kTexFormatASTC_RGB_10x10 = 58,
-    kTexFormatASTC_RGB_12x12 = 59,
+    // ==================== ASTC LDR ====================
+    // 每个块尺寸都有 sRGB 与 UNORM(线性) 两种格式（ASTC 编码本身相同，仅视图/解码语义不同）。
+    // 块尺寸覆盖 Vulkan/Metal ASTC LDR 全部 14 种（含非正方形块）。
+    // 命名规则: kTexFormatASTC_<块宽>x<块高>_<SRGB|UNORM>
+    // (旧 kTexFormatASTC_RGB_*x* / kTexFormatASTC_RGBA_*x* 已废弃移除；
+    //  ASTC RGB 与 RGBA 内部编码一致，不再区分，由上层材质语义决定有无 alpha)
+    kTexFormatASTC_4x4_SRGB = 52,
+    kTexFormatASTC_4x4_UNORM = 53,
+    kTexFormatASTC_5x4_SRGB = 54,
+    kTexFormatASTC_5x4_UNORM = 55,
+    kTexFormatASTC_5x5_SRGB = 56,
+    kTexFormatASTC_5x5_UNORM = 57,
+    kTexFormatASTC_6x5_SRGB = 58,
+    kTexFormatASTC_6x5_UNORM = 59,
+    kTexFormatASTC_6x6_SRGB = 60,
+    kTexFormatASTC_6x6_UNORM = 61,
+    kTexFormatASTC_8x5_SRGB = 62,
+    kTexFormatASTC_8x5_UNORM = 63,
+    kTexFormatASTC_8x6_SRGB = 64,
+    kTexFormatASTC_8x6_UNORM = 65,
+    kTexFormatASTC_8x8_SRGB = 66,
+    kTexFormatASTC_8x8_UNORM = 67,
+    kTexFormatASTC_10x5_SRGB = 68,
+    kTexFormatASTC_10x5_UNORM = 69,
+    kTexFormatASTC_10x6_SRGB = 70,
+    kTexFormatASTC_10x6_UNORM = 71,
+    kTexFormatASTC_10x8_SRGB = 72,
+    kTexFormatASTC_10x8_UNORM = 73,
+    kTexFormatASTC_10x10_SRGB = 74,
+    kTexFormatASTC_10x10_UNORM = 75,
+    kTexFormatASTC_12x10_SRGB = 76,
+    kTexFormatASTC_12x10_UNORM = 77,
+    kTexFormatASTC_12x12_SRGB = 78,
+    kTexFormatASTC_12x12_UNORM = 79,
 
-    kTexFormatASTC_RGBA_4x4 = 60,
-    kTexFormatASTC_RGBA_5x5 = 61,
-    kTexFormatASTC_RGBA_6x6 = 62,
-    kTexFormatASTC_RGBA_8x8 = 63,
-    kTexFormatASTC_RGBA_10x10 = 64,
-    kTexFormatASTC_RGBA_12x12 = 65,
-    
     //深度模板格式
-    kTexFormatDepth16 = 70,            // 16 bit depth buffer
-    kTexFormatDepth24 = 71,            // 24 bit depth buffer
-    kTexFormatDepth32Float = 73,       // 32 bit float depth buffer
+    kTexFormatDepth16 = 80,            // 16 bit depth buffer
+    kTexFormatDepth24 = 81,            // 24 bit depth buffer
+    kTexFormatDepth32Float = 82,       // 32 bit float depth buffer
     
-    kTexFormatDepth16Stencil8 = 74,
-    kTexFormatDepth24Stencil8 = 75,
-    kTexFormatDepth32FloatStencil8 = 76,
+    kTexFormatDepth16Stencil8 = 83,
+    kTexFormatDepth24Stencil8 = 84,
+    kTexFormatDepth32FloatStencil8 = 85,
     
     
     //浮点格式纹理
-    kTexFormatRGBA16Float = 80,
-    kTexFormatRGBA32Float = 81,
-    kTexFormatRG16Float = 82,
+    kTexFormatRGBA16Float = 86,
+    kTexFormatRGBA32Float = 87,
+    kTexFormatRG16Float = 88,
 
-	kTexFormatR32Uint = 98,
-	kTexFormatR32Sint = 99,
-    kTexFormatR32Float = 100,
+	kTexFormatR32Uint = 96,
+	kTexFormatR32Sint = 97,
+    kTexFormatR32Float = 98,
 
-    kTexFormatRG32Uint = 101,
-    kTexFormatRG32Sint = 102,
-    kTexFormatRG32Float = 103,
+    kTexFormatRG32Uint = 99,
+    kTexFormatRG32Sint = 100,
+    kTexFormatRG32Float = 101,
 
     // 8-bit / 16-bit unsigned/integer formats
     // Useful for: virtual texture page tables, index buffers as textures,
     // packed coordinate storage, compute shader readback
-    kTexFormatR8Uint   = 104,
-    kTexFormatRG8Uint  = 105,
-    kTexFormatRGBA8Uint= 106,
-    kTexFormatR8Sint   = 107,
-    kTexFormatRG8Sint  = 108,
-    kTexFormatRGBA8Sint= 109,
-    kTexFormatR16Uint  = 110,
-    kTexFormatRG16Uint = 111,
-    kTexFormatRGBA16Uint=112,
-    kTexFormatR16Sint  = 113,
-    kTexFormatRG16Sint = 114,
-    kTexFormatRGBA16Sint=115,
+    kTexFormatR8Uint   = 102,
+    kTexFormatRG8Uint  = 103,
+    kTexFormatRGBA8Uint= 104,
+    kTexFormatR8Sint   = 105,
+    kTexFormatRG8Sint  = 106,
+    kTexFormatRGBA8Sint= 107,
+    kTexFormatR16Uint  = 108,
+    kTexFormatRG16Uint = 109,
+    kTexFormatRGBA16Uint=110,
+    kTexFormatR16Sint  = 111,
+    kTexFormatRG16Sint = 112,
+    kTexFormatRGBA16Sint=113,
 
     kTexFormatTotalCount    = 1000 // keep this last!
 };
@@ -183,7 +203,20 @@ inline bool Is16BitTextureFormat(TextureFormat format)
 
 inline bool IsCompressedASTCTextureFormat(TextureFormat format)
 {
-	return format >= kTexFormatASTC_RGB_4x4 && format <= kTexFormatASTC_RGBA_12x12;
+	// ASTC LDR 全部块尺寸 × {SRGB, UNORM} 连续排列（kTexFormatASTC_4x4_SRGB .. kTexFormatASTC_12x12_UNORM）
+	return format >= kTexFormatASTC_4x4_SRGB && format <= kTexFormatASTC_12x12_UNORM;
+}
+
+// ASTC sRGB 变体（每尺寸的 SRGB 在前、UNORM 在后，间隔 1）
+inline bool IsASTCSRGBFormat(TextureFormat format)
+{
+	return IsCompressedASTCTextureFormat(format) && ((format - kTexFormatASTC_4x4_SRGB) & 1) == 0;
+}
+
+// ASTC UNORM(线性) 变体
+inline bool IsASTCUNORMFormat(TextureFormat format)
+{
+	return IsCompressedASTCTextureFormat(format) && !IsASTCSRGBFormat(format);
 }
 
 inline bool IsCompressedBCTextureFormat(TextureFormat format)
@@ -228,6 +261,17 @@ struct TextureBlockInfo
 
 // 返回压缩格式的块尺寸与每块字节数；非压缩格式返回 bytesPerBlock=0。
 TextureBlockInfo GetCompressedTextureBlockInfo(TextureFormat format);
+
+// ==================== ASTC 辅助 ====================
+// ASTC LDR 支持的全部块尺寸数量（正方形 + 非正方形）
+constexpr uint32_t kASTCBlockSizeCount = 14;
+
+// 把 ASTC 块尺寸 + 颜色空间映射为引擎 ASTC TextureFormat；非法尺寸返回 kTexFormatInvalid。
+// 供 GL/Vk 格式转换（ImageTextureUtil / 后端映射）与资产烘焙共用，避免各处重复维护尺寸表。
+TextureFormat ConvertASTCBlockToEngineFormat(uint32_t blockWidth, uint32_t blockHeight, bool sRGB);
+
+// 从引擎 ASTC TextureFormat 反查块尺寸（与 GetCompressedTextureBlockInfo 一致，供名称等使用）
+bool GetASTCBlockSizeFromFormat(TextureFormat format, uint32_t& outBlockWidth, uint32_t& outBlockHeight);
 
 // 返回某高度（像素行）对应的块行数；非压缩格式返回原值（每像素一行）。
 inline uint32_t GetBlockRowCount(TextureFormat format, uint32_t pixelHeight)
