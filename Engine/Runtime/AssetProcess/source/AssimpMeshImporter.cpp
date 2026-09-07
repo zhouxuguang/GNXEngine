@@ -1,6 +1,7 @@
 #include "AssimpMeshImporter.h"
 #include "MeshMessageUtil.h"
 #include "Runtime/BaseLib/include/FileUtil.h"
+#include <meshoptimizer.h>
 
 NS_ASSETPROCESS_BEGIN
 
@@ -15,11 +16,15 @@ AssimpMeshImporter::~AssimpMeshImporter()
 void AssimpMeshImporter::LoadMesh(const baselib::NXGUID& guid)
 {
 	getVertexCountAndLayout(mScene->mRootNode, mScene);
+	mOriginalVertexCount = mVertexCount;
 	processMeshVertex(mScene);
+	processIndice();
+	// 顶点坐标去重（各属性数组同步收窄）——必须在 setupLayout 之前，
+	// 否则 channel offset 会按去重前的数组大小计算而错位。
+	DeduplicateVertices();
 
 	MeshPtr mesh = std::make_shared<Mesh>();
 	setupLayout(mesh.get());
-	processIndice();
 
 	mesh->GetVertexData().Resize(mVertexCount, mVertexSize);
 	mesh->SetPositions(mPosition.data(), mPosition.size());
@@ -50,6 +55,7 @@ bool AssimpMeshImporter::EncodeMeshToMemory(std::vector<uint8_t>& outData)
 {
 	// 清空上一次解析的状态（复用对象时安全）
 	mVertexCount = 0;
+	mOriginalVertexCount = 0;
 	mVertexSize = 0;
 	mSubVertexCounts.clear();
 	mSubMeshs.clear();
@@ -68,6 +74,7 @@ bool AssimpMeshImporter::EncodeMeshToMemory(std::vector<uint8_t>& outData)
 	}
 
 	getVertexCountAndLayout(mScene->mRootNode, mScene);
+	mOriginalVertexCount = mVertexCount;
 	processMeshVertex(mScene);
 
 	if (mVertexCount == 0)
@@ -75,9 +82,13 @@ bool AssimpMeshImporter::EncodeMeshToMemory(std::vector<uint8_t>& outData)
 		return false;
 	}
 
+	processIndice();
+	// 顶点坐标去重（各属性数组同步收窄）——必须在 setupLayout 之前，
+	// 否则 channel offset 会按去重前的数组大小计算而错位。
+	DeduplicateVertices();
+
 	MeshPtr mesh = std::make_shared<Mesh>();
 	setupLayout(mesh.get());
-	processIndice();
 
 	mesh->GetVertexData().Resize(mVertexCount, mVertexSize);
 	mesh->SetPositions(mPosition.data(), mPosition.size());
@@ -225,6 +236,122 @@ void AssimpMeshImporter::processMeshVertex(const aiScene* scene)
 
 		idx += mesh->mNumVertices;
 	}
+}
+
+// ---------------------------------------------------------------------------
+// 顶点去重：使用 meshoptimizer 按【全部顶点属性】作为键去除完全重复的顶点，
+// 并同步重映射各属性数组，保持各属性数组长度一致，避免顶点数据膨胀。
+//
+// 说明：
+//  - 仅当所有“非空”属性数组长度都与顶点总数一致时才去重；
+//    若某 submesh 缺某属性导致数组长度不一致，则回退（不去重），保证正确性。
+//  - 去重键 = 位置 + 法线 + UV + 切线等【所有非空属性】；
+//    只有全部属性二进制一致的顶点才会合并，因此不会破坏硬边 / UV 接缝处的
+//    法线或纹理坐标（渲染结果与去重前一致，仅剔除真正重复的顶点）。
+//  - 会同步更新 mIndices 与 mSubMeshInfos（顶点范围缩小），并把 mVertexCount
+//    更新为去重后的唯一顶点数。
+// ---------------------------------------------------------------------------
+bool AssimpMeshImporter::DeduplicateVertices()
+{
+	if (mPosition.empty() || mIndices.empty())
+	{
+		return false;
+	}
+
+	const size_t oldVertexCount = mPosition.size();
+
+	// 各属性数组必须与顶点总数一致（允许整体为空：无该属性）
+	auto consistent = [oldVertexCount](const auto& attr) 
+	{
+		return attr.empty() || attr.size() == oldVertexCount;
+	};
+	if (!consistent(mNormal) || !consistent(mColor) ||
+		!consistent(mTexCoord0) || !consistent(mTexCoord1) ||
+		!consistent(mTangent))
+	{
+		// 属性不齐全/长度不一致，无法安全去重，回退原逻辑
+		LOG_WARN("AssimpMeshImporter: attribute arrays inconsistent, skip vertex dedup");
+		return false;
+	}
+
+	// 把所有非空顶点属性组成 meshoptimizer 多流（每个元素 = 一个顶点的一种属性）。
+	// meshopt_generateVertexRemapMulti 以全部流的二进制内容为键去重，
+	// 只有属性完全一致的顶点才合并（不会破坏 UV/法线接缝）。
+	std::vector<meshopt_Stream> streams;
+	streams.reserve(6);
+
+	auto addStream = [&streams](const void* data, size_t elemSize) 
+	{
+		meshopt_Stream s;
+		s.data   = data;
+		s.size   = elemSize;
+		s.stride = elemSize;   // SoA 布局：每元素连续存放
+		streams.push_back(s);
+	};
+
+	addStream(mPosition.data(), sizeof(Vector3f));
+	if (!mNormal.empty())    addStream(mNormal.data(), sizeof(Vector3f));
+	if (!mColor.empty())     addStream(mColor.data(), sizeof(uint32_t));
+	if (!mTexCoord0.empty()) addStream(mTexCoord0.data(), sizeof(Vector2f));
+	if (!mTexCoord1.empty()) addStream(mTexCoord1.data(), sizeof(Vector2f));
+	if (!mTangent.empty())   addStream(mTangent.data(), sizeof(Vector4f));
+
+	// remap[i] == ~0u 表示该旧顶点未被任何索引引用（会从顶点缓冲中剔除）
+	std::vector<uint32_t> remap(oldVertexCount);
+
+	const size_t uniqueCount = meshopt_generateVertexRemapMulti(
+		remap.data(),
+		mIndices.data(), mIndices.size(),
+		oldVertexCount,
+		streams.data(), streams.size());
+
+	if (uniqueCount == 0 || uniqueCount >= oldVertexCount)
+	{
+		// 没有可去除的重复顶点（或去重失败），无需改写
+		return false;
+	}
+
+	// 按 remap 重映射各属性数组（SoA）：dst 大小 = uniqueCount
+	auto remapAttr = [&](auto& dst) 
+	{
+		if (dst.empty())
+		{
+			return;
+		}
+		using AttrType = typename std::remove_reference<decltype(dst)>::type::value_type;
+		std::vector<AttrType> tmp(uniqueCount);
+		meshopt_remapVertexBuffer(tmp.data(), dst.data(), oldVertexCount,
+								  sizeof(AttrType), remap.data());
+		dst.swap(tmp);
+	};
+
+	remapAttr(mPosition);
+	remapAttr(mNormal);
+	remapAttr(mColor);
+	remapAttr(mTexCoord0);
+	remapAttr(mTexCoord1);
+	remapAttr(mTangent);
+
+	// 重映射索引
+	std::vector<uint32_t> remappedIndices(mIndices.size());
+	meshopt_remapIndexBuffer(remappedIndices.data(), mIndices.data(),
+							 mIndices.size(), remap.data());
+	mIndices.swap(remappedIndices);
+
+	// 更新顶点计数（子网格顶点范围也一并收窄；firstIndex/indexCount 不受影响）
+	mVertexCount = (uint32_t)uniqueCount;
+	for (auto& sub : mSubMeshInfos)
+	{
+		if (sub.vertexCount > mVertexCount)
+		{
+			sub.vertexCount = mVertexCount;
+		}
+	}
+
+	LOG_INFO("AssimpMeshImporter: vertex dedup %u -> %u (saved %.1f%%)",
+			 (uint32_t)oldVertexCount, mVertexCount,
+			 100.0 * (1.0 - (double)uniqueCount / (double)oldVertexCount));
+	return true;
 }
 
 void AssimpMeshImporter::setupLayout(Mesh* mesh)

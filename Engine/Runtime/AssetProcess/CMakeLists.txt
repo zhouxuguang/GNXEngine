@@ -62,6 +62,7 @@ source_group(TREE ${asset_process_include_dir} PREFIX include FILES ${ASSET_PROC
 
 target_include_directories(AssetProcess PRIVATE ${asset_process_include_dir} ${ISPC_HEADER_DIR})
 
-target_link_libraries(AssetProcess PRIVATE assimp RenderSystem nanopb tbb ktx pvrtc ImageCodec AssetManager yaml-cpp)
+# meshoptimizer: AssimpMeshImporter 用 meshopt_generateVertexRemap 做顶点坐标去重
+target_link_libraries(AssetProcess PRIVATE assimp RenderSystem nanopb tbb ktx pvrtc ImageCodec AssetManager yaml-cpp meshoptimizer)
 
 set_property(TARGET AssetProcess PROPERTY FOLDER "Runtime")

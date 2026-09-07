@@ -35,6 +35,9 @@ public:
 	/// 解析出的顶点总数（EncodeMeshToMemory 后有效）
 	uint32_t GetVertexCount() const { return mVertexCount; }
 
+	/// 去重前的原始顶点总数（用于统计/对比，EncodeMeshToMemory 后有效）
+	uint32_t GetOriginalVertexCount() const { return mOriginalVertexCount; }
+
 private:
 	const aiScene* mScene = nullptr;
 
@@ -46,7 +49,20 @@ private:
 
 	void processIndice();
 
+	/**
+	 * @brief 使用 meshoptimizer 按顶点坐标去重，并同步重映射全部顶点属性。
+	 *
+	 * 仅当所有非空属性数组长度都与 mVertexCount 一致（即各 submesh 属性齐全）时执行，
+	 * 否则保持原样（不做去重，避免属性错位）。
+	 *
+	 * 去重键 = 位置坐标；不同 UV/法线的顶点若坐标相同会合并，属性取首次出现的顶点。
+	 * 会同步压缩 mPosition/mNormal/mTexCoord0/mTexCoord1/mTangent 与 mIndices，
+	 * 并把 mVertexCount 更新为去重后数量。
+	 */
+	bool DeduplicateVertices();
+
 	uint32_t mVertexCount = 0;
+	uint32_t mOriginalVertexCount = 0;
 	uint32_t mVertexSize = 0;
 	std::vector<uint32_t> mSubVertexCounts;    //每个submesh的顶点个数
 	std::vector<aiMesh*> mSubMeshs;
