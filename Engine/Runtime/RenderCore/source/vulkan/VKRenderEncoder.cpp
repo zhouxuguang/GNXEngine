@@ -53,6 +53,49 @@ VkPrimitiveTopology ConvertToVulkanPrimitiveTopology(PrimitiveMode mode)
     return topology;
 }
 
+static VkCullModeFlags ConvertToVulkanCullMode(CullMode mode)
+{
+    switch (mode)
+    {
+        case CullModeFront: return VK_CULL_MODE_FRONT_BIT;
+        case CullModeBack:  return VK_CULL_MODE_BACK_BIT;
+        case CullModeNone:
+        default:            return VK_CULL_MODE_NONE;
+    }
+}
+
+static VkCompareOp ConvertToVulkanCompareFunction(CompareFunction function)
+{
+    switch (function)
+    {
+        case CompareFunctionNever:              return VK_COMPARE_OP_NEVER;
+        case CompareFunctionLess:               return VK_COMPARE_OP_LESS;
+        case CompareFunctionEqual:              return VK_COMPARE_OP_EQUAL;
+        case CompareFunctionLessThanOrEqual:    return VK_COMPARE_OP_LESS_OR_EQUAL;
+        case CompareFunctionGreater:            return VK_COMPARE_OP_GREATER;
+        case CompareFunctionNotEqual:           return VK_COMPARE_OP_NOT_EQUAL;
+        case CompareFunctionGreaterThanOrEqual: return VK_COMPARE_OP_GREATER_OR_EQUAL;
+        case CompareFunctionAlways:
+        default:                                return VK_COMPARE_OP_ALWAYS;
+    }
+}
+
+static VkStencilOp ConvertToVulkanStencilOperation(StencilOperation operation)
+{
+    switch (operation)
+    {
+        case StencilOperationZero:           return VK_STENCIL_OP_ZERO;
+        case StencilOperationReplace:        return VK_STENCIL_OP_REPLACE;
+        case StencilOperationIncrementClamp: return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
+        case StencilOperationDecrementClamp: return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
+        case StencilOperationInvert:         return VK_STENCIL_OP_INVERT;
+        case StencilOperationIncrementWrap:  return VK_STENCIL_OP_INCREMENT_AND_WRAP;
+        case StencilOperationDecrementWrap:  return VK_STENCIL_OP_DECREMENT_AND_WRAP;
+        case StencilOperationKeep:
+        default:                             return VK_STENCIL_OP_KEEP;
+    }
+}
+
 void VKRenderEncoder::BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInfo)
 {
     // 动态渲染没有子流程依赖，所以需要插入图像内存屏障
@@ -402,10 +445,10 @@ VKRenderEncoder::VKRenderEncoder(VulkanContextPtr context,
     // [POI] Flip the sign of the viewport's height
     viewport.height = -(float)renderInfo.renderArea.extent.height;
     
-    vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
+    SetDynamicViewport(viewport);
 
     //设置裁剪区域
-    vkCmdSetScissor(mCommandBuffer, 0, 1, &renderInfo.renderArea);
+    SetDynamicScissor(renderInfo.renderArea);
     
     if (mContext->vulkanExtension.enableDebugUtils)
     {
@@ -473,6 +516,8 @@ void VKRenderEncoder::BindPipeline()
             pso = mGraphicsPipieline->GetWireframePipeline();
     }
     vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pso);
+    mHasBoundPipeline = true;
+    ApplyExtendedDynamicState();
 
     if (!mContext->vulkanExtension.enablePushDesDescriptor)
     {
@@ -486,6 +531,125 @@ void VKRenderEncoder::BindPipeline()
 				desCriptors.data(), 0, nullptr);
         }
     }
+}
+
+void VKRenderEncoder::ApplyExtendedDynamicState()
+{
+    if (!mGraphicsPipieline || !mContext->vulkanExtension.enableExtendedDynamicState)
+    {
+        return;
+    }
+
+    const GraphicsPipelineDesc& pipelineDesc = mGraphicsPipieline->GetDesc();
+    const DepthStencilDesc& depthStencil = pipelineDesc.depthStencilDescriptor;
+    const StencilDesc& stencil = depthStencil.stencil;
+    const VkBool32 depthTestEnable = depthStencil.depthCompareFunction != CompareFunctionAlways;
+
+    if (mContext->vulkanExtension.enableExtendedDynamicStateEXT)
+    {
+        vkCmdSetCullModeEXT(mCommandBuffer, ConvertToVulkanCullMode(pipelineDesc.cullMode));
+        vkCmdSetFrontFaceEXT(mCommandBuffer, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        vkCmdSetDepthTestEnableEXT(mCommandBuffer, depthTestEnable);
+        vkCmdSetDepthWriteEnableEXT(mCommandBuffer, depthStencil.depthWriteEnabled);
+        vkCmdSetDepthCompareOpEXT(mCommandBuffer, ConvertToVulkanCompareFunction(depthStencil.depthCompareFunction));
+        // RenderCore has no configurable depth-bounds descriptor yet. Submit the state disabled.
+        vkCmdSetDepthBoundsTestEnableEXT(mCommandBuffer, VK_FALSE);
+        vkCmdSetStencilTestEnableEXT(mCommandBuffer, stencil.stencilEnable);
+        vkCmdSetStencilOpEXT(mCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK,
+            ConvertToVulkanStencilOperation(stencil.stencilFailureOperation),
+            ConvertToVulkanStencilOperation(stencil.depthStencilPassOperation),
+            ConvertToVulkanStencilOperation(stencil.depthFailureOperation),
+            ConvertToVulkanCompareFunction(stencil.stencilCompareFunction));
+    }
+    else
+    {
+        // Vulkan 1.3 core commands are equivalent to the EXT commands above.
+        vkCmdSetCullMode(mCommandBuffer, ConvertToVulkanCullMode(pipelineDesc.cullMode));
+        vkCmdSetFrontFace(mCommandBuffer, VK_FRONT_FACE_COUNTER_CLOCKWISE);
+        vkCmdSetDepthTestEnable(mCommandBuffer, depthTestEnable);
+        vkCmdSetDepthWriteEnable(mCommandBuffer, depthStencil.depthWriteEnabled);
+        vkCmdSetDepthCompareOp(mCommandBuffer, ConvertToVulkanCompareFunction(depthStencil.depthCompareFunction));
+        vkCmdSetDepthBoundsTestEnable(mCommandBuffer, VK_FALSE);
+        vkCmdSetStencilTestEnable(mCommandBuffer, stencil.stencilEnable);
+        vkCmdSetStencilOp(mCommandBuffer, VK_STENCIL_FACE_FRONT_AND_BACK,
+            ConvertToVulkanStencilOperation(stencil.stencilFailureOperation),
+            ConvertToVulkanStencilOperation(stencil.depthStencilPassOperation),
+            ConvertToVulkanStencilOperation(stencil.depthFailureOperation),
+            ConvertToVulkanCompareFunction(stencil.stencilCompareFunction));
+    }
+}
+
+void VKRenderEncoder::SetDynamicPrimitiveTopology(VkPrimitiveTopology topology)
+{
+    if (!mContext->vulkanExtension.enableExtendedDynamicState)
+    {
+        return;
+    }
+    if (mContext->vulkanExtension.enableExtendedDynamicStateEXT)
+        vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, topology);
+    else
+        vkCmdSetPrimitiveTopology(mCommandBuffer, topology);
+}
+
+void VKRenderEncoder::SetDynamicViewport(const VkViewport& viewport)
+{
+    if (!mContext->vulkanExtension.enableExtendedDynamicState)
+    {
+        vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
+        return;
+    }
+    if (mContext->vulkanExtension.enableExtendedDynamicStateEXT)
+    {
+        // RenderCore currently exposes one viewport only. Record the EXT count command before
+        // the first pipeline bind; classic VIEWPORT remains authoritative for PBR passes.
+        if (!mHasBoundPipeline)
+            vkCmdSetViewportWithCountEXT(mCommandBuffer, 1, &viewport);
+        vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
+    }
+    else
+    {
+        if (!mHasBoundPipeline)
+            vkCmdSetViewportWithCount(mCommandBuffer, 1, &viewport);
+        vkCmdSetViewport(mCommandBuffer, 0, 1, &viewport);
+    }
+}
+
+void VKRenderEncoder::SetDynamicScissor(const VkRect2D& scissor)
+{
+    if (!mContext->vulkanExtension.enableExtendedDynamicState)
+    {
+        vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
+        return;
+    }
+    if (mContext->vulkanExtension.enableExtendedDynamicStateEXT)
+    {
+        // RenderCore currently exposes one scissor only; see SetDynamicViewport above.
+        if (!mHasBoundPipeline)
+            vkCmdSetScissorWithCountEXT(mCommandBuffer, 1, &scissor);
+        vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
+    }
+    else
+    {
+        if (!mHasBoundPipeline)
+            vkCmdSetScissorWithCount(mCommandBuffer, 1, &scissor);
+        vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
+    }
+}
+
+void VKRenderEncoder::BindDynamicVertexBuffer(uint32_t binding, VkBuffer buffer, VkDeviceSize offset)
+{
+    if (!mContext->vulkanExtension.enableExtendedDynamicState)
+    {
+        vkCmdBindVertexBuffers(mCommandBuffer, binding, 1, &buffer, &offset);
+        return;
+    }
+
+    // RenderEncoder does not expose an explicit vertex stride yet. A null pStrides keeps the
+    // pipeline's static stride while still using the extended buffer/offset binding command.
+    if (mContext->vulkanExtension.enableExtendedDynamicStateEXT)
+        vkCmdBindVertexBuffers2EXT(mCommandBuffer, binding, 1, &buffer, &offset, nullptr, nullptr);
+    else
+        vkCmdBindVertexBuffers2(mCommandBuffer, binding, 1, &buffer, &offset, nullptr, nullptr);
 }
 
 void VKRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
@@ -551,7 +715,7 @@ void VKRenderEncoder::SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, i
     VkBuffer innerBuffer = vkBuffer->GetGpuBuffer();
     VkDeviceSize deviceOffset = offset;
     
-    vkCmdBindVertexBuffers(mCommandBuffer, index, 1, &innerBuffer, &deviceOffset);
+    BindDynamicVertexBuffer(static_cast<uint32_t>(index), innerBuffer, deviceOffset);
 }
 
 void VKRenderEncoder::SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index)
@@ -570,7 +734,7 @@ void VKRenderEncoder::SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int i
     VkBuffer innerBuffer = vkBuffer->GetVkBuffer();
     VkDeviceSize deviceOffset = offset;
     
-    vkCmdBindVertexBuffers(mCommandBuffer, index, 1, &innerBuffer, &deviceOffset);
+    BindDynamicVertexBuffer(static_cast<uint32_t>(index), innerBuffer, deviceOffset);
 }
 
 void VKRenderEncoder::SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer, ShaderStage stage)
@@ -884,7 +1048,7 @@ void VKRenderEncoder::DrawPrimitives(PrimitiveMode mode, int offset, int size)
     //设置图元拓扑类型，需要使用扩展动态状态
     if (mContext->vulkanExtension.enableExtendedDynamicState)
     {
-        vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+        SetDynamicPrimitiveTopology(ConvertToVulkanPrimitiveTopology(mode));
     }
     else
     {
@@ -900,7 +1064,7 @@ void VKRenderEncoder::DrawInstancePrimitives(PrimitiveMode mode, int offset, int
 	//设置图元拓扑类型，需要使用扩展动态状态
 	if (mContext->vulkanExtension.enableExtendedDynamicState)
 	{
-		vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+		SetDynamicPrimitiveTopology(ConvertToVulkanPrimitiveTopology(mode));
 	}
 	else
 	{
@@ -933,7 +1097,7 @@ void VKRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexB
     vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer->GetBuffer(), 0, indexType);
     if (mContext->vulkanExtension.enableExtendedDynamicState)
     {
-        vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+        SetDynamicPrimitiveTopology(ConvertToVulkanPrimitiveTopology(mode));
     }
     else
     {
@@ -967,7 +1131,7 @@ void VKRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size
 	vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer->GetBuffer(), 0, indexType);
 	if (mContext->vulkanExtension.enableExtendedDynamicState)
 	{
-		vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+		SetDynamicPrimitiveTopology(ConvertToVulkanPrimitiveTopology(mode));
 	}
 	else
 	{
@@ -988,7 +1152,7 @@ void VKRenderEncoder::DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buf
 
     if (mContext->vulkanExtension.enableExtendedDynamicState)
     {
-        vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+        SetDynamicPrimitiveTopology(ConvertToVulkanPrimitiveTopology(mode));
     }
 
     vkCmdDrawIndirect(mCommandBuffer, vkBuffer->GetVkBuffer(), offset, drawCount, stride);
@@ -1019,7 +1183,7 @@ void VKRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBuf
 
     if (mContext->vulkanExtension.enableExtendedDynamicState)
     {
-        vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+        SetDynamicPrimitiveTopology(ConvertToVulkanPrimitiveTopology(mode));
     }
 
     // Vulkan spec: if multiDrawIndirect is not enabled, drawCount must be 0 or 1.
@@ -1069,7 +1233,7 @@ void VKRenderEncoder::DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, Ind
 
     if (mContext->vulkanExtension.enableExtendedDynamicState)
     {
-        vkCmdSetPrimitiveTopologyEXT(mCommandBuffer, ConvertToVulkanPrimitiveTopology(mode));
+        SetDynamicPrimitiveTopology(ConvertToVulkanPrimitiveTopology(mode));
     }
 
     if (mContext->vulkanExtension.enableDrawIndirectCount)
@@ -1191,7 +1355,7 @@ void VKRenderEncoder::SetScissorRect(int x, int y, uint32_t width, uint32_t heig
     scissor.offset.y = y;
     scissor.extent.width = width;
     scissor.extent.height = height;
-    vkCmdSetScissor(mCommandBuffer, 0, 1, &scissor);
+    SetDynamicScissor(scissor);
 }
 
 void VKRenderEncoder::SetDepthBias(float bias, float slopeScale, float clamp)

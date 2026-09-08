@@ -381,8 +381,12 @@ void VulkanContext::CollectDeviceExtension()
     // 扩展动态状态
     if (vulkanExtension.enableExtendedDynamicState)
     {
-        deviceEnableExtensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
-        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.extendedDynamicStateFeaturesEXT);
+        // The Vulkan 1.3 core path has no feature struct; the explicit extension path does.
+        if (vulkanExtension.enableExtendedDynamicStateEXT)
+        {
+            deviceEnableExtensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME);
+            AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.extendedDynamicStateFeaturesEXT);
+        }
     }
 
     if (vulkanExtension.enableExtendedDynamicState2)

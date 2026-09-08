@@ -110,6 +110,7 @@ private:
     VulkanContextPtr mContext = nullptr;
     uint32_t mCurrentFrameIndex = 0;
     bool mIsEncoding = true;  // 跟踪 render pass 是否活跃，析构时自动结束
+    bool mHasBoundPipeline = false;
     
     void BeginDynamicRenderPass(const VkRenderingInfoKHR& renderInfo);
     void EndDynamicRenderPass();
@@ -122,6 +123,11 @@ private:
     void EndRenderPass();
     
     void BindPipeline();
+    void ApplyExtendedDynamicState();
+    void SetDynamicPrimitiveTopology(VkPrimitiveTopology topology);
+    void SetDynamicViewport(const VkViewport& viewport);
+    void SetDynamicScissor(const VkRect2D& scissor);
+    void BindDynamicVertexBuffer(uint32_t binding, VkBuffer buffer, VkDeviceSize offset);
 };
 
 using VKRenderEncoderPtr = std::shared_ptr<VKRenderEncoder>;

@@ -462,6 +462,17 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     std::vector<VkDynamicState> dynamicStates;
     dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
     dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
+    if (mContext->vulkanExtension.enableExtendedDynamicState)
+    {
+        dynamicStates.push_back(VK_DYNAMIC_STATE_CULL_MODE_EXT);
+        dynamicStates.push_back(VK_DYNAMIC_STATE_FRONT_FACE_EXT);
+        dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_TEST_ENABLE_EXT);
+        dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_WRITE_ENABLE_EXT);
+        dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_COMPARE_OP_EXT);
+        dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BOUNDS_TEST_ENABLE_EXT);
+        dynamicStates.push_back(VK_DYNAMIC_STATE_STENCIL_TEST_ENABLE_EXT);
+        dynamicStates.push_back(VK_DYNAMIC_STATE_STENCIL_OP_EXT);
+    }
     //dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS);
     dynamicStates.push_back(VK_DYNAMIC_STATE_STENCIL_REFERENCE);
 
@@ -470,6 +481,9 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
         mGraphicsPipelineDes.pipelineType != PipelineType::Mesh)
     {
         dynamicStates.push_back(VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY_EXT);
+        // The current SoA vertex-stream API exposes buffer offsets but no explicit stride.
+        // Keep the pipeline stride authoritative until RenderEncoder exposes that value:
+        // dynamicStates.push_back(VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE_EXT);
     }
 
     if (mContext->vulkanExtension.enableExtendedDynamicState3)

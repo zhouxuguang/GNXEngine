@@ -89,8 +89,10 @@ void VulkanExtension::Init(VkPhysicalDevice physicalDevice, VkPhysicalDeviceProp
 
 void VulkanExtension::InitExtendedDynamicState(const DeviceExtFeature& deviceExtFeature)
 {
-    enableExtendedDynamicState = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) && 
+    enableExtendedDynamicStateCore = mPhysicalDeviceProperties.apiVersion >= VK_API_VERSION_1_3;
+    enableExtendedDynamicStateEXT = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME) &&
         deviceExtFeature.extendedDynamicStateFeaturesEXT.extendedDynamicState;
+    enableExtendedDynamicState = enableExtendedDynamicStateCore || enableExtendedDynamicStateEXT;
     enableExtendedDynamicState2 = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME) && 
         deviceExtFeature.extendedDynamicState2FeaturesEXT.extendedDynamicState2;
     enableExtendedDynamicState3 = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME) && 

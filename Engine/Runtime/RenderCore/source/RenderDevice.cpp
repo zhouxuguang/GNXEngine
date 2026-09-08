@@ -44,7 +44,7 @@ IndexBuffer::IndexBuffer(IndexType indexType, const void* pData, uint32_t dataLe
 
 IndexBuffer::~IndexBuffer(){}
 
-GraphicsPipeline::GraphicsPipeline(const GraphicsPipelineDesc& des){}
+GraphicsPipeline::GraphicsPipeline(const GraphicsPipelineDesc& des) : mDesc(des) {}
 
 GraphicsPipeline::~GraphicsPipeline(){}
 

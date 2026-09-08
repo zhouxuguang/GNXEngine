@@ -17,6 +17,10 @@ struct VulkanExtension
 {
     bool enableMaintenance3 = false;
     bool enableExtendedDynamicState = false;
+    // Vulkan 1.3 promotes every VK_EXT_extended_dynamic_state command to core.
+    // Prefer the explicit EXT path when available, otherwise use the core path.
+    bool enableExtendedDynamicStateEXT = false;
+    bool enableExtendedDynamicStateCore = false;
     bool enableExtendedDynamicState2 = false;
     bool enableExtendedDynamicState3 = false;
     
