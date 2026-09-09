@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.6)
+project(pbr_android)
+
+set(GNX_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../../../..)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+
+option(ENABLE_TESTING "Build unit tests" OFF)
+option(ENABLE_EDITOR "Build editor" OFF)
+option(ENABLE_NSIGHT_AFTERMATH "Enable NVIDIA Nsight Aftermath" OFF)
+option(ENABLE_TRACY "Enable Tracy profiler" OFF)
+
+include_directories(${GNX_ROOT}/Engine)
+include(${GNX_ROOT}/cmake/ISPC.cmake)
+add_subdirectory(${GNX_ROOT}/ThirdParty ${CMAKE_CURRENT_BINARY_DIR}/ThirdParty)
+add_subdirectory(${GNX_ROOT}/Engine/Runtime ${CMAKE_CURRENT_BINARY_DIR}/Engine/Runtime)
+add_subdirectory(src)

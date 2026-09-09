@@ -1,7 +1,7 @@
+#include <SDL.h>
 #include "PBRFrameWork.h"
-#include "Runtime/GNXEngine/include/GNXMain.h"
 
-int main(int argc, char* argv[])
+extern "C" int SDL_main(int argc, char* argv[])
 {
     GNXEngine::WindowProps props("GNXEngine_PBR", 1280U, 720U);
     PBRFrameWork app(props);

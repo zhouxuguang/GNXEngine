@@ -1,0 +1,53 @@
+apply plugin: 'com.android.application'
+
+def dataAssetDir = file('../../../../data_asset')
+def generatedPbrAssetsDir = file("$buildDir/generated/pbrAssets")
+
+def stagePbrAssets = tasks.register('stagePbrAssets', Sync) {
+    from(dataAssetDir) {
+        include 'Shader/**'
+        include 'pbr/**'
+    }
+    into(generatedPbrAssetsDir)
+}
+
+android {
+    namespace "com.gnxengine.pbr"
+    compileSdkVersion 35
+    defaultConfig {
+        applicationId "com.gnxengine.pbr"
+        minSdkVersion 24
+        targetSdkVersion 35
+        versionCode 1
+        versionName "1.0"
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_APP_PLATFORM=android-24", "-DANDROID_STL=c++_static"
+                abiFilters 'arm64-v8a', 'x86_64', 'x86'
+            }
+        }
+    }
+    buildTypes {
+        debug {
+            debuggable true
+            jniDebuggable true
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    sourceSets.main {
+        jniLibs.srcDir 'libs'
+        assets.srcDir generatedPbrAssetsDir
+    }
+    externalNativeBuild {
+        cmake { path 'jni/CMakeLists.txt' }
+    }
+}
+
+dependencies { }
+
+tasks.named('preBuild').configure {
+    dependsOn(stagePbrAssets)
+}
