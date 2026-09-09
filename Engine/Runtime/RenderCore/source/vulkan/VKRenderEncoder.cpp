@@ -518,6 +518,7 @@ void VKRenderEncoder::BindPipeline()
     vkCmdBindPipeline(mCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pso);
     mHasBoundPipeline = true;
     ApplyExtendedDynamicState();
+    ApplyExtendedDynamicState2();
 
     if (!mContext->vulkanExtension.enablePushDesDescriptor)
     {
@@ -577,6 +578,32 @@ void VKRenderEncoder::ApplyExtendedDynamicState()
             ConvertToVulkanStencilOperation(stencil.depthFailureOperation),
             ConvertToVulkanCompareFunction(stencil.stencilCompareFunction));
     }
+}
+
+void VKRenderEncoder::ApplyExtendedDynamicState2()
+{
+    if (!mGraphicsPipieline || !mContext->vulkanExtension.enableExtendedDynamicState2)
+    {
+        return;
+    }
+
+    // These values mirror the pipeline defaults. Declaring the corresponding states dynamic
+    // makes recording them mandatory before every draw after a graphics-pipeline bind.
+    vkCmdSetRasterizerDiscardEnableEXT(mCommandBuffer, VK_FALSE);
+    vkCmdSetDepthBiasEnableEXT(mCommandBuffer, VK_TRUE);
+
+    if (mGraphicsPipieline->GetDesc().pipelineType != PipelineType::Mesh)
+    {
+        vkCmdSetPrimitiveRestartEnableEXT(mCommandBuffer, VK_FALSE);
+    }
+
+    // vkCmdSetPatchControlPointsEXT requires extendedDynamicState2PatchControlPoints and a
+    // tessellation pipeline. RenderCore does not expose tessellation or patch-control-point state.
+    // vkCmdSetPatchControlPointsEXT(mCommandBuffer, patchControlPoints);
+
+    // vkCmdSetLogicOpEXT requires extendedDynamicState2LogicOp. GraphicsPipelineDesc currently
+    // exposes blend state only and has no logic-op field from which to record this command.
+    // vkCmdSetLogicOpEXT(mCommandBuffer, logicOp);
 }
 
 void VKRenderEncoder::SetDynamicPrimitiveTopology(VkPrimitiveTopology topology)

@@ -490,6 +490,20 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     {
         dynamicStates.push_back(VK_DYNAMIC_STATE_POLYGON_MODE_EXT);
     }
+    if (mContext->vulkanExtension.enableExtendedDynamicState2)
+    {
+        dynamicStates.push_back(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT);
+        dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_BIAS_ENABLE_EXT);
+        if (mGraphicsPipelineDes.pipelineType != PipelineType::Mesh)
+        {
+            dynamicStates.push_back(VK_DYNAMIC_STATE_PRIMITIVE_RESTART_ENABLE_EXT);
+        }
+
+        // VK_DYNAMIC_STATE_PATCH_CONTROL_POINTS_EXT / vkCmdSetPatchControlPointsEXT are not
+        // enabled because RenderCore currently has no tessellation pipeline state.
+        // VK_DYNAMIC_STATE_LOGIC_OP_EXT / vkCmdSetLogicOpEXT are not enabled because
+        // GraphicsPipelineDesc currently has no configurable logic-op state.
+    }
     VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo = {};
     dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicStateCreateInfo.dynamicStateCount = (uint32_t)dynamicStates.size();
