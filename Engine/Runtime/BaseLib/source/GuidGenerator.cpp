@@ -106,8 +106,12 @@ bool CreateGUID(NXGUID *guid)
 
 struct NXGUID CreateGUIDFromBytes(const uint8_t* pBytes)
 {
-    NXGUID guid;
-    memcpy(&guid, pBytes, 16);
+    NXGUID guid = {};
+    if (pBytes != nullptr)
+    {
+        static_assert(sizeof(NXGUID) == 16, "NXGUID must remain a 16-byte value");
+        memcpy(&guid, pBytes, sizeof(guid));
+    }
     return guid;
 }
 
@@ -116,7 +120,7 @@ std::string GUIDToString(const NXGUID &guid)
 	size_t nLen = GUIDStringLength;
     std::string bufStr;
 	bufStr.resize(nLen + 1);
-	int num = snprintf((char *)bufStr.c_str(), nLen + 1, GUIDFormatString,
+	int num = snprintf(bufStr.data(), nLen + 1, GUIDFormatString,
 		guid.Data1, guid.Data2, guid.Data3,
 		GUIDGenerator::BytesToUInt32(&(guid.Data4[0])),
 		GUIDGenerator::BytesToUInt32(&(guid.Data4[4])));

@@ -60,9 +60,12 @@ VOID NTAPI  WindowsTimeFunc(PVOID pPara, BOOLEAN flag)
 
 Timer* Timer::CreateTimer(int64_t nStartLater, int64_t nInterval, TimerProc pFun, void* pParameter)
 {
+	if (pFun == nullptr || nStartLater < 0 || nInterval < 0)
+		return nullptr;
+
 	HANDLE hTimer = INVALID_HANDLE_VALUE;
 	HANDLE hQueue = CreateTimerQueue();
-	if (hQueue == INVALID_HANDLE_VALUE)
+	if (hQueue == NULL)
 	{
 		return NULL;
 	}
@@ -73,6 +76,7 @@ Timer* Timer::CreateTimer(int64_t nStartLater, int64_t nInterval, TimerProc pFun
 	if (!CreateTimerQueueTimer(&hTimer,hQueue, WindowsTimeFunc, stTimeFunc, nStartLater, nInterval, 0))
 	{
 		DeleteTimerQueue(hQueue);
+		delete stTimeFunc;
 		return NULL;
 	}
 
@@ -142,6 +146,9 @@ static void TimerFunction(sigval_t value)
 
 Timer* Timer::CreateTimer(int64_t nStartLater, int64_t nInterval, TimerProc pFun, void* pParameter)
 {
+	if (pFun == nullptr || nStartLater < 0 || nInterval < 0)
+		return nullptr;
+
 	timer_t timerid;
 	struct sigevent evp;
 	memset(&evp, 0, sizeof(struct sigevent));       
@@ -157,18 +164,19 @@ Timer* Timer::CreateTimer(int64_t nStartLater, int64_t nInterval, TimerProc pFun
 
 	if (timer_create(CLOCK_REALTIME, &evp, &timerid) == -1)
 	{
+		delete pOption;
 		perror("fail to timer_create");
 		return NULL;
 	}
 
-	struct itimerspec it;
+	struct itimerspec it = {};
 	int nSecond = nInterval / 1000;
 	int nMilliSecond = nInterval % 1000;
 	it.it_interval.tv_sec = nSecond;
 #if defined(__MACH__) && defined(__APPLE__)
 	it.it_interval.tv_usec = nMilliSecond;
 #else
-    it.it_interval.tv_nsec = nMilliSecond;
+    it.it_interval.tv_nsec = nMilliSecond * 1000000LL;
 #endif
 	nSecond = nStartLater / 1000;
 	nMilliSecond = nStartLater % 1000;
@@ -176,12 +184,17 @@ Timer* Timer::CreateTimer(int64_t nStartLater, int64_t nInterval, TimerProc pFun
 #if defined(__MACH__) && defined(__APPLE__)
 	it.it_value.tv_usec = nMilliSecond;
 #else
-    it.it_value.tv_nsec = nMilliSecond;
+    it.it_value.tv_nsec = nMilliSecond * 1000000LL;
 #endif
+	// POSIX interprets an all-zero it_value as "disarmed"; match the Windows
+	// implementation where a zero delay fires as soon as possible.
+	if (it.it_value.tv_sec == 0 && it.it_value.tv_nsec == 0)
+		it.it_value.tv_nsec = 1;
 
 	if (timer_settime(timerid, 0, &it, NULL) == -1)
 	{
 		timer_delete(timerid);
+		delete pOption;
 		perror("fail to timer_settime");
 		return NULL;
 	}
@@ -217,6 +230,9 @@ struct TimerOption
 
 Timer* Timer::CreateTimer(int64_t nStartLater, int64_t nInterval, TimerProc pFun, void* pParameter)
 {
+	if (pFun == nullptr || nStartLater < 0 || nInterval < 0)
+		return nullptr;
+
 	dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
 	dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
 	if (timer)

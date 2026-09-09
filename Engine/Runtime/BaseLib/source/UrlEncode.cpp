@@ -30,28 +30,27 @@ std::string HttpUrlDecode(const std::string& srcUrl)
     std::string   desStr;
     int length = 0;
     int flag      =1;
-    unsigned char firstNum  = 0;
-    unsigned char SecondNum = 0;
+    int firstNum  = 0;
+    int secondNum = 0;
     const char * pchar = srcUrl.c_str();
     while(length < srcUrl.length())
     {
         if(pchar[length]=='%')
         {
             //最后一位,need break;
-            if(length == srcUrl.length()-1)
+            if (srcUrl.length() - length < 3)
             {
-                desStr +=pchar[length];//.append(pchar[length]);
-                break;
+                return srcUrl;
             }
             //正常移位
             length++;	firstNum = hexchar2int(pchar[length]);
-            length++;	SecondNum = hexchar2int(pchar[length]);
-            if (firstNum == -1 || SecondNum == -1)//判断字符转换成的整数是否有效
+            length++;	secondNum = hexchar2int(pchar[length]);
+            if (firstNum == -1 || secondNum == -1)//判断字符转换成的整数是否有效
             {
                 flag = 0;
                 break;
             }
-            desStr += char(firstNum<<4) + char(SecondNum);//.append(char(firstNum<<4) + char(SecondNum));
+            desStr += static_cast<char>((firstNum << 4) | secondNum);
         }
         else if(pchar[length]=='+')
         {

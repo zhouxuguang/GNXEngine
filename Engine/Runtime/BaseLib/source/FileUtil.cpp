@@ -114,11 +114,11 @@ bool FileUtil::IsFile(const std::string &strFileName)
     struct _stat sbuf;
     if ( _stat(strFileName.c_str(), &sbuf ) == -1)
         return false;
-    return (_S_IFMT & sbuf.st_mode ? true : false);
+    return (sbuf.st_mode & _S_IFMT) == _S_IFREG;
 #else
     struct stat sbuf;
-    
-    stat(strFileName.c_str(), &sbuf);
+    if (stat(strFileName.c_str(), &sbuf) != 0)
+        return false;
     return ((sbuf.st_mode & S_IFMT) == S_IFREG);
 #endif
 }
@@ -207,7 +207,9 @@ std::string FileUtil::GetParentPath(const std::string& strFileName)
 
 int64_t FileUtil::GetFileSize(const std::string &strFileName)
 {
-    return fs::file_size(strFileName);
+    std::error_code ec;
+    const auto size = fs::file_size(strFileName, ec);
+    return ec ? 0 : static_cast<int64_t>(size);
 }
 
 bool FileUtil::IsRelative(const std::string &strFileName)
@@ -296,7 +298,9 @@ std::vector<uint8_t> FileUtil::ReadBinaryFile(const std::string& path)
 	if (!file.is_open()) return {};
 
 	// 获取文件大小
-	size_t size = static_cast<size_t>(file.tellg());
+	const std::streampos endPosition = file.tellg();
+	if (endPosition <= 0) return {};
+	size_t size = static_cast<size_t>(endPosition);
 	if (size == 0) return {};
 
 	// 创建足够容纳文件的向量

@@ -95,14 +95,23 @@ Thread::~Thread()
 
 bool Thread::Start(ThreadFunc pFunc,void* pArgs)
 {
-	if (m_Handle)
+	if (m_Handle || pFunc == nullptr)
 	{
 		return false;
 	}
 
 	WindowsThread *pThreadData = new(std::nothrow) WindowsThread();
+	if (pThreadData == nullptr)
+	{
+		return false;
+	}
 
-	stThread *stInfo = new stThread;
+	stThread *stInfo = new(std::nothrow) stThread;
+	if (stInfo == nullptr)
+	{
+		delete pThreadData;
+		return false;
+	}
 	stInfo->pArgs = pArgs;
 	stInfo->pFun = pFunc;
 
@@ -132,6 +141,10 @@ bool Thread::Start()
 	}
 
 	WindowsThread *pThreadData = new(std::nothrow) WindowsThread();
+	if (pThreadData == nullptr)
+	{
+		return false;
+	}
 
 	unsigned int flagCreate = 0;
 	if (m_bCreateSuspend)
@@ -194,6 +207,18 @@ thread_id_t Thread::GetThreadID() const
 	return pThreadData->threadID;
 }
 
+ThreadState Thread::GetThreadState() const
+{
+	WindowsThread *pThreadData = (WindowsThread*)m_Handle;
+	if (pThreadData == nullptr)
+		return Thread_NotFound;
+
+	DWORD exitCode = 0;
+	if (!GetExitCodeThread(pThreadData->threadHandle, &exitCode))
+		return Thread_NotFound;
+	return exitCode == STILL_ACTIVE ? Thread_Running : Thread_Exit;
+}
+
 bool Thread::WaitFor() const
 {
 	WindowsThread *pThreadData = (WindowsThread*)m_Handle;
@@ -223,6 +248,7 @@ struct LinuxThread
 {
     pthread_t threadID;            //线程ID
     pthread_attr_t threadAtt;    // 线程属性
+    bool joined;
 };
 
 unsigned long GetTickCount(void)
@@ -263,19 +289,19 @@ Thread::~Thread()
     }
 }
 
-static void thread_exit_func(int sig)
-{
-    pthread_exit(0);
-}
-
 bool Thread::Start(ThreadFunc pFunc,void* pArgs)
 {
-    if (m_Handle)
+    if (m_Handle || pFunc == nullptr)
     {
         return false;
     }
     
     LinuxThread *pThreadData = new(std::nothrow) LinuxThread();
+    if (pThreadData == nullptr)
+    {
+        return false;
+    }
+    pThreadData->joined = false;
     //struct sched_param schedparam;
     pthread_attr_init(&pThreadData->threadAtt);
     
@@ -297,16 +323,11 @@ bool Thread::Start(ThreadFunc pFunc,void* pArgs)
         nRet = pthread_create(&pThreadData->threadID, &pThreadData->threadAtt, pFunc, pArgs);
     }
     
-#elif defined  __ANDROID__
+#else
     nRet = pthread_create(&pThreadData->threadID, &pThreadData->threadAtt, pFunc, pArgs);
-    
-    struct sigaction actions;
-    memset(&actions, 0, sizeof(actions));
-    sigemptyset(&actions.sa_mask);
-    actions.sa_flags = 0;
-    actions.sa_handler = thread_exit_func;
-    nRet = sigaction(SIGUSR1,&actions,NULL);
 #endif
+
+    pthread_attr_destroy(&pThreadData->threadAtt);
     
     if (nRet)
     {
@@ -341,6 +362,11 @@ bool Thread::Start()
     int nRet = 1;
     
     LinuxThread *pThreadData = new(std::nothrow) LinuxThread();
+    if (pThreadData == nullptr)
+    {
+        return false;
+    }
+    pThreadData->joined = false;
     //struct sched_param schedparam;
     pthread_attr_init(&pThreadData->threadAtt);
     
@@ -364,20 +390,16 @@ bool Thread::Start()
 //    pthread_attr_t attribute;
 //    pthread_attr_setsuspendstate_np(&attribute, 0);
     
-#elif defined  __ANDROID__
+#else
     //pthread_attr_t attribute;
     //pthread_attr_setsuspendstate_np(&attribute, PTHREAD_CREATE_SUSPENDED_NP);
     
 //    pthread_continue_np();
     
     nRet = pthread_create(&pThreadData->threadID, &pThreadData->threadAtt, pthread_Callback, pArgs);
-    struct sigaction actions;
-    memset(&actions, 0, sizeof(actions));
-    sigemptyset(&actions.sa_mask);
-    actions.sa_flags = 0;
-    actions.sa_handler = thread_exit_func;
-    nRet = sigaction(SIGUSR1,&actions,NULL);
 #endif
+
+    pthread_attr_destroy(&pThreadData->threadAtt);
     
     if (nRet)
     {
@@ -397,8 +419,17 @@ void Thread::Stop()
     {
         return;
     }
-    // 等待线程正常结束，避免强杀导致资源泄漏
-    pthread_join(pThreadData->threadID, nullptr);
+    // 等待线程正常结束并回收 pthread 及包装对象，允许同一个 Thread 再次 Start。
+    if (!pThreadData->joined)
+    {
+        if (pthread_equal(pthread_self(), pThreadData->threadID))
+            pthread_detach(pThreadData->threadID);
+        else
+            pthread_join(pThreadData->threadID, nullptr);
+        pThreadData->joined = true;
+    }
+    delete pThreadData;
+    m_Handle = NULL;
 }
 
 void Thread::Resume()
@@ -477,9 +508,12 @@ bool Thread::WaitFor() const
     if (tid)
     {
         void *status;
+        if (pThreadData->joined)
+            return true;
         int rc = pthread_join(tid, &status);
         if (rc)
             return false;
+        pThreadData->joined = true;
         return true;
     }
     return false;
