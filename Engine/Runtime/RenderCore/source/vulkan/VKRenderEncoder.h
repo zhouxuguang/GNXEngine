@@ -125,6 +125,9 @@ private:
     void BindPipeline();
     void ApplyExtendedDynamicState();
     void ApplyExtendedDynamicState2();
+    void ApplyExtendedDynamicState3();
+    void ApplyVertexInputDynamicState();
+    void ApplyColorWriteEnable();
     void SetDynamicPrimitiveTopology(VkPrimitiveTopology topology);
     void SetDynamicViewport(const VkViewport& viewport);
     void SetDynamicScissor(const VkRect2D& scissor);

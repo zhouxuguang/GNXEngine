@@ -510,7 +510,8 @@ void VKRenderEncoder::BindPipeline()
     // 选择 PSO：驱动不支持动态 polygonMode（Adreno 等）时，线框模式用静态 LINE 变体；
     // 否则用默认 PSO（polygonMode 由 vkCmdSetPolygonModeEXT 动态设置）。
     VkPipeline pso = mGraphicsPipieline->GetPipeline();
-    if (!mContext->vulkanExtension.enableExtendedDynamicState3)
+    if (!mContext->vulkanExtension.enableExtendedDynamicState3 ||
+        !mContext->vulkanExtension.extendedDynamicState3.extendedDynamicState3PolygonMode)
     {
         if (mCurrentFillMode == FillModeWireframe && mGraphicsPipieline->HasWireframePipeline())
             pso = mGraphicsPipieline->GetWireframePipeline();
@@ -519,6 +520,9 @@ void VKRenderEncoder::BindPipeline()
     mHasBoundPipeline = true;
     ApplyExtendedDynamicState();
     ApplyExtendedDynamicState2();
+    ApplyExtendedDynamicState3();
+    ApplyVertexInputDynamicState();
+    ApplyColorWriteEnable();
 
     if (!mContext->vulkanExtension.enablePushDesDescriptor)
     {
@@ -604,6 +608,83 @@ void VKRenderEncoder::ApplyExtendedDynamicState2()
     // vkCmdSetLogicOpEXT requires extendedDynamicState2LogicOp. GraphicsPipelineDesc currently
     // exposes blend state only and has no logic-op field from which to record this command.
     // vkCmdSetLogicOpEXT(mCommandBuffer, logicOp);
+}
+
+void VKRenderEncoder::ApplyExtendedDynamicState3()
+{
+    if (!mGraphicsPipieline || !mContext->vulkanExtension.enableExtendedDynamicState3)
+        return;
+
+    const auto& f = mContext->vulkanExtension.extendedDynamicState3;
+    const auto& blendStates = mGraphicsPipieline->GetColorBlendStates();
+    if (f.extendedDynamicState3DepthClampEnable) vkCmdSetDepthClampEnableEXT(mCommandBuffer, VK_FALSE);
+    if (f.extendedDynamicState3PolygonMode)
+        vkCmdSetPolygonModeEXT(mCommandBuffer, mCurrentFillMode == FillModeWireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL);
+    if (f.extendedDynamicState3RasterizationSamples) vkCmdSetRasterizationSamplesEXT(mCommandBuffer, VK_SAMPLE_COUNT_1_BIT);
+    if (f.extendedDynamicState3SampleMask)
+    {
+        const VkSampleMask mask = ~0u;
+        vkCmdSetSampleMaskEXT(mCommandBuffer, VK_SAMPLE_COUNT_1_BIT, &mask);
+    }
+    if (f.extendedDynamicState3AlphaToCoverageEnable) vkCmdSetAlphaToCoverageEnableEXT(mCommandBuffer, VK_FALSE);
+    if (f.extendedDynamicState3AlphaToOneEnable) vkCmdSetAlphaToOneEnableEXT(mCommandBuffer, VK_FALSE);
+    if (f.extendedDynamicState3LogicOpEnable) vkCmdSetLogicOpEnableEXT(mCommandBuffer, VK_FALSE);
+
+    if (!blendStates.empty())
+    {
+        std::vector<VkBool32> enables;
+        std::vector<VkColorBlendEquationEXT> equations;
+        std::vector<VkColorComponentFlags> masks;
+        enables.reserve(blendStates.size());
+        equations.reserve(blendStates.size());
+        masks.reserve(blendStates.size());
+        for (const auto& state : blendStates)
+        {
+            enables.push_back(state.blendEnable);
+            equations.push_back({state.srcColorBlendFactor, state.dstColorBlendFactor, state.colorBlendOp,
+                                 state.srcAlphaBlendFactor, state.dstAlphaBlendFactor, state.alphaBlendOp});
+            masks.push_back(state.colorWriteMask);
+        }
+        if (f.extendedDynamicState3ColorBlendEnable)
+            vkCmdSetColorBlendEnableEXT(mCommandBuffer, 0, static_cast<uint32_t>(enables.size()), enables.data());
+        if (f.extendedDynamicState3ColorBlendEquation)
+            vkCmdSetColorBlendEquationEXT(mCommandBuffer, 0, static_cast<uint32_t>(equations.size()), equations.data());
+        if (f.extendedDynamicState3ColorWriteMask)
+            vkCmdSetColorWriteMaskEXT(mCommandBuffer, 0, static_cast<uint32_t>(masks.size()), masks.data());
+    }
+}
+
+void VKRenderEncoder::ApplyVertexInputDynamicState()
+{
+    if (!mGraphicsPipieline || !mContext->vulkanExtension.enableVertexInputDynamicState ||
+        mGraphicsPipieline->GetDesc().pipelineType == PipelineType::Mesh)
+        return;
+
+    const auto& layout = mGraphicsPipieline->GetVertexInputLayout();
+    std::vector<VkVertexInputBindingDescription2EXT> bindings;
+    std::vector<VkVertexInputAttributeDescription2EXT> attributes;
+    bindings.reserve(layout.inputBindings.size());
+    attributes.reserve(layout.attributeDescriptions.size());
+    for (const auto& binding : layout.inputBindings)
+        bindings.push_back({VK_STRUCTURE_TYPE_VERTEX_INPUT_BINDING_DESCRIPTION_2_EXT, nullptr,
+                            binding.binding, binding.stride, binding.inputRate, 1});
+    for (const auto& attribute : layout.attributeDescriptions)
+        attributes.push_back({VK_STRUCTURE_TYPE_VERTEX_INPUT_ATTRIBUTE_DESCRIPTION_2_EXT, nullptr,
+                              attribute.location, attribute.binding, attribute.format, attribute.offset});
+    vkCmdSetVertexInputEXT(mCommandBuffer, static_cast<uint32_t>(bindings.size()), bindings.data(),
+                          static_cast<uint32_t>(attributes.size()), attributes.data());
+}
+
+void VKRenderEncoder::ApplyColorWriteEnable()
+{
+    if (!mGraphicsPipieline || !mContext->vulkanExtension.enableColorWrite)
+        return;
+    const auto& states = mGraphicsPipieline->GetColorBlendStates();
+    std::vector<VkBool32> enables(states.size(), VK_TRUE);
+    for (size_t i = 0; i < states.size(); ++i)
+        enables[i] = states[i].colorWriteMask != 0 ? VK_TRUE : VK_FALSE;
+    if (!enables.empty())
+        vkCmdSetColorWriteEnableEXT(mCommandBuffer, static_cast<uint32_t>(enables.size()), enables.data());
 }
 
 void VKRenderEncoder::SetDynamicPrimitiveTopology(VkPrimitiveTopology topology)
@@ -703,7 +784,8 @@ void VKRenderEncoder::SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline)
 
     // 当 VK_DYNAMIC_STATE_POLYGON_MODE_EXT 被启用时，静态 polygonMode 被忽略，
     // 必须在绑定管线后动态设置，否则后续绘制会使用未定义的填充模式
-    if (mContext->vulkanExtension.enableExtendedDynamicState3)
+    if (mContext->vulkanExtension.enableExtendedDynamicState3 &&
+        mContext->vulkanExtension.extendedDynamicState3.extendedDynamicState3PolygonMode)
     {
         VkPolygonMode polygonMode = (mCurrentFillMode == FillModeWireframe)
             ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
@@ -715,7 +797,8 @@ void VKRenderEncoder::SetFillMode(FillMode fillMode)
 {
     mCurrentFillMode = fillMode;
 
-    if (mContext->vulkanExtension.enableExtendedDynamicState3)
+    if (mContext->vulkanExtension.enableExtendedDynamicState3 &&
+        mContext->vulkanExtension.extendedDynamicState3.extendedDynamicState3PolygonMode)
     {
         // 支持动态 polygonMode：直接设置
         VkPolygonMode polygonMode = (fillMode == FillModeWireframe) ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;

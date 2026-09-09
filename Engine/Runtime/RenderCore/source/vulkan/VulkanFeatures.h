@@ -26,6 +26,8 @@ struct DeviceExtFeature
     VkPhysicalDeviceExtendedDynamicStateFeaturesEXT extendedDynamicStateFeaturesEXT = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT};
     VkPhysicalDeviceExtendedDynamicState2FeaturesEXT extendedDynamicState2FeaturesEXT = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_2_FEATURES_EXT};
     VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extendedDynamicState3FeaturesEXT = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT};
+    VkPhysicalDeviceVertexInputDynamicStateFeaturesEXT vertexInputDynamicStateFeaturesEXT = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VERTEX_INPUT_DYNAMIC_STATE_FEATURES_EXT};
+    VkPhysicalDeviceColorWriteEnableFeaturesEXT colorWriteEnableFeaturesEXT = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_COLOR_WRITE_ENABLE_FEATURES_EXT};
     VkPhysicalDeviceDescriptorIndexingFeaturesEXT descriptorIndexingFeatures = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT};
     VkPhysicalDeviceHostImageCopyFeaturesEXT hostImageCopyFeatures = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HOST_IMAGE_COPY_FEATURES_EXT};
     VkPhysicalDeviceASTCDecodeFeaturesEXT astcDecodeFeatures = {VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ASTC_DECODE_FEATURES_EXT};
@@ -51,6 +53,8 @@ struct DeviceExtFeature
         AddToPNextChain(&features2, &extendedDynamicStateFeaturesEXT);
         AddToPNextChain(&features2, &extendedDynamicState2FeaturesEXT);
         AddToPNextChain(&features2, &extendedDynamicState3FeaturesEXT);
+        AddToPNextChain(&features2, &vertexInputDynamicStateFeaturesEXT);
+        AddToPNextChain(&features2, &colorWriteEnableFeaturesEXT);
         AddToPNextChain(&features2, &descriptorIndexingFeatures);
         AddToPNextChain(&features2, &hostImageCopyFeatures);
         AddToPNextChain(&features2, &astcDecodeFeatures);
@@ -70,6 +74,8 @@ struct DeviceExtFeature
         extendedDynamicStateFeaturesEXT.pNext = nullptr;
         extendedDynamicState2FeaturesEXT.pNext = nullptr;
         extendedDynamicState3FeaturesEXT.pNext = nullptr;
+        vertexInputDynamicStateFeaturesEXT.pNext = nullptr;
+        colorWriteEnableFeaturesEXT.pNext = nullptr;
         descriptorIndexingFeatures.pNext = nullptr;
         hostImageCopyFeatures.pNext = nullptr;
         astcDecodeFeatures.pNext = nullptr;

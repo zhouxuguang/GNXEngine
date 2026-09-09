@@ -400,6 +400,18 @@ void VulkanContext::CollectDeviceExtension()
         deviceEnableExtensions.push_back(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
         AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.extendedDynamicState3FeaturesEXT);
     }
+
+    if (vulkanExtension.enableVertexInputDynamicState)
+    {
+        deviceEnableExtensions.push_back(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME);
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.vertexInputDynamicStateFeaturesEXT);
+    }
+
+    if (vulkanExtension.enableColorWrite)
+    {
+        deviceEnableExtensions.push_back(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME);
+        AddToPNextChain(&deviceExtFeatures.features11, &deviceExtFeatures.colorWriteEnableFeaturesEXT);
+    }
     
     if (vulkanExtension.enablePushDesDescriptor)
     {

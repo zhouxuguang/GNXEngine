@@ -319,8 +319,6 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
 
     // vertexInputLayout 必须在函数作用域内声明，因为 vertexInputInfo 的指针指向它的数据，
     // 这些数据在 vkCreateGraphicsPipelines 调用时仍需有效
-    VertexInputLayout vertexInputLayout;
-
     if (mGraphicsPipelineDes.pipelineType == PipelineType::Mesh)
     {
         // Mesh pipeline 不使用顶点输入，使用空状态
@@ -329,7 +327,7 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     }
     else
     {
-        vertexInputLayout = mShader->GetVertexInputLayout();
+        mVertexInputLayout = mShader->GetVertexInputLayout();
 
         // 如果 GraphicsPipelineDesc 中指定了顶点属性格式，则覆盖 shader 反射的格式
         // 这对于 byte4 -> float4 归一化等场景非常重要
@@ -338,14 +336,14 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
         {
             for (const auto& attr : pipelineAttributes)
             {
-                for (auto& vertexAttr : vertexInputLayout.attributeDescriptions)
+                for (auto& vertexAttr : mVertexInputLayout.attributeDescriptions)
                 {
                     if (vertexAttr.location == attr.index)
                     {
                         vertexAttr.format = VulkanBufferUtil::ConvertVertexFormat(attr.format);
                         // 更新对应的 binding stride
                         uint32_t stride = VulkanBufferUtil::GetVertexFormatSize(attr.format);
-                        for (auto& binding : vertexInputLayout.inputBindings)
+                        for (auto& binding : mVertexInputLayout.inputBindings)
                         {
                             if (binding.binding == vertexAttr.binding)
                             {
@@ -359,10 +357,10 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
             }
         }
 
-        vertexInputInfo.vertexBindingDescriptionCount = (uint32_t)vertexInputLayout.inputBindings.size();
-        vertexInputInfo.pVertexBindingDescriptions = vertexInputLayout.inputBindings.data();
-        vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)vertexInputLayout.attributeDescriptions.size();
-        vertexInputInfo.pVertexAttributeDescriptions = vertexInputLayout.attributeDescriptions.data();
+        vertexInputInfo.vertexBindingDescriptionCount = (uint32_t)mVertexInputLayout.inputBindings.size();
+        vertexInputInfo.pVertexBindingDescriptions = mVertexInputLayout.inputBindings.data();
+        vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)mVertexInputLayout.attributeDescriptions.size();
+        vertexInputInfo.pVertexAttributeDescriptions = mVertexInputLayout.attributeDescriptions.data();
     }
     mPipeCreateInfo.pVertexInputState = &vertexInputInfo;
 
@@ -450,12 +448,12 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
     colorBlendInfo.logicOpEnable = VK_FALSE;
     colorBlendInfo.logicOp = VK_LOGIC_OP_COPY;
     colorBlendInfo.attachmentCount = (uint32_t)mColorAttachmentDescs.size();
-    std::vector<VkPipelineColorBlendAttachmentState> colorBlendStates;
+    mColorBlendStates.clear();
     for (size_t i = 0; i < mColorAttachmentDescs.size(); i ++)
     {
-        colorBlendStates.push_back(CreateColorBlendState(mColorAttachmentDescs[i]));
+        mColorBlendStates.push_back(CreateColorBlendState(mColorAttachmentDescs[i]));
     }
-    colorBlendInfo.pAttachments = colorBlendStates.data();
+    colorBlendInfo.pAttachments = mColorBlendStates.data();
     mPipeCreateInfo.pColorBlendState = &colorBlendInfo;
 
     //10、动态状态
@@ -488,8 +486,28 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
 
     if (mContext->vulkanExtension.enableExtendedDynamicState3)
     {
-        dynamicStates.push_back(VK_DYNAMIC_STATE_POLYGON_MODE_EXT);
+        const auto& f = mContext->vulkanExtension.extendedDynamicState3;
+        if (f.extendedDynamicState3DepthClampEnable) dynamicStates.push_back(VK_DYNAMIC_STATE_DEPTH_CLAMP_ENABLE_EXT);
+        if (f.extendedDynamicState3PolygonMode) dynamicStates.push_back(VK_DYNAMIC_STATE_POLYGON_MODE_EXT);
+        if (f.extendedDynamicState3RasterizationSamples) dynamicStates.push_back(VK_DYNAMIC_STATE_RASTERIZATION_SAMPLES_EXT);
+        if (f.extendedDynamicState3SampleMask) dynamicStates.push_back(VK_DYNAMIC_STATE_SAMPLE_MASK_EXT);
+        if (f.extendedDynamicState3AlphaToCoverageEnable) dynamicStates.push_back(VK_DYNAMIC_STATE_ALPHA_TO_COVERAGE_ENABLE_EXT);
+        if (f.extendedDynamicState3AlphaToOneEnable) dynamicStates.push_back(VK_DYNAMIC_STATE_ALPHA_TO_ONE_ENABLE_EXT);
+        if (f.extendedDynamicState3LogicOpEnable) dynamicStates.push_back(VK_DYNAMIC_STATE_LOGIC_OP_ENABLE_EXT);
+        if (f.extendedDynamicState3ColorBlendEnable) dynamicStates.push_back(VK_DYNAMIC_STATE_COLOR_BLEND_ENABLE_EXT);
+        if (f.extendedDynamicState3ColorBlendEquation) dynamicStates.push_back(VK_DYNAMIC_STATE_COLOR_BLEND_EQUATION_EXT);
+        if (f.extendedDynamicState3ColorWriteMask) dynamicStates.push_back(VK_DYNAMIC_STATE_COLOR_WRITE_MASK_EXT);
+
+        // The remaining state3 commands require optional companion extensions and engine states
+        // (tessellation, transform feedback, conservative/depth-clip/sample-location/advanced-blend,
+        // provoking-vertex, line-rasterization, or vendor-specific rasterization modes). They are
+        // intentionally not declared dynamic until RenderCore exposes those states.
     }
+    if (mContext->vulkanExtension.enableVertexInputDynamicState &&
+        mGraphicsPipelineDes.pipelineType != PipelineType::Mesh)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_VERTEX_INPUT_EXT);
+    if (mContext->vulkanExtension.enableColorWrite)
+        dynamicStates.push_back(VK_DYNAMIC_STATE_COLOR_WRITE_ENABLE_EXT);
     if (mContext->vulkanExtension.enableExtendedDynamicState2)
     {
         dynamicStates.push_back(VK_DYNAMIC_STATE_RASTERIZER_DISCARD_ENABLE_EXT);
@@ -541,7 +559,9 @@ void VKGraphicsPipeline::ContructDes(const RenderPassFormat& passFormat)
 
     // 当 VK_EXT_extended_dynamic_state3 不可用（Adreno 等移动 GPU）时，运行时无法动态切换
     // polygonMode，必须创建静态 polygonMode=LINE 的线框变体 PSO。SetFillMode 时切换到这个变体。
-    if (!mContext->vulkanExtension.enableExtendedDynamicState3 && rasterInfo.polygonMode != VK_POLYGON_MODE_LINE)
+    if ((!mContext->vulkanExtension.enableExtendedDynamicState3 ||
+         !mContext->vulkanExtension.extendedDynamicState3.extendedDynamicState3PolygonMode) &&
+        rasterInfo.polygonMode != VK_POLYGON_MODE_LINE)
     {
         // 复用当前 createInfo，仅把 polygonMode 改为 LINE 创建线框变体
         VkGraphicsPipelineCreateInfo wireCreateInfo = mPipeCreateInfo;

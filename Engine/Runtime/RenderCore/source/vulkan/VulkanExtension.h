@@ -23,6 +23,10 @@ struct VulkanExtension
     bool enableExtendedDynamicStateCore = false;
     bool enableExtendedDynamicState2 = false;
     bool enableExtendedDynamicState3 = false;
+    bool enableVertexInputDynamicState = false;
+    bool enableColorWrite = false;
+    VkPhysicalDeviceExtendedDynamicState3FeaturesEXT extendedDynamicState3 = {
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_3_FEATURES_EXT};
     
     bool enableDynamicRendering = false;
     bool enablePushDesDescriptor = false;

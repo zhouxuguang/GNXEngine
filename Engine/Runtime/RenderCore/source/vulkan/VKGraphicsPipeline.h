@@ -183,6 +183,10 @@ public:
     }
 
     VKGraphicsShaderPtr GetCurrentShader() const;
+
+    const VertexInputLayout& GetVertexInputLayout() const { return mVertexInputLayout; }
+    const std::vector<ColorAttachmentDesc>& GetColorAttachmentDescs() const { return mColorAttachmentDescs; }
+    const std::vector<VkPipelineColorBlendAttachmentState>& GetColorBlendStates() const { return mColorBlendStates; }
     
     // 获取资源绑定索引
     uint32_t GetResourceBindIndex(const std::string& resourceName) const;
@@ -208,6 +212,8 @@ private:
     VkGraphicsPipelineCreateInfo mPipeCreateInfo;
     uint32_t mCurrentFrameIndex = 0;
     VKGraphicsShaderPtr mShader = nullptr;
+    VertexInputLayout mVertexInputLayout;
+    std::vector<VkPipelineColorBlendAttachmentState> mColorBlendStates;
     
     GraphicsPipelineDesc mGraphicsPipelineDes;
     std::vector<ColorAttachmentDesc> mColorAttachmentDescs;

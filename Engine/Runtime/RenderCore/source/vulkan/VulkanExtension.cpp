@@ -95,9 +95,27 @@ void VulkanExtension::InitExtendedDynamicState(const DeviceExtFeature& deviceExt
     enableExtendedDynamicState = enableExtendedDynamicStateCore || enableExtendedDynamicStateEXT;
     enableExtendedDynamicState2 = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_2_EXTENSION_NAME) && 
         deviceExtFeature.extendedDynamicState2FeaturesEXT.extendedDynamicState2;
-    enableExtendedDynamicState3 = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME) && 
-        deviceExtFeature.extendedDynamicState3FeaturesEXT.extendedDynamicState3ColorBlendEnable && 
-        deviceExtFeature.extendedDynamicState3FeaturesEXT.extendedDynamicState3ColorBlendEquation;
+    const bool hasDynamicState3 = IsExtensionSupported(VK_EXT_EXTENDED_DYNAMIC_STATE_3_EXTENSION_NAME);
+    if (hasDynamicState3)
+    {
+        extendedDynamicState3 = deviceExtFeature.extendedDynamicState3FeaturesEXT;
+        extendedDynamicState3.pNext = nullptr;
+    }
+    enableExtendedDynamicState3 = hasDynamicState3 &&
+        (extendedDynamicState3.extendedDynamicState3DepthClampEnable ||
+         extendedDynamicState3.extendedDynamicState3PolygonMode ||
+         extendedDynamicState3.extendedDynamicState3RasterizationSamples ||
+         extendedDynamicState3.extendedDynamicState3SampleMask ||
+         extendedDynamicState3.extendedDynamicState3AlphaToCoverageEnable ||
+         extendedDynamicState3.extendedDynamicState3AlphaToOneEnable ||
+         extendedDynamicState3.extendedDynamicState3LogicOpEnable ||
+         extendedDynamicState3.extendedDynamicState3ColorBlendEnable ||
+         extendedDynamicState3.extendedDynamicState3ColorBlendEquation ||
+         extendedDynamicState3.extendedDynamicState3ColorWriteMask);
+    enableVertexInputDynamicState = IsExtensionSupported(VK_EXT_VERTEX_INPUT_DYNAMIC_STATE_EXTENSION_NAME) &&
+        deviceExtFeature.vertexInputDynamicStateFeaturesEXT.vertexInputDynamicState;
+    enableColorWrite = IsExtensionSupported(VK_EXT_COLOR_WRITE_ENABLE_EXTENSION_NAME) &&
+        deviceExtFeature.colorWriteEnableFeaturesEXT.colorWriteEnable;
 }
 
 void VulkanExtension::InitHostImageCopy(const DeviceExtFeature &deviceExtFeature)
