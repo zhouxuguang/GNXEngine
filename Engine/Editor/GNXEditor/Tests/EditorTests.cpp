@@ -4,6 +4,7 @@
 #include "EditorSettings.h"
 #include "Runtime/GNXEngine/include/RenderWindow.h"
 #include <QCoreApplication>
+#include <QDir>
 #include <QTemporaryDir>
 #include <type_traits>
 
@@ -27,6 +28,20 @@ int main(int argc, char **argv) {
   QTemporaryDir temporaryDirectory;
   if (!temporaryDirectory.isValid())
     return 2;
+
+  ProjectCreateRequest projectRequest{temporaryDirectory.path(),
+                                      QStringLiteral("AssetRootProject")};
+  if (!projectService.CreateProject(projectRequest))
+    return 3;
+  const QString expectedAssetRoot =
+      QDir(temporaryDirectory.filePath("AssetRootProject/Assets"))
+          .absolutePath();
+  if (QDir(projectService.AssetRoot()).absolutePath() != expectedAssetRoot)
+    return 4;
+  projectService.CloseProject();
+  if (!projectService.AssetRoot().isEmpty())
+    return 5;
+
   const QString settingsPath = temporaryDirectory.filePath("editor.ini");
   {
     EditorSettings settings(settingsPath);
@@ -39,13 +54,13 @@ int main(int argc, char **argv) {
     settings.Load();
     if (settings.RecentProjects().size() != 1 ||
         settings.LastImportDirectory() != "C:/Imports")
-      return 3;
+      return 6;
   }
 
   AssetImportService importService;
   if (importService.Enqueue({temporaryDirectory.filePath("missing.fbx"),
                              temporaryDirectory.path()}))
-    return 4;
+    return 7;
   importService.Shutdown();
   importService.Shutdown();
   return 0;

@@ -138,6 +138,7 @@ ContentWidget::ContentWidget(QDockWidget *parent, const QString &currentDir,
           &ContentWidget::showContextMenu);
 
   parent->setWidget(this);
+  SetRootPath(currentDir);
 }
 
 void ContentWidget::UpdatePathLabel() {
@@ -156,10 +157,25 @@ void ContentWidget::UpdatePathLabel() {
 }
 
 void ContentWidget::SetRootPath(const QString &path) {
-  mModel->setRootPath(path);
-  mCurrentDir = path;
-  mInitDir = path;
-  mListView->setRootIndex(mProxyModel->mapFromSource(mModel->index(path)));
+  const bool hasProjectAssetRoot = !path.isEmpty() && QDir(path).exists();
+  if (!hasProjectAssetRoot) {
+    mCurrentDir.clear();
+    mInitDir.clear();
+    mListView->setRootIndex(QModelIndex());
+    mListView->setVisible(false);
+    mPathLabel->setText(tr("未打开工程"));
+    mPathLabel->setToolTip(QString());
+    mBackButton->setEnabled(false);
+    return;
+  }
+
+  const QString assetRoot = QDir(path).absolutePath();
+  mModel->setRootPath(assetRoot);
+  mCurrentDir = assetRoot;
+  mInitDir = assetRoot;
+  mListView->setRootIndex(
+      mProxyModel->mapFromSource(mModel->index(assetRoot)));
+  mListView->setVisible(true);
   mBackButton->setEnabled(false);
   UpdatePathLabel();
 }

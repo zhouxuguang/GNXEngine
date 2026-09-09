@@ -63,7 +63,7 @@ void MainWindow::SetupDock() {
   mDetailDockWidget = new QDockWidget(tr("Detail"), this);
   const QString root = mContext.projectService->HasOpenProject()
                            ? mContext.projectService->AssetRoot()
-                           : QString::fromStdString(GetProjectAssetDir());
+                           : QString();
   mContentWidget =
       new ContentWidget(mContentDockWidget, root, *mContext.assetImportService,
                         *mContext.settings);
@@ -106,7 +106,7 @@ void MainWindow::OnProjectOpened(const QString &) {
   UpdateProjectUi();
 }
 void MainWindow::OnProjectClosed() {
-  mContentWidget->SetRootPath(QString::fromStdString(GetProjectAssetDir()));
+  mContentWidget->SetRootPath(QString());
   UpdateProjectUi();
 }
 void MainWindow::OnProjectError(const QString &m) {
