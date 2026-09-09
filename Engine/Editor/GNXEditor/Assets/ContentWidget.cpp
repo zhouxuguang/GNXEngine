@@ -303,14 +303,21 @@ void ContentWidget::OpenImportAssetDialog() {
                         ? QDir::homePath()
                         : mSettings.LastImportDirectory();
 
-  // 使用 QFileDialog::getOpenFileName 显示文件打开对话框
-  QString filePath = QFileDialog::getOpenFileName(
-      this,
-      "导入资产", // 对话框标题
-      lastDir,    // 默认目录
-      "模型文件 (*.obj *.fbx *.gltf *.glb);;图像文件 (*.png *.jpg *.bmp *.tga "
-      "*.hdr *.exr *.webp)" // 文件过滤器
-  );
+  const QString filters =
+      tr("模型文件 (*.obj *.fbx *.gltf *.glb);;图像文件 (*.png *.jpg *.bmp "
+         "*.tga *.hdr *.exr *.webp)");
+  QFileDialog fileDialog(this, tr("导入资产"), lastDir, filters);
+  // 与工程选择保持一致，绕开 Windows Explorer Shell 的 COM/RPC 通道。
+  fileDialog.setOption(QFileDialog::DontUseNativeDialog, true);
+  fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
+  fileDialog.setFileMode(QFileDialog::ExistingFile);
+  fileDialog.setNameFilters(filters.split(";;"));
+
+  QString filePath;
+  if (fileDialog.exec() == QDialog::Accepted &&
+      !fileDialog.selectedFiles().isEmpty()) {
+    filePath = fileDialog.selectedFiles().constFirst();
+  }
 
   if (!filePath.isEmpty()) {
     QFileInfo fileInfo(filePath);

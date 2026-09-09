@@ -110,8 +110,21 @@ void OpenProjectDialog::OnBrowseButtonClicked() {
     defaultPath = QDir::homePath();
   }
 
-  QString filepath = QFileDialog::getOpenFileName(
-      this, "打开工程", defaultPath, "GNXEngine Project Files (*.gnxproj)");
+  QFileDialog fileDialog(this, tr("打开工程"), defaultPath,
+                         tr("GNXEngine Project Files (*.gnxproj)"));
+  // Windows 原生文件对话框依赖 Explorer Shell 的 COM/RPC 服务。某些 Shell
+  // 扩展或服务异常时会抛出 RPC_S_SERVER_UNAVAILABLE (0x6BA)，甚至直接终止
+  // 编辑器。工程选择不需要 Shell 特有能力，使用 Qt 对话框可隔离该依赖。
+  fileDialog.setOption(QFileDialog::DontUseNativeDialog, true);
+  fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
+  fileDialog.setFileMode(QFileDialog::ExistingFile);
+  fileDialog.setNameFilter(tr("GNXEngine Project Files (*.gnxproj)"));
+
+  QString filepath;
+  if (fileDialog.exec() == QDialog::Accepted &&
+      !fileDialog.selectedFiles().isEmpty()) {
+    filepath = fileDialog.selectedFiles().constFirst();
+  }
 
   if (!filepath.isEmpty()) {
     mSelectedProjectPath = filepath;

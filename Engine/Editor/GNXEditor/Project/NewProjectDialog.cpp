@@ -88,8 +88,17 @@ QString NewProjectDialog::GetProjectPath() const {
 }
 
 void NewProjectDialog::OnBrowseButtonClicked() {
-  QString dir = QFileDialog::getExistingDirectory(this, "选择工程保存位置",
-                                                  QDir::homePath());
+  QFileDialog directoryDialog(this, tr("选择工程保存位置"), QDir::homePath());
+  directoryDialog.setOption(QFileDialog::DontUseNativeDialog, true);
+  directoryDialog.setAcceptMode(QFileDialog::AcceptOpen);
+  directoryDialog.setFileMode(QFileDialog::Directory);
+  directoryDialog.setOption(QFileDialog::ShowDirsOnly, true);
+
+  QString dir;
+  if (directoryDialog.exec() == QDialog::Accepted &&
+      !directoryDialog.selectedFiles().isEmpty()) {
+    dir = directoryDialog.selectedFiles().constFirst();
+  }
 
   if (!dir.isEmpty()) {
     mProjectPathEdit->setText(dir);
