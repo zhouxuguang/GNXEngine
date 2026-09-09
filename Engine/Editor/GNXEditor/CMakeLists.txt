@@ -20,7 +20,7 @@ add_library(GNXEditorCore STATIC
   EditorSettings.cpp EditorSettings.h
   AssetImportService.cpp AssetImportService.h)
 set_target_properties(GNXEditorCore PROPERTIES AUTOMOC ON)
-target_link_libraries(GNXEditorCore PUBLIC Qt${QT_VERSION_MAJOR}::Widgets GNXEngine nanopb)
+target_link_libraries(GNXEditorCore PUBLIC Qt${QT_VERSION_MAJOR}::Core GNXEngine nanopb)
 target_include_directories(GNXEditorCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(EDITOR_WIDGET_SOURCES
@@ -57,18 +57,9 @@ if(APPLE)
 endif()
 
 if(ENABLE_EDITOR_SANDBOX)
-  set(SANDBOX_SOURCES View.h TestPost/TestPost.cpp TestPost/TestPost.hpp
-    TestImageDecode.cpp TestImageDecode.h TestComputeShader.cpp TestComputeShader.hpp
-    TestTransform.cpp TestTransform.hpp testSkybox.cpp testSkybox.h TestBlitEncoder.cpp)
-  if(WIN32)
-    list(APPEND SANDBOX_SOURCES View.cpp WindowsVulkanView.cpp WindowsVulkanView.h)
-  elseif(APPLE)
-    list(APPEND SANDBOX_SOURCES view.mm MetalView.mm MetalView.h OpenGLView.mm OpenGLView.h
-      RenderDelegate.mm RenderDelegate.h ResourceUtil.mm ResourceUtil.h testShader.mm testShader.h)
-  endif()
-  add_library(GNXEditorRenderSandbox STATIC ${SANDBOX_SOURCES})
-  target_link_libraries(GNXEditorRenderSandbox PRIVATE GNXEditorCore Qt${QT_VERSION_MAJOR}::Widgets)
-  set_target_properties(GNXEditorRenderSandbox PROPERTIES AUTOMOC ON)
+  add_executable(GNXEditorRenderSandbox SandboxMain.cpp)
+  target_link_libraries(GNXEditorRenderSandbox PRIVATE GNXEditorCore)
+  set_property(TARGET GNXEditorRenderSandbox PROPERTY FOLDER "Editor/Sandbox")
 endif()
 
 if(ENABLE_EDITOR_TESTS)

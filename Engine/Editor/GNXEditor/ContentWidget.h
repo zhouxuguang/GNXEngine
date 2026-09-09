@@ -1,52 +1,51 @@
 #pragma once
 
-#include <QWidget>
-#include <QFileSystemModel>
-#include <QListView>
-#include <QString>
 #include <QDockWidget>
-#include <QPushButton>
-#include <QMenu>
-#include <QMainWindow>
+#include <QFileSystemModel>
 #include <QLabel>
+#include <QListView>
+#include <QMainWindow>
+#include <QMenu>
+#include <QPushButton>
 #include <QSortFilterProxyModel>
+#include <QString>
+#include <QWidget>
 
 // 前向声明
 class TextureItemDelegate;
 class AssetImportService;
 class EditorSettings;
 
-//内容浏览器的窗口
+// 内容浏览器的窗口
 
-class ContentWidget : public QWidget
-{
-	Q_OBJECT
+class ContentWidget : public QWidget {
+  Q_OBJECT
 public:
-	ContentWidget(QDockWidget* parent, const QString& currentDir, AssetImportService& importService, EditorSettings& settings);
+  ContentWidget(QDockWidget *parent, const QString &currentDir,
+                AssetImportService &importService, EditorSettings &settings);
 
-	void SetRootPath(const QString& path);
+  void SetRootPath(const QString &path);
 
 private slots:
-	void onDoubleClicked(const QModelIndex& index);
+  void onDoubleClicked(const QModelIndex &index);
 
-	void onBackClicked();
+  void onBackClicked();
 
-	void showContextMenu(const QPoint& pos);
+  void showContextMenu(const QPoint &pos);
 
-	void OpenImportAssetDialog();
+  void OpenImportAssetDialog();
 
 private:
-	void UpdatePathLabel();
+  void UpdatePathLabel();
 
-	QFileSystemModel* mModel = nullptr;
-	QSortFilterProxyModel* mProxyModel = nullptr;
-	QListView* mListView = nullptr;
-	TextureItemDelegate* mThumbnailDelegate = nullptr;
-	QPushButton* mBackButton = nullptr;
-	QLabel* mPathLabel = nullptr;
-	QString mInitDir;
-	QString mCurrentDir;
-	AssetImportService& mImportService;
-	EditorSettings& mSettings;
+  QFileSystemModel *mModel = nullptr;
+  QSortFilterProxyModel *mProxyModel = nullptr;
+  QListView *mListView = nullptr;
+  TextureItemDelegate *mThumbnailDelegate = nullptr;
+  QPushButton *mBackButton = nullptr;
+  QLabel *mPathLabel = nullptr;
+  QString mInitDir;
+  QString mCurrentDir;
+  AssetImportService &mImportService;
+  EditorSettings &mSettings;
 };
-

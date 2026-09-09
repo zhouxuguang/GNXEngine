@@ -185,7 +185,7 @@ cmake -B build -DENABLE_EDITOR=ON
 # 编译正式编辑器目标
 cmake --build build --config Debug --target GNXEditor
 
-# 可选：编译隔离的旧渲染实验代码（不会进入 GNXEditor）
+# 可选：编译隔离的渲染实验入口（不会进入 GNXEditor）
 cmake -B build -DENABLE_EDITOR=ON -DENABLE_EDITOR_SANDBOX=ON
 cmake --build build --config Debug --target GNXEditorRenderSandbox
 
