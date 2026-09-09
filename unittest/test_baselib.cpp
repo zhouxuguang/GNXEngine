@@ -13,6 +13,9 @@
 #include "Runtime/BaseLib/include/AlignedMalloc.h"
 #include "Runtime/BaseLib/include/CryptoHash.h"
 #include "Runtime/BaseLib/include/DataCompress.h"
+#include "Runtime/BaseLib/include/FileUtil.h"
+#include "Runtime/BaseLib/include/GuidGenerator.h"
+#include "Runtime/BaseLib/include/Thread.h"
 
 using namespace baselib;
 using Catch::Matchers::WithinAbs;
@@ -684,6 +687,76 @@ TEST_CASE("AlignedMalloc GetAllocationSize", "[baselib][alignedmalloc]")
     REQUIRE(allocSize >= size);
 
     AlignedFree(ptr);
+}
+
+TEST_CASE("AlignedMalloc reports requested size for every alignment", "[baselib][alignedmalloc]")
+{
+    for (size_t alignment : {alignof(void*), size_t(16), size_t(64), size_t(4096)})
+    {
+        void* ptr = AlignedMalloc(257, alignment);
+        REQUIRE(ptr != nullptr);
+        REQUIRE(reinterpret_cast<uintptr_t>(ptr) % alignment == 0);
+        REQUIRE(GetAllocationSize(ptr) == 257);
+        AlignedFree(ptr);
+    }
+    REQUIRE(GetAllocationSize(nullptr) == 0);
+    AlignedFree(nullptr);
+}
+
+TEST_CASE("FileUtil distinguishes files, directories and missing paths", "[baselib][fileutil]")
+{
+    const auto root = std::filesystem::temp_directory_path() / "gnx_baselib_fileutil_test";
+    const auto file = root / "payload.bin";
+    std::error_code ec;
+    std::filesystem::remove_all(root, ec);
+
+    REQUIRE(FileUtil::MakeDirectory(root.string()));
+    const std::vector<uint8_t> payload = {1, 2, 3, 4};
+    REQUIRE(FileUtil::WriteBinaryFile(file.string(), payload));
+    REQUIRE(FileUtil::IsDir(root.string()));
+    REQUIRE_FALSE(FileUtil::IsFile(root.string()));
+    REQUIRE(FileUtil::IsFile(file.string()));
+    REQUIRE(FileUtil::GetFileSize(file.string()) == 4);
+    REQUIRE(FileUtil::ReadBinaryFile(file.string()) == payload);
+    REQUIRE_FALSE(FileUtil::IsFile((root / "missing.bin").string()));
+    REQUIRE(FileUtil::GetFileSize((root / "missing.bin").string()) == 0);
+
+    std::filesystem::remove_all(root, ec);
+}
+
+TEST_CASE("CreateGUIDFromBytes handles null and preserves bytes", "[baselib][guid]")
+{
+    const NXGUID empty = CreateGUIDFromBytes(nullptr);
+    const NXGUID zero = {};
+    REQUIRE(IsGUIDEqual(empty, zero));
+
+    uint8_t bytes[16];
+    for (uint8_t i = 0; i < 16; ++i) bytes[i] = i;
+    const NXGUID guid = CreateGUIDFromBytes(bytes);
+    REQUIRE(memcmp(&guid, bytes, sizeof(bytes)) == 0);
+    REQUIRE(GUIDToString(guid).size() == 36);
+}
+
+namespace
+{
+void* IncrementThreadValue(void* argument)
+{
+    ++*static_cast<int*>(argument);
+    return nullptr;
+}
+}
+
+TEST_CASE("Thread can be stopped and restarted", "[baselib][thread]")
+{
+    Thread thread;
+    int value = 0;
+    REQUIRE(thread.Start(IncrementThreadValue, &value));
+    thread.Stop();
+    REQUIRE(value == 1);
+    REQUIRE(thread.Start(IncrementThreadValue, &value));
+    thread.Stop();
+    REQUIRE(value == 2);
+    REQUIRE_FALSE(thread.Start(nullptr, nullptr));
 }
 
 TEST_CASE("AlignedMalloc multiple allocations", "[baselib][alignedmalloc]")
