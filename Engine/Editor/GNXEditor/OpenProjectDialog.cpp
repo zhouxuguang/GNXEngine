@@ -4,19 +4,15 @@
 //
 
 #include "OpenProjectDialog.h"
-#include "EditorConfig.h"
-#include "Runtime/GNXEngine/include/ProjectConfig.h"
+#include "EditorSettings.h"
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QDir>
 
-OpenProjectDialog::OpenProjectDialog(QWidget* parent)
-    : QDialog(parent)
+OpenProjectDialog::OpenProjectDialog(EditorSettings& settings, QWidget* parent)
+    : QDialog(parent), mSettings(settings)
 {
-    // 加载编辑器配置
-    EditorConfig::GetInstance().LoadConfig();
-
     SetupUI();
 
     setWindowTitle("打开工程");
@@ -82,7 +78,7 @@ void OpenProjectDialog::LoadRecentProjects()
     mRecentProjectsList->clear();
 
     // 从编辑器配置获取最近工程列表
-    auto recentProjects = EditorConfig::GetInstance().GetRecentProjects();
+    auto recentProjects = mSettings.RecentProjects();
 
     if (recentProjects.empty())
     {
@@ -94,10 +90,10 @@ void OpenProjectDialog::LoadRecentProjects()
     {
         for (const auto& projectPath : recentProjects)
         {
-            QFileInfo fileInfo(projectPath.c_str());
+            QFileInfo fileInfo(projectPath);
             QString displayName = fileInfo.fileName() + " (" + fileInfo.absolutePath() + ")";
             mRecentProjectsList->addItem(displayName);
-            mRecentProjectsList->item(mRecentProjectsList->count() - 1)->setData(Qt::UserRole, QString::fromStdString(projectPath));
+            mRecentProjectsList->item(mRecentProjectsList->count() - 1)->setData(Qt::UserRole, projectPath);
         }
     }
 }
@@ -105,7 +101,7 @@ void OpenProjectDialog::LoadRecentProjects()
 void OpenProjectDialog::OnBrowseButtonClicked()
 {
     // 从编辑器配置获取上次打开工程时的路径作为默认路径
-    QString defaultPath = EditorConfig::GetInstance().GetLastOpenProjectPath().c_str();
+    QString defaultPath = mSettings.LastProjectDirectory();
 
     // 如果没有记录，则使用用户主目录
     if (defaultPath.isEmpty())
@@ -152,25 +148,7 @@ void OpenProjectDialog::OnOpenButtonClicked()
         return;
     }
 
-    // 调用工程管理器打开工程
-    bool success = GNXEngine::ProjectManager::GetInstance().OpenProject(mSelectedProjectPath.toStdString());
-
-    if (success)
-    {
-        // 添加到最近工程列表
-        EditorConfig::GetInstance().AddRecentProject(mSelectedProjectPath.toStdString());
-
-        // 保存上次打开工程时的路径（使用工程文件所在目录）
-        std::string lastOpenPath = fileInfo.absolutePath().toStdString();
-        EditorConfig::GetInstance().SetLastOpenProjectPath(lastOpenPath);
-
-        QMessageBox::information(this, "成功", "工程打开成功！");
-        accept();
-    }
-    else
-    {
-        QMessageBox::critical(this, "错误", "工程打开失败！");
-    }
+    accept();
 }
 
 void OpenProjectDialog::OnCancelButtonClicked()

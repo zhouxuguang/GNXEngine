@@ -4,7 +4,6 @@
 //
 
 #include "NewProjectDialog.h"
-#include "Runtime/GNXEngine/include/ProjectConfig.h"
 #include <QMessageBox>
 #include <QDir>
 
@@ -121,21 +120,7 @@ void NewProjectDialog::OnCreateButtonClicked()
         return;
     }
 
-    // 调用工程管理器创建工程
-    bool success = GNXEngine::ProjectManager::GetInstance().CreateNewProject(
-        fullProjectPath.toStdString(),
-        projectName.toStdString()
-    );
-
-    if (success)
-    {
-        QMessageBox::information(this, "成功", "工程创建成功！");
-        accept();
-    }
-    else
-    {
-        QMessageBox::critical(this, "错误", "工程创建失败！");
-    }
+    accept();
 }
 
 void NewProjectDialog::OnCancelButtonClicked()

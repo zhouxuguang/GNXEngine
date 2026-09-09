@@ -198,9 +198,6 @@ void Example_AsyncResourceLoading(RenderDevicePtr renderDevice, const void* text
         stagingBuffer, 0, width * 4, 0,
         texture, 0, 0, mathutil::Vector2i(0, 0), mathutil::Vector2i(width, height));
     
-    // 添加内存屏障
-    blitEncoder->MemoryBarrier();
-    
     // 结束编码
     blitEncoder->EndEncode();
     

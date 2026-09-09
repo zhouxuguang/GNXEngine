@@ -3,7 +3,8 @@
 #include "TextureEditorDialog.h"
 #include <QPushButton>
 #include <QFileDialog>
-#include <QSettings>
+#include "AssetImportService.h"
+#include "EditorSettings.h"
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -13,7 +14,6 @@
 #include <QDir>
 
 #include "Runtime/ImageCodec/include/ImageDecoder.h"
-#include "Runtime/AssetProcess/include/AssetImporter.h"
 
 // 代理模型：过滤掉.meta文件和.gnx目录
 class FileSystemProxyModel : public QSortFilterProxyModel
@@ -43,12 +43,12 @@ protected:
 	}
 };
 
-ContentWidget::ContentWidget(QDockWidget* parent, const QString& currentDir)
+ContentWidget::ContentWidget(QDockWidget* parent, const QString& currentDir, AssetImportService& importService, EditorSettings& settings)
 	: QWidget(parent),
 	mModel(new QFileSystemModel(this)),
 	mProxyModel(new FileSystemProxyModel(this)),
 	mListView(new QListView(this)),
-	mThumbnailDelegate(new TextureItemDelegate(this))
+	mThumbnailDelegate(new TextureItemDelegate(this)), mImportService(importService), mSettings(settings)
 {
 	mModel->setRootPath(currentDir);
 	mCurrentDir = currentDir;
@@ -296,10 +296,7 @@ void ContentWidget::showContextMenu(const QPoint& pos)
 
 void ContentWidget::OpenImportAssetDialog()
 {
-	// 读取历史记录
-	QSettings settings("GNXEngine", "GNXEngine");
-	QStringList history = settings.value("FileDialogHistory").toStringList();
-	QString lastDir = history.isEmpty() ? QDir::homePath() : history.first();
+	QString lastDir = mSettings.LastImportDirectory().isEmpty() ? QDir::homePath() : mSettings.LastImportDirectory();
 
 	// 使用 QFileDialog::getOpenFileName 显示文件打开对话框
 	QString filePath = QFileDialog::getOpenFileName(
@@ -311,22 +308,8 @@ void ContentWidget::OpenImportAssetDialog()
 
 	if (!filePath.isEmpty())
 	{
-		// 更新历史记录
 		QFileInfo fileInfo(filePath);
-		QString dirPath = fileInfo.absolutePath();
-
-		// 移重复项并添加到开头
-		history.removeAll(dirPath);
-		history.prepend(dirPath);
-
-		// 限制历史记录数量
-		while (history.size() > 10) 
-		{
-			history.removeLast();
-		}
-
-		// 保存历史
-		settings.setValue("FileDialogHistory", history);
+		mSettings.SetLastImportDirectory(fileInfo.absolutePath());
 	}
 
 	
@@ -334,8 +317,7 @@ void ContentWidget::OpenImportAssetDialog()
 	//选择了文件，进行导入操作
 	if (!filePath.isEmpty())
 	{
-		AssetProcess::AssetImporter assetImporter;
-		assetImporter.ImportFromFile(filePath.toStdString(), mCurrentDir.toStdString());
+		mImportService.Enqueue({filePath, mCurrentDir});
 		/*imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
 		imagecodec::ImageDecoder::DecodeFile(filePath.toUtf8().constData(), image.get());*/
 	}

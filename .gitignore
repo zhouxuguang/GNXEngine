@@ -21,6 +21,7 @@ out/
 build/
 build1/
 build_ios/
+build-runtime/
 
 # asset file
 Assets/

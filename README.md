@@ -182,6 +182,18 @@ cmake -B build -DENABLE_EDITOR=ON -DENABLE_TESTING=ON
 # 仅编译编辑器
 cmake -B build -DENABLE_EDITOR=ON
 
+# 编译正式编辑器目标
+cmake --build build --config Debug --target GNXEditor
+
+# 可选：编译隔离的旧渲染实验代码（不会进入 GNXEditor）
+cmake -B build -DENABLE_EDITOR=ON -DENABLE_EDITOR_SANDBOX=ON
+cmake --build build --config Debug --target GNXEditorRenderSandbox
+
+# 运行编辑器基础架构测试
+cmake -B build -DENABLE_EDITOR=ON -DENABLE_TESTING=ON
+cmake --build build --config Debug --target GNXEditorTests
+ctest --test-dir build -C Debug --output-on-failure
+
 # 编译并运行单元测试
 cmake -B build -DENABLE_TESTING=ON
 cmake --build build

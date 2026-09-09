@@ -13,6 +13,8 @@
 
 // 前向声明
 class TextureItemDelegate;
+class AssetImportService;
+class EditorSettings;
 
 //内容浏览器的窗口
 
@@ -20,7 +22,7 @@ class ContentWidget : public QWidget
 {
 	Q_OBJECT
 public:
-	ContentWidget(QDockWidget* parent, const QString& currentDir);
+	ContentWidget(QDockWidget* parent, const QString& currentDir, AssetImportService& importService, EditorSettings& settings);
 
 	void SetRootPath(const QString& path);
 
@@ -44,5 +46,7 @@ private:
 	QLabel* mPathLabel = nullptr;
 	QString mInitDir;
 	QString mCurrentDir;
+	AssetImportService& mImportService;
+	EditorSettings& mSettings;
 };
 
