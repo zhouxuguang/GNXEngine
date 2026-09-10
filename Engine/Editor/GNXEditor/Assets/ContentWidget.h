@@ -1,51 +1,49 @@
 #pragma once
 
-#include <QDockWidget>
-#include <QFileSystemModel>
-#include <QLabel>
-#include <QListView>
-#include <QMainWindow>
-#include <QMenu>
-#include <QPushButton>
-#include <QSortFilterProxyModel>
-#include <QString>
 #include <QWidget>
 
-// 前向声明
-class TextureItemDelegate;
+class AssetBrowserModel;
+class AssetImportController;
 class AssetImportService;
+class AssetRegistry;
 class EditorSettings;
+class QFileSystemModel;
+class QLabel;
+class QListView;
+class QModelIndex;
+class QPushButton;
+class QDockWidget;
+class TextureItemDelegate;
+class ThumbnailService;
 
-// 内容浏览器的窗口
+class ContentWidget final : public QWidget
+{
+    Q_OBJECT
+  public:
+    ContentWidget(QDockWidget *parent, const QString &currentDir, AssetImportService &importService,
+                  AssetRegistry &assetRegistry, ThumbnailService &thumbnailService,
+                  EditorSettings &settings);
+    void SetRootPath(const QString &path);
 
-class ContentWidget : public QWidget {
-  Q_OBJECT
-public:
-  ContentWidget(QDockWidget *parent, const QString &currentDir,
-                AssetImportService &importService, EditorSettings &settings);
+  private slots:
+    void onDoubleClicked(const QModelIndex &index);
+    void onBackClicked();
+    void showContextMenu(const QPoint &pos);
+    void OpenImportAssetDialog();
 
-  void SetRootPath(const QString &path);
+  private:
+    void UpdatePathLabel();
 
-private slots:
-  void onDoubleClicked(const QModelIndex &index);
-
-  void onBackClicked();
-
-  void showContextMenu(const QPoint &pos);
-
-  void OpenImportAssetDialog();
-
-private:
-  void UpdatePathLabel();
-
-  QFileSystemModel *mModel = nullptr;
-  QSortFilterProxyModel *mProxyModel = nullptr;
-  QListView *mListView = nullptr;
-  TextureItemDelegate *mThumbnailDelegate = nullptr;
-  QPushButton *mBackButton = nullptr;
-  QLabel *mPathLabel = nullptr;
-  QString mInitDir;
-  QString mCurrentDir;
-  AssetImportService &mImportService;
-  EditorSettings &mSettings;
+    QFileSystemModel *mModel = nullptr;
+    AssetBrowserModel *mProxyModel = nullptr;
+    QListView *mListView = nullptr;
+    TextureItemDelegate *mThumbnailDelegate = nullptr;
+    QPushButton *mBackButton = nullptr;
+    QLabel *mPathLabel = nullptr;
+    QString mInitDir;
+    QString mCurrentDir;
+    AssetImportService &mImportService;
+    AssetRegistry &mAssetRegistry;
+    EditorSettings &mSettings;
+    AssetImportController *mImportController = nullptr;
 };

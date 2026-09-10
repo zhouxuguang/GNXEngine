@@ -5,20 +5,28 @@ class EditorRenderHost;
 class QKeyEvent;
 class QMouseEvent;
 class QWheelEvent;
-class EditorInputAdapter final {
-public:
-  explicit EditorInputAdapter(EditorRenderHost &host) : mHost(host) {}
-  void KeyPress(QKeyEvent &);
-  void KeyRelease(QKeyEvent &);
-  void MousePress(QMouseEvent &);
-  void MouseRelease(QMouseEvent &);
-  void MouseMove(QMouseEvent &);
-  void Wheel(QWheelEvent &);
-  void ClearState();
+class EditorInputAdapter final
+{
+  public:
+    explicit EditorInputAdapter(EditorRenderHost &host) : mHost(host)
+    {
+    }
+    void KeyPress(QKeyEvent &);
+    void KeyRelease(QKeyEvent &);
+    void MousePress(QMouseEvent &);
+    void MouseRelease(QMouseEvent &);
+    void MouseMove(QMouseEvent &);
+    void Wheel(QWheelEvent &);
+    void ClearState();
+    void SetDevicePixelRatio(qreal ratio)
+    {
+        mDevicePixelRatio = ratio;
+    }
 
-private:
-  static int MapKey(int key);
-  static int MapButton(Qt::MouseButton button);
-  EditorRenderHost &mHost;
-  QSet<int> mPressedKeys, mPressedButtons;
+  private:
+    static int MapKey(int key);
+    static int MapButton(Qt::MouseButton button);
+    EditorRenderHost &mHost;
+    QSet<int> mPressedKeys, mPressedButtons;
+    qreal mDevicePixelRatio = 1.0;
 };

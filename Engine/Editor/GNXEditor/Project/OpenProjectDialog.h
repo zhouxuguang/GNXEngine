@@ -1,48 +1,37 @@
-//
-//  OpenProjectDialog.h
-//  GNXEngine
-//
-//  打开工程对话框
-//
-
 #pragma once
 
 #include <QDialog>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QListWidget>
-#include <QPushButton>
-#include <QVBoxLayout>
 
 class EditorSettings;
-class OpenProjectDialog : public QDialog {
-  Q_OBJECT
+class QLabel;
+class QListWidget;
+class QPushButton;
 
-public:
-  explicit OpenProjectDialog(EditorSettings &settings,
-                             QWidget *parent = nullptr);
-  ~OpenProjectDialog();
+class OpenProjectDialog final : public QDialog
+{
+    Q_OBJECT
 
-  // 获取选中的工程路径
-  QString GetSelectedProjectPath() const;
+  public:
+    explicit OpenProjectDialog(EditorSettings &settings, QWidget *parent = nullptr);
+    ~OpenProjectDialog() override = default;
 
-private slots:
-  void OnBrowseButtonClicked();
-  void OnOpenButtonClicked();
-  void OnCancelButtonClicked();
-  void OnProjectSelectionChanged();
+    QString GetSelectedProjectPath() const;
 
-private:
-  void SetupUI();
-  void LoadRecentProjects();
+  private slots:
+    void OnBrowseButtonClicked();
+    void OnOpenButtonClicked();
+    void OnCancelButtonClicked();
+    void OnProjectSelectionChanged();
 
-  QListWidget *mRecentProjectsList = nullptr;
-  QPushButton *mBrowseButton = nullptr;
-  QPushButton *mOpenButton = nullptr;
-  QPushButton *mCancelButton = nullptr;
+  private:
+    void SetupUI();
+    void LoadRecentProjects();
 
-  QLabel *mStatusLabel = nullptr;
-
-  QString mSelectedProjectPath;
-  EditorSettings &mSettings;
+    QListWidget *mRecentProjectsList = nullptr;
+    QPushButton *mBrowseButton = nullptr;
+    QPushButton *mOpenButton = nullptr;
+    QPushButton *mCancelButton = nullptr;
+    QLabel *mStatusLabel = nullptr;
+    QString mSelectedProjectPath;
+    EditorSettings &mSettings;
 };
