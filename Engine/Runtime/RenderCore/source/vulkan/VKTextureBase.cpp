@@ -168,32 +168,38 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
         mSupportHostImageCopy = false;
     }
     
-    // 修改相应的标记, 如果是深度模板缓冲，去掉存储缓冲区的标志
-    VkImageUsageFlags extraImageUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    const VkFormatFeatureFlags2 formatFeatures = formatProperties3.optimalTilingFeatures;
     VkImageCreateInfo imageCreateInfoCopy = imageCreateInfo;
+
+    if ((formatFeatures & VK_FORMAT_FEATURE_2_TRANSFER_SRC_BIT) != 0)
+    {
+        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    }
+    if ((formatFeatures & VK_FORMAT_FEATURE_2_TRANSFER_DST_BIT) != 0)
+    {
+        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    }
+    if ((formatFeatures & VK_FORMAT_FEATURE_2_STORAGE_IMAGE_BIT) != 0 &&
+        !VulkanBufferUtil::IsSRGBFormat(imageCreateInfo.format))
+    {
+        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+    }
+
     if (VulkanBufferUtil::IsDepthStencilFormat(imageCreateInfo.format))
     {
-        // pCreateInfo->format VK_FORMAT_D32_SFLOAT_S8_UINT with tiling VK_IMAGE_TILING_OPTIMAL
-        // doesn't support VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT.
-        // Metal/MoltenVK also doesn't support TRANSFER_SRC for depth formats.
-        extraImageUsageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-
-        //VK_IMAGE_USAGE_STORAGE_BIT
-
-	    //VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT
-
-        imageCreateInfoCopy.usage &= ~(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | 
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_HOST_TRANSFER_BIT);
+    if ((formatFeatures & VK_FORMAT_FEATURE_2_DEPTH_STENCIL_ATTACHMENT_BIT) != 0)
+    {
+        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     }
-    
-    // 新的layout有VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL，就必须有VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT标记
+    }
+    else if ((formatFeatures & VK_FORMAT_FEATURE_2_COLOR_ATTACHMENT_BIT) != 0)
+    {
+        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    }
+
     if (mSupportHostImageCopy)
     {
-        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT | extraImageUsageFlags;
-    }
-    else
-    {
-        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT | extraImageUsageFlags;
+        imageCreateInfoCopy.usage |= VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT;
     }
     
     //创建图像

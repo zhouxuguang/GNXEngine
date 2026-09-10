@@ -913,36 +913,24 @@ case kTexFormatRGBA32Float:
  */
 VkImageUsageFlags VulkanBufferUtil::ConvertTextureUsage(TextureUsage textureUsage, VkFormat format)
 {
-    // 基础用途：采样、传输
-    VkImageUsageFlags flags = VK_IMAGE_USAGE_SAMPLED_BIT |
-                              VK_IMAGE_USAGE_TRANSFER_SRC_BIT | 
+    VkImageUsageFlags flags = VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                               VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    
-    // SRGB 格式不支持 storage image，只有非 SRGB 格式才添加 storage 用途
-    if (!IsSRGBFormat(format))
-    {
-        flags |= VK_IMAGE_USAGE_STORAGE_BIT;
-    }
-    
-    // 注意：textureUsage 是位掩码（如 ShaderRead | RenderTarget），不能用 switch 精确匹配
-    // 需要用位运算判断每个标志位
+
     if ((textureUsage & TextureUsage::TextureUsageShaderRead) != static_cast<TextureUsage>(0))
     {
         flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
     }
-    
+
     if ((textureUsage & TextureUsage::TextureUsageShaderWrite) != static_cast<TextureUsage>(0))
     {
-        // SRGB 格式不支持 storage，跳过
         if (!IsSRGBFormat(format))
         {
             flags |= VK_IMAGE_USAGE_STORAGE_BIT;
         }
     }
-    
+
     if ((textureUsage & TextureUsage::TextureUsageRenderTarget) != static_cast<TextureUsage>(0))
     {
-        // 还要区分是深度模板还是颜色缓冲
         if (VulkanBufferUtil::IsDepthStencilFormat(format))
         {
             flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
@@ -952,7 +940,7 @@ VkImageUsageFlags VulkanBufferUtil::ConvertTextureUsage(TextureUsage textureUsag
             flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         }
     }
-    
+
     return flags;
 }
 

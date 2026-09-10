@@ -146,7 +146,8 @@ void VulkanSwapChain::CreateSwapChain(VulkanContextPtr vulkanContext, uint32_t w
     {
         char szBuf[64] = {0};
         snprintf(szBuf, 64, "%d (0x%x)", (int)res, (uint32_t)res);
-        LOG_INFO("VulkanSwapChain: vkCreateSwapchainKHR failed: %s", szBuf);
+        LOG_ERROR("VulkanSwapChain: vkCreateSwapchainKHR failed: %s", szBuf);
+        mSwapchain = VK_NULL_HANDLE;
     }
     
     // 获得交换链图像
