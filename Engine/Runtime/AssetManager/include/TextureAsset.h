@@ -75,6 +75,7 @@ public:
 	 * 获取纹理数据大小
 	 */
 	uint32_t GetDataSize() const;
+	size_t GetImageDataOffset() const { return mImageDataOffset; }
 
     /**
      * 获取纹理格式
@@ -110,6 +111,7 @@ private:
 	uint32_t mMipLevels = 0;
 	uint32_t mDepth = 0;
 	uint32_t mArrayLayers = 0;
+	size_t mImageDataOffset = 0;
 
 	void ParseMeta(const ByteVector& binData);
 };

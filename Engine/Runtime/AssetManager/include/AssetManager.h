@@ -39,6 +39,11 @@ public:
 	 * 销毁资源管理器
 	 */
 	static void Shutdown();
+	static bool SetProjectRoot(const std::string& rootPath);
+	static void ClearProjectRoot();
+	static std::string ResolveResourcePath(const std::string& path);
+	static bool RegisterResourcePath(const std::string& guid,
+		const std::string& path);
 
 	// ==================== 包内资源读取（跨平台） ====================
 
@@ -196,9 +201,14 @@ private:
 	void AddToCache(const std::string& guid, Asset* asset);
 
 	std::string mRootPath;                              // 资根目录
+	std::string mProjectRootPath;
+	std::unordered_map<std::string, std::string> mResourcePaths;
 
 	std::unordered_map<std::string, Asset*> mAssets;        // GUID到资源的映射
 	std::unordered_map<std::string, TextureAsset*> mTextures;  // 名称到纹理的映射
+	std::unordered_map<std::string, TextureAsset*> mTexturesByPath;
+	std::unordered_map<std::string, ShaderAsset*> mShadersByPath;
+	std::vector<Asset*> mRetiredAssets;
 	std::unordered_map<std::string, ShaderAsset*> mShaders;   // 名称到shader的映射
 
 	static AssetManager* sInstance;

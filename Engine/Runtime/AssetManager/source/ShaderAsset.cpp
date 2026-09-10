@@ -215,7 +215,12 @@ bool ShaderAsset::LoadFromFile(const std::string& filepath)
         return false;
     }
 
-    // 读取 protobuf 数据
+    if (header.dataSize > fileData.size() - sizeof(AssetFileHeader))
+    {
+        LOG_ERROR("ShaderAsset: invalid payload size in %s", filepath.c_str());
+        return false;
+    }
+
     std::vector<uint8_t> pbData(header.dataSize);
     memcpy(pbData.data(), fileData.data() + sizeof(AssetFileHeader), header.dataSize);
 

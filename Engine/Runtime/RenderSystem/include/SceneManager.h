@@ -42,6 +42,7 @@ class RENDERSYSTEM_API SceneManager
 {
 public:
     static SceneManager* GetInstance();
+    static void DestroyInstance();
 
     SceneNode* GetRootNode() const;
 

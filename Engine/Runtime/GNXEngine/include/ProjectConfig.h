@@ -24,6 +24,7 @@ enum class RenderPath
 // 工程配置
 struct GNXENGINE_API ProjectConfig
 {
+    uint32_t schemaVersion = 1;
     // 基本信息
     std::string projectName;              // 项目名称
     std::string version = "1.0.0";       // 项目版本
@@ -32,6 +33,7 @@ struct GNXENGINE_API ProjectConfig
 
     // 工程路径
     std::string projectPath;              // 工程根目录（包含 project.gnxproj 的路径）
+    std::string projectFilePath;          // 实际打开的 .gnxproj 文件
     std::string assetsPath;               // Assets 目录（源资源）
     std::string scenesPath;               // Scenes 目录
     std::string settingsPath;             // Settings 目录
@@ -58,6 +60,7 @@ struct GNXENGINE_API ProjectConfig
 
     // 从文件加载
     bool LoadFromFile(const std::string& filepath);
+    bool Validate(std::string* errorMessage = nullptr) const;
 
     // 获取工程目录
     std::string GetProjectDirectory() const;

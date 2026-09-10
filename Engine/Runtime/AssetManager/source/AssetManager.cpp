@@ -75,6 +75,134 @@ void AssetManager::Shutdown()
 	sInstance = nullptr;
 }
 
+bool AssetManager::SetProjectRoot(const std::string& rootPath)
+{
+	if (!sInstance || rootPath.empty() || !baselib::FileUtil::IsDir(rootPath))
+		return false;
+	sInstance->mProjectRootPath = rootPath;
+	return true;
+}
+
+void AssetManager::ClearProjectRoot()
+{
+	if (!sInstance)
+		return;
+	const std::filesystem::path oldRoot =
+		std::filesystem::path(sInstance->mProjectRootPath).lexically_normal();
+	for (auto iterator = sInstance->mTexturesByPath.begin();
+		 iterator != sInstance->mTexturesByPath.end();)
+	{
+		const std::filesystem::path assetPath(iterator->first);
+		const auto relative = assetPath.lexically_relative(oldRoot);
+		const bool inProject = !oldRoot.empty() && !relative.empty() &&
+			*relative.begin() != "..";
+		if (!inProject)
+		{
+			++iterator;
+			continue;
+		}
+		Asset* asset = iterator->second;
+		for (auto entry = sInstance->mAssets.begin(); entry != sInstance->mAssets.end();)
+			entry = entry->second == asset ? sInstance->mAssets.erase(entry) : std::next(entry);
+		auto byName = sInstance->mTextures.find(asset->GetName());
+		if (byName != sInstance->mTextures.end() && byName->second == asset)
+			sInstance->mTextures.erase(byName);
+		iterator = sInstance->mTexturesByPath.erase(iterator);
+		if (asset->GetRefCount() == 0)
+		{
+			asset->ReleaseFromGPU();
+			asset->Unload();
+			delete asset;
+		}
+		else
+			sInstance->mRetiredAssets.push_back(asset);
+	}
+	for (const auto& entry : sInstance->mTexturesByPath)
+		sInstance->mTextures.try_emplace(entry.second->GetName(), entry.second);
+	for (auto iterator = sInstance->mShadersByPath.begin();
+		 iterator != sInstance->mShadersByPath.end();)
+	{
+		const std::filesystem::path assetPath(iterator->first);
+		const auto relative = assetPath.lexically_relative(oldRoot);
+		const bool inProject = !oldRoot.empty() && !relative.empty() &&
+			*relative.begin() != "..";
+		if (!inProject)
+		{
+			++iterator;
+			continue;
+		}
+		Asset* asset = iterator->second;
+		for (auto entry = sInstance->mAssets.begin();
+			 entry != sInstance->mAssets.end();)
+			entry = entry->second == asset ? sInstance->mAssets.erase(entry)
+			                               : std::next(entry);
+		auto byName = sInstance->mShaders.find(asset->GetName());
+		if (byName != sInstance->mShaders.end() && byName->second == asset)
+			sInstance->mShaders.erase(byName);
+		iterator = sInstance->mShadersByPath.erase(iterator);
+		if (asset->GetRefCount() == 0)
+		{
+			asset->ReleaseFromGPU();
+			asset->Unload();
+			delete asset;
+		}
+		else
+			sInstance->mRetiredAssets.push_back(asset);
+	}
+	for (const auto& entry : sInstance->mShadersByPath)
+		sInstance->mShaders.try_emplace(entry.second->GetName(), entry.second);
+	sInstance->mResourcePaths.clear();
+	sInstance->mProjectRootPath.clear();
+}
+
+bool AssetManager::RegisterResourcePath(const std::string& guid,
+	const std::string& path)
+{
+	if (!sInstance || guid.empty() || path.empty())
+		return false;
+	const std::filesystem::path resolved =
+		std::filesystem::absolute(path).lexically_normal();
+	if (!std::filesystem::is_regular_file(resolved))
+		return false;
+	sInstance->mResourcePaths[guid] = resolved.string();
+	return true;
+}
+
+std::string AssetManager::ResolveResourcePath(const std::string& path)
+{
+#if GNX_OS_IOS || GNX_OS_ANDROID
+	return path;
+#else
+	if (path.empty())
+		return {};
+	const std::filesystem::path requested(path);
+	if (sInstance)
+	{
+		auto mapped = sInstance->mResourcePaths.find(path);
+		if (mapped == sInstance->mResourcePaths.end() &&
+			requested.extension() == ".texture")
+			mapped = sInstance->mResourcePaths.find(requested.stem().string());
+		if (mapped != sInstance->mResourcePaths.end())
+			return mapped->second;
+	}
+	if (requested.is_absolute() && std::filesystem::is_regular_file(requested))
+		return requested.lexically_normal().string();
+	if (sInstance && !sInstance->mProjectRootPath.empty())
+	{
+		const auto candidate = std::filesystem::path(sInstance->mProjectRootPath) / requested;
+		if (std::filesystem::is_regular_file(candidate))
+			return candidate.lexically_normal().string();
+	}
+	if (sInstance)
+	{
+		const auto candidate = std::filesystem::path(sInstance->mRootPath) / requested;
+		if (std::filesystem::is_regular_file(candidate))
+			return candidate.lexically_normal().string();
+	}
+	return path;
+#endif
+}
+
 bool AssetManager::LoadResource(const std::string& relPath, std::vector<uint8_t>& outData)
 {
 	outData.clear();
@@ -101,7 +229,7 @@ bool AssetManager::LoadResource(const std::string& relPath, std::vector<uint8_t>
 	return true;
 #else
 	// 桌面端：直接文件系统读取（保持现状）
-	std::ifstream file(relPath, std::ios::binary | std::ios::ate);
+	std::ifstream file(ResolveResourcePath(relPath), std::ios::binary | std::ios::ate);
 	if (!file.is_open())
 	{
 		return false;
@@ -126,7 +254,7 @@ bool AssetManager::ResourceExists(const std::string& relPath)
 	SDL_RWclose(rw);
 	return true;
 #else
-	std::ifstream f(relPath, std::ios::binary);
+	std::ifstream f(ResolveResourcePath(relPath), std::ios::binary);
 	return f.good();
 #endif
 }
@@ -181,8 +309,9 @@ TextureAsset* AssetManager::LoadTextureInternal(const std::string& path, bool as
 		}
 	}
 
-	// 检查是否已加载
-	TextureAsset* existing = FindTexture(baseName);
+	const std::string resolvedPath = ResolveResourcePath(texturePath);
+	auto pathEntry = mTexturesByPath.find(resolvedPath);
+	TextureAsset* existing = pathEntry == mTexturesByPath.end() ? nullptr : pathEntry->second;
 	if (existing)
 	{
 		existing->AddRef();
@@ -195,8 +324,7 @@ TextureAsset* AssetManager::LoadTextureInternal(const std::string& path, bool as
 #if GNX_OS_IOS || GNX_OS_ANDROID
 	readOK = LoadResource(texturePath, fileData);
 #else
-	std::string fullPath = mRootPath + "/" + texturePath;
-	fileData = baselib::FileUtil::ReadBinaryFile(fullPath);
+	fileData = baselib::FileUtil::ReadBinaryFile(resolvedPath);
 	readOK = !fileData.empty();
 #endif
 
@@ -218,11 +346,12 @@ TextureAsset* AssetManager::LoadTextureInternal(const std::string& path, bool as
 #if GNX_OS_IOS || GNX_OS_ANDROID
 	texture->SetAssetInfo(baseName, texturePath);
 #else
-	texture->SetAssetInfo(baseName, mRootPath + "/" + texturePath);
+	texture->SetAssetInfo(baseName, ResolveResourcePath(texturePath));
 #endif
 
 	// 添加到缓存（缓存持有引用）
-	AddToCache(baseName, texture);
+	AddToCache(resolvedPath, texture);
+	mTexturesByPath[resolvedPath] = texture;
 	texture->AddRef();
 
 	std::cout << "Loaded texture asset: " << texturePath << std::endl;
@@ -238,6 +367,10 @@ Asset* AssetManager::FindAsset(const std::string& guid)
 	{
 		return it->second;
 	}
+	if (TextureAsset* texture = FindTexture(guid))
+		return texture;
+	if (ShaderAsset* shader = FindShader(guid))
+		return shader;
 	return nullptr;
 }
 
@@ -299,7 +432,9 @@ void AssetManager::UnloadAsset(Asset* asset)
 
 	// 从缓存中移除
 	std::string guid = asset->GetGUID();
-	mAssets.erase(guid);
+	for (auto iterator = mAssets.begin(); iterator != mAssets.end();)
+		iterator = iterator->second == asset ? mAssets.erase(iterator)
+		                                    : std::next(iterator);
 
 	if (asset->GetType() == AssetType::Texture)
 	{
@@ -315,8 +450,14 @@ void AssetManager::UnloadAsset(Asset* asset)
 	// 从GPU释放并卸载
 	asset->ReleaseFromGPU();
 	asset->Unload();
+	for (auto iterator = mTexturesByPath.begin(); iterator != mTexturesByPath.end();)
+		iterator = iterator->second == asset ? mTexturesByPath.erase(iterator) : std::next(iterator);
+	for (auto iterator = mShadersByPath.begin(); iterator != mShadersByPath.end();)
+		iterator = iterator->second == asset ? mShadersByPath.erase(iterator)
+		                                    : std::next(iterator);
 
 	std::cout << "Unloaded asset: " << guid << std::endl;
+	delete asset;
 }
 
 void AssetManager::UnloadUnusedAssets()
@@ -337,6 +478,19 @@ void AssetManager::UnloadUnusedAssets()
 	{
 		Asset* asset = mAssets[guid];
 		UnloadAsset(asset);
+	}
+	for (auto iterator = mRetiredAssets.begin(); iterator != mRetiredAssets.end();)
+	{
+		Asset* asset = *iterator;
+		if (asset->GetRefCount() != 0)
+		{
+			++iterator;
+			continue;
+		}
+		asset->ReleaseFromGPU();
+		asset->Unload();
+		delete asset;
+		iterator = mRetiredAssets.erase(iterator);
 	}
 
 	if (!toUnload.empty())
@@ -366,6 +520,18 @@ void AssetManager::UnloadAllAssets()
 	mAssets.clear();
 	mTextures.clear();
 	mShaders.clear();
+	mTexturesByPath.clear();
+	mShadersByPath.clear();
+	for (Asset* asset : mRetiredAssets)
+	{
+		if (asset->GetRefCount() == 0)
+		{
+			asset->ReleaseFromGPU();
+			asset->Unload();
+			delete asset;
+		}
+	}
+	mRetiredAssets.clear();
 
 	std::cout << "Unloaded all assets" << std::endl;
 }
@@ -477,36 +643,32 @@ ShaderAsset* AssetManager::LoadShader(const std::string& filePath)
 		return nullptr;
 	}
 
-	// 用完整路径作为缓存 key（同一 shader 的多个 stage 是不同文件）
-	// 提取文件名作为 name（GUID = 文件名）
-	std::string fileName = filePath;
+	const std::string resolvedPath = ResolveResourcePath(filePath);
+	auto byPath = mShadersByPath.find(resolvedPath);
+	if (byPath != mShadersByPath.end())
+	{
+		byPath->second->AddRef();
+		return byPath->second;
+	}
+
+	std::string fileName = resolvedPath;
 	auto pos = fileName.find_last_of("/\\");
 	if (pos != std::string::npos)
 	{
 		fileName = fileName.substr(pos + 1);
 	}
 
-	// 检查是否已加载（按文件名查）
-	ShaderAsset* existing = FindShader(fileName);
-	if (existing)
-	{
-		existing->AddRef();
-		return existing;
-	}
-
-	// 新建并加载
 	ShaderAsset* shader = new ShaderAsset();
-	if (!shader->LoadFromFile(filePath))
+	if (!shader->LoadFromFile(resolvedPath))
 	{
-		std::cerr << "Failed to load shader: " << filePath << std::endl;
+		std::cerr << "Failed to load shader: " << resolvedPath << std::endl;
 		delete shader;
 		return nullptr;
 	}
 
-	// 添加到缓存
-	AddToCache(shader->GetGUID(), shader);
-
-	// 为调用方持有引用（调用方用后需 Release，对称于命中缓存的 AddRef）
+	mAssets[resolvedPath] = shader;
+	mShaders[fileName] = shader;
+	mShadersByPath[resolvedPath] = shader;
 	shader->AddRef();
 
 	return shader;
@@ -533,31 +695,7 @@ TextureAsset* AssetManager::LoadTextureByHash(uint64_t hash)
 		return nullptr;
 	}
 
-	// 构建.texture文件路径（在.gnx目录中）
-	std::string textureFilePath = mRootPath + "/" + std::to_string(hash) + ".texture";
-	std::string guid = std::to_string(hash);
-
-	// 检查是否已加载
-	TextureAsset* existing = FindTexture(guid);
-	if (existing)
-	{
-		existing->AddRef();
-		return existing;
-	}
-
-	// 加载纹理（使用CreateFromTextureMessageFile）
-	TextureAsset* texture = nullptr;
-	if (!texture)
-	{
-		std::cerr << "Failed to load texture: " << textureFilePath << std::endl;
-		return nullptr;
-	}
-
-	// 添加到缓存
-	AddToCache(texture->GetGUID(), texture);
-
-	std::cout << "Loaded texture by hash: " << hash << std::endl;
-	return texture;
+	return LoadTexture(std::to_string(hash));
 }
 
 NS_ASSETMANAGER_END

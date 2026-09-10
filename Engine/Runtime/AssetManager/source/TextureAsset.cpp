@@ -225,25 +225,45 @@ void TextureAsset::SetAssetInfo(const std::string& name, const std::string& file
 
 bool TextureAsset::LoadFromMemory(const void* pData, size_t dataSize)
 {
-	if (!pData || 0 == dataSize)
+	if (!pData || dataSize < sizeof(AssetFileHeader))
 	{
 		return false;
 	}
 
 	const uint8_t* pPBData = (const uint8_t*)pData;
-	size_t assetHeader = sizeof(AssetFileHeader);
+	AssetFileHeader header;
+	memcpy(&header, pPBData, sizeof(header));
+	if (!AssetFileHeaderUtil::ValidateHeader(header) ||
+		header.fileType != static_cast<uint32_t>(AssetType::Texture) ||
+		header.dataOffset > dataSize || header.dataSize > dataSize - header.dataOffset)
+		return false;
 
 	ByteVector packedImageData;
-	bool suc = TextureMessageUtil::DecodeTextureMessage(pPBData + assetHeader, dataSize - assetHeader, packedImageData);
+	bool suc = TextureMessageUtil::DecodeTextureMessage(
+		pPBData + header.dataOffset, static_cast<size_t>(header.dataSize),
+		packedImageData);
 	if (!suc)
 	{
 		return false;
 	}
 
-	// 解析元数据
+	if (packedImageData.size() < sizeof(TextureDataHeader))
+		return false;
+	TextureDataHeader textureHeader;
+	memcpy(&textureHeader, packedImageData.data(), sizeof(textureHeader));
+	static constexpr uint8_t kKtxIdentifier[12] = {
+		0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A};
+	if (memcmp(textureHeader.identifier, kKtxIdentifier,
+		       sizeof(kKtxIdentifier)) != 0 ||
+		textureHeader.pixelWidth == 0 || textureHeader.pixelHeight == 0 ||
+		textureHeader.bytesOfKeyValueData >
+			packedImageData.size() - sizeof(TextureDataHeader))
+		return false;
+
 	ParseMeta(packedImageData);
 
 	size_t textureDataSize = packedImageData.size() - sizeof(TextureDataHeader);
+	mImageDataOffset = textureHeader.bytesOfKeyValueData;
 
 	mTextureData.resize(textureDataSize);
 	memcpy(mTextureData.data(), packedImageData.data() + sizeof(TextureDataHeader), textureDataSize);
@@ -323,6 +343,8 @@ void TextureAsset::ParseMeta(const ByteVector& binData)
 	mWidth = textureHeader->pixelWidth;
 	mHeight = textureHeader->pixelHeight;
 	mMipLevels = textureHeader->numberOfMipmapLevels;
+	if (mMipLevels == 0)
+		mMipLevels = 1;
 	mArrayLayers = textureHeader->numberOfArrayElements;
 
     // 转换 OpenGL 内部格式到引擎格式

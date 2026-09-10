@@ -19,6 +19,9 @@
 #include <ctime>
 #include <filesystem>
 #include "IBLBaker/PBRBase.h"
+#if defined(_WIN32)
+#include <Windows.h>
+#endif
 
 namespace fs = std::filesystem;
 
@@ -211,6 +214,13 @@ TextureImporter::~TextureImporter()
 
 bool TextureImporter::Import(const std::string& sourceFilePath, const std::string& currentDir)
 {
+	return Import(sourceFilePath, currentDir,
+		fs::path(currentDir).parent_path().string());
+}
+
+bool TextureImporter::Import(const std::string& sourceFilePath,
+	const std::string& currentDir, const std::string& projectRootPath)
+{
     //GenerateBRDFLUT_Texture("", 512, 1024);
 	mSourceFilePath = sourceFilePath;
 	mCurrentDir = currentDir;
@@ -309,11 +319,12 @@ bool TextureImporter::Import(const std::string& sourceFilePath, const std::strin
 	}
 
 	// 13. 压缩纹理
-    std::string textureFilePath = GetTextureFilePath(mSourceFileHash, currentDir);
-	if (!CompressTexture(image, textureFilePath))
+    std::string textureFilePath = GetTextureFilePath(mSourceFileHash, projectRootPath);
+    if (!CompressTexture(image, textureFilePath))
 	{
 		return false;
 	}
+	mMeta.textureHash = mSourceFileHash;
 
 	// 14. 保存导入时间
 	auto now = std::time(nullptr);
@@ -330,9 +341,7 @@ bool TextureImporter::Import(const std::string& sourceFilePath, const std::strin
 
 	// 16. 生成缩略图
 	// currentDir 是 Assets 目录，项目根目录是 Assets 的父目录
-	fs::path assetsPath(currentDir);
-	fs::path projectRoot = assetsPath.parent_path();
-	if (!GenerateThumbnail(image, mSourceFileHash, projectRoot.string()))
+	if (!GenerateThumbnail(image, mSourceFileHash, projectRootPath))
 	{
 		LOG_WARN("Failed to generate thumbnail for: %s", targetFilePath.c_str());
 	}
@@ -556,8 +565,13 @@ static void CompressTextureInner(const uint8_t* imageData, uint32_t width, uint3
 
 std::vector<uint8_t> TextureImporter::GenerateKTXData(imagecodec::VImagePtr image, const TextureImportSettings& textureImportSettings)
 {
+    if (!image || !image->GetImageData() || image->GetWidth() == 0 ||
+        image->GetHeight() == 0 || image->GetBytesPerPixels() == 0)
+        return {};
     bool generateMipmap = textureImportSettings.mipmapMode != MipmapMode::None;
     KTXFormat ktxFormat = CreateKTXFormat(image->GetFormat());
+    if (ktxFormat.glInternalformat == 0 || ktxFormat.vkFormat == 0)
+        return {};
 
     uint32_t width = image->GetWidth();
     uint32_t height = image->GetHeight();
@@ -580,17 +594,32 @@ std::vector<uint8_t> TextureImporter::GenerateKTXData(imagecodec::VImagePtr imag
     createInfoKTX.numFaces = 1u;
     createInfoKTX.generateMipmaps = KTX_FALSE;
     ktxTexture1* textureKTX1 = nullptr;
-    ktxTexture1_Create(&createInfoKTX, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &textureKTX1);
+    if (ktxTexture1_Create(&createInfoKTX, KTX_TEXTURE_CREATE_ALLOC_STORAGE,
+                           &textureKTX1) != KTX_SUCCESS || !textureKTX1)
+        return {};
 
     uint32_t w = width;
     uint32_t h = height;
 
-    uint8_t* pTmpData = (uint8_t*)baselib::AlignedMalloc(width * height * image->GetBytesPerPixels() * 2, 64);
-    uint8_t* pFormatData = (uint8_t*)baselib::AlignedMalloc(width * height * image->GetBytesPerPixels() * 2, 64);
+    const size_t temporarySize = static_cast<size_t>(width) * height *
+                                 image->GetBytesPerPixels();
+    uint8_t* pTmpData = static_cast<uint8_t*>(
+        baselib::AlignedMalloc(temporarySize, 64));
+    if (!pTmpData)
+    {
+        ktxTexture_Destroy(ktxTexture(textureKTX1));
+        return {};
+    }
     
     {
         size_t offset = 0;
-        ktxTexture_GetImageOffset(ktxTexture(textureKTX1), 0, 0, 0, &offset);
+        if (ktxTexture_GetImageOffset(ktxTexture(textureKTX1), 0, 0, 0,
+                                      &offset) != KTX_SUCCESS)
+        {
+            baselib::AlignedFree(pTmpData);
+            ktxTexture_Destroy(ktxTexture(textureKTX1));
+            return {};
+        }
         
         uint32_t bytesForImage = width * height * image->GetBytesPerPixels();
         CompressTextureInner(image->GetImageData(), w, h, ktxTexture_GetData(ktxTexture(textureKTX1)) + offset, ktxFormat.vkFormat, bytesForImage);
@@ -602,10 +631,17 @@ std::vector<uint8_t> TextureImporter::GenerateKTXData(imagecodec::VImagePtr imag
     for (uint32_t i = 1; i != numMipLevels; ++i)
     {
         size_t offset = 0;
-        ktxTexture_GetImageOffset(ktxTexture(textureKTX1), i, 0, 0, &offset);
-
-        stbir_resize((const unsigned char*)image->GetImageData(), width, height, 0, pTmpData, w, h, 0,
-                     ktxFormat.stbLayout, ktxFormat.stbDatatype, ktxFormat.stbEdge, ktxFormat.stbFilter);
+        if (ktxTexture_GetImageOffset(ktxTexture(textureKTX1), i, 0, 0,
+                                      &offset) != KTX_SUCCESS ||
+            !stbir_resize((const unsigned char*)image->GetImageData(), width,
+                          height, 0, pTmpData, w, h, 0,
+                          ktxFormat.stbLayout, ktxFormat.stbDatatype,
+                          ktxFormat.stbEdge, ktxFormat.stbFilter))
+        {
+            baselib::AlignedFree(pTmpData);
+            ktxTexture_Destroy(ktxTexture(textureKTX1));
+            return {};
+        }
         
         uint32_t bytesForImage = w * h * image->GetBytesPerPixels();
 
@@ -616,12 +652,17 @@ std::vector<uint8_t> TextureImporter::GenerateKTXData(imagecodec::VImagePtr imag
     }
 
     baselib::AlignedFree(pTmpData);
-    baselib::AlignedFree(pFormatData);
     
     ktx_uint8_t* ktxData = nullptr;
     ktx_size_t ktxDataSize = 0;
 
-    ktxTexture_WriteToMemory(ktxTexture(textureKTX1), &ktxData, &ktxDataSize);
+    if (ktxTexture_WriteToMemory(ktxTexture(textureKTX1), &ktxData,
+                                 &ktxDataSize) != KTX_SUCCESS ||
+        !ktxData || ktxDataSize == 0)
+    {
+        ktxTexture_Destroy(ktxTexture(textureKTX1));
+        return {};
+    }
     
     std::vector<uint8_t> resultData;
     resultData.resize(ktxDataSize);
@@ -630,7 +671,7 @@ std::vector<uint8_t> TextureImporter::GenerateKTXData(imagecodec::VImagePtr imag
     free(ktxData);
     ktxTexture_Destroy(ktxTexture(textureKTX1));
 
-    return std::move(resultData);
+    return resultData;
 }
 
 std::vector<uint8_t> TextureImporter::GenerateKTXCubemapData(
@@ -642,9 +683,22 @@ std::vector<uint8_t> TextureImporter::GenerateKTXCubemapData(
         LOG_ERROR("GenerateKTXCubemapData requires exactly 6 faces, got %zu", faces.size());
         return {};
     }
+    if (!faces[0] || !faces[0]->GetImageData() || faces[0]->GetWidth() == 0 ||
+        faces[0]->GetHeight() == 0 || faces[0]->GetBytesPerPixels() == 0)
+        return {};
+    for (const auto& face : faces)
+    {
+        if (!face || !face->GetImageData() ||
+            face->GetWidth() != faces[0]->GetWidth() ||
+            face->GetHeight() != faces[0]->GetHeight() ||
+            face->GetFormat() != faces[0]->GetFormat())
+            return {};
+    }
 
     bool generateMipmap = textureImportSettings.mipmapMode != MipmapMode::None;
     KTXFormat ktxFormat = CreateKTXFormat(faces[0]->GetFormat());
+    if (ktxFormat.glInternalformat == 0 || ktxFormat.vkFormat == 0)
+        return {};
 
     uint32_t width = faces[0]->GetWidth();
     uint32_t height = faces[0]->GetHeight();
@@ -678,8 +732,15 @@ std::vector<uint8_t> TextureImporter::GenerateKTXCubemapData(
     }
 
     // 为 mipmap 降采样分配临时缓冲区
-    uint32_t maxBytesPerImage = width * height * faces[0]->GetBytesPerPixels() * 2;
-    uint8_t* pTmpData = (uint8_t*)baselib::AlignedMalloc(maxBytesPerImage, 64);
+    const size_t maxBytesPerImage = static_cast<size_t>(width) * height *
+                                    faces[0]->GetBytesPerPixels();
+    uint8_t* pTmpData =
+        static_cast<uint8_t*>(baselib::AlignedMalloc(maxBytesPerImage, 64));
+    if (!pTmpData)
+    {
+        ktxTexture_Destroy(ktxTexture(textureKTX1));
+        return {};
+    }
 
     // 写入每个面每个 mip level 的数据
     for (uint32_t face = 0; face < 6; ++face)
@@ -690,7 +751,13 @@ std::vector<uint8_t> TextureImporter::GenerateKTXCubemapData(
         // Base level (level 0): 直接压缩源图像数据
         {
             size_t offset = 0;
-            ktxTexture_GetImageOffset(ktxTexture(textureKTX1), 0, 0, face, &offset);
+            if (ktxTexture_GetImageOffset(ktxTexture(textureKTX1), 0, 0,
+                                          face, &offset) != KTX_SUCCESS)
+            {
+                baselib::AlignedFree(pTmpData);
+                ktxTexture_Destroy(ktxTexture(textureKTX1));
+                return {};
+            }
 
             uint32_t bytesForImage = w * h * faces[face]->GetBytesPerPixels();
             CompressTextureInner(faces[face]->GetImageData(), w, h,
@@ -705,12 +772,18 @@ std::vector<uint8_t> TextureImporter::GenerateKTXCubemapData(
         for (uint32_t level = 1; level < numMipLevels; ++level)
         {
             size_t offset = 0;
-            ktxTexture_GetImageOffset(ktxTexture(textureKTX1), level, 0, face, &offset);
-
-            stbir_resize((const unsigned char*)faces[face]->GetImageData(), width, height, 0,
-                         pTmpData, w, h, 0,
-                         ktxFormat.stbLayout, ktxFormat.stbDatatype,
-                         ktxFormat.stbEdge, ktxFormat.stbFilter);
+            if (ktxTexture_GetImageOffset(ktxTexture(textureKTX1), level, 0,
+                                          face, &offset) != KTX_SUCCESS ||
+                !stbir_resize(
+                    (const unsigned char*)faces[face]->GetImageData(), width,
+                    height, 0, pTmpData, w, h, 0, ktxFormat.stbLayout,
+                    ktxFormat.stbDatatype, ktxFormat.stbEdge,
+                    ktxFormat.stbFilter))
+            {
+                baselib::AlignedFree(pTmpData);
+                ktxTexture_Destroy(ktxTexture(textureKTX1));
+                return {};
+            }
 
             uint32_t bytesForImage = w * h * faces[face]->GetBytesPerPixels();
             CompressTextureInner(pTmpData, w, h,
@@ -727,7 +800,13 @@ std::vector<uint8_t> TextureImporter::GenerateKTXCubemapData(
     // 序列化为 KTX 二进制数据
     ktx_uint8_t* ktxData = nullptr;
     ktx_size_t ktxDataSize = 0;
-    ktxTexture_WriteToMemory(ktxTexture(textureKTX1), &ktxData, &ktxDataSize);
+    if (ktxTexture_WriteToMemory(ktxTexture(textureKTX1), &ktxData,
+                                 &ktxDataSize) != KTX_SUCCESS ||
+        !ktxData || ktxDataSize == 0)
+    {
+        ktxTexture_Destroy(ktxTexture(textureKTX1));
+        return {};
+    }
 
     std::vector<uint8_t> resultData;
     resultData.resize(ktxDataSize);
@@ -738,7 +817,7 @@ std::vector<uint8_t> TextureImporter::GenerateKTXCubemapData(
 
     LOG_INFO("Generated KTX cubemap data: %ux%u, %d mips, %zu bytes", width, height, numMipLevels, ktxDataSize);
 
-    return std::move(resultData);
+    return resultData;
 }
 
 bool TextureImporter::SaveTextureFile(const std::string& textureFilePath,
@@ -746,6 +825,8 @@ bool TextureImporter::SaveTextureFile(const std::string& textureFilePath,
                                     const std::string& originalFileName)
 {
 	ByteVectorPtr encodedData = AssetManager::TextureMessageUtil::EncodeTextureMessage(ktxData.data(), ktxData.size());
+	if (!encodedData || encodedData->empty())
+		return false;
 
 	// 5. 创建资产文件头
 	uint32_t flags = AssetManager::AssetFileFlags::NONE;
@@ -774,7 +855,8 @@ bool TextureImporter::SaveTextureFile(const std::string& textureFilePath,
 	}
 
 	// 7. 写入文件：先写文件头，再写 protobuf 数据
-	std::ofstream outFile(textureFilePath, std::ios::binary);
+	const fs::path temporaryPath = filePath.string() + ".tmp";
+	std::ofstream outFile(temporaryPath, std::ios::binary | std::ios::trunc);
 	if (!outFile.is_open())
 	{
 		LOG_ERROR("Failed to open texture file for writing: %s", textureFilePath.c_str());
@@ -786,12 +868,38 @@ bool TextureImporter::SaveTextureFile(const std::string& textureFilePath,
 	{
 		LOG_ERROR("Failed to write asset file header");
 		outFile.close();
+		std::error_code error;
+		fs::remove(temporaryPath, error);
 		return false;
 	}
 
 	// 写入 protobuf 数据
 	outFile.write(reinterpret_cast<const char*>(encodedData->data()), encodedData->size());
+	outFile.flush();
+	if (!outFile.good())
+	{
+		outFile.close();
+		std::error_code error;
+		fs::remove(temporaryPath, error);
+		return false;
+	}
 	outFile.close();
+	std::error_code error;
+#if defined(_WIN32)
+	if (!MoveFileExW(temporaryPath.c_str(), filePath.c_str(),
+		             MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH))
+	{
+		fs::remove(temporaryPath, error);
+		return false;
+	}
+#else
+	fs::rename(temporaryPath, filePath, error);
+	if (error)
+	{
+		fs::remove(temporaryPath, error);
+		return false;
+	}
+#endif
 
 	LOG_INFO("Saved texture file: %s (size: %zu bytes)", textureFilePath.c_str(), encodedData->size());
 

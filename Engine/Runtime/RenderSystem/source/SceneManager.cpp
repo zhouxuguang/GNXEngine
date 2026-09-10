@@ -25,15 +25,25 @@
 
 NS_RENDERSYSTEM_BEGIN
 
+namespace
+{
+std::mutex gSceneManagerMutex;
+SceneManager* gSceneManager = nullptr;
+}
+
 SceneManager* SceneManager::GetInstance()
 {
-    static std::once_flag flag;
-    static SceneManager *instance = nullptr;
-    std::call_once(flag, []() 
-    {
-        instance = new SceneManager();
-    });
-    return instance;
+    std::lock_guard<std::mutex> lock(gSceneManagerMutex);
+    if (!gSceneManager)
+        gSceneManager = new SceneManager();
+    return gSceneManager;
+}
+
+void SceneManager::DestroyInstance()
+{
+    std::lock_guard<std::mutex> lock(gSceneManagerMutex);
+    delete gSceneManager;
+    gSceneManager = nullptr;
 }
 
 bool SceneManager::HasCamera(const std::string &name) const

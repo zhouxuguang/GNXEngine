@@ -10,42 +10,41 @@
 
 #include <iostream>
 #include <string>
-#include <stdlib.h>     // 用于 getenv 函数
+#include <cstdlib>
 
-#ifndef _WIN32
-#include <unistd.h>     // 用于 readlink 函数
-#else
+#if defined(_WIN32)
 #include <Windows.h>
-#endif // !_WIN32
+#elif defined(__APPLE__)
+#include <mach-o/dyld.h>
+#else
+#include <unistd.h>
+#endif
 
 std::string GetCurrentWorkingDirectory()
 {
-    std::string cwd;
-    const uint32_t kMaxPathLength = 1024;
-    char path[kMaxPathLength];
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-    // Windows 平台上使用 GetModuleFileNameA 获取可执行文件路径
-    DWORD result = GetModuleFileNameA(nullptr, path, kMaxPathLength);
-    if (result == 0 || result == kMaxPathLength) {
-        return "";
-    }
+#if defined(_WIN32)
+    std::wstring path(32768, L'\0');
+    const DWORD length = GetModuleFileNameW(nullptr, path.data(),
+                                            static_cast<DWORD>(path.size()));
+    if (length == 0 || length == path.size())
+        return {};
+    path.resize(length);
+    return fs::path(path).parent_path().string();
+#elif defined(__APPLE__)
+    uint32_t size = 0;
+    _NSGetExecutablePath(nullptr, &size);
+    std::string path(size, '\0');
+    if (_NSGetExecutablePath(path.data(), &size) != 0)
+        return {};
+    return fs::weakly_canonical(fs::path(path.c_str())).parent_path().string();
 #else
-    // macOS 上使用 readlink 获取可执行文件路径
-    ssize_t result = readlink("/proc/self/exe", path, kMaxPathLength - 1);
-    if (result == -1) {
-        return "";
-    }
+    std::string path(4096, '\0');
+    const ssize_t result = readlink("/proc/self/exe", path.data(), path.size() - 1);
+    if (result < 0)
+        return {};
     path[result] = '\0';
+    return fs::path(path.c_str()).parent_path().string();
 #endif
-
-    // 从可执行文件路径中解析出当前源文件所在的目录
-    char* pos = strrchr(path, '/');
-    if (pos == nullptr) {
-        return "";
-    }
-    *pos = '\0';
-    cwd = path;
-    return cwd;
 }
 
 //  /Users/zhouxuguang/work/mycode/GNXEngine/source/shader/built-in
@@ -69,10 +68,7 @@ std::string getBuiltInShaderDir()
 
 std::string getCompiledShaderDir()
 {
-    fs::path path = __FILE__;
-    fs::path parentDir = path.parent_path();
-    path = (parentDir / fs::path("../../../../data_asset/Shader/")).lexically_normal();
-    return path.string();
+    return (fs::path(GetProjectAssetDir()) / "Shader").string() + PATHSPLIT;
 }
 
 std::string getMediaDir()
@@ -97,10 +93,25 @@ std::string getAssetsDir()
 
 std::string GetProjectAssetDir()
 {
-	fs::path path = __FILE__;
-	fs::path parentDir = path.parent_path();
-	path = (parentDir / fs::path("../../../../data_asset/")).lexically_normal();
-	return path.string();
+	auto withSeparator = [](const fs::path& path)
+	{
+		std::string value = path.lexically_normal().string();
+		if (!value.empty() && value.back() != '/' && value.back() != '\\')
+			value += PATHSPLIT;
+		return value;
+	};
+	if (const char* configured = std::getenv("GNX_ENGINE_CONTENT_ROOT"))
+	{
+		const fs::path path(configured);
+		if (fs::is_directory(path))
+			return withSeparator(path);
+	}
+	const fs::path deployed = fs::path(GetCurrentWorkingDirectory()) / "data_asset";
+	if (fs::is_directory(deployed))
+		return withSeparator(deployed);
+	const fs::path source =
+		(fs::path(__FILE__).parent_path() / "../../../../data_asset").lexically_normal();
+	return withSeparator(source);
 }
 
 bool EnsurePathExists(const fs::path& path) 

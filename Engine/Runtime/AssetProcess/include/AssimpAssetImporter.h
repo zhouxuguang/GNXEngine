@@ -8,6 +8,7 @@
 #include <assimp/cimport.h>
 #include "AssetProcessDefine.h"
 #include "AssetImporter.h"
+#include <vector>
 
 NS_ASSETPROCESS_BEGIN
 
@@ -18,6 +19,8 @@ public:
 	~AssimpAssetImporter();
 
 	bool ImportFromFile(const std::string& fileName, const std::string& saveDir);
+	bool ImportFromFile(const std::string& fileName, const std::string& saveDir,
+		const std::string& projectRoot, std::vector<std::string>* generatedAssets);
 
 private:
 	//

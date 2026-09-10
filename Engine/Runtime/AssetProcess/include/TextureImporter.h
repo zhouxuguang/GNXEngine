@@ -35,6 +35,8 @@ public:
 	 * @return 导入是否成功
 	 */
 	bool Import(const std::string& sourceFilePath, const std::string& currentDir);
+	bool Import(const std::string& sourceFilePath, const std::string& currentDir,
+	            const std::string& projectRootPath);
 
 	/**
 	 * 检查是否需要重新导入
