@@ -124,10 +124,12 @@ static RCTexture2DPtr CreateMetalRoughTexture()
 static RCTexture2DPtr CreateNormalTexture()
 {
     uint8_t *pData = (uint8_t*)malloc(4);
-    pData[0] = 0;
-    pData[1] = 0;
+    // Neutral tangent-space normal.  Using zero for X/Y decodes to (-1,-1)
+    // and corrupts the geometric normal on every material without a normal map.
+    pData[0] = 128;
+    pData[1] = 128;
     pData[2] = 255;
-    pData[3] = 0;
+    pData[3] = 255;
     imagecodec::VImagePtr image = std::make_shared<imagecodec::VImage>();
     image->SetImageInfo(FORMAT_RGBA8, 1, 1, pData, free);
     

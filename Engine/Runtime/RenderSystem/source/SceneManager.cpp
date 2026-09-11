@@ -251,6 +251,18 @@ void SceneManager::SetIBLTextures(RCTexturePtr irradianceMap,
     }
 }
 
+void SceneManager::SetSSREnabled(bool enabled)
+{
+    if (mSceneRenderer)
+    {
+        auto* deferredRenderer = dynamic_cast<DeferredSceneRenderer*>(mSceneRenderer.get());
+        if (deferredRenderer)
+        {
+            deferredRenderer->SetSSREnabled(enabled);
+        }
+    }
+}
+
 void SceneManager::CreateController(CameraPtr camera, CameraControllerType type)
 {
     if (mActiveController)

@@ -155,6 +155,11 @@ private:
     void CreateShadowUniformBuffer();
 
     /**
+     * @brief 创建未启用 IBL/Shadow 时使用的占位纹理
+     */
+    void CreateFallbackTextures();
+
+    /**
      * @brief 更新阴影数据到UBO
      */
     void UpdateShadowData(const DeferredLightingParams& params);
@@ -178,6 +183,11 @@ private:
 
     // ShadowMap 采样器（PCSS 需要非比较采样，手动做深度比较）
     TextureSamplerPtr mShadowSampler = nullptr;
+
+    // Shader 中声明的纹理/采样器在 Metal 上必须始终绑定。
+    // 功能关闭或资源缺失时，用黑色占位纹理填充对应槽位。
+    RCTexture2DPtr mFallbackTexture2D = nullptr;
+    RCTextureCubePtr mFallbackTextureCube = nullptr;
     
     // 光源数据UBO
     UniformBufferPtr mLightDataUBO = nullptr;

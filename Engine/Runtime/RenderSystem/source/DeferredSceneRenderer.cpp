@@ -32,6 +32,7 @@ DeferredSceneRenderer::DeferredSceneRenderer()
     mDeferredLightingPass = std::make_shared<DeferredLightingPass>();
     mHiZPass = std::make_shared<HiZPass>();
     mSSAOPass = std::make_shared<SSAOPass>();
+    mSSRPass = std::make_shared<SSRPass>();
     mMotionBlurPass = std::make_shared<MotionBlurPass>();
     mShadowMapModule = std::make_unique<ShadowMapModule>(GetRenderDevice().get());
     
@@ -67,6 +68,16 @@ void DeferredSceneRenderer::SetMotionBlurEnabled(bool enabled)
 bool DeferredSceneRenderer::IsMotionBlurEnabled() const
 {
     return mEnableMotionBlur;
+}
+
+void DeferredSceneRenderer::SetSSREnabled(bool enabled)
+{
+    mEnableSSR = enabled;
+}
+
+bool DeferredSceneRenderer::IsSSREnabled() const
+{
+    return mEnableSSR;
 }
 
 const GBufferRenderer::GBufferConfig& DeferredSceneRenderer::GetGBufferConfig() const
@@ -249,8 +260,39 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
         }
     }
 
-    // Motion Blur Pass（在 Skybox 之后、Present之前）
-    FrameGraphResource finalResult = skyboxResult;
+    // SSR Pass（在光照和天空盒之后、后处理之前）
+    FrameGraphResource reflectedResult = skyboxResult;
+    if (mEnableSSR && mSSRPass && depthResource != -1 && gbufferData.gBufferA != -1)
+    {
+        if (!mSSRPass->IsInitialized())
+        {
+            SSRConfig config;
+            config.maxRayDistance = 80.0f;
+            config.stepLength = 0.35f;
+            config.thickness = 0.4f;
+            config.maxSteps = 128;
+            config.binarySearchSteps = 5;
+            config.edgeFade = 0.12f;
+            config.maxRoughness = 0.8f;
+            config.intensity = 1.0f;
+            mSSRPass->Initialize(config);
+        }
+
+        SSRParams params;
+        params.width = mWidth;
+        params.height = mHeight;
+        params.sceneColor = skyboxResult;
+        params.gBufferA = gbufferData.gBufferA;
+        params.gBufferB = gbufferData.gBufferB;
+        params.gBufferC = gbufferData.gBufferC;
+        params.depthTexture = depthResource;
+        params.cameraUBO = cameraUBO;
+        reflectedResult = mSSRPass->AddToFrameGraph(
+            "SSRPass", frameGraph, commandBuffer, params).result;
+    }
+
+    // Motion Blur Pass（在 SSR 之后、Present之前）
+    FrameGraphResource finalResult = reflectedResult;
     if (mEnableMotionBlur && mMotionBlurPass && depthResource != -1)
     {
         if (!mMotionBlurPass->IsInitialized())
@@ -262,7 +304,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
         MotionBlurParams motionBlurParams;
         motionBlurParams.width = mWidth;
         motionBlurParams.height = mHeight;
-        motionBlurParams.colorTexture = skyboxResult;
+        motionBlurParams.colorTexture = reflectedResult;
         motionBlurParams.depthTexture = depthResource;
         motionBlurParams.cameraUBO = cameraUBO;
 

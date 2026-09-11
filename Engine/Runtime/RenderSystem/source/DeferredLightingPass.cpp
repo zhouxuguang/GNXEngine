@@ -53,6 +53,9 @@ bool DeferredLightingPass::Initialize(const DeferredLightingConfig& config)
 
     // 创建阴影UBO
     CreateShadowUniformBuffer();
+
+    // 创建可选纹理缺失时的占位资源
+    CreateFallbackTextures();
     
     mInitialized = true;
     return true;
@@ -190,6 +193,36 @@ void DeferredLightingPass::CreateShadowUniformBuffer()
 {
     // 创建阴影数据UBO - 使用引擎统一的cbShadow结构
     mShadowUBO = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(sizeof(cbShadow));
+}
+
+void DeferredLightingPass::CreateFallbackTextures()
+{
+    RenderDevicePtr renderDevice = RenderCore::GetRenderDevice();
+    if (!renderDevice)
+    {
+        return;
+    }
+
+    const uint8_t blackPixel[4] = {0, 0, 0, 255};
+    const Rect2D region(0, 0, 1, 1);
+
+    mFallbackTexture2D = renderDevice->CreateTexture2D(
+        kTexFormatRGBA8, TextureUsage::TextureUsageShaderRead, 1, 1, 1);
+    if (mFallbackTexture2D)
+    {
+        mFallbackTexture2D->ReplaceRegion(region, 0, blackPixel, sizeof(blackPixel));
+    }
+
+    mFallbackTextureCube = renderDevice->CreateTextureCube(
+        kTexFormatRGBA8, TextureUsage::TextureUsageShaderRead, 1, 1, 1);
+    if (mFallbackTextureCube)
+    {
+        for (uint32_t face = 0; face < 6; ++face)
+        {
+            mFallbackTextureCube->ReplaceRegion(
+                region, 0, face, blackPixel, sizeof(blackPixel), sizeof(blackPixel));
+        }
+    }
 }
 
 //=============================================================================
@@ -416,34 +449,59 @@ DeferredLightingOutput DeferredLightingPass::AddToFrameGraph(
                 renderEncoder->SetFragmentTextureAndSampler("gSSAO", ssaoTexture->texture, mGBufferSampler);
             }
 
-            // 绑定ShadowMap纹理（如果启用）
+            // Shader 始终声明 gShadowMap。即使 flags=0 不执行采样，Metal 仍要求
+            // 对应的 texture/sampler 槽位有效，因此关闭阴影时绑定占位纹理。
+            RCTexturePtr shadowTexture = mFallbackTexture2D;
             if (data.enableShadow)
             {
                 FrameGraphTexture& shadowMapTex = resources.Get<FrameGraphTexture>(data.shadowMap);
                 if (shadowMapTex.texture)
                 {
-                    renderEncoder->SetFragmentTextureAndSampler("gShadowMap", shadowMapTex.texture,
-                                                                mShadowSampler ? mShadowSampler : mGBufferSampler);
+                    shadowTexture = shadowMapTex.texture;
                 }
             }
+            if (shadowTexture)
+            {
+                renderEncoder->SetFragmentTextureAndSampler(
+                    "gShadowMap", shadowTexture,
+                    mShadowSampler ? mShadowSampler : mGBufferSampler);
+            }
             
-            // 绑定IBL纹理（如果启用）
+            // Shader 始终声明三张 IBL 纹理。未启用或某张资源缺失时绑定黑色
+            // 占位纹理，使其光照贡献为零并满足 Metal 的绑定校验。
+            RCTexturePtr irradianceMap = mFallbackTextureCube;
+            RCTexturePtr prefilteredMap = mFallbackTextureCube;
+            RCTexturePtr brdfLUT = mFallbackTexture2D;
             if (data.enableIBL)
             {
                 if (data.irradianceMap)
                 {
-                    renderEncoder->SetFragmentTextureAndSampler("texEnvMapIrradiance", data.irradianceMap, mGBufferSampler);
+                    irradianceMap = data.irradianceMap;
                 }
                 if (data.prefilteredMap)
                 {
-                    // 预过滤环境贴图需要按 roughness 采样不同 mip，使用带 mip trilinear 的采样器
-                    renderEncoder->SetFragmentTextureAndSampler("texEnvMap", data.prefilteredMap,
-                                                                mIBLCubeSampler ? mIBLCubeSampler : mGBufferSampler);
+                    prefilteredMap = data.prefilteredMap;
                 }
                 if (data.brdfLUT)
                 {
-                    renderEncoder->SetFragmentTextureAndSampler("texBRDF_LUT", data.brdfLUT, mGBufferSampler);
+                    brdfLUT = data.brdfLUT;
                 }
+            }
+            if (irradianceMap)
+            {
+                renderEncoder->SetFragmentTextureAndSampler(
+                    "texEnvMapIrradiance", irradianceMap, mGBufferSampler);
+            }
+            if (prefilteredMap)
+            {
+                // 预过滤环境贴图需要按 roughness 采样不同 mip，使用带 mip trilinear 的采样器
+                renderEncoder->SetFragmentTextureAndSampler(
+                    "texEnvMap", prefilteredMap,
+                    mIBLCubeSampler ? mIBLCubeSampler : mGBufferSampler);
+            }
+            if (brdfLUT)
+            {
+                renderEncoder->SetFragmentTextureAndSampler("texBRDF_LUT", brdfLUT, mGBufferSampler);
             }
             
             // 绘制全屏三角形（3个顶点）

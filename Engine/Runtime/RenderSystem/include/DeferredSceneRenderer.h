@@ -15,6 +15,7 @@
 #include "DeferredLightingPass.h"
 #include "HiZPass.h"
 #include "SSAOPass.h"
+#include "SSRPass.h"
 #include "MotionBlurPass.h"
 #include "PostProcess/PostProcessing.h"
 #include "SkyBoxNode.h"
@@ -60,6 +61,9 @@ public:
      */
     void SetMotionBlurEnabled(bool enabled);
     bool IsMotionBlurEnabled() const;
+
+    void SetSSREnabled(bool enabled);
+    bool IsSSREnabled() const;
 
 private:
     FrameGraphResource RenderPreDepthPass(
@@ -177,11 +181,13 @@ private:
     DeferredLightingPassPtr mDeferredLightingPass = nullptr;
     HiZPassPtr mHiZPass = nullptr;
     SSAOPassPtr mSSAOPass = nullptr;
+    SSRPassPtr mSSRPass = nullptr;
     MotionBlurPassPtr mMotionBlurPass = nullptr;
     PostProcessing* mPostProcessing = nullptr;
     FeedbackRendererUniPtr mFeedbackRender = nullptr;
     ShadowMapModuleUniPtr mShadowMapModule = nullptr;   // 阴影模块（PCSS）
     bool mEnableMotionBlur = false;
+    bool mEnableSSR = false;
     
     uint32_t mWidth = 1;
     uint32_t mHeight = 1;

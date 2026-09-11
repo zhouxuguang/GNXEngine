@@ -142,7 +142,7 @@ bool Material::GetValue(const std::string& name, float &value)
 
 void Material::SetTexture(const std::string& name, RCTexturePtr texture)
 {
-    mTextureSlotMap.emplace(name, TextureSlot(texture));
+    mTextureSlotMap.insert_or_assign(name, TextureSlot(texture));
 }
 
 RCTexturePtr Material::GetTexture(const std::string& name)
@@ -157,7 +157,7 @@ RCTexturePtr Material::GetTexture(const std::string& name)
 
 void Material::SetTexture(const std::string& name, RCTexturePtr texture, const SamplerDesc& samplerDesc)
 {
-    mTextureSlotMap.emplace(name, TextureSlot(texture, samplerDesc));
+    mTextureSlotMap.insert_or_assign(name, TextureSlot(texture, samplerDesc));
 }
 
 const TextureSlot* Material::GetTextureSlot(const std::string& name) const

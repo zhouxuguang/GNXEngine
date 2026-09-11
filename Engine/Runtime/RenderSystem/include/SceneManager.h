@@ -146,6 +146,8 @@ public:
                         RenderCore::RCTexturePtr prefilteredMap,
                         RenderCore::RCTexturePtr brdfLUT);
 
+    void SetSSREnabled(bool enabled);
+
     // ==================== 虚拟纹理系统 ====================
 
     /**
