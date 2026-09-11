@@ -111,7 +111,7 @@
 | 工具 | 版本要求 | 说明 |
 |------|---------|------|
 | **CMake** | 3.17+ | 构建系统 |
-| **C++17 编译器** | — | macOS: Xcode Command Line Tools；Windows: MSVC 2019+；Linux: GCC 9+ / Clang |
+| **C++20 编译器** | — | macOS: Xcode Command Line Tools；Windows: MSVC 2019+；Linux: GCC 10+ / Clang 12+ |
 | **PowerShell / curl + unzip** | — | 用于自动拉取依赖（见下文） |
 
 > **注**：Linux 编译还需安装 Vulkan SDK（渲染后端）与 X11/Wayland 开发库（GLFW 窗口依赖）。
@@ -172,6 +172,8 @@ cmake --build build --config Debug
 |------|------|--------|
 | `ENABLE_EDITOR` | 编译编辑器（需安装 Qt） | OFF |
 | `ENABLE_TESTING` | 编译单元测试 | OFF |
+| `ENABLE_EDITOR_TESTS` | 编译编辑器测试（仅编辑器开启时） | `ENABLE_TESTING` |
+| `ENABLE_EDITOR_SANDBOX` | 编译独立渲染实验窗口 | OFF |
 
 示例：
 
@@ -193,6 +195,18 @@ cmake --build build --config Debug --target GNXEditorRenderSandbox
 cmake -B build -DENABLE_EDITOR=ON -DENABLE_TESTING=ON
 cmake --build build --config Debug --target GNXEditorTests
 ctest --test-dir build -C Debug --output-on-failure
+
+# 运行无交互启动/渲染/退出验证
+build\Debug\GNXEditor.exe --smoke-test
+build\Debug\GNXEditorRenderSandbox.exe --smoke-test
+
+# 生成可分发的编辑器目录（Windows 会部署 Qt 运行库和插件）
+cmake --install build --config Release --prefix build/install
+
+# 验证不含 Qt 和编辑器代码的 Runtime-only 构建
+cmake -B build-runtime -DENABLE_EDITOR=OFF -DENABLE_TESTING=ON
+cmake --build build-runtime --config Debug
+ctest --test-dir build-runtime -C Debug --output-on-failure
 
 # 编译并运行单元测试
 cmake -B build -DENABLE_TESTING=ON
