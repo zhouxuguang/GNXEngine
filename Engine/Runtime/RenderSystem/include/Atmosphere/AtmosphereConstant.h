@@ -116,6 +116,17 @@ static void ValidateAtmosphereParametersOffsets()
     static_assert(sizeof(AtmosphereParameters) == 304, "AtmosphereParameters Size mismatch");
 }
 
+// 参考 Demo 中用于演示光柱与地面着色的“额外几何体”参数。
+// 单位说明：均为“大气单位”（1 大气单位 = kLengthUnitInMeters 米），
+// 默认值与参考实现一致：球心 (0,0,1000m)、半径 1000m、地面着色反照率 (0,0,0.04)。
+struct AtmosphereSceneGeometry
+{
+    Vector3f sphereCenter{0.0f, 0.0f, 1.0f};   // 球心（大气单位）
+    float    sphereRadius = 1.0f;              // 球半径（大气单位）
+    Vector3f sphereAlbedo{0.8f, 0.8f, 0.8f};   // 球体反照率
+    Vector3f groundAlbedo{0.0f, 0.0f, 0.04f};  // 地面着色反照率
+};
+
 // 每帧更新的大气视角参数（与 AtmosphereShader.shader 中 AtmosphereViewCB 一一对应）
 struct DECLARE_ALIGNED(16) AtmosphereViewParams
 {
@@ -125,6 +136,10 @@ struct DECLARE_ALIGNED(16) AtmosphereViewParams
     simd_float4       sun_direction_pad;    // xyz=太阳方向(单位向量)
     simd_float4       sun_size_pad;         // xy=(tan(sunAngularRadius), cos(sunAngularRadius))
     simd_float4       white_point_pad;      // xyz=白点
+    // 场景“额外几何体”（球体 + 地面），由 AtmosphereComponent 传入
+    simd_float4       sphere_center_radius; // xyz=球心(大气单位), w=球半径(大气单位)
+    simd_float4       sphere_albedo_pad;    // xyz=球体反照率
+    simd_float4       ground_albedo_pad;    // xyz=地面着色反照率
 };
 
 static void ValidateAtmosphereViewParamsOffsets()
@@ -135,7 +150,10 @@ static void ValidateAtmosphereViewParamsOffsets()
     static_assert(offsetof(AtmosphereViewParams, sun_direction_pad) == 96, "sun_direction_pad offset error");
     static_assert(offsetof(AtmosphereViewParams, sun_size_pad) == 112, "sun_size_pad offset error");
     static_assert(offsetof(AtmosphereViewParams, white_point_pad) == 128, "white_point_pad offset error");
-    static_assert(sizeof(AtmosphereViewParams) == 144, "AtmosphereViewParams Size mismatch");
+    static_assert(offsetof(AtmosphereViewParams, sphere_center_radius) == 144, "sphere_center_radius offset error");
+    static_assert(offsetof(AtmosphereViewParams, sphere_albedo_pad) == 160, "sphere_albedo_pad offset error");
+    static_assert(offsetof(AtmosphereViewParams, ground_albedo_pad) == 176, "ground_albedo_pad offset error");
+    static_assert(sizeof(AtmosphereViewParams) == 192, "AtmosphereViewParams Size mismatch");
 }
 
 // 预计算散射 Pass 的参数（与 ComputeSingleScattering/ScatteringDensity/MultipleScattering

@@ -463,7 +463,8 @@ void AtmosphereRenderer::UpdateViewParams(const Camera* camera,
                                           const Vector3f& earthCenter,
                                           const Vector3f& sunDirection,
                                           float exposure,
-                                          const Vector3f& whitePoint)
+                                          const Vector3f& whitePoint,
+                                          const Atmosphere::AtmosphereSceneGeometry& geometry)
 {
     if (!mViewUBO || !camera)
     {
@@ -483,6 +484,14 @@ void AtmosphereRenderer::UpdateViewParams(const Camera* camera,
     const float sunAngularRadius = Atmosphere::kSunAngularRadius;
     vp.sun_size_pad = make_simd_float4(tanf(sunAngularRadius), cosf(sunAngularRadius), 0.0f, 0.0f);
     vp.white_point_pad = make_simd_float4(whitePoint.x, whitePoint.y, whitePoint.z, 0.0f);
+
+    // 场景“额外几何体”（球体 + 地面），全部由 C++ 侧传入，着色器内不再写死
+    vp.sphere_center_radius = make_simd_float4(geometry.sphereCenter.x, geometry.sphereCenter.y,
+                                               geometry.sphereCenter.z, geometry.sphereRadius);
+    vp.sphere_albedo_pad = make_simd_float4(geometry.sphereAlbedo.x, geometry.sphereAlbedo.y,
+                                            geometry.sphereAlbedo.z, 0.0f);
+    vp.ground_albedo_pad = make_simd_float4(geometry.groundAlbedo.x, geometry.groundAlbedo.y,
+                                            geometry.groundAlbedo.z, 0.0f);
 
     mViewUBO->SetData(&vp, 0, sizeof(vp));
 }

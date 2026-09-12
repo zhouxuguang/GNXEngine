@@ -10,6 +10,7 @@
 #define GNX_ENGINE_ATMOSPHERE_COMPONENT_INCLUDE_HJFHJ
 
 #include "../Component.h"
+#include "AtmosphereConstant.h"
 #include "AtmosphereRenderer.h"
 #include "Runtime/MathUtil/include/Vector3.h"
 
@@ -46,14 +47,23 @@ public:
     void SetEarthCenter(const Vector3f& center) { mEarthCenter = center; }
     const Vector3f& GetEarthCenter() const { return mEarthCenter; }
 
+    // 场景“额外几何体”（球体 + 地面）：用于演示大气光柱与地面着色，由着色器外部传入。
+    // 单位说明：均为“大气单位”（1 大气单位 = Atmosphere::kLengthUnitInMeters 米）。
+    // 默认值与参考实现一致：球心 (0,0,1000m)、半径 1000m、地面着色反照率 (0,0,0.04)。
+    void SetSceneGeometry(const Atmosphere::AtmosphereSceneGeometry& geometry) { mSceneGeometry = geometry; }
+    const Atmosphere::AtmosphereSceneGeometry& GetSceneGeometry() const { return mSceneGeometry; }
+
 private:
     AtmosphereRendererPtr mRenderer;
 
-    float mExposure = 10.0f;
+    // 默认曝光：着色器输出线性 HDR，由管线末端 PostProcessing(ACES) 色调映射，
+    // 取 5.0 时整体亮度与参考实现（exposure=10 配合自带指数曲线）一致。
+    float mExposure = 5.0f;
     Vector3f mWhitePoint{1.0f, 1.0f, 1.0f};
     Vector3f mSunDirection{0.0f, 0.0f, 1.0f};
     // 默认地球中心：-(bottom_radius / length_unit) = -(6360000 / 1000)
     Vector3f mEarthCenter{0.0f, 0.0f, -6360.0f};
+    Atmosphere::AtmosphereSceneGeometry mSceneGeometry;
 };
 
 template<> struct ComponentTypeOf<AtmosphereComponent>

@@ -203,7 +203,8 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
             mAtmosphere->SetSunDirection(sunDir);
 
             atmoRenderer->UpdateViewParams(camera.get(), mAtmosphere->GetEarthCenter(),
-                                           sunDir, mAtmosphere->GetExposure(), mAtmosphere->GetWhitePoint());
+                                           sunDir, mAtmosphere->GetExposure(), mAtmosphere->GetWhitePoint(),
+                                           mAtmosphere->GetSceneGeometry());
         }
     }
 

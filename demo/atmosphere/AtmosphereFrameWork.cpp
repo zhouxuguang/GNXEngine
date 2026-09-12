@@ -72,6 +72,20 @@ void AtmosphereFrameWork::CreateScene(uint32_t width, uint32_t height)
     // 本引擎管线末端使用 ACES 曲线（对中间调提升更强），取 5.0 后整体亮度与参考图一致。
     mAtmosphere->SetExposure(5.0f);
     mAtmosphere->SetWhitePoint(Vector3f(1.0f, 1.0f, 1.0f));
+
+    // 场景“额外几何体”（球体 + 地面）：来自参考 Demo 的演示物体。
+    // 这里以米为单位给出，再换算成大气单位（1 大气单位 = kLengthUnitInMeters 米），
+    // 通过参数传给着色器，避免把这些场景参数写死在 shader 里。
+    {
+        const float kLengthUnitInMeters = static_cast<float>(RenderSystem::Atmosphere::kLengthUnitInMeters);
+        RenderSystem::Atmosphere::AtmosphereSceneGeometry geometry;
+        geometry.sphereCenter = Vector3f(0.0f, 0.0f, 1000.0f / kLengthUnitInMeters); // 球心 (0,0,1000m)
+        geometry.sphereRadius = 1000.0f / kLengthUnitInMeters;                       // 半径 1000m
+        geometry.sphereAlbedo = Vector3f(0.8f, 0.8f, 0.8f);                          // 球体反照率
+        geometry.groundAlbedo = Vector3f(0.0f, 0.0f, 0.04f);                         // 地面着色反照率
+        mAtmosphere->SetSceneGeometry(geometry);
+    }
+
     mAtmosphere->Initialize(5);   // 散射重数 = 5
 
     LOG_INFO("Atmosphere demo scene created");

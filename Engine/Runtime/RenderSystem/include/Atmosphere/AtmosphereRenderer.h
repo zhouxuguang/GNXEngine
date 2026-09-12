@@ -54,12 +54,13 @@ public:
     // 执行一次完整的预计算（生成所有 LUT）
     void Precompute();
 
-    // 每帧更新视角参数（相机、地球中心、太阳方向、曝光、白点）
+    // 每帧更新视角参数（相机、地球中心、太阳方向、曝光、白点、场景几何体）
     void UpdateViewParams(const Camera* camera,
                           const mathutil::Vector3f& earthCenter,
                           const mathutil::Vector3f& sunDirection,
                           float exposure,
-                          const mathutil::Vector3f& whitePoint);
+                          const mathutil::Vector3f& whitePoint,
+                          const Atmosphere::AtmosphereSceneGeometry& geometry);
 
     // 渲染天空。调用者需提供颜色附件为场景颜色、深度附件为场景深度的 RenderEncoder。
     void RenderSky(RenderEncoderPtr renderEncoder);
