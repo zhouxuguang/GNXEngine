@@ -62,6 +62,29 @@ target_link_libraries(GNXEngine PRIVATE
     imgui
 )
 
+# ---------------------------------------------------------------------------
+# Dear ImGui：静态库并入本共享库，作为进程内的【唯一副本】
+#
+# imgui 已改为静态库，而 ImGui 的全局上下文 GImGui 是每个镜像（dylib/exe）
+# 各自一份的静态变量：若引擎库与可执行文件各静态链接一份，两者互不可见，
+# 运行时触发 "No current context" 断言。因此约定本共享库承载唯一副本并导出
+# 全部 ImGui 符号，可执行文件只链接 imgui_headers（见 demo/*/CMakeLists.txt）。
+#
+# 必须「整库加载」而不是按需加载：静态库默认只把被引用到的 .o 拉进镜像，
+# 而 ImGui 的小部件实现（imgui_widgets.cpp：Text/Button/SliderFloat 等）
+# 主要由 demo 调用、引擎自身并未引用；若不整库加载，这些符号不会进入本库，
+# 可执行文件链接时会报未定义符号。
+# ---------------------------------------------------------------------------
+if(MSVC)
+    # Windows 使用 /WHOLEARCHIVE；配合 imgui 目标的 IMGUI_API=__declspec(dllexport)
+    # 使 ImGui 符号从本 DLL 导出。
+    target_link_options(GNXEngine PRIVATE "/WHOLEARCHIVE:$<TARGET_FILE:imgui>")
+elseif(APPLE)
+    target_link_options(GNXEngine PRIVATE "-Wl,-force_load,$<TARGET_FILE:imgui>")
+else()
+    target_link_options(GNXEngine PRIVATE "-Wl,--whole-archive" "$<TARGET_FILE:imgui>" "-Wl,--no-whole-archive")
+endif()
+
 # 窗口后端宏定义（控制 #if GNX_WINDOW_SDL）
 # 注意：GNX_WINDOW_SDL 必须是 PUBLIC，demo 的 main.cpp 通过 GNXMain.h
 # 依赖该宏决定是否把 main 重命名为 SDL_main（iOS/Android 必需，
