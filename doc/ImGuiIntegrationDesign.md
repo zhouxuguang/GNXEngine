@@ -144,19 +144,17 @@ Engine/Runtime/RenderSystem/include/UI/ImGuiRenderer.cpp
 class ImGuiRenderer
 {
 public:
-    void Initialize(RenderDevice* device);       // 创建管线 + 字体纹理
-    void NewFrame(float deltaTime, uint32_t w, uint32_t h);
-    void Render(RenderEncoderPtr encoder);       // 每帧绘制
+    bool Initialize(RenderDevice* device, bool installIniFile = false);  // 创建管线 + 加载字体
+    void NewFrame(float deltaTime, uint32_t width, uint32_t height);     // 驱动 ImGui::NewFrame()
+    void Render(RenderEncoderPtr encoder);                              // 纹理协议 + 每帧绘制
     void Shutdown();
-    void InvalidateFontAtlas();                  // 字体图集重建
+    bool OnEvent(GNXEngine::Event& e);                                  // 输入桥接
 
 private:
     GraphicsPipelinePtr mPipeline;               // alpha blend, CullNone, 无深度测试
-    RCBufferPtr mVertexBuffers[kMaxFramesInFlight];  // N 份防 in-flight 冲突
-    RCBufferPtr mIndexBuffers[kMaxFramesInFlight];
-    RCTexture2DPtr mFontTexture;
+    RCBufferPtr mPosBuffer, mUVBuffer, mColorBuffer;  // 3 个独立顶点缓冲，按需扩容、每帧 Map/Unmap
+    std::unordered_map<ImTextureData*, RCTexture2DPtr> mTextures;  // ImGui 按需创建的字集纹理由后端持有
     UniformBufferPtr mProjUBO;
-    uint32_t mFrameIdx = 0;
 };
 ```
 
@@ -181,6 +179,41 @@ for (each drawList):
 - **in-flight 帧数**：参考 `RenderSystem/source/terrain/QuadTreeTerrain.cpp:467` 的 N 份缓冲模式；Vulkan 多帧并行提交时会踩同一缓冲
 - **非字体纹理**（ImGui 图像按钮）：用 `ImTextureID` 存 `RCTexture2D*`，渲染时查表
 - **Y 翻转**：Metal 与 Vulkan clip space Y 方向相反。走 RHI 统一入口，初始化时按 `device->GetDeviceType()` 分支一次（Vulkan：`proj[1][1] *= -1`）
+
+**动态纹理协议（ImGui 1.92，`ImGuiBackendFlags_RendererHasTextures`）**：
+
+1.92 起字体纹理由 ImGui 在运行时按需请求创建/更新/销毁，后端不再一次性构建图集。
+`Initialize()` 声明能力标志，`Render()` 在绘制前逐帧跟进：
+
+```cpp
+io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;   // Initialize()
+...
+UpdateTextures(drawData);   // Render() 开头（早退判断之后、展开顶点之前）
+ExpandDrawData();
+```
+
+`UpdateTexture()` 按 `ImTextureData::Status` 分派：
+
+| 状态 | 处理 |
+|---|---|
+| `WantCreate` | 按 `Width/Height` 创建 `kTexFormatRGBA8` 纹理，全量上传 `GetPixels()`（行距 `GetPitch()`），`SetTexID()` 写入引擎纹理指针 |
+| `WantUpdates` | 遍历 `Updates[]`（`ImTextureRect{x,y,w,h}`）逐块 `ReplaceRegion` 子矩形上传，数据取 `GetPixelsAt(x,y)` |
+| `WantDestroy` | `UnusedFrames >= 2` 时释放引擎纹理，`SetTexID(ImTextureID_Invalid)` 并置 `Destroyed` |
+| `OK` | 跳过（绝大多数帧仅 1 项且为此状态，开销可忽略） |
+
+关键约定与约束：
+
+- **`ImTextureID` 存放 `RCTexture*`（基类指针）**。因 `RCTexture2D : virtual public RCTexture` 为虚继承，
+  必须用隐式向上转型取得基类地址；若把 `RCTexture2D*` 直接 `reinterpret_cast` 成 `RCTexture*`，
+  渲染侧 `dynamic_pointer_cast<MTLTextureBase>` 会失败并在空指针上崩溃。
+- 字体图集纹理的所有权在 `mTextures`（`unordered_map<ImTextureData*, RCTexture2DPtr>`）；
+  绘制时把 `ImDrawCmd::GetTexID()` 还原为**不接管所有权**的别名 `shared_ptr` 交给编码器。
+- `Shutdown()` 必须在 `ImGui::DestroyContext()` **之前**遍历 `GetPlatformIO().Textures`，
+  对 `RefCount == 1` 的纹理调用 `DestroyTexture`。
+- ImGui 保证增量更新只写入「从未被使用过」的区域，因此无需读回原内容做混合。
+- 绘制遍历使用 `ImDrawData::CmdLists.Size`（`CmdListsCount` 已被官方标记 obsolete，
+  且 1.92.9 曾出现其恒为 0 的回归，会导致 UI 完全不渲染）。
+- 实现对照：官方 `backends/imgui_impl_metal.mm` 的 `ImGui_ImplMetal_UpdateTexture/DestroyTexture`。
 
 ### 3.4 输入桥接 `ImGuiInputBridge`
 
@@ -351,11 +384,44 @@ ImGui 的全局上下文变量 `GImGui`。`CreateContext()` 设置的是引擎 d
 
 ### 8.4 其他实现细节
 
-- **字体/DPI**：`io.DisplaySize` 使用**逻辑坐标**（帧缓冲像素 / `GetDPIScale()`），鼠标坐标同为逻辑
-  坐标（GLFW 光标坐标即逻辑点），scissor 换算回像素；字体按 `13 * dpiScale` 光栅化并设
-  `io.FontGlobalScale = 1/dpiScale`，Retina 下文字清晰且命中正确。
+- **字体/DPI**（ImGui 1.92 动态字体）：`io.DisplaySize` 使用**逻辑坐标**（帧缓冲像素 / `GetDPIScale()`），
+  鼠标坐标同为逻辑坐标（GLFW 光标坐标即逻辑点），scissor 换算回像素；
+  同时设 `io.DisplayFramebufferScale = (dpiScale, dpiScale)`，框架会据此自动设置当前字形的
+  光栅化密度（`g.FontRasterizerDensity = DisplayFramebufferScale`），Retina 下文字自动清晰且命中正确。
+  **不要再手工 `io.FontGlobalScale` 缩放，也不要设置 `style.FontScaleDpi`**，否则会与自动密度
+  叠加导致字号被二次放大（`style.FontSizeBase` 只填逻辑字号）。
 - **顶点索引**：引擎 `IndexBuffer` 为 `StorageModePrivate` 不支持逐帧更新，故 UI 的索引在 CPU 侧
   展开为顶点序列，使用非索引绘制（`DrawPrimitives`），避免每帧重建索引缓冲。
 - **顶点缓冲**：3 个 `RCBuffer(StorageModeShared)` 按需扩容，每帧 `Map/Unmap` 更新。
 - **UI 时机**：`RenderPresentPass` 中 `mPostProcessing->Process()` 之后、`EndEncode()` 之前，
   复用同一 encoder，UI 永远绘制在最终画面之上。
+- **性能**：实测 UI 每帧开销 **< 0.1ms**（大气 demo 场景渲染 ~95ms/帧，UI 占比可忽略）。
+
+### 8.5 中文显示（乱码问题）
+
+**现象**：UI 中的中文显示为方块/乱码。
+
+**原因**：ImGui 内置字体（ProggyClean / ProggyForever）只包含拉丁字形，必须显式加载 CJK 字体文件。
+
+**解决方案**（`ImGuiRenderer::LoadFonts`，ImGui 1.92 动态字体图集）：
+
+1. **加载中文系统字体**：按平台优先级探测并加载第一个存在的字体文件
+   - macOS：`PingFang.ttc` → `STHeiti Medium.ttc` → `Hiragino Sans GB.ttc` → `Arial Unicode.ttf`
+   - Windows：`msyh.ttc`(微软雅黑) → `simhei.ttf` → `simsun.ttc`
+   - Linux：`NotoSansCJK-Regular.ttc` → `wqy-microhei.ttc` → `uming.ttc`
+   - 均找不到时回退内置字体并打印告警；也可用 `SetCjkFontPath()` 显式指定。
+2. **不再需要字形范围**：1.92 起字形在绘制时按需光栅化、图集随用字增长，
+   `GetGlyphRanges*()` 全部废弃、`ImFontGlyphRangesBuilder` 官方评价"不再真正有用"，
+   生僻字（如**“曝”**）**无需任何注册**即可显示。
+   > 需区分：动态字体免除的是「字形范围声明」，CJK 字体文件本身仍必须显式加载。
+3. **图集尺寸**：初始化时设 `TexMinWidth/TexMinHeight = 1024` 以减少动态扩容
+   （扩容 = 重新分配 + 拷贝，短时间内新旧尺寸纹理并存）；
+   并把 `TexMaxWidth/TexMaxHeight` 与设备 `maxTextureSize2D` 对齐（ImGui 默认 8192）。
+
+> 历史方案（1.91 静态图集，已废弃）：曾用 `ImFontGlyphRangesBuilder` 组合
+> 「默认范围 + 约 2500 常用汉字」，并用 `AddGlyphText()` 注册范围外文本；
+> 该方案需人工维护注册列表，且「不采用 `GetGlyphRangesChineseFull()`（Retina 下约 268MB）」
+> 的结论同样仅适用于静态图集。升级到 1.92.9b 后两者一并移除。
+
+> 升级的可行性、逐文件改造清单、风险登记册与验证结论见
+> **[ImGuiUpgradeTo192Assessment.md](./ImGuiUpgradeTo192Assessment.md)**。

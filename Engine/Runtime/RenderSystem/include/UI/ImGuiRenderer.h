@@ -29,7 +29,13 @@
 #include "Runtime/RenderCore/include/RenderEncoder.h"
 
 #include <memory>
+#include <unordered_map>
 #include <vector>
+
+// Dear ImGui 1.92 动态纹理协议的类型。
+// 仅在 .cpp 内包含 imgui.h，头文件保持对 ImGui 无依赖。
+struct ImDrawData;
+struct ImTextureData;
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -65,39 +71,31 @@ public:
 
     // ---- 字体 ----
     // 设置 CJK 字体文件（.ttf/.ttc）。留空则自动探测系统中的中文字体。
-    // 修改后需调用 InvalidateFontAtlas() 生效。
+    // 须在 Initialize 之前设置。
     void SetCjkFontPath(const std::string& path) { mCjkFontPath = path; }
     const std::string& GetCjkFontPath() const { return mCjkFontPath; }
 
-    // 逻辑字号（未乘 DPI），默认 15.0
+    // 逻辑字号（逻辑尺寸，未乘 DPI），默认 15.0。
+    // ImGui 1.92 采用动态字体，字形按需光栅化，运行期修改即时生效。
     void SetFontSize(float size) { mFontSize = size > 4.0f ? size : 15.0f; }
     float GetFontSize() const { return mFontSize; }
-
-    // 追加需要生成字形的文本（UTF-8）。
-    // 字体图集默认含「拉丁 + 常用汉字(约2500字)」范围，少数常用范围之外的汉字
-    // （如“曝”）会显示为 '?'。把 UI 中会用到的文本注册进来即可补齐对应字形。
-    // 须在字体图集构建前调用（即 Initialize 之后、首次 NewFrame 之前），
-    // 或调用后配合 InvalidateFontAtlas() 重建。
-    void AddGlyphText(const char* utf8Text)
-    {
-        if (utf8Text)
-        {
-            mExtraGlyphText += utf8Text;
-        }
-    }
 
     // 是否成功加载了含中文字形的字体（加载失败时回退到内置字体，仅支持拉丁字符）
     bool HasCjkFont() const { return mHasCjkFont; }
 
-    // 字体图集失效（如动态加载新字体后），下次 NewFrame 时重建纹理
-    void InvalidateFontAtlas() { mFontTextureDirty = true; }
-
 private:
     bool CreateDeviceObjects();
-    bool CreateFontTexture();
+    bool LoadFonts();
     bool EnsureVertexCapacity(uint32_t vertexCount);
     void ExpandDrawData();
     void SetupStyle();
+
+    // ---- ImGui 1.92 动态纹理协议（ImGuiBackendFlags_RendererHasTextures）----
+    // 逐帧跟进 ImGui 的纹理请求：新建 / 增量更新 / 销毁
+    void UpdateTextures(const ImDrawData* drawData);
+    void UpdateTexture(ImTextureData* tex);
+    void DestroyTexture(ImTextureData* tex);
+    void DestroyAllTextures();
 
     struct DrawBatch
     {
@@ -115,7 +113,6 @@ private:
     GraphicsPipelinePtr mPipeline;
     TextureSamplerPtr   mSampler;
     UniformBufferPtr    mProjUBO;
-    RCTexture2DPtr      mFontTexture;
 
     // 顶点属性分 3 个 buffer（与引擎 Metal/Vulkan 顶点布局约定一致）
     RCBufferPtr mPosBuffer;
@@ -134,11 +131,15 @@ private:
     uint32_t mWidth = 0;
     uint32_t mHeight = 0;
     bool     mInitialized = false;
-    bool     mFontTextureDirty = true;
     bool     mIniFileEnabled = false;
     bool     mHasCjkFont = false;               // 是否成功加载中文字体
+    bool     mTextureErrorLogged = false;       // 纹理创建失败只提示一次，避免每帧刷屏
+    uint32_t mMaxTextureSize = 0;               // 设备 2D 纹理尺寸上限（约束动态字体图集尺寸）
     std::string mCjkFontPath;                   // 为空表示自动探测系统字体
-    std::string mExtraGlyphText;                // 额外需要生成字形的文本（UTF-8）
+
+    // ImGui 1.92 动态字体图集纹理由 ImGui 按需请求创建，后端持有其生命周期。
+    // 键为 ImGui 侧的纹理对象，值为引擎 2D 纹理（增量更新需要 RCTexture2D 接口）。
+    std::unordered_map<ImTextureData*, RCTexture2DPtr> mTextures;
 };
 
 typedef std::shared_ptr<ImGuiRenderer> ImGuiRendererPtr;

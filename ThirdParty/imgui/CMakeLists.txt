@@ -1,6 +1,10 @@
 # Dear ImGui - 即时模式 GUI 库（核心，不含 backends）
 #
-# 版本：v1.91.9b（https://github.com/ocornut/imgui/releases/tag/v1.91.9b）
+# 版本：v1.92.9b（https://github.com/ocornut/imgui/releases/tag/v1.92.9b）
+#
+# 1.92 起采用动态字体图集（ImGuiBackendFlags_RendererHasTextures）：
+# 字形按需光栅化，无需预设字形范围；后端需自行响应 ImDrawData::Textures 的
+# 创建/增量更新/销毁请求（见 Engine/Runtime/RenderSystem/include/UI/ImGuiRenderer.cpp）。
 # 许可证：MIT，见 imgui/LICENSE.txt
 #
 # 说明：

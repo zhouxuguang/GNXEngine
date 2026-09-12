@@ -32,7 +32,7 @@ void AtmosphereFrameWork::Initlize()
     GNXEngine::AppFrameWork::Initlize();
 }
 
-// 启用 ImGui，并按窗口 DPI 缩放重建字体图集
+// 启用 ImGui，并按窗口 DPI 设置渲染缩放
 void AtmosphereFrameWork::SetupImGui()
 {
     SetImGuiEnabled(true);
@@ -43,20 +43,14 @@ void AtmosphereFrameWork::SetupImGui()
         return;
     }
 
-    // 注册面板中用到的中文文本。
-    // ImGui 字体图集默认只含「拉丁 + 约 2500 常用汉字」范围，范围外的汉字（如“曝”）
-    // 会显示为 '?'，这里把实际用到的文本登记进去以补齐字形（须在字体图集构建前调用）。
-    imgui->AddGlyphText(
-        "预计算大气散射曝光太阳相机场景几何体球心半径反照率地面快捷键方向角视线"
-        "点击面板时输入不会传给当前生效重重新生成透射辐照度短暂卡顿捕获鼠标键盘");
-
+    // ImGui 1.92 采用动态字体：字形按需光栅化、图集随用字增长，
+    // 生僻字无需任何注册即可正常显示（原 AddGlyphText / InvalidateFontAtlas 已移除）。
     float dpiScale = 1.0f;
     if (GNXEngine::RenderWindowPtr window = GNXEngine::GetRenderWindow())
     {
         dpiScale = window->GetDPIScale();
     }
     imgui->SetDPIScale(dpiScale);
-    imgui->InvalidateFontAtlas();   // 按新的 DPI 重建字体，保证文字清晰
 }
 
 void AtmosphereFrameWork::Resize(uint32_t width, uint32_t height)
