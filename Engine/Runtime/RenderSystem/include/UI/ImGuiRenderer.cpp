@@ -384,10 +384,14 @@ bool ImGuiRenderer::LoadFonts()
     style.FontScaleMain = 1.0f;
     style.FontScaleDpi = 1.0f;
 
-    // 图集初始尺寸（默认 512x128）：预置更大的尺寸可减少动态扩容。
-    // 扩容 = 重新分配 + 拷贝，且短时间内新旧两种尺寸的纹理会同时存在于内存中。
-    io.Fonts->TexMinWidth = 1024;
-    io.Fonts->TexMinHeight = 1024;
+    // 图集初始尺寸。1.92 只光栅化「实际用到的字形」，因此图集远小于 1.91 的
+    // 固定范围图集（后者需覆盖拉丁 + 约 2500 常用汉字，约 1024/2048 见方）。
+    // 实测（大气 demo 全量面板、Retina 2x）：无论起始尺寸多少，图集最终稳定在
+    // 512x256（RGBA32 = 0.5MB），且扩容只发生一次、在启动首帧的 1ms 内完成。
+    // 这里取 512x512（1MB，约 2 倍余量）：比原先 1024x1024（4MB）省 4 倍显存，
+    // 同时避免首帧扩容。若 UI 大量增加用字，ImGui 会自动扩容，无需改这里。
+    io.Fonts->TexMinWidth = 512;
+    io.Fonts->TexMinHeight = 512;
 
     // 图集上限与设备能力对齐（ImGui 默认 8192）
     if (mMaxTextureSize > 0)

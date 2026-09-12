@@ -4,7 +4,11 @@ AtmosphereFrameWork.cpp
 AtmosphereFrameWork.h
 )
 
-target_link_libraries(atmosphere GNXEngine AssetManager imgui)
+# 注意：这里链接的是 imgui_headers（仅头文件），不是 imgui 静态库本身。
+# imgui 的唯一副本位于 GNXEngine 共享库中；若此处直接链接 imgui 静态库，
+# 可执行文件会持有第二份 ImGui 全局上下文（GImGui），导致运行时
+# "No current context" 断言（详见 ThirdParty/imgui/CMakeLists.txt）。
+target_link_libraries(atmosphere GNXEngine AssetManager imgui_headers)
 
 if(IOS)
     set_target_properties(atmosphere PROPERTIES

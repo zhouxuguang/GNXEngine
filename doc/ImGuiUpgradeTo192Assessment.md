@@ -516,8 +516,35 @@ tex->SetTexID((ImTextureID)(uintptr_t)baseTexture.get());
 3. **未实测 dpiScale = 1.0 的显示器**下的清晰度表现（本次为 Retina 2x）。
 4. 若要回归"1.91 风格"的像素对齐，可关注 `ImFontConfig::PixelSnapH`（当前已开启）。
 
+### 11.6 后续改动：imgui 改为静态库（2026-09-12）
+
+升级完成后，按要求把 imgui **统一编译为静态库**（此前桌面平台为 SHARED），并解决了静态化带来的
+「同一进程内出现两份 `GImGui` 上下文」问题：
+
+| 改动 | 内容 |
+|---|---|
+| `ThirdParty/imgui/CMakeLists.txt` | `add_library(imgui STATIC ...)`（全平台）；新增 `imgui_headers`（INTERFACE：仅头文件 + Windows `dllimport`），并显式开启 `POSITION_INDEPENDENT_CODE` |
+| `Engine/Runtime/GNXEngine/CMakeLists.txt` | 以**整库加载**方式把静态库并入引擎共享库（APPLE `-force_load` / MSVC `/WHOLEARCHIVE:` / 其它 `--whole-archive`），使其成为进程内的**唯一副本**并导出全部 ImGui 符号 |
+| `demo/atmosphere/CMakeLists.txt` | `imgui` → `imgui_headers`：可执行文件不再链接静态库，ImGui 符号从引擎库导入 |
+
+**为什么必须整库加载**：静态库默认只拉入被引用到的 `.o`，而 `imgui_widgets.cpp`
+（`Text` / `SliderFloat` / `ColorEdit3` 等）仅由 demo 调用、引擎自身并不引用；
+不整库加载时这些符号不会进入引擎库，demo 链接会报未定义符号。
+
+**验证结果**：
+
+| 项 | 结果 |
+|---|---|
+| 产物形态 | 仅 `build/ThirdParty/imgui/Debug/libimgui.a`（原 `libimgui.dylib` 与 `libimguid.a` 残留已清理） |
+| 引擎库导出 | **1352 个 ImGui 符号**，含仅 demo 使用的 `ImGui::SliderFloat` / `ColorEdit3` ✓ |
+| 无第二份上下文 | `nm -g build/Debug/atmosphere \| grep " T " \| grep -c ImGui` = **0** ✓ |
+| 动态依赖 | `otool -L build/Debug/atmosphere` 无 imgui ✓（不再需要随包分发 imgui 动态库） |
+| 运行表现 | UI / 中文 / 大气散射均正常，FPS 10.6（94.44ms）与基线一致；**0 崩溃、0 `No current context` 断言** ✓ |
+| 其他可执行文件 | `pbr` / `terrain` 编译通过；各自 imgui 动态依赖计数均为 0 ✓ |
+
 ---
 
 **报告结束**
 
-> 本文主体为升级实施前编写的评估文档；§11 为 2026-09-12 实施升级后的结果、偏差与踩坑记录。
+> 本文主体为升级实施前编写的评估文档；§11 为 2026-09-12 实施升级后的结果、偏差与踩坑记录，
+> 含 §11.6 的静态库化改造。

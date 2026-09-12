@@ -321,7 +321,7 @@ ImGui::Render();
 | 文件 | 类型 | 内容 |
 |---|---|---|
 | `ThirdParty/imgui/imgui/*` | 新增 | ImGui 核心源码（子模块或直接拷贝） |
-| `ThirdParty/imgui/CMakeLists.txt` | 新增 | 库定义（桌面 SHARED / 移动 STATIC，见第 8 节） |
+| `ThirdParty/imgui/CMakeLists.txt` | 新增 | 库定义（**统一 STATIC**，唯一副本由引擎库承载，见第 8 节） |
 | `ThirdParty/CMakeLists.txt` | 修改 | `add_subdirectory(imgui)` |
 | `Engine/Shader/built-in/ImGui.shader` | 新增 | UI shader（pos+uv+color） |
 | `Engine/Runtime/RenderSystem/include/UI/ImGuiRenderer.h/.cpp` | 新增 | RHI 渲染后端 |
@@ -342,7 +342,7 @@ ImGui::Render();
 | 文件 | 内容 |
 |---|---|
 | `ThirdParty/imgui/imgui/` | 仅 4 个 .cpp（imgui / imgui_draw / imgui_tables / imgui_widgets）+ 头文件，**不含 backends/docs/examples/misc** |
-| `ThirdParty/imgui/CMakeLists.txt` | 桌面 SHARED / 移动 STATIC，详见 8.2 |
+| `ThirdParty/imgui/CMakeLists.txt` | **统一 STATIC**（`libimgui.a`），另提供 `imgui_headers` 接口目标，详见 8.2 |
 | `Engine/Shader/built-in/ImGui.shader` | 顶点属性 3 个独立 buffer（POSITION/TEXCOORD0/COLOR0），输出线性色的 `col * tex` |
 | `Engine/Runtime/RenderSystem/include/UI/ImGuiRenderer.{h,cpp}` | RHI 渲染后端 + 输入桥接（约 500 行） |
 | `Engine/Runtime/RenderSystem/include/SceneManager.h` + `.cpp` | 持有 ImGui 层，`GetImGuiRenderer()` 按需创建 |
@@ -351,22 +351,48 @@ ImGui::Render();
 | `Engine/Runtime/GNXEngine/include/RenderWindow.h` | 新增 `GetDPIScale()`（GLFW/SDL 各自实现） |
 | `demo/atmosphere/AtmosphereFrameWork.cpp` | ImGui 调参面板（曝光/太阳/相机/LUT 重数/场景几何） |
 
-### 8.2 关键坑：ImGui 上下文重复（务必保持共享库）
+### 8.2 关键坑：ImGui 全局上下文重复（静态库下的「唯一副本」约束）
 
 **现象**：`ImGui::GetIO()` 断言 `No current context`，即使 `CreateContext()` 已成功调用。
 
-**根因**：`imgui` 若编成**静态库**，且同时被「引擎动态库」与「可执行文件」链接，则两者各自持有一份
-ImGui 的全局上下文变量 `GImGui`。`CreateContext()` 设置的是引擎 dylib 中那份，
-而 demo 可执行文件里的 `ImGui::GetIO()` 读的是自己的那份（仍为 null）。
+**根因**：`GImGui` 是**每个镜像（dylib / exe）各自一份**的静态变量。若 imgui 静态库被
+「引擎动态库」与「可执行文件」分别链接，两者各持一份上下文：`CreateContext()` 设置的是
+引擎 dylib 里那份，而 demo 可执行文件中的 `ImGui::GetIO()` 读的是自己那份（仍为 null）。
 
-**结论与约束**：
-- 桌面平台（引擎为动态库）：`imgui` 必须编译为 **SHARED**，保证进程内只有一份 `GImGui`。
-- 移动平台（整体静态链接为单一二进制）：可用静态库。
-- 另外两点 CMake 细节：
-  1. 工程根 `CMakeLists.txt` 设置了 `CMAKE_CXX_VISIBILITY_PRESET hidden`，而 imgui 内部无导出宏，
-     需为该 target 覆盖 `CXX_VISIBILITY_PRESET default`，否则共享库不导出任何符号。
-  2. Xcode 生成器跨目录引用共享库时使用 `libimgui.dylib`，故需 `DEBUG_POSTFIX ""` 统一产物名，
-     否则实际产物 `libimguid.dylib` 与之不匹配导致链接失败。
+**现行方案（imgui 统一编译为静态库）**：由 GNXEngine 共享库承载**唯一副本**并导出全部 ImGui 符号。
+
+| 角色 | 做法 |
+|---|---|
+| `ThirdParty/imgui` | `add_library(imgui STATIC ...)`；另提供 `imgui_headers`（INTERFACE，仅头文件） |
+| `GNXEngine`（唯一宿主） | **整库加载**并入静态库：APPLE `-Wl,-force_load,<libimgui.a>`、MSVC `/WHOLEARCHIVE:`、其它 `-Wl,--whole-archive` |
+| 可执行文件（demo 等） | **不链接 `imgui` 静态库**，只链接 `imgui_headers`，ImGui 符号从引擎库导入 |
+| 移动端（iOS/Android） | 整体静态链接为单一二进制，天然只有一份 |
+
+必须**整库加载**而非按需加载：静态库默认只把被引用到的 `.o` 拉进镜像，而 ImGui 的小部件实现
+（`imgui_widgets.cpp`：`Text` / `Button` / `SliderFloat` 等）主要由 demo 调用、引擎自身并未引用；
+若不整库加载，这些符号不会进入引擎库，可执行文件链接时会报未定义符号。验证方式：
+
+```bash
+# 引擎库应导出「仅被 demo 使用」的符号；可执行文件自身不得定义 ImGui 符号（即无第二份）
+nm -g build/Debug/libGNXEngined.dylib | grep -E "SliderFloat|ColorEdit3" | head
+nm -g build/Debug/atmosphere | grep " T " | grep -c ImGui      # 期望 0
+otool -L build/Debug/atmosphere | grep imgui                   # 期望无输出
+```
+
+其余 CMake 细节：
+
+1. 工程根 `CMakeLists.txt` 全局设置 `CMAKE_CXX_VISIBILITY_PRESET hidden`，而 imgui 内部没有导出宏；
+   若沿用 hidden，并入共享库后不导出任何 ImGui 符号（可执行文件链接报未定义符号），
+   因此需为该 target 覆盖 `CXX_VISIBILITY_PRESET default` 并关闭 `VISIBILITY_INLINES_HIDDEN`。
+2. 需 `POSITION_INDEPENDENT_CODE ON`（静态库会被并入 dylib / so）。
+3. `DEBUG_POSTFIX ""` 统一产物名，避免 Xcode 生成器产物名不一致导致链接失败。
+4. Windows 需 `IMGUI_API=__declspec(dllexport)`（PRIVATE，随 DLL 导出）与
+   `IMGUI_API=__declspec(dllimport)`（由 `imgui_headers` 以 INTERFACE 传给使用方）；
+   macOS / Linux 依靠默认可见性由共享库自动导出，无需额外处理。
+5. IDE 分组：`set_property(TARGET imgui PROPERTY FOLDER "ThirdParty")`（与 glfw / ktx /
+   meshoptimizer / tbb 等 13 个第三方库一致），并配合
+   `source_group(TREE <imgui 目录> PREFIX ThirdParty FILES ...)`，
+   使 **目标** 与 **源文件** 都归入 IDE 的 ThirdParty 分组。
 
 ### 8.3 事件分发验证（已通过）
 
