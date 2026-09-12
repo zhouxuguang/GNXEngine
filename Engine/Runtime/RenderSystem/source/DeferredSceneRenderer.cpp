@@ -169,6 +169,44 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
         skinnedMatrixUBO = skinnedMeshItems[0].mesh->GetSkinnedMatrixBuffer();
     }
 
+    // ========== 大气散射 ==========
+    // 查找场景中的大气散射组件；首次使用时执行一次预计算，并在每帧更新视角参数
+    mAtmosphere = FindAtmosphereRecursive(rootNode);
+    if (mAtmosphere && mAtmosphere->IsInitialized())
+    {
+        AtmosphereRenderer* atmoRenderer = mAtmosphere->GetRenderer();
+        if (atmoRenderer)
+        {
+            // 首次使用：执行 GPU 预计算（一次性）
+            if (!atmoRenderer->IsPrecomputed())
+            {
+                atmoRenderer->Precompute();
+            }
+
+            // 从场景方向光推导太阳方向（地表指向太阳）
+            Vector3f sunDir = mAtmosphere->GetSunDirection();
+            const std::vector<Light*>& allLights = sceneManager->GetAllLights();
+            for (Light* light : allLights)
+            {
+                if (light && light->getLightType() == Light::LightType::DirectionLight)
+                {
+                    DirectionLight* dirLight = static_cast<DirectionLight*>(light);
+                    Vector3f d = dirLight->getDirection();
+                    float len = d.Length();
+                    if (len > 0.00001f)
+                    {
+                        sunDir = d * (1.0f / len);
+                    }
+                    break;
+                }
+            }
+            mAtmosphere->SetSunDirection(sunDir);
+
+            atmoRenderer->UpdateViewParams(camera.get(), mAtmosphere->GetEarthCenter(),
+                                           sunDir, mAtmosphere->GetExposure(), mAtmosphere->GetWhitePoint());
+        }
+    }
+
     // ========== 执行渲染 Pass ==========
 
     // Terrain GPU Culling（FrameGraph Compute Pass，必须在 PreDepth + BasePass 之前）
@@ -260,8 +298,18 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
         }
     }
 
+    // Atmosphere Pass（大气散射天空）：在天空盒之后，只填充远平面（天空）区域
+    FrameGraphResource atmosphereResult = skyboxResult;
+    if (mAtmosphere && mAtmosphere->IsInitialized()
+        && mAtmosphere->GetRenderer() && mAtmosphere->GetRenderer()->IsPrecomputed()
+        && depthResource != -1)
+    {
+        atmosphereResult = RenderAtmospherePass(
+            frameGraph, commandBuffer, skyboxResult, depthResource, cameraUBO, mAtmosphere);
+    }
+
     // SSR Pass（在光照和天空盒之后、后处理之前）
-    FrameGraphResource reflectedResult = skyboxResult;
+    FrameGraphResource reflectedResult = atmosphereResult;
     if (mEnableSSR && mSSRPass && depthResource != -1 && gbufferData.gBufferA != -1)
     {
         if (!mSSRPass->IsInitialized())
@@ -882,6 +930,94 @@ void DeferredSceneRenderer::CollectMeshesRecursive(
     {
         CollectMeshesRecursive(child, meshItems, skinnedMeshItems, terrainItems);
     }
+}
+
+AtmosphereComponent* DeferredSceneRenderer::FindAtmosphereRecursive(SceneNode* node)
+{
+    if (!node)
+    {
+        return nullptr;
+    }
+
+    AtmosphereComponent* atmo = node->QueryComponentT<AtmosphereComponent>();
+    if (atmo)
+    {
+        return atmo;
+    }
+
+    const auto& children = node->GetAllNodes();
+    for (SceneNode* child : children)
+    {
+        AtmosphereComponent* result = FindAtmosphereRecursive(child);
+        if (result)
+        {
+            return result;
+        }
+    }
+
+    return nullptr;
+}
+
+FrameGraphResource DeferredSceneRenderer::RenderAtmospherePass(
+    FrameGraph& frameGraph,
+    CommandBufferPtr commandBuffer,
+    FrameGraphResource colorTexture,
+    FrameGraphResource depthTexture,
+    UniformBufferPtr cameraUBO,
+    AtmosphereComponent* atmosphere)
+{
+    struct AtmospherePassData
+    {
+        FrameGraphResource outputResult;
+        FrameGraphResource inputDepth;
+    };
+
+    auto& passData = frameGraph.AddPass<AtmospherePassData>(
+        "Atmosphere_Pass",
+        [=](FrameGraph::Builder& builder, AtmospherePassData& data)
+        {
+            // 写入场景颜色（延迟光照/天空盒结果），只覆盖天空区域
+            data.outputResult = builder.Write(colorTexture, (uint32_t)ResourceAccessType::ColorAttachment);
+            // 读取深度用于深度测试（只读）
+            data.inputDepth = builder.Read(depthTexture, (uint32_t)ResourceAccessType::ShaderRead);
+        },
+        [this, commandBuffer, atmosphere](const AtmospherePassData& data,
+                                          FrameGraphPassResources& resources, void*)
+        {
+            ZoneScopedN("AtmospherePass");
+
+            FrameGraphTexture& outputTexture = resources.Get<FrameGraphTexture>(data.outputResult);
+            FrameGraphTexture& depthTex = resources.Get<FrameGraphTexture>(data.inputDepth);
+
+            float debugColor[4] = {0.4f, 0.7f, 1.0f, 1.0f};
+            SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), debugColor);
+
+            RenderPass renderPass;
+            renderPass.renderRegion = Rect2D(0, 0, (int)mWidth, (int)mHeight);
+
+            // 颜色附件：加载已有内容（延迟光照结果），不清除
+            auto colorAttachment = std::make_shared<RenderPassColorAttachment>();
+            colorAttachment->texture = outputTexture.texture;
+            colorAttachment->clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+            colorAttachment->loadOp = ATTACHMENT_LOAD_OP_LOAD;
+            colorAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            renderPass.colorAttachments.push_back(colorAttachment);
+
+            // 深度附件：只读，用于把大气天空限制在远平面（天空）区域
+            auto depthAttachment = std::make_shared<RenderPassDepthAttachment>();
+            depthAttachment->texture = depthTex.texture;
+            depthAttachment->loadOp = ATTACHMENT_LOAD_OP_LOAD;
+            depthAttachment->storeOp = ATTACHMENT_STORE_OP_DONT_CARE;
+            depthAttachment->readOnly = true;
+            renderPass.depthAttachment = depthAttachment;
+
+            RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);
+            atmosphere->GetRenderer()->RenderSky(renderEncoder);
+            renderEncoder->EndEncode();
+        }
+    );
+
+    return passData.outputResult;
 }
 
 NS_RENDERSYSTEM_END

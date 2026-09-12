@@ -40,19 +40,10 @@ struct PSOutput
 };
 
 Texture2D transmittance_texture;
-Texture3D scattering_density_texture;
+SamplerState transmittance_textureSam;
 
-static const SamplerState linear_sampler
-{
-    Filter = MIN_MAG_MIP_LINEAR;
-    AddressU = Clamp;
-    AddressV = Clamp;
-    AddressW = Clamp;
-    MaxAnisotropy = 1;
-    ComparisonFunc = NEVER;
-    MinLOD = 0;
-    MaxLOD = FLOAT32_MAX;
-};
+Texture3D scattering_density_texture;
+SamplerState scattering_density_textureSam;
 
 [shader("pixel")]
 PSOutput PS(float4 position : SV_Position)
@@ -64,7 +55,8 @@ PSOutput PS(float4 position : SV_Position)
     
     float nu = 0.0;
 	output.delta_multiple_scattering.rgb = ComputeMultipleScatteringTexture(
-      		ATMOSPHERE, transmittance_texture, linear_sampler, scattering_density_texture, linear_sampler,
+      		ATMOSPHERE, transmittance_texture, transmittance_textureSam,
+      		scattering_density_texture, scattering_density_textureSam,
       		frag_coord, nu);
     output.delta_multiple_scattering.a = 1.0;
 	output.scattering = float4(output.delta_multiple_scattering.rgb / RayleighPhaseFunction(nu), 0.0);

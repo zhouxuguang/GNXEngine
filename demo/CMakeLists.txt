@@ -1,6 +1,7 @@
 add_subdirectory(nanite)
 add_subdirectory(lumen)
 add_subdirectory(pbr)
+add_subdirectory(atmosphere)
 add_subdirectory(ssao)
 add_subdirectory(ssr)
 add_subdirectory(terrain)

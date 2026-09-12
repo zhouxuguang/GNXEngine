@@ -21,6 +21,7 @@
 #include "SkyBoxNode.h"
 #include "terrain/TerrainComponent.h"
 #include "VirtualTexture/FeedbackRenderer.h"
+#include "Atmosphere/AtmosphereComponent.h"
 #include <vector>
 
 NS_RENDERSYSTEM_BEGIN
@@ -168,6 +169,23 @@ private:
         std::vector<TerrainComponent*>& terrainItems);
 
     /**
+     * 递归查找场景中的大气散射组件
+     */
+    AtmosphereComponent* FindAtmosphereRecursive(SceneNode* node);
+
+    /**
+     * 执行大气散射天空 Pass（在延迟光照/天空盒之后、后处理之前）
+     * 通过深度测试只填充远平面（天空）区域
+     */
+    FrameGraphResource RenderAtmospherePass(
+        FrameGraph& frameGraph,
+        CommandBufferPtr commandBuffer,
+        FrameGraphResource colorTexture,
+        FrameGraphResource depthTexture,
+        UniformBufferPtr cameraUBO,
+        AtmosphereComponent* atmosphere);
+
+    /**
      * 渲染场景（延迟渲染路径）
      * @param deltaTime 帧时间（秒）
      */
@@ -186,6 +204,7 @@ private:
     PostProcessing* mPostProcessing = nullptr;
     FeedbackRendererUniPtr mFeedbackRender = nullptr;
     ShadowMapModuleUniPtr mShadowMapModule = nullptr;   // 阴影模块（PCSS）
+    AtmosphereComponent* mAtmosphere = nullptr;         // 大气散射组件（可空）
     bool mEnableMotionBlur = false;
     bool mEnableSSR = false;
     

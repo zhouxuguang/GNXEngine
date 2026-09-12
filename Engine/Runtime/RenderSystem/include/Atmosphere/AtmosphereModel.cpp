@@ -93,4 +93,8 @@ AtmosphereModel::AtmosphereModel(
     
 }
 
+AtmosphereModel::~AtmosphereModel()
+{
+}
+
 NS_RENDERSYSTEM_END

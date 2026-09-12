@@ -3,6 +3,9 @@
 
 #include "../RSDefine.h"
 #include "Runtime/MathUtil/include/Vector3.h"
+#include "Runtime/MathUtil/include/Vector2.h"
+#include "Runtime/MathUtil/include/SimdMath.h"
+#include "Runtime/MathUtil/include/Matrix4x4.h"
 
 USING_NS_MATHUTIL
 
@@ -112,6 +115,38 @@ static void ValidateAtmosphereParametersOffsets()
     static_assert(offsetof(AtmosphereParameters, mu_s_min) == 300, "mu_s_min offset error");
     static_assert(sizeof(AtmosphereParameters) == 304, "AtmosphereParameters Size mismatch");
 }
+
+// 每帧更新的大气视角参数（与 AtmosphereShader.shader 中 AtmosphereViewCB 一一对应）
+struct DECLARE_ALIGNED(16) AtmosphereViewParams
+{
+    Matrix4x4f        inv_view_proj;        // 逆视图投影矩阵
+    simd_float4       camera_pos_exposure;  // xyz=相机世界坐标(大气单位), w=曝光
+    simd_float4       earth_center_pad;     // xyz=地球中心(大气单位)
+    simd_float4       sun_direction_pad;    // xyz=太阳方向(单位向量)
+    simd_float4       sun_size_pad;         // xy=(tan(sunAngularRadius), cos(sunAngularRadius))
+    simd_float4       white_point_pad;      // xyz=白点
+};
+
+static void ValidateAtmosphereViewParamsOffsets()
+{
+    static_assert(offsetof(AtmosphereViewParams, inv_view_proj) == 0, "inv_view_proj offset error");
+    static_assert(offsetof(AtmosphereViewParams, camera_pos_exposure) == 64, "camera_pos_exposure offset error");
+    static_assert(offsetof(AtmosphereViewParams, earth_center_pad) == 80, "earth_center_pad offset error");
+    static_assert(offsetof(AtmosphereViewParams, sun_direction_pad) == 96, "sun_direction_pad offset error");
+    static_assert(offsetof(AtmosphereViewParams, sun_size_pad) == 112, "sun_size_pad offset error");
+    static_assert(offsetof(AtmosphereViewParams, white_point_pad) == 128, "white_point_pad offset error");
+    static_assert(sizeof(AtmosphereViewParams) == 144, "AtmosphereViewParams Size mismatch");
+}
+
+// 预计算散射 Pass 的参数（与 ComputeSingleScattering/ScatteringDensity/MultipleScattering
+// 中 ScatteringCB 一一对应）
+struct AtmosphereScatteringParams
+{
+    int layer;              // 当前散射层（3D 纹理切片）
+    int scattering_order;   // 当前散射重数
+    int pad0;
+    int pad1;
+};
 
 }
 

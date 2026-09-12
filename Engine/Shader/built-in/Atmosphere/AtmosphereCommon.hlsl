@@ -1135,7 +1135,7 @@ float3 GetCombinedScattering(
 			scattering_texture.Sample(scattering_sampler, uvw0).rgb * (1.0 - lerp) +
 			scattering_texture.Sample(scattering_sampler, uvw1).rgb * lerp;
 	single_mie_scattering =
-			GetExtrapolatedSingleMieScattering(atmosphere, combined_scattering);
+			GetExtrapolatedSingleMieScattering(atmosphere, scattering);
 #else
 	/* 非合并的情况,直接采样各自的纹理 */
 	float3 scattering = 

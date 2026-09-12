@@ -31,7 +31,8 @@ enum class ComponentType : uint32_t
     SkinnedRenderer = 5,
     SkeletonAnim    = 6,
     Terrain         = 7,
-    Count           = 8
+    Atmosphere      = 8,
+    Count           = 9
 };
 
 /// 类型 → ComponentType 编译期映射（在各自头文件中特化）

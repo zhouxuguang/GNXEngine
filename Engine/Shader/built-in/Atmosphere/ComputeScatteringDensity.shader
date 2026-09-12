@@ -39,22 +39,19 @@ struct PSOutput
 };
 
 Texture2D transmittance_texture;
-Texture3D single_rayleigh_scattering_texture;
-Texture3D single_mie_scattering_texture;
-Texture3D multiple_scattering_texture;
-Texture2D irradiance_texture;
+SamplerState transmittance_textureSam;
 
-static const SamplerState linear_sampler
-{
-    Filter = MIN_MAG_MIP_LINEAR;
-    AddressU = Clamp;
-    AddressV = Clamp;
-    AddressW = Clamp;
-    MaxAnisotropy = 1;
-    ComparisonFunc = NEVER;
-    MinLOD = 0;
-    MaxLOD = FLOAT32_MAX;
-};
+Texture3D single_rayleigh_scattering_texture;
+SamplerState single_rayleigh_scattering_textureSam;
+
+Texture3D single_mie_scattering_texture;
+SamplerState single_mie_scattering_textureSam;
+
+Texture3D multiple_scattering_texture;
+SamplerState multiple_scattering_textureSam;
+
+Texture2D irradiance_texture;
+SamplerState irradiance_textureSam;
 
 [shader("pixel")]
 PSOutput PS(float4 position : SV_Position)
@@ -68,15 +65,15 @@ PSOutput PS(float4 position : SV_Position)
     float3 scattering_density = ComputeScatteringDensityTexture(
         ATMOSPHERE,
         transmittance_texture,
-        linear_sampler,
+        transmittance_textureSam,
         single_rayleigh_scattering_texture,
-        linear_sampler,
+        single_rayleigh_scattering_textureSam,
         single_mie_scattering_texture,
-        linear_sampler,
+        single_mie_scattering_textureSam,
         multiple_scattering_texture,
-        linear_sampler,
+        multiple_scattering_textureSam,
         irradiance_texture,
-        linear_sampler,
+        irradiance_textureSam,
         frag_coord,
         scattering_order
     );

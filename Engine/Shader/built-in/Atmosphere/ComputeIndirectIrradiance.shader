@@ -40,20 +40,13 @@ struct PSOutput
 };
 
 Texture3D single_rayleigh_scattering_texture;
-Texture3D single_mie_scattering_texture;
-Texture3D multiple_scattering_texture;
+SamplerState single_rayleigh_scattering_textureSam;
 
-static const SamplerState linear_sampler
-{
-    Filter = MIN_MAG_MIP_LINEAR;
-    AddressU = Clamp;
-    AddressV = Clamp;
-    AddressW = Clamp;
-    MaxAnisotropy = 1;
-    ComparisonFunc = NEVER;
-    MinLOD = 0;
-    MaxLOD = FLOAT32_MAX;
-};
+Texture3D single_mie_scattering_texture;
+SamplerState single_mie_scattering_textureSam;
+
+Texture3D multiple_scattering_texture;
+SamplerState multiple_scattering_textureSam;
 
 [shader("pixel")]
 PSOutput PS(float4 screenSpace : SV_Position)
@@ -64,9 +57,9 @@ PSOutput PS(float4 screenSpace : SV_Position)
     float2 frag_coord = screenSpace.xy;
     
     output.delta_irradiance.xyz = ComputeIndirectIrradianceTexture(
-      	ATMOSPHERE, single_rayleigh_scattering_texture, linear_sampler,
-      	single_mie_scattering_texture, linear_sampler, 
-        multiple_scattering_texture, linear_sampler,
+      	ATMOSPHERE, single_rayleigh_scattering_texture, single_rayleigh_scattering_textureSam,
+      	single_mie_scattering_texture, single_mie_scattering_textureSam, 
+        multiple_scattering_texture, multiple_scattering_textureSam,
       	frag_coord, scattering_order);
     output.delta_irradiance.w = 1.0;
     //output.delta_irradiance = float4(1.0, 0.0, 0.0, 1.0);
