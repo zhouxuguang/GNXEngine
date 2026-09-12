@@ -113,7 +113,12 @@ private:
     
     std::shared_ptr<MTLPipelineCache> mPipelineCache;
     
-    bool mGenerated = false;
+    // Metal 要求 PSO 的颜色/深度/模板附件格式与 RenderPassDescriptor 严格一致，
+    // 而同一个 GraphicsPipeline 可能被颜色附件数量/格式不同的多个 Pass 复用
+    // （例如：G-Buffer Pass 有颜色附件，Depth/Shadow Pass 没有）。
+    // 因此 PSO 按 FrameBufferFormat 缓存，而不是"只生成一次"。
+    std::unordered_map<uint64_t, id<MTLRenderPipelineState>> mPipelineStatesByFormat;
+    uint64_t mCurrentFormatKey = 0;
 };
 
 typedef std::shared_ptr<MTLGraphicsPipeline> MTLGraphicsPipelinePtr;

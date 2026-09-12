@@ -142,15 +142,23 @@ RenderEncoderPtr MTLCommandBuffer::CreateRenderEncoder(const RenderPass& renderP
         for (size_t i = 0; i < renderPass.colorAttachments.size(); i ++)
         {
             RenderPassColorAttachmentPtr iter = renderPass.colorAttachments[i];
+            // 注意：colorFormats 的下标必须与 passDescriptor.colorAttachments 的下标一一对应。
+            // 附件被跳过（空附件 / 无法转换 / 纹理句柄创建失败）时要压入 Invalid 占位，
+            // 否则后面的格式会整体前移，导致 PSO 的 attachment 0 拿到了 attachment 1 的格式，
+            // 触发 Metal 断言："For color attachment 0, the renderPipelineState pixelFormat
+            // must be MTLPixelFormatInvalid, as no texture is set."
             if (!iter)
             {
+                frameBufferFormat.colorFormats.push_back(MTLPixelFormatInvalid);
                 continue;
             }
             
             MTLTextureBasePtr mtlRenderTexture = std::dynamic_pointer_cast<MTLTextureBase>(iter->texture);
             
-            if (mtlRenderTexture == nullptr)
+            if (mtlRenderTexture == nullptr || mtlRenderTexture->getMTLTexture() == nil)
             {
+                // 纹理句柄为空：该附件不参与渲染，pixelFormat 必须是 Invalid
+                frameBufferFormat.colorFormats.push_back(MTLPixelFormatInvalid);
                 continue;
             }
             

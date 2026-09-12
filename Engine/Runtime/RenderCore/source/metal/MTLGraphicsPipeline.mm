@@ -375,10 +375,43 @@ void MTLGraphicsPipeline::AttachMeshShader(ShaderFunctionPtr shaderFunction)
     mMeshPipelineDes.meshFunction = shaderPtr->GetShaderFunction();
 }
 
+// Metal 最多支持 8 个颜色附件
+static const uint32_t kMaxMTLColorAttachments = 8;
+
+// Metal 的 PSO 与 RenderPass 的附件格式必须完全匹配，因此用 FrameBufferFormat 作为 PSO 缓存 key。
+static uint64_t HashFrameBufferFormat(const FrameBufferFormat& format)
+{
+    uint64_t hash = 1469598103934665603ULL;   // FNV-1a offset basis
+    auto mix = [&hash](uint64_t value)
+    {
+        hash ^= value;
+        hash *= 1099511628211ULL;             // FNV prime
+    };
+
+    mix(static_cast<uint64_t>(format.colorFormats.size()));
+    for (MTLPixelFormat pixelFormat : format.colorFormats)
+    {
+        mix(static_cast<uint64_t>(pixelFormat));
+    }
+    mix(static_cast<uint64_t>(format.depthFormat));
+    mix(static_cast<uint64_t>(format.stencilFormat));
+    return hash;
+}
+
 void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
 {
-    if (mGenerated)
+    const uint64_t formatKey = HashFrameBufferFormat(frameBufferFormat);
+    mCurrentFormatKey = formatKey;
+
+    // 同一格式只创建一次 PSO；格式不同（附件数量/格式不同）则各自创建
+    auto cachedIter = mPipelineStatesByFormat.find(formatKey);
+    if (cachedIter != mPipelineStatesByFormat.end())
     {
+        mRenderPipelineState = cachedIter->second;
+        if (mDesc.pipelineType == PipelineType::Mesh)
+        {
+            mMeshPipelineState = cachedIter->second;
+        }
         return;
     }
     
@@ -388,9 +421,20 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
         if (mMeshPipelineDes)
         {
             // 设置 framebuffer 格式
-            int index = 0;
+            // descriptor 会被不同格式复用，先把所有颜色附件重置为 Invalid，
+            // 避免上一次创建时残留的格式污染当前 PSO
+            for (uint32_t i = 0; i < kMaxMTLColorAttachments; ++i)
+            {
+                mMeshPipelineDes.colorAttachments[i].pixelFormat = MTLPixelFormatInvalid;
+            }
+            
+            uint32_t index = 0;
             for (const auto &iter : frameBufferFormat.colorFormats)
             {
+                if (index >= kMaxMTLColorAttachments)
+                {
+                    break;
+                }
                 mMeshPipelineDes.colorAttachments[index++].pixelFormat = iter;
             }
             mMeshPipelineDes.depthAttachmentPixelFormat = frameBufferFormat.depthFormat;
@@ -526,9 +570,20 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
             NSError *error = nil;
             
             //这里再设置renderpass传递过来的frame buffer的格式
-            int index = 0;
+            // descriptor 会被不同格式复用：先全部重置为 Invalid，避免上一次创建的高位附件格式残留，
+            // 否则 Depth-only Pass（无颜色附件）会拿到上一次 Color Pass 的 pixelFormat 从而触发 Metal 断言
+            for (uint32_t i = 0; i < kMaxMTLColorAttachments; ++i)
+            {
+                mRenderPipelineDes.colorAttachments[i].pixelFormat = MTLPixelFormatInvalid;
+            }
+            
+            uint32_t index = 0;
             for (const auto &iter : frameBufferFormat.colorFormats)
             {
+                if (index >= kMaxMTLColorAttachments)
+                {
+                    break;
+                }
                 mRenderPipelineDes.colorAttachments[index++].pixelFormat = iter;
             }
             mRenderPipelineDes.depthAttachmentPixelFormat = frameBufferFormat.depthFormat;
@@ -610,7 +665,9 @@ void MTLGraphicsPipeline::Generate(const FrameBufferFormat& frameBufferFormat)
         }
     }
     
-    mGenerated = true;
+    // 按格式缓存新建的 PSO：同一管线在不同附件格式的 Pass 中各自绑定匹配的 PSO
+    mPipelineStatesByFormat[formatKey] =
+        (mDesc.pipelineType == PipelineType::Mesh) ? mMeshPipelineState : mRenderPipelineState;
 }
 
 id<MTLRenderPipelineState> MTLGraphicsPipeline::getRenderPipelineState() const
