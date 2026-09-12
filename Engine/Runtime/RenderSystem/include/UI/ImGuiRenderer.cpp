@@ -16,9 +16,11 @@
 #include "Runtime/BaseLib/include/LogService.h"
 
 #include <imgui.h>
+#include <imgui_internal.h>
 
 #include <algorithm>
 #include <cstring>
+#include <fstream>
 
 USING_NS_MATHUTIL
 
@@ -26,6 +28,44 @@ NS_RENDERSYSTEM_BEGIN
 
 namespace
 {
+// 探测系统中可用的中文字体（按优先级返回第一个存在的文件）。
+// ImGui 内置字体（ProggyClean）只包含拉丁字形，中文必须加载系统 CJK 字体。
+const char* FindSystemCjkFont()
+{
+#if defined(__APPLE__)
+    static const char* kCandidates[] = {
+        "/System/Library/Fonts/PingFang.ttc",           // macOS 10.11+ 默认中文字体
+        "/System/Library/Fonts/STHeiti Medium.ttc",
+        "/System/Library/Fonts/Hiragino Sans GB.ttc",
+        "/Library/Fonts/Arial Unicode.ttf",
+    };
+#elif defined(_WIN32)
+    static const char* kCandidates[] = {
+        "C:/Windows/Fonts/msyh.ttc",                    // 微软雅黑
+        "C:/Windows/Fonts/msyh.ttf",
+        "C:/Windows/Fonts/simhei.ttf",                  // 黑体
+        "C:/Windows/Fonts/simsun.ttc",                  // 宋体
+    };
+#else
+    static const char* kCandidates[] = {
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/opentype/noto/NotoSansCJKsc-Regular.otf",
+        "/usr/share/fonts/truetype/wqy/wqy-microhei.ttc",
+        "/usr/share/fonts/truetype/arphic/uming.ttc",
+    };
+#endif
+
+    for (const char* path : kCandidates)
+    {
+        std::ifstream file(path, std::ios::binary);
+        if (file.good())
+        {
+            return path;
+        }
+    }
+    return nullptr;
+}
+
 // ImGui 逻辑坐标 -> 引擎 Event 的键值映射（引擎 KeyCode 与 GLFW keycode 一致）
 ImGuiKey ToImGuiKey(GNXEngine::KeyCode key)
 {
@@ -305,12 +345,66 @@ bool ImGuiRenderer::CreateFontTexture()
 {
     ImGuiIO& io = ImGui::GetIO();
 
-    // 高分屏：按 dpiScale 放大字体，再用 FontGlobalScale 缩回逻辑尺寸，保证文字清晰
-    if (io.Fonts->Fonts.empty())
+    // 重建字体图集（支持运行时切换字体 / DPI 变化）
+    io.Fonts->Clear();
+
+    // 高分屏：按 dpiScale 放大字形光栅化尺寸，再用 FontGlobalScale 缩回逻辑尺寸，保证文字清晰
+    const float scale = std::max(mDPIScale, 1.0f);
+    const float pixelSize = mFontSize * scale;
+    io.FontGlobalScale = 1.0f / scale;
+
+    ImFontConfig config;
+    config.SizePixels = pixelSize;
+    config.OversampleH = 2;
+    config.OversampleV = 1;
+    config.PixelSnapH = true;
+
+    // 中文字形：优先使用显式指定的字体，其次自动探测系统 CJK 字体。
+    // ImGui 内置字体（ProggyClean）只含拉丁字形，直接使用会导致中文显示为乱码。
+    mHasCjkFont = false;
+    std::string fontPath = mCjkFontPath;
+    if (fontPath.empty())
     {
-        ImFontConfig config;
-        config.SizePixels = 13.0f * std::max(mDPIScale, 1.0f);
+        if (const char* systemFont = FindSystemCjkFont())
+        {
+            fontPath = systemFont;
+        }
+    }
+
+    if (!fontPath.empty())
+    {
+        // 字形范围：拉丁/标点 + 常用汉字(约2500) + 调用方注册的文本。
+        // 常用汉字范围之外的字（如“曝”）若未注册会显示为 '?'，可通过 AddGlyphText 补齐。
+        // 注意：glyphRanges 需存活到字体图集构建完成（本函数内 GetTexDataAsRGBA32 即构建）。
+        ImVector<ImWchar> glyphRanges;
+        {
+            ImFontGlyphRangesBuilder builder;
+            builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
+            builder.AddRanges(io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+            if (!mExtraGlyphText.empty())
+            {
+                builder.AddText(mExtraGlyphText.c_str());
+            }
+            builder.BuildRanges(&glyphRanges);
+        }
+
+        ImFont* font = io.Fonts->AddFontFromFileTTF(fontPath.c_str(), pixelSize, &config, glyphRanges.Data);
+        if (font)
+        {
+            mHasCjkFont = true;
+            LOG_INFO("ImGuiRenderer: 字体已加载 %s (%.1fpx, 字形数=%d)",
+                     fontPath.c_str(), pixelSize, (int)io.Fonts->Fonts[0]->Glyphs.Size);
+        }
+        else
+        {
+            LOG_WARN("ImGuiRenderer: 字体加载失败，回退到内置字体: %s", fontPath.c_str());
+        }
+    }
+
+    if (!mHasCjkFont)
+    {
         io.Fonts->AddFontDefault(&config);
+        LOG_WARN("ImGuiRenderer: 未找到中文系统字体，中文将无法正常显示（可调用 SetCjkFontPath 指定）");
     }
 
     unsigned char* pixels = nullptr;

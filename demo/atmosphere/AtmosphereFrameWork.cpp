@@ -43,6 +43,13 @@ void AtmosphereFrameWork::SetupImGui()
         return;
     }
 
+    // 注册面板中用到的中文文本。
+    // ImGui 字体图集默认只含「拉丁 + 约 2500 常用汉字」范围，范围外的汉字（如“曝”）
+    // 会显示为 '?'，这里把实际用到的文本登记进去以补齐字形（须在字体图集构建前调用）。
+    imgui->AddGlyphText(
+        "预计算大气散射曝光太阳相机场景几何体球心半径反照率地面快捷键方向角视线"
+        "点击面板时输入不会传给当前生效重重新生成透射辐照度短暂卡顿捕获鼠标键盘");
+
     float dpiScale = 1.0f;
     if (GNXEngine::RenderWindowPtr window = GNXEngine::GetRenderWindow())
     {
@@ -179,8 +186,11 @@ void AtmosphereFrameWork::RenderFrame()
     lastTime = thisTime;
 
     // ---- ImGui：构建 UI 并结束帧（绘制由渲染管线的 Present Pass 完成）----
-    BuildImGuiPanel();
-    ImGui::Render();
+    if (IsImGuiEnabled())
+    {
+        BuildImGuiPanel();
+        ImGui::Render();
+    }
 
     SceneManager* sceneManager = SceneManager::GetInstance();
     sceneManager->Update(deltaTime);
@@ -265,12 +275,11 @@ void AtmosphereFrameWork::BuildImGuiPanel()
         return;
     }
 
-    LOG_INFO("[demo] BuildImGuiPanel: ctx=%p", (void*)ImGui::GetCurrentContext());
     ImGuiIO& io = ImGui::GetIO();
     const float unit = static_cast<float>(RenderSystem::Atmosphere::kLengthUnitInMeters);
 
     ImGui::SetNextWindowPos(ImVec2(12.0f, 12.0f), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(340.0f, 540.0f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(430.0f, 560.0f), ImGuiCond_FirstUseEver);
 
     if (ImGui::Begin("预计算大气散射", &mShowPanel))
     {

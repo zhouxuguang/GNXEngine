@@ -63,6 +63,32 @@ public:
     void SetDPIScale(float scale) { mDPIScale = scale > 0.0f ? scale : 1.0f; }
     float GetDPIScale() const { return mDPIScale; }
 
+    // ---- 字体 ----
+    // 设置 CJK 字体文件（.ttf/.ttc）。留空则自动探测系统中的中文字体。
+    // 修改后需调用 InvalidateFontAtlas() 生效。
+    void SetCjkFontPath(const std::string& path) { mCjkFontPath = path; }
+    const std::string& GetCjkFontPath() const { return mCjkFontPath; }
+
+    // 逻辑字号（未乘 DPI），默认 15.0
+    void SetFontSize(float size) { mFontSize = size > 4.0f ? size : 15.0f; }
+    float GetFontSize() const { return mFontSize; }
+
+    // 追加需要生成字形的文本（UTF-8）。
+    // 字体图集默认含「拉丁 + 常用汉字(约2500字)」范围，少数常用范围之外的汉字
+    // （如“曝”）会显示为 '?'。把 UI 中会用到的文本注册进来即可补齐对应字形。
+    // 须在字体图集构建前调用（即 Initialize 之后、首次 NewFrame 之前），
+    // 或调用后配合 InvalidateFontAtlas() 重建。
+    void AddGlyphText(const char* utf8Text)
+    {
+        if (utf8Text)
+        {
+            mExtraGlyphText += utf8Text;
+        }
+    }
+
+    // 是否成功加载了含中文字形的字体（加载失败时回退到内置字体，仅支持拉丁字符）
+    bool HasCjkFont() const { return mHasCjkFont; }
+
     // 字体图集失效（如动态加载新字体后），下次 NewFrame 时重建纹理
     void InvalidateFontAtlas() { mFontTextureDirty = true; }
 
@@ -104,11 +130,15 @@ private:
     std::vector<DrawBatch> mBatches;
 
     float    mDPIScale = 1.0f;
+    float    mFontSize = 15.0f;                 // 逻辑字号（未乘 DPI）
     uint32_t mWidth = 0;
     uint32_t mHeight = 0;
     bool     mInitialized = false;
     bool     mFontTextureDirty = true;
     bool     mIniFileEnabled = false;
+    bool     mHasCjkFont = false;               // 是否成功加载中文字体
+    std::string mCjkFontPath;                   // 为空表示自动探测系统字体
+    std::string mExtraGlyphText;                // 额外需要生成字形的文本（UTF-8）
 };
 
 typedef std::shared_ptr<ImGuiRenderer> ImGuiRendererPtr;
