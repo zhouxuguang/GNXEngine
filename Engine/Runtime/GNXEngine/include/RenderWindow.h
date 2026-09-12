@@ -52,6 +52,10 @@ public:
 
     virtual void* GetNativeWindow() const = 0;
 
+    // 高分屏缩放系数 = 帧缓冲像素尺寸 / 逻辑窗口尺寸（Retina/macOS 上通常为 2.0）。
+    // 供 UI 层（ImGui）与需要逻辑坐标的输入处理使用。
+    virtual float GetDPIScale() const { return 1.0f; }
+
     virtual void Resize(uint32_t width, uint32_t height) = 0;
 
     // 应用是否处于前台（后台时主循环应暂停渲染，移动端生命周期）
@@ -67,7 +71,7 @@ public:
 
 typedef std::shared_ptr<RenderWindow> RenderWindowPtr;
 
-RenderWindowPtr GetRenderWindow();
+GNXENGINE_API RenderWindowPtr GetRenderWindow();
 
 NAMESPACE_GNXENGINE_END
 

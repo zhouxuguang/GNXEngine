@@ -25,3 +25,6 @@ add_subdirectory(mimalloc mimalloc)
 add_subdirectory(yaml-cpp yaml-cpp)
 add_subdirectory(tracy)
 add_subdirectory(metis metis)
+
+# Dear ImGui: 仅核心库（不含官方 backends），渲染/输入后端由引擎自研 RHI 实现
+add_subdirectory(imgui imgui)

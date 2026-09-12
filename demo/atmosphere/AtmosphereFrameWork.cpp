@@ -4,11 +4,15 @@
 //
 
 #include "AtmosphereFrameWork.h"
+#include "Runtime/GNXEngine/include/RenderWindow.h"
 #include "Runtime/RenderSystem/include/Light.h"
 #include "Runtime/RenderSystem/include/Atmosphere/AtmosphereRenderer.h"
 #include "Runtime/RenderSystem/include/Atmosphere/AtmosphereConstant.h"
 #include "Runtime/MathUtil/include/MathUtil.h"
 #include "Runtime/MathUtil/include/Vector3.h"
+
+#include <imgui.h>
+
 #include <cmath>
 
 using namespace mathutil;
@@ -26,6 +30,26 @@ AtmosphereFrameWork::AtmosphereFrameWork(const GNXEngine::WindowProps& props)
 void AtmosphereFrameWork::Initlize()
 {
     GNXEngine::AppFrameWork::Initlize();
+}
+
+// 启用 ImGui，并按窗口 DPI 缩放重建字体图集
+void AtmosphereFrameWork::SetupImGui()
+{
+    SetImGuiEnabled(true);
+
+    RenderSystem::ImGuiRendererPtr imgui = GetImGui();
+    if (!imgui)
+    {
+        return;
+    }
+
+    float dpiScale = 1.0f;
+    if (GNXEngine::RenderWindowPtr window = GNXEngine::GetRenderWindow())
+    {
+        dpiScale = window->GetDPIScale();
+    }
+    imgui->SetDPIScale(dpiScale);
+    imgui->InvalidateFontAtlas();   // 按新的 DPI 重建字体，保证文字清晰
 }
 
 void AtmosphereFrameWork::Resize(uint32_t width, uint32_t height)
@@ -87,6 +111,11 @@ void AtmosphereFrameWork::CreateScene(uint32_t width, uint32_t height)
     }
 
     mAtmosphere->Initialize(5);   // 散射重数 = 5
+    mScatteringOrders = 5;
+    mPendingScatteringOrders = 5;
+
+    // ---- 启用 ImGui（UI 优先消费输入，避免点击面板时同时操作场景）----
+    SetupImGui();
 
     LOG_INFO("Atmosphere demo scene created");
 }
@@ -149,6 +178,10 @@ void AtmosphereFrameWork::RenderFrame()
     float deltaTime = float(thisTime - lastTime) * 0.000000001f;
     lastTime = thisTime;
 
+    // ---- ImGui：构建 UI 并结束帧（绘制由渲染管线的 Present Pass 完成）----
+    BuildImGuiPanel();
+    ImGui::Render();
+
     SceneManager* sceneManager = SceneManager::GetInstance();
     sceneManager->Update(deltaTime);
     sceneManager->Render(nullptr);
@@ -156,8 +189,14 @@ void AtmosphereFrameWork::RenderFrame()
 
 void AtmosphereFrameWork::OnEvent(GNXEngine::Event& e)
 {
+    // AppFrameWork::OnEvent 内部会先把事件交给 ImGui；UI 捕获时会标记 e.handled
     GNXEngine::AppFrameWork::OnEvent(e);
-    RenderSystem::SceneManager::GetInstance()->OnEvent(e);
+
+    // 事件已被 UI 消费：不再触发 demo 自身的场景快捷键（3D 场景不受影响）
+    if (e.handled)
+    {
+        return;
+    }
 
     GNXEngine::EventDispatcher dispatcher(e);
     dispatcher.Dispatch<GNXEngine::KeyPressedEvent>(GNX_BIND_EVENT_FN(OnKeyPressed));
@@ -214,4 +253,116 @@ bool AtmosphereFrameWork::OnKeyPressed(GNXEngine::KeyPressedEvent& e)
     }
 
     return false;
+}
+
+// ---------------------------------------------------------------------------
+// ImGui 调试面板：暴露大气散射的可调参数
+// ---------------------------------------------------------------------------
+void AtmosphereFrameWork::BuildImGuiPanel()
+{
+    if (!mAtmosphere)
+    {
+        return;
+    }
+
+    LOG_INFO("[demo] BuildImGuiPanel: ctx=%p", (void*)ImGui::GetCurrentContext());
+    ImGuiIO& io = ImGui::GetIO();
+    const float unit = static_cast<float>(RenderSystem::Atmosphere::kLengthUnitInMeters);
+
+    ImGui::SetNextWindowPos(ImVec2(12.0f, 12.0f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(340.0f, 540.0f), ImGuiCond_FirstUseEver);
+
+    if (ImGui::Begin("预计算大气散射", &mShowPanel))
+    {
+        ImGui::Text("FPS %.1f (%.2f ms)", io.Framerate,
+                    io.Framerate > 0.0f ? 1000.0f / io.Framerate : 0.0f);
+        ImGui::Text("输入捕获: 鼠标[%s] 键盘[%s]",
+                    io.WantCaptureMouse ? "UI" : "场景",
+                    io.WantCaptureKeyboard ? "UI" : "场景");
+        ImGui::Separator();
+
+        // ---- 曝光 ----
+        if (ImGui::CollapsingHeader("曝光", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            float exposure = mAtmosphere->GetExposure();
+            if (ImGui::SliderFloat("exposure", &exposure, 0.1f, 20.0f, "%.2f"))
+            {
+                mAtmosphere->SetExposure(exposure);
+            }
+        }
+
+        // ---- 太阳 ----
+        if (ImGui::CollapsingHeader("太阳", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            bool changed = false;
+            changed |= ImGui::SliderFloat("sun zenith", &mSunZenith, 0.0f, kDemoPi, "%.3f rad");
+            changed |= ImGui::SliderFloat("sun azimuth", &mSunAzimuth, -kDemoPi, kDemoPi, "%.3f rad");
+            if (changed)
+            {
+                UpdateSun();
+            }
+        }
+
+        // ---- 相机 ----
+        if (ImGui::CollapsingHeader("相机", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            bool changed = false;
+            changed |= ImGui::SliderFloat("view zenith", &mViewZenith, 0.0f, kDemoPi * 0.5f, "%.3f rad");
+            changed |= ImGui::SliderFloat("view azimuth", &mViewAzimuth, -kDemoPi, kDemoPi, "%.3f rad");
+            changed |= ImGui::SliderFloat("view distance", &mViewDistance, 1.0f, 200.0f, "%.1f");
+            if (changed)
+            {
+                UpdateCamera();
+            }
+        }
+
+        // ---- 散射预计算 ----
+        if (ImGui::CollapsingHeader("散射 / LUT 预计算"))
+        {
+            ImGui::SliderInt("scattering orders", &mPendingScatteringOrders, 1, 8);
+            ImGui::TextWrapped("当前生效: %d 重", mScatteringOrders);
+            if (ImGui::Button("重新预计算 LUT"))
+            {
+                mAtmosphere->Initialize((unsigned int)mPendingScatteringOrders);
+                mScatteringOrders = mPendingScatteringOrders;
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("重新生成 透射率 / 散射 / 辐照度 LUT（会短暂卡顿）");
+            }
+        }
+
+        // ---- 场景几何体（参考 Demo 的球体与地面）----
+        if (ImGui::CollapsingHeader("场景几何体"))
+        {
+            RenderSystem::Atmosphere::AtmosphereSceneGeometry geometry = mAtmosphere->GetSceneGeometry();
+
+            float centerXY[2] = { geometry.sphereCenter.x * unit, geometry.sphereCenter.y * unit };
+            float centerZ = geometry.sphereCenter.z * unit;
+            float radiusMeters = geometry.sphereRadius * unit;
+            float sphereAlbedo[3] = { geometry.sphereAlbedo.x, geometry.sphereAlbedo.y, geometry.sphereAlbedo.z };
+            float groundAlbedo[3] = { geometry.groundAlbedo.x, geometry.groundAlbedo.y, geometry.groundAlbedo.z };
+
+            bool changed = false;
+            changed |= ImGui::DragFloat2("球心 XY (m)", centerXY, 10.0f, -5000.0f, 5000.0f);
+            changed |= ImGui::DragFloat("球心 Z (m)", &centerZ, 10.0f, 0.0f, 5000.0f);
+            changed |= ImGui::DragFloat("球半径 (m)", &radiusMeters, 10.0f, 10.0f, 5000.0f);
+            changed |= ImGui::ColorEdit3("球体反照率", sphereAlbedo);
+            changed |= ImGui::ColorEdit3("地面反照率", groundAlbedo);
+
+            if (changed)
+            {
+                geometry.sphereCenter = Vector3f(centerXY[0] / unit, centerXY[1] / unit, centerZ / unit);
+                geometry.sphereRadius = radiusMeters / unit;
+                geometry.sphereAlbedo = Vector3f(sphereAlbedo[0], sphereAlbedo[1], sphereAlbedo[2]);
+                geometry.groundAlbedo = Vector3f(groundAlbedo[0], groundAlbedo[1], groundAlbedo[2]);
+                mAtmosphere->SetSceneGeometry(geometry);
+            }
+        }
+
+        ImGui::Separator();
+        ImGui::TextDisabled("快捷键: 方向键 = 太阳, W/S/A/D = 视线");
+        ImGui::TextDisabled("点击面板时输入不会传给 3D 场景");
+    }
+    ImGui::End();
 }

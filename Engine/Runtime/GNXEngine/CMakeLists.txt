@@ -59,6 +59,7 @@ target_link_libraries(GNXEngine PRIVATE
     tbb 
     ktx 
     TracyClient
+    imgui
 )
 
 # 窗口后端宏定义（控制 #if GNX_WINDOW_SDL）

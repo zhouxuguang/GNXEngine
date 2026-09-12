@@ -31,6 +31,8 @@ private:
     void CreateScene(uint32_t width, uint32_t height);
     void UpdateCamera();
     void UpdateSun();
+    void SetupImGui();
+    void BuildImGuiPanel();
 
     bool OnKeyPressed(GNXEngine::KeyPressedEvent& e);
 
@@ -45,6 +47,13 @@ private:
     // 太阳参数
     float mSunZenith = 1.3f;
     float mSunAzimuth = 2.9f;
+
+    // ImGui 面板参数
+    bool  mShowPanel = true;
+    int   mScatteringOrders = 5;                       // 当前生效的散射重数
+    int   mPendingScatteringOrders = 5;                // UI 上待应用的值
+    float mGroundAlbedoBlue = 0.04f;                   // 地面着色反照率（蓝通道）
+    bool  mDirtySceneGeometry = false;                 // 场景几何参数被 UI 修改
 
     RenderSystem::AtmosphereComponent* mAtmosphere = nullptr;
 };

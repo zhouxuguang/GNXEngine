@@ -44,6 +44,9 @@ target_include_directories(RenderSystem PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../.
 # meshoptimizer 用于 meshlet 构建
 target_link_libraries(RenderSystem PRIVATE metis meshoptimizer)
 
+# Dear ImGui：UI 层（仅核心库，渲染/输入后端由本模块自研 RHI 实现）
+target_link_libraries(RenderSystem PRIVATE imgui)
+
 #这里后续还需要修改
 #target_link_directories(rendersystem PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../../source/thirdparty/assimp-5.2.4/lib/Mac)
 # target_link_directories(rendersystem PRIVATE 

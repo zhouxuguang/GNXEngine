@@ -4,7 +4,7 @@ AtmosphereFrameWork.cpp
 AtmosphereFrameWork.h
 )
 
-target_link_libraries(atmosphere GNXEngine AssetManager)
+target_link_libraries(atmosphere GNXEngine AssetManager imgui)
 
 if(IOS)
     set_target_properties(atmosphere PROPERTIES

@@ -1,4 +1,5 @@
 #include "AppFrameWork.h"
+#include "Runtime/BaseLib/include/DateTime.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/RenderSystem/include/SceneManager.h"
 #include "Runtime/RenderSystem/include/RenderEngine.h"
@@ -41,6 +42,7 @@ void AppFrameWork::RunLoop()
         // 避免在失效的 swapchain / surface 上执行 vkAcquireNextImageKHR / vkQueuePresentKHR
         if (mRenderWindow->IsAppActive())
         {
+            UpdateImGuiFrame();
             RenderFrame();
         }
         FrameMark;
@@ -91,6 +93,41 @@ void AppFrameWork::RenderFrame()
     commandBuffer->PresentFrameBuffer();
 }
 
+RenderSystem::ImGuiRendererPtr AppFrameWork::GetImGui()
+{
+    if (!mImGuiEnabled)
+    {
+        return nullptr;
+    }
+    return RenderSystem::SceneManager::GetInstance()->GetImGuiRenderer();
+}
+
+void AppFrameWork::UpdateImGuiFrame()
+{
+    if (!mImGuiEnabled || !mRenderWindow)
+    {
+        return;
+    }
+
+    const uint64_t now = baselib::GetTickNanoSeconds();
+    if (mLastFrameTick != 0)
+    {
+        mDeltaTime = (float)(now - mLastFrameTick) * 1e-9f;
+        // 夹取异常值（例如断点/后台切回）
+        if (mDeltaTime <= 0.0f || mDeltaTime > 0.5f)
+        {
+            mDeltaTime = 1.0f / 60.0f;
+        }
+    }
+    mLastFrameTick = now;
+
+    if (RenderSystem::ImGuiRendererPtr imgui = GetImGui())
+    {
+        // 窗口尺寸为帧缓冲像素尺寸；DPI 缩放由 demo/平台层设置
+        imgui->NewFrame(mDeltaTime, mRenderWindow->GetWidth(), mRenderWindow->GetHeight());
+    }
+}
+
 void AppFrameWork::OnEvent(Event& e)
 {
     LOG_INFO("%s", e.ToString().c_str());
@@ -98,6 +135,20 @@ void AppFrameWork::OnEvent(Event& e)
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<WindowCloseEvent>(GNX_BIND_EVENT_FN(OnWindowClose));
     dispatcher.Dispatch<WindowResizeEvent>(GNX_BIND_EVENT_FN(OnWindowResize));
+
+    // ImGui 优先消费输入事件：当 UI 捕获鼠标/键盘时，事件不再传递给 3D 场景，
+    // 避免「点击 UI 面板的同时也在操作相机」这类问题。
+    if (mImGuiEnabled)
+    {
+        if (RenderSystem::ImGuiRendererPtr imgui = GetImGui())
+        {
+            if (imgui->OnEvent(e))
+            {
+                // 事件已被 UI 消费（e.handled 已置位），调用方据此跳过自身处理
+                return;
+            }
+        }
+    }
     
     RenderSystem::SceneManager::GetInstance()->OnEvent(e);
 }

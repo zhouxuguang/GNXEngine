@@ -569,6 +569,27 @@ void SceneManager::OnEvent(GNXEngine::Event& e)
     }
 }
 
+ImGuiRendererPtr SceneManager::GetImGuiRenderer()
+{
+    if (!mImGuiRenderer)
+    {
+        RenderDevicePtr device = GetRenderDevice();
+        if (!device)
+        {
+            return nullptr;
+        }
+
+        ImGuiRendererPtr renderer = std::make_shared<ImGuiRenderer>();
+        if (!renderer->Initialize(device.get()))
+        {
+            LOG_ERROR("SceneManager: initialize ImGui renderer failed");
+            return nullptr;
+        }
+        mImGuiRenderer = renderer;
+    }
+    return mImGuiRenderer;
+}
+
 uint32_t SceneManager::AddVTManager(const VirtualTextureConfig& config,
                                     std::shared_ptr<IVirtualTextureDataSource> dataSource,
                                     const mathutil::Vector2i& viewSize,

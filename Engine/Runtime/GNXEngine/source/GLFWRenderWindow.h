@@ -78,6 +78,22 @@ public:
         return mWindow;
     }
 
+    // 高分屏缩放 = 帧缓冲像素尺寸 / 窗口逻辑尺寸
+    float GetDPIScale() const override
+    {
+        if (!mWindow || mData.width == 0)
+        {
+            return 1.0f;
+        }
+        int winW = 0, winH = 0;
+        glfwGetWindowSize(mWindow, &winW, &winH);
+        if (winW <= 0)
+        {
+            return 1.0f;
+        }
+        return (float)mData.width / (float)winW;
+    }
+
     void Resize(uint32_t width, uint32_t height) override;
 
     virtual void Shutdown();

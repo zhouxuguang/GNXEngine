@@ -17,6 +17,7 @@
 #include "mesh/MeshDrawUtil.h"
 #include "PostProcess/PostProcessing.h"
 #include "SceneRenderer.h"
+#include "UI/ImGuiRenderer.h"
 #include "VirtualTexture/VirtualTextureManager.h"
 #include <memory>
 #include <vector>
@@ -130,6 +131,12 @@ public:
     // Forward an event to the active camera controller
     void OnEvent(GNXEngine::Event& e);
 
+    /**
+     * 获取 ImGui UI 层（首次调用时按需创建并初始化）。
+     * 返回的指针由 SceneManager 持有，调用方直接使用即可。
+     */
+    ImGuiRendererPtr GetImGuiRenderer();
+
     // 清空场景（删除所有节点和灯光）
     void ClearScene();
 
@@ -192,6 +199,9 @@ private:
     
     SkyBoxNode* mSkyBoxNode = nullptr;   //天空盒的特殊节点
     PostProcessing *mPostProcessing = nullptr;
+
+    // ImGui UI 层（按需创建）
+    ImGuiRendererPtr mImGuiRenderer = nullptr;
     
     CameraController* mActiveController = nullptr;  // active camera controller (polymorphic)
     CameraControllerType mControllerType = CameraControllerType::Editor;  // desired type

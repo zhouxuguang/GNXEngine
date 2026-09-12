@@ -45,6 +45,22 @@ public:
 
     virtual void* GetNativeWindow() const override { return mWindow; }
 
+    // 高分屏缩放 = 帧缓冲像素尺寸 / 窗口逻辑尺寸
+    virtual float GetDPIScale() const override
+    {
+        if (!mWindow || mData.width == 0)
+        {
+            return 1.0f;
+        }
+        int winW = 0, winH = 0;
+        SDL_GetWindowSize(mWindow, &winW, &winH);
+        if (winW <= 0)
+        {
+            return 1.0f;
+        }
+        return (float)mData.width / (float)winW;
+    }
+
     virtual void Resize(uint32_t width, uint32_t height) override;
 
     // 应用是否处于前台（移动端生命周期：SDL_APP_DIDENTERBACKGROUND 后为 false）

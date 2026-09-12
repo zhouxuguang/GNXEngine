@@ -553,6 +553,12 @@ void DeferredSceneRenderer::RenderPresentPass(FrameGraph& frameGraph, CommandBuf
             mPostProcessing->SetRenderTexture(colorTexture.texture);
             mPostProcessing->Process(renderEncoder);
 
+            // ImGui UI：绘制在最终画面之上（后处理之后），复用同一个 encoder，只切换管线
+            if (ImGuiRendererPtr imGuiRenderer = SceneManager::GetInstance()->GetImGuiRenderer())
+            {
+                imGuiRenderer->Render(renderEncoder);
+            }
+
             renderEncoder->EndEncode();
         }
         commandBuffer->PresentFrameBuffer();
