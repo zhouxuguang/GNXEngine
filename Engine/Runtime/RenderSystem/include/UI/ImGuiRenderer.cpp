@@ -88,7 +88,9 @@ ImGuiKey ToImGuiKey(GNXEngine::KeyCode key)
     case RightBracket: return ImGuiKey_RightBracket;
     case GraveAccent:  return ImGuiKey_GraveAccent;
 
-    case Escape:     return ImGuiKey_Escape;
+    // 必须限定命名空间：Windows 的 wingdi.h 在全局命名空间声明了 Escape() 函数，
+    // 与本文件的 using namespace GNXEngine 冲突，未限定会报 C2872 不明确的符号。
+    case GNXEngine::Escape: return ImGuiKey_Escape;
     case Enter:      return ImGuiKey_Enter;
     case Tab:        return ImGuiKey_Tab;
     case Backspace:  return ImGuiKey_Backspace;

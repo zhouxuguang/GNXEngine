@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # 修复MSVC的__cplusplus宏的值错误的问题
 if(MSVC)
     add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/Zc:__cplusplus>")
+    add_compile_options("$<$<COMPILE_LANGUAGE:C>:/utf-8>"
+                        "$<$<COMPILE_LANGUAGE:CXX>:/utf-8>")
 endif()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

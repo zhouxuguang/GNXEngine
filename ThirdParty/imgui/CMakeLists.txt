@@ -60,8 +60,8 @@ target_include_directories(imgui_headers INTERFACE
 if(WIN32)
     # Windows 下静态库会被并入 GNXEngine.dll，符号必须显式导出/导入
     # （macOS/Linux 使用默认可见性，共享库会自动导出，无需额外处理）。
-    target_compile_definitions(imgui PRIVATE IMGUI_API=__declspec(dllexport))
-    target_compile_definitions(imgui_headers INTERFACE IMGUI_API=__declspec(dllimport))
+    target_compile_definitions(imgui PRIVATE "IMGUI_API=__declspec(dllexport)")
+    target_compile_definitions(imgui_headers INTERFACE "IMGUI_API=__declspec(dllimport)")
 endif()
 
 # 产物名统一（不带 Debug 后缀）：
