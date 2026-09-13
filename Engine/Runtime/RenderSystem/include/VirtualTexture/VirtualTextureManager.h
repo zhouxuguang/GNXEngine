@@ -55,6 +55,12 @@ public:
     /// 每帧执行 VT 管线。
     void Tick();
 
+    /// 主视口变化时同步 feedback target 尺寸。
+    void Resize(const mathutil::Vector2i& viewSize);
+
+    /// Feedback pass 已加入本帧渲染，允许下一帧 Tick 读回。
+    void NotifyFeedbackRendered();
+
     // 纹理绑定接口
     RCTexturePtr GetPageTableTexture() const { return mPageTable->GetGPUTexture(); }
     RCTexturePtr GetAtlasTexture()    const { return mAtlasTexture; }
@@ -74,13 +80,16 @@ public:
     const VirtualTextureConfig& GetConfig() const { return mConfig; }
 
     /// 每帧最大上传数。
-    void SetUploadsPerFrame(uint32_t count) { mCache->SetUploadsPerFrame(count); }
+    void SetUploadsPerFrame(uint32_t count);
 
     // ── 调试/统计接口 ──
     uint32_t GetResidentPageCount() const;
     uint32_t GetAtlasSlotCapacity() const;
     uint32_t GetPendingLoadCount()   const { return static_cast<uint32_t>(mPendingLoads.size()); }
     uint32_t GetPendingRequestCount() const { return static_cast<uint32_t>(mPendingRequests.size()); }
+    uint32_t GetLastFeedbackPageCount() const { return mLastFeedbackPageCount; }
+    uint64_t GetTotalUploadedPageCount() const { return mTotalUploadedPageCount; }
+    uint64_t GetFailedPageLoadCount() const { return mFailedPageLoadCount; }
 
 private:
     VirtualTextureConfig mConfig;
@@ -96,6 +105,9 @@ private:
 
     std::vector<PageLoadRequest> mPendingLoads;      //当前请求的结果
     std::set<PageRequest>      mPendingRequests;   //请求队列
+    uint32_t mLastFeedbackPageCount = 0;
+    uint64_t mTotalUploadedPageCount = 0;
+    uint64_t mFailedPageLoadCount = 0;
 
     void DispatchLoadRequests(const FeedbackResult& feedback);
     void ProcessCompletedLoads();

@@ -13,7 +13,9 @@
 #include "VirtualTextureDefines.h"
 #include <vector>
 #include <list>
+#include <optional>
 #include <unordered_map>
+#include <unordered_set>
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -43,7 +45,8 @@ public:
     VirtualTextureCache& operator=(const VirtualTextureCache&) = delete;
 
     /// 请求为指定 page 分配物理 slot。
-    CacheAllocation Allocate(const PageRequest& request);
+    CacheAllocation Allocate(const PageRequest& request,
+                             const std::unordered_set<PageRequest>* protectedRequests = nullptr);
 
     /// 标记指定 page 最近被使用（更新 LRU 顺序）。
     void Touch(const PageRequest& request);
@@ -96,7 +99,8 @@ private:
     std::unordered_map<PageSlot, PageRequest> mSlotOwners;
 
     /// 查找最久未使用的可淘汰 page。
-    PageRequest FindEvictionCandidate() const;
+    std::optional<PageRequest> FindEvictionCandidate(
+        const std::unordered_set<PageRequest>* protectedRequests) const;
 
     /// 执行淘汰。
     void Evict(const PageRequest& request);

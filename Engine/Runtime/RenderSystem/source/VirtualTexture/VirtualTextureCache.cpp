@@ -35,7 +35,9 @@ VirtualTextureCache::VirtualTextureCache(const VirtualTextureConfig& config)
     }
 }
 
-CacheAllocation VirtualTextureCache::Allocate(const PageRequest& request)
+CacheAllocation VirtualTextureCache::Allocate(
+    const PageRequest& request,
+    const std::unordered_set<PageRequest>* protectedRequests)
 {
     if (mActiveAllocations.find(request) != mActiveAllocations.end())
     {
@@ -50,18 +52,18 @@ CacheAllocation VirtualTextureCache::Allocate(const PageRequest& request)
     }
 
     // LRU 淘汰
-    PageRequest evicted = FindEvictionCandidate();
-    if (mActiveAllocations.find(evicted) == mActiveAllocations.end())
+    const std::optional<PageRequest> evicted = FindEvictionCandidate(protectedRequests);
+    if (!evicted)
     {
         // 所有 page 都被 pinned，没有可淘汰的
         return {false, {}, false, {}};
     }
-    Evict(evicted);
-    PageSlot slot = mActiveAllocations[evicted];
-    mActiveAllocations.erase(evicted);
+    PageSlot slot = mActiveAllocations.at(*evicted);
+    Evict(*evicted);
+    mActiveAllocations.erase(*evicted);
     mSlotOwners.erase(slot);
 
-    return {true, slot, true, evicted};
+    return {true, slot, true, *evicted};
 }
 
 void VirtualTextureCache::Touch(const PageRequest& request)
@@ -96,18 +98,20 @@ void VirtualTextureCache::FreeSlot(const PageSlot& slot)
     mFreeSlots.push_back(slot);
 }
 
-PageRequest VirtualTextureCache::FindEvictionCandidate() const
+std::optional<PageRequest> VirtualTextureCache::FindEvictionCandidate(
+    const std::unordered_set<PageRequest>* protectedRequests) const
 {
-    // 从 LRU 尾部（最久未使用）向前遍历，找到第一个非常驻的 page
+    // 从 LRU 尾部（最久未使用）向前遍历。本帧 feedback 仍在使用的
+    // page 不能被淘汰，否则工作集大于 atlas 时会在相邻帧间循环换页。
     for (auto it = mLRUList.rbegin(); it != mLRUList.rend(); ++it)
     {
-        if (!IsPinnedLod(it->mipLevel))
+        if (!IsPinnedLod(it->mipLevel) &&
+            (!protectedRequests || protectedRequests->find(*it) == protectedRequests->end()))
         {
             return *it;
         }
     }
-    // 所有 page 都被 pinned，调用方 Allocate 通过 mActiveAllocations 检查兜底
-    return {0, 0, 0};
+    return std::nullopt;
 }
 
 void VirtualTextureCache::Evict(const PageRequest& request)

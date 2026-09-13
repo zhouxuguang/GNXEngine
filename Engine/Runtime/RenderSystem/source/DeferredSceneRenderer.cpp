@@ -382,6 +382,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
             RenderFeedbackPass(frameGraph, commandBuffer, fbParams,
                                vtManager->GetFeedbackTarget(),
                                vtManager->GetFeedbackDepthTarget());
+            vtManager->NotifyFeedbackRendered();
         }
     }
 

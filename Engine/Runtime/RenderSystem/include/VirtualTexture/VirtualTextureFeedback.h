@@ -40,6 +40,13 @@ public:
     RCTexturePtr GetFeedbackTarget() const { return mFeedbackTarget; }
     RCTexturePtr GetDepthTarget() const { return mDepthTarget; }
 
+    /// 窗口尺寸变化时重建降分辨率 feedback target 与 readback buffer。
+    void Resize(const mathutil::Vector2i& viewSize);
+
+    /// FeedbackRenderer 在本帧提交 feedback pass 后调用；下一帧 Tick 才允许读回。
+    /// 这样可避免初始化/resize 后读取尚未写入的纹理。
+    void NotifyRendered() { mHasRenderedFrame = true; }
+
     /// 执行 readback 并解析 feedback buffer 为 page 请求集合。
     FeedbackResult ReadbackAndDecode();
 
@@ -53,6 +60,7 @@ private:
     uint32_t mWidth  = 0;
     uint32_t mHeight = 0;
     uint32_t mScale  = 16;
+    bool mHasRenderedFrame = false;
 
     /// 解码单个 FeedbackPixel → PageRequest。
     static PageRequest DecodePixel(FeedbackPixel pixel);

@@ -6,6 +6,7 @@
 #include "VirtualTexture/VirtualTextureManager.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/BaseLib/include/LogService.h"
+#include <algorithm>
 #include <chrono>
 
 NS_RENDERSYSTEM_BEGIN
@@ -60,11 +61,38 @@ void VirtualTextureManager::Tick()
     ProcessCompletedLoads();
 
     FeedbackResult feedback = mFeedback->ReadbackAndDecode();
+    mLastFeedbackPageCount = static_cast<uint32_t>(feedback.requestedPages.size());
 
-    //return;
     DispatchLoadRequests(feedback);
 
     mPageTable->SyncToGPU();
+}
+
+void VirtualTextureManager::Resize(const mathutil::Vector2i& viewSize)
+{
+    if (mFeedback)
+    {
+        mFeedback->Resize(viewSize);
+        mLastFeedbackPageCount = 0;
+    }
+}
+
+void VirtualTextureManager::NotifyFeedbackRendered()
+{
+    if (mFeedback)
+    {
+        mFeedback->NotifyRendered();
+    }
+}
+
+void VirtualTextureManager::SetUploadsPerFrame(uint32_t count)
+{
+    count = std::max(count, 1u);
+    mConfig.uploadsPerFrame = count;
+    if (mCache)
+    {
+        mCache->SetUploadsPerFrame(count);
+    }
 }
 
 void VirtualTextureManager::DispatchLoadRequests(const FeedbackResult& feedback)
@@ -95,7 +123,9 @@ void VirtualTextureManager::DispatchLoadRequests(const FeedbackResult& feedback)
             break; // 队列积压保护
         }
 
-        CacheAllocation alloc = mCache->Allocate(req);
+        // 不淘汰同一帧 feedback 中仍可见的页。当可见工作集超过
+        // atlas 容量时，缺失页继续使用粗 mip 回退，避免每帧循环换页。
+        CacheAllocation alloc = mCache->Allocate(req, &feedback.requestedPages);
         if (!alloc.success)
         {
             continue;
@@ -136,9 +166,12 @@ void VirtualTextureManager::ProcessCompletedLoads()
         ByteVector result = req.future.get();
         mPendingRequests.erase(req.page);
 
-        if (result.size() < requiredBytes)
+        if (result.size() != requiredBytes)
         {
-            // 加载失败 / 尺寸不符：丢弃，允许后续重试
+            // 加载失败 / 尺寸不符：归还 Allocate() 预留的 slot，允许后续重试。
+            // 若这里不归还，反复失败会永久耗尽 atlas。
+            mCache->FreeSlot(req.targetSlot);
+            ++mFailedPageLoadCount;
             return true;
         }
 
@@ -155,6 +188,7 @@ void VirtualTextureManager::ProcessCompletedLoads()
         mPageTable->WriteEntry(req.page, entry);
         mCache->Commit(req.page, req.targetSlot);
         ++uploadedCount;
+        ++mTotalUploadedPageCount;
 
         return true;
     });

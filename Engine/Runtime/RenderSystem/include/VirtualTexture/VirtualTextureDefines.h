@@ -195,6 +195,8 @@ struct VTInfoBufferData
     }
 };
 
+static_assert(sizeof(VTInfoBufferData) == 48, "VTInfoBufferData must match shader cbVTInfo");
+
 /// CPU 端 VT feedback uniform buffer 数据，与 shader 中 cbVTFeedback 对应
 struct FeedbackBufferData
 {
@@ -216,6 +218,8 @@ struct FeedbackBufferData
         pad               = 0.0f;
     }
 };
+
+static_assert(sizeof(FeedbackBufferData) == 32, "FeedbackBufferData must match shader cbVTFeedback");
 
 NS_RENDERSYSTEM_END
 

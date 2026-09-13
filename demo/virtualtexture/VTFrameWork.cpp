@@ -85,7 +85,8 @@ void VTFrameWork::SetupScene()
 
     SceneManager* sceneManager = SceneManager::GetInstance();
 
-    // ── Camera：相机由 demo 自己创建并摆位（引擎窗口/AppFrameWork 不再创建相机）──
+    // ── Camera：参考模型和 GNXEngine 都使用右手、Y-up 世界坐标，模型无需轴旋转。──
+    // 屏幕坐标则交给引擎 Camera/ImGui 转换：3D 为左下 NDC，UI 为左上像素坐标。
     // 模型缩放后约 600x600，相机抬高俯视整片地形。
     // 先 GetCamera 再创建：CreateCamera 不去重，直接调用会得到第二个同名相机，
     // 而 GetCamera 永远返回第一个，后面的摆位就落到没人用的相机上。
@@ -203,6 +204,10 @@ void VTFrameWork::Resize(uint32_t width, uint32_t height)
     mWindowWidth = width;
     mWindowHeight = height;
     UpdateCameraLens(width, height);
+    if (mVTManager)
+    {
+        mVTManager->Resize(Vector2i((int)width, (int)height));
+    }
 }
 
 void VTFrameWork::RenderFrame()
@@ -267,6 +272,14 @@ void VTFrameWork::BuildImGuiPanel()
             ImGui::Text("加载中: %u   待加载: %u",
                         mVTManager->GetPendingLoadCount(),
                         mVTManager->GetPendingRequestCount());
+            ImGui::Text("本帧反馈: %u   累计上传: %llu",
+                        mVTManager->GetLastFeedbackPageCount(),
+                        (unsigned long long)mVTManager->GetTotalUploadedPageCount());
+            if (mVTManager->GetFailedPageLoadCount() > 0)
+            {
+                ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.25f, 1.0f), "加载失败: %llu",
+                                   (unsigned long long)mVTManager->GetFailedPageLoadCount());
+            }
 
             int uploads = (int)mUploadsPerFrame;
             if (ImGui::SliderInt("每帧上传数", &uploads, 1, 32))
@@ -309,5 +322,4 @@ void VTFrameWork::BuildImGuiPanel()
         ImGui::End();
     }
 }
-
 

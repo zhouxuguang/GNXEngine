@@ -89,9 +89,9 @@ uint FetchPageEntry(uint mip, float2 uv, out float2 outGrid)
     pageCoords.y = (grid.y - 1.0) - pageCoords.y;
     pageCoords = clamp(pageCoords, float2(0.0, 0.0), grid - 1.0);
 
-    // 采样该 mip 的 texel 中心（page table 使用 point 采样器）
-    float2 texelUV = (pageCoords + 0.5) / grid;
-    return pageTable.SampleLevel(pageTableSam, texelUV, float(mip)).r;
+    // Page table 是整数索引数据，必须按 texel 坐标直接读取。
+    // 对 R32Uint 做归一化采样在 Metal 上会读回 0，导致所有页都被判定为未驻留。
+    return pageTable.Load(int3(uint2(pageCoords), mip)).r;
 }
 
 // 通过 page table 采样虚拟纹理：从屏幕足迹决定的 mip 开始，逐级向粗糙 mip 回退，
