@@ -38,3 +38,15 @@ set_property(TARGET test_mathutil PROPERTY FOLDER "unittest")
 source_group("Source Files" FILES test_mathutil.cpp)
 
 add_test(NAME test_mathutil COMMAND test_mathutil)
+
+# 代码审计缺陷的复现 / 回归测试（见 doc/BugAuditReport.md）
+# 这些用例覆盖 ImageCodec / MathUtil / RenderSystem(Camera) 的已修复缺陷。
+# 只链接 GNXEngine 共享库：MathUtil / ImageCodec / RenderSystem 的符号均已由其导出，
+# 若再直接链接 BaseLib/MathUtil 这类 OBJECT 库，会因缺少其第三方依赖（zlib 等）而链接失败。
+add_executable(test_bugfixes test_bugfixes.cpp)
+target_link_libraries(test_bugfixes PRIVATE Catch2::Catch2WithMain GNXEngine)
+target_compile_definitions(test_bugfixes PRIVATE MATH3D_EXPORTS)
+set_property(TARGET test_bugfixes PROPERTY FOLDER "unittest")
+source_group("Source Files" FILES test_bugfixes.cpp)
+
+add_test(NAME test_bugfixes COMMAND test_bugfixes)

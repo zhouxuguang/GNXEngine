@@ -689,14 +689,17 @@ TEST_CASE("AlignedMalloc GetAllocationSize", "[baselib][alignedmalloc]")
     AlignedFree(ptr);
 }
 
-TEST_CASE("AlignedMalloc reports requested size for every alignment", "[baselib][alignedmalloc]")
+TEST_CASE("AlignedMalloc reports usable size for every alignment", "[baselib][alignedmalloc]")
 {
+    // 注意：GetAllocationSize 返回的是分配器的「可用大小」（后台调用 malloc_size /
+    // malloc_usable_size / _aligned_msize 等），它总是 >= 请求大小且会被向上取整，
+    // 因此断言必须用 >= 而不是 ==（原断言 == 257 在所有平台恒失败）。
     for (size_t alignment : {alignof(void*), size_t(16), size_t(64), size_t(4096)})
     {
         void* ptr = AlignedMalloc(257, alignment);
         REQUIRE(ptr != nullptr);
         REQUIRE(reinterpret_cast<uintptr_t>(ptr) % alignment == 0);
-        REQUIRE(GetAllocationSize(ptr) == 257);
+        REQUIRE(GetAllocationSize(ptr) >= 257);
         AlignedFree(ptr);
     }
     REQUIRE(GetAllocationSize(nullptr) == 0);
