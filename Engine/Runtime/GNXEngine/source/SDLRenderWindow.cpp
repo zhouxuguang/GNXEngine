@@ -30,6 +30,10 @@ NAMESPACE_GNXENGINE_BEGIN
 static KeyCode MapSDLKeyToKeyCode(SDL_Keycode sdlKey)
 {
     // 字母/数字键直接映射（SDL Keycode 和 KeyCode 都用 ASCII 兼容值）
+    // 注意：SDL 对字母键给出的是「未加 Shift 的小写 ASCII」（SDLK_a == 'a' == 97），
+    // 而 KeyCode 的字母枚举使用大写值。修复前只判断 'A'..'Z'，导致移动端
+    // 所有字母键都落到 default 返回 0（字母键完全失效）。
+    if (sdlKey >= 'a' && sdlKey <= 'z')   return static_cast<KeyCode>(sdlKey - 'a' + 'A');
     if (sdlKey >= 'A' && sdlKey <= 'Z')   return static_cast<KeyCode>(sdlKey);
     if (sdlKey >= '0' && sdlKey <= '9')   return static_cast<KeyCode>(sdlKey);
     // 功能键

@@ -171,7 +171,13 @@ void GLFWRenderWindow::Resize(uint32_t width, uint32_t height)
 
 void GLFWRenderWindow::Shutdown()
 {
-    glfwDestroyWindow(mWindow);
+    // 幂等：析构函数也会调用本函数，若不置空 mWindow，
+    // 再次调用会对已销毁的窗口指针重复 glfwDestroyWindow（悬垂指针/崩溃）。
+    if (mWindow != nullptr)
+    {
+        glfwDestroyWindow(mWindow);
+        mWindow = nullptr;
+    }
     glfwTerminate();
 }
 
