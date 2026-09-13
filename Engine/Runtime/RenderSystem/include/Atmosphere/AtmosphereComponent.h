@@ -22,36 +22,80 @@ public:
     AtmosphereComponent();
     ~AtmosphereComponent() override;
 
-    ComponentType GetComponentType() const override { return ComponentType::Atmosphere; }
+    ComponentType GetComponentType() const override
+    {
+        return ComponentType::Atmosphere;
+    }
 
     // 构建默认大气模型并初始化 GPU 预计算资源
     bool Initialize(unsigned int numScatteringOrders = 4);
 
-    bool IsInitialized() const { return mRenderer && mRenderer->IsInitialized(); }
+    bool IsInitialized() const
+    {
+        return mRenderer && mRenderer->IsInitialized();
+    }
 
-    AtmosphereRenderer* GetRenderer() const { return mRenderer.get(); }
+    AtmosphereRenderer* GetRenderer() const
+    {
+        return mRenderer.get();
+    }
 
     // 曝光
-    void SetExposure(float exposure) { mExposure = exposure; }
-    float GetExposure() const { return mExposure; }
+    void SetExposure(float exposure)
+    {
+        mExposure = exposure;
+    }
+
+    float GetExposure() const
+    {
+        return mExposure;
+    }
 
     // 白点
-    void SetWhitePoint(const Vector3f& wp) { mWhitePoint = wp; }
-    const Vector3f& GetWhitePoint() const { return mWhitePoint; }
+    void SetWhitePoint(const Vector3f& wp)
+    {
+        mWhitePoint = wp;
+    }
+
+    const Vector3f& GetWhitePoint() const
+    {
+        return mWhitePoint;
+    }
 
     // 太阳方向（世界空间，从地表指向太阳，单位向量）
-    void SetSunDirection(const Vector3f& dir) { mSunDirection = dir; }
-    const Vector3f& GetSunDirection() const { return mSunDirection; }
+    void SetSunDirection(const Vector3f& dir)
+    {
+        mSunDirection = dir;
+    }
+
+    const Vector3f& GetSunDirection() const
+    {
+        return mSunDirection;
+    }
 
     // 地球中心（大气单位）
-    void SetEarthCenter(const Vector3f& center) { mEarthCenter = center; }
-    const Vector3f& GetEarthCenter() const { return mEarthCenter; }
+    void SetEarthCenter(const Vector3f& center)
+    {
+        mEarthCenter = center;
+    }
+
+    const Vector3f& GetEarthCenter() const
+    {
+        return mEarthCenter;
+    }
 
     // 场景“额外几何体”（球体 + 地面）：用于演示大气光柱与地面着色，由着色器外部传入。
     // 单位说明：均为“大气单位”（1 大气单位 = Atmosphere::kLengthUnitInMeters 米）。
     // 使用引擎 Y-up 世界坐标；默认球心位于地表上方 1000m。
-    void SetSceneGeometry(const Atmosphere::AtmosphereSceneGeometry& geometry) { mSceneGeometry = geometry; }
-    const Atmosphere::AtmosphereSceneGeometry& GetSceneGeometry() const { return mSceneGeometry; }
+    void SetSceneGeometry(const Atmosphere::AtmosphereSceneGeometry& geometry)
+    {
+        mSceneGeometry = geometry;
+    }
+
+    const Atmosphere::AtmosphereSceneGeometry& GetSceneGeometry() const
+    {
+        return mSceneGeometry;
+    }
 
 private:
     AtmosphereRendererPtr mRenderer;

@@ -48,8 +48,15 @@ public:
     bool Initialize(const Atmosphere::AtmosphereParameters& params,
                     unsigned int numScatteringOrders = 4);
 
-    bool IsInitialized() const { return mInitialized; }
-    bool IsPrecomputed() const { return mPrecomputed; }
+    bool IsInitialized() const
+    {
+        return mInitialized;
+    }
+
+    bool IsPrecomputed() const
+    {
+        return mPrecomputed;
+    }
 
     // 执行一次完整的预计算（生成所有 LUT）
     void Precompute();

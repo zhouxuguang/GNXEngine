@@ -284,9 +284,15 @@ void AtmosphereRenderer::Precompute()
     }
 
     RenderDevicePtr device = GetRenderDevice();
+    if (!device)
+    {
+        LOG_ERROR("AtmosphereRenderer::Precompute: render device is null");
+        return;
+    }
     CommandQueuePtr queue = device->GetCommandQueue(QueueType::Graphics, 0);
     if (!queue)
     {
+        LOG_ERROR("AtmosphereRenderer::Precompute: graphics queue is null");
         return;
     }
 
@@ -300,7 +306,8 @@ void AtmosphereRenderer::Precompute()
 
     // 保持每层/每重数参数的 UBO 存活到命令执行完成
     std::vector<UniformBufferPtr> paramUBOs;
-    auto makeScatteringUBO = [&](int layer, int order) -> UniformBufferPtr {
+    auto makeScatteringUBO = [&](int layer, int order) -> UniformBufferPtr
+    {
         UniformBufferPtr ubo = device->CreateUniformBufferWithSize(sizeof(Atmosphere::AtmosphereScatteringParams));
         Atmosphere::AtmosphereScatteringParams p;
         p.layer = layer;
@@ -312,20 +319,26 @@ void AtmosphereRenderer::Precompute()
         return ubo;
     };
 
-    // 关键：每个 Pass 使用独立命令缓冲区并 Submit + WaitUntilCompleted。
-    // Metal(TBDR) 下，跨编码器读取“上一个 Pass 作为渲染目标写入”的纹理需要显式同步，
-    // 否则可能读到未定义数据（表现为 NaN），导致预计算的 LUT 出错（天空全黑）。
-    auto flush = [](CommandBufferPtr& cmd) {
+    // 每个 Pass 独立命令缓冲区并提交等待：Metal(TBDR) 下跨编码器读上一 Pass 的渲染
+    // 目标需要显式同步，否则会读到未定义数据（NaN）。
+    // 必须用离屏命令缓冲区：预计算在帧内触发，交换链帧命令缓冲区此时已重置飞行栅栏，
+    // 用它会在 5 秒超时后返回 nullptr 并崩溃，且会耗尽交换链图像而死锁。
+    auto flush = [](CommandBufferPtr& cmd)
+    {
         if (cmd)
         {
-            cmd->Submit();
             cmd->WaitUntilCompleted();
         }
     };
 
     // ---- 1) 透射率 ----
     {
-        CommandBufferPtr cmd = queue->CreateCommandBuffer();
+        CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
+        if (!cmd)
+        {
+            LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (transmittance)");
+            return;
+        }
         cmd->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ColorAttachment);
         RenderEncoderPtr enc = BeginPass(cmd, mTransmittancePipeline,
             { MakeColorAttachment(mTransmittanceTexture, 0, false) },
@@ -338,7 +351,12 @@ void AtmosphereRenderer::Precompute()
 
     // ---- 2) 直接辐照度 -> [delta_irradiance, irradiance] ----
     {
-        CommandBufferPtr cmd = queue->CreateCommandBuffer();
+        CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
+        if (!cmd)
+        {
+            LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (direct irradiance)");
+            return;
+        }
         cmd->ResourceBarrier(mDeltaIrradianceTexture, ResourceAccessType::ColorAttachment);
         cmd->ResourceBarrier(mIrradianceTexture, ResourceAccessType::ColorAttachment);
         cmd->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
@@ -355,7 +373,12 @@ void AtmosphereRenderer::Precompute()
 
     // ---- 3) 单次散射 -> [delta_rayleigh, delta_mie, scattering, single_mie] ----
     {
-        CommandBufferPtr cmd = queue->CreateCommandBuffer();
+        CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
+        if (!cmd)
+        {
+            LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (single scattering)");
+            return;
+        }
         cmd->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
         for (int layer = 0; layer < (int)kScatteringD; ++layer)
         {
@@ -384,7 +407,12 @@ void AtmosphereRenderer::Precompute()
     {
         // 4a) 散射密度 -> delta_scattering_density
         {
-            CommandBufferPtr cmd = queue->CreateCommandBuffer();
+            CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
+            if (!cmd)
+            {
+                LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (scattering density, order=%u)", order);
+                return;
+            }
             cmd->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
             cmd->ResourceBarrier(mDeltaRayleighTexture, ResourceAccessType::ShaderRead);
             cmd->ResourceBarrier(mDeltaMieTexture, ResourceAccessType::ShaderRead);
@@ -410,7 +438,12 @@ void AtmosphereRenderer::Precompute()
 
         // 4b) 间接辐照度 -> [delta_irradiance, irradiance(混合累积)]
         {
-            CommandBufferPtr cmd = queue->CreateCommandBuffer();
+            CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
+            if (!cmd)
+            {
+                LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (indirect irradiance, order=%u)", order);
+                return;
+            }
             cmd->ResourceBarrier(mDeltaIrradianceTexture, ResourceAccessType::ColorAttachment);
             cmd->ResourceBarrier(mIrradianceTexture, ResourceAccessType::ColorAttachment);
             RenderEncoderPtr enc = BeginPass(cmd, mIndirectIrradiancePipeline,
@@ -429,7 +462,12 @@ void AtmosphereRenderer::Precompute()
 
         // 4c) 多次散射 -> [delta_multiple(=delta_rayleigh), scattering(混合累积)]
         {
-            CommandBufferPtr cmd = queue->CreateCommandBuffer();
+            CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
+            if (!cmd)
+            {
+                LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (multiple scattering, order=%u)", order);
+                return;
+            }
             cmd->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
             cmd->ResourceBarrier(mDeltaScatteringDensityTexture, ResourceAccessType::ShaderRead);
             for (int layer = 0; layer < (int)kScatteringD; ++layer)
@@ -449,6 +487,21 @@ void AtmosphereRenderer::Precompute()
             }
             flush(cmd);
         }
+    }
+
+    // ---- 5) LUT 布局收尾：以上 Pass 把 LUT 当颜色附件写，需转到 SHADER_READ_ONLY 供天空 Pass 采样 ----
+    {
+        CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
+        if (!cmd)
+        {
+            LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (LUT layout transition)");
+            return;
+        }
+        cmd->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
+        cmd->ResourceBarrier(mScatteringTexture, ResourceAccessType::ShaderRead);
+        cmd->ResourceBarrier(mSingleMieTexture, ResourceAccessType::ShaderRead);
+        cmd->ResourceBarrier(mIrradianceTexture, ResourceAccessType::ShaderRead);
+        flush(cmd);
     }
 
     mPrecomputed = true;
