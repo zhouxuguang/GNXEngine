@@ -13,7 +13,18 @@ VirtualTextureCache::VirtualTextureCache(const VirtualTextureConfig& config)
     , mSlotSize(config.slotSize)
     , mPinnedMipLevels(config.pinnedMipLevels)
     , mUploadsPerFrame(config.uploadsPerFrame)
+    , mTotalMipLevels(config.mipLevels > 0 ? config.mipLevels : 1)
 {
+    // 常驻的是“最粗糙”的若干级 mip：mipLevel ∈ [mTotalMipLevels - mPinnedMipLevels, mTotalMipLevels)
+    if (mPinnedMipLevels >= mTotalMipLevels)
+    {
+        mMinPinnedMip = 0;
+    }
+    else
+    {
+        mMinPinnedMip = mTotalMipLevels - mPinnedMipLevels;
+    }
+
     mFreeSlots.reserve(static_cast<size_t>(mAtlasSlotsX) * mAtlasSlotsY);
     for (uint32_t y = 0; y < mAtlasSlotsY; ++y)
     {
@@ -55,9 +66,9 @@ CacheAllocation VirtualTextureCache::Allocate(const PageRequest& request)
 
 void VirtualTextureCache::Touch(const PageRequest& request)
 {
-    if (request.mipLevel >= mPinnedMipLevels)
+    if (IsPinnedLod(request.mipLevel))
     {
-        return; // no-op for pinned lods
+        return; // 常驻页不参与 LRU，无需更新
     }
 
 	if (auto it = mLRUMap.find(request); it != mLRUMap.end())
@@ -72,8 +83,8 @@ void VirtualTextureCache::Commit(const PageRequest& request, const PageSlot& slo
     mActiveAllocations[request] = slot;
     mSlotOwners[slot] = request;
 
-    // pinned page 不会被淘汰，不需要加入 LRU
-    if (request.mipLevel < mPinnedMipLevels)
+    // 常驻页不会被淘汰，不需要加入 LRU
+    if (!IsPinnedLod(request.mipLevel))
     {
         mLRUList.push_front(request);
         mLRUMap[request] = mLRUList.begin();
@@ -87,10 +98,10 @@ void VirtualTextureCache::FreeSlot(const PageSlot& slot)
 
 PageRequest VirtualTextureCache::FindEvictionCandidate() const
 {
-    // 从 LRU 尾部（最久未使用）向前遍历，找到第一个非 pinned 的 page
+    // 从 LRU 尾部（最久未使用）向前遍历，找到第一个非常驻的 page
     for (auto it = mLRUList.rbegin(); it != mLRUList.rend(); ++it)
     {
-        if (it->mipLevel < mPinnedMipLevels)
+        if (!IsPinnedLod(it->mipLevel))
         {
             return *it;
         }

@@ -63,6 +63,17 @@ public:
     uint32_t GetAtlasSlotsY() const { return mAtlasSlotsY; }
     uint32_t GetSlotSize()   const { return mSlotSize; }
 
+    /// 当前已占用的 slot 数量（= resident page 数量，用于调试显示）。
+    uint32_t GetResidentCount() const { return static_cast<uint32_t>(mActiveAllocations.size()); }
+
+    /// 物理 atlas 的总 slot 容量。
+    uint32_t GetCapacity() const { return mAtlasSlotsX * mAtlasSlotsY; }
+
+    /// 判断某个 mip 是否为常驻（不可淘汰）层级。
+    /// 常驻层级是最粗糙的若干级 mip（mipLevel >= mTotalMipLevels - mPinnedMipLevels），
+    /// 它们提供 mip 回退的兜底数据。
+    bool IsPinnedLod(uint32_t mipLevel) const { return mipLevel >= mMinPinnedMip; }
+
 private:
     // 配置缓存
     uint32_t mAtlasSlotsX = 0;
@@ -70,6 +81,8 @@ private:
     uint32_t mSlotSize    = 0;
     uint32_t mPinnedMipLevels = 0;
     uint32_t mUploadsPerFrame = 8;
+    uint32_t mTotalMipLevels  = 1;
+    uint32_t mMinPinnedMip    = 0;   // 常驻层级的下界
 
     // 空闲 slot 池。
     std::vector<PageSlot> mFreeSlots;

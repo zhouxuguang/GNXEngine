@@ -20,8 +20,8 @@ VirtualTexturePageTable::VirtualTexturePageTable(const VirtualTextureConfig& con
 
     for (uint32_t mip = 0; mip < mMipLevels; ++mip)
     {
-        mGridWidth[mip]  = GetPageGridCount(mVirtualWidth,  mip);
-        mGridHeight[mip] = GetPageGridCount(mVirtualHeight, mip);
+        mGridWidth[mip]  = GetPageGridCount(mVirtualWidth,  mPageSize, mip);
+        mGridHeight[mip] = GetPageGridCount(mVirtualHeight, mPageSize, mip);
         mCPUTables[mip].resize(
             static_cast<size_t>(mGridWidth[mip]) * mGridHeight[mip], 0
         );

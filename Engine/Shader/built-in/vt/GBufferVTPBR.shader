@@ -21,12 +21,17 @@ SamplerState gAmbientMapSam;
 Texture2D gEmissiveMap;
 SamplerState gEmissiveMapSam;
 
-// 虚拟纹理常量
+// 虚拟纹理常量（布局必须与 C++ 侧 VTInfoBufferData 一致）
 cbuffer cbVTInfo
 {
-    float2 pageGrid;      // 虚拟纹理的 tile 网格数 (virtualSize / pageSize)
-    float2 tileSize;      // 单个 tile 的像素尺寸 (128, 128)
+    float2 pageGrid;      // mip0 的 tile 网格数 (virtualSize / pageSize)
+    float2 tileSize;      // 单个 tile 的像素尺寸 (pageSize, pageSize)
     float2 atlasSize;     // 物理 atlas 的像素尺寸
+    float2 virtualSize;   // 虚拟纹理像素尺寸
+    float pagePadding;    // tile 四周 padding（像素）
+    float slotSize;       // 物理 slot 步长 = pageSize + 2 * pagePadding
+    float minMipLevel;    // 可采样的最小 mip
+    float maxMipLevel;    // 可采样的最大 mip
 }
 
 // 顶点着色器输入
@@ -72,25 +77,67 @@ VertexOutput VS(VertexInput input)
     return output;
 }
 
-// 通过 page table 采样虚拟纹理
+// 读取某一 mip 层级下、uv 对应的 page table entry。
+// page table 与 feedback 使用同一个 Y 翻转约定，故此处也要翻转 Y。
+// outGrid 返回该 mip 的 tile 网格数，供上层计算局部 UV。
+uint FetchPageEntry(uint mip, float2 uv, out float2 outGrid)
+{
+    float2 grid = max(pageGrid * exp2(-float(mip)), float2(1.0, 1.0));
+    outGrid = grid;
+
+    float2 pageCoords = floor(uv * grid);
+    pageCoords.y = (grid.y - 1.0) - pageCoords.y;
+    pageCoords = clamp(pageCoords, float2(0.0, 0.0), grid - 1.0);
+
+    // 采样该 mip 的 texel 中心（page table 使用 point 采样器）
+    float2 texelUV = (pageCoords + 0.5) / grid;
+    return pageTable.SampleLevel(pageTableSam, texelUV, float(mip)).r;
+}
+
+// 通过 page table 采样虚拟纹理：从屏幕足迹决定的 mip 开始，逐级向粗糙 mip 回退，
+// 直到找到 resident 的 page。找到后按 padding 计算物理 atlas UV，并用显式梯度采样。
 float4 SampleVirtualTexture(float2 uv)
 {
-    uint entry = pageTable.Sample(pageTableSam, uv).r;
-    
-    // 计算 tile 内的局部 UV
-    float2 tileUV = frac(uv * pageGrid);
-    
-    // 从 page table entry 提取物理 tile 坐标
+    float mipFloat = ComputeMipLevel(uv.x, uv.y, virtualSize.x, virtualSize.y);
+    uint startMip = uint(clamp(mipFloat, minMipLevel, maxMipLevel));
+    uint endMip   = uint(maxMipLevel);
+
+    uint entry = 0u;
+    bool resident = false;
+    float2 activeGrid = max(pageGrid, float2(1.0, 1.0));
+
+    for (uint mip = startMip; mip <= endMip; ++mip)
+    {
+        float2 grid;
+        uint e = FetchPageEntry(mip, uv, grid);
+        if ((e & 1u) != 0u)
+        {
+            entry = e;
+            activeGrid = grid;
+            resident = true;
+            break;
+        }
+    }
+
+    if (!resident)
+    {
+        // 兜底：常驻 mip 尚未就绪时显示黑色
+        return float4(0.0, 0.0, 0.0, 1.0);
+    }
+
     // C++ 编码: bit0=resident, bit1-8=slotX, bit9-16=slotY
-    float2 physicalTile = float2(
-        (entry >> 1) & 0xFFu,
-        (entry >> 9) & 0xFFu
-    );
-    
-    // 计算物理 UV = (tileUV + tile offset) * tileSize / atlasSize
-    float2 physicalUV = (tileUV + physicalTile) * tileSize / atlasSize;
-    
-    return atlas.Sample(atlasSam, physicalUV);
+    float2 physicalSlot = float2((entry >> 1) & 0xFFu, (entry >> 9) & 0xFFu);
+    float2 localUV = frac(uv * activeGrid);
+
+    // 物理采样位置 = slot 原点 + padding + tile 内偏移
+    float2 sampleTexel = physicalSlot * slotSize + pagePadding + localUV * tileSize;
+    float2 atlasUV = sampleTexel / atlasSize;
+
+    // atlasUV 在 tile 边界不连续，自动 LOD 会选错，必须用显式梯度
+    float2 dx = ddx(uv) * activeGrid * (tileSize / atlasSize);
+    float2 dy = ddy(uv) * activeGrid * (tileSize / atlasSize);
+
+    return atlas.SampleGrad(atlasSam, atlasUV, dx, dy);
 }
 
 struct FragmentOutput

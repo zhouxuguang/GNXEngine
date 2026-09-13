@@ -5,6 +5,7 @@
 
 #include "VirtualTexture/VirtualTextureManager.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
+#include "Runtime/BaseLib/include/LogService.h"
 #include <chrono>
 
 NS_RENDERSYSTEM_BEGIN
@@ -49,6 +50,9 @@ void VirtualTextureManager::Initialize(const VirtualTextureConfig& config,
     fbData.FillFromConfig(resolved, feedbackScale);
     mFeedbackUBO = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(sizeof(FeedbackBufferData));
     mFeedbackUBO->SetData(&fbData, 0, sizeof(FeedbackBufferData));
+
+    // 预加载常驻（最粗糙）mip，保证任意 uv 都有兜底数据可回退
+    PreloadPinnedPages();
 }
 
 void VirtualTextureManager::Tick()
@@ -67,36 +71,43 @@ void VirtualTextureManager::DispatchLoadRequests(const FeedbackResult& feedback)
 {
     for (const auto& req : feedback.requestedPages)
     {
-        // 递归添加父级 page（parent fallback）
-        PageRequest parent = req;
-        while (parent.mipLevel > 0)
+        // 过滤非法请求：feedback 纹理首帧可能包含未初始化数据，
+        // 若直接用来索引 page table 会越界。
+        if (!IsValidPageRequest(mConfig, req))
         {
-            parent.mipLevel--;
-            parent.pageX >>= 1;
-            parent.pageY >>= 1;
-            if (mPageTable->IsResident(parent)) break; // 父级已加载，更高层自然也已加载
-        }
-        // 父级检查完后回到原始 request
-        PageRequest current = req;
-
-        if (mPageTable->IsResident(current))
-        {
-            mCache->Touch(current);
             continue;
         }
 
-        if (mPendingLoads.size() >= mConfig.uploadsPerFrame * 2) break; // 队列积压保护
+        if (mPageTable->IsResident(req))
+        {
+            mCache->Touch(req);
+            continue;
+        }
 
-        CacheAllocation alloc = mCache->Allocate(current);
-        if (!alloc.success) continue;
+        // 已在加载队列中的 page 不重复请求
+        if (mPendingRequests.find(req) != mPendingRequests.end())
+        {
+            continue;
+        }
 
+        if (mPendingLoads.size() >= mConfig.uploadsPerFrame * 2)
+        {
+            break; // 队列积压保护
+        }
+
+        CacheAllocation alloc = mCache->Allocate(req);
+        if (!alloc.success)
+        {
+            continue;
+        }
+
+        // 被淘汰的 page：清除其 resident 标记，避免采样到已失效的 slot
         if (alloc.hasEvicted)
         {
             mPageTable->ClearEntry(alloc.evictedRequest);
         }
 
-        mPageTable->WriteEntry(current, 0);
-        RequestPageAsync(current, alloc.slot);
+        RequestPageAsync(req, alloc.slot);
     }
 }
 
@@ -104,19 +115,30 @@ void VirtualTextureManager::ProcessCompletedLoads()
 {
     const uint32_t slotSizeX = mConfig.slotSize;
     const uint32_t slotSizeY = mConfig.slotSize;
+    const uint32_t requiredBytes = slotSizeX * slotSizeY * 4;   // RGBA8
+    const uint32_t maxUploads = mConfig.uploadsPerFrame;
+    uint32_t uploadedCount = 0;
 
-    // 将处理完的tile从队列中移除，此时也是上传tile到缓存，以及更新pagetable的时机
-    std::erase_if(mPendingLoads, [this, slotSizeX, slotSizeY](PageLoadRequest& req)
+    // 将处理完的 tile 从队列中移除；此处也是上传 tile 到 atlas、更新 page table 的时机。
+    // 每帧上传数量受 uploadsPerFrame 限制，超出的留到下一帧（让 streaming 分帧可见）。
+    std::erase_if(mPendingLoads, [&](PageLoadRequest& req)
     {
-        if (req.future.wait_for(std::chrono::microseconds(0)) != std::future_status::ready) 
+        if (uploadedCount >= maxUploads)
+        {
+            return false;
+        }
+
+        if (req.future.wait_for(std::chrono::microseconds(0)) != std::future_status::ready)
         {
             return false;
         }
 
         ByteVector result = req.future.get();
-        if (result.empty())
+        mPendingRequests.erase(req.page);
+
+        if (result.size() < requiredBytes)
         {
-            mPendingRequests.erase(req.page);
+            // 加载失败 / 尺寸不符：丢弃，允许后续重试
             return true;
         }
 
@@ -125,13 +147,14 @@ void VirtualTextureManager::ProcessCompletedLoads()
         region.offsetY = slotSizeY * req.targetSlot.atlasY;
         region.width = slotSizeX;
         region.height = slotSizeY;
-        mAtlasTexture->ReplaceRegion(region, 0, result.data(), slotSizeX * 4);   //先假定是RGBA8的图像
+        mAtlasTexture->ReplaceRegion(region, 0, result.data(), slotSizeX * 4);
 
-        uint32_t entry = 0x1 | ((req.targetSlot.atlasX & 0xFFu) << 1) | ((req.targetSlot.atlasY & 0xFFu) << 9);
+        const uint32_t entry = 0x1 | ((req.targetSlot.atlasX & 0xFFu) << 1)
+                                   | ((req.targetSlot.atlasY & 0xFFu) << 9);
 
         mPageTable->WriteEntry(req.page, entry);
         mCache->Commit(req.page, req.targetSlot);
-        mPendingRequests.erase(req.page);
+        ++uploadedCount;
 
         return true;
     });
@@ -149,6 +172,66 @@ void VirtualTextureManager::RequestPageAsync(const PageRequest& page, const Page
 
     auto future = mDataSource->RequestTile(page);
     mPendingLoads.push_back({page, std::move(future), false, slot});
+}
+
+void VirtualTextureManager::PreloadPinnedPages()
+{
+    if (mConfig.pinnedMipLevels == 0 || !mDataSource)
+    {
+        return;
+    }
+
+    uint32_t pinned = mConfig.pinnedMipLevels;
+    if (pinned > mConfig.mipLevels)
+    {
+        pinned = mConfig.mipLevels;
+    }
+    const uint32_t startMip = mConfig.mipLevels - pinned;
+
+    uint32_t requested = 0;
+    for (uint32_t mip = startMip; mip < mConfig.mipLevels; ++mip)
+    {
+        const uint32_t gridW = GetPageGridCount(mConfig.virtualWidth,  mConfig.pageSize, mip);
+        const uint32_t gridH = GetPageGridCount(mConfig.virtualHeight, mConfig.pageSize, mip);
+
+        for (uint32_t y = 0; y < gridH; ++y)
+        {
+            for (uint32_t x = 0; x < gridW; ++x)
+            {
+                PageRequest page{mip, x, y};
+                if (mPageTable->IsResident(page) || mPendingRequests.find(page) != mPendingRequests.end())
+                {
+                    continue;
+                }
+
+                CacheAllocation alloc = mCache->Allocate(page);
+                if (!alloc.success)
+                {
+                    return; // 没有空闲 slot（正常情况不会发生）
+                }
+                if (alloc.hasEvicted)
+                {
+                    mPageTable->ClearEntry(alloc.evictedRequest);
+                }
+
+                RequestPageAsync(page, alloc.slot);
+                ++requested;
+            }
+        }
+    }
+
+    LOG_INFO("VT: preloaded %u pinned page(s) (mip %u..%u)", requested, startMip,
+             mConfig.mipLevels > 0 ? mConfig.mipLevels - 1 : 0);
+}
+
+uint32_t VirtualTextureManager::GetResidentPageCount() const
+{
+    return mCache ? mCache->GetResidentCount() : 0;
+}
+
+uint32_t VirtualTextureManager::GetAtlasSlotCapacity() const
+{
+    return mCache ? mCache->GetCapacity() : 0;
 }
 
 NS_RENDERSYSTEM_END

@@ -22,10 +22,26 @@ public:
     virtual void Initlize() override;
     virtual void Resize(uint32_t width, uint32_t height) override;
     virtual void RenderFrame() override;
-    virtual void OnEvent(GNXEngine::Event& e) override;
 
 private:
+    void SetupImGui();
+    void SetupScene();
+    void BuildImGuiPanel();
+    void UpdateCameraLens(uint32_t width, uint32_t height);
+
     uint32_t mVTIndex = UINT32_MAX;  // SceneManager 中 VT 管理器的索引
+    RenderSystem::VirtualTextureManagerPtr mVTManager = nullptr;
+
+    // 物理 atlas（与 VT manager 共享所有权，供 ImGui 预览使用）
+    RCTexturePtr mAtlasTexture = nullptr;
+
+    uint32_t mWindowWidth = 1280;
+    uint32_t mWindowHeight = 720;
+    uint32_t mUploadsPerFrame = 8;
+
+    bool  mShowPanel = true;
+    bool  mShowAtlasPreview = true;
+    float mAtlasPreviewSize = 256.0f;
 };
 
 #endif /* VTFrameWork_h */

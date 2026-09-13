@@ -21,6 +21,7 @@
 #include "Runtime/RenderCore/include/TextureSampler.h"
 #include <vector>
 #include <queue>
+#include <set>
 #include <future>
 #include <memory>
 
@@ -75,6 +76,12 @@ public:
     /// 每帧最大上传数。
     void SetUploadsPerFrame(uint32_t count) { mCache->SetUploadsPerFrame(count); }
 
+    // ── 调试/统计接口 ──
+    uint32_t GetResidentPageCount() const;
+    uint32_t GetAtlasSlotCapacity() const;
+    uint32_t GetPendingLoadCount()   const { return static_cast<uint32_t>(mPendingLoads.size()); }
+    uint32_t GetPendingRequestCount() const { return static_cast<uint32_t>(mPendingRequests.size()); }
+
 private:
     VirtualTextureConfig mConfig;
 
@@ -93,6 +100,12 @@ private:
     void DispatchLoadRequests(const FeedbackResult& feedback);
     void ProcessCompletedLoads();
     void RequestPageAsync(const PageRequest& page, const PageSlot& slot);
+
+    /// 把 page 加入异步加载队列（分配 slot 已由调用方完成）。
+    void EnqueuePage(const PageRequest& page, const PageSlot& slot);
+
+    /// 预加载所有常驻（最粗糙）mip 的 page，作为 mip 回退的兜底数据。
+    void PreloadPinnedPages();
 };
 
 using VirtualTextureManagerPtr = std::shared_ptr<VirtualTextureManager>;

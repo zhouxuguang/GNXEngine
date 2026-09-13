@@ -123,10 +123,26 @@ struct PageSlot
 using PageTableEntry = uint32_t;
 using FeedbackPixel  = uint32_t;
 
-/// 获取指定 mip 层级的 tile 网格维度。
-inline uint32_t GetPageGridCount(uint32_t dimension, uint32_t mipLevel)
+/// 获取指定 mip 层级的 tile 网格维度（单位是 page 个数，不是像素数）。
+/// 注意：必须先用 dimension / pageSize 得到 mip0 的 page 数，再按 mip 右移；
+/// 早期实现直接对像素尺寸右移，导致 page table 被放大 pageSize 倍。
+inline uint32_t GetPageGridCount(uint32_t dimension, uint32_t pageSize, uint32_t mipLevel)
 {
-    return (dimension >> mipLevel) > 0 ? (dimension >> mipLevel) : 1;
+    uint32_t pages = dimension / (pageSize > 0 ? pageSize : 1);
+    pages >>= mipLevel;
+    return pages > 0 ? pages : 1;
+}
+
+/// 校验一个 page 请求是否落在有效网格内。
+/// feedback 纹理在首帧可能包含未初始化数据，必须先过滤，否则会越界索引 page table。
+inline bool IsValidPageRequest(const VirtualTextureConfig& cfg, const PageRequest& r)
+{
+    if (r.mipLevel >= cfg.mipLevels)
+    {
+        return false;
+    }
+    return r.pageX < GetPageGridCount(cfg.virtualWidth,  cfg.pageSize, r.mipLevel)
+        && r.pageY < GetPageGridCount(cfg.virtualHeight, cfg.pageSize, r.mipLevel);
 }
 
 /// Page table / feedback 的内存开销估算（用于调试/调参）。
@@ -136,8 +152,8 @@ inline uint64_t EstimatePageTableMemory(const VirtualTextureConfig& cfg)
     uint64_t total = 0;
     for (uint32_t mip = 0; mip < cfg.mipLevels; ++mip)
     {
-        uint32_t w = GetPageGridCount(cfg.virtualWidth,  mip);
-        uint32_t h = GetPageGridCount(cfg.virtualHeight, mip);
+        uint32_t w = GetPageGridCount(cfg.virtualWidth,  cfg.pageSize, mip);
+        uint32_t h = GetPageGridCount(cfg.virtualHeight, cfg.pageSize, mip);
         total += static_cast<uint64_t>(w) * h;
     }
     return total * sizeof(PageTableEntry);
@@ -149,21 +165,33 @@ inline uint64_t EstimateAtlasMemory(const VirtualTextureConfig& cfg)
     return static_cast<uint64_t>(cfg.atlasWidth) * cfg.atlasHeight * 4;
 }
 
-/// CPU 端 VT info uniform buffer 数据，与 shader 中 cbVTInfo 对应
+/// CPU 端 VT info uniform buffer 数据，与 shader 中 cbVTInfo 对应。
+/// 成员顺序 / 类型必须与 GBufferVTPBR.shader 中的 cbVTInfo 完全一致（48 bytes）。
 struct VTInfoBufferData
 {
-    float pageGrid[2];   // 虚拟纹理的 tile 网格数 (virtualSize / pageSize)
-    float tileSize[2];   // 单个 tile 的像素尺寸 (pageSize, pageSize)
-    float atlasSize[2];  // 物理 atlas 的像素尺寸 (atlasWidth, atlasHeight)
+    float pageGrid[2];    // mip0 的 tile 网格数 (virtualSize / pageSize)
+    float tileSize[2];    // 单个 tile 的像素尺寸 (pageSize, pageSize)
+    float atlasSize[2];   // 物理 atlas 的像素尺寸 (atlasWidth, atlasHeight)
+    float virtualSize[2]; // 虚拟纹理像素尺寸 (virtualWidth, virtualHeight)
+    float pagePadding;    // tile 四周 padding（像素，= pageBorder）
+    float slotSize;       // 物理 slot 步长（= pageSize + pageBorder * 2）
+    float minMipLevel;    // 可采样的最小 mip
+    float maxMipLevel;    // 可采样的最大 mip（= mipLevels - 1）
 
     void FillFromConfig(const VirtualTextureConfig& cfg)
     {
-        pageGrid[0]  = static_cast<float>(cfg.virtualWidth)  / cfg.pageSize;
-        pageGrid[1]  = static_cast<float>(cfg.virtualHeight) / cfg.pageSize;
-        tileSize[0]  = static_cast<float>(cfg.pageSize);
-        tileSize[1]  = static_cast<float>(cfg.pageSize);
-        atlasSize[0] = static_cast<float>(cfg.atlasWidth);
-        atlasSize[1] = static_cast<float>(cfg.atlasHeight);
+        pageGrid[0]   = static_cast<float>(cfg.virtualWidth)  / cfg.pageSize;
+        pageGrid[1]   = static_cast<float>(cfg.virtualHeight) / cfg.pageSize;
+        tileSize[0]   = static_cast<float>(cfg.pageSize);
+        tileSize[1]   = static_cast<float>(cfg.pageSize);
+        atlasSize[0]  = static_cast<float>(cfg.atlasWidth);
+        atlasSize[1]  = static_cast<float>(cfg.atlasHeight);
+        virtualSize[0] = static_cast<float>(cfg.virtualWidth);
+        virtualSize[1] = static_cast<float>(cfg.virtualHeight);
+        pagePadding   = static_cast<float>(cfg.pageBorder);
+        slotSize      = static_cast<float>(cfg.slotSize);
+        minMipLevel   = 0.0f;
+        maxMipLevel   = static_cast<float>(cfg.mipLevels > 0 ? cfg.mipLevels - 1 : 0);
     }
 };
 
