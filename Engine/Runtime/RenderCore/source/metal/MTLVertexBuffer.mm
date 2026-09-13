@@ -28,7 +28,8 @@ uint32_t MTLVertexBuffer::GetBufferLength() const
 {
     if (mBuffer)
     {
-        mBuffer->getBufferLength();
+        // 修复：原实现漏写 return，导致恒返回 0（查询缓冲长度永远得到 0）
+        return static_cast<uint32_t>(mBuffer->getBufferLength());
     }
     return 0;
 }

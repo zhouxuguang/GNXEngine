@@ -66,7 +66,8 @@ MTLCommandBuffer::MTLCommandBuffer(id<MTLCommandQueue> commandQueue, CAMetalLaye
         mMetalLayer = metalLayer;
         mCommandBuffer = [commandQueue commandBuffer];
         mDepthTexture = depthTexture;
-        mStencilTexture = depthStencilTexture;
+        // 修复：此前误写为 depthStencilTexture，导致传入的独立 stencil 纹理被丢弃
+        mStencilTexture = stencilTexture;
         mDepthStencilTexture = depthStencilTexture;
         mMetalDevice = [commandQueue device];
     }
