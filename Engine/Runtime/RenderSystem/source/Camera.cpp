@@ -137,6 +137,14 @@ Matrix4x4f Camera::GetProjectionMatrix() const
 void Camera::SetNearClipDistance(float nearClipDistance)
 {
     mNearZ = nearClipDistance;
+
+    // 投影矩阵（含 Reverse-Z 无限远平面）由 zNear 参与计算，必须同步重算：
+    // 否则 GetNearZ() 与 GetProjectionMatrix() 不一致，深度/视锥/剔除等
+    // 全部继续使用过期的近平面。未调用过 SetLens（视口尺寸为 0）时跳过，避免 aspect 除零。
+    if (mWidth > 0 && mHeight > 0)
+    {
+        SetLens(mFov, mWidth, mHeight, mNearZ, mFarZ);
+    }
 }
 
 float Camera::GetNearZ() const

@@ -660,7 +660,11 @@ FrameGraphResource DeferredSceneRenderer::RenderSkyboxPass(
     struct SkyboxPassData
     {
         FrameGraphResource outputResult;
-        FrameGraphResource inputColor;
+        // 注意：不要在此处增加未赋值的资源成员。颜色附件以 Write + LOAD/STORE 方式
+        // 复用延迟光照结果（天空盒按深度测试叠加），无需再 Read 同一资源。
+        // 历史上这里有一个从未赋值的 inputColor，exec 里却用 Get(data.inputColor) 取资源：
+        // 默认值 0 能否通过 Get() 的 assert 完全取决于「资源 0 恰被本 pass 声明」这一巧合，
+        // 一旦资源注册顺序变化就会断言失败（Debug）或取到无关纹理（Release）。
         FrameGraphResource inputDepth;
         UniformBufferPtr cameraUBO;
     };
@@ -687,7 +691,6 @@ FrameGraphResource DeferredSceneRenderer::RenderSkyboxPass(
         [this, commandBuffer, skyBoxNode](const SkyboxPassData& data, FrameGraphPassResources& resources, void* ctx)
         {
             FrameGraphTexture& outputTexture = resources.Get<FrameGraphTexture>(data.outputResult);
-            FrameGraphTexture& inputColor = resources.Get<FrameGraphTexture>(data.inputColor);
             FrameGraphTexture& depthTex = resources.Get<FrameGraphTexture>(data.inputDepth);
 
             float debugColor[4] = {0.2f, 0.6f, 1.0f, 1.0f};
