@@ -63,13 +63,15 @@ void NaniteFrameWork::Resize(uint32_t width, uint32_t height)
     
     RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
 
+    // ---- Camera：相机由 demo 自己创建并摆位（引擎窗口/AppFrameWork 不再创建相机）----
+    // 只在首次创建时摆位，避免窗口 Resize 把用户的视角重置回初始值。
     RenderSystem::CameraPtr cameraPtr = sceneManager->GetCamera("MainCamera");
     if (!cameraPtr)
     {
         cameraPtr = sceneManager->CreateCamera("MainCamera");
+        cameraPtr->LookAt(mathutil::Vector3f(330.0f, 330.0f, -330.0f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
     }
 
-    cameraPtr->LookAt(mathutil::Vector3f(330.0f, 330.0f, -330.0f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
     cameraPtr->SetLens(60, width, height, 0.1f, 1000.f);
 
     mGlobalData.modelMatrix = mathutil::Matrix4x4f::CreateRotation(0, 1, 0, -90) * mathutil::Matrix4x4f::CreateRotation(1, 0, 0, 180);
@@ -481,9 +483,10 @@ void NaniteFrameWork::RenderFrame()
 
 void NaniteFrameWork::OnEvent(GNXEngine::Event& e)
 {
+    // AppFrameWork::OnEvent 内部已经把事件转给 SceneManager（相机控制器），
+    // 这里再调一次会让事件被重复处理（滚轮缩放缓两倍）。
     GNXEngine::AppFrameWork::OnEvent(e);
-    RenderSystem::SceneManager::GetInstance()->OnEvent(e);
-    
+
     GNXEngine::EventDispatcher dispatcher(e);
     dispatcher.Dispatch<GNXEngine::KeyReleasedEvent>(GNX_BIND_EVENT_FN(OnKeyUp));
 }

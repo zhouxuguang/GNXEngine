@@ -13,6 +13,7 @@
 #include "Runtime/RenderCore/include/ShaderFunction.h"
 #include "Runtime/RenderCore/include/RenderDefine.h"
 #include "Runtime/RenderSystem/include/RenderEngine.h"
+#include "Runtime/RenderSystem/include/SceneManager.h"
 #include "Runtime/RenderSystem/include/ShaderAssetLoader.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
@@ -144,6 +145,20 @@ void MeshShaderFrameWork::Resize(uint32_t width, uint32_t height)
     AppFrameWork::Resize(width, height);
     mWidth = width;
     mHeight = height;
+
+    // ---- Camera：相机由 demo 自己创建并摆位（引擎窗口/AppFrameWork 不再创建相机）----
+    // SSBO 里的顶点是 object space 坐标，由 shader 内的 mvp 变换到裁剪空间，
+    // 所以这个 demo 需要一台真实的相机；只在首次创建时摆位，避免 Resize 重置视角。
+    RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
+    RenderSystem::CameraPtr cameraPtr = sceneManager->GetCamera("MainCamera");
+    if (!cameraPtr)
+    {
+        cameraPtr = sceneManager->CreateCamera("MainCamera");
+        cameraPtr->LookAt(Vector3f(0.0f, 0.0f, -5.0f),
+                          Vector3f(0.0f, 0.0f, 0.0f),
+                          Vector3f(0.0f, 1.0f, 0.0f));
+    }
+    cameraPtr->SetLens(60.0f, width, height, 0.1f, 100.0f);
 }
 
 void MeshShaderFrameWork::RenderFrame()
@@ -153,18 +168,29 @@ void MeshShaderFrameWork::RenderFrame()
         return;
     }
 
+    // 驱动相机控制器（鼠标拖拽轨道 / 滚轮缩放 / WASD 飞行）
+    RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
+    static uint64_t lastTime = 0;
+    uint64_t thisTime = baselib::GetTickNanoSeconds();
+    float deltaTime = float(thisTime - lastTime) * 0.000000001f;
+    lastTime = thisTime;
+    sceneManager->Update(deltaTime);
+
     // update uniform data
     UniformData uboData;
     uboData.model = Matrix4x4f();
     uboData.model.MakeIdentity();
-    uboData.view = Matrix4x4f::CreateLookAt(
-        Vector3f(0.0f, 0.0f, -5.0f),
-        Vector3f(0.0f, 0.0f, 0.0f),
-        Vector3f(0.0f, 1.0f, 0.0f)
-    );
-    uboData.view.MakeIdentity();
-    uboData.projection = Matrix4x4f::CreatePerspective(60.0f, (float)mWidth / (float)mHeight, 0.1f, 100.0f);
-    uboData.projection.MakeIdentity();
+    if (RenderSystem::CameraPtr cameraPtr = sceneManager->GetCamera("MainCamera"))
+    {
+        uboData.view = cameraPtr->GetViewMatrix();
+        uboData.projection = cameraPtr->GetProjectionMatrix();
+    }
+    else
+    {
+        // 兜底：没有相机时按裁剪空间直出，画面不会全黑
+        uboData.view.MakeIdentity();
+        uboData.projection.MakeIdentity();
+    }
     mUniformBuffer->SetData(&uboData, 0, sizeof(UniformData));
 
     // create command buffer

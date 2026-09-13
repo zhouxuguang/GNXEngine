@@ -326,9 +326,10 @@ void PBRFrameWork::RenderFrame()
 
 void PBRFrameWork::OnEvent(GNXEngine::Event& e)
 {
+    // AppFrameWork::OnEvent 内部已经把事件转给 SceneManager（相机控制器），
+    // 这里再调一次会让事件被重复处理（滚轮缩放缓两倍）。
     GNXEngine::AppFrameWork::OnEvent(e);
-    RenderSystem::SceneManager::GetInstance()->OnEvent(e);
-    
+
     GNXEngine::EventDispatcher dispatcher(e);
     dispatcher.Dispatch<GNXEngine::KeyReleasedEvent>(GNX_BIND_EVENT_FN(OnKeyUp));
 }

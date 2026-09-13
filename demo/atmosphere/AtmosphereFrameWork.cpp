@@ -13,6 +13,7 @@
 
 #include <imgui.h>
 
+#include <algorithm>
 #include <cmath>
 
 using namespace mathutil;
@@ -79,7 +80,17 @@ void AtmosphereFrameWork::CreateScene(uint32_t width, uint32_t height)
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
 
     // ---- 相机（移植自参考实现 GodCamera）----
-    RenderSystem::CameraPtr camera = sceneManager->CreateCamera("MainCamera");
+    // 相机由 demo 自己创建并摆位（引擎窗口/AppFrameWork 不再创建相机）。
+    // 先 GetCamera 再创建：CreateCamera 不去重，重复创建会留下第二个同名相机。
+    RenderSystem::CameraPtr camera = sceneManager->GetCamera("MainCamera");
+    if (!camera)
+    {
+        camera = sceneManager->CreateCamera("MainCamera");
+    }
+    // 本 demo 用 Z-up 的 GodCamera 自行驱动相机，必须解绑 CreateCamera 默认挂上的
+    // 轨道相机控制器：否则鼠标拖拽 / WASD 会让控制器用世界 Y-up 重建视图矩阵，
+    // 而本场景的“上”是 +Z，画面会整体滚转约 90°（地平线变成竖的）。
+    sceneManager->DestroyCameraController();
     UpdateCamera();
     camera->SetLens(50.0f, width, height, 0.5f, 1000.0f);
 
@@ -196,14 +207,29 @@ void AtmosphereFrameWork::OnEvent(GNXEngine::Event& e)
     // AppFrameWork::OnEvent 内部会先把事件交给 ImGui；UI 捕获时会标记 e.handled
     GNXEngine::AppFrameWork::OnEvent(e);
 
+    // UI 捕获鼠标移动时事件不会派发给 3D 场景。这里仍同步一次光标位置，
+    // 否则拖拽经过 ImGui 面板期间的位置差会被累积，回到场景后产生一次跳变。
+    if (e.handled && e.GetEventType() == GNXEngine::EventType::MouseMoved)
+    {
+        const GNXEngine::MouseMovedEvent& moveEvent = static_cast<const GNXEngine::MouseMovedEvent&>(e);
+        mLastMouseX = moveEvent.GetX();
+        mLastMouseY = moveEvent.GetY();
+        mViewRotatePrimed = false;   // 回到场景后的第一帧先对齐，不做旋转
+    }
+
     // 事件已被 UI 消费：不再触发 demo 自身的场景快捷键（3D 场景不受影响）
     if (e.handled)
     {
         return;
     }
 
+    // 相机控制器已在 CreateScene 中解绑，这里完全由 demo 自己消费鼠标/键盘
     GNXEngine::EventDispatcher dispatcher(e);
     dispatcher.Dispatch<GNXEngine::KeyPressedEvent>(GNX_BIND_EVENT_FN(OnKeyPressed));
+    dispatcher.Dispatch<GNXEngine::MouseButtonPressedEvent>(GNX_BIND_EVENT_FN(OnMouseButtonPressed));
+    dispatcher.Dispatch<GNXEngine::MouseButtonReleasedEvent>(GNX_BIND_EVENT_FN(OnMouseButtonReleased));
+    dispatcher.Dispatch<GNXEngine::MouseMovedEvent>(GNX_BIND_EVENT_FN(OnMouseMoved));
+    dispatcher.Dispatch<GNXEngine::MouseScrolledEvent>(GNX_BIND_EVENT_FN(OnMouseScrolled));
 }
 
 bool AtmosphereFrameWork::OnKeyPressed(GNXEngine::KeyPressedEvent& e)
@@ -256,6 +282,74 @@ bool AtmosphereFrameWork::OnKeyPressed(GNXEngine::KeyPressedEvent& e)
         UpdateSun();
     }
 
+    return false;
+}
+
+// ---------------------------------------------------------------------------
+// 鼠标交互：拖拽旋转视线（手感对齐引擎轨道相机），滚轮缩放距离
+// ---------------------------------------------------------------------------
+bool AtmosphereFrameWork::OnMouseButtonPressed(GNXEngine::MouseButtonPressedEvent& e)
+{
+    if (e.GetMouseButton() == GNXEngine::ButtonLeft ||
+        e.GetMouseButton() == GNXEngine::ButtonRight)
+    {
+        mViewRotating = true;
+        mViewRotatePrimed = false;   // 首帧只记录位置，避免跳变
+    }
+    return false;
+}
+
+bool AtmosphereFrameWork::OnMouseButtonReleased(GNXEngine::MouseButtonReleasedEvent& e)
+{
+    if (e.GetMouseButton() == GNXEngine::ButtonLeft ||
+        e.GetMouseButton() == GNXEngine::ButtonRight)
+    {
+        mViewRotating = false;
+        mViewRotatePrimed = false;
+    }
+    return false;
+}
+
+bool AtmosphereFrameWork::OnMouseMoved(GNXEngine::MouseMovedEvent& e)
+{
+    const float x = e.GetX();
+    const float y = e.GetY();
+
+    if (!mViewRotating)
+    {
+        mLastMouseX = x;
+        mLastMouseY = y;
+        return false;
+    }
+
+    if (!mViewRotatePrimed)
+    {
+        mLastMouseX = x;
+        mLastMouseY = y;
+        mViewRotatePrimed = true;
+        return false;
+    }
+
+    const float kRotateSpeed = 0.001f;   // 弧度 / 像素（与 EditorCameraController 一致）
+    const float dx = x - mLastMouseX;
+    const float dy = y - mLastMouseY;
+    mLastMouseX = x;
+    mLastMouseY = y;
+
+    // 横拖改方位角；纵拖改天顶角（向上拖 = 天顶角减小 = 抬头看天空）
+    mViewAzimuth -= dx * kRotateSpeed;
+    mViewZenith  = std::clamp(mViewZenith - dy * kRotateSpeed, 0.0f, kDemoPi * 0.5f);
+
+    UpdateCamera();
+    return false;
+}
+
+bool AtmosphereFrameWork::OnMouseScrolled(GNXEngine::MouseScrolledEvent& e)
+{
+    // 滚轮缩放：调整相机到原点的距离（GLFW 后端每格已归一化为 ±120）
+    mViewDistance *= (1.0f - e.GetYOffset() * 0.0005f);
+    mViewDistance = std::clamp(mViewDistance, 1.0f, 200.0f);
+    UpdateCamera();
     return false;
 }
 
@@ -365,6 +459,7 @@ void AtmosphereFrameWork::BuildImGuiPanel()
 
         ImGui::Separator();
         ImGui::TextDisabled("快捷键: 方向键 = 太阳, W/S/A/D = 视线");
+        ImGui::TextDisabled("鼠标: 左/右键拖拽 = 旋转视线, 滚轮 = 缩放距离");
         ImGui::TextDisabled("点击面板时输入不会传给 3D 场景");
     }
     ImGui::End();

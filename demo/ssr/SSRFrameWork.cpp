@@ -11,6 +11,7 @@
 #include "Runtime/BaseLib/include/DateTime.h"
 #include <algorithm>
 #include <array>
+#include <iterator>   // std::size
 
 using namespace RenderSystem;
 using namespace RenderCore;
@@ -89,17 +90,21 @@ void SSRFrameWork::Resize(uint32_t width, uint32_t height)
 {
     AppFrameWork::Resize(width, height);
 
+    // ---- Camera：相机由 demo 自己创建并摆位（引擎窗口/AppFrameWork 不再创建相机）----
     SceneManager* scene = SceneManager::GetInstance();
     CameraPtr camera = scene->GetCamera("MainCamera");
     if (!camera)
+    {
         camera = scene->CreateCamera("MainCamera");
 
-    // Parameters from the OpenGL SSR reference scene.
-    // The reference starts at z=30 and its showcase is captured after backing
-    // the same camera away to frame the full reflective floor.
-    camera->LookAt(Vector3f(0.0f, 0.0f, 82.0f),
-                   Vector3f(0.0f, 0.0f, 81.0f),
-                   Vector3f(0.0f, 1.0f, 0.0f));
+        // Parameters from the OpenGL SSR reference scene.
+        // The reference starts at z=30 and its showcase is captured after backing
+        // the same camera away to frame the full reflective floor.
+        // 只在首次创建时摆位，避免窗口 Resize 把用户的视角重置回初始值。
+        camera->LookAt(Vector3f(0.0f, 0.0f, 82.0f),
+                       Vector3f(0.0f, 0.0f, 81.0f),
+                       Vector3f(0.0f, 1.0f, 0.0f));
+    }
     camera->SetLens(45.0f, width, height, 0.1f, 300.0f);
     scene->SetSSREnabled(true);
 
@@ -168,6 +173,7 @@ void SSRFrameWork::RenderFrame()
 
 void SSRFrameWork::OnEvent(GNXEngine::Event& event)
 {
+    // AppFrameWork::OnEvent 内部已经把事件转给 SceneManager（相机控制器），
+    // 这里再调一次会让事件被重复处理（滚轮缩放缓两倍）。
     GNXEngine::AppFrameWork::OnEvent(event);
-    SceneManager::GetInstance()->OnEvent(event);
 }

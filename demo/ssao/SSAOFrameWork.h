@@ -28,6 +28,9 @@ public:
     
 private:
     bool OnKeyUp(GNXEngine::KeyReleasedEvent& e);
+
+    // 场景只创建一次：Resize 会被窗口尺寸变化反复调用
+    bool mSceneCreated = false;
 };
 
 #endif /* SSAOFrameWork_h */

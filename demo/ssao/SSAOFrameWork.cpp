@@ -130,25 +130,35 @@ void SSAOFrameWork::Initlize()
 void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
 {
     AppFrameWork::Resize(width, height);
-    
-    // Update camera
+
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
+
+    // ---- Camera：相机由 demo 自己创建并摆位（引擎窗口/AppFrameWork 不再创建相机）----
+    // 只在首次创建时摆位，避免窗口 Resize 把用户的视角重置回初始值。
     RenderSystem::CameraPtr cameraPtr = sceneManager->GetCamera("MainCamera");
     if (!cameraPtr)
     {
         cameraPtr = sceneManager->CreateCamera("MainCamera");
+        cameraPtr->LookAt(
+            mathutil::Vector3f(2.1f, 1.5f, 2.1f),
+            mathutil::Vector3f(0.0f, 1.0f, 0.0f),
+            mathutil::Vector3f(0.0f, 1.0f, 0.0f)
+        );
     }
-    cameraPtr->LookAt(
-        mathutil::Vector3f(2.1f, 1.5f, 2.1f),
-        mathutil::Vector3f(0.0f, 1.0f, 0.0f),
-        mathutil::Vector3f(0.0f, 1.0f, 0.0f)
-    );
-    
+
     cameraPtr->SetLens(50, width, height, 0.3f, 100.0f);
-    
+
+    // 场景/灯光只创建一次：Resize 每次窗口尺寸变化都会被调用，
+    // 不守卫会重复创建灯光与节点（灯光累加、模型重复加载）。
+    if (mSceneCreated)
+    {
+        return;
+    }
+    mSceneCreated = true;
+
     // Enable FPS camera controller (one line to enable WASD + mouse roaming)
     //sceneManager->EnableFPSCameraController();
-    
+
     // Create a simple light
     RenderSystem::PointLight* pointLight = (RenderSystem::PointLight*)sceneManager->CreateLight(
         "mainLight", RenderSystem::Light::PointLight);
@@ -271,8 +281,9 @@ void SSAOFrameWork::RenderFrame()
 
 void SSAOFrameWork::OnEvent(GNXEngine::Event& e)
 {
+    // AppFrameWork::OnEvent 内部已经把事件转给 SceneManager（相机控制器），
+    // 这里再调一次会让事件被重复处理（滚轮缩放缓两倍），也会绕过 ImGui 的输入捕获保护。
     GNXEngine::AppFrameWork::OnEvent(e);
-    RenderSystem::SceneManager::GetInstance()->OnEvent(e);
 }
 
 bool SSAOFrameWork::OnKeyUp(GNXEngine::KeyReleasedEvent& e)

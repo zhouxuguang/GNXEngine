@@ -117,16 +117,27 @@ void LumenFrameWork::Resize(uint32_t width, uint32_t height)
     AppFrameWork::Resize(width, height);
     
     RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
-    LoadGeometryData(sceneManager);
 
+    // ---- Camera：相机由 demo 自己创建并摆位（引擎窗口/AppFrameWork 不再创建相机）----
+    // 只在首次创建时摆位，避免窗口 Resize 把用户的视角重置回初始值。
 	RenderSystem::CameraPtr cameraPtr = sceneManager->GetCamera("MainCamera");
 	if (!cameraPtr)
 	{
 		cameraPtr = sceneManager->CreateCamera("MainCamera");
+		cameraPtr->LookAt(mathutil::Vector3f(1059.769897f, 336.560120f, -833.207886f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
 	}
 
-	cameraPtr->LookAt(mathutil::Vector3f(1059.769897f, 336.560120f, -833.207886f), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
 	cameraPtr->SetLens(60, width, height, 10.0f, 10000.f);
+
+    // 场景/灯光只创建一次：Resize 每次窗口尺寸变化都会被调用，
+    // 不守卫会重复创建灯光与节点（灯光累加、几何重复加载）。
+    if (mSceneCreated)
+    {
+        return;
+    }
+    mSceneCreated = true;
+
+    LoadGeometryData(sceneManager);
 
     RenderSystem::DirectionLight* dirLight = (RenderSystem::DirectionLight*)sceneManager->CreateLight("mainLight", RenderSystem::Light::DirectionLight);
     dirLight->setColor(mathutil::Vector3f(10.0f, 10.0f, 10.0f));
@@ -152,8 +163,9 @@ void LumenFrameWork::RenderFrame()
 
 void LumenFrameWork::OnEvent(GNXEngine::Event& e)
 {
+    // AppFrameWork::OnEvent 内部已经把事件转给 SceneManager（相机控制器），
+    // 这里再调一次会让事件被重复处理（滚轮缩放缓两倍）。
     GNXEngine::AppFrameWork::OnEvent(e);
-    RenderSystem::SceneManager::GetInstance()->OnEvent(e);
 }
 
 bool LumenFrameWork::OnKeyUp(GNXEngine::KeyReleasedEvent& e)

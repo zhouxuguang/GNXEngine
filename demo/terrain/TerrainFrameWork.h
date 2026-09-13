@@ -33,6 +33,9 @@ public:
 private:
     RenderSystem::SkyBox* mSkyBox = nullptr;
     RenderSystem::TerrainComponent* mTerrainComponent = nullptr;
+
+    // 场景只创建一次：Resize 会被窗口尺寸变化反复调用
+    bool mSceneCreated = false;
 };
 
 #endif /* TERRAIN_FRAMEWORK_H */

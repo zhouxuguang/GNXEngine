@@ -308,13 +308,15 @@ void MeshletFrameWork::Resize(uint32_t width, uint32_t height)
     
     RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
 
+    // ---- Camera：相机由 demo 自己创建并摆位（引擎窗口/AppFrameWork 不再创建相机）----
+    // 只在首次创建时摆位，避免窗口 Resize 把用户的视角重置回初始值。
     RenderSystem::CameraPtr cameraPtr = sceneManager->GetCamera("MainCamera");
     if (!cameraPtr)
     {
         cameraPtr = sceneManager->CreateCamera("MainCamera");
+        cameraPtr->LookAt(mathutil::Vector3f(0.3f, 0.125f, 0.525f), mathutil::Vector3f(0, 0.1f, -0.425f), mathutil::Vector3f(0, 1, 0));
     }
 
-    cameraPtr->LookAt(mathutil::Vector3f(0.3f, 0.125f, 0.525f), mathutil::Vector3f(0, 0.1f, -0.425f), mathutil::Vector3f(0, 1, 0));
     cameraPtr->SetLens(45, width, height, 0.1f, 1000.f);
 }
 

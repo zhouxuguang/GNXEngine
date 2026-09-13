@@ -131,20 +131,29 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
 
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
 
-    // ---- Camera ----
+    // ---- Camera：相机由 demo 自己创建并摆位（引擎窗口/AppFrameWork 不再创建相机）----
+    // 只在首次创建时摆位，避免窗口 Resize 把用户的视角重置回初始值。
     RenderSystem::CameraPtr camera = sceneManager->GetCamera("MainCamera");
     if (!camera)
     {
         camera = sceneManager->CreateCamera("MainCamera");
+        camera->LookAt(
+            Vector3f(0.0f, 70000.0f, 90000.0f),
+            Vector3f(0.0f, 0.0f, 0.0f),
+            Vector3f(0.0f, 1.0f, 0.0f)
+        );
     }
-    camera->LookAt(
-        Vector3f(0.0f, 70000.0f, 90000.0f),
-        Vector3f(0.0f, 0.0f, 0.0f),
-        Vector3f(0.0f, 1.0f, 0.0f)
-    );
     // 远平面需要覆盖整个地形范围（对角线距离 + 相机高度余量）
     // 地形大小 163840，对角线约 231700，加上相机位置偏移，设为 300000
     camera->SetLens(60.0f, width, height, 1.0f, 300000.0f);
+
+    // 场景/灯光只创建一次：Resize 每次窗口尺寸变化都会被调用，
+    // 不守卫会重复创建灯光、天空盒与整棵四叉树地形。
+    if (mSceneCreated)
+    {
+        return;
+    }
+    mSceneCreated = true;
 
     // ---- Directional Light (sun) ----
     RenderSystem::DirectionLight* dirLight = static_cast<RenderSystem::DirectionLight*>(
@@ -251,6 +260,7 @@ void TerrainFrameWork::RenderFrame()
 
 void TerrainFrameWork::OnEvent(GNXEngine::Event& e)
 {
+    // AppFrameWork::OnEvent 内部已经把事件转给 SceneManager（相机控制器），
+    // 这里再调一次会让事件被重复处理（滚轮缩放缓两倍）。
     GNXEngine::AppFrameWork::OnEvent(e);
-    RenderSystem::SceneManager::GetInstance()->OnEvent(e);
 }
