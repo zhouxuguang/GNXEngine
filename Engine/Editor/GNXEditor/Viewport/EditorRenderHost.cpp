@@ -31,6 +31,7 @@ bool EditorRenderHost::Attach(void *handle, uint32_t width, uint32_t height)
         }
         mLastError.clear();
         mState = EditorRenderState::Ready;
+        EnsureSceneCamera(width, height);
         return true;
     }
     catch (const std::exception &error)
@@ -92,6 +93,7 @@ void EditorRenderHost::Tick(float dt)
             mRenderWindow->Resize(mPendingWidth, mPendingHeight);
             GNXEngine::WindowResizeEvent e(mPendingWidth, mPendingHeight);
             ForwardEvent(e);
+            EnsureSceneCamera(mPendingWidth, mPendingHeight);
             mResizePending = false;
         }
         auto *scene = RenderSystem::SceneManager::GetInstance();
@@ -114,4 +116,26 @@ void EditorRenderHost::ForwardEvent(GNXEngine::Event &event)
 {
     if (mRenderWindow)
         mRenderWindow->TriggerEventCallback(event);
+}
+
+void EditorRenderHost::EnsureSceneCamera(uint32_t width, uint32_t height)
+{
+    auto *scene = RenderSystem::SceneManager::GetInstance();
+    if (!scene)
+        return;
+
+    RenderSystem::CameraPtr camera = scene->GetCamera("MainCamera");
+    if (!camera)
+    {
+        // 与原先 GLFWRenderWindow 外部窗口分支里的默认相机保持一致
+        camera = scene->CreateCamera("MainCamera");
+        camera->LookAt(mathutil::Vector3f(0.0f, 0.0f, 5.0f),
+                       mathutil::Vector3f(0.0f, 0.0f, 0.0f),
+                       mathutil::Vector3f(0.0f, 1.0f, 0.0f));
+    }
+
+    if (width > 0 && height > 0)
+    {
+        camera->SetLens(60.0f, width, height, 0.1f, 1000.0f);
+    }
 }

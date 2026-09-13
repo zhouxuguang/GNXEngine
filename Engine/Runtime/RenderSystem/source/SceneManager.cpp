@@ -263,6 +263,15 @@ void SceneManager::SetSSREnabled(bool enabled)
     }
 }
 
+void SceneManager::DestroyCameraController()
+{
+    if (mActiveController)
+    {
+        delete mActiveController;
+        mActiveController = nullptr;
+    }
+}
+
 void SceneManager::CreateController(CameraPtr camera, CameraControllerType type)
 {
     if (mActiveController)
