@@ -8,7 +8,6 @@
 #if !GNX_WINDOW_SDL
 
 #include "GLFWRenderWindow.h"
-#include "Runtime/RenderSystem/include/SceneManager.h"
 #include "Events/ApplicationEvent.h"
 #include "Events/KeyEvent.h"
 #include "Events/MouseEvent.h"
@@ -77,12 +76,6 @@ GLFWRenderWindow::GLFWRenderWindow(const WindowProps& props)
     SetVSync(false);
     Init();
 
-    RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
-
-    //初始化相机
-    RenderSystem::CameraPtr cameraPtr = sceneManager->CreateCamera("MainCamera");
-    cameraPtr->LookAt(mathutil::Vector3f(0, 0, 5), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
-    cameraPtr->SetLens(60, mData.width, mData.height, 0.1f, 1000.f);
 }
 
 GLFWRenderWindow::GLFWRenderWindow(const WindowProps& props, void* externalWindowHandle)
@@ -127,13 +120,6 @@ GLFWRenderWindow::GLFWRenderWindow(const WindowProps& props, void* externalWindo
         mRenderDevice->Resize(mData.width, mData.height);
         SetVSync(false);
 
-        // 不需要初始化 GLFW 回调，因为事件由 Qt 处理
-        RenderSystem::SceneManager *sceneManager = RenderSystem::SceneManager::GetInstance();
-
-        //初始化相机
-        RenderSystem::CameraPtr cameraPtr = sceneManager->CreateCamera("MainCamera");
-        cameraPtr->LookAt(mathutil::Vector3f(0, 0, 5), mathutil::Vector3f(0, 0, 0), mathutil::Vector3f(0, 1, 0));
-        cameraPtr->SetLens(60, mData.width, mData.height, 0.1f, 1000.f);
     }
 }
 
@@ -221,18 +207,21 @@ void GLFWRenderWindow::Init()
             {
                 case GLFW_PRESS:
                 {
+                    InputState::GetInstance().SetKeyState((KeyCode)key, true);
                     KeyPressedEvent event(key, 0);
                     data.eventCallback(event);
                     break;
                 }
                 case GLFW_RELEASE:
                 {
+                    InputState::GetInstance().SetKeyState((KeyCode)key, false);
                     KeyReleasedEvent event(key);
                     data.eventCallback(event);
                     break;
                 }
                 case GLFW_REPEAT:
                 {
+                    InputState::GetInstance().SetKeyState((KeyCode)key, true);
                     KeyPressedEvent event(key, true);
                     data.eventCallback(event);
                     break;
@@ -248,12 +237,14 @@ void GLFWRenderWindow::Init()
             {
                 case GLFW_PRESS:
                 {
+                    InputState::GetInstance().SetMouseButtonState((MouseCode)button, true);
                     MouseButtonPressedEvent event(button);
                     data.eventCallback(event);
                     break;
                 }
                 case GLFW_RELEASE:
                 {
+                    InputState::GetInstance().SetMouseButtonState((MouseCode)button, false);
                     MouseButtonReleasedEvent event(button);
                     data.eventCallback(event);
                     break;
@@ -275,6 +266,7 @@ void GLFWRenderWindow::Init()
                 yOffset = 120;
             }
 
+            InputState::GetInstance().UpdateMouseScroll((float)xOffset, (float)yOffset);
             MouseScrolledEvent event((float)xOffset, (float)yOffset);
             data.eventCallback(event);
         });
@@ -283,6 +275,7 @@ void GLFWRenderWindow::Init()
         {
             WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
+            InputState::GetInstance().SetMousePosition((float)xPos, (float)yPos);
             MouseMovedEvent event((float)xPos, (float)yPos);
             data.eventCallback(event);
         });

@@ -130,8 +130,6 @@ void AppFrameWork::UpdateImGuiFrame()
 
 void AppFrameWork::OnEvent(Event& e)
 {
-    LOG_INFO("%s", e.ToString().c_str());
-    
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<WindowCloseEvent>(GNX_BIND_EVENT_FN(OnWindowClose));
     dispatcher.Dispatch<WindowResizeEvent>(GNX_BIND_EVENT_FN(OnWindowResize));
