@@ -159,6 +159,14 @@ Real MathUtil::FastSin(Real fValue)
 	}
 
 	int nValueInt = (int)fValue;
+	// fmod 归一化后 fValue 可能因浮点舍入恰好等于 360.0（例如极小负数 +360.0），
+	// 此时 nValueInt = 360，下一行会读取 SinTable[361] —— 越界（合法下标 0..360），
+	// 越界读到的内存若为 NaN/Inf 还会污染插值结果（FastCos 即会返回 NaN）。
+	// 钳到 359 后 thetaFrac == 1，插值结果仍精确等于 SinTable[360]，语义不变。
+	if (nValueInt > 359)
+	{
+		nValueInt = 359;
+	}
 	double thetaFrac = fValue - nValueInt;
 
 	return SinTable[nValueInt] + thetaFrac*(SinTable[nValueInt+1] - SinTable[nValueInt]);
@@ -177,6 +185,11 @@ Real MathUtil::FastCos(Real fValue)
 	}
 
 	int nValueInt = (int)fValue;
+	// 同 FastSin：fValue 可能被舍入为 360.0，导致读取 CosTable[361] 越界（并可能返回 NaN）。
+	if (nValueInt > 359)
+	{
+		nValueInt = 359;
+	}
 	double thetaFrac = fValue - nValueInt;
 
 	return CosTable[nValueInt] + thetaFrac*(CosTable[nValueInt+1] - CosTable[nValueInt]);
