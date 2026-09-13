@@ -816,10 +816,6 @@ void MTLRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceN
         return;
     }
     NSUInteger samIndex = shader->GetFragmentResourceBindIndex(resourceName + "Sam");
-    if (samIndex == InvalidBindingIndex)
-    {
-        return;
-    }
     
     if (!texture)
     {
@@ -831,14 +827,19 @@ void MTLRenderEncoder::SetFragmentTextureAndSampler(const std::string& resourceN
         [mRenderEncoder setFragmentTexture:mtlTexture atIndex:texIndex];
     }
     
-    if (!sampler)
+    // Texture.Load()/texelFetch() 不使用 sampler，编译器会优化掉对应反射项。
+    // 这种情况仍需绑定 texture，只跳过 sampler 即可。
+    if (samIndex != InvalidBindingIndex)
     {
-        [mRenderEncoder setFragmentSamplerState:nil atIndex:samIndex];
-    }
-    else
-    {
-        id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
-        [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];
+        if (!sampler)
+        {
+            [mRenderEncoder setFragmentSamplerState:nil atIndex:samIndex];
+        }
+        else
+        {
+            id<MTLSamplerState> mtlSampler = std::dynamic_pointer_cast<MTLTextureSampler>(sampler)->getMTLSampler();
+            [mRenderEncoder setFragmentSamplerState:mtlSampler atIndex:samIndex];
+        }
     }
 }
 
