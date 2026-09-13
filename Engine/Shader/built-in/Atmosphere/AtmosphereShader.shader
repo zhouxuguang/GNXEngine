@@ -143,7 +143,8 @@ float GetSkyVisibility(float3 pos, float3 sphereCenter, float sphereRadius)
 {
     float3 p = pos - sphereCenter;
     float p_dot_p = dot(p, p);
-    return 1.0 + p.z / sqrt(p_dot_p) * sphereRadius * sphereRadius / p_dot_p;
+    // GNXEngine 世界坐标为 Y-up；这里的分量表示遮挡球相对地表点的高度。
+    return 1.0 + p.y / sqrt(p_dot_p) * sphereRadius * sphereRadius / p_dot_p;
 }
 
 void GetSphereShadowInOut(float3 view_direction, float3 sun_direction, float3 camera,

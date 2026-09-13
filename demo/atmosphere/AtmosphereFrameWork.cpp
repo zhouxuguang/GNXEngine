@@ -79,19 +79,19 @@ void AtmosphereFrameWork::CreateScene(uint32_t width, uint32_t height)
 {
     RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
 
-    // ---- 相机（移植自参考实现 GodCamera）----
-    // 相机由 demo 自己创建并摆位（引擎窗口/AppFrameWork 不再创建相机）。
+    // ---- 相机：使用引擎原生 Y-up 坐标与 EditorCameraController ----
+    // 相机由 demo 创建；CreateCamera 会自动挂接引擎轨道相机控制器。
     // 先 GetCamera 再创建：CreateCamera 不去重，重复创建会留下第二个同名相机。
     RenderSystem::CameraPtr camera = sceneManager->GetCamera("MainCamera");
     if (!camera)
     {
         camera = sceneManager->CreateCamera("MainCamera");
     }
-    // 本 demo 用 Z-up 的 GodCamera 自行驱动相机，必须解绑 CreateCamera 默认挂上的
-    // 轨道相机控制器：否则鼠标拖拽 / WASD 会让控制器用世界 Y-up 重建视图矩阵，
-    // 而本场景的“上”是 +Z，画面会整体滚转约 90°（地平线变成竖的）。
-    sceneManager->DestroyCameraController();
-    UpdateCamera();
+    // 参考视角旋转到引擎坐标后的位置。目标固定为地表原点，使控制器首次同步时
+    // 获得正确的焦点和 9km 轨道距离，后续拖拽、平移和缩放都不会跳变。
+    camera->LookAt(Vector3f(8.910f, 0.905f, 0.893f),
+                   Vector3f(0.0f, 0.0f, 0.0f),
+                   Vector3f(0.0f, 1.0f, 0.0f));
     camera->SetLens(50.0f, width, height, 0.5f, 1000.0f);
 
     // ---- 太阳（方向光）：方向从地表指向太阳 ----
@@ -115,7 +115,7 @@ void AtmosphereFrameWork::CreateScene(uint32_t width, uint32_t height)
     {
         const float kLengthUnitInMeters = static_cast<float>(RenderSystem::Atmosphere::kLengthUnitInMeters);
         RenderSystem::Atmosphere::AtmosphereSceneGeometry geometry;
-        geometry.sphereCenter = Vector3f(0.0f, 0.0f, 1000.0f / kLengthUnitInMeters); // 球心 (0,0,1000m)
+        geometry.sphereCenter = Vector3f(0.0f, 1000.0f / kLengthUnitInMeters, 0.0f); // Y-up：球心高 1000m
         geometry.sphereRadius = 1000.0f / kLengthUnitInMeters;                       // 半径 1000m
         geometry.sphereAlbedo = Vector3f(0.8f, 0.8f, 0.8f);                          // 球体反照率
         geometry.groundAlbedo = Vector3f(0.0f, 0.0f, 0.04f);                         // 地面着色反照率
@@ -132,35 +132,6 @@ void AtmosphereFrameWork::CreateScene(uint32_t width, uint32_t height)
     LOG_INFO("Atmosphere demo scene created");
 }
 
-// 依据 view_zenith / view_azimuth / view_distance 摆放相机
-// 与参考实现 GodCamera 的基向量一致：
-//   ux = (-sin a, cos a, 0)
-//   uy = (-cos z cos a, -cos z sin a, sin z)
-//   uz = ( sin z cos a,  sin z sin a, cos z)
-// 相机位于 uz * distance，沿 -uz 方向观察，up = uy
-void AtmosphereFrameWork::UpdateCamera()
-{
-    RenderSystem::SceneManager* sceneManager = RenderSystem::SceneManager::GetInstance();
-    RenderSystem::CameraPtr camera = sceneManager->GetCamera("MainCamera");
-    if (!camera)
-    {
-        return;
-    }
-
-    const float cosz = cosf(mViewZenith);
-    const float sinz = sinf(mViewZenith);
-    const float cosa = cosf(mViewAzimuth);
-    const float sina = sinf(mViewAzimuth);
-
-    Vector3f uz(sinz * cosa, sinz * sina, cosz);
-    Vector3f uy(-cosz * cosa, -cosz * sina, sinz);
-
-    Vector3f position = uz * mViewDistance;
-    Vector3f target = position - uz;
-
-    camera->LookAt(position, target, uy);
-}
-
 // 依据 sun_zenith / sun_azimuth 设置太阳方向
 void AtmosphereFrameWork::UpdateSun()
 {
@@ -172,10 +143,13 @@ void AtmosphereFrameWork::UpdateSun()
     }
 
     RenderSystem::DirectionLight* dirLight = static_cast<RenderSystem::DirectionLight*>(light);
+    // 参考场景是 Z-up；与相机使用相同的保手性旋转
+    // (oldX, oldY, oldZ) -> (oldX, oldZ, -oldY)，转换到引擎 Y-up。
+    // 这样不仅竖直轴正确，也能保留太阳相对默认视角的正前方方位。
     Vector3f sunDir(
         cosf(mSunAzimuth) * sinf(mSunZenith),
-        sinf(mSunAzimuth) * sinf(mSunZenith),
-        cosf(mSunZenith));
+        cosf(mSunZenith),
+        -sinf(mSunAzimuth) * sinf(mSunZenith));
 
     dirLight->setDirection(sunDir.Normalize());
 }
@@ -207,29 +181,15 @@ void AtmosphereFrameWork::OnEvent(GNXEngine::Event& e)
     // AppFrameWork::OnEvent 内部会先把事件交给 ImGui；UI 捕获时会标记 e.handled
     GNXEngine::AppFrameWork::OnEvent(e);
 
-    // UI 捕获鼠标移动时事件不会派发给 3D 场景。这里仍同步一次光标位置，
-    // 否则拖拽经过 ImGui 面板期间的位置差会被累积，回到场景后产生一次跳变。
-    if (e.handled && e.GetEventType() == GNXEngine::EventType::MouseMoved)
-    {
-        const GNXEngine::MouseMovedEvent& moveEvent = static_cast<const GNXEngine::MouseMovedEvent&>(e);
-        mLastMouseX = moveEvent.GetX();
-        mLastMouseY = moveEvent.GetY();
-        mViewRotatePrimed = false;   // 回到场景后的第一帧先对齐，不做旋转
-    }
-
     // 事件已被 UI 消费：不再触发 demo 自身的场景快捷键（3D 场景不受影响）
     if (e.handled)
     {
         return;
     }
 
-    // 相机控制器已在 CreateScene 中解绑，这里完全由 demo 自己消费鼠标/键盘
+    // 相机输入已经由 AppFrameWork 转发给引擎轨道控制器；这里只处理太阳快捷键。
     GNXEngine::EventDispatcher dispatcher(e);
     dispatcher.Dispatch<GNXEngine::KeyPressedEvent>(GNX_BIND_EVENT_FN(OnKeyPressed));
-    dispatcher.Dispatch<GNXEngine::MouseButtonPressedEvent>(GNX_BIND_EVENT_FN(OnMouseButtonPressed));
-    dispatcher.Dispatch<GNXEngine::MouseButtonReleasedEvent>(GNX_BIND_EVENT_FN(OnMouseButtonReleased));
-    dispatcher.Dispatch<GNXEngine::MouseMovedEvent>(GNX_BIND_EVENT_FN(OnMouseMoved));
-    dispatcher.Dispatch<GNXEngine::MouseScrolledEvent>(GNX_BIND_EVENT_FN(OnMouseScrolled));
 }
 
 bool AtmosphereFrameWork::OnKeyPressed(GNXEngine::KeyPressedEvent& e)
@@ -256,23 +216,6 @@ bool AtmosphereFrameWork::OnKeyPressed(GNXEngine::KeyPressedEvent& e)
         mSunZenith = std::max(0.0f, mSunZenith - step);
         changedSun = true;
         break;
-    // W/S：调整视线俯仰，A/D：调整视线方位
-    case GNXEngine::W:
-        mViewZenith = std::max(0.0f, mViewZenith - step);
-        UpdateCamera();
-        break;
-    case GNXEngine::S:
-        mViewZenith = std::min(kDemoPi * 0.5f, mViewZenith + step);
-        UpdateCamera();
-        break;
-    case GNXEngine::A:
-        mViewAzimuth -= step;
-        UpdateCamera();
-        break;
-    case GNXEngine::D:
-        mViewAzimuth += step;
-        UpdateCamera();
-        break;
     default:
         break;
     }
@@ -282,74 +225,6 @@ bool AtmosphereFrameWork::OnKeyPressed(GNXEngine::KeyPressedEvent& e)
         UpdateSun();
     }
 
-    return false;
-}
-
-// ---------------------------------------------------------------------------
-// 鼠标交互：拖拽旋转视线（手感对齐引擎轨道相机），滚轮缩放距离
-// ---------------------------------------------------------------------------
-bool AtmosphereFrameWork::OnMouseButtonPressed(GNXEngine::MouseButtonPressedEvent& e)
-{
-    if (e.GetMouseButton() == GNXEngine::ButtonLeft ||
-        e.GetMouseButton() == GNXEngine::ButtonRight)
-    {
-        mViewRotating = true;
-        mViewRotatePrimed = false;   // 首帧只记录位置，避免跳变
-    }
-    return false;
-}
-
-bool AtmosphereFrameWork::OnMouseButtonReleased(GNXEngine::MouseButtonReleasedEvent& e)
-{
-    if (e.GetMouseButton() == GNXEngine::ButtonLeft ||
-        e.GetMouseButton() == GNXEngine::ButtonRight)
-    {
-        mViewRotating = false;
-        mViewRotatePrimed = false;
-    }
-    return false;
-}
-
-bool AtmosphereFrameWork::OnMouseMoved(GNXEngine::MouseMovedEvent& e)
-{
-    const float x = e.GetX();
-    const float y = e.GetY();
-
-    if (!mViewRotating)
-    {
-        mLastMouseX = x;
-        mLastMouseY = y;
-        return false;
-    }
-
-    if (!mViewRotatePrimed)
-    {
-        mLastMouseX = x;
-        mLastMouseY = y;
-        mViewRotatePrimed = true;
-        return false;
-    }
-
-    const float kRotateSpeed = 0.001f;   // 弧度 / 像素（与 EditorCameraController 一致）
-    const float dx = x - mLastMouseX;
-    const float dy = y - mLastMouseY;
-    mLastMouseX = x;
-    mLastMouseY = y;
-
-    // 横拖改方位角；纵拖改天顶角（向上拖 = 天顶角减小 = 抬头看天空）
-    mViewAzimuth -= dx * kRotateSpeed;
-    mViewZenith  = std::clamp(mViewZenith - dy * kRotateSpeed, 0.0f, kDemoPi * 0.5f);
-
-    UpdateCamera();
-    return false;
-}
-
-bool AtmosphereFrameWork::OnMouseScrolled(GNXEngine::MouseScrolledEvent& e)
-{
-    // 滚轮缩放：调整相机到原点的距离（GLFW 后端每格已归一化为 ±120）
-    mViewDistance *= (1.0f - e.GetYOffset() * 0.0005f);
-    mViewDistance = std::clamp(mViewDistance, 1.0f, 200.0f);
-    UpdateCamera();
     return false;
 }
 
@@ -400,19 +275,6 @@ void AtmosphereFrameWork::BuildImGuiPanel()
             }
         }
 
-        // ---- 相机 ----
-        if (ImGui::CollapsingHeader("相机", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            bool changed = false;
-            changed |= ImGui::SliderFloat("view zenith", &mViewZenith, 0.0f, kDemoPi * 0.5f, "%.3f rad");
-            changed |= ImGui::SliderFloat("view azimuth", &mViewAzimuth, -kDemoPi, kDemoPi, "%.3f rad");
-            changed |= ImGui::SliderFloat("view distance", &mViewDistance, 1.0f, 200.0f, "%.1f");
-            if (changed)
-            {
-                UpdateCamera();
-            }
-        }
-
         // ---- 散射预计算 ----
         if (ImGui::CollapsingHeader("散射 / LUT 预计算"))
         {
@@ -434,22 +296,22 @@ void AtmosphereFrameWork::BuildImGuiPanel()
         {
             RenderSystem::Atmosphere::AtmosphereSceneGeometry geometry = mAtmosphere->GetSceneGeometry();
 
-            float centerXY[2] = { geometry.sphereCenter.x * unit, geometry.sphereCenter.y * unit };
-            float centerZ = geometry.sphereCenter.z * unit;
+            float centerXZ[2] = { geometry.sphereCenter.x * unit, geometry.sphereCenter.z * unit };
+            float centerY = geometry.sphereCenter.y * unit;
             float radiusMeters = geometry.sphereRadius * unit;
             float sphereAlbedo[3] = { geometry.sphereAlbedo.x, geometry.sphereAlbedo.y, geometry.sphereAlbedo.z };
             float groundAlbedo[3] = { geometry.groundAlbedo.x, geometry.groundAlbedo.y, geometry.groundAlbedo.z };
 
             bool changed = false;
-            changed |= ImGui::DragFloat2("球心 XY (m)", centerXY, 10.0f, -5000.0f, 5000.0f);
-            changed |= ImGui::DragFloat("球心 Z (m)", &centerZ, 10.0f, 0.0f, 5000.0f);
+            changed |= ImGui::DragFloat2("球心 XZ (m)", centerXZ, 10.0f, -5000.0f, 5000.0f);
+            changed |= ImGui::DragFloat("球心 Y / 高度 (m)", &centerY, 10.0f, 0.0f, 5000.0f);
             changed |= ImGui::DragFloat("球半径 (m)", &radiusMeters, 10.0f, 10.0f, 5000.0f);
             changed |= ImGui::ColorEdit3("球体反照率", sphereAlbedo);
             changed |= ImGui::ColorEdit3("地面反照率", groundAlbedo);
 
             if (changed)
             {
-                geometry.sphereCenter = Vector3f(centerXY[0] / unit, centerXY[1] / unit, centerZ / unit);
+                geometry.sphereCenter = Vector3f(centerXZ[0] / unit, centerY / unit, centerXZ[1] / unit);
                 geometry.sphereRadius = radiusMeters / unit;
                 geometry.sphereAlbedo = Vector3f(sphereAlbedo[0], sphereAlbedo[1], sphereAlbedo[2]);
                 geometry.groundAlbedo = Vector3f(groundAlbedo[0], groundAlbedo[1], groundAlbedo[2]);
@@ -458,8 +320,9 @@ void AtmosphereFrameWork::BuildImGuiPanel()
         }
 
         ImGui::Separator();
-        ImGui::TextDisabled("快捷键: 方向键 = 太阳, W/S/A/D = 视线");
-        ImGui::TextDisabled("鼠标: 左/右键拖拽 = 旋转视线, 滚轮 = 缩放距离");
+        ImGui::TextDisabled("坐标系: Y-up（GNXEngine 世界坐标）");
+        ImGui::TextDisabled("快捷键: 方向键 = 太阳, W/A/S/D/Q/E = 平移相机");
+        ImGui::TextDisabled("鼠标: 左/右键拖拽 = 轨道旋转, 中键 = 平移, 滚轮 = 缩放");
         ImGui::TextDisabled("点击面板时输入不会传给 3D 场景");
     }
     ImGui::End();

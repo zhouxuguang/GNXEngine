@@ -3,9 +3,7 @@
 //  atmosphere demo
 //
 //  预计算大气散射（Precomputed Atmospheric Scattering）演示
-//  相机 / 太阳参数移植自参考实现 Atmosphere（ZeusYang）：
-//    view_zenith=1.47rad, view_azimuth=-0.1rad, view_distance=9000m
-//    sun_zenith=1.3rad,  sun_azimuth=2.9rad,  exposure=10
+//  使用 GNXEngine 原生 Y-up 世界坐标和轨道相机控制器。
 //
 
 #ifndef AtmosphereFrameWork_h
@@ -15,7 +13,6 @@
 #include "Runtime/RenderSystem/include/SceneManager.h"
 #include "Runtime/RenderSystem/include/Atmosphere/AtmosphereComponent.h"
 #include "Runtime/GNXEngine/include/Events/KeyEvent.h"
-#include "Runtime/GNXEngine/include/Events/MouseEvent.h"
 #include "Runtime/MathUtil/include/Vector3.h"
 
 class AtmosphereFrameWork : public GNXEngine::AppFrameWork
@@ -30,24 +27,13 @@ public:
 
 private:
     void CreateScene(uint32_t width, uint32_t height);
-    void UpdateCamera();
     void UpdateSun();
     void SetupImGui();
     void BuildImGuiPanel();
 
     bool OnKeyPressed(GNXEngine::KeyPressedEvent& e);
-    bool OnMouseButtonPressed(GNXEngine::MouseButtonPressedEvent& e);
-    bool OnMouseButtonReleased(GNXEngine::MouseButtonReleasedEvent& e);
-    bool OnMouseMoved(GNXEngine::MouseMovedEvent& e);
-    bool OnMouseScrolled(GNXEngine::MouseScrolledEvent& e);
-
 private:
     bool mSceneCreated = false;
-
-    // 视角参数（移植自参考实现 GodCamera，view_zenith=1.47）
-    float mViewZenith = 1.47f;      // 视线天顶角（弧度）
-    float mViewAzimuth = -0.1f;     // 视线方位角（弧度）
-    float mViewDistance = 9.0f;     // 相机到原点的距离（大气单位 = 米/1000）
 
     // 太阳参数
     float mSunZenith = 1.3f;
@@ -58,13 +44,6 @@ private:
     int   mScatteringOrders = 5;                       // 当前生效的散射重数
     int   mPendingScatteringOrders = 5;                // UI 上待应用的值
     float mGroundAlbedoBlue = 0.04f;                   // 地面着色反照率（蓝通道）
-    bool  mDirtySceneGeometry = false;                 // 场景几何参数被 UI 修改
-
-    // 鼠标交互状态（拖拽旋转视线 / 滚轮缩放距离）
-    bool  mViewRotating = false;      // 左键或右键按住拖拽中
-    bool  mViewRotatePrimed = false;  // 拖拽首帧先对齐鼠标位置，避免跳变
-    float mLastMouseX = 0.0f;
-    float mLastMouseY = 0.0f;
 
     RenderSystem::AtmosphereComponent* mAtmosphere = nullptr;
 };

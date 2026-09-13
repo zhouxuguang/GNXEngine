@@ -28,8 +28,9 @@ bool AtmosphereComponent::Initialize(unsigned int numScatteringOrders)
 
     const Atmosphere::AtmosphereParameters& params = model->GetAtmosphereParameters();
 
-    // 地球中心与模型的内半径保持一致（单位：大气长度单位）
-    mEarthCenter = Vector3f(0.0f, 0.0f, -params.bottom_radius);
+    // GNXEngine 的世界坐标为 Y-up。把地表原点放在行星北极点，
+    // 地球中心沿 -Y 偏移一个内半径（单位：大气长度单位）。
+    mEarthCenter = Vector3f(0.0f, -params.bottom_radius, 0.0f);
 
     mRenderer = std::make_shared<AtmosphereRenderer>();
     bool ok = mRenderer->Initialize(params, numScatteringOrders);

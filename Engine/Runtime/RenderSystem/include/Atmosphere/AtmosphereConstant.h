@@ -118,10 +118,10 @@ static void ValidateAtmosphereParametersOffsets()
 
 // 参考 Demo 中用于演示光柱与地面着色的“额外几何体”参数。
 // 单位说明：均为“大气单位”（1 大气单位 = kLengthUnitInMeters 米），
-// 默认值与参考实现一致：球心 (0,0,1000m)、半径 1000m、地面着色反照率 (0,0,0.04)。
+// 使用引擎世界坐标约定（Y-up）。默认球心位于地表上方 1000m，半径 1000m。
 struct AtmosphereSceneGeometry
 {
-    Vector3f sphereCenter{0.0f, 0.0f, 1.0f};   // 球心（大气单位）
+    Vector3f sphereCenter{0.0f, 1.0f, 0.0f};   // 球心（大气单位，Y-up）
     float    sphereRadius = 1.0f;              // 球半径（大气单位）
     Vector3f sphereAlbedo{0.8f, 0.8f, 0.8f};   // 球体反照率
     Vector3f groundAlbedo{0.0f, 0.0f, 0.04f};  // 地面着色反照率
