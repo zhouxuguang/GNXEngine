@@ -67,6 +67,10 @@ public:
     ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderString) const override;
     
     CommandBufferPtr CreateCommandBuffer();
+
+    // 不依赖交换链/帧同步的离屏命令缓冲区，供帧外一次性 GPU 工作使用
+    CommandBufferPtr CreateOffscreenCommandBuffer();
+
     
     RCTexture2DPtr CreateTexture2D(TextureFormat format,
                                         TextureUsage usage,

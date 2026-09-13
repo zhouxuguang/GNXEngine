@@ -95,6 +95,12 @@ public:
      * @return 命令缓冲区指针，失败返回nullptr
      */
     virtual CommandBufferPtr CreateCommandBuffer() = 0;
+
+    // 与交换链/帧同步无关的离屏命令缓冲区；默认回退到 CreateCommandBuffer()（Metal 无需特殊处理）
+    virtual CommandBufferPtr CreateOffscreenCommandBuffer()
+    {
+        return CreateCommandBuffer();
+    }
 };
 
 typedef std::shared_ptr<CommandQueue> CommandQueuePtr;
