@@ -53,6 +53,15 @@ bool ImageDecoderHDR::onDecode(const void* buffer, size_t size, VImage* bitmap)
 
 bool ImageDecoderHDR::IsFormat(const void* buffer, size_t size)
 {
+	// Radiance HDR 魔数最长 11 字节（"#?RADIANCE\n"）。
+	// 必须先用 size 做长度校验：hdr_test_core 会一直读到签名末尾，
+	// 缓冲区更短时（例如被截断的 .hdr 文件）会越界读取缓冲区之外的内存。
+	const size_t kMinHeaderSize = 11;
+	if (nullptr == buffer || size < kMinHeaderSize)
+	{
+		return false;
+	}
+
 	return hdr_test((const uint8_t*)buffer);
 }
 

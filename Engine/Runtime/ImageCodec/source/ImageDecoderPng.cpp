@@ -14,22 +14,38 @@ NAMESPACE_IMAGECODEC_BEGIN
 
 #ifdef USE_PNG_LIB
 
+// PNG 内存读取游标：需要同时记录当前位置与缓冲区末尾，才能在读取回调里做越界保护。
+struct PngMemoryReader
+{
+    const uint8_t* cur;
+    const uint8_t* end;
+};
+
 static void pngtest_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
 {
-    //png_size_t check = 0;
-    png_voidp io_ptr;
-    /* fread() returns 0 on error, so it is OK to store this in a png_size_t
-     * instead of an int, which is what fread() actually returns.
-     */
-    io_ptr = png_get_io_ptr(png_ptr);
-    
-    if (io_ptr != NULL)
+    PngMemoryReader* reader = (PngMemoryReader*)png_get_io_ptr(png_ptr);
+    if (reader == NULL || reader->cur == NULL)
     {
-        //check = fread(data, 1, length, (png_FILE_p)io_ptr);
-        memcpy(data, io_ptr, length);
+        memset(data, 0, length);
+        return;
     }
-    
-    png_ptr->io_ptr = (char*)png_ptr->io_ptr + length;
+
+    // 越界保护：截断/损坏的 PNG 会让 libpng 请求超出缓冲区范围的数据。
+    // 修复前这里直接 memcpy(data, io_ptr, length) 并按 length 前进指针，
+    // 没有任何剩余长度检查 —— 读取会越过缓冲区末尾（堆越界读）。
+    // 现在只拷贝剩余部分，缺失部分补 0：后续解码会因数据非法而失败，
+    // 但绝不会读到缓冲区之外。
+    const size_t remain = (size_t)(reader->end - reader->cur);
+    const size_t copy = (length < remain) ? (size_t)length : remain;
+    if (copy > 0)
+    {
+        memcpy(data, reader->cur, copy);
+        reader->cur += copy;
+    }
+    if (copy < (size_t)length)
+    {
+        memset(data + copy, 0, (size_t)length - copy);
+    }
 }
 
 static uint8_t* DecodePngData(const uint8_t* pPngData, size_t dataLen, uint32_t* uiWidth, uint32_t* uiHeight, uint32_t* uChannelCount, uint32_t* uBitCount, ImagePixelFormat &pixelFormat)
@@ -67,8 +83,11 @@ static uint8_t* DecodePngData(const uint8_t* pPngData, size_t dataLen, uint32_t*
         
         setjmp(png_jmpbuf(png_ptr));
         
-        // set the read call back function
-        png_set_read_fn(png_ptr, (png_voidp)pPngData, pngtest_read_data);
+        // set the read call back function（传入带末尾边界的读取游标）
+        PngMemoryReader reader;
+        reader.cur = pPngData;
+        reader.end = pPngData + dataLen;
+        png_set_read_fn(png_ptr, (png_voidp)&reader, pngtest_read_data);
         
         // read png file info
         png_read_info(png_ptr, info_ptr);
@@ -255,6 +274,12 @@ static int pngHeaderCheck(const unsigned char* sig, size_t start, size_t num_to_
 
 bool ImageDecoderPNG::IsFormat(const void *buffer, size_t size)
 {
+    // PNG 签名固定 8 字节，缓冲区不足时不得读取（否则越界）
+    if (NULL == buffer || size < 8)
+    {
+        return false;
+    }
+
     int is_png = pngHeaderCheck((const unsigned char*)buffer, 0, 8);
     return is_png == 0;
 }

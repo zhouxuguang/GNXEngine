@@ -20,7 +20,20 @@ bool EncodeWithLibPNG(std::vector<unsigned char>& dataStream, const VImage& imag
 
 static bool formatHasAlpha(const ImagePixelFormat format)
 {
-    return false;
+    // 修复前恒返回 false，导致带 alpha 的输入被当作无 alpha 处理：
+    // 传到 EncodeWithLibPNG 的 hasAlpha 参数与扫描线转换选择（choose_tranform_proc）都会出错。
+    switch (format)
+    {
+        case FORMAT_RGBA8:
+        case FORMAT_SRGB8_ALPHA8:
+        case FORMAT_RGBA4444:
+        case FORMAT_RGB5A1:
+        case FORMAT_GRAY8_ALPHA8:
+        case FORMAT_RGBA32Float:
+            return true;
+        default:
+            return false;
+    }
 }
 
 bool ImageEncoderPNG::onEncode(std::vector<unsigned char>& dataStream, const VImage& image, int quality) const
@@ -228,11 +241,22 @@ static void transform_scanline_4444(const unsigned char* src, int width, unsigne
 
 static void transform_scanline_5551(const unsigned char* src, int width, unsigned char* dst)
 {
-    //待实现
+    // RGB5A1(16bit) -> RGBA8888：5/5/5/1 位各通道按比例扩展到 8 位。
+    // 修复前该函数体为空（只读不写），导致 FORMAT_RGB5A1 编码时输出未初始化的扫描线数据。
     const uint16_t* srcP = (const uint16_t*)src;
     for (int i = 0; i < width; i++)
     {
-        unsigned int c = *srcP++;
+        const unsigned int c = *srcP++;
+        const unsigned int r5 = (c >> 11) & 0x1F;
+        const unsigned int g5 = (c >> 6)  & 0x1F;
+        const unsigned int b5 = (c >> 1)  & 0x1F;
+        const unsigned int a1 =  c        & 0x01;
+
+        // (v5 << 3) | (v5 >> 2) 即 v5 * 255 / 31，是 5bit->8bit 的标准展宽
+        *dst++ = (unsigned char)((r5 << 3) | (r5 >> 2));
+        *dst++ = (unsigned char)((g5 << 3) | (g5 >> 2));
+        *dst++ = (unsigned char)((b5 << 3) | (b5 >> 2));
+        *dst++ = (unsigned char)(a1 ? 0xFF : 0x00);
     }
 }
 
