@@ -121,3 +121,23 @@ project/ios/GNXEngine.xcodeproj/xcuserdata/zhouxuguang.xcuserdatad/xcschemes/xcs
 
 
 buildtools/
+
+# ---------------------------------------------------------------------------
+# ThirdParty/assimp：源码目录内的 CMake 构建产物（in-source build / port/iOS/build.sh 产生，不入库）
+# ---------------------------------------------------------------------------
+ThirdParty/assimp/assimp-5.2.4/**/CMakeFiles/
+ThirdParty/assimp/assimp-5.2.4/Makefile
+ThirdParty/assimp/assimp-5.2.4/code/Makefile
+ThirdParty/assimp/assimp-5.2.4/contrib/zlib/Makefile
+ThirdParty/assimp/assimp-5.2.4/test/Makefile
+ThirdParty/assimp/assimp-5.2.4/test/headercheck/Makefile
+ThirdParty/assimp/assimp-5.2.4/tools/assimp_cmd/Makefile
+ThirdParty/assimp/assimp-5.2.4/**/cmake_install.cmake
+ThirdParty/assimp/assimp-5.2.4/**/CTestTestfile.cmake
+ThirdParty/assimp/assimp-5.2.4/cmake_uninstall.cmake
+ThirdParty/assimp/assimp-5.2.4/assimp.pc
+ThirdParty/assimp/assimp-5.2.4/include/assimp/config.h
+ThirdParty/assimp/assimp-5.2.4/generated/
+ThirdParty/assimp/assimp-5.2.4/lib/
+ThirdParty/assimp/assimp-5.2.4/**/*.o
+ThirdParty/assimp/assimp-5.2.4/**/*.o.d
