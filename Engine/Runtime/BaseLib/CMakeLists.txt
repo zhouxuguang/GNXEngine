@@ -18,9 +18,19 @@ source_group(TREE ${baselib_dir} PREFIX source FILES ${BASELIB_SOURCES})
 source_group(TREE ${baselib_include_dir} PREFIX include FILES ${BASELIB_INCLUDES})
 
 target_include_directories(BaseLib PRIVATE ${baselib_include_dir})
+
+# DataCompress 使用 zlib 的 compress/inflate/compressBound，所有平台都需要。
+# 此前只在 WIN32 下链接，macOS/Linux 上仅靠其它依赖（assimp/ktx 等）间接带入 libz，
+# 导致「直接链接 BaseLib 的目标」（如 unittest 的 test_baselib / test_mathutil）链接失败：
+#   Undefined symbols: _compress, _compressBound, _inflate, _inflateEnd, _inflateInit2_
+# 说明：ThirdParty/zlib 只在 WIN32 下创建 `zlib` 目标，macOS/Linux 使用系统 zlib。
 if(WIN32)
     target_link_libraries(BaseLib PUBLIC zlib)
-elseif(LINUX)
+else()
+    target_link_libraries(BaseLib PUBLIC z)
+endif()
+
+if(LINUX)
     target_link_libraries(BaseLib PRIVATE ${UUID_LIBRARIES})
 endif()
 
