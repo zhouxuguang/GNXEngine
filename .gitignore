@@ -102,6 +102,7 @@ local.properties
 .cache
 .vscode
 .vs
+.workbuddy/
 
 # lint
 lint/intermediates/
