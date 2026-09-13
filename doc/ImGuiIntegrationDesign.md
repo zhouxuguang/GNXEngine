@@ -440,9 +440,14 @@ otool -L build/Debug/atmosphere | grep imgui                   # 期望无输出
    `GetGlyphRanges*()` 全部废弃、`ImFontGlyphRangesBuilder` 官方评价"不再真正有用"，
    生僻字（如**“曝”**）**无需任何注册**即可显示。
    > 需区分：动态字体免除的是「字形范围声明」，CJK 字体文件本身仍必须显式加载。
-3. **图集尺寸**：初始化时设 `TexMinWidth/TexMinHeight = 1024` 以减少动态扩容
-   （扩容 = 重新分配 + 拷贝，短时间内新旧尺寸纹理并存）；
+3. **图集尺寸**：初始化时设 `TexMinWidth/TexMinHeight = 512`（1MB），
    并把 `TexMaxWidth/TexMaxHeight` 与设备 `maxTextureSize2D` 对齐（ImGui 默认 8192）。
+
+   > **实测数据（大气 demo 全量面板，Retina 2x）**：动态图集最终稳定在 **512×256**
+   > （RGBA32 = 0.5MB 显存 + 0.5MB CPU 副本），且扩容只发生一次、在启动首帧 1ms 内完成
+   > （`512x128 → 512x256`）。1.91 的固定范围图集需覆盖拉丁 + 约 2500 常用汉字，
+   > 按本文档早期记录为"约 1024/2048 见方"（4–16MB）；因此升级后 **纹理显存下降约 8–32 倍**，
+   > 且不再需要一次性上传整张图集（只增量上传新增字形）。
 
 > 历史方案（1.91 静态图集，已废弃）：曾用 `ImFontGlyphRangesBuilder` 组合
 > 「默认范围 + 约 2500 常用汉字」，并用 `AddGlyphText()` 注册范围外文本；
