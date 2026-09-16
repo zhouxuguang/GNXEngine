@@ -1,0 +1,3 @@
+Source: https://github.com/microsoft/DirectX-Headers
+Tag: v1.619.5
+Commit: ee479f0bd5f7b884f202bcf0c3f076cc050dd256
