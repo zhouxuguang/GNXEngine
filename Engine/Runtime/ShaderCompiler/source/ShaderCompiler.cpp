@@ -8,6 +8,10 @@
 #include "ShaderCompiler.h"
 #include "spirv_cross/spirv_glsl.hpp"
 #include "spirv_cross/spirv_msl.hpp"
+#include "spirv_cross/spirv_hlsl.hpp"   // DX12 链路：SPIR-V → HLSL
+
+#include <map>
+#include <utility>
 #include "spirv_reflection.h"
 #include "Runtime/BaseLib/include/PreCompile.h"
 #include "Runtime/BaseLib/include/LogService.h"
@@ -17,6 +21,9 @@
 #include "ReflectionInfo.h"
 #include <unordered_set>
 #include <unordered_map>
+#include <algorithm>
+#include <functional>
+#include <vector>
 
 NAMESPACE_SHADERCOMPILER_BEGIN
 
@@ -144,6 +151,361 @@ static void patchDXCMeshShaderPayloadBug(ShaderCodePtr spirvCode, ShaderStage sh
         }
         offset += wordCountInstr;
     }
+}
+
+// DXC may omit the optional task payload operand required by SPIRV-Cross HLSL.
+static void patchEmitMeshTasksPayloadOperand(ShaderCodePtr spirvCode, ShaderStage shaderStage)
+{
+    if (shaderStage != ShaderStage_Task || !spirvCode || spirvCode->size() < 20)
+    {
+        return;
+    }
+
+    const size_t wordCount = spirvCode->size() / 4;
+    const uint32_t* words = reinterpret_cast<const uint32_t*>(spirvCode->data());
+
+    constexpr uint16_t kOpVariable = 59;
+    constexpr uint16_t kOpEmitMeshTasksEXT = 5294;
+
+    auto instructionOp = [](uint32_t instr) { return (uint16_t)(instr & 0xFFFF); };
+    auto instructionLen = [](uint32_t instr) { return (uint16_t)((instr >> 16) & 0xFFFF); };
+
+    // 1) 找到 task payload 变量（TaskPayloadWorkgroupEXT 存储类的 OpVariable）
+    uint32_t payloadVarId = 0;
+    for (size_t off = 5; off < wordCount;)
+    {
+        const uint16_t len = instructionLen(words[off]);
+        if (len == 0 || off + len > wordCount)
+        {
+            break;
+        }
+        if (instructionOp(words[off]) == kOpVariable && len >= 4 &&
+            words[off + 3] == spv::StorageClassTaskPayloadWorkgroupEXT)
+        {
+            payloadVarId = words[off + 2];   // OpVariable: [result type, result id, storage class]
+            break;
+        }
+        off += len;
+    }
+
+    if (payloadVarId == 0)
+    {
+        return;   // 没有 payload 接口，无需处理
+    }
+
+    // 2) 重建模块，给缺少 payload 操作数的 OpEmitMeshTasksEXT 补上它。
+    //    SPIR-V 内部只有 id 引用（没有字节偏移），因此插入字并整体后移是安全的。
+    std::vector<uint32_t> rebuilt;
+    rebuilt.reserve(wordCount + 1);
+    rebuilt.insert(rebuilt.end(), words, words + 5);   // 5 字头部
+
+    bool patched = false;
+    for (size_t off = 5; off < wordCount;)
+    {
+        const uint16_t len = instructionLen(words[off]);
+        if (len == 0 || off + len > wordCount)
+        {
+            break;
+        }
+
+        if (instructionOp(words[off]) == kOpEmitMeshTasksEXT && len == 4)
+        {
+            rebuilt.push_back((5u << 16) | kOpEmitMeshTasksEXT);
+            rebuilt.push_back(words[off + 1]);
+            rebuilt.push_back(words[off + 2]);
+            rebuilt.push_back(words[off + 3]);
+            rebuilt.push_back(payloadVarId);
+            patched = true;
+        }
+        else
+        {
+            rebuilt.insert(rebuilt.end(), words + off, words + off + len);
+        }
+        off += len;
+    }
+
+    if (!patched)
+    {
+        return;
+    }
+
+    spirvCode->resize(rebuilt.size() * 4);
+    memcpy(spirvCode->data(), rebuilt.data(), rebuilt.size() * 4);
+
+}
+
+// Pad struct array elements so SPIR-V strides are representable in HLSL.
+static void patchStructArrayStridePaddingForHLSL(ShaderCodePtr spirvCode)
+{
+    if (!spirvCode || spirvCode->size() < 20)
+    {
+        return;
+    }
+
+    const size_t wordCount = spirvCode->size() / 4;
+    const uint32_t* words = reinterpret_cast<const uint32_t*>(spirvCode->data());
+
+    constexpr uint16_t kOpTypeInt          = 21;
+    constexpr uint16_t kOpTypeFloat        = 22;
+    constexpr uint16_t kOpTypeVector       = 23;
+    constexpr uint16_t kOpTypeMatrix       = 24;
+    constexpr uint16_t kOpTypeArray        = 28;
+    constexpr uint16_t kOpTypeStruct       = 30;
+    constexpr uint16_t kOpConstant         = 43;
+    constexpr uint16_t kOpDecorate         = 71;
+    constexpr uint16_t kOpMemberDecorate   = 72;
+    constexpr uint32_t kDecorationArrayStride = 6;
+    constexpr uint32_t kDecorationOffset      = 35;
+
+    auto instrOp  = [](uint32_t instr) { return (uint16_t)(instr & 0xFFFF); };
+    auto instrLen = [](uint32_t instr) { return (uint16_t)((instr >> 16) & 0xFFFF); };
+
+    std::unordered_map<uint32_t, uint32_t> scalarSizes;   // 类型 id → 标量/向量/矩阵字节数
+    std::unordered_map<uint32_t, uint32_t> constantValues; // 常量 id → 值（数组长度）
+    std::unordered_map<uint32_t, uint32_t> arrayElem;     // OpTypeArray id → 元素类型 id
+    std::unordered_map<uint32_t, uint32_t> arrayLength;   // OpTypeArray id → 元素个数
+    std::unordered_map<uint32_t, std::vector<uint32_t>> structMembers;  // OpTypeStruct id → 成员类型 id
+    std::unordered_map<uint32_t, std::unordered_map<uint32_t, uint32_t>> memberOffsets;  // struct → member → offset
+    std::unordered_map<uint32_t, uint32_t> arrayStride;   // OpTypeArray id → 步长
+
+    uint32_t float32TypeId = 0;
+
+    for (size_t off = 5; off < wordCount;)
+    {
+        const uint16_t len = instrLen(words[off]);
+        if (len == 0 || off + len > wordCount)
+        {
+            break;
+        }
+
+        const uint16_t op = instrOp(words[off]);
+        const uint32_t* args = words + off + 1;
+
+        if (op == kOpTypeFloat && len >= 3)
+        {
+            const uint32_t width = args[1];
+            scalarSizes[args[0]] = width / 8;
+            if (width == 32 && float32TypeId == 0)
+            {
+                float32TypeId = args[0];
+            }
+        }
+        else if (op == kOpTypeInt && len >= 4)
+        {
+            scalarSizes[args[0]] = args[1] / 8;
+        }
+        else if (op == kOpTypeVector && len >= 4)
+        {
+            auto scalar = scalarSizes.find(args[1]);
+            if (scalar != scalarSizes.end())
+            {
+                scalarSizes[args[0]] = scalar->second * args[2];
+            }
+        }
+        else if (op == kOpTypeMatrix && len >= 4)
+        {
+            // 矩阵按「列数个列向量」占用（cbuffer 中列向量 16 字节对齐的紧凑排列）
+            auto column = scalarSizes.find(args[1]);
+            if (column != scalarSizes.end())
+            {
+                scalarSizes[args[0]] = column->second * args[2];
+            }
+        }
+        else if (op == kOpTypeArray && len >= 4)
+        {
+            arrayElem[args[0]] = args[1];
+            // 第 3 个操作数是长度常量 id，需要从 OpConstant 还原出实际元素个数
+            auto length = constantValues.find(args[2]);
+            if (length != constantValues.end())
+            {
+                arrayLength[args[0]] = length->second;
+            }
+        }
+        else if (op == kOpConstant && len >= 4)
+        {
+            constantValues[args[1]] = args[2];
+        }
+        else if (op == kOpTypeStruct && len >= 2)
+        {
+            std::vector<uint32_t> members(args + 1, args + len - 1);
+            structMembers[args[0]] = std::move(members);
+        }
+        else if (op == kOpDecorate && len >= 3 && args[1] == kDecorationArrayStride)
+        {
+            arrayStride[args[0]] = args[2];
+        }
+        else if (op == kOpMemberDecorate && len >= 4 && args[2] == kDecorationOffset)
+        {
+            memberOffsets[args[0]][args[1]] = args[3];
+        }
+
+        off += len;
+    }
+
+    if (structMembers.empty() || arrayStride.empty())
+    {
+        return;
+    }
+
+    // 递归求类型占用的字节数（用于推算结构体的自然大小）。
+    // 只依赖「成员偏移 + 成员大小」，与 SPIRV-Cross 的 HLSL 布局计算口径一致。
+    std::unordered_map<uint32_t, uint32_t> sizeCache;
+    std::function<uint32_t(uint32_t)> typeSize = [&](uint32_t typeId) -> uint32_t
+    {
+        auto cached = sizeCache.find(typeId);
+        if (cached != sizeCache.end())
+        {
+            return cached->second;
+        }
+
+        uint32_t size = 0;
+
+        auto scalar = scalarSizes.find(typeId);
+        if (scalar != scalarSizes.end())
+        {
+            size = scalar->second;
+        }
+        else
+        {
+            auto array = arrayElem.find(typeId);
+            auto stride = arrayStride.find(typeId);
+            auto length = arrayLength.find(typeId);
+            if (array != arrayElem.end() && stride != arrayStride.end() &&
+                length != arrayLength.end() && length->second > 0)
+            {
+                // 数组整体按「步长 × 元素个数」占用（每个元素都按步长排布）
+                size = stride->second * length->second;
+            }
+            else
+            {
+                auto structure = structMembers.find(typeId);
+                if (structure != structMembers.end())
+                {
+                    const auto offsets = memberOffsets.find(typeId);
+                    for (uint32_t i = 0; i < (uint32_t)structure->second.size(); ++i)
+                    {
+                        uint32_t memberOffset = 0;
+                        if (offsets != memberOffsets.end())
+                        {
+                            auto found = offsets->second.find(i);
+                            if (found != offsets->second.end())
+                            {
+                                memberOffset = found->second;
+                            }
+                        }
+                        const uint32_t end = memberOffset + typeSize(structure->second[i]);
+                        if (end > size)
+                        {
+                            size = end;
+                        }
+                    }
+                }
+            }
+        }
+
+        sizeCache[typeId] = size;
+        return size;
+    };
+
+    // 找出「元素是结构体、且步长大于结构体自然大小」的数组，给元素结构体补填充成员
+    std::unordered_map<uint32_t, uint32_t> padCounts;   // 结构体 id → 追加的 float 个数
+    struct PendingOffset { uint32_t structId; uint32_t memberIndex; uint32_t offset; };
+    std::vector<PendingOffset> pendingOffsets;
+
+    for (const auto& kv : arrayStride)
+    {
+        auto elem = arrayElem.find(kv.first);
+        if (elem == arrayElem.end())
+        {
+            continue;
+        }
+        if (structMembers.find(elem->second) == structMembers.end())
+        {
+            continue;
+        }
+
+        const uint32_t structSize = typeSize(elem->second);
+        const uint32_t stride = kv.second;
+        if (structSize == 0 || stride <= structSize || ((stride - structSize) % 4) != 0)
+        {
+            continue;
+        }
+
+        auto& padCount = padCounts[elem->second];
+        for (uint32_t offset = structSize; offset < stride; offset += 4)
+        {
+            PendingOffset pending;
+            pending.structId = elem->second;
+            pending.memberIndex =
+                (uint32_t)structMembers[elem->second].size() + padCount;
+            pending.offset = offset;
+            pendingOffsets.push_back(pending);
+            ++padCount;
+        }
+    }
+
+
+    if (padCounts.empty() || float32TypeId == 0)
+    {
+        return;
+    }
+
+    std::unordered_map<uint32_t, std::vector<PendingOffset>> pendingByStruct;
+    for (const PendingOffset& pending : pendingOffsets)
+    {
+        pendingByStruct[pending.structId].push_back(pending);
+    }
+
+    // 重建模块：加长目标 OpTypeStruct 的成员表，并紧跟其后写入新的成员偏移装饰。
+    std::vector<uint32_t> rebuilt;
+    rebuilt.reserve(wordCount + pendingOffsets.size() * 5 + padCounts.size() * 4 + 16);
+    rebuilt.insert(rebuilt.end(), words, words + 5);
+
+    for (size_t off = 5; off < wordCount;)
+    {
+        const uint16_t len = instrLen(words[off]);
+        if (len == 0 || off + len > wordCount)
+        {
+            break;
+        }
+
+        const uint16_t op = instrOp(words[off]);
+        const uint32_t* args = words + off + 1;
+
+        if (op == kOpTypeStruct && len >= 2 && padCounts.count(args[0]) != 0)
+        {
+            const uint32_t structId = args[0];
+            const uint32_t padCount = padCounts[structId];
+            const uint32_t newLen = (uint32_t)len + padCount;
+
+            rebuilt.push_back(((newLen & 0xFFFF) << 16) | kOpTypeStruct);
+            rebuilt.insert(rebuilt.end(), args, args + len - 1);
+            for (uint32_t i = 0; i < padCount; ++i)
+            {
+                rebuilt.push_back(float32TypeId);
+            }
+
+            // 新增成员的 Offset 装饰：紧跟类型声明之后，保证解析时类型已存在
+            for (const PendingOffset& pending : pendingByStruct[structId])
+            {
+                rebuilt.push_back((5u << 16) | kOpMemberDecorate);
+                rebuilt.push_back(pending.structId);
+                rebuilt.push_back(pending.memberIndex);
+                rebuilt.push_back(kDecorationOffset);
+                rebuilt.push_back(pending.offset);
+            }
+        }
+        else
+        {
+            rebuilt.insert(rebuilt.end(), words + off, words + off + len);
+        }
+
+        off += len;
+    }
+
+    spirvCode->resize(rebuilt.size() * 4);
+    memcpy(spirvCode->data(), rebuilt.data(), rebuilt.size() * 4);
+
 }
 
 // 将 ≤256B 的 UBO (cbuffer) 改写为 push constant
@@ -487,6 +849,131 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
     return shaderInfo;
 }
 
+// SPIR-V -> HLSL for the DXIL path. Preserve SPIR-V binding numbers.
+static CompiledShaderInfoPtr compileToHLSL(ShaderCodePtr spirvCode, ShaderStage shaderStage)
+{
+    spirv_cross::CompilerHLSL hlsl((const uint32_t*)spirvCode->data(), spirvCode->size() / 4);
+    spirv_cross::ShaderResources resources = hlsl.get_shader_resources();
+
+    spv::ExecutionModel model = spv::ExecutionModelVertex;
+    switch (shaderStage)
+    {
+        case ShaderStage_Vertex:   model = spv::ExecutionModelVertex;    break;
+        case ShaderStage_Fragment: model = spv::ExecutionModelFragment;  break;
+        case ShaderStage_Compute:  model = spv::ExecutionModelGLCompute; break;
+        case ShaderStage_Task:     model = spv::ExecutionModelTaskEXT;   break;
+        case ShaderStage_Mesh:     model = spv::ExecutionModelMeshEXT;   break;
+        default: break;
+    }
+
+    // NonWritable distinguishes SRVs from UAVs in storage_buffers.
+    enum BindClass { kBcv = 0, kSrv, kUav, kSampler };
+
+    std::map<std::pair<uint32_t, uint32_t>, spirv_cross::HLSLResourceBinding> bindingMap;
+
+    auto addBinding = [&](const spirv_cross::Resource& res, BindClass cls)
+    {
+        const uint32_t set     = hlsl.get_decoration(res.id, spv::DecorationDescriptorSet);
+        const uint32_t binding = hlsl.get_decoration(res.id, spv::DecorationBinding);
+
+        const auto key = std::make_pair(set, binding);
+        auto iter = bindingMap.find(key);
+        if (iter == bindingMap.end())
+        {
+            spirv_cross::HLSLResourceBinding resBinding = {};
+            resBinding.stage    = model;
+            resBinding.desc_set = set;
+            resBinding.binding  = binding;
+            iter = bindingMap.emplace(key, resBinding).first;
+        }
+
+        // 同一个 (set, binding) 可能同时承载 srv 与 sampler（combined image sampler），
+        // 因此这里按位补充而不是覆盖。
+        switch (cls)
+        {
+            case kBcv:     iter->second.cbv.register_binding     = binding; break;
+            case kSrv:     iter->second.srv.register_binding     = binding; break;
+            case kUav:     iter->second.uav.register_binding     = binding; break;
+            case kSampler: iter->second.sampler.register_binding = binding; break;
+        }
+
+    };
+
+    for (auto& r : resources.uniform_buffers)
+    {
+        addBinding(r, kBcv);
+    }
+
+    // 只读 / 可写的存储缓冲与存储图像需要分别落到 SRV / UAV
+    for (auto& r : resources.storage_buffers)
+    {
+        const bool readOnly = hlsl.has_decoration(r.id, spv::DecorationNonWritable);
+        addBinding(r, readOnly ? kSrv : kUav);
+    }
+    for (auto& r : resources.storage_images)
+    {
+        const bool readOnly = hlsl.has_decoration(r.id, spv::DecorationNonWritable);
+        addBinding(r, readOnly ? kSrv : kUav);
+    }
+
+    for (auto& r : resources.separate_images)   addBinding(r, kSrv);
+    for (auto& r : resources.separate_samplers) addBinding(r, kSampler);
+    for (auto& r : resources.sampled_images)
+    {
+        addBinding(r, kSrv);
+        addBinding(r, kSampler);
+    }
+
+    spirv_cross::CompilerHLSL::Options options;
+    // SM 6.0：引擎的 shader 使用 StructuredBuffer / RWTexture 等 SM 5+ 特性
+    options.shader_model = 60;
+    // 关键：默认情况下 SPIRV-Cross 把入口点命名为 "main"（use_entry_point_name=false），
+    // 而 SPIR-V 的入口点名字正是引擎传给 DXC 的 -E 参数（VS/PS/CS/TS/MS）。
+    // 开启该选项后，生成的 HLSL 入口点就是 VS/PS/CS/TS/MS，
+    // 与 DXCompilerUtil::GetHLSLEntryPoint 的 -E 参数保持一致。
+    options.use_entry_point_name = true;
+    hlsl.set_hlsl_options(options);
+
+    // 顶点语义：SPIRV-Cross 默认输出 TEXCOORD<location>，
+    // 与 DX12ShaderFunction 按 input register 反射语义的方式天然吻合。
+    std::string hlslSource;
+    try
+    {
+        hlslSource = hlsl.compile();
+    }
+    catch (const std::exception& ex)
+    {
+        // SPIRV-Cross 用异常报告不支持的构造（例如不支持的 execution model），
+        // 必须捕获，否则会直接终止离线编译进程。
+        LOG_ERROR("SPIRV-Cross HLSL conversion failed (stage=%d): %s",
+                  (int)shaderStage, ex.what());
+        return nullptr;
+    }
+
+    CompiledShaderInfoPtr info = std::make_shared<CompiledShaderInfo>();
+    info->format = RenderCore::ShaderFormat_DXIL;
+
+    // 顶点描述需要传给 PSO 的输入布局（slot / offset / format）
+    if (shaderStage == ShaderStage_Vertex)
+    {
+        info->vertexDescriptor = GetMetalReflectionInfo(hlsl, resources);
+    }
+
+    if (shaderStage == ShaderStage_Task || shaderStage == ShaderStage_Mesh ||
+        shaderStage == ShaderStage_Compute)
+    {
+        info->threadgroupSizeX = hlsl.get_execution_mode_argument(spv::ExecutionModeLocalSize, 0);
+        info->threadgroupSizeY = hlsl.get_execution_mode_argument(spv::ExecutionModeLocalSize, 1);
+        info->threadgroupSizeZ = hlsl.get_execution_mode_argument(spv::ExecutionModeLocalSize, 2);
+    }
+
+    info->shaderSource = std::make_shared<ShaderCode>();
+    info->shaderSource->resize(hlslSource.size());
+    memcpy(info->shaderSource->data(), hlslSource.data(), hlslSource.size());
+
+    return info;
+}
+
 //HLSL shader脚本字符串转换
 ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType)
 {
@@ -519,6 +1006,14 @@ CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage s
     // Fix DXC mesh shader payload storage class bug for both Metal and Vulkan
     patchDXCMeshShaderPayloadBug(shaderCode, shaderStage);
 
+    // Fix DXC 省略 OpEmitMeshTasksEXT payload 操作数的问题：
+    // Vulkan 不依赖它，但 SPIRV-Cross 的 HLSL 后端依赖它，缺了就无法生成 DispatchMesh。
+    patchEmitMeshTasksPayloadOperand(shaderCode, shaderStage);
+
+    // Fix 「std140 结构体数组步长 vs HLSL 自然布局」不一致导致 SPIRV-Cross 拒绝生成 HLSL：
+    // 给这类结构体补足填充成员（字节布局不变），使 SPIR-V → HLSL 这一步可用。
+    patchStructArrayStridePaddingForHLSL(shaderCode);
+
     switch (targetFormat)
     {
         case RenderCore::ShaderFormat_MSL_iOS:
@@ -543,8 +1038,66 @@ CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage s
 
         case RenderCore::ShaderFormat_DXIL:
         {
-            LOG_ERROR("CompileShader: DXIL format not implemented yet");
+            // .shader(HLSL) -> SPIR-V -> HLSL -> DXIL.
+#if (GNX_OS_WINDOWS || GNX_OS_LINUX || GNX_OS_MACOS)
+            CompiledShaderInfoPtr compileShader = std::make_shared<CompiledShaderInfo>();
+            compileShader->format = targetFormat;
+
+            // 顶点描述与 threadgroup 大小统一从 SPIR-V 反射得到：
+            // 两条链路都需要它们，且与最终用哪条链路无关。
+            {
+                spirv_cross::Compiler reflection((const uint32_t*)shaderCode->data(),
+                                                 shaderCode->size() / 4);
+                spirv_cross::ShaderResources res = reflection.get_shader_resources();
+
+                if (shaderStage == ShaderStage_Vertex)
+                {
+                    compileShader->vertexDescriptor = GetMetalReflectionInfo(reflection, res);
+                }
+                if (shaderStage == ShaderStage_Task || shaderStage == ShaderStage_Mesh ||
+                    shaderStage == ShaderStage_Compute)
+                {
+                    compileShader->threadgroupSizeX =
+                        reflection.get_execution_mode_argument(spv::ExecutionModeLocalSize, 0);
+                    compileShader->threadgroupSizeY =
+                        reflection.get_execution_mode_argument(spv::ExecutionModeLocalSize, 1);
+                    compileShader->threadgroupSizeZ =
+                        reflection.get_execution_mode_argument(spv::ExecutionModeLocalSize, 2);
+                }
+            }
+
+            CompiledShaderInfoPtr hlslInfo = compileToHLSL(shaderCode, shaderStage);
+            if (!hlslInfo || !hlslInfo->shaderSource || hlslInfo->shaderSource->empty())
+            {
+                LOG_ERROR("CompileShader: SPIR-V to HLSL failed (stage=%d)", (int)shaderStage);
+                return nullptr;
+            }
+
+            const std::string hlslText(hlslInfo->shaderSource->begin(),
+                                       hlslInfo->shaderSource->end());
+            ShaderCodePtr dxilCode =
+                DXCompilerUtil::GetInstance()->compileHLSLTextToDXIL(hlslText, shaderStage);
+
+            if (!dxilCode)
+            {
+                LOG_ERROR("CompileShader: HLSL to DXIL failed (stage=%d)", (int)shaderStage);
+                return nullptr;
+            }
+
+            compileShader->shaderSource = dxilCode;
+            if (!DXCompilerUtil::GetInstance()->reflectDXIL(
+                    *dxilCode, shaderStage, compileShader->resources, compileShader->inputs))
+            {
+                LOG_ERROR("CompileShader: DXIL reflection metadata generation failed (stage=%d)",
+                          (int)shaderStage);
+                return nullptr;
+            }
+            // DX12 不使用 push constant（统一走 CBV），因此不填充 pushConstants
+            return compileShader;
+#else
+            LOG_ERROR("CompileShader: DXIL format is only available on desktop platforms");
             return nullptr;
+#endif
         }
 
         case RenderCore::ShaderFormat_SPIRV:

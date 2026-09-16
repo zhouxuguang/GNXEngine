@@ -24,6 +24,8 @@ struct ShaderMessageEncodeData
     std::vector<PushConstantMessage> pushConstants;
     std::vector<ShaderResourceMessage> resources;
     std::vector<VertexInputMessage> vertexInputs;
+    std::vector<std::string> resourceNames;
+    std::vector<std::string> inputSemantics;
 };
 
 class ShaderMessageUtil

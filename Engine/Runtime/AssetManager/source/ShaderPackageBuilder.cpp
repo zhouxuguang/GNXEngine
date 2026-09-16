@@ -18,10 +18,14 @@
 
 #include <fstream>
 #include <filesystem>
+#include <algorithm>
 
 namespace fs = std::filesystem;
 
 NS_ASSETMANAGER_BEGIN
+
+static bool shader_string_encode_callback(pb_ostream_t* stream, const pb_field_t* field,
+                                          void* const* arg);
 
 ShaderPackageBuilder::ShaderPackageBuilder() = default;
 ShaderPackageBuilder::~ShaderPackageBuilder() = default;
@@ -34,6 +38,8 @@ void ShaderPackageBuilder::AddStage(RenderCore::ShaderStage stage,
                                     uint32_t threadgroupSizeY,
                                     uint32_t threadgroupSizeZ,
                                     const std::vector<RenderCore::CompiledPushConstantInfo>& pushConstants,
+                                    const std::vector<RenderCore::CompiledShaderResourceInfo>& resources,
+                                    const std::vector<RenderCore::CompiledShaderInputInfo>& inputs,
                                     uint64_t sourceHash)
 {
     StageEntry entry;
@@ -45,6 +51,8 @@ void ShaderPackageBuilder::AddStage(RenderCore::ShaderStage stage,
     entry.threadgroupSizeY = threadgroupSizeY;
     entry.threadgroupSizeZ = threadgroupSizeZ;
     entry.pushConstants = pushConstants;
+    entry.resources = resources;
+    entry.inputs = inputs;
     entry.sourceHash = sourceHash;
     mStages.push_back(std::move(entry));
 }
@@ -81,6 +89,8 @@ static void FillVertexInputsFromVertexDesc(const RenderCore::VertexDesc& desc,
 // 从 stage 反射数据填充 encode data（反射 repeated 字段）
 static void FillEncodeDataFromStage(const RenderCore::VertexDesc& vertexDesc,
                                     const std::vector<RenderCore::CompiledPushConstantInfo>& pushConstants,
+                                    const std::vector<RenderCore::CompiledShaderResourceInfo>& resources,
+                                    const std::vector<RenderCore::CompiledShaderInputInfo>& inputs,
                                     ShaderMessageEncodeData& out)
 {
     // vertexInputs（由 vertexDescriptor 转换，Metal 重建 VertexDesc 必需）
@@ -98,6 +108,46 @@ static void FillEncodeDataFromStage(const RenderCore::VertexDesc& vertexDesc,
         pcm.set     = pc.set;
         pcm.binding = pc.binding;
         out.pushConstants.push_back(pcm);
+    }
+
+    out.resources.clear();
+    out.resourceNames.clear();
+    out.resourceNames.reserve(resources.size());
+    out.resources.reserve(resources.size());
+    for (const auto& resource : resources)
+    {
+        out.resourceNames.push_back(resource.name);
+        ShaderResourceMessage message = ShaderResourceMessage_init_default;
+        message.name.funcs.encode = shader_string_encode_callback;
+        message.name.arg = &out.resourceNames.back();
+        message.binding = resource.binding;
+        message.resource_class = (uint32_t)resource.resourceClass;
+        message.bind_count = resource.bindCount;
+        message.dimension = resource.dimension;
+        message.structured_stride = resource.structuredStride;
+        message.is_raw_buffer = resource.isRawBuffer;
+        out.resources.push_back(message);
+    }
+
+    out.inputSemantics.clear();
+    out.inputSemantics.reserve(inputs.size());
+    for (const auto& input : inputs)
+    {
+        out.inputSemantics.push_back(input.semanticName);
+        auto it = std::find_if(out.vertexInputs.begin(), out.vertexInputs.end(),
+                               [&](const VertexInputMessage& message) {
+                                   return message.location == input.registerIndex;
+                               });
+        if (it == out.vertexInputs.end())
+        {
+            out.vertexInputs.push_back(VertexInputMessage_init_default);
+            it = out.vertexInputs.end() - 1;
+            it->location = input.registerIndex;
+        }
+        it->semantic.funcs.encode = shader_string_encode_callback;
+        it->semantic.arg = &out.inputSemantics.back();
+        it->semantic_index = input.semanticIndex;
+        it->register_index = input.registerIndex;
     }
 }
 
@@ -176,7 +226,8 @@ bool ShaderPackageBuilder::Save(const std::string& outputPath)
         msg.compiledShader.funcs.encode = nanopb_encode_gnx_bytes;
 
         // 反射 repeated 字段（由 stages 编码回调统一挂 encode 函数）
-        FillEncodeDataFromStage(entry.vertexDesc, entry.pushConstants, sEntry.encodeData);
+        FillEncodeDataFromStage(entry.vertexDesc, entry.pushConstants, entry.resources, entry.inputs,
+                                sEntry.encodeData);
 
         stageEntries.push_back(std::move(sEntry));
     }

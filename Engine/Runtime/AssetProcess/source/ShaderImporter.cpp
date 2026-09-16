@@ -92,6 +92,8 @@ bool ShaderImporter::ImportAndSave()
                      result->threadgroupSizeY,
                      result->threadgroupSizeZ,
                      result->pushConstants,
+                     result->resources,
+                     result->inputs,
                      sourceHash);
 
     mProgress = 0.9f;

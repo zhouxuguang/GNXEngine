@@ -64,6 +64,48 @@ static void FillPushConstantsFromPb(const ShaderMessage& msg,
     }
 }
 
+static void FillDX12ReflectionFromPb(const ShaderMessage& msg,
+                                    RenderCore::ShaderStageData& data)
+{
+    data.resources.clear();
+    if (msg.resources.arg)
+    {
+        const auto* list = (std::vector<ShaderResourceMessage>*)msg.resources.arg;
+        for (const auto& item : *list)
+        {
+            RenderCore::CompiledShaderResourceInfo resource;
+            if (item.name.arg)
+            {
+                const auto* bytes = (pb_bytes_array_t*)item.name.arg;
+                resource.name.assign((const char*)bytes->bytes, bytes->size);
+            }
+            resource.resourceClass = (RenderCore::ShaderResourceClass)item.resource_class;
+            resource.binding = item.binding;
+            resource.bindCount = item.bind_count ? item.bind_count : 1;
+            resource.dimension = item.dimension;
+            resource.structuredStride = item.structured_stride;
+            resource.isRawBuffer = item.is_raw_buffer;
+            data.resources.push_back(std::move(resource));
+        }
+    }
+
+    data.inputs.clear();
+    if (msg.vertexInputs.arg)
+    {
+        const auto* list = (std::vector<VertexInputMessage>*)msg.vertexInputs.arg;
+        for (const auto& item : *list)
+        {
+            if (!item.semantic.arg) continue;
+            const auto* bytes = (pb_bytes_array_t*)item.semantic.arg;
+            RenderCore::CompiledShaderInputInfo input;
+            input.semanticName.assign((const char*)bytes->bytes, bytes->size);
+            input.semanticIndex = item.semantic_index;
+            input.registerIndex = item.register_index;
+            data.inputs.push_back(std::move(input));
+        }
+    }
+}
+
 static RenderCore::ShaderStageData ConvertStageFromPb(const ShaderMessage& msg)
 {
     RenderCore::ShaderStageData data;
@@ -91,6 +133,7 @@ static RenderCore::ShaderStageData ConvertStageFromPb(const ShaderMessage& msg)
     // 反射
     FillVertexDescFromPb(msg, data.vertexDescriptor);
     FillPushConstantsFromPb(msg, data.pushConstants);
+    FillDX12ReflectionFromPb(msg, data);
 
     return data;
 }

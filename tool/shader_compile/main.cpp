@@ -267,6 +267,8 @@ int main(int argc, char* argv[])
                          result->threadgroupSizeY,
                          result->threadgroupSizeZ,
                          result->pushConstants,
+                         result->resources,
+                         result->inputs,
                          sourceHash);
     }
 

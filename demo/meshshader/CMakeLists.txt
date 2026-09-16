@@ -4,14 +4,6 @@ MeshShaderFrameWork.cpp
 MeshShaderFrameWork.h
 )
 
-target_link_libraries(meshshader GNXEngine ShaderCompiler spirv_reflect)
-
-if(APPLE AND NOT IOS)
-    target_link_libraries(meshshader ${CMAKE_CURRENT_SOURCE_DIR}/../../ThirdParty/DirectXShaderCompiler/lib/mac/libdxcompiler.dylib)
-elseif(WIN32)
-    target_link_libraries(meshshader ${CMAKE_CURRENT_SOURCE_DIR}/../../ThirdParty/DirectXShaderCompiler/lib/win/dxcompiler.lib)
-elseif(LINUX AND NOT ANDROID)
-    target_link_libraries(meshshader ${CMAKE_CURRENT_SOURCE_DIR}/../../ThirdParty/DirectXShaderCompiler/lib/linux/libdxcompiler.so)
-endif()
+target_link_libraries(meshshader GNXEngine)
 
 set_property(TARGET meshshader PROPERTY FOLDER "demo/meshshader")

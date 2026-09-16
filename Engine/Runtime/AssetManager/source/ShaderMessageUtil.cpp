@@ -153,6 +153,8 @@ static bool nanopb_decode_shader_resource(pb_istream_t* stream, const pb_field_t
     }
 
     ShaderResourceMessage r = ShaderResourceMessage_init_default;
+    r.name.funcs.decode = nanopb_decode_gnx_bytes;
+    r.name.arg = nullptr;
     if (!pb_decode(stream, ShaderResourceMessage_fields, &r))
         return false;
     pList->push_back(r);
@@ -169,6 +171,8 @@ static bool nanopb_decode_vertex_input(pb_istream_t* stream, const pb_field_t* f
     }
 
     VertexInputMessage vi = VertexInputMessage_init_default;
+    vi.semantic.funcs.decode = nanopb_decode_gnx_bytes;
+    vi.semantic.arg = nullptr;
     if (!pb_decode(stream, VertexInputMessage_fields, &vi))
         return false;
     pList->push_back(vi);
@@ -271,12 +275,16 @@ void ShaderMessageUtil::ReleaseShaderMessage(ShaderMessage& msg)
     }
     if (msg.resources.arg)
     {
-        delete (std::vector<ShaderResourceMessage>*)msg.resources.arg;
+        auto* resources = (std::vector<ShaderResourceMessage>*)msg.resources.arg;
+        for (auto& resource : *resources) free(resource.name.arg);
+        delete resources;
         msg.resources.arg = nullptr;
     }
     if (msg.vertexInputs.arg)
     {
-        delete (std::vector<VertexInputMessage>*)msg.vertexInputs.arg;
+        auto* inputs = (std::vector<VertexInputMessage>*)msg.vertexInputs.arg;
+        for (auto& input : *inputs) free(input.semantic.arg);
+        delete inputs;
         msg.vertexInputs.arg = nullptr;
     }
 

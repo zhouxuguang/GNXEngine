@@ -53,27 +53,19 @@ target_link_libraries(RenderSystem PRIVATE imgui)
 #         /Users/zhouxuguang/work/mycode/GNXEngine/source/thirdparty/assimp-5.2.4/lib/Mac
 #         /Users/zhouxuguang/work/mycode/GNXEngine/source/thirdparty/DirectXShaderCompiler/lib/mac)
 
-if(ANDROID OR IOS)
-# 移动端（Android/iOS）不链接 DXC，使用离线编译的 shader 资产
 target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler AssetManager nanopb TracyClient
-    assimp
-    ktx)
-elseif(APPLE)
-target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler AssetManager nanopb TracyClient
-    assimp
-    ktx
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/mac/libdxcompiler.dylib)
+    assimp ktx)
+
+if(APPLE AND NOT IOS)
+    target_link_libraries(RenderSystem PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/mac/libdxcompiler.dylib)
 elseif(WIN32)
-target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler AssetManager nanopb TracyClient
-    assimp
-    ktx
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/win/dxcompiler.lib)
-elseif(LINUX)
-target_link_libraries(RenderSystem PRIVATE BaseLib RenderCore ShaderCompiler AssetManager nanopb TracyClient
-    assimp
-    ktx
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/linux/libdxcompiler.so)
-endif() 
+    target_link_libraries(RenderSystem PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/win/dxcompiler.lib)
+elseif(LINUX AND NOT ANDROID)
+    target_link_libraries(RenderSystem PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../../ThirdParty/DirectXShaderCompiler/lib/linux/libdxcompiler.so)
+endif()
 
 set_property(TARGET RenderSystem PROPERTY FOLDER "Runtime")
 

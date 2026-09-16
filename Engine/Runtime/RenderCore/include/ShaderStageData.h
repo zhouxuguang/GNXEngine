@@ -34,6 +34,32 @@ struct CompiledPushConstantInfo
     uint32_t binding = 0; // 原始 descriptor binding
 };
 
+enum class ShaderResourceClass : uint32_t
+{
+    CBV = 0,
+    SRV = 1,
+    UAV = 2,
+    Sampler = 3,
+};
+
+struct CompiledShaderResourceInfo
+{
+    std::string name;
+    ShaderResourceClass resourceClass = ShaderResourceClass::SRV;
+    uint32_t binding = 0;
+    uint32_t bindCount = 1;
+    uint32_t dimension = 0;
+    uint32_t structuredStride = 0;
+    bool isRawBuffer = false;
+};
+
+struct CompiledShaderInputInfo
+{
+    std::string semanticName;
+    uint32_t semanticIndex = 0;
+    uint32_t registerIndex = 0;
+};
+
 // 单个 stage 的编译/加载结果（与 pb ShaderMessage 对应，但为纯 C++ 值类型）
 struct ShaderStageData
 {
@@ -49,6 +75,8 @@ struct ShaderStageData
     // ====== 反射元数据 ======
     RenderCore::VertexDesc vertexDescriptor;  // 顶点描述（Metal 重建 MTLVertexDescriptor 必需）
     std::vector<CompiledPushConstantInfo> pushConstants;  // push constant 布局（Vulkan 管线布局需要）
+    std::vector<CompiledShaderResourceInfo> resources;
+    std::vector<CompiledShaderInputInfo> inputs;
 
     // ====== Threadgroup 大小（TS / MS / CS 有效） ======
     uint32_t threadgroupSizeX = 0;

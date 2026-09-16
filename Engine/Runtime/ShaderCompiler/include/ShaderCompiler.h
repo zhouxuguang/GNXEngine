@@ -57,6 +57,24 @@ struct CompiledShaderInfo
     // 从 UBO 转换为 push constant 的 cbuffer 列表
     // 在 CompileShader 中由 patchUniformToPushConstant 填充
     std::vector<CompiledPushConstantInfo> pushConstants;
+    std::vector<RenderCore::CompiledShaderResourceInfo> resources;
+    std::vector<RenderCore::CompiledShaderInputInfo> inputs;
+
+    RenderCore::ShaderStageData ToStageData(RenderCore::ShaderStage stage) const
+    {
+        RenderCore::ShaderStageData data;
+        data.stage = stage;
+        data.format = format;
+        if (shaderSource) data.sourceData = *shaderSource;
+        data.vertexDescriptor = vertexDescriptor;
+        data.pushConstants = pushConstants;
+        data.resources = resources;
+        data.inputs = inputs;
+        data.threadgroupSizeX = threadgroupSizeX;
+        data.threadgroupSizeY = threadgroupSizeY;
+        data.threadgroupSizeZ = threadgroupSizeZ;
+        return data;
+    }
 };
 
 using CompiledShaderInfoPtr = std::shared_ptr<CompiledShaderInfo>;

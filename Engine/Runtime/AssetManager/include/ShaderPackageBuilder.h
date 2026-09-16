@@ -50,6 +50,8 @@ public:
                   uint32_t threadgroupSizeY,
                   uint32_t threadgroupSizeZ,
                   const std::vector<RenderCore::CompiledPushConstantInfo>& pushConstants,
+                  const std::vector<RenderCore::CompiledShaderResourceInfo>& resources,
+                  const std::vector<RenderCore::CompiledShaderInputInfo>& inputs,
                   uint64_t sourceHash);
 
     /** 返回已添加的 stage 数 */
@@ -75,6 +77,8 @@ private:
         uint32_t threadgroupSizeY = 0;
         uint32_t threadgroupSizeZ = 0;
         std::vector<RenderCore::CompiledPushConstantInfo> pushConstants;
+        std::vector<RenderCore::CompiledShaderResourceInfo> resources;
+        std::vector<RenderCore::CompiledShaderInputInfo> inputs;
         uint64_t sourceHash = 0;
     };
 

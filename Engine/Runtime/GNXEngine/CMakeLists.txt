@@ -54,8 +54,8 @@ target_link_libraries(GNXEngine PRIVATE
     ImageCodec 
     RenderCore 
     RenderSystem 
-    ShaderCompiler 
-    spirv_reflect 
+    ShaderCompiler
+    spirv_reflect
     tbb 
     ktx 
     TracyClient
@@ -130,15 +130,7 @@ if(ANDROID)
     )
 endif()
 
-# DirectX Shader Compiler 运行时库拷贝（参考 RenderCore 里的 CopyAftermathDLL）：
-# GNXEngine 通过 RenderSystem / ShaderCompiler 链接了 dxcompiler 导入库，
-# 生成的 GNXEngine 共享库在加载时会隐式依赖 dxcompiler.dll（.dylib / .so），
-# 必须把它一并拷贝到可执行文件所在目录，否则运行/调试时报
-# "找不到 dxcompiler.dll / 0xc000007b"。
-# 注意：Android / iOS 使用离线编译的 shader 资产，不链接 DXC，无需拷贝。
 if(WIN32 OR APPLE OR (LINUX AND NOT ANDROID))
-    # 用 CMAKE_CURRENT_SOURCE_DIR 逐级上溯到仓库根，避免 PROJECT_SOURCE_DIR
-    # 在 Android jni 子工程里指向错误位置。
     get_filename_component(GNX_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
     if(WIN32)
         set(DXC_RUNTIME_LIB "${GNX_REPO_ROOT}/ThirdParty/DirectXShaderCompiler/lib/win/dxcompiler.dll")
@@ -152,10 +144,7 @@ if(WIN32 OR APPLE OR (LINUX AND NOT ANDROID))
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "${DXC_RUNTIME_LIB}"
                 "$<TARGET_FILE_DIR:GNXEngine>"
-            COMMENT "Copying ${DXC_RUNTIME_LIB} to $<TARGET_FILE_DIR:GNXEngine>"
         )
-    else()
-        message(WARNING "DXC runtime library not found: ${DXC_RUNTIME_LIB}")
     endif()
 endif()
 

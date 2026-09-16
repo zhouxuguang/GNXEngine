@@ -58,6 +58,11 @@ message ShaderResourceMessage
     uint32 binding = 3;
     uint32 msl_texture = 4;     // Metal 重映射后的纹理槽位（MSL 专用）
     uint32 msl_sampler = 5;     // Metal 重映射后的采样器槽位（MSL 专用）
+    uint32 resource_class = 6;  // CBV/SRV/UAV/Sampler
+    uint32 bind_count = 7;
+    uint32 dimension = 8;
+    uint32 structured_stride = 9;
+    bool is_raw_buffer = 10;
 }
 
 // ==================== 顶点输入属性 ====================
@@ -68,6 +73,8 @@ message VertexInputMessage
     VertexDataFormat format = 3;    // 数据格式
     uint32 offset = 4;              // vertex stride 内字节偏移
     uint32 stride = 5;              // 该 attribute 对应 buffer layout 的 stride（Metal 每 attribute 一个 layout）
+    uint32 semantic_index = 6;
+    uint32 register_index = 7;
 }
 
 // ==================== 编译后的 Shader ====================

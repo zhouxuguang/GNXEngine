@@ -18,7 +18,9 @@ NAMESPACE_SHADERCOMPILER_BEGIN
 
 UniformBuffersLayout GetMetalUniformReflectionInfo(const spirv_cross::CompilerMSL& msl, const spirv_cross::ShaderResources& resources);
 
-VertexDesc GetMetalReflectionInfo(const spirv_cross::CompilerMSL& msl, const spirv_cross::ShaderResources& resources);
+// 顶点描述反射：只使用 spirv_cross::Compiler 的基类接口，
+// 因此 MSL 与 HLSL 后端共用同一份实现（HLSL 是 DX12 链路的一环）。
+VertexDesc GetMetalReflectionInfo(const spirv_cross::Compiler& msl, const spirv_cross::ShaderResources& resources);
 
 NAMESPACE_SHADERCOMPILER_END
 
