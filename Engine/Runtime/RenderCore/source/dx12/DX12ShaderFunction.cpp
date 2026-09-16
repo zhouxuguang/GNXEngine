@@ -338,9 +338,15 @@ void DX12GraphicsShader::MergeBindings()
             auto ownerIter = registerOwner.find(key);
             if (ownerIter != registerOwner.end() && ownerIter->second != name)
             {
-                LOG_ERROR("[DX12] Register aliasing: (class=%d, reg=%u) is bound to both '%s' and '%s'. "
-                          "两个不同的资源不能占用同一寄存器。",
-                          (int)info.cls, info.bindPoint, ownerIter->second.c_str(), name.c_str());
+                const auto existing = mMergedBindings.find(ownerIter->second);
+                const bool sameStageAlias = existing != mMergedBindings.end() &&
+                                            existing->second.stage == info.stage;
+                if (!sameStageAlias)
+                {
+                    LOG_ERROR("[DX12] Register aliasing: (class=%d, reg=%u) is bound to both '%s' and '%s'. "
+                              "两个不同的资源不能占用同一寄存器。",
+                              (int)info.cls, info.bindPoint, ownerIter->second.c_str(), name.c_str());
+                }
             }
             registerOwner[key] = name;
 

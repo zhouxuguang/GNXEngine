@@ -677,7 +677,9 @@ void DX12Util::FillSamplerDesc(const SamplerDesc& des, D3D12_SAMPLER_DESC& outDe
     // 因此 MaxAnisotropy 恒为 1；非各向异性 filter 下 D3D 本来就忽略该字段。
     outDesc.MaxAnisotropy  = 1u;
     (void)des.anisotropyLog2;
-    outDesc.ComparisonFunc = ConvertCompareFunction(des.compareFunc);
+    outDesc.ComparisonFunc = des.compareMode == COMPARE_TO_TEXTURE
+        ? ConvertCompareFunction(des.compareFunc)
+        : D3D12_COMPARISON_FUNC_NEVER;
     outDesc.BorderColor[0] = 0.0f;
     outDesc.BorderColor[1] = 0.0f;
     outDesc.BorderColor[2] = 0.0f;
