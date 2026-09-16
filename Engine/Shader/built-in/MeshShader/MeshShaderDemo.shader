@@ -1,7 +1,6 @@
 // MeshShaderDemo.shader
 // Demonstrates mesh shader reading vertex data from StructuredBuffer (SSBO).
-// Task shader dispatches 2 mesh workgroups, each mesh workgroup reads vertices
-// from gVertices SSBO and outputs 1 triangle.
+// Task shader dispatches one mesh workgroup for each input triangle.
 //
 // This test validates:
 //   - MS + SSBO (StructuredBuffer) read path
@@ -33,18 +32,16 @@ static const uint VERTS_PER_TRIANGLE = 3;
 // ==================== Task Shader ====================
 struct MeshPayload
 {
-    uint triangleIndex;  // which triangle this mesh group will output
+    uint triangleIndex;
 };
 
-groupshared MeshPayload payload;
+groupshared MeshPayload taskPayload;
 
 [numthreads(1, 1, 1)]
-void TS(in uint groupId : SV_GroupID)
+void TS(uint groupId : SV_GroupID)
 {
-    // Dispatch one mesh workgroup per triangle
-    // The demo has 2 triangles in the vertex buffer
-    payload.triangleIndex = groupId;
-    DispatchMesh(1, 1, 1, payload);
+    taskPayload.triangleIndex = groupId;
+    DispatchMesh(1, 1, 1, taskPayload);
 }
 
 // ==================== Mesh Shader ====================
@@ -56,10 +53,10 @@ struct VertexOutput
 
 [outputtopology("triangle")]
 [numthreads(1, 1, 1)]
-void MS(out indices uint3 triangles[1], out vertices VertexOutput vertices[3], uint3 dispatchThreadID : SV_DispatchThreadID)
+void MS(out indices uint3 triangles[1], out vertices VertexOutput vertices[3],
+        in payload MeshPayload payload,
+        uint3 groupId : SV_GroupID)
 {
-    float4x4 mvp = mul(projection, mul(view, model));
-
     uint triIdx = payload.triangleIndex;
     uint baseVertex = triIdx * VERTS_PER_TRIANGLE;
 
@@ -69,7 +66,8 @@ void MS(out indices uint3 triangles[1], out vertices VertexOutput vertices[3], u
     for (uint i = 0; i < VERTS_PER_TRIANGLE; i++)
     {
         VertexData v = gVertices[baseVertex + i];
-        vertices[i].position = mul(mvp, v.position);
+        // Demo vertices are authored directly in homogeneous clip space.
+        vertices[i].position = v.position;
         vertices[i].color = v.color;
     }
 

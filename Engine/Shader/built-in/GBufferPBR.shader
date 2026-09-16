@@ -69,7 +69,8 @@ GBufferOutput PS(VertexOut pin)
     float opacity = Kd.a;
     
     // 2. 法线映射
-    float3 normalSample = gNormalMap.Sample(gNormalMapSam, pin.texCoord0).xyz;
+    // Decode the glTF tangent-space normal from UNORM.
+    float3 normalSample = gNormalMap.Sample(gNormalMapSam, pin.texCoord0).xyz * 2.0f - 1.0f;
     float3 n = normalize(pin.worldNormal);
     
     // 使用NormalSampleToWorldSpace转换法线

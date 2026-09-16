@@ -223,7 +223,8 @@ void TerrainFrameWork::Resize(uint32_t width, uint32_t height)
 
     // Assign material to TerrainComponent
     mTerrainComponent->SetMaterial(material);
-    mTerrainComponent->SetWireframe(true);
+    // Solid fill avoids backend-specific line rasterization rules.
+    mTerrainComponent->SetWireframe(false);
     mTerrainComponent->SetUseGPUCulling(false);
     mTerrainComponent->SetUseMeshShader(true);
 

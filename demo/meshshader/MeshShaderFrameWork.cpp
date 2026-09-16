@@ -67,8 +67,8 @@ void MeshShaderFrameWork::CreatePipeline()
     shaderInfo.graphicsPipelineDesc.colorAttachmentDescriptors[0].writeMask = ColorWriteMaskAll;
 
     // depth attachment
-    shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionLessThanOrEqual;
-    shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = true;
+    shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionAlways;
+    shaderInfo.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
 
     // create pipeline
     mMeshPipeline = mRenderDevice->CreateGraphicsPipeline(shaderInfo.graphicsPipelineDesc);
@@ -125,14 +125,14 @@ void MeshShaderFrameWork::CreateVertexSSBO()
     }
 
     // Triangle 0: left triangle (green → cyan → blue)
-    vertices[0] = {{ -0.5f,  0.5f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}};   // top,    green
-    vertices[1] = {{ -1.0f, -0.5f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f, 1.0f}};   // bottom-left, cyan
-    vertices[2] = {{  0.0f, -0.5f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}};   // bottom-right, blue
+    vertices[0] = {{ -0.5f,  0.98f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}};   // top, green
+    vertices[1] = {{ -0.98f, -0.98f, 0.0f, 1.0f}, {0.0f, 1.0f, 1.0f, 1.0f}}; // bottom-left, cyan
+    vertices[2] = {{ -0.01f, -0.98f, 0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}}; // bottom-right, blue
 
     // Triangle 1: right triangle (orange → yellow → red), offset by +1.0 in X
-    vertices[3] = {{  0.5f,  0.5f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.0f, 1.0f}};   // top,    orange
-    vertices[4] = {{  0.0f, -0.5f, 0.0f, 1.0f}, {1.0f, 1.0f, 0.0f, 1.0f}};   // bottom-left, yellow
-    vertices[5] = {{  1.0f, -0.5f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}};   // bottom-right, red
+    vertices[3] = {{  0.5f,  0.98f, 0.0f, 1.0f}, {1.0f, 0.5f, 0.0f, 1.0f}};   // top, orange
+    vertices[4] = {{  0.01f, -0.98f, 0.0f, 1.0f}, {1.0f, 1.0f, 0.0f, 1.0f}}; // bottom-left, yellow
+    vertices[5] = {{  0.98f, -0.98f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}}; // bottom-right, red
 
     mVertexSSBO->Unmap();
 
@@ -211,8 +211,7 @@ void MeshShaderFrameWork::RenderFrame()
     // set mesh pipeline
     renderEncoder->SetGraphicsPipeline(mMeshPipeline);
 
-    // bind uniform buffer to mesh shader (binding 0)
-    renderEncoder->SetMeshUniformBuffer(mUniformBuffer, 0);
+    // The unused clip-space transform UBO is optimized out.
 
     // bind vertex SSBO to mesh shader stage (StructuredBuffer read in MS)
     if (mVertexSSBO)
