@@ -94,7 +94,8 @@ void TerrainCullPass::CreateCullPipeline()
 {
     ShaderAssetString shaderAsset = LoadShaderAsset("TerrainCull");
 
-    mCullPipeline = GetRenderDevice()->CreateComputePipeline(*shaderAsset.computeShader->shaderSource);
+    mCullPipeline = GetRenderDevice()->CreateComputePipeline(
+        *shaderAsset.computeShader);
 
     if (!mCullPipeline)
     {

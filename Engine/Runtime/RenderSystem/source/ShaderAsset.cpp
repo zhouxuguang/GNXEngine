@@ -6,10 +6,7 @@
 //
 
 #include "ShaderAsset.h"
-#include "Runtime/ShaderCompiler/include/ShaderCompiler.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
-
-using namespace shader_compiler;
 
 NS_RENDERSYSTEM_BEGIN
 

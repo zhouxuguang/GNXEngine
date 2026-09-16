@@ -207,7 +207,7 @@ void HiZPass::CreateHiZPipeline()
     
     // 使用加载的Shader
     mHiZPipeline = GetRenderDevice()->CreateComputePipeline(
-        *shaderAsset.computeShader->shaderSource
+        *shaderAsset.computeShader
     );
 }
 

@@ -55,9 +55,6 @@ MaterialPtr Material::CreateMaterial(const char *shaderStrPath)
     {
         return nullptr;
     }
-    ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
-    ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
-    
     /*FILE* fp1 = fopen("/Users/zhouxuguang/work/pbr.vert", "wb");
     fwrite(vertexShader->data(), 1, vertexShader->size(), fp1);
     fclose(fp1);
@@ -69,7 +66,8 @@ MaterialPtr Material::CreateMaterial(const char *shaderStrPath)
     /*ShaderFunctionPtr vertShader = getRenderDevice()->createShaderFunction(*vertexShader, ShaderStage_Vertex);
     ShaderFunctionPtr fragShader = getRenderDevice()->createShaderFunction(*fragmentShader, ShaderStage_Fragment);*/
 
-    GraphicsShaderPtr shader = GetRenderDevice()->CreateGraphicsShader(*vertexShader, *fragmentShader);
+    GraphicsShaderPtr shader = GetRenderDevice()->CreateGraphicsShader(
+        *shaderAssetString.vertexShader, *shaderAssetString.fragmentShader);
     
     GraphicsPipelineDesc graphicsPipelineDescriptor;
     VertextAttributesDesc vertextAttributesDescritptor;

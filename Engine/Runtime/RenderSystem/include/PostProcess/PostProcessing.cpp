@@ -21,10 +21,8 @@ PostProcessing::PostProcessing(RenderDevicePtr renderDevice)
     
     ShaderAssetString shaderAssetString = LoadShaderAsset("PostProcessShader");
     
-    ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
-    ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
-
-    GraphicsShaderPtr graphicsShader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
+    GraphicsShaderPtr graphicsShader = renderDevice->CreateGraphicsShader(
+        *shaderAssetString.vertexShader, *shaderAssetString.fragmentShader);
 
     GraphicsPipelineDesc graphicsPipelineDescriptor;
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;

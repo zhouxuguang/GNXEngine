@@ -11,12 +11,10 @@
 #include "RSDefine.h"
 #include "Runtime/RenderCore/include/RenderDescriptor.h"
 #include "Runtime/RenderCore/include/ShaderFunction.h"
-#include "Runtime/ShaderCompiler/include/ShaderCompiler.h"
+#include "Runtime/RenderCore/include/ShaderStageData.h"
 #include "Runtime/RenderCore/include/GraphicsPipeline.h"
 
 NS_RENDERSYSTEM_BEGIN
-
-using namespace shader_compiler;
 
 struct ShaderString
 {
@@ -29,15 +27,13 @@ struct ShaderString
 
 struct ShaderAssetString
 {
-    CompiledShaderInfoPtr vertexShader;
-    CompiledShaderInfoPtr fragmentShader;
-    CompiledShaderInfoPtr computeShader;
-    CompiledShaderInfoPtr taskShader;
-    CompiledShaderInfoPtr meshShader;
+    std::shared_ptr<RenderCore::ShaderStageData> vertexShader;
+    std::shared_ptr<RenderCore::ShaderStageData> fragmentShader;
+    std::shared_ptr<RenderCore::ShaderStageData> computeShader;
+    std::shared_ptr<RenderCore::ShaderStageData> taskShader;
+    std::shared_ptr<RenderCore::ShaderStageData> meshShader;
 
-    VertexDesc vertexDescriptor;                             // 顶点描述
-    shader_compiler::UniformBuffersLayout vertexUniformBufferLayout;  //顶点ubo信息
-    shader_compiler::UniformBuffersLayout fragmentUniformBufferLayout; //片元ubo信息
+    VertexDesc vertexDescriptor;
 };
 
 struct GraphicsShaderInfo
@@ -50,7 +46,7 @@ RENDERSYSTEM_API ShaderAssetString LoadShaderAsset(const std::string &shaderName
 
 RENDERSYSTEM_API ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName);
 
-RENDERCORE_API GraphicsShaderInfo CreateGraphicsShaderInfo(const std::string& shaderName);
+RENDERSYSTEM_API GraphicsShaderInfo CreateGraphicsShaderInfo(const std::string& shaderName);
 
 NS_RENDERSYSTEM_END
 

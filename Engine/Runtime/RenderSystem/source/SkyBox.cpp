@@ -170,10 +170,8 @@ bool SkyBox::init(RenderDevicePtr renderDevice, VImagePtr positive_x, VImagePtr 
     
     ShaderAssetString shaderAssetString = LoadShaderAsset("Skybox");
     
-    ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
-    ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
-
-    GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
+    GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(
+        *shaderAssetString.vertexShader, *shaderAssetString.fragmentShader);
 
     GraphicsPipelineDesc graphicsPipelineDescriptor;
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;
@@ -204,10 +202,8 @@ bool SkyBox::initFromTexture(RenderDevicePtr renderDevice, RCTextureCubePtr text
 
     ShaderAssetString shaderAssetString = LoadShaderAsset("Skybox");
 
-    ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
-    ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
-
-    GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
+    GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(
+        *shaderAssetString.vertexShader, *shaderAssetString.fragmentShader);
 
     GraphicsPipelineDesc graphicsPipelineDescriptor;
     graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;

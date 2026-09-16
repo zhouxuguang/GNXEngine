@@ -16,9 +16,9 @@
 #include "Runtime/BaseLib/include/LogService.h"
 #include <fstream>
 
-using namespace shader_compiler;
-
 NS_RENDERSYSTEM_BEGIN
+
+using namespace shader_compiler;
 
 // ============================================================================
 // 内部辅助：从 .gnxasset 加载预编译 shader
@@ -35,6 +35,9 @@ static RenderCore::ShaderFormat GetShaderFormat(RenderDeviceType renderType)
 #else
             return RenderCore::ShaderFormat_MSL_iOS;
 #endif
+        case RenderDeviceType::DX12:
+            // D3D12 使用 DXIL 字节码（由 .shader → SPIR-V → HLSL → DXIL 离线生成）
+            return RenderCore::ShaderFormat_DXIL;
         case RenderDeviceType::VULKAN:
         default:
             return RenderCore::ShaderFormat_SPIRV;
@@ -47,46 +50,11 @@ static std::string GetShaderFormatSuffix(RenderCore::ShaderFormat format)
     return RenderCore::ShaderFormatToString(format);
 }
 
-// Build CompiledShaderInfo from ShaderStageData (RenderCore value type, not pb)
-static CompiledShaderInfoPtr BuildCompiledShaderInfo(const RenderCore::ShaderStageData& stageData,
-                                                     ShaderStage shaderStage)
-{
-    // Validate stage match
-    if (stageData.stage != shaderStage)
-    {
-        LOG_WARN("LoadCompiledShader: stage mismatch (expected %u, got %u)",
-                 (uint32_t)shaderStage, (uint32_t)stageData.stage);
-        return nullptr;
-    }
-
-    // Build CompiledShaderInfo
-    auto info = std::make_shared<CompiledShaderInfo>();
-    info->format = stageData.format;
-    info->shaderSource = std::make_shared<ShaderCode>();
-    if (!stageData.sourceData.empty())
-    {
-        info->shaderSource->resize(stageData.sourceData.size());
-        memcpy(info->shaderSource->data(), stageData.sourceData.data(), stageData.sourceData.size());
-    }
-
-    info->threadgroupSizeX = stageData.threadgroupSizeX;
-    info->threadgroupSizeY = stageData.threadgroupSizeY;
-    info->threadgroupSizeZ = stageData.threadgroupSizeZ;
-
-    // Vertex descriptor (already decoded by ShaderAsset from pb vertexInputs)
-    info->vertexDescriptor = stageData.vertexDescriptor;
-
-    // Push constants (already decoded)
-    info->pushConstants = stageData.pushConstants;
-
-    return info;
-}
-
 // Load a single stage compile result from a container file
 // File naming: {shaderName}.{format}.gnxasset (one file per shader, all stages inside)
-static CompiledShaderInfoPtr LoadCompiledShaderFromAsset(AssetManager::ShaderAsset* shaderAsset,
-                                                          ShaderStage shaderStage,
-                                                          const std::string& formatSuffix)
+static std::shared_ptr<RenderCore::ShaderStageData> LoadCompiledShaderFromAsset(
+    AssetManager::ShaderAsset* shaderAsset, ShaderStage shaderStage,
+    const std::string& formatSuffix)
 {
     // Get stage from container (ShaderAsset already decoded to ShaderStageData value type)
     const RenderCore::ShaderStageData* stageData = shaderAsset->GetStage(shaderStage);
@@ -96,7 +64,7 @@ static CompiledShaderInfoPtr LoadCompiledShaderFromAsset(AssetManager::ShaderAss
         return nullptr;
     }
 
-    CompiledShaderInfoPtr info = BuildCompiledShaderInfo(*stageData, shaderStage);
+    auto info = std::make_shared<RenderCore::ShaderStageData>(*stageData);
 
     LOG_INFO("LoadCompiledShader: loaded stage %u from %s.%s.gnxasset (%zu bytes)",
              (uint32_t)shaderStage, shaderAsset->GetShaderName().c_str(),
@@ -252,48 +220,23 @@ ShaderAssetString LoadShaderAsset(const std::string &shaderName)
 
 ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName)
 {
-    ShaderAssetString shaderAssetString;
-    if (!GetRenderDevice())
-    {
-        return shaderAssetString;
-    }
-    
-    RenderDeviceType renderType = GetRenderDevice()->GetRenderDeviceType();
-    RenderCore::ShaderFormat format = GetShaderFormat(renderType);
-    
-    CompiledShaderInfoPtr vertexShaderInfo = CompileShader(shaderName, ShaderStage_Vertex, format);
-    
-    if (vertexShaderInfo)
-    {
-        shaderAssetString.vertexShader = vertexShaderInfo;
-        shaderAssetString.vertexDescriptor = vertexShaderInfo->vertexDescriptor;
-    }
-    
-    CompiledShaderInfoPtr fragmentShaderInfo = CompileShader(shaderName, ShaderStage_Fragment, format);
-    if (fragmentShaderInfo)
-    {
-        shaderAssetString.fragmentShader = fragmentShaderInfo;
-    }
-    
-    CompiledShaderInfoPtr computeShaderInfo = CompileShader(shaderName, ShaderStage_Compute, format);
-    if (computeShaderInfo)
-    {
-        shaderAssetString.computeShader = computeShaderInfo;
-    }
-    
-    CompiledShaderInfoPtr taskShaderInfo = CompileShader(shaderName, ShaderStage_Task, format);
-    if (taskShaderInfo)
-    {
-        shaderAssetString.taskShader = taskShaderInfo;
-    }
-    
-    CompiledShaderInfoPtr meshShaderInfo = CompileShader(shaderName, ShaderStage_Mesh, format);
-    if (meshShaderInfo)
-    {
-        shaderAssetString.meshShader = meshShaderInfo;
-    }
-    
-    return shaderAssetString;
+    ShaderAssetString result;
+    if (!GetRenderDevice()) return result;
+
+    const RenderCore::ShaderFormat format = GetShaderFormat(GetRenderDevice()->GetRenderDeviceType());
+    const auto compileStage = [&](ShaderStage stage) {
+        CompiledShaderInfoPtr compiled = CompileShader(shaderName, stage, format);
+        if (!compiled) return std::shared_ptr<RenderCore::ShaderStageData>();
+        return std::make_shared<RenderCore::ShaderStageData>(compiled->ToStageData(stage));
+    };
+
+    result.vertexShader = compileStage(ShaderStage_Vertex);
+    result.fragmentShader = compileStage(ShaderStage_Fragment);
+    result.computeShader = compileStage(ShaderStage_Compute);
+    result.taskShader = compileStage(ShaderStage_Task);
+    result.meshShader = compileStage(ShaderStage_Mesh);
+    if (result.vertexShader) result.vertexDescriptor = result.vertexShader->vertexDescriptor;
+    return result;
 }
 
 GraphicsShaderInfo CreateGraphicsShaderInfo(const std::string& shaderName)
@@ -308,19 +251,14 @@ GraphicsShaderInfo CreateGraphicsShaderInfo(const std::string& shaderName)
     if (isMeshShader)
     {
         // Mesh Shader 管线：Task(可选) + Mesh + Fragment
-        ShaderCodePtr taskShader = shaderAssetString.taskShader ? shaderAssetString.taskShader->shaderSource : ShaderCodePtr();
-        ShaderCodePtr meshShader = shaderAssetString.meshShader->shaderSource;
-        ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
-        
-        ShaderCode emptyTask; // 空 task shader
+        RenderCore::ShaderStageData taskData;
+        if (shaderAssetString.taskShader) taskData = *shaderAssetString.taskShader;
         GraphicsShaderPtr graphicsShader = GetRenderDevice()->CreateMeshGraphicsShader(
-            taskShader ? *taskShader : emptyTask,
-            *meshShader,
-            *fragmentShader);
+            taskData, *shaderAssetString.meshShader, *shaderAssetString.fragmentShader);
 
         // Pass SPIR-V threadgroup sizes (from HLSL [numthreads]) to the graphics shader,
         // so the pipeline can use them instead of hardcoded defaults.
-        if (shaderAssetString.taskShader->threadgroupSizeX > 0)
+        if (shaderAssetString.taskShader && shaderAssetString.taskShader->threadgroupSizeX > 0)
         {
             graphicsShader->SetMeshThreadgroupSize(
                 shaderAssetString.taskShader->threadgroupSizeX,
@@ -351,10 +289,8 @@ GraphicsShaderInfo CreateGraphicsShaderInfo(const std::string& shaderName)
     else
     {
         // 传统图形管线：Vertex + Fragment
-        ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
-        ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
-        
-        GraphicsShaderPtr graphicsShader = GetRenderDevice()->CreateGraphicsShader(*vertexShader, *fragmentShader);
+        GraphicsShaderPtr graphicsShader = GetRenderDevice()->CreateGraphicsShader(
+            *shaderAssetString.vertexShader, *shaderAssetString.fragmentShader);
         graphicsShaderInfo.graphicsShader = graphicsShader;
         
         graphicsShaderInfo.graphicsPipelineDesc.vertexDescriptor = std::move(shaderAssetString.vertexDescriptor);
