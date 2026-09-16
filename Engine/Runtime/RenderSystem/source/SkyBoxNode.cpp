@@ -10,9 +10,18 @@
 
 NS_RENDERSYSTEM_BEGIN
 
+SkyBoxNode::~SkyBoxNode()
+{
+    delete mSkyBox;
+    mSkyBox = nullptr;
+}
+
 void SkyBoxNode::AttachSkyBoxObject(SkyBox *obj)
 {
-    //SceneNode::AttachObject(obj);
+    if (mSkyBox != obj)
+    {
+        delete mSkyBox;
+    }
     mSkyBox = obj;
 }
 

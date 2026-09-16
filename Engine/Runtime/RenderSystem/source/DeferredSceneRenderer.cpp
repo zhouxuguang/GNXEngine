@@ -44,6 +44,8 @@ DeferredSceneRenderer::DeferredSceneRenderer()
 
 DeferredSceneRenderer::~DeferredSceneRenderer()
 {
+    delete mPostProcessing;
+    mPostProcessing = nullptr;
 }
 
 void DeferredSceneRenderer::SetGBufferConfig(const GBufferRenderer::GBufferConfig& config)

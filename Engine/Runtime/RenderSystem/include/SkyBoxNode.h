@@ -18,6 +18,8 @@ NS_RENDERSYSTEM_BEGIN
 class RENDERSYSTEM_API SkyBoxNode : public SceneNode
 {
 public:
+    ~SkyBoxNode() override;
+
     void AttachSkyBoxObject(SkyBox *obj);
     
     //
