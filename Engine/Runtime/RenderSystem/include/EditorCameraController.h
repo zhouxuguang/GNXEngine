@@ -59,6 +59,17 @@ public:
     mathutil::Vector3f GetFocusPoint() const { return mFocusPoint; }
     void SetFocusPoint(const mathutil::Vector3f& focus);
 
+    // 最小相机高度约束（可选，默认不生效）。
+    // 设置后轨道俯仰会被夹取，保证相机停留在该高度之上——大气散射这类
+    // "地面在 y=0、相机沉到地面以下就会渲染异常"的场景需要它。
+    void SetMinCameraY(float y)
+    {
+        mMinCameraY = y;
+        mUseMinCameraY = true;
+    }
+
+    void DisableMinCameraY() { mUseMinCameraY = false; }
+
 private:
     bool OnMouseMoved(GNXEngine::MouseMovedEvent& e);
     bool OnMouseButtonPressed(GNXEngine::MouseButtonPressedEvent& e);
@@ -93,6 +104,13 @@ private:
     // Distance limits
     float mMinDistance = 0.1f;
     float mMaxDistance = 1000000.0f;
+
+    // 相机最低高度约束
+    float mMinCameraY = 0.0f;
+    bool  mUseMinCameraY = false;
+
+    // 把 mPitch 夹到"相机不低于 mMinCameraY"的最小值
+    void ClampPitchToMinCameraY();
 
     // Keyboard state for WASD movement
     bool mKeyW = false;

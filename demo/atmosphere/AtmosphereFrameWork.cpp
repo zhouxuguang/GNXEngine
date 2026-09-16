@@ -5,6 +5,7 @@
 
 #include "AtmosphereFrameWork.h"
 #include "Runtime/GNXEngine/include/RenderWindow.h"
+#include "Runtime/RenderSystem/include/EditorCameraController.h"
 #include "Runtime/RenderSystem/include/Light.h"
 #include "Runtime/RenderSystem/include/Atmosphere/AtmosphereRenderer.h"
 #include "Runtime/RenderSystem/include/Atmosphere/AtmosphereConstant.h"
@@ -93,6 +94,15 @@ void AtmosphereFrameWork::CreateScene(uint32_t width, uint32_t height)
                    Vector3f(0.0f, 0.0f, 0.0f),
                    Vector3f(0.0f, 1.0f, 0.0f));
     camera->SetLens(50.0f, width, height, 0.5f, 1000.0f);
+
+    // 参考实现的相机天顶角被夹在 [0, π/2]，从而保证 |camera - earth_center| >= bottom_radius。
+    // 这里给轨道相机加同样的约束：焦点在地表，若不限制，往上拖鼠标会让相机沉到地面以下，
+    // 那时大气 LUT 查询会退化（rho = sqrt(r²-R²) 被截断为 0），地面会消失并渲染成黑/雾。
+    if (auto* orbitController =
+            dynamic_cast<RenderSystem::EditorCameraController*>(sceneManager->GetCameraController()))
+    {
+        orbitController->SetMinCameraY(0.0f);
+    }
 
     // ---- 太阳（方向光）：方向从地表指向太阳 ----
     RenderSystem::DirectionLight* dirLight = static_cast<RenderSystem::DirectionLight*>(

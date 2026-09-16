@@ -147,6 +147,7 @@ bool EditorCameraController::OnMouseMoved(MouseMovedEvent& e)
         mYaw   -= dx * mRotateSpeed;
         mPitch += dy * mRotateSpeed;
         mPitch  = std::clamp(mPitch, -PITCH_LIMIT, PITCH_LIMIT);
+        ClampPitchToMinCameraY();
 
         ApplyTransform();
         return true;
@@ -217,9 +218,24 @@ bool EditorCameraController::OnKeyReleased(KeyReleasedEvent& e)
     return true;
 }
 
+void EditorCameraController::ClampPitchToMinCameraY()
+{
+    if (!mUseMinCameraY || mDistance <= 1e-6f)
+    {
+        return;
+    }
+
+    // camera.y = focus.y + sin(pitch) * distance >= mMinCameraY
+    float sinPitch = (mMinCameraY - mFocusPoint.y) / mDistance;
+    sinPitch = std::clamp(sinPitch, -1.0f, 1.0f);
+    mPitch = std::max(mPitch, std::asin(sinPitch));
+}
+
 void EditorCameraController::ApplyTransform()
 {
     if (!mCamera) return;
+
+    ClampPitchToMinCameraY();
 
     // Spherical -> Cartesian (camera position relative to focus)
     float cosPitch = std::cos(mPitch);
