@@ -10,7 +10,10 @@
 #include "Runtime/BaseLib/include/LogService.h"
 #include <assert.h>
 #include <filesystem>
+#if GNX_OS_WINDOWS
+// DX12 链路专用：D3D12 反射接口（ID3D12ShaderReflection）
 #include <d3d12shader.h>
+#endif
 
 //代码可以参考这个博客。https://simoncoenen.com/blog/programming/graphics/DxcCompiling
 
@@ -33,6 +36,8 @@ DXCompilerUtil* DXCompilerUtil::GetInstance()
     return &instance;
 }
 
+#if GNX_OS_WINDOWS
+// DX12(DXIL) 反射：依赖 d3d12shader.h，仅 Windows 编译
 bool DXCompilerUtil::reflectDXIL(
     const ShaderCode& bytecode, ShaderStage shaderStage,
     std::vector<RenderCore::CompiledShaderResourceInfo>& resources,
@@ -112,6 +117,7 @@ bool DXCompilerUtil::reflectDXIL(
     }
     return true;
 }
+#endif  // GNX_OS_WINDOWS
 
 int SpirvReflectExample(const void* spirv_code, size_t spirv_nbytes)
 {
@@ -314,6 +320,8 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
     return nullptr;
 }
 
+#if GNX_OS_WINDOWS
+// 以下为 DX12(DXIL) 链路专用：HLSL -> DXIL 编译
 namespace
 {
 // Runs DXC and returns DXIL; callers may retry with a compatibility language version.
@@ -445,5 +453,6 @@ ShaderCodePtr DXCompilerUtil::compileHLSLTextToDXIL(const std::string& hlslSourc
 
     return dxilBuffer;
 }
+#endif  // GNX_OS_WINDOWS
 
 NAMESPACE_SHADERCOMPILER_END

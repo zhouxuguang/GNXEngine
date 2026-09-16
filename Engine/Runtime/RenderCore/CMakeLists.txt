@@ -61,8 +61,11 @@ source_group(TREE ${rendercore_include_dir} PREFIX include FILES ${RENDERCORE_IN
 get_filename_component(GNX_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
 target_include_directories(RenderCore PRIVATE ${rendercore_include_dir}
                                                ${GNX_REPO_ROOT}/ThirdParty/vulkan-headers
-                                               ${GNX_REPO_ROOT}/ThirdParty/DirectX-Headers/include/directx
                                                )
+if(WIN32)
+    target_include_directories(RenderCore PRIVATE
+        ${GNX_REPO_ROOT}/ThirdParty/DirectX-Headers/include/directx)
+endif()
 target_compile_definitions(RenderCore PRIVATE RENDERCORE_EXPORTS)
 
 # 平台宏必须以编译定义的形式下发到整个 RenderCore 目标（包括 volk.c）

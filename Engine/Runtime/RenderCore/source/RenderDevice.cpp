@@ -22,6 +22,8 @@
 #include "dx12/DX12RenderDevice.h"
 #endif
 
+#include "Runtime/BaseLib/include/LogService.h"
+
 NAMESPACE_RENDERCORE_BEGIN
 
 // DepthConfig 静态成员定义

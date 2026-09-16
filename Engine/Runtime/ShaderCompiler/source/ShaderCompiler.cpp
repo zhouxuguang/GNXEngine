@@ -8,15 +8,19 @@
 #include "ShaderCompiler.h"
 #include "spirv_cross/spirv_glsl.hpp"
 #include "spirv_cross/spirv_msl.hpp"
-#include "spirv_cross/spirv_hlsl.hpp"   // DX12 链路：SPIR-V → HLSL
 
 #include <map>
 #include <utility>
 #include "spirv_reflection.h"
 #include "Runtime/BaseLib/include/PreCompile.h"
 #include "Runtime/BaseLib/include/LogService.h"
+// DXC: HLSL -> SPIR-V，Windows/macOS/Linux 的离线编译都需要
 #if (GNX_OS_WINDOWS || GNX_OS_LINUX || GNX_OS_MACOS)
 #include "DXCompilerUtil.h"
+#endif
+// DX12 链路专用：SPIR-V -> HLSL
+#if GNX_OS_WINDOWS
+#include "spirv_cross/spirv_hlsl.hpp"
 #endif
 #include "ReflectionInfo.h"
 #include <unordered_set>
@@ -849,6 +853,7 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
     return shaderInfo;
 }
 
+#if GNX_OS_WINDOWS
 // SPIR-V -> HLSL for the DXIL path. Preserve SPIR-V binding numbers.
 static CompiledShaderInfoPtr compileToHLSL(ShaderCodePtr spirvCode, ShaderStage shaderStage)
 {
@@ -973,6 +978,7 @@ static CompiledShaderInfoPtr compileToHLSL(ShaderCodePtr spirvCode, ShaderStage 
 
     return info;
 }
+#endif  // GNX_OS_WINDOWS
 
 //HLSL shader脚本字符串转换
 ShaderCodePtr compileHLSLToSPIRV(const std::string& shaderFile, ShaderStage shaderStage, RenderDeviceType renderType)
@@ -1039,7 +1045,7 @@ CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage s
         case RenderCore::ShaderFormat_DXIL:
         {
             // .shader(HLSL) -> SPIR-V -> HLSL -> DXIL.
-#if (GNX_OS_WINDOWS || GNX_OS_LINUX || GNX_OS_MACOS)
+#if GNX_OS_WINDOWS
             CompiledShaderInfoPtr compileShader = std::make_shared<CompiledShaderInfo>();
             compileShader->format = targetFormat;
 
@@ -1095,7 +1101,7 @@ CompiledShaderInfoPtr CompileShader(const std::string& shaderFile, ShaderStage s
             // DX12 不使用 push constant（统一走 CBV），因此不填充 pushConstants
             return compileShader;
 #else
-            LOG_ERROR("CompileShader: DXIL format is only available on desktop platforms");
+            LOG_ERROR("CompileShader: DXIL format is only available on Windows");
             return nullptr;
 #endif
         }
