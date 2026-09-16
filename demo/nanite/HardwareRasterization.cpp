@@ -9,10 +9,8 @@ void InitHWRasterizePass(RenderCore::RenderDevicePtr renderDevice, uint32_t widt
 {
 	RenderSystem::ShaderAssetString shaderAssetString = RenderSystem::LoadShaderAsset("Nanite/HWRasterize");
 
-	ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
-	ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
-
-	GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
+	GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(
+        *shaderAssetString.vertexShader, *shaderAssetString.fragmentShader);
 
 	GraphicsPipelineDesc graphicsPipelineDescriptor;
 	graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;

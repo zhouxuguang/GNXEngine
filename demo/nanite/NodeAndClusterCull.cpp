@@ -27,7 +27,8 @@ RenderCore::RCBufferPtr InitHierarchyBuffer(RenderCore::RenderDevicePtr renderDe
 void InitNodeAndClusterCullPass(RenderCore::RenderDevicePtr renderDevice)
 {
     RenderSystem::ShaderAssetString shaderAssetString = RenderSystem::LoadShaderAsset("Nanite/NodeAndClusterCull");
-    sPSO = renderDevice->CreateComputePipeline(*shaderAssetString.computeShader->shaderSource);
+    sPSO = renderDevice->CreateComputePipeline(
+        *shaderAssetString.computeShader);
 }
 
 //cluster selection pass

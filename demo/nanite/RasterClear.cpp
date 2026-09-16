@@ -8,7 +8,8 @@ static RenderCore::ComputePipelinePtr sPSO = nullptr;
 void InitRasterClearPass(RenderCore::RenderDevicePtr renderDevice)
 {
     RenderSystem::ShaderAssetString shaderAssetString = RenderSystem::LoadShaderAsset("Nanite/RasterClear");
-    sPSO = renderDevice->CreateComputePipeline(*shaderAssetString.computeShader->shaderSource);
+    sPSO = renderDevice->CreateComputePipeline(
+        *shaderAssetString.computeShader);
 }
 
 void ExecuteRasterClearPass(RenderCore::CommandBufferPtr commandBuffer,

@@ -8,10 +8,8 @@ void InitSwapChainPass(RenderCore::RenderDevicePtr renderDevice)
 {
     RenderSystem::ShaderAssetString shaderAssetString = RenderSystem::LoadShaderAsset("Nanite/SwapChainPresent");
 
-	ShaderCodePtr vertexShader = shaderAssetString.vertexShader->shaderSource;
-	ShaderCodePtr fragmentShader = shaderAssetString.fragmentShader->shaderSource;
-
-	GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(*vertexShader, *fragmentShader);
+	GraphicsShaderPtr shader = renderDevice->CreateGraphicsShader(
+        *shaderAssetString.vertexShader, *shaderAssetString.fragmentShader);
 
     GraphicsPipelineDesc graphicsPipelineDescriptor;
 	graphicsPipelineDescriptor.vertexDescriptor = shaderAssetString.vertexDescriptor;

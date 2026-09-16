@@ -15,7 +15,8 @@ static RenderCore::ComputePipelinePtr sPSO = nullptr;
 void InitClusterCullPass(RenderCore::RenderDevicePtr renderDevice)
 {
     RenderSystem::ShaderAssetString shaderAssetString = RenderSystem::LoadShaderAsset("Nanite/ClusterCull");
-    sPSO = renderDevice->CreateComputePipeline(*shaderAssetString.computeShader->shaderSource);
+    sPSO = renderDevice->CreateComputePipeline(
+        *shaderAssetString.computeShader);
 }
 
 //cluster selection pass

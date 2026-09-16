@@ -7,7 +7,8 @@ static RenderCore::ComputePipelinePtr sPSO = nullptr;
 void InitVisualizationPass(RenderCore::RenderDevicePtr renderDevice)
 {
 	RenderSystem::ShaderAssetString shaderAssetString = RenderSystem::LoadShaderAsset("Nanite/Visualization");
-	sPSO = renderDevice->CreateComputePipeline(*shaderAssetString.computeShader->shaderSource);
+	sPSO = renderDevice->CreateComputePipeline(
+        *shaderAssetString.computeShader);
 }
 
 void ExecuteVisualizationPass(RenderCore::CommandBufferPtr commandBuffer, RenderCore::RCTexture2DPtr visBuffer64, RenderCore::RCTexture2DPtr visualizationBuffer)
