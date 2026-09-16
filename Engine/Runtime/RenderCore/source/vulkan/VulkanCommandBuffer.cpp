@@ -326,7 +326,7 @@ RenderEncoderPtr VulkanCommandBuffer::CreateRenderEncoder(const RenderPass& rend
 
 ComputeEncoderPtr VulkanCommandBuffer::CreateComputeEncoder() const
 {
-    return std::make_shared<VKComputeEncoder>(mCommandInfo->vulkanContext, mCommandBuffer);
+    return std::make_shared<VKComputeEncoder>(mCommandInfo->vulkanContext, mCommandBuffer, mCommandInfo->currentFrameIndex);
 }
 
 BlitEncoderPtr VulkanCommandBuffer::CreateBlitEncoder() const

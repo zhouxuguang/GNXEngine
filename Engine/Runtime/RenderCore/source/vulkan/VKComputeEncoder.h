@@ -19,7 +19,7 @@ class VKComputePipeline;
 class VKComputeEncoder : public ComputeEncoder
 {
 public:
-    VKComputeEncoder(VulkanContextPtr context, VkCommandBuffer commandBuffer);
+    VKComputeEncoder(VulkanContextPtr context, VkCommandBuffer commandBuffer, uint32_t frameIndex = 0);
     
     ~VKComputeEncoder();
     
@@ -60,6 +60,7 @@ private:
     VulkanContextPtr mContext = nullptr;
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
     VKComputePipeline *mVKPipeline = nullptr;
+    uint32_t mFrameIndex = 0;   // 当前帧槽位索引（uniform buffer 按帧分环使用）
 };
 
 NAMESPACE_RENDERCORE_END

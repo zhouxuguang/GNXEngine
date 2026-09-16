@@ -14,10 +14,11 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
-VKComputeEncoder::VKComputeEncoder(VulkanContextPtr context, VkCommandBuffer commandBuffer)
+VKComputeEncoder::VKComputeEncoder(VulkanContextPtr context, VkCommandBuffer commandBuffer, uint32_t frameIndex)
 {
     mContext = context;
     mCommandBuffer = commandBuffer;
+    mFrameIndex = frameIndex;
 }
 
 VKComputeEncoder::~VKComputeEncoder()
@@ -66,8 +67,9 @@ void VKComputeEncoder::SetUniformBuffer(const std::string& resourceName, Uniform
 
 	VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.buffer = vkBuffer->GetBuffer();
-    bufferInfo.offset = 0;
-    bufferInfo.range = VK_WHOLE_SIZE;
+    // 与图形侧一致：使用当前帧槽位，避免 CPU 改写时被在飞行的帧读到
+    bufferInfo.offset = vkBuffer->PrepareForFrame(mFrameIndex);
+    bufferInfo.range = vkBuffer->GetSize();
 
 	// 注意 使用了 pushDescriptorSet了，VkDescriptorSet就必须设置为空
 	VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(VK_NULL_HANDLE,

@@ -463,7 +463,16 @@ TextureSamplerPtr VKRenderDevice::CreateSamplerWithDescriptor(const SamplerDesc&
 
 UniformBufferPtr VKRenderDevice::CreateUniformBufferWithSize(uint32_t bufSize) const
 {
-    return std::make_shared<VKUniformBuffer>(mVulkanContext, bufSize);
+    // Uniform buffer 按帧槽位分环使用：槽位数必须 >= 交换链 image count，
+    // 否则 CPU 写入的槽位可能仍被在飞行的帧读取（表现为移动相机时闪烁）。
+    // 传入 0 时由 VKUniformBuffer 取兜底槽位数。
+    uint32_t slotCount = 0;
+    if (mSwapChain)
+    {
+        slotCount = (uint32_t)mSwapChain->GetSwapChainImageCount();
+    }
+    
+    return std::make_shared<VKUniformBuffer>(mVulkanContext, bufSize, slotCount);
 }
 
 ShaderFunctionPtr VKRenderDevice::CreateShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const

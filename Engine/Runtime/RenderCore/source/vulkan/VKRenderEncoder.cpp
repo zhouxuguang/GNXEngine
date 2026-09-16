@@ -902,8 +902,10 @@ void VKRenderEncoder::SetVertexUniformBuffer(UniformBufferPtr buffer, int index)
     }
     
     VkDescriptorBufferInfo bufferInfo = {};
-    bufferInfo.range = VK_WHOLE_SIZE;
+    bufferInfo.range = vkUniformBuffer->GetSize();
     bufferInfo.buffer = vkUniformBuffer->GetBuffer();
+    // 使用当前帧槽位：避免 CPU 改写数据时被在飞行的帧读到（移动相机闪烁的根因）
+    bufferInfo.offset = vkUniformBuffer->PrepareForFrame(mCurrentFrameIndex);
     
     VkDescriptorSet descriptorSet = mGraphicsPipieline->GetDescriptorSet(texOffset);
     VkWriteDescriptorSet writeDescriptorSet = VulkanDescriptorUtil::GetBufferWriteDescriptorSet(descriptorSet,
@@ -979,8 +981,8 @@ void VKRenderEncoder::SetVertexUniformBuffer(const std::string& resourceName, Un
 
     ShaderBufferDesc bufferDesc;
     bufferDesc.buffer = vkUniformBuffer->GetBuffer();
-    bufferDesc.offset = 0;
-    bufferDesc.range = VK_WHOLE_SIZE;
+    bufferDesc.offset = vkUniformBuffer->PrepareForFrame(mCurrentFrameIndex);
+    bufferDesc.range = vkUniformBuffer->GetSize();
 
     shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
 }
@@ -1007,8 +1009,8 @@ void VKRenderEncoder::SetFragmentUniformBuffer(const std::string& resourceName, 
 
 	ShaderBufferDesc bufferDesc;
 	bufferDesc.buffer = vkUniformBuffer->GetBuffer();
-	bufferDesc.offset = 0;
-	bufferDesc.range = VK_WHOLE_SIZE;
+	bufferDesc.offset = vkUniformBuffer->PrepareForFrame(mCurrentFrameIndex);
+	bufferDesc.range = vkUniformBuffer->GetSize();
 
 	shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
 }
@@ -1034,8 +1036,8 @@ void VKRenderEncoder::SetMeshUniformBuffer(UniformBufferPtr buffer, int index)
 
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.buffer = vkUniformBuffer->GetBuffer();
-    bufferInfo.offset = 0;
-    bufferInfo.range = VK_WHOLE_SIZE;
+    bufferInfo.offset = vkUniformBuffer->PrepareForFrame(mCurrentFrameIndex);
+    bufferInfo.range = vkUniformBuffer->GetSize();
 
     // Mesh shader 使用 push descriptor 绑定 uniform buffer
     VkWriteDescriptorSet writeDescriptorSet = {};
@@ -1072,8 +1074,8 @@ void VKRenderEncoder::SetTaskUniformBuffer(UniformBufferPtr buffer, int index)
 
     VkDescriptorBufferInfo bufferInfo = {};
     bufferInfo.buffer = vkUniformBuffer->GetBuffer();
-    bufferInfo.offset = 0;
-    bufferInfo.range = VK_WHOLE_SIZE;
+    bufferInfo.offset = vkUniformBuffer->PrepareForFrame(mCurrentFrameIndex);
+    bufferInfo.range = vkUniformBuffer->GetSize();
 
     // Task shader 使用 push descriptor 绑定 uniform buffer
     VkWriteDescriptorSet writeDescriptorSet = {};
@@ -1115,8 +1117,8 @@ void VKRenderEncoder::SetMeshUniformBuffer(const std::string& resourceName, Unif
 
     ShaderBufferDesc bufferDesc;
     bufferDesc.buffer = vkUniformBuffer->GetBuffer();
-    bufferDesc.offset = 0;
-    bufferDesc.range = VK_WHOLE_SIZE;
+    bufferDesc.offset = vkUniformBuffer->PrepareForFrame(mCurrentFrameIndex);
+    bufferDesc.range = vkUniformBuffer->GetSize();
 
     shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
 }
@@ -1147,8 +1149,8 @@ void VKRenderEncoder::SetTaskUniformBuffer(const std::string& resourceName, Unif
 
     ShaderBufferDesc bufferDesc;
     bufferDesc.buffer = vkUniformBuffer->GetBuffer();
-    bufferDesc.offset = 0;
-    bufferDesc.range = VK_WHOLE_SIZE;
+    bufferDesc.offset = vkUniformBuffer->PrepareForFrame(mCurrentFrameIndex);
+    bufferDesc.range = vkUniformBuffer->GetSize();
 
     shader->BindUniformBuffer(mCommandBuffer, resourceName, bufferDesc, mGraphicsPipieline->GetPipelineLayout());
 }
