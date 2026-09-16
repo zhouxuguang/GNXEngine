@@ -19,6 +19,7 @@
 #include "RCBuffer.h"
 #include "RCTexture.h"
 #include "CommandQueue.h"
+#include "ShaderStageData.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -130,12 +131,24 @@ public:
      创建GraphicsShader
      */
     virtual GraphicsShaderPtr CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const = 0;
+    virtual GraphicsShaderPtr CreateGraphicsShader(const ShaderStageData& vertexShader,
+                                                   const ShaderStageData& fragmentShader) const
+    {
+        return CreateGraphicsShader(vertexShader.sourceData, fragmentShader.sourceData);
+    }
     
     /**
      创建Mesh GraphicsShader (Task + Mesh + Fragment)
      taskShader可以为空（无Task Shader的Mesh Pipeline）
      */
     virtual GraphicsShaderPtr CreateMeshGraphicsShader(const ShaderCode& taskShader, const ShaderCode& meshShader, const ShaderCode& fragmentShader) const = 0;
+    virtual GraphicsShaderPtr CreateMeshGraphicsShader(const ShaderStageData& taskShader,
+                                                       const ShaderStageData& meshShader,
+                                                       const ShaderStageData& fragmentShader) const
+    {
+        return CreateMeshGraphicsShader(taskShader.sourceData, meshShader.sourceData,
+                                        fragmentShader.sourceData);
+    }
     
     /**
      创建图形管线
@@ -146,6 +159,10 @@ public:
      创建计算管线
      */
     virtual ComputePipelinePtr CreateComputePipeline(const ShaderCode& shaderString) const = 0;
+    virtual ComputePipelinePtr CreateComputePipeline(const ShaderStageData& shader) const
+    {
+        return CreateComputePipeline(shader.sourceData);
+    }
     
     /**
      * @brief Create a Texture2D object

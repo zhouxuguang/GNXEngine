@@ -1,5 +1,4 @@
 
-
 set(rendercore_dir ${CMAKE_CURRENT_SOURCE_DIR}/source)
 set(rendercore_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -22,14 +21,24 @@ if(APPLE)
     endif()
     
 elseif(ANDROID) #android平台
+    file(GLOB RENDERCORE_SOURCES CONFIGURE_DEPENDS  ${rendercore_dir}/*.cpp
+                                                    ${rendercore_dir}/*.c
+                                                    ${rendercore_dir}/*.h
+                                                    ${rendercore_dir}/vulkan/*.cpp
+                                                    ${rendercore_dir}/vulkan/*.c
+                                                    ${rendercore_dir}/vulkan/*.h)
+
+elseif(WIN32) #Windows平台：Vulkan + DX12
     file(GLOB RENDERCORE_SOURCES CONFIGURE_DEPENDS  ${rendercore_dir}/*.cpp 
                                                     ${rendercore_dir}/*.c 
                                                     ${rendercore_dir}/*.h
                                                     ${rendercore_dir}/vulkan/*.cpp
                                                     ${rendercore_dir}/vulkan/*.c
-                                                    ${rendercore_dir}/vulkan/*.h) 
+                                                    ${rendercore_dir}/vulkan/*.h
+                                                    ${rendercore_dir}/dx12/*.cpp
+                                                    ${rendercore_dir}/dx12/*.h)
 
-elseif(WIN32 OR LINUX) #WINDOWS平台和Linux
+elseif(LINUX) #Linux平台：仅 Vulkan
     file(GLOB RENDERCORE_SOURCES CONFIGURE_DEPENDS  ${rendercore_dir}/*.cpp 
                                                     ${rendercore_dir}/*.c 
                                                     ${rendercore_dir}/*.h
@@ -51,7 +60,9 @@ source_group(TREE ${rendercore_include_dir} PREFIX include FILES ${RENDERCORE_IN
 # 不用 PROJECT_SOURCE_DIR（在 Android 的 jni 子工程里会指向错误位置）
 get_filename_component(GNX_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
 target_include_directories(RenderCore PRIVATE ${rendercore_include_dir}
-                                               ${GNX_REPO_ROOT}/ThirdParty/vulkan-headers)
+                                               ${GNX_REPO_ROOT}/ThirdParty/vulkan-headers
+                                               ${GNX_REPO_ROOT}/ThirdParty/DirectX-Headers/include/directx
+                                               )
 target_compile_definitions(RenderCore PRIVATE RENDERCORE_EXPORTS)
 
 # 平台宏必须以编译定义的形式下发到整个 RenderCore 目标（包括 volk.c）
@@ -85,6 +96,18 @@ if(ENABLE_NSIGHT_AFTERMATH)
 endif()
 
 target_link_libraries(RenderCore PRIVATE MathUtil spirv_reflect TracyClient)
+
+# ---------------------------------------------------------------------------
+# Direct3D 12 后端（仅 Windows）
+#   d3d12        : D3D12 运行时（含 D3D12SerializeRootSignature / D3D12GetDebugInterface）
+#   dxgi         : DXGI 工厂、适配器枚举、交换链
+# ---------------------------------------------------------------------------
+if(WIN32)
+    # 打开 HRESULT 检查：失败时打印格式化错误并中断（见 DX12RenderDefine.h）
+    target_compile_definitions(RenderCore PRIVATE GNX_DX12_RESULT_CHECK)
+
+    target_link_libraries(RenderCore PUBLIC d3d12 dxgi)
+endif()
 
 if(APPLE)
     target_compile_options(RenderCore PRIVATE "-fobjc-arc")

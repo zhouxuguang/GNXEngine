@@ -18,6 +18,10 @@
 #include "metal/MTLRenderDeviceWrapper.h"
 #include "vulkan/VKRenderDevice.h"
 
+#if GNX_OS_WINDOWS
+#include "dx12/DX12RenderDevice.h"
+#endif
+
 NAMESPACE_RENDERCORE_BEGIN
 
 // DepthConfig 静态成员定义
@@ -99,6 +103,14 @@ RenderDevicePtr CreateRenderDevice(RenderDeviceType deviceType, const NativeWind
     #if !GNX_OS_IOS
         renderDevicePtr = std::make_shared<VKRenderDevice>(nativeWindow);
     #endif
+    }
+    else if (DX12 == deviceType)
+    {
+#if GNX_OS_WINDOWS
+        renderDevicePtr = std::make_shared<DX12RenderDevice>(nativeWindow);
+#else
+        LOG_ERROR("[RenderDevice] DX12 backend is only available on Windows");
+#endif
     }
     return renderDevicePtr;
 }

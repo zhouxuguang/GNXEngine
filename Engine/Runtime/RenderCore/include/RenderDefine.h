@@ -61,6 +61,7 @@ typedef enum RenderDeviceType
 {
     METAL,
     VULKAN,
+    DX12,
 } RenderDeviceType;
 
 // 管线类型
