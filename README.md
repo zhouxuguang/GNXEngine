@@ -28,94 +28,80 @@
 
 ## 架构
 
-<svg viewBox="0 0 680 700" width="100%" role="img" xmlns="http://www.w3.org/2000/svg">
-<title>GNXEngine 整体架构分层图</title>
-<desc>GNXEngine 的模块分层：编辑器与 demo、引擎核心、渲染与资产系统、Shader 编译与资源管理、RenderCore RHI 双后端、基础库。依赖严格单向向下。</desc>
-<defs>
-<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-<path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-</marker>
-</defs>
-<g>
-<rect x="100" y="40" width="240" height="56" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
-<text class="th" x="220" y="60" text-anchor="middle" dominant-baseline="central" fill="#3C3489" font-size="14">GNXEditor</text>
-<text class="ts" x="220" y="80" text-anchor="middle" dominant-baseline="central" fill="#534AB7" font-size="12">Qt 桌面编辑器（可选）</text>
-</g>
-<g>
-<rect x="340" y="40" width="240" height="56" rx="10" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
-<text class="th" x="460" y="60" text-anchor="middle" dominant-baseline="central" fill="#3C3489" font-size="14">demo × 10</text>
-<text class="ts" x="460" y="80" text-anchor="middle" dominant-baseline="central" fill="#534AB7" font-size="12">pbr · terrain · nanite · vt …</text>
-</g>
-<g>
-<rect x="140" y="136" width="400" height="56" rx="10" fill="#E6F1FB" stroke="#185FA5" stroke-width="0.5"/>
-<text class="th" x="340" y="156" text-anchor="middle" dominant-baseline="central" fill="#0C447C" font-size="14">GNXEngine 引擎核心</text>
-<text class="ts" x="340" y="176" text-anchor="middle" dominant-baseline="central" fill="#185FA5" font-size="12">事件 · 输入 · 序列化 · 窗口（GLFW / SDL2）</text>
-</g>
-<g>
-<rect x="55" y="240" width="280" height="56" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-<text class="th" x="195" y="260" text-anchor="middle" dominant-baseline="central" fill="#085041" font-size="14">RenderSystem</text>
-<text class="ts" x="195" y="280" text-anchor="middle" dominant-baseline="central" fill="#0F6E56" font-size="12">帧图 · 延迟渲染 · 地形 · VT · 大气</text>
-</g>
-<g>
-<rect x="345" y="240" width="280" height="56" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-<text class="th" x="485" y="260" text-anchor="middle" dominant-baseline="central" fill="#085041" font-size="14">AssetProcess</text>
-<text class="ts" x="485" y="280" text-anchor="middle" dominant-baseline="central" fill="#0F6E56" font-size="12">模型导入 · IBL 烘焙 · ISPC 压缩</text>
-</g>
-<g>
-<rect x="50" y="344" width="180" height="56" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-<text class="th" x="140" y="364" text-anchor="middle" dominant-baseline="central" fill="#085041" font-size="14">ShaderCompiler</text>
-<text class="ts" x="140" y="384" text-anchor="middle" dominant-baseline="central" fill="#0F6E56" font-size="12">HLSL→SPIR-V→MSL</text>
-</g>
-<g>
-<rect x="250" y="344" width="180" height="56" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-<text class="th" x="340" y="364" text-anchor="middle" dominant-baseline="central" fill="#085041" font-size="14">AssetManager</text>
-<text class="ts" x="340" y="384" text-anchor="middle" dominant-baseline="central" fill="#0F6E56" font-size="12">加载 · 缓存 · protobuf</text>
-</g>
-<g>
-<rect x="450" y="344" width="180" height="56" rx="10" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
-<text class="th" x="540" y="364" text-anchor="middle" dominant-baseline="central" fill="#085041" font-size="14">ImageCodec</text>
-<text class="ts" x="540" y="384" text-anchor="middle" dominant-baseline="central" fill="#0F6E56" font-size="12">PNG · JPEG · KTX · HDR</text>
-</g>
-<g>
-<rect x="55" y="448" width="570" height="110" rx="12" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
-<text class="th" x="340" y="470" text-anchor="middle" dominant-baseline="central" fill="#633806" font-size="14">RenderCore — RHI 抽象层</text>
-<g>
-<rect x="85" y="486" width="250" height="52" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
-<text class="th" x="210" y="503" text-anchor="middle" dominant-baseline="central" fill="#633806" font-size="13">Metal 后端</text>
-<text class="ts" x="210" y="522" text-anchor="middle" dominant-baseline="central" fill="#854F0B" font-size="12">macOS · iOS</text>
-</g>
-<g>
-<rect x="345" y="486" width="250" height="52" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
-<text class="th" x="470" y="503" text-anchor="middle" dominant-baseline="central" fill="#633806" font-size="13">Vulkan 后端</text>
-<text class="ts" x="470" y="522" text-anchor="middle" dominant-baseline="central" fill="#854F0B" font-size="12">Windows · Linux · Android</text>
-</g>
-</g>
-<g>
-<rect x="50" y="606" width="180" height="56" rx="10" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-<text class="th" x="140" y="626" text-anchor="middle" dominant-baseline="central" fill="#444441" font-size="14">MathUtil</text>
-<text class="ts" x="140" y="646" text-anchor="middle" dominant-baseline="central" fill="#5F5E5A" font-size="12">向量 · 矩阵 · SIMD</text>
-</g>
-<g>
-<rect x="250" y="606" width="180" height="56" rx="10" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-<text class="th" x="340" y="626" text-anchor="middle" dominant-baseline="central" fill="#444441" font-size="14">Allocator</text>
-<text class="ts" x="340" y="646" text-anchor="middle" dominant-baseline="central" fill="#5F5E5A" font-size="12">可插拔分配器 ×4</text>
-</g>
-<g>
-<rect x="450" y="606" width="180" height="56" rx="10" fill="#F1EFE8" stroke="#5F5E5A" stroke-width="0.5"/>
-<text class="th" x="540" y="626" text-anchor="middle" dominant-baseline="central" fill="#444441" font-size="14">BaseLib</text>
-<text class="ts" x="540" y="646" text-anchor="middle" dominant-baseline="central" fill="#5F5E5A" font-size="12">线程 · 日志 · 容器</text>
-</g>
-<path d="M220 96 L220 136" class="arr" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
-<path d="M460 96 L460 136" class="arr" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
-<path d="M240 192 L195 240" class="arr" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
-<path d="M440 192 L485 240" class="arr" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
-<path d="M195 296 L145 344" class="arr" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
-<path d="M485 296 L345 344" class="arr" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
-<path d="M505 296 L535 344" class="arr" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
-<path d="M240 400 L240 448" class="arr" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
-<path d="M340 558 L340 606" class="arr" fill="none" stroke="#888780" stroke-width="1.5" marker-end="url(#arrow)"/>
-<text class="ts" x="340" y="688" text-anchor="middle" dominant-baseline="central" fill="#888780" font-size="12">模块依赖严格单向（上层 → 下层），全仓无循环依赖；平台裁剪在 CMake 层完成</text>
-</svg>
+```mermaid
+flowchart TB
+    subgraph App["应用层"]
+        direction LR
+        Editor["GNXEditor<br/>Qt 桌面编辑器（可选）"]
+        Demo["demo × 10<br/>pbr · terrain · nanite · vt …"]
+    end
+
+    subgraph Core["引擎核心"]
+        Engine["GNXEngine 引擎核心<br/>事件 · 输入 · 序列化 · 窗口（GLFW / SDL2）"]
+    end
+
+    subgraph Feature["渲染与资产"]
+        direction LR
+        RenderSystem["RenderSystem<br/>帧图 · 延迟渲染 · 地形 · VT · 大气"]
+        AssetProcess["AssetProcess<br/>模型导入 · IBL 烘焙 · ISPC 压缩"]
+    end
+
+    subgraph Support["资源与编译支撑"]
+        direction LR
+        ShaderCompiler["ShaderCompiler<br/>HLSL→SPIR-V→MSL"]
+        AssetManager["AssetManager<br/>加载 · 缓存 · protobuf"]
+        ImageCodec["ImageCodec<br/>PNG · JPEG · KTX · HDR"]
+    end
+
+    subgraph RHI["RenderCore — RHI 抽象层"]
+        direction LR
+        Metal["Metal 后端<br/>macOS · iOS"]
+        Vulkan["Vulkan 后端<br/>Windows · Linux · Android"]
+    end
+
+    subgraph Base["基础库"]
+        direction LR
+        MathUtil["MathUtil<br/>向量 · 矩阵 · SIMD"]
+        Allocator["Allocator<br/>可插拔分配器 ×4"]
+        BaseLib["BaseLib<br/>线程 · 日志 · 容器"]
+    end
+
+    Editor --> Engine
+    Demo --> Engine
+    Engine --> RenderSystem
+    Engine --> AssetProcess
+    RenderSystem --> ShaderCompiler
+    RenderSystem --> RHI
+    AssetProcess --> AssetManager
+    AssetProcess --> ImageCodec
+    ShaderCompiler --> RHI
+    AssetManager --> ImageCodec
+    ImageCodec --> MathUtil
+    RHI --> BaseLib
+    MathUtil --> BaseLib
+    Allocator --> BaseLib
+
+    classDef app fill:#EEEDFE,stroke:#534AB7,color:#3C3489
+    classDef core fill:#E6F1FB,stroke:#185FA5,color:#0C447C
+    classDef feature fill:#E1F5EE,stroke:#0F6E56,color:#085041
+    classDef rhi fill:#FAEEDA,stroke:#854F0B,color:#633806
+    classDef base fill:#F1EFE8,stroke:#5F5E5A,color:#444441
+
+    class Editor,Demo app
+    class Engine core
+    class RenderSystem,AssetProcess,ShaderCompiler,AssetManager,ImageCodec feature
+    class Metal,Vulkan rhi
+    class MathUtil,Allocator,BaseLib base
+
+    style App fill:#FFFFFF,stroke:#B9B7E8
+    style Core fill:#FFFFFF,stroke:#9CC4E4
+    style Feature fill:#FFFFFF,stroke:#8FC7B4
+    style Support fill:#FFFFFF,stroke:#8FC7B4
+    style RHI fill:#FFFFFF,stroke:#D8A85A
+    style Base fill:#FFFFFF,stroke:#B5B3AC
+```
+
+*模块依赖严格单向（上层 → 下层），全仓无循环依赖；平台裁剪在 CMake 层完成。*
 
 ### 核心模块说明
 
