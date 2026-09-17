@@ -179,10 +179,12 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
         AtmosphereRenderer* atmoRenderer = mAtmosphere->GetRenderer();
         if (atmoRenderer)
         {
-            // 首次使用：执行 GPU 预计算（一次性）
+            // 首次使用：执行 GPU 预计算（一次性）。
+            // 直接录制进当前帧的命令缓冲区：Vulkan / DX12 的 CreateCommandBuffer()
+            // 与交换链帧同步绑定，为每个 Pass 单独新建会耗尽交换链图像导致死锁。
             if (!atmoRenderer->IsPrecomputed())
             {
-                atmoRenderer->Precompute();
+                atmoRenderer->Precompute(commandBuffer);
             }
 
             // 从场景方向光推导太阳方向（地表指向太阳）

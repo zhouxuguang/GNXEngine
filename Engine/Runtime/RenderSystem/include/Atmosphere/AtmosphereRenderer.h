@@ -31,6 +31,7 @@
 #include "Runtime/RenderCore/include/CommandBuffer.h"
 #include "Runtime/RenderCore/include/RenderPass.h"
 #include <vector>
+#include <map>
 #include <memory>
 #include <string>
 
@@ -58,8 +59,15 @@ public:
         return mPrecomputed;
     }
 
-    // 执行一次完整的预计算（生成所有 LUT）
-    void Precompute();
+    /**
+     * @brief 推进 LUT 预计算，把本帧要做的 Pass 录制进当前帧的命令缓冲区
+     *
+     * 每帧调用一次，直到 IsPrecomputed() 为真。Pass 被切成小批分摊到多帧执行：
+     * 不要为每个 Pass 单独 CreateCommandBuffer()（Vulkan / DX12 的命令缓冲区与
+     * 交换链帧同步绑定，重复创建会耗尽交换链图像导致死锁），也不要一次性塞进
+     * 一帧（会撑爆 DX12 单帧描述符环，采样器堆硬件上限仅 2048）。
+     */
+    void Precompute(CommandBufferPtr commandBuffer);
 
     // 每帧更新视角参数（相机、地球中心、太阳方向、曝光、白点、场景几何体）
     void UpdateViewParams(const Camera* camera,
@@ -76,6 +84,28 @@ private:
     void CreateResources();
     void CreatePipelines();
     void DestroyResources();
+
+    // 预计算步骤（每个步骤 = 一个 draw 的 Pass），跨帧按游标推进
+    enum class PrecomputeStepType
+    {
+        Transmittance,
+        DirectIrradiance,
+        SingleScattering,
+        ScatteringDensity,
+        IndirectIrradiance,
+        MultipleScattering,
+    };
+
+    struct PrecomputeStep
+    {
+        PrecomputeStepType type = PrecomputeStepType::Transmittance;
+        int layer = 0;
+        int order = 0;
+    };
+
+    void BuildPrecomputeSteps();
+    void RunPrecomputeStep(CommandBufferPtr commandBuffer, const PrecomputeStep& step);
+    UniformBufferPtr GetScatteringUBO(int layer, int order);
 
     RenderEncoderPtr BeginPass(
         CommandBufferPtr commandBuffer,
@@ -98,6 +128,13 @@ private:
 
     UniformBufferPtr mAtmosphereUBO;          // AtmosphereParametersCB
     UniformBufferPtr mViewUBO;                // AtmosphereViewCB
+
+    // 预计算 Pass 用到的 (layer, order) 参数 UBO。命令缓冲区随帧提交，
+    // 这些 UBO 必须存活到 GPU 执行完，故由渲染器持有并按 key 复用。
+    std::map<uint64_t, UniformBufferPtr> mPrecomputeUBOs;
+
+    std::vector<PrecomputeStep> mPrecomputeSteps;
+    size_t mPrecomputeCursor = 0;
 
     TextureSamplerPtr mLinearSampler;
 

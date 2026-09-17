@@ -11,7 +11,7 @@
 #include "RenderEngine.h"
 #include "Camera.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
-#include "Runtime/RenderCore/include/CommandQueue.h"
+#include "Runtime/RenderCore/include/CommandBuffer.h"
 #include "Runtime/RenderCore/include/TextureSampler.h"
 #include "Runtime/RenderCore/include/TextureFormat.h"
 #include "Runtime/BaseLib/include/LogService.h"
@@ -168,6 +168,10 @@ void AtmosphereRenderer::DestroyResources()
     mAtmosphereUBO.reset();
     mViewUBO.reset();
     mLinearSampler.reset();
+    mPrecomputeUBOs.clear();
+    mPrecomputeSteps.clear();
+    mPrecomputeCursor = 0;
+    mPrecomputed = false;
 
     mTransmittancePipeline.reset();
     mDirectIrradiancePipeline.reset();
@@ -275,234 +279,233 @@ RenderEncoderPtr AtmosphereRenderer::BeginPass(
 // ---------------------------------------------------------------------------
 // 预计算
 // ---------------------------------------------------------------------------
-void AtmosphereRenderer::Precompute()
+UniformBufferPtr AtmosphereRenderer::GetScatteringUBO(int layer, int order)
 {
-    ZoneScopedN("AtmosphereRenderer::Precompute");
-    if (!mInitialized)
-    {
-        return;
-    }
-
     RenderDevicePtr device = GetRenderDevice();
     if (!device)
     {
-        LOG_ERROR("AtmosphereRenderer::Precompute: render device is null");
-        return;
-    }
-    CommandQueuePtr queue = device->GetCommandQueue(QueueType::Graphics, 0);
-    if (!queue)
-    {
-        LOG_ERROR("AtmosphereRenderer::Precompute: graphics queue is null");
-        return;
+        return nullptr;
     }
 
-    const uint32_t kScatteringW = Atmosphere::SCATTERING_TEXTURE_WIDTH;
-    const uint32_t kScatteringH = Atmosphere::SCATTERING_TEXTURE_HEIGHT;
+    // 命令缓冲区要等到帧结束才提交执行，UBO 必须存活到那时，因此由渲染器持有，
+    // 并按 (layer, order) 复用。
+    const uint64_t key = ((uint64_t)(uint32_t)layer << 32) | (uint32_t)order;
+    auto iter = mPrecomputeUBOs.find(key);
+    if (iter != mPrecomputeUBOs.end())
+    {
+        return iter->second;
+    }
+
+    UniformBufferPtr ubo = device->CreateUniformBufferWithSize(sizeof(Atmosphere::AtmosphereScatteringParams));
+    Atmosphere::AtmosphereScatteringParams p;
+    p.layer = layer;
+    p.scattering_order = order;
+    p.pad0 = 0;
+    p.pad1 = 0;
+    ubo->SetData(&p, 0, sizeof(p));
+    mPrecomputeUBOs[key] = ubo;
+    return ubo;
+}
+
+void AtmosphereRenderer::BuildPrecomputeSteps()
+{
+    mPrecomputeSteps.clear();
+    mPrecomputeCursor = 0;
+
+    const int kScatteringD = (int)Atmosphere::SCATTERING_TEXTURE_DEPTH;
+
+    // 1) 透射率
+    mPrecomputeSteps.push_back({PrecomputeStepType::Transmittance, 0, 0});
+    // 2) 直接辐照度
+    mPrecomputeSteps.push_back({PrecomputeStepType::DirectIrradiance, 0, 0});
+    // 3) 单次散射（逐层）
+    for (int layer = 0; layer < kScatteringD; ++layer)
+    {
+        mPrecomputeSteps.push_back({PrecomputeStepType::SingleScattering, layer, 0});
+    }
+    // 4) 多次散射迭代：散射密度（逐层）→ 间接辐照度 → 多次散射（逐层）
+    for (unsigned int order = 2; order <= mNumScatteringOrders; ++order)
+    {
+        for (int layer = 0; layer < kScatteringD; ++layer)
+        {
+            mPrecomputeSteps.push_back({PrecomputeStepType::ScatteringDensity, layer, (int)order});
+        }
+        mPrecomputeSteps.push_back({PrecomputeStepType::IndirectIrradiance, 0, (int)order});
+        for (int layer = 0; layer < kScatteringD; ++layer)
+        {
+            mPrecomputeSteps.push_back({PrecomputeStepType::MultipleScattering, layer, (int)order});
+        }
+    }
+}
+
+void AtmosphereRenderer::RunPrecomputeStep(CommandBufferPtr commandBuffer, const PrecomputeStep& step)
+{
+    const int kScatteringW = (int)Atmosphere::SCATTERING_TEXTURE_WIDTH;
+    const int kScatteringH = (int)Atmosphere::SCATTERING_TEXTURE_HEIGHT;
     const uint32_t kScatteringD = Atmosphere::SCATTERING_TEXTURE_DEPTH;
-    const uint32_t kTransW = Atmosphere::TRANSMITTANCE_TEXTURE_WIDTH;
-    const uint32_t kTransH = Atmosphere::TRANSMITTANCE_TEXTURE_HEIGHT;
-    const uint32_t kIrrW = Atmosphere::IRRADIANCE_TEXTURE_WIDTH;
-    const uint32_t kIrrH = Atmosphere::IRRADIANCE_TEXTURE_HEIGHT;
+    const int kTransW = (int)Atmosphere::TRANSMITTANCE_TEXTURE_WIDTH;
+    const int kTransH = (int)Atmosphere::TRANSMITTANCE_TEXTURE_HEIGHT;
+    const int kIrrW = (int)Atmosphere::IRRADIANCE_TEXTURE_WIDTH;
+    const int kIrrH = (int)Atmosphere::IRRADIANCE_TEXTURE_HEIGHT;
 
-    // 保持每层/每重数参数的 UBO 存活到命令执行完成
-    std::vector<UniformBufferPtr> paramUBOs;
-    auto makeScatteringUBO = [&](int layer, int order) -> UniformBufferPtr
-    {
-        UniformBufferPtr ubo = device->CreateUniformBufferWithSize(sizeof(Atmosphere::AtmosphereScatteringParams));
-        Atmosphere::AtmosphereScatteringParams p;
-        p.layer = layer;
-        p.scattering_order = order;
-        p.pad0 = 0;
-        p.pad1 = 0;
-        ubo->SetData(&p, 0, sizeof(p));
-        paramUBOs.push_back(ubo);
-        return ubo;
-    };
+    const uint32_t layer = (uint32_t)step.layer;
 
-    // 每个 Pass 独立命令缓冲区并提交等待：Metal(TBDR) 下跨编码器读上一 Pass 的渲染
-    // 目标需要显式同步，否则会读到未定义数据（NaN）。
-    // 必须用离屏命令缓冲区：预计算在帧内触发，交换链帧命令缓冲区此时已重置飞行栅栏，
-    // 用它会在 5 秒超时后返回 nullptr 并崩溃，且会耗尽交换链图像而死锁。
-    auto flush = [](CommandBufferPtr& cmd)
+    switch (step.type)
     {
-        if (cmd)
-        {
-            cmd->WaitUntilCompleted();
-        }
-    };
-
-    // ---- 1) 透射率 ----
+    case PrecomputeStepType::Transmittance:
     {
-        CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
-        if (!cmd)
-        {
-            LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (transmittance)");
-            return;
-        }
-        cmd->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ColorAttachment);
-        RenderEncoderPtr enc = BeginPass(cmd, mTransmittancePipeline,
+        commandBuffer->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ColorAttachment);
+        RenderEncoderPtr enc = BeginPass(commandBuffer, mTransmittancePipeline,
             { MakeColorAttachment(mTransmittanceTexture, 0, false) },
-            (int)kTransW, (int)kTransH);
+            kTransW, kTransH);
         enc->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
         enc->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
         enc->EndEncode();
-        flush(cmd);
+        break;
     }
 
-    // ---- 2) 直接辐照度 -> [delta_irradiance, irradiance] ----
+    case PrecomputeStepType::DirectIrradiance:
     {
-        CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
-        if (!cmd)
-        {
-            LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (direct irradiance)");
-            return;
-        }
-        cmd->ResourceBarrier(mDeltaIrradianceTexture, ResourceAccessType::ColorAttachment);
-        cmd->ResourceBarrier(mIrradianceTexture, ResourceAccessType::ColorAttachment);
-        cmd->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
-        RenderEncoderPtr enc = BeginPass(cmd, mDirectIrradiancePipeline,
+        commandBuffer->ResourceBarrier(mDeltaIrradianceTexture, ResourceAccessType::ColorAttachment);
+        commandBuffer->ResourceBarrier(mIrradianceTexture, ResourceAccessType::ColorAttachment);
+        commandBuffer->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
+        RenderEncoderPtr enc = BeginPass(commandBuffer, mDirectIrradiancePipeline,
             { MakeColorAttachment(mDeltaIrradianceTexture, 0, false),
               MakeColorAttachment(mIrradianceTexture, 0, false) },
-            (int)kIrrW, (int)kIrrH);
+            kIrrW, kIrrH);
         enc->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
         enc->SetFragmentTextureAndSampler("transmittance_texture", mTransmittanceTexture, mLinearSampler);
         enc->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
         enc->EndEncode();
-        flush(cmd);
+        break;
     }
 
-    // ---- 3) 单次散射 -> [delta_rayleigh, delta_mie, scattering, single_mie] ----
+    case PrecomputeStepType::SingleScattering:
     {
-        CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
-        if (!cmd)
-        {
-            LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (single scattering)");
-            return;
-        }
-        cmd->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
-        for (int layer = 0; layer < (int)kScatteringD; ++layer)
-        {
-            cmd->ResourceBarrier(mDeltaRayleighTexture, ResourceAccessType::ColorAttachment);
-            cmd->ResourceBarrier(mDeltaMieTexture, ResourceAccessType::ColorAttachment);
-            cmd->ResourceBarrier(mScatteringTexture, ResourceAccessType::ColorAttachment);
-            cmd->ResourceBarrier(mSingleMieTexture, ResourceAccessType::ColorAttachment);
-
-            RenderEncoderPtr enc = BeginPass(cmd, mSingleScatteringPipeline,
-                { MakeColorAttachment(mDeltaRayleighTexture, (uint32_t)layer, false),
-                  MakeColorAttachment(mDeltaMieTexture, (uint32_t)layer, false),
-                  MakeColorAttachment(mScatteringTexture, (uint32_t)layer, false),
-                  MakeColorAttachment(mSingleMieTexture, (uint32_t)layer, false) },
-                (int)kScatteringW, (int)kScatteringH, kScatteringD);
-            enc->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
-            enc->SetFragmentUniformBuffer("ScatteringCB", makeScatteringUBO(layer, 0));
-            enc->SetFragmentTextureAndSampler("transmittance_texture", mTransmittanceTexture, mLinearSampler);
-            enc->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
-            enc->EndEncode();
-        }
-        flush(cmd);
+        commandBuffer->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
+        commandBuffer->ResourceBarrier(mDeltaRayleighTexture, ResourceAccessType::ColorAttachment);
+        commandBuffer->ResourceBarrier(mDeltaMieTexture, ResourceAccessType::ColorAttachment);
+        commandBuffer->ResourceBarrier(mScatteringTexture, ResourceAccessType::ColorAttachment);
+        commandBuffer->ResourceBarrier(mSingleMieTexture, ResourceAccessType::ColorAttachment);
+        RenderEncoderPtr enc = BeginPass(commandBuffer, mSingleScatteringPipeline,
+            { MakeColorAttachment(mDeltaRayleighTexture, layer, false),
+              MakeColorAttachment(mDeltaMieTexture, layer, false),
+              MakeColorAttachment(mScatteringTexture, layer, false),
+              MakeColorAttachment(mSingleMieTexture, layer, false) },
+            kScatteringW, kScatteringH, kScatteringD);
+        enc->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
+        enc->SetFragmentUniformBuffer("ScatteringCB", GetScatteringUBO(step.layer, 0));
+        enc->SetFragmentTextureAndSampler("transmittance_texture", mTransmittanceTexture, mLinearSampler);
+        enc->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
+        enc->EndEncode();
+        break;
     }
 
-    // ---- 4) 多次散射迭代 ----
-    for (unsigned int order = 2; order <= mNumScatteringOrders; ++order)
+    case PrecomputeStepType::ScatteringDensity:
     {
-        // 4a) 散射密度 -> delta_scattering_density
-        {
-            CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
-            if (!cmd)
-            {
-                LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (scattering density, order=%u)", order);
-                return;
-            }
-            cmd->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
-            cmd->ResourceBarrier(mDeltaRayleighTexture, ResourceAccessType::ShaderRead);
-            cmd->ResourceBarrier(mDeltaMieTexture, ResourceAccessType::ShaderRead);
-            cmd->ResourceBarrier(mIrradianceTexture, ResourceAccessType::ShaderRead);
-            for (int layer = 0; layer < (int)kScatteringD; ++layer)
-            {
-                cmd->ResourceBarrier(mDeltaScatteringDensityTexture, ResourceAccessType::ColorAttachment);
-                RenderEncoderPtr enc = BeginPass(cmd, mScatteringDensityPipeline,
-                    { MakeColorAttachment(mDeltaScatteringDensityTexture, (uint32_t)layer, false) },
-                    (int)kScatteringW, (int)kScatteringH, kScatteringD);
-                enc->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
-                enc->SetFragmentUniformBuffer("ScatteringCB", makeScatteringUBO(layer, (int)order));
-                enc->SetFragmentTextureAndSampler("transmittance_texture", mTransmittanceTexture, mLinearSampler);
-                enc->SetFragmentTextureAndSampler("single_rayleigh_scattering_texture", mDeltaRayleighTexture, mLinearSampler);
-                enc->SetFragmentTextureAndSampler("single_mie_scattering_texture", mDeltaMieTexture, mLinearSampler);
-                enc->SetFragmentTextureAndSampler("multiple_scattering_texture", mDeltaRayleighTexture, mLinearSampler);
-                enc->SetFragmentTextureAndSampler("irradiance_texture", mIrradianceTexture, mLinearSampler);
-                enc->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
-                enc->EndEncode();
-            }
-            flush(cmd);
-        }
-
-        // 4b) 间接辐照度 -> [delta_irradiance, irradiance(混合累积)]
-        {
-            CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
-            if (!cmd)
-            {
-                LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (indirect irradiance, order=%u)", order);
-                return;
-            }
-            cmd->ResourceBarrier(mDeltaIrradianceTexture, ResourceAccessType::ColorAttachment);
-            cmd->ResourceBarrier(mIrradianceTexture, ResourceAccessType::ColorAttachment);
-            RenderEncoderPtr enc = BeginPass(cmd, mIndirectIrradiancePipeline,
-                { MakeColorAttachment(mDeltaIrradianceTexture, 0, false),
-                  MakeColorAttachment(mIrradianceTexture, 0, true) },
-                (int)kIrrW, (int)kIrrH);
-            enc->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
-            enc->SetFragmentUniformBuffer("ScatteringCB", makeScatteringUBO(0, (int)order - 1));
-            enc->SetFragmentTextureAndSampler("single_rayleigh_scattering_texture", mDeltaRayleighTexture, mLinearSampler);
-            enc->SetFragmentTextureAndSampler("single_mie_scattering_texture", mDeltaMieTexture, mLinearSampler);
-            enc->SetFragmentTextureAndSampler("multiple_scattering_texture", mDeltaRayleighTexture, mLinearSampler);
-            enc->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
-            enc->EndEncode();
-            flush(cmd);
-        }
-
-        // 4c) 多次散射 -> [delta_multiple(=delta_rayleigh), scattering(混合累积)]
-        {
-            CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
-            if (!cmd)
-            {
-                LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (multiple scattering, order=%u)", order);
-                return;
-            }
-            cmd->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
-            cmd->ResourceBarrier(mDeltaScatteringDensityTexture, ResourceAccessType::ShaderRead);
-            for (int layer = 0; layer < (int)kScatteringD; ++layer)
-            {
-                cmd->ResourceBarrier(mDeltaRayleighTexture, ResourceAccessType::ColorAttachment);
-                cmd->ResourceBarrier(mScatteringTexture, ResourceAccessType::ColorAttachment);
-                RenderEncoderPtr enc = BeginPass(cmd, mMultipleScatteringPipeline,
-                    { MakeColorAttachment(mDeltaRayleighTexture, (uint32_t)layer, false),
-                      MakeColorAttachment(mScatteringTexture, (uint32_t)layer, true) },
-                    (int)kScatteringW, (int)kScatteringH, kScatteringD);
-                enc->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
-                enc->SetFragmentUniformBuffer("ScatteringCB", makeScatteringUBO(layer, (int)order));
-                enc->SetFragmentTextureAndSampler("transmittance_texture", mTransmittanceTexture, mLinearSampler);
-                enc->SetFragmentTextureAndSampler("scattering_density_texture", mDeltaScatteringDensityTexture, mLinearSampler);
-                enc->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
-                enc->EndEncode();
-            }
-            flush(cmd);
-        }
+        commandBuffer->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
+        commandBuffer->ResourceBarrier(mDeltaRayleighTexture, ResourceAccessType::ShaderRead);
+        commandBuffer->ResourceBarrier(mDeltaMieTexture, ResourceAccessType::ShaderRead);
+        commandBuffer->ResourceBarrier(mIrradianceTexture, ResourceAccessType::ShaderRead);
+        commandBuffer->ResourceBarrier(mDeltaScatteringDensityTexture, ResourceAccessType::ColorAttachment);
+        RenderEncoderPtr enc = BeginPass(commandBuffer, mScatteringDensityPipeline,
+            { MakeColorAttachment(mDeltaScatteringDensityTexture, layer, false) },
+            kScatteringW, kScatteringH, kScatteringD);
+        enc->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
+        enc->SetFragmentUniformBuffer("ScatteringCB", GetScatteringUBO(step.layer, step.order));
+        enc->SetFragmentTextureAndSampler("transmittance_texture", mTransmittanceTexture, mLinearSampler);
+        enc->SetFragmentTextureAndSampler("single_rayleigh_scattering_texture", mDeltaRayleighTexture, mLinearSampler);
+        enc->SetFragmentTextureAndSampler("single_mie_scattering_texture", mDeltaMieTexture, mLinearSampler);
+        enc->SetFragmentTextureAndSampler("multiple_scattering_texture", mDeltaRayleighTexture, mLinearSampler);
+        enc->SetFragmentTextureAndSampler("irradiance_texture", mIrradianceTexture, mLinearSampler);
+        enc->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
+        enc->EndEncode();
+        break;
     }
 
-    // ---- 5) LUT 布局收尾：以上 Pass 把 LUT 当颜色附件写，需转到 SHADER_READ_ONLY 供天空 Pass 采样 ----
+    case PrecomputeStepType::IndirectIrradiance:
     {
-        CommandBufferPtr cmd = queue->CreateOffscreenCommandBuffer();
-        if (!cmd)
-        {
-            LOG_ERROR("AtmosphereRenderer::Precompute: failed to create command buffer (LUT layout transition)");
-            return;
-        }
-        cmd->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
-        cmd->ResourceBarrier(mScatteringTexture, ResourceAccessType::ShaderRead);
-        cmd->ResourceBarrier(mSingleMieTexture, ResourceAccessType::ShaderRead);
-        cmd->ResourceBarrier(mIrradianceTexture, ResourceAccessType::ShaderRead);
-        flush(cmd);
+        commandBuffer->ResourceBarrier(mDeltaRayleighTexture, ResourceAccessType::ShaderRead);
+        commandBuffer->ResourceBarrier(mDeltaMieTexture, ResourceAccessType::ShaderRead);
+        commandBuffer->ResourceBarrier(mDeltaIrradianceTexture, ResourceAccessType::ColorAttachment);
+        commandBuffer->ResourceBarrier(mIrradianceTexture, ResourceAccessType::ColorAttachment);
+        RenderEncoderPtr enc = BeginPass(commandBuffer, mIndirectIrradiancePipeline,
+            { MakeColorAttachment(mDeltaIrradianceTexture, 0, false),
+              MakeColorAttachment(mIrradianceTexture, 0, true) },
+            kIrrW, kIrrH);
+        enc->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
+        enc->SetFragmentUniformBuffer("ScatteringCB", GetScatteringUBO(0, step.order - 1));
+        enc->SetFragmentTextureAndSampler("single_rayleigh_scattering_texture", mDeltaRayleighTexture, mLinearSampler);
+        enc->SetFragmentTextureAndSampler("single_mie_scattering_texture", mDeltaMieTexture, mLinearSampler);
+        enc->SetFragmentTextureAndSampler("multiple_scattering_texture", mDeltaRayleighTexture, mLinearSampler);
+        enc->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
+        enc->EndEncode();
+        break;
     }
+
+    case PrecomputeStepType::MultipleScattering:
+    {
+        commandBuffer->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
+        commandBuffer->ResourceBarrier(mDeltaScatteringDensityTexture, ResourceAccessType::ShaderRead);
+        commandBuffer->ResourceBarrier(mDeltaRayleighTexture, ResourceAccessType::ColorAttachment);
+        commandBuffer->ResourceBarrier(mScatteringTexture, ResourceAccessType::ColorAttachment);
+        RenderEncoderPtr enc = BeginPass(commandBuffer, mMultipleScatteringPipeline,
+            { MakeColorAttachment(mDeltaRayleighTexture, layer, false),
+              MakeColorAttachment(mScatteringTexture, layer, true) },
+            kScatteringW, kScatteringH, kScatteringD);
+        enc->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
+        enc->SetFragmentUniformBuffer("ScatteringCB", GetScatteringUBO(step.layer, step.order));
+        enc->SetFragmentTextureAndSampler("transmittance_texture", mTransmittanceTexture, mLinearSampler);
+        enc->SetFragmentTextureAndSampler("scattering_density_texture", mDeltaScatteringDensityTexture, mLinearSampler);
+        enc->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
+        enc->EndEncode();
+        break;
+    }
+    }
+}
+
+void AtmosphereRenderer::Precompute(CommandBufferPtr commandBuffer)
+{
+    ZoneScopedN("AtmosphereRenderer::Precompute");
+    if (!mInitialized || !commandBuffer || mPrecomputed)
+    {
+        return;
+    }
+
+    if (mPrecomputeSteps.empty())
+    {
+        BuildPrecomputeSteps();
+    }
+
+    // 每帧只执行有限个 Pass，录制进当前帧的命令缓冲区，直到全部完成。
+    //
+    // 这么切分有两个必要原因：
+    // 1) Vulkan / DX12 后端的 CreateCommandBuffer() 与交换链帧同步绑定（会 acquire
+    //    交换链图像并重置飞行栅栏），不能为每个 Pass 单独建命令缓冲区——一次预计算
+    //    有数百个 Pass，重复创建会耗尽交换链图像导致死锁，或让飞行栅栏永远等不到
+    //    信号导致永久跳帧。
+    // 2) 全部 Pass 塞进一帧会撑爆 DX12 的单帧描述符环（采样器堆硬件上限 2048），
+    //    描述符被回绕复用后 LUT 内容会被写成 garbage（表现为天空颜色错误/NaN）。
+    constexpr size_t kMaxStepsPerFrame = 24;
+
+    size_t executed = 0;
+    while (mPrecomputeCursor < mPrecomputeSteps.size() && executed < kMaxStepsPerFrame)
+    {
+        RunPrecomputeStep(commandBuffer, mPrecomputeSteps[mPrecomputeCursor]);
+        ++mPrecomputeCursor;
+        ++executed;
+    }
+
+    if (mPrecomputeCursor < mPrecomputeSteps.size())
+    {
+        return;
+    }
+
+    // 收尾：以上 Pass 把 LUT 当颜色附件写，需转到 SHADER_READ_ONLY 供天空 Pass 采样
+    commandBuffer->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ShaderRead);
+    commandBuffer->ResourceBarrier(mScatteringTexture, ResourceAccessType::ShaderRead);
+    commandBuffer->ResourceBarrier(mSingleMieTexture, ResourceAccessType::ShaderRead);
+    commandBuffer->ResourceBarrier(mIrradianceTexture, ResourceAccessType::ShaderRead);
 
     mPrecomputed = true;
 
