@@ -41,11 +41,10 @@ class DX12BlitEncoder;
 struct DX12CommandBufferInfo
 {
     DX12ContextPtr context;
-    DX12SwapChainPtr swapChain;          // 上屏命令缓冲区才有；离屏为 nullptr
+    DX12SwapChainPtr swapChain;
     DX12RenderDevice* renderDevice = nullptr;
     uint32_t frameIndex = 0;             // 帧槽位下标（用于 fence 与资源多缓冲）
     uint32_t backBufferIndex = 0;
-    bool isOffscreen = false;
     bool isCompute = false;
 };
 
@@ -87,7 +86,6 @@ public:
     DX12RenderDevice* GetRenderDevice() const { return mRenderDevice; }
     uint32_t GetFrameIndex() const { return mFrameIndex; }
     uint32_t GetBackBufferIndex() const { return mBackBufferIndex; }
-    bool IsOffscreen() const { return mIsOffscreen; }
 
     /// 开始录制（重置命令分配器与描述符环形堆）
     bool BeginRecording();
@@ -208,7 +206,6 @@ private:
 
     uint32_t mFrameIndex = 0;
     uint32_t mBackBufferIndex = 0;
-    bool mIsOffscreen = false;
     bool mIsCompute = false;
 
     State mState = State::Initial;

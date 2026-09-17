@@ -29,7 +29,6 @@ struct CommandBufferInfo
     VKDepthStencilBufferPtr depthStencilBuffer;
     VKRenderDevice *renderDevice;
     bool isComputeCommandBuffer = false;  // 是否为计算命令缓冲区
-    bool isOffscreenCommandBuffer = false;// 离屏命令缓冲区（不用帧信号量/飞行栅栏）
 };
 
 using CommandBufferInfoPtr = std::shared_ptr<CommandBufferInfo>;
@@ -83,7 +82,6 @@ public:
 
 private:
     void EndCommandBufferOnce();      // 幂等结束录制（vkEndCommandBuffer 只能调用一次）
-    void SubmitOffscreenAndWait();    // 离屏命令缓冲区：提交后立即等待完成
 
     VkCommandBuffer mCommandBuffer = VK_NULL_HANDLE;
     CommandBufferInfoPtr mCommandInfo = nullptr;

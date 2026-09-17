@@ -28,7 +28,6 @@ DX12CommandBuffer::DX12CommandBuffer(ID3D12GraphicsCommandList* commandList,
     , mRenderDevice(info ? info->renderDevice : nullptr)
     , mFrameIndex(info ? info->frameIndex : 0)
     , mBackBufferIndex(info ? info->backBufferIndex : 0)
-    , mIsOffscreen(info ? info->isOffscreen : false)
     , mIsCompute(info ? info->isCompute : false)
 {
     if (commandList == nullptr || mContext == nullptr)
@@ -651,10 +650,9 @@ void DX12CommandBuffer::ResourceBarrier(RCBufferPtr buffer, ResourceAccessType a
 
 RenderEncoderPtr DX12CommandBuffer::CreateDefaultRenderEncoder(const ClearColor& clearColor) const
 {
-    if (mState != State::Recording || mIsOffscreen)
+    if (mState != State::Recording)
     {
-        LOG_ERROR("[DX12] CreateDefaultRenderEncoder: command buffer is not recording "
-                  "or is offscreen");
+        LOG_ERROR("[DX12] CreateDefaultRenderEncoder: command buffer is not recording");
         return nullptr;
     }
 
@@ -721,7 +719,7 @@ void DX12CommandBuffer::EndDebugGroup()
 
 bool DX12CommandBuffer::PresentToSwapChain()
 {
-    if (mIsOffscreen || !mSwapChain)
+    if (!mSwapChain)
     {
         return false;
     }
@@ -759,14 +757,6 @@ bool DX12CommandBuffer::PresentToSwapChain()
 
 void DX12CommandBuffer::PresentFrameBuffer()
 {
-    if (mIsOffscreen)
-    {
-        // 离屏命令缓冲区没有可上屏的内容，按 Vulkan 后端语义立即提交并等待
-        Submit();
-        WaitUntilCompleted();
-        return;
-    }
-
     PresentToSwapChain();
 }
 

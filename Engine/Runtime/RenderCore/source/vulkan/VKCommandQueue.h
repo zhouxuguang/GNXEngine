@@ -69,8 +69,6 @@ public:
      */
     virtual CommandBufferPtr CreateCommandBuffer() override;
 
-    virtual CommandBufferPtr CreateOffscreenCommandBuffer() override;
-
     /**
      * @brief 获取Vulkan队列句柄
      */

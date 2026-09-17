@@ -57,14 +57,4 @@ CommandBufferPtr VKCommandQueue::CreateCommandBuffer()
     return mRenderDevice->CreateCommandBuffer();
 }
 
-CommandBufferPtr VKCommandQueue::CreateOffscreenCommandBuffer()
-{
-    if (!mRenderDevice)
-    {
-        return nullptr;
-    }
-
-    return mRenderDevice->CreateOffscreenCommandBuffer();
-}
-
 NAMESPACE_RENDERCORE_END

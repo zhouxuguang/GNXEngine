@@ -79,7 +79,6 @@ public:
     // ---- 供命令队列 / 命令缓冲区使用 ----
 
     CommandBufferPtr CreateCommandBuffer();
-    CommandBufferPtr CreateOffscreenCommandBuffer();
 
     const DX12ContextPtr& GetContext() const { return mContext; }
     DX12SwapChain* GetSwapChain() const { return mSwapChain.get(); }
@@ -144,10 +143,6 @@ private:
 
     // 缓存的命令缓冲区（每个帧槽位一个），复用其描述符堆避免每帧重建
     std::vector<DX12CommandBufferPtr> mFrameCommandBuffers;
-
-    // 离屏命令缓冲区（单例复用；提交后立即等待完成，因此不会与在飞帧冲突）
-    DX12CommandBufferPtr mOffscreenCommandBuffer;
-    ComPtr<ID3D12CommandAllocator> mOffscreenAllocator;
 
     uint32_t mCurrentFrameIndex = 0;
     uint32_t mBackBufferIndex = 0;

@@ -808,52 +808,6 @@ CommandBufferPtr VKRenderDevice::CreateCommandBuffer()
     return std::make_shared<VulkanCommandBuffer>(commandBuffer, commandBufferInfo);
 }
 
-CommandBufferPtr VKRenderDevice::CreateOffscreenCommandBuffer()
-{
-    if (mVulkanContext == nullptr || mVulkanContext->device == VK_NULL_HANDLE)
-    {
-        return nullptr;
-    }
-
-    VkCommandPool commandPool = mVulkanContext->GetCommandPool();
-    if (commandPool == VK_NULL_HANDLE)
-    {
-        LOG_ERROR("VKRenderDevice: CreateOffscreenCommandBuffer failed, graphics command pool is null");
-        return nullptr;
-    }
-
-    // 每次单独分配，不复用交换链帧命令缓冲区
-    VkCommandBufferAllocateInfo allocateInfo = {};
-    allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocateInfo.pNext = nullptr;
-    allocateInfo.commandPool = commandPool;
-    allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocateInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-    VkResult res = vkAllocateCommandBuffers(mVulkanContext->device, &allocateInfo, &commandBuffer);
-    if (res != VK_SUCCESS || commandBuffer == VK_NULL_HANDLE)
-    {
-        LOG_ERROR("VKRenderDevice: vkAllocateCommandBuffers (offscreen) failed with error: %d", (int)res);
-        return nullptr;
-    }
-
-    CommandBufferInfoPtr commandBufferInfo = std::make_shared<CommandBufferInfo>();
-    commandBufferInfo->imageAvailableSemaphore = VK_NULL_HANDLE;
-    commandBufferInfo->renderFinishSemaphore = VK_NULL_HANDLE;
-    commandBufferInfo->flightFence = VK_NULL_HANDLE;
-    commandBufferInfo->swapChain = nullptr;
-    commandBufferInfo->currentFrameIndex = 0;
-    commandBufferInfo->nextFrameIndex = 0;
-    commandBufferInfo->vulkanContext = mVulkanContext;
-    commandBufferInfo->depthStencilBuffer = nullptr;
-    commandBufferInfo->renderDevice = this;
-    commandBufferInfo->isComputeCommandBuffer = false;
-    commandBufferInfo->isOffscreenCommandBuffer = true;
-
-    return std::make_shared<VulkanCommandBuffer>(commandBuffer, commandBufferInfo);
-}
-
 void VKRenderDevice::CreateSyncObject()
 {
     assert(mSwapChain->GetSwapChainImageCount());

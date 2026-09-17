@@ -35,7 +35,6 @@ public:
     std::string GetDescription() const override;
 
     CommandBufferPtr CreateCommandBuffer() override;
-    CommandBufferPtr CreateOffscreenCommandBuffer() override;
 
     ID3D12CommandQueue* GetD3D12Queue() const { return mQueue.Get(); }
     uint32_t GetFamilyIndex() const { return mFamilyIndex; }

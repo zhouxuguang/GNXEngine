@@ -35,13 +35,4 @@ CommandBufferPtr DX12CommandQueue::CreateCommandBuffer()
     return mRenderDevice->CreateCommandBuffer();
 }
 
-CommandBufferPtr DX12CommandQueue::CreateOffscreenCommandBuffer()
-{
-    if (mRenderDevice == nullptr)
-    {
-        return nullptr;
-    }
-    return mRenderDevice->CreateOffscreenCommandBuffer();
-}
-
 NAMESPACE_RENDERCORE_END

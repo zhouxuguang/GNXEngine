@@ -36,7 +36,6 @@ DX12RenderDevice::~DX12RenderDevice()
 
     // 顺序很重要：帧资源 → 交换链 → 根签名 → 上下文
     ReleaseFrameResources();
-    mOffscreenCommandBuffer.reset();
     mSwapChain.reset();
     mRootSignature.reset();
 
@@ -470,47 +469,6 @@ CommandBufferPtr DX12RenderDevice::CreateCommandBuffer()
     }
 
     return cached;
-}
-
-CommandBufferPtr DX12RenderDevice::CreateOffscreenCommandBuffer()
-{
-    if (!mContext || !mContext->IsValid())
-    {
-        return nullptr;
-    }
-
-    // 离屏命令缓冲区：单例复用（提交后立即等待完成，因此不会与在飞帧冲突）
-    if (!mOffscreenCommandBuffer)
-    {
-        ComPtr<ID3D12CommandAllocator> allocator;
-        ComPtr<ID3D12GraphicsCommandList> commandList;
-        if (FAILED(mContext->device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                                           IID_PPV_ARGS(&allocator))) ||
-            FAILED(mContext->device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT,
-                                                       allocator.Get(), nullptr,
-                                                       IID_PPV_ARGS(&commandList))))
-        {
-            LOG_ERROR("[DX12] 创建离屏命令缓冲区失败");
-            return nullptr;
-        }
-        commandList->Close();
-
-        auto info = std::make_shared<DX12CommandBufferInfo>();
-        info->context = mContext;
-        info->renderDevice = this;
-        info->isOffscreen = true;
-
-        mOffscreenAllocator = allocator;
-        mOffscreenCommandBuffer = std::make_shared<DX12CommandBuffer>(commandList.Get(),
-                                                                     allocator.Get(), info);
-    }
-
-    if (!mOffscreenCommandBuffer->BeginRecording())
-    {
-        return nullptr;
-    }
-
-    return mOffscreenCommandBuffer;
 }
 
 // ============================================================================

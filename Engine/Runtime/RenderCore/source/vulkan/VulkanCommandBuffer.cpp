@@ -66,38 +66,10 @@ void VulkanCommandBuffer::EndCommandBufferOnce()
     mEnded = true;
 }
 
-void VulkanCommandBuffer::SubmitOffscreenAndWait()
-{
-    if (mCommandBuffer == VK_NULL_HANDLE || mSubmitted)
-    {
-        return;
-    }
-
-    EndCommandBufferOnce();
-
-    VulkanFencePtr fence = mCommandInfo->vulkanContext->fencePool.createFence(mCommandInfo->vulkanContext->device);
-
-    VkSubmitInfo submitInfo = {};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &mCommandBuffer;
-
-    VkResult res = vkQueueSubmit(mCommandInfo->vulkanContext->graphicsQueue, 1, &submitInfo, fence->getHandle());
-    if (res != VK_SUCCESS)
-    {
-        LOG_ERROR("VulkanCommandBuffer: offscreen vkQueueSubmit failed with error: %d", (int)res);
-    }
-    mSubmitted = true;
-
-    fence->wait(mCommandInfo->vulkanContext->device, UINT64_MAX);
-    mCommandInfo->vulkanContext->fencePool.releaseFence(mCommandInfo->vulkanContext->device, fence);
-}
-
 //创建默认的encoder，也就是屏幕渲染的encoder
 RenderEncoderPtr VulkanCommandBuffer::CreateDefaultRenderEncoder(const ClearColor& clearColor) const
 {
-    if (mCommandInfo->isOffscreenCommandBuffer || !mCommandInfo->swapChain
-        || !mCommandInfo->depthStencilBuffer)
+    if (!mCommandInfo->swapChain || !mCommandInfo->depthStencilBuffer)
     {
         LOG_ERROR("VulkanCommandBuffer: CreateDefaultRenderEncoder requires a swapchain-bound command buffer");
         return nullptr;
@@ -337,9 +309,9 @@ BlitEncoderPtr VulkanCommandBuffer::CreateBlitEncoder() const
 //呈现到屏幕上，上屏
 void VulkanCommandBuffer::PresentFrameBuffer()
 {
-    if (mCommandInfo->isOffscreenCommandBuffer || !mCommandInfo->swapChain)
+    if (!mCommandInfo->swapChain)
     {
-        LOG_ERROR("VulkanCommandBuffer: PresentFrameBuffer called on an offscreen command buffer");
+        LOG_ERROR("VulkanCommandBuffer: PresentFrameBuffer requires a swapchain-bound command buffer");
         return;
     }
 
@@ -468,12 +440,6 @@ void VulkanCommandBuffer::WaitUntilCompleted()
         return;
     }
 
-    if (mCommandInfo->isOffscreenCommandBuffer)
-    {
-        SubmitOffscreenAndWait();
-        return;
-    }
-
     EndCommandBufferOnce();
 
     // 从 FencePool 获取 Fence
@@ -498,12 +464,6 @@ void VulkanCommandBuffer::Submit()
 {
     if (mCommandBuffer == VK_NULL_HANDLE)
     {
-        return;
-    }
-
-    if (mCommandInfo->isOffscreenCommandBuffer)
-    {
-        SubmitOffscreenAndWait();
         return;
     }
 
