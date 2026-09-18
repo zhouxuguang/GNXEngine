@@ -383,10 +383,22 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
             fbParams.cameraUBO = cameraUBO;
             fbParams.feedbackUBO = vtManager->GetFeedbackUBO();
 
-            RenderFeedbackPass(frameGraph, commandBuffer, fbParams,
-                               vtManager->GetFeedbackTarget(),
-                               vtManager->GetFeedbackDepthTarget());
-            vtManager->NotifyFeedbackRendered();
+            const FrameGraphResource feedbackResource = RenderFeedbackPass(
+                frameGraph, commandBuffer, fbParams,
+                vtManager->GetFeedbackTarget(), vtManager->GetFeedbackDepthTarget());
+
+            // 在主图形命令缓冲区中回读 feedback。
+            frameGraph.AddPass("VtFeedbackReadback",
+                [=](FrameGraph::Builder& builder, FrameGraph::NoData&)
+                {
+                    builder.Read(feedbackResource,
+                                 (uint32_t)RenderCore::ResourceAccessType::TransferSrc);
+                    builder.SetSideEffect();
+                },
+                [=](const FrameGraph::NoData&, FrameGraphPassResources&, void*)
+                {
+                    vtManager->RecordFeedbackReadback(commandBuffer);
+                });
         }
     }
 

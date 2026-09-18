@@ -58,8 +58,8 @@ public:
     /// 主视口变化时同步 feedback target 尺寸。
     void Resize(const mathutil::Vector2i& viewSize);
 
-    /// Feedback pass 已加入本帧渲染，允许下一帧 Tick 读回。
-    void NotifyFeedbackRendered();
+    /// 把 feedback 读回拷贝录制到本帧主命令缓冲区。
+    void RecordFeedbackReadback(const CommandBufferPtr& commandBuffer);
 
     // 纹理绑定接口
     RCTexturePtr GetPageTableTexture() const { return mPageTable->GetGPUTexture(); }

@@ -13,6 +13,7 @@
 #include "VirtualTextureDefines.h"
 #include "Runtime/RenderCore/include/RCBuffer.h"
 #include "Runtime/RenderCore/include/RCTexture.h"
+#include "Runtime/RenderCore/include/CommandBuffer.h"
 #include "Runtime/MathUtil/include/Vector2.h"
 #include <vector>
 #include <unordered_set>
@@ -43,9 +44,9 @@ public:
     /// 窗口尺寸变化时重建降分辨率 feedback target 与 readback buffer。
     void Resize(const mathutil::Vector2i& viewSize);
 
-    /// FeedbackRenderer 在本帧提交 feedback pass 后调用；下一帧 Tick 才允许读回。
-    /// 这样可避免初始化/resize 后读取尚未写入的纹理。
-    void NotifyRendered() { mHasRenderedFrame = true; }
+    /// 将 feedback texture 的 GPU→CPU 拷贝录制到当前帧已有的命令缓冲区。
+    /// 下一帧 ReadbackAndDecode() 会等待这次帧提交完成后再 Map。
+    void RecordReadback(const CommandBufferPtr& commandBuffer);
 
     /// 执行 readback 并解析 feedback buffer 为 page 请求集合。
     FeedbackResult ReadbackAndDecode();
@@ -60,7 +61,9 @@ private:
     uint32_t mWidth  = 0;
     uint32_t mHeight = 0;
     uint32_t mScale  = 16;
+    uint32_t mPitch  = 0;   // staging buffer 每行字节数（按 D3D12 的 256 字节 pitch 对齐）
     bool mHasRenderedFrame = false;
+    CommandBufferPtr mPendingCommandBuffer;
 
     /// 解码单个 FeedbackPixel → PageRequest。
     static PageRequest DecodePixel(FeedbackPixel pixel);

@@ -77,11 +77,11 @@ void VirtualTextureManager::Resize(const mathutil::Vector2i& viewSize)
     }
 }
 
-void VirtualTextureManager::NotifyFeedbackRendered()
+void VirtualTextureManager::RecordFeedbackReadback(const CommandBufferPtr& commandBuffer)
 {
     if (mFeedback)
     {
-        mFeedback->NotifyRendered();
+        mFeedback->RecordReadback(commandBuffer);
     }
 }
 
