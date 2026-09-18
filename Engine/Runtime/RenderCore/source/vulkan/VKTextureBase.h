@@ -74,6 +74,11 @@ public:
     {
         return mFormat;
     }
+
+    VkImageUsageFlags GetVKUsage() const
+    {
+        return mImageUsage;
+    }
     
     VkImage GetVKImage() const
     {
@@ -87,6 +92,31 @@ public:
 
     void SetCurrentLayout(VkImageLayout layout)
     {
+        mCurrentLayout = layout;
+        for (VkImageLayout& subLayout : mSubresourceLayouts)
+        {
+            subLayout = layout;
+        }
+    }
+
+    VkImageLayout GetSubresourceLayout(uint32_t mipLevel, uint32_t slice) const
+    {
+        const size_t index = SubresourceIndex(mipLevel, slice);
+        if (index < mSubresourceLayouts.size())
+        {
+            return mSubresourceLayouts[index];
+        }
+        return mCurrentLayout;
+    }
+
+    void SetSubresourceLayout(uint32_t mipLevel, uint32_t slice, VkImageLayout layout)
+    {
+        const size_t index = SubresourceIndex(mipLevel, slice);
+        if (index >= mSubresourceLayouts.size())
+        {
+            mSubresourceLayouts.resize(index + 1, VK_IMAGE_LAYOUT_UNDEFINED);
+        }
+        mSubresourceLayouts[index] = layout;
         mCurrentLayout = layout;
     }
 
@@ -110,8 +140,15 @@ private:
     VulkanImageViewPtr mVulkanImageViewPtr = nullptr;
     std::vector<VulkanImageViewPtr> mRenderTargetViews;
     std::unordered_map<uint32_t, VulkanImageViewPtr> mMipLevelViews;  // 缓存每个 mip level 的视图
+    size_t SubresourceIndex(uint32_t mipLevel, uint32_t slice) const
+    {
+        return static_cast<size_t>(mipLevel) * (mLayerCount > 0 ? mLayerCount : 1) + slice;
+    }
+
     bool mSupportHostImageCopy = false;
     VkImageLayout mCurrentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkImageUsageFlags mImageUsage = 0;
+    std::vector<VkImageLayout> mSubresourceLayouts;
 };
 
 using VKTextureBasePtr = std::shared_ptr<VKTextureBase>;

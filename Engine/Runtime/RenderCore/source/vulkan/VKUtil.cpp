@@ -65,7 +65,7 @@ void UpLoadTask::Run()
 	VulkanBufferUtil::SetImageLayout(
 		commandBuffer,
 		mImage,
-		VK_IMAGE_LAYOUT_UNDEFINED,
+		oldLayout,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		subresourceRange);
 

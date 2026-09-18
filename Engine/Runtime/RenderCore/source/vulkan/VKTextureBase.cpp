@@ -45,11 +45,17 @@ void VKTextureBase::CreateImageViews(const VkImageCreateInfo& imageCreateInfo)
     const VkImageViewASTCDecodeModeEXT* astcDecodeModePtr =
         GetASTCDecodeMode(astcDecodeMode) ? &astcDecodeMode : nullptr;
 
+    // Shader view 覆盖全 mip，attachment view 保持单 mip。
+    const bool usedAsAttachment =
+        (imageCreateInfo.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) != 0 ||
+        (imageCreateInfo.usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0;
+    const uint32_t shaderViewLevelCount = usedAsAttachment ? 1 : imageCreateInfo.mipLevels;
+
     VkImageView imageView = VK_NULL_HANDLE;
     if (GetTextureType() == TextureType_2D)
     {
         imageView = VulkanBufferUtil::CreateImageView(mContext->device, mImage, mFormat,
-            nullptr, imageAspectFlags, 1, astcDecodeModePtr);
+            nullptr, imageAspectFlags, shaderViewLevelCount, astcDecodeModePtr);
     }
 
     else if (GetTextureType() == TextureType_3D)
@@ -213,6 +219,11 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
     mMipLevels = imageCreateInfoCopy.mipLevels;
     mLayerCount = imageCreateInfoCopy.arrayLayers;
 
+    mSubresourceLayouts.assign(
+        static_cast<size_t>(mMipLevels) * (mLayerCount > 0 ? mLayerCount : 1),
+        VK_IMAGE_LAYOUT_UNDEFINED);
+    mImageUsage = imageCreateInfoCopy.usage;
+
     assert(mImage != VK_NULL_HANDLE);
 }
 
@@ -299,11 +310,27 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
 
     if (mSupportHostImageCopy)
     {
-        // 从驱动返回的pCopyDstLayouts中选择一个合适的layout作为Host Image Copy的中间layout
-        // 优先选择TRANSFER_DST_OPTIMAL，其次GENERAL，最后取列表中第一个
+        // 只检查驱动返回的有效 layout。
+        const std::vector<VkImageLayout>& dstLayouts =
+            mContext->deviceExtProperties.hostImageCopyDstLayoutsStorage;
+        const uint32_t dstLayoutCount = std::min<uint32_t>(
+            mContext->deviceExtProperties.hostImageCopyProperties.copyDstLayoutCount,
+            static_cast<uint32_t>(dstLayouts.size()));
+
         VkImageLayout hostCopyDstLayout = VK_IMAGE_LAYOUT_GENERAL;
-        for (VkImageLayout layout : mContext->deviceExtProperties.hostImageCopyDstLayoutsStorage)
+        bool foundSupportedLayout = false;
+        for (uint32_t i = 0; i < dstLayoutCount; ++i)
         {
+            const VkImageLayout layout = dstLayouts[i];
+            if (layout == VK_IMAGE_LAYOUT_UNDEFINED)
+            {
+                continue;
+            }
+            if (!foundSupportedLayout)
+            {
+                hostCopyDstLayout = layout;
+                foundSupportedLayout = true;
+            }
             if (layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
             {
                 hostCopyDstLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
@@ -312,10 +339,6 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
             if (layout == VK_IMAGE_LAYOUT_GENERAL)
             {
                 hostCopyDstLayout = VK_IMAGE_LAYOUT_GENERAL;
-            }
-            else if (hostCopyDstLayout == VK_IMAGE_LAYOUT_GENERAL)
-            {
-                hostCopyDstLayout = layout;
             }
         }
 
@@ -327,11 +350,13 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
         subresourceRange.baseArrayLayer = slice;
         subresourceRange.layerCount = 1;
 
-        // Step 1: Host端layout转换，newLayout必须是驱动pCopyDstLayouts中支持的layout
+        // 增量上传必须使用 subresource 的实际 oldLayout。
+        const VkImageLayout currentMipLayout = GetSubresourceLayout(level, slice);
+
         VkHostImageLayoutTransitionInfoEXT hostImageLayoutTransitionInfo = {};
         hostImageLayoutTransitionInfo.sType = VK_STRUCTURE_TYPE_HOST_IMAGE_LAYOUT_TRANSITION_INFO_EXT;
         hostImageLayoutTransitionInfo.image = mImage;
-        hostImageLayoutTransitionInfo.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        hostImageLayoutTransitionInfo.oldLayout = currentMipLayout;
         hostImageLayoutTransitionInfo.newLayout = hostCopyDstLayout;
         hostImageLayoutTransitionInfo.subresourceRange = subresourceRange;
 
@@ -361,22 +386,26 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
 
         vkCopyMemoryToImageEXT(mContext->device, &copyMemoryInfo);
 
-        // Step 3: 通过command buffer barrier将layout转换到SHADER_READ_ONLY_OPTIMAL
-        if (hostCopyDstLayout != VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+        // 恢复到纹理用途允许的最终 layout。
+        const VkImageLayout finalLayout =
+            (mImageUsage & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) != 0
+                ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+                : VK_IMAGE_LAYOUT_GENERAL;
+
+        if (hostCopyDstLayout != finalLayout)
         {
             VkCommandPool cmdPool = mContext->GetCommandPool();
             VkCommandBuffer cmdBuffer = VulkanBufferUtil::BeginSingleTimeCommand(mContext->device, cmdPool);
             VulkanBufferUtil::SetImageLayout(cmdBuffer, mImage,
-                hostCopyDstLayout, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                hostCopyDstLayout, finalLayout,
                 subresourceRange);
             VulkanBufferUtil::EndSingleTimeCommand(*mContext, mContext->graphicsQueue, cmdPool, cmdBuffer);
         }
 
-        mCurrentLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        SetSubresourceLayout(level, slice, finalLayout);
     }
     else
     {
-        // 异步加载逻辑还有问题
         VkBuffer stageBuffer = VK_NULL_HANDLE;
         VmaAllocation allocation = VK_NULL_HANDLE;
         VkDeviceSize size = bytesPerRow * rect.height;
@@ -403,6 +432,8 @@ void VKTextureBase::ReplaceRegion(const Rect2D& rect,
         upLoadTask->mImage = image;
         upLoadTask->stageBuffer = stageBuffer;
         upLoadTask->mContext = mContext;
+        upLoadTask->oldLayout = GetSubresourceLayout(level, slice);
+        SetSubresourceLayout(level, slice, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
         mContext->upLoadPool.Execute(upLoadTask);
     }

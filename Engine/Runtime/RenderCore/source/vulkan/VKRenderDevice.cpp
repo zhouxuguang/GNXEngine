@@ -800,7 +800,8 @@ CommandBufferPtr VKRenderDevice::CreateCommandBuffer()
     commandBufferInfo->currentFrameIndex = mCurrentFrame;
     commandBufferInfo->nextFrameIndex = mNextFrameIndex;
     commandBufferInfo->renderDevice = this;
-    commandBufferInfo->renderFinishSemaphore = mRenderFinishedSemaphores[mCurrentFrame];
+    // Present 信号量跟随交换链图像复用。
+    commandBufferInfo->renderFinishSemaphore = mRenderFinishedSemaphores[mNextFrameIndex];
     commandBufferInfo->swapChain = mSwapChain;
     commandBufferInfo->vulkanContext = mVulkanContext;
     commandBufferInfo->depthStencilBuffer = mSwapChain->GetDSBuffer();

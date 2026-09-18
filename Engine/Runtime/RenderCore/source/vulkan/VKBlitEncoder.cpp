@@ -9,6 +9,7 @@
 #include "VKVertexBuffer.h"
 #include "VKRCBuffer.h"
 #include "VKTextureBase.h"
+#include "VulkanBufferUtil.h"
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -196,10 +197,26 @@ void VKBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
     VkExtent3D extent = {static_cast<uint32_t>(sourceSize.x), 
                          static_cast<uint32_t>(sourceSize.y), 1};
     
+    // Vulkan 的 bufferRowLength 以 texel 为单位。
+    uint32_t texelSize = 0;
+    VKTextureBasePtr vkSource = std::dynamic_pointer_cast<VKTextureBase>(source);
+    if (vkSource)
+    {
+        texelSize = VulkanBufferUtil::GetFormatSize(vkSource->GetVKFormat());
+    }
+
     VkBufferImageCopy copyRegion = {};
     copyRegion.bufferOffset = destinationOffset;
     copyRegion.bufferRowLength = 0;
     copyRegion.bufferImageHeight = 0;
+    if (texelSize > 0 && destinationBytesPerRow >= texelSize)
+    {
+        copyRegion.bufferRowLength = (uint32_t)(destinationBytesPerRow) / texelSize;
+        if (copyRegion.bufferRowLength > 0 && destinationBytesPerImage >= destinationBytesPerRow)
+        {
+            copyRegion.bufferImageHeight = (uint32_t)(destinationBytesPerImage / destinationBytesPerRow);
+        }
+    }
     copyRegion.imageSubresource = subresource;
     copyRegion.imageOffset = srcOffset;
     copyRegion.imageExtent = extent;

@@ -21,6 +21,23 @@
 
 NAMESPACE_RENDERCORE_BEGIN
 
+static VkImageLayout ResolvePostRenderLayout(const VKTextureBasePtr& texture, bool isPresentStage)
+{
+    if (isPresentStage)
+    {
+        return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    }
+
+    // 纯 RT 纹理不能进入 SHADER_READ_ONLY_OPTIMAL。
+    if (texture &&
+        (texture->GetVKUsage() & (VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT)) == 0)
+    {
+        return VK_IMAGE_LAYOUT_GENERAL;
+    }
+
+    return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+}
+
 VkPrimitiveTopology ConvertToVulkanPrimitiveTopology(PrimitiveMode mode)
 {
     VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
@@ -263,15 +280,14 @@ void VKRenderEncoder::EndDynamicRenderPass()
 {
     vkCmdEndRenderingKHR(mCommandBuffer);
 
-    VkImageLayout imageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    if (!mPassImage.isPresentStage)
-    {
-        imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    }
-
     // 对颜色附件进行转换
     for (size_t i = 0; i < mPassImage.colorImages.size(); ++i)
     {
+        VKTextureBasePtr colorTexture =
+            (i < mPassTexture.colorTextures.size()) ? mPassTexture.colorTextures[i] : nullptr;
+
+        const VkImageLayout imageLayout = ResolvePostRenderLayout(colorTexture, mPassImage.isPresentStage);
+
         VulkanBufferUtil::InsertImageMemoryBarrier(
             mCommandBuffer,
             mPassImage.colorImages[i],
@@ -284,9 +300,9 @@ void VKRenderEncoder::EndDynamicRenderPass()
             VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
 
         // 更新纹理layout
-        if (!mPassTexture.colorTextures.empty() && i < mPassTexture.colorTextures.size() && mPassTexture.colorTextures[i])
+        if (colorTexture)
         {
-            mPassTexture.colorTextures[i]->SetCurrentLayout(imageLayout);
+            colorTexture->SetCurrentLayout(imageLayout);
         }
     }
 }

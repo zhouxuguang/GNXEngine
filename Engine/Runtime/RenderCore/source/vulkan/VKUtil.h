@@ -168,6 +168,7 @@ public:
 	VmaAllocation allocation = VK_NULL_HANDLE;
 	VkImage mImage = VK_NULL_HANDLE;
 	Rect2D rect;
+	VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 	std::shared_ptr<VulkanContext> mContext = nullptr;
 	VulkanFencePtr fence = nullptr;

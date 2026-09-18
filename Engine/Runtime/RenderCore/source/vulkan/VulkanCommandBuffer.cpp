@@ -440,6 +440,24 @@ void VulkanCommandBuffer::WaitUntilCompleted()
         return;
     }
 
+    // 已提交的命令只等待，不重复提交。
+    if (mSubmitted)
+    {
+        if (mCommandInfo->flightFence != VK_NULL_HANDLE)
+        {
+            vkWaitForFences(mCommandInfo->vulkanContext->device, 1,
+                            &mCommandInfo->flightFence, VK_TRUE, UINT64_MAX);
+        }
+        else
+        {
+            const VkQueue submittedQueue = mCommandInfo->isComputeCommandBuffer
+                ? mCommandInfo->vulkanContext->availableComputeQueues[0]
+                : mCommandInfo->vulkanContext->graphicsQueue;
+            vkQueueWaitIdle(submittedQueue);
+        }
+        return;
+    }
+
     EndCommandBufferOnce();
 
     // 从 FencePool 获取 Fence
