@@ -424,6 +424,22 @@ bool DX12CreateDevice(DX12Context& context)
     query(D3D12_FEATURE_D3D12_OPTIONS7,  &context.options7,  sizeof(context.options7));
     query(D3D12_FEATURE_D3D12_OPTIONS12, &context.options12, sizeof(context.options12));
 
+    // ---- Render Pass ----
+    // RenderPassesTier 只表示驱动对 RenderPass 的"利用程度"：
+    //   TIER_0 = 驱动未实现 DDI 表，由运行时翻译成等价的 OMSetRenderTargets
+    //   TIER_1 = UMD 实现，RT/DB 写入可加速
+    //   TIER_2 = TIER_1 + pass 内 UAV 写入高效
+    // tier 本身不影响合法性 —— 真正的门槛是 OPTIONS18.RenderPassesValid。
+    // （实测 NVIDIA RTX 5060：RenderPassesValid=1 但 tier=0，此时调用
+    //   BeginRenderPass 完全合法，只是由运行时做翻译。）
+    context.renderPassTier = context.options5.RenderPassesTier;
+
+    // RenderPassesValid 决定"调用 RenderPass API 是否定义良好"。旧运行时查询会失败。
+    bool options18Queried = query(D3D12_FEATURE_D3D12_OPTIONS18, &context.options18,
+                                  sizeof(context.options18));
+    context.isRenderPassValid = options18Queried && (context.options18.RenderPassesValid != FALSE);
+    context.isRenderPassSupported = context.isRenderPassValid;
+
     // ---- Shader Model 支持（用于判断 SM 6.6 = bindless 资源）----
     D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = {};
     shaderModel.HighestShaderModel = D3D_SHADER_MODEL_6_0;
@@ -443,6 +459,10 @@ bool DX12CreateDevice(DX12Context& context)
              (int)context.isMeshShaderSupported, (int)context.options7.MeshShaderTier,
              (int)context.isRayTracingSupported, (int)context.isShaderModel6_6Supported,
              (int)context.options1.WaveOps);
+
+    LOG_INFO("[DX12] RenderPass: tier=%d, RenderPassesValid(cap queried)=%d, deviceSupported=%d",
+             (int)context.renderPassTier, (int)context.isRenderPassValid,
+             (int)context.isRenderPassSupported);
 
     DX12ConfigureDebugFeatures(context);
     return true;

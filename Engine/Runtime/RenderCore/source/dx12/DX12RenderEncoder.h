@@ -13,10 +13,26 @@
 //
 //  ── RenderPass 的模拟 ──
 //  D3D12 没有 render pass 对象。这里把 RenderPass 的 load/store 语义展开为：
-//    loadOp=CLEAR  → ClearRenderTargetView / ClearDepthStencilView
-//    loadOp=LOAD   → 仅插入状态转换
-//    进入时把附件转换到 RENDER_TARGET / DEPTH_WRITE（只读深度用 DEPTH_READ），
+// -- RenderPass --
+// 两条实现路径，运行时按设备能力选择（见 DX12Context::isRenderPassSupported）：
+//
+// A) 原生 RenderPass（ID3D12GraphicsCommandList4::BeginRenderPass，tier>=1）
+//    load/store 语义直接编码进 beginning/ending access：
+//      loadOp  CLEAR     -> BEGINNING_ACCESS_CLEAR（带 D3D12_CLEAR_VALUE）
+//      loadOp  LOAD      -> BEGINNING_ACCESS_PRESERVE
+//      loadOp  DONT_CARE -> BEGINNING_ACCESS_DISCARD
+//      storeOp STORE     -> ENDING_ACCESS_PRESERVE
+//      storeOp DONT_CARE -> ENDING_ACCESS_DISCARD
+//    pass 内不允许 OMSetRenderTargets / Clear*View，也不需要它们。
+//
+// B) 回退：把 load/store 展开成显式命令
+//      loadOp=CLEAR  -> ClearRenderTargetView / ClearDepthStencilView
+//      loadOp=LOAD   -> 仅插入状态转换
+//    进入时把附件转换到 RENDER_TARGET / DEPTH_WRITE，
 //    退出时转到 SHADER_READ（离屏）或 PRESENT（上屏）。
+//
+// 两条路径共用同一份资源状态转换（BeginRenderPass 不做隐式状态转换，
+// DirectX-Specs 已明确移除该特性），因此画面结果必须完全一致。
 //
 
 #ifndef GNX_ENGINE_DX12_RENDER_ENCODER_INCLUDE_JHGSD
@@ -102,21 +118,31 @@ public:
     void SetStencilReference(uint32_t frontRef, uint32_t backRef) override;
 
 private:
+    /// 单个颜色附件（同时供两条 RenderPass 路径消费）
+    struct ColorTarget
+    {
+        std::shared_ptr<DX12TextureBase> texture;
+        D3D12_CPU_DESCRIPTOR_HANDLE rtv = {};
+        AttachmentLoadOp  loadOp  = ATTACHMENT_LOAD_OP_CLEAR;
+        AttachmentStoreOp storeOp = ATTACHMENT_STORE_OP_STORE;
+        std::array<float, 4> clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+    };
+
     /// 渲染目标描述（由 RenderPass 或交换链展开而来）
     struct TargetInfo
     {
-        std::vector<std::shared_ptr<DX12TextureBase>> colorTextures;
+        std::vector<ColorTarget> colors;
         std::shared_ptr<DX12TextureBase> depthTexture;
-        std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> colorRTVs;
-        D3D12_CPU_DESCRIPTOR_HANDLE depthDSV = {};
-        std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> colorClearRTVs;   // 需要 clear 的附件
-        std::vector<std::array<float, 4>> colorClearColors;        // 与 colorClearRTVs 一一对应
+
         bool hasDepth = false;
         bool depthReadOnly = false;
-        bool clearDepth = false;
+        D3D12_CPU_DESCRIPTOR_HANDLE depthDSV = {};
+        AttachmentLoadOp  depthLoadOp  = ATTACHMENT_LOAD_OP_CLEAR;
+        AttachmentStoreOp depthStoreOp = ATTACHMENT_STORE_OP_DONT_CARE;
         float clearDepthValue = 1.0f;
         uint32_t clearStencilValue = 0;
-        bool hasStencil = false;
+        bool hasStencilPlane = false;   // DSV 格式是否含 stencil 平面
+
         uint32_t width = 0;
         uint32_t height = 0;
         DX12RenderPassFormat psoFormat;
@@ -126,6 +152,18 @@ private:
     void BuildSwapChainTargets(const ClearColor& clearColor);
     void BeginTargets();
     void EndTargets();
+
+    /// 进入 RenderPass 前的资源状态转换（两条路径共用）
+    void TransitionTargetsIn();
+
+    /**
+     * @brief 尝试用原生 BeginRenderPass 开启渲染
+     * @return true 表示渲染已进入 pass（随后必须调用 EndRenderPass）
+     */
+    bool TryBeginRenderPass();
+
+    /// 回退路径：OMSetRenderTargets + Clear*View
+    void BindTargetsLegacy(const D3D12_RECT& scissor);
 
     /// 在附件与 PSO 格式变化时确保 PSO 存在并绑定
     void BindPipelineIfNeeded();
@@ -170,7 +208,10 @@ private:
     void FlushDescriptorTables();
 
     DX12CommandBufferPtr mCommandBuffer;
-    ComPtr<ID3D12GraphicsCommandList> mCommandList;
+    ComPtr<ID3D12GraphicsCommandList>  mCommandList;
+    // ID3D12GraphicsCommandList4 提供 BeginRenderPass/EndRenderPass。
+    // 在不支持的设备上 QueryInterface 失败，此时恒走回退路径。
+    ComPtr<ID3D12GraphicsCommandList4> mCommandList4;
     DX12Context* mContext = nullptr;
 
     DX12GraphicsPipeline* mGraphicsPipeline = nullptr;
@@ -181,6 +222,7 @@ private:
     TargetInfo mTargets;
     bool mIsSwapChainPass = false;
     bool mEncoding = false;
+    bool mRenderPassActive = false;   // 原生 RenderPass 是否已 Begin（End 时必须配对）
 };
 
 using DX12RenderEncoderPtr = std::shared_ptr<DX12RenderEncoder>;

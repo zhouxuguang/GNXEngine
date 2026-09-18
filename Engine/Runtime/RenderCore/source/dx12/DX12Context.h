@@ -127,11 +127,22 @@ struct DX12Context
     D3D12_FEATURE_DATA_D3D12_OPTIONS5 options5 = {};
     D3D12_FEATURE_DATA_D3D12_OPTIONS7 options7 = {};
     D3D12_FEATURE_DATA_D3D12_OPTIONS12 options12 = {};
+    // OPTIONS18 只在较新的 D3D12 运行时上可查询；查询失败即代表运行时过旧。
+    D3D12_FEATURE_DATA_D3D12_OPTIONS18 options18 = {};
 
     uint32_t maxSupportedFeatureLevel = 0;   // D3D_FEATURE_LEVEL 数值
     bool     isShaderModel6_6Supported = false;
     bool     isMeshShaderSupported = false;
     bool     isRayTracingSupported = false;
+
+    // ---- Render Pass（ID3D12GraphicsCommandList4::BeginRenderPass）----
+    //
+    // 依据 DirectX-Specs/d3d/RenderPasses.md：RenderPass 早期实现是有缺陷的，
+    // 只有在 OPTIONS18.RenderPassesValid 为 TRUE 的运行时上使用才是定义良好的；
+    // 旧运行时查询不到该 cap，此时必须回退到 OMSetRenderTargets 路径。
+    D3D12_RENDER_PASS_TIER renderPassTier = D3D12_RENDER_PASS_TIER_0;
+    bool isRenderPassValid = false;      // OPTIONS18.RenderPassesValid
+    bool isRenderPassSupported = false;  // 设备层面的最终结论
 
     // 设备信息（用于填充 RenderDeviceFeatures）
     std::string deviceName;

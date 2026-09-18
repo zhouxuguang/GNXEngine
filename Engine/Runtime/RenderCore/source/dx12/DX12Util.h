@@ -26,6 +26,15 @@ public:
     /// 该 DXGI 格式是否为深度/模板格式
     static bool IsDepthStencilFormat(DXGI_FORMAT format);
 
+    /**
+     * @brief 该深度/模板格式是否含有 stencil 平面
+     *
+     * RenderPass 需要分别为 depth / stencil 平面声明 beginning/ending access；
+     * 对不含 stencil 平面的格式（如 D32_FLOAT）必须声明 NO_ACCESS，否则运行时
+     * 会认为模板平面被访问而校验失败。
+     */
+    static bool HasStencilPlane(DXGI_FORMAT format);
+
     /// 该 DXGI 格式是否带 sRGB 编码
     static bool IsSRGBFormat(DXGI_FORMAT format);
 

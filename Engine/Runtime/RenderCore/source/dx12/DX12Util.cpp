@@ -206,6 +206,14 @@ bool DX12Util::IsDepthStencilFormat(DXGI_FORMAT format)
     }
 }
 
+bool DX12Util::HasStencilPlane(DXGI_FORMAT format)
+{
+    return format == DXGI_FORMAT_D24_UNORM_S8_UINT ||
+           format == DXGI_FORMAT_D32_FLOAT_S8X24_UINT ||
+           format == DXGI_FORMAT_X24_TYPELESS_G8_UINT ||
+           format == DXGI_FORMAT_X32_TYPELESS_G8X24_UINT;
+}
+
 bool DX12Util::IsSRGBFormat(DXGI_FORMAT format)
 {
     switch (format)

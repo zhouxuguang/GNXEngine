@@ -78,6 +78,12 @@ DX12RenderEncoder::DX12RenderEncoder(const DX12CommandBufferPtr& commandBuffer,
     }
 
     mCommandList = mCommandBuffer->GetCommandList();
+    // BeginRenderPass/EndRenderPass 位于 ID3D12GraphicsCommandList4；
+    // 不支持的设备/运行时上 QueryInterface 失败，mCommandList4 保持为空 → 回退路径。
+    if (mCommandList != nullptr)
+    {
+        mCommandList->QueryInterface(IID_PPV_ARGS(&mCommandList4));
+    }
     mContext = mCommandBuffer->GetContext().get();
     mEncoding = true;
 
@@ -97,6 +103,10 @@ DX12RenderEncoder::DX12RenderEncoder(const DX12CommandBufferPtr& commandBuffer,
     }
 
     mCommandList = mCommandBuffer->GetCommandList();
+    if (mCommandList != nullptr)
+    {
+        mCommandList->QueryInterface(IID_PPV_ARGS(&mCommandList4));
+    }
     mContext = mCommandBuffer->GetContext().get();
     mEncoding = true;
 
@@ -129,9 +139,7 @@ DX12RenderEncoder::~DX12RenderEncoder()
 
 void DX12RenderEncoder::BuildTargetsFromRenderPass(const RenderPass& renderPass)
 {
-    mTargets.colorTextures.clear();
-    mTargets.colorRTVs.clear();
-    mTargets.colorClearRTVs.clear();
+    mTargets.colors.clear();
 
     for (const auto& attachment : renderPass.colorAttachments)
     {
@@ -147,17 +155,14 @@ void DX12RenderEncoder::BuildTargetsFromRenderPass(const RenderPass& renderPass)
             continue;
         }
 
-        mTargets.colorTextures.push_back(texture);
-        mTargets.colorRTVs.push_back(texture->GetRTVHandle(attachment->level, attachment->slice));
-
-        if (attachment->loadOp == ATTACHMENT_LOAD_OP_CLEAR)
-        {
-            // clear 颜色需要逐附件记录（D3D12 的 Clear 按单个 RTV 进行）
-            // 这里用额外的 RTV 数组按索引对应；实际 clear 值在调用点展开
-            mTargets.colorClearRTVs.push_back(mTargets.colorRTVs.back());
-            mTargets.colorClearColors.push_back({attachment->clearColor.red, attachment->clearColor.green,
-                                                 attachment->clearColor.blue, attachment->clearColor.alpha});
-        }
+        ColorTarget target;
+        target.texture  = texture;
+        target.rtv      = texture->GetRTVHandle(attachment->level, attachment->slice);
+        target.loadOp   = attachment->loadOp;
+        target.storeOp  = attachment->storeOp;
+        target.clearColor = { attachment->clearColor.red, attachment->clearColor.green,
+                              attachment->clearColor.blue, attachment->clearColor.alpha };
+        mTargets.colors.push_back(target);
 
         mTargets.psoFormat.colorFormats.push_back(texture->GetDXGIFormat());
     }
@@ -171,11 +176,13 @@ void DX12RenderEncoder::BuildTargetsFromRenderPass(const RenderPass& renderPass)
             mTargets.hasDepth = true;
             mTargets.depthReadOnly = renderPass.depthAttachment->readOnly;
             mTargets.depthDSV = depthTexture->GetDSVHandle();
+            mTargets.depthLoadOp = renderPass.depthAttachment->loadOp;
+            mTargets.depthStoreOp = renderPass.depthAttachment->storeOp;
+            mTargets.hasStencilPlane = DX12Util::HasStencilPlane(depthTexture->GetDXGIFormat());
             mTargets.psoFormat.depthFormat = depthTexture->GetDXGIFormat();
 
             if (renderPass.depthAttachment->loadOp == ATTACHMENT_LOAD_OP_CLEAR)
             {
-                mTargets.clearDepth = true;
                 mTargets.clearDepthValue = renderPass.depthAttachment->clearDepth;
             }
         }
@@ -204,12 +211,14 @@ void DX12RenderEncoder::BuildSwapChainTargets(const ClearColor& clearColor)
 
     if (backBuffer && backBuffer->IsValid())
     {
-        float cr = clearColor.red, cg = clearColor.green, cb = clearColor.blue, ca = clearColor.alpha;
+        ColorTarget target;
+        target.texture = backBuffer;
+        target.rtv     = backBuffer->GetRTVHandle();
+        target.loadOp  = ATTACHMENT_LOAD_OP_CLEAR;
+        target.storeOp = ATTACHMENT_STORE_OP_STORE;
+        target.clearColor = { clearColor.red, clearColor.green, clearColor.blue, clearColor.alpha };
+        mTargets.colors.push_back(target);
 
-        mTargets.colorTextures.push_back(backBuffer);
-        mTargets.colorRTVs.push_back(backBuffer->GetRTVHandle());
-        mTargets.colorClearRTVs.push_back(mTargets.colorRTVs.back());
-        mTargets.colorClearColors.push_back({cr, cg, cb, ca});
         mTargets.psoFormat.colorFormats.push_back(backBuffer->GetDXGIFormat());
     }
 
@@ -219,7 +228,9 @@ void DX12RenderEncoder::BuildSwapChainTargets(const ClearColor& clearColor)
         mTargets.hasDepth = true;
         mTargets.depthReadOnly = false;
         mTargets.depthDSV = depthTexture->GetDSVHandle();
-        mTargets.clearDepth = true;
+        mTargets.depthLoadOp = ATTACHMENT_LOAD_OP_CLEAR;
+        mTargets.depthStoreOp = ATTACHMENT_STORE_OP_STORE;
+        mTargets.hasStencilPlane = DX12Util::HasStencilPlane(depthTexture->GetDXGIFormat());
         mTargets.clearDepthValue = DepthConfig::GetDefaultClearDepth();
         mTargets.psoFormat.depthFormat = depthTexture->GetDXGIFormat();
     }
@@ -229,18 +240,18 @@ void DX12RenderEncoder::BuildSwapChainTargets(const ClearColor& clearColor)
     mTargets.psoFormat.sampleCount = 1;
 }
 
-void DX12RenderEncoder::BeginTargets()
+void DX12RenderEncoder::TransitionTargetsIn()
 {
     if (!mCommandList)
     {
         return;
     }
 
-    // ---- 状态转换 ----
     std::vector<D3D12_RESOURCE_BARRIER> barriers;
 
-    for (const auto& texture : mTargets.colorTextures)
+    for (const auto& target : mTargets.colors)
     {
+        const auto& texture = target.texture;
         if (texture->GetCurrentState() != D3D12_RESOURCE_STATE_RENDER_TARGET)
         {
             barriers.push_back(DX12TransitionBarrier(texture->GetResource(),
@@ -252,6 +263,7 @@ void DX12RenderEncoder::BeginTargets()
 
     // 只读深度：v1 简化为仍绑定可写 DSV + DEPTH_WRITE 状态。
     // 正确性依据：PSO 的 DepthWriteMask=ZERO 阻止实际写入，内容不会破坏。
+    // RenderPass 路径同样绑定的是可写 DSV，因此不需要 BIND_READ_ONLY_DEPTH 标志。
     if (mTargets.hasDepth && mTargets.depthTexture)
     {
         if (mTargets.depthTexture->GetCurrentState() != D3D12_RESOURCE_STATE_DEPTH_WRITE)
@@ -267,36 +279,178 @@ void DX12RenderEncoder::BeginTargets()
     {
         mCommandList->ResourceBarrier((UINT)barriers.size(), barriers.data());
     }
+}
 
-    // ---- 绑定渲染目标 ----
-    mCommandList->OMSetRenderTargets(
-        (UINT)mTargets.colorRTVs.size(),
-        mTargets.colorRTVs.empty() ? nullptr : mTargets.colorRTVs.data(),
-        FALSE,
-        mTargets.hasDepth ? &mTargets.depthDSV : nullptr);
-
-    // ---- 视口与裁剪（正向高度，见 DX12Pipeline 对 FrontCounterClockwise 的说明）----
-    const D3D12_VIEWPORT viewport = { 0.0f, 0.0f, (float)mTargets.width, (float)mTargets.height,
-                                      0.0f, 1.0f };
-    mCommandList->RSSetViewports(1, &viewport);
-
-    const D3D12_RECT scissor = { 0, 0, (LONG)mTargets.width, (LONG)mTargets.height };
-    mCommandList->RSSetScissorRects(1, &scissor);
-
-    // ---- Clear（loadOp == CLEAR 的附件）----
-    for (size_t i = 0; i < mTargets.colorClearRTVs.size() && i < mTargets.colorClearColors.size(); ++i)
+namespace
+{
+/// 引擎 loadOp → D3D12 RenderPass beginning access
+D3D12_RENDER_PASS_BEGINNING_ACCESS DX12BeginningAccess(AttachmentLoadOp loadOp)
+{
+    D3D12_RENDER_PASS_BEGINNING_ACCESS access = {};
+    switch (loadOp)
     {
-        mCommandList->ClearRenderTargetView(mTargets.colorClearRTVs[i],
-                                            mTargets.colorClearColors[i].data(), 1, &scissor);
+        case ATTACHMENT_LOAD_OP_CLEAR:
+            access.Type = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR;
+            break;
+        case ATTACHMENT_LOAD_OP_LOAD:
+            access.Type = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_PRESERVE;
+            break;
+        case ATTACHMENT_LOAD_OP_DONT_CARE:
+        default:
+            access.Type = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_DISCARD;
+            break;
+    }
+    return access;
+}
+
+/// 引擎 storeOp → D3D12 RenderPass ending access
+D3D12_RENDER_PASS_ENDING_ACCESS DX12EndingAccess(AttachmentStoreOp storeOp)
+{
+    D3D12_RENDER_PASS_ENDING_ACCESS access = {};
+    access.Type = (storeOp == ATTACHMENT_STORE_OP_STORE)
+                      ? D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE
+                      : D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD;
+    return access;
+}
+} // namespace
+
+bool DX12RenderEncoder::TryBeginRenderPass()
+{
+    // 必须至少有一个附件：BeginRenderPass 不允许 RTV 与 DSV 同时为空。
+    const bool hasAttachment = !mTargets.colors.empty() || mTargets.hasDepth;
+    if (!hasAttachment || !mCommandList4 || mContext == nullptr)
+    {
+        return false;
     }
 
-    if (mTargets.clearDepth && mTargets.hasDepth)
+    // 能力门槛见 DX12Context：OPTIONS18.RenderPassesValid 为 TRUE 才可安全调用。
+    if (!mContext->isRenderPassSupported)
+    {
+        return false;
+    }
+
+    std::vector<D3D12_RENDER_PASS_RENDER_TARGET_DESC> rtDescs;
+    rtDescs.reserve(mTargets.colors.size());
+
+    for (const auto& target : mTargets.colors)
+    {
+        D3D12_RENDER_PASS_RENDER_TARGET_DESC desc = {};
+        desc.cpuDescriptor = target.rtv;
+        desc.BeginningAccess = DX12BeginningAccess(target.loadOp);
+        desc.EndingAccess    = DX12EndingAccess(target.storeOp);
+
+        if (desc.BeginningAccess.Type == D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR)
+        {
+            desc.BeginningAccess.Clear.ClearValue.Format = target.texture->GetDXGIFormat();
+            for (uint32_t i = 0; i < 4; ++i)
+            {
+                desc.BeginningAccess.Clear.ClearValue.Color[i] = target.clearColor[i];
+            }
+        }
+
+        rtDescs.push_back(desc);
+    }
+
+    D3D12_RENDER_PASS_DEPTH_STENCIL_DESC dsDesc = {};
+    const D3D12_RENDER_PASS_DEPTH_STENCIL_DESC* pDsDesc = nullptr;
+    if (mTargets.hasDepth)
+    {
+        dsDesc.cpuDescriptor = mTargets.depthDSV;
+
+        dsDesc.DepthBeginningAccess = DX12BeginningAccess(mTargets.depthLoadOp);
+        // 深度一律 PRESERVE：引擎上层把深度 storeOp 默认成 DONT_CARE，但后续
+        // pass（SSAO / SSR / HiZ）会采样同一张深度图；若这里真的 DISCARD，
+        // 采样结果未定义 —— 回退路径也始终保留深度，两条路径必须一致。
+        dsDesc.DepthEndingAccess.Type = D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE;
+        if (dsDesc.DepthBeginningAccess.Type == D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR)
+        {
+            dsDesc.DepthBeginningAccess.Clear.ClearValue.Format = mTargets.depthTexture->GetDXGIFormat();
+            dsDesc.DepthBeginningAccess.Clear.ClearValue.DepthStencil.Depth   = mTargets.clearDepthValue;
+            dsDesc.DepthBeginningAccess.Clear.ClearValue.DepthStencil.Stencil = (UINT8)mTargets.clearStencilValue;
+        }
+
+        if (mTargets.hasStencilPlane)
+        {
+            // 模板平面与深度平面同步（引擎侧没有独立的模板附件语义）
+            dsDesc.StencilBeginningAccess = dsDesc.DepthBeginningAccess;
+            dsDesc.StencilEndingAccess    = dsDesc.DepthEndingAccess;
+        }
+        else
+        {
+            // 格式不含模板平面（如 D32_FLOAT）时必须显式声明 NO_ACCESS
+            dsDesc.StencilBeginningAccess.Type = D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_NO_ACCESS;
+            dsDesc.StencilEndingAccess.Type    = D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_NO_ACCESS;
+        }
+
+        pDsDesc = &dsDesc;
+    }
+
+    // ALLOW_UAV_WRITES 只是"pass 内可能有 UAV 写入"的声明，恒开不会有害。
+    mCommandList4->BeginRenderPass((UINT)rtDescs.size(),
+                                   rtDescs.empty() ? nullptr : rtDescs.data(),
+                                   pDsDesc,
+                                   D3D12_RENDER_PASS_FLAG_ALLOW_UAV_WRITES);
+    mRenderPassActive = true;
+    return true;
+}
+
+void DX12RenderEncoder::BindTargetsLegacy(const D3D12_RECT& scissor)
+{
+    std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> rtvs;
+    rtvs.reserve(mTargets.colors.size());
+    for (const auto& target : mTargets.colors)
+    {
+        rtvs.push_back(target.rtv);
+    }
+
+    mCommandList->OMSetRenderTargets((UINT)rtvs.size(),
+                                     rtvs.empty() ? nullptr : rtvs.data(),
+                                     FALSE,
+                                     mTargets.hasDepth ? &mTargets.depthDSV : nullptr);
+
+    for (const auto& target : mTargets.colors)
+    {
+        if (target.loadOp != ATTACHMENT_LOAD_OP_CLEAR)
+        {
+            continue;
+        }
+        mCommandList->ClearRenderTargetView(target.rtv, target.clearColor.data(), 1, &scissor);
+    }
+
+    if (mTargets.hasDepth && mTargets.depthLoadOp == ATTACHMENT_LOAD_OP_CLEAR)
     {
         mCommandList->ClearDepthStencilView(mTargets.depthDSV,
                                             D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL,
                                             mTargets.clearDepthValue, mTargets.clearStencilValue,
                                             1, &scissor);
     }
+}
+
+void DX12RenderEncoder::BeginTargets()
+{
+    if (!mCommandList)
+    {
+        return;
+    }
+
+    // 两条路径都需要把附件转到 RENDER_TARGET / DEPTH_WRITE：
+    // BeginRenderPass 不做隐式状态转换（DirectX-Specs 已明确移除该设计）。
+    TransitionTargetsIn();
+
+    const D3D12_RECT scissor = { 0, 0, (LONG)mTargets.width, (LONG)mTargets.height };
+
+    // 原生 RenderPass 优先；失败则回退到 OMSetRenderTargets + Clear*View
+    if (!TryBeginRenderPass())
+    {
+        BindTargetsLegacy(scissor);
+    }
+
+    // ---- 视口与裁剪（正向高度，见 DX12Pipeline 对 FrontCounterClockwise 的说明）----
+    // RSSetViewports / RSSetScissorRects 在 RenderPass 内依然合法。
+    const D3D12_VIEWPORT viewport = { 0.0f, 0.0f, (float)mTargets.width, (float)mTargets.height,
+                                      0.0f, 1.0f };
+    mCommandList->RSSetViewports(1, &viewport);
+    mCommandList->RSSetScissorRects(1, &scissor);
 }
 
 void DX12RenderEncoder::EndTargets()
@@ -306,6 +460,16 @@ void DX12RenderEncoder::EndTargets()
         return;
     }
 
+    // RenderPass 必须先结束：其内部禁止资源屏障与拷贝等命令
+    if (mRenderPassActive)
+    {
+        mRenderPassActive = false;
+        if (mCommandList4)
+        {
+            mCommandList4->EndRenderPass();
+        }
+    }
+
     std::vector<D3D12_RESOURCE_BARRIER> barriers;
 
     // 上屏 pass → PRESENT；离屏 pass → ALL_SHADER_RESOURCE（供后续 pass 采样）
@@ -313,8 +477,9 @@ void DX12RenderEncoder::EndTargets()
                                                  ? D3D12_RESOURCE_STATE_PRESENT
                                                  : D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
 
-    for (const auto& texture : mTargets.colorTextures)
+    for (const auto& target : mTargets.colors)
     {
+        const auto& texture = target.texture;
         if (texture->GetCurrentState() != colorFinal)
         {
             barriers.push_back(DX12TransitionBarrier(texture->GetResource(),
@@ -324,6 +489,9 @@ void DX12RenderEncoder::EndTargets()
     }
 
     // 深度 → DEPTH_READ：FrameGraph 的后续 pass 通常会采样深度（SSAO/HiZ/SSR）
+    //
+    // 注意：RenderPass 的 ending access 并不改变这一结论 —— 引擎始终保留深度内容
+    // （storeOp 为 DONT_CARE 时若真的 DISCARD，后续采样深度的 pass 会读到未定义数据）。
     if (mTargets.hasDepth && mTargets.depthTexture)
     {
         if (mTargets.depthTexture->GetCurrentState() != D3D12_RESOURCE_STATE_DEPTH_READ)
