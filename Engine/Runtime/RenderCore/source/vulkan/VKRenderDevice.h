@@ -100,6 +100,9 @@ public:
     virtual uint32_t GetCommandQueueCount(QueueType type) const override;
 
     void UpdateCurrentIndex();
+
+    /// 同步对象重建计数：Resize 后自增，调用方可据此避免等待已失效的 VkFence
+    uint64_t GetSyncGeneration() const { return mSyncGeneration; }
     
     // Flush pipeline cache to disk (can be called at any time, e.g., before shutdown)
     // Does NOT destroy the Vulkan pipeline cache, just persists data to disk
@@ -126,6 +129,9 @@ private:
     std::vector<VkFence> mFlightFences;
     uint32_t mCurrentFrame = 0;                         //当前渲染的帧
     uint32_t mNextFrameIndex = 0;                       //可以提交命令缓冲区的交换链图像索引
+
+    // 见 GetSyncGeneration
+    uint64_t mSyncGeneration = 0;
     
     //创建相关的同步对象
     void CreateSyncObject();

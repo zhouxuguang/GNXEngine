@@ -433,6 +433,13 @@ void DeferredSceneRenderer::UpdateCameraView(SceneManager *sceneManager)
     }
     mWidth = width;
     mHeight = height;
+
+    // GBuffer 尺寸只在 Resize() 更新，不跟随视口会导致缩放后 renderArea
+    // 与深度附件尺寸不一致（VUID-VkRenderingInfo-pNext-06079/06080）
+    if (mGBufferRenderer)
+    {
+        mGBufferRenderer->Resize(width, height);
+    }
 }
 
 FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(

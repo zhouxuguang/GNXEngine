@@ -232,7 +232,7 @@ bool DX12SwapChain::Recreate(uint32_t width, uint32_t height, bool vsync)
     // 先把 GPU 工作排空，避免销毁仍在使用的 back buffer
     if (mContextPtr->graphicsFence.IsValid())
     {
-        mContextPtr->graphicsFence.WaitForIdle(5000);
+        mContextPtr->graphicsFence.FlushAndWait(mContextPtr->graphicsQueue.Get(), 5000);
     }
 
     // Release 会清空 mContextPtr / mHwnd，因此先保存

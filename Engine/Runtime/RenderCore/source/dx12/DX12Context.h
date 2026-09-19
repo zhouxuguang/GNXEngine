@@ -59,6 +59,19 @@ public:
     /// 等待 GPU 完成当前已 Signal 的全部工作
     bool WaitForIdle(uint32_t timeoutMs);
 
+    /// 排空命令队列：先补打一个信号再等待。
+    /// Present 之后 DXGI 会在同一队列追加工作，仅 WaitForIdle() 覆盖不到，
+    /// 直接 ResizeBuffers/销毁交换链会触发调试层 ERROR #921。
+    bool FlushAndWait(ID3D12CommandQueue* queue, uint32_t timeoutMs)
+    {
+        if (queue == nullptr || mFence == nullptr)
+        {
+            return false;
+        }
+        Signal(queue);
+        return WaitForIdle(timeoutMs);
+    }
+
     uint64_t GetCompletedValue() const;
     uint64_t GetLastSignaledValue() const { return mLastSignaledValue; }
 

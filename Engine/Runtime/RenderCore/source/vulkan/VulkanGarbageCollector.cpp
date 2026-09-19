@@ -275,8 +275,6 @@ void VulkanGarbageCollector::CleanupImages()
             break;
         }
 
-        printf("FUCK");
-
         if (pending.image != VK_NULL_HANDLE)
         {
             vmaDestroyImage(allocator, pending.image, pending.allocation);

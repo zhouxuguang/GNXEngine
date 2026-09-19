@@ -30,7 +30,8 @@ DX12RenderDevice::~DX12RenderDevice()
     {
         if (mContext->graphicsFence.IsValid())
         {
-            mContext->graphicsFence.WaitForIdle(5000);
+            // 排空队列（含 Present 后 DXGI 追加的工作），否则销毁交换链时仍在执行
+            mContext->graphicsFence.FlushAndWait(mContext->graphicsQueue.Get(), 5000);
         }
     }
 
@@ -309,7 +310,8 @@ void DX12RenderDevice::Resize(uint32_t width, uint32_t height)
 
     if (mContext->graphicsFence.IsValid())
     {
-        mContext->graphicsFence.WaitForIdle(5000);
+        // 必须先排空队列，否则 ResizeBuffers 会在 back buffer 仍被使用时释放内部对象
+        mContext->graphicsFence.FlushAndWait(mContext->graphicsQueue.Get(), 5000);
     }
 
     if (!mSwapChain->Resize(width, height))
@@ -332,7 +334,8 @@ void DX12RenderDevice::OnWindowRestored(const NativeWindow& nativeWindow)
 
     if (mContext->graphicsFence.IsValid())
     {
-        mContext->graphicsFence.WaitForIdle(5000);
+        // 重建交换链前彻底排空队列
+        mContext->graphicsFence.FlushAndWait(mContext->graphicsQueue.Get(), 5000);
     }
 
     mSwapChain->Recreate(mWidth ? mWidth : 1280, mHeight ? mHeight : 720, mVSync);

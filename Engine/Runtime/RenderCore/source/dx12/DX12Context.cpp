@@ -711,7 +711,15 @@ void DX12DestroyContext(DX12Context& context)
     // 顺序很重要：先让 GPU 空闲，再按 队列 → 分配器 → 设备 → 工厂 逆序释放
     if (context.graphicsFence.IsValid())
     {
-        context.graphicsFence.WaitForIdle(5000);
+        context.graphicsFence.FlushAndWait(context.graphicsQueue.Get(), 5000);
+    }
+    if (context.computeFence.IsValid() && context.computeQueue)
+    {
+        context.computeFence.FlushAndWait(context.computeQueue.Get(), 5000);
+    }
+    if (context.copyFence.IsValid() && context.copyQueue)
+    {
+        context.copyFence.FlushAndWait(context.copyQueue.Get(), 5000);
     }
 
     context.graphicsFence.Destroy();

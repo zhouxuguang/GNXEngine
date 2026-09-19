@@ -29,6 +29,9 @@ struct CommandBufferInfo
     VKDepthStencilBufferPtr depthStencilBuffer;
     VKRenderDevice *renderDevice;
     bool isComputeCommandBuffer = false;  // 是否为计算命令缓冲区
+
+    // 创建时的同步对象代数，与 RenderDevice 不一致说明 VkFence 已失效
+    uint64_t syncGeneration = 0;
 };
 
 using CommandBufferInfoPtr = std::shared_ptr<CommandBufferInfo>;

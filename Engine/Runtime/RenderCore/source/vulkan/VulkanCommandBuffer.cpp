@@ -384,6 +384,16 @@ void VulkanCommandBuffer::PresentFrameBuffer()
         }
     }
 
+    if (res != VK_SUCCESS)
+    {
+        LOG_INFO("[VKTRACE] present submit failed cb=%llu res=%d waitSem=%llu signalSem=%llu fence=%llu frame=%u image=%u",
+                 (unsigned long long)(uintptr_t)mCommandBuffer, (int)res,
+                 (unsigned long long)mCommandInfo->imageAvailableSemaphore,
+                 (unsigned long long)mCommandInfo->renderFinishSemaphore,
+                 (unsigned long long)mCommandInfo->flightFence,
+                 mCommandInfo->currentFrameIndex, mCommandInfo->nextFrameIndex);
+    }
+
     assert(res == VK_SUCCESS);
 
     mSubmitted = true;
@@ -438,6 +448,29 @@ void VulkanCommandBuffer::WaitUntilCompleted()
     if (mCommandBuffer == VK_NULL_HANDLE)
     {
         return;
+    }
+
+    // Resize 已重建同步对象，本命令缓冲区的 VkFence 失效；而 Resize 内执行过
+    // vkDeviceWaitIdle，本帧工作必然完成，直接返回即可。
+    if (mCommandInfo && mCommandInfo->renderDevice &&
+        mCommandInfo->renderDevice->GetSyncGeneration() != mCommandInfo->syncGeneration)
+    {
+        LOG_INFO("[VKTRACE] WaitUntilCompleted skipped: sync objects recreated "
+                 "(cb=%llu fence=%llu gen=%llu cur=%llu)",
+                 (unsigned long long)(uintptr_t)mCommandBuffer,
+                 (unsigned long long)mCommandInfo->flightFence,
+                 (unsigned long long)mCommandInfo->syncGeneration,
+                 (unsigned long long)mCommandInfo->renderDevice->GetSyncGeneration());
+        return;
+    }
+
+    if (!mSubmitted)
+    {
+        // 正常路径只会等待已提交的命令缓冲区，走到这里说明有帧被中途放弃
+        LOG_INFO("[VKTRACE] WaitUntilCompleted on UNSETTLED cb=%llu fence=%llu frame=%u image=%u",
+                 (unsigned long long)(uintptr_t)mCommandBuffer,
+                 (unsigned long long)mCommandInfo->flightFence,
+                 mCommandInfo->currentFrameIndex, mCommandInfo->nextFrameIndex);
     }
 
     // 已提交的命令只等待，不重复提交。

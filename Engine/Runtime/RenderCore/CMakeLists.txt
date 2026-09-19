@@ -109,6 +109,12 @@ if(WIN32)
     # 打开 HRESULT 检查：失败时打印格式化错误并中断（见 DX12RenderDefine.h）
     target_compile_definitions(RenderCore PRIVATE GNX_DX12_RESULT_CHECK)
 
+    # D3D12 调试层：Debug 构建默认开启，Release 可用 -DGNX_DX12_DEBUG_LAYER=ON 打开
+    option(GNX_DX12_DEBUG_LAYER "Enable the D3D12 debug layer" OFF)
+    if(GNX_DX12_DEBUG_LAYER)
+        target_compile_definitions(RenderCore PRIVATE GNX_DX12_DEBUG_LAYER=1)
+    endif()
+
     target_link_libraries(RenderCore PUBLIC d3d12 dxgi)
 endif()
 

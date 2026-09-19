@@ -293,8 +293,12 @@ VKRenderDevice::~VKRenderDevice()
 
 void VKRenderDevice::Resize(uint32_t width, uint32_t height)
 {
-    vkQueueWaitIdle(mVulkanContext->graphicsQueue);
-    //vkDeviceWaitIdle(mVulkanContext->device);
+    // 设备级空闲：下面会重建 fence/semaphore 与命令缓冲区，
+    // 只等图形队列覆盖不到提交到计算/传输队列的工作
+    vkDeviceWaitIdle(mVulkanContext->device);
+
+    // 让在飞的命令缓冲区知道其 fence 已失效（见 WaitUntilCompleted）
+    ++mSyncGeneration;
 
     bool vSync = mSwapChain ? mSwapChain->IsVSync() : false;
 
@@ -751,6 +755,12 @@ CommandBufferPtr VKRenderDevice::CreateCommandBuffer()
 
     res = vkAcquireNextImageKHR(mVulkanContext->device, mSwapChain->GetSwapChain(), UINT64_MAX,
             mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE, &mNextFrameIndex);
+    if (res != VK_SUCCESS)
+    {
+        LOG_INFO("[VKTRACE] acquire frame=%u sem=%llu image=%u res=%d",
+                 mCurrentFrame, (unsigned long long)mImageAvailableSemaphores[mCurrentFrame],
+                 mNextFrameIndex, (int)res);
+    }
 
 	if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR)
 	{
@@ -805,6 +815,7 @@ CommandBufferPtr VKRenderDevice::CreateCommandBuffer()
     commandBufferInfo->swapChain = mSwapChain;
     commandBufferInfo->vulkanContext = mVulkanContext;
     commandBufferInfo->depthStencilBuffer = mSwapChain->GetDSBuffer();
+    commandBufferInfo->syncGeneration = mSyncGeneration;
     
     return std::make_shared<VulkanCommandBuffer>(commandBuffer, commandBufferInfo);
 }
