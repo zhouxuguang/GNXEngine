@@ -487,7 +487,7 @@ void VKGraphicsShader::BindUniformBuffer(VkCommandBuffer commandBuffer, const st
 	auto bindData = mReflectionDatas.find(resourceName);
 	if (bindData == mReflectionDatas.end())
 	{
-		printf("Fail to find shader resource %s", resourceName.c_str());
+		LogMissingResourceOnce(resourceName);
 		return;
 	}
 	VkDescriptorBufferInfo bufferInfo = {};
@@ -519,7 +519,7 @@ void VKGraphicsShader::BindTexture(VkCommandBuffer commandBuffer, const std::str
 	auto bindData = mReflectionDatas.find(resourceName);
 	if (bindData == mReflectionDatas.end())
 	{
-		LOG_INFO("Fail to find shader resource %s", resourceName.c_str());
+		LogMissingResourceOnce(resourceName);
 		return;
 	}
 	VkDescriptorImageInfo imageInfo = {};
@@ -551,7 +551,7 @@ void VKGraphicsShader::BindSampler(VkCommandBuffer commandBuffer, const std::str
 	auto bindData = mReflectionDatas.find(resourceName);
 	if (bindData == mReflectionDatas.end())
 	{
-        LOG_INFO("Fail to find shader resource %s", resourceName.c_str());
+        LogMissingResourceOnce(resourceName);
 		return;
 	}
 	VkDescriptorImageInfo imageInfo = {};
@@ -737,10 +737,22 @@ uint32_t VKGraphicsShader::GetResourceBindIndex(const std::string& resourceName)
     auto bindData = mReflectionDatas.find(resourceName);
     if (bindData == mReflectionDatas.end())
     {
-        LOG_INFO("Fail to find shader resource %s", resourceName.c_str());
+        LogMissingResourceOnce(resourceName);
         return (uint32_t)-1;
     }
     return bindData->second.binding;
+}
+
+void VKGraphicsShader::LogMissingResourceOnce(const std::string& resourceName) const
+{
+    if (mLoggedMissingResources.find(resourceName) != mLoggedMissingResources.end())
+    {
+        return;
+    }
+    mLoggedMissingResources.insert(resourceName);
+
+    LOG_WARN("VKShader: 着色器未声明资源 '%s'，本次绑定被忽略（同资源后续不再提示）",
+             resourceName.c_str());
 }
 
 void VKGraphicsShader::OverrideVertexAttributeFormat(uint32_t location, VertexFormat format)

@@ -193,10 +193,22 @@ uint32_t VKComputePipeline::GetResourceBindIndex(const std::string& resourceName
 	auto bindData = mReflectionDatas.find(resourceName);
 	if (bindData == mReflectionDatas.end())
 	{
-		LOG_INFO("Fail to find shader resource %s", resourceName.c_str());
+		LogMissingResourceOnce(resourceName);
         return -1;
 	}
     return bindData->second.binding;
+}
+
+void VKComputePipeline::LogMissingResourceOnce(const std::string& resourceName) const
+{
+    if (mLoggedMissingResources.find(resourceName) != mLoggedMissingResources.end())
+    {
+        return;
+    }
+    mLoggedMissingResources.insert(resourceName);
+
+    LOG_WARN("VKComputePipeline: 着色器未声明资源 '%s'，本次绑定被忽略（同资源后续不再提示）",
+             resourceName.c_str());
 }
 
 const PushConstantMeta* VKComputePipeline::GetPushConstantByName(const std::string& resourceName) const

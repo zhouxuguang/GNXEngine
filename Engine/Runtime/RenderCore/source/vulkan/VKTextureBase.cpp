@@ -173,6 +173,17 @@ VKTextureBase::VKTextureBase(const VulkanContextPtr& context, const VkImageCreat
     {
         mSupportHostImageCopy = false;
     }
+
+    // 渲染目标禁用 host image copy：带 VK_IMAGE_USAGE_HOST_TRANSFER_BIT_EXT 的图像
+    // 会被驱动关闭渲染目标压缩（NVIDIA DCC），4K 下整帧 5ms → 23ms。
+    // 此处 usage 来自 ConvertTextureUsage，附件位即代表「声明为渲染目标」。
+    const bool isDeclaredRenderTarget =
+        (imageCreateInfo.usage &
+         (VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)) != 0;
+    if (isDeclaredRenderTarget)
+    {
+        mSupportHostImageCopy = false;
+    }
     
     const VkFormatFeatureFlags2 formatFeatures = formatProperties3.optimalTilingFeatures;
     VkImageCreateInfo imageCreateInfoCopy = imageCreateInfo;

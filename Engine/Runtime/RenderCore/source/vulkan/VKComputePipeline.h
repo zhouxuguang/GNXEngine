@@ -59,6 +59,9 @@ public:
     const std::vector<PushConstantMeta>& GetPushConstants() const { return mPushConstants; }
     
 private:
+    // 资源缺失只提示一次：SPIR-V 会裁掉未引用的资源，按帧打印会严重拖慢帧率
+    void LogMissingResourceOnce(const std::string& resourceName) const;
+
     VulkanContextPtr mContext = nullptr;
     VkPipeline mPipeline = VK_NULL_HANDLE;
     VkPipelineLayout mPipelineLayout = VK_NULL_HANDLE;
@@ -67,6 +70,8 @@ private:
     
     uint32_t mStageSetOffsets[DESCRIPTOR_TYPE_MAX];   //每一种资源所在的set的索引
     std::unordered_map<std::string, BindMetaData> mReflectionDatas;
+
+    mutable std::unordered_set<std::string> mLoggedMissingResources;
     
     // Push constant 数据
     std::vector<PushConstantMeta> mPushConstants;

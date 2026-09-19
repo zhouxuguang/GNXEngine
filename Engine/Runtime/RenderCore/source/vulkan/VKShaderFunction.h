@@ -11,6 +11,7 @@
 #include "VulkanContext.h"
 #include "ShaderFunction.h"
 #include "spirv_reflection.h"
+#include <unordered_set>
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -270,6 +271,11 @@ private:
     void GenerateVulkanDescriptorSetLayout();
 
     void GenerateDescriptorSets();
+
+    // 资源缺失只提示一次：SPIR-V 会裁掉未引用的资源，按帧打印会严重拖慢帧率
+    void LogMissingResourceOnce(const std::string& resourceName) const;
+
+    mutable std::unordered_set<std::string> mLoggedMissingResources;
 
     VulkanContextPtr mContext = nullptr;
     VkShaderModule mVertexShader = VK_NULL_HANDLE;
