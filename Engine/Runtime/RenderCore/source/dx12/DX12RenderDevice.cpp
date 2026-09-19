@@ -715,7 +715,12 @@ void DX12RenderDevice::SetVSync(bool enable)
         return;
     }
     mVSync = enable;
-    // DXGI 的 VSync 在 Present 时决定，无需重建交换链
+
+    // Present() 读的是交换链自己的 mVSync，必须同步过去
+    if (mSwapChain)
+    {
+        mSwapChain->SetVSync(enable);
+    }
 }
 
 bool DX12RenderDevice::IsVSync() const

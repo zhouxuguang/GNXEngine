@@ -78,6 +78,9 @@ public:
     DXGI_FORMAT GetFormat() const { return mFormat; }
     bool IsVSync() const { return mVSync; }
 
+    // Present 时决定 syncInterval/presentFlags，无需重建交换链
+    void SetVSync(bool vsync) { mVSync = vsync; }
+
     /// 是否发生了“交换链已重建”，供上层重置帧索引
     bool ConsumeResizedFlag();
 
