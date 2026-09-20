@@ -415,7 +415,8 @@ void AssimpMeshImporter::processIndice()
 	uint32_t currentVertexCount = 0;
 	for (auto mesh : mSubMeshs)
 	{
-		uint16_t indexCount = 0;
+		// 索引数必须用 32 位：大网格用 uint16_t 会溢出回绕（1572864 -> 0），导致网格不可见。
+		uint32_t indexCount = 0;
 		for (unsigned int i = 0; i < mesh->mNumFaces; i++)
 		{
 			const aiFace& face = mesh->mFaces[i];

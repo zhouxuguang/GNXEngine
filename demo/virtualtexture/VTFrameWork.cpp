@@ -16,17 +16,66 @@
 #include "Runtime/RenderSystem/include/ImageTextureUtil.h"
 #include "Runtime/RenderSystem/include/VirtualTexture/FileVirtualTextureDataSource.h"
 #include "Runtime/RenderSystem/include/mesh/MeshRenderer.h"
+#include "Runtime/AssetManager/include/AssetFileHeader.h"
+#include "Runtime/AssetManager/include/MeshMessageUtil.h"
 #include "Runtime/GNXEngine/include/RenderWindow.h"
 #include "Runtime/MathUtil/include/Vector2.h"
 #include "Runtime/MathUtil/include/Vector3.h"
 #include "Runtime/MathUtil/include/Quaternion.h"
 #include "Runtime/BaseLib/include/BaseLib.h"
+#include "Runtime/BaseLib/include/FileUtil.h"
 
 #include <imgui.h>
 #include <memory>
 #include <string>
+#include <vector>
 
 using namespace mathutil;
+
+namespace
+{
+// 加载引擎自有网格资产（.meshasset：AssetFileHeader + MeshMessage pb），与 pbr demo 一致。
+RenderSystem::MeshPtr LoadMeshAsset(const std::string& filePath)
+{
+    std::vector<uint8_t> fileData;
+#if GNX_OS_IOS || GNX_OS_ANDROID
+    if (!AssetManager::AssetManager::LoadResource(filePath, fileData))
+    {
+        LOG_ERROR("LoadMeshAsset: cannot load %s", filePath.c_str());
+        return nullptr;
+    }
+#else
+    fileData = baselib::FileUtil::ReadBinaryFile(filePath);
+    if (fileData.empty())
+    {
+        LOG_ERROR("LoadMeshAsset: cannot read %s", filePath.c_str());
+        return nullptr;
+    }
+#endif
+
+    const size_t kHeaderSize = sizeof(AssetManager::AssetFileHeader);
+    if (fileData.size() <= kHeaderSize)
+    {
+        LOG_ERROR("LoadMeshAsset: file too small: %s", filePath.c_str());
+        return nullptr;
+    }
+
+    RenderSystem::MeshPtr mesh = std::make_shared<RenderSystem::Mesh>();
+    if (!AssetManager::MeshMessageUtil::DecodeMeshMessage(fileData.data() + kHeaderSize,
+                                                          (uint32_t)(fileData.size() - kHeaderSize),
+                                                          mesh.get()))
+    {
+        LOG_ERROR("LoadMeshAsset: pb decode failed: %s", filePath.c_str());
+        return nullptr;
+    }
+
+    // 创建 GPU 顶点/索引缓冲
+    mesh->SetUpBuffer();
+    LOG_INFO("Loaded mesh asset: %s (%u verts, %zu indices, %u submesh)",
+             filePath.c_str(), mesh->GetVertexCount(), mesh->GetIndices().size(), mesh->GetSubMeshCount());
+    return mesh;
+}
+} // namespace
 
 VTFrameWork::VTFrameWork(const GNXEngine::WindowProps& props)
     : AppFrameWork(props)
@@ -157,40 +206,46 @@ void VTFrameWork::SetupScene()
         LOG_INFO("Tile source: %s (0_0_0.png ...)", tilePath.c_str());
     }
 
-    // ── 加载模型，材质切换为 VirtualTexturePBR ──
+    // ── 加载模型（.meshasset），材质设为 VirtualTexturePBR ──
     {
-        const std::string modelPath = GetProjectAssetDir() + "vt/snowy_mountain.obj";
+        const std::string modelPath = GetProjectAssetDir() + "vt/snowy_mountain.meshasset";
 
-        Transform transform;
-        transform.position = Vector3f(0.0f, 0.0f, 0.0f);
-        transform.rotation = Quaternionf();
-        transform.scale    = Vector3f(30.0f, 30.0f, 30.0f);  // 与参考 demo 一致
-
-        SceneNode* modelNode = sceneManager->GetRootNode()->CreateRendererNode(
-            "VTModel", modelPath, transform.position, transform.rotation, transform.scale);
-
-        if (modelNode)
+        RenderSystem::MeshPtr mesh = LoadMeshAsset(modelPath);
+        if (!mesh)
         {
-            MeshRenderer* meshRender = modelNode->QueryComponentT<MeshRenderer>();
-            if (meshRender)
-            {
-                // 非 base color 的贴图用 1x1 常量纹理兜底（模型本身不带贴图）
-                RCTexture2DPtr normalTex   = ImageTextureUtil::CreateNormalTexture();
-                RCTexture2DPtr roughTex    = ImageTextureUtil::CreateDiffuseTexture(0.0f, 0.85f, 0.0f); // G=rough, B=metal
-                RCTexture2DPtr ambientTex  = ImageTextureUtil::CreateDiffuseTexture(1.0f, 1.0f, 1.0f);   // AO=1
-                RCTexture2DPtr emissiveTex = ImageTextureUtil::CreateEmmisveTexture();                    // 无自发光
+            LOG_ERROR("Failed to load VT model asset: %s", modelPath.c_str());
+        }
+        else
+        {
+            Transform transform;
+            transform.position = Vector3f(0.0f, 0.0f, 0.0f);
+            transform.rotation = Quaternionf();
+            transform.scale    = Vector3f(30.0f, 30.0f, 30.0f);  // 与参考 demo 一致
 
-                const auto& materials = meshRender->GetMaterials();
-                for (const auto& mat : materials)
-                {
-                    mat->SetMaterialType(Material::MaterialType::VirtualTexturePBR);
-                    mat->SetTexture("normalTexture", normalTex);
-                    mat->SetTexture("roughnessTexture", roughTex);
-                    mat->SetTexture("ambientTexture", ambientTex);
-                    mat->SetTexture("emissiveTexture", emissiveTex);
-                }
-                LOG_INFO("Replaced %zu material(s) with VirtualTexturePBR", materials.size());
-            }
+            SceneNode* modelNode = sceneManager->GetRootNode()->CreateChildSceneNode(
+                "VTModel", transform.position, transform.rotation, transform.scale);
+
+            MeshRenderer* meshRender = modelNode->AddComponent<MeshRenderer>();
+            meshRender->SetSharedMesh(mesh);
+
+            // 非 base color 的贴图用 1x1 常量纹理兜底（模型本身不带贴图）
+            RCTexture2DPtr normalTex   = ImageTextureUtil::CreateNormalTexture();
+            RCTexture2DPtr roughTex    = ImageTextureUtil::CreateDiffuseTexture(0.0f, 0.85f, 0.0f); // G=rough, B=metal
+            RCTexture2DPtr ambientTex  = ImageTextureUtil::CreateDiffuseTexture(1.0f, 1.0f, 1.0f);   // AO=1
+            RCTexture2DPtr emissiveTex = ImageTextureUtil::CreateEmmisveTexture();                    // 无自发光
+
+            // 单材质即可：多 submesh 共用该材质
+            MaterialPtr mat = std::make_shared<Material>();
+            mat->SetName("VTModel_Material");
+            mat->SetMaterialType(Material::MaterialType::VirtualTexturePBR);
+            mat->SetTexture("normalTexture", normalTex);
+            mat->SetTexture("roughnessTexture", roughTex);
+            mat->SetTexture("ambientTexture", ambientTex);
+            mat->SetTexture("emissiveTexture", emissiveTex);
+            meshRender->AddMaterial(mat);
+
+            LOG_INFO("Loaded VT model asset: %s (%u submesh), material = VirtualTexturePBR",
+                     modelPath.c_str(), mesh->GetSubMeshCount());
         }
     }
 
