@@ -143,6 +143,15 @@ public:
     DX12ComputePipeline* GetCurrentComputePipeline() const { return mCurrentComputePipeline; }
     void SetCurrentComputePipeline(DX12ComputePipeline* pipeline) { mCurrentComputePipeline = pipeline; }
 
+    /// 保持录制期间使用的临时资源存活，直到该帧槽位可安全复用。
+    void RetainTransientBuffer(const RCBufferPtr& buffer)
+    {
+        if (buffer)
+        {
+            mTransientBuffers.push_back(buffer);
+        }
+    }
+
     /// 提交并在上屏前插入 Present 前的资源状态转换
     bool PresentToSwapChain();
 
@@ -233,6 +242,8 @@ private:
     bool mCurrentIsMeshPipeline = false;
     DX12GraphicsPipeline* mCurrentGraphicsPipeline = nullptr;
     DX12ComputePipeline*  mCurrentComputePipeline = nullptr;
+
+    std::vector<RCBufferPtr> mTransientBuffers;
 
     uint32_t mDebugGroupDepth = 0;
 };

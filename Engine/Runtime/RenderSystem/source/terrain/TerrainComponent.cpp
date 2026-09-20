@@ -255,7 +255,8 @@ void TerrainComponent::RenderGPUCulled(RenderEncoder* renderEncoder,
         mLastCullOutput.visibleCountBuffer,   // countBuffer（GPU 写入的实际可见数量）
         0,                                    // countBufferOffset
         mLastCullOutput.indirectArgsCount,    // maxDrawCount = 缓冲区容量
-        sizeof(RenderCore::DrawIndexedIndirectCommand)  // stride
+        sizeof(RenderCore::DrawIndexedIndirectCommand),  // stride
+        IndexType_UInt                        // 模板索引为 32 位
     );
 }
 
@@ -320,7 +321,9 @@ void TerrainComponent::RenderCPUInstanced(RenderEncoder* renderEncoder,
         templateIB,
         0,             // indexBufferOffset
         0,             // firstInstance
-        visibleCount); // instanceCount = 可见 patch 数量
+        visibleCount,  // instanceCount = 可见 patch 数量
+        IndexType_UInt // 模板索引为 32 位
+    );
 }
 
 //=============================================================================
@@ -410,7 +413,8 @@ void TerrainComponent::RenderDepthGPUCulled(RenderEncoder* renderEncoder,
         mLastCullOutput.visibleCountBuffer,
         0,
         mLastCullOutput.indirectArgsCount,
-        sizeof(RenderCore::DrawIndexedIndirectCommand)
+        sizeof(RenderCore::DrawIndexedIndirectCommand),
+        IndexType_UInt                        // 模板索引为 32 位
     );
 }
 
@@ -465,7 +469,9 @@ void TerrainComponent::RenderDepthCPUInstanced(RenderEncoder* renderEncoder,
         templateIB,
         0,
         0,
-        visibleCount);
+        visibleCount,
+        IndexType_UInt // 模板索引为 32 位
+    );
 }
 
 //=============================================================================

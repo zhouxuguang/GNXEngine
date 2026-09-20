@@ -566,7 +566,7 @@ void QuadTreeTerrain::CreateTemplateMesh()
         mTemplateVB->SetName("TerrainTemplateVB");
 
     // 创建索引缓冲区
-    mTemplateIB = renderDevice->CreateIndexBufferWithBytes(indices.data(), kIndexCount * sizeof(uint32_t), RenderCore::IndexType_UInt);
+    mTemplateIB = renderDevice->CreateIndexBuffer(indices.data(), kIndexCount * sizeof(uint32_t));
 }
 
 //=============================================================================

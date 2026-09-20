@@ -6,7 +6,6 @@
 //
 
 #include "VKBlitEncoder.h"
-#include "VKVertexBuffer.h"
 #include "VKRCBuffer.h"
 #include "VKTextureBase.h"
 #include "VulkanBufferUtil.h"
@@ -25,31 +24,13 @@ VKBlitEncoder::~VKBlitEncoder()
     mCommandBuffer = VK_NULL_HANDLE;
 }
 
-VkBuffer VKBlitEncoder::GetVkBuffer(VertexBufferPtr buffer) const
+VkBuffer VKBlitEncoder::GetVkBuffer(RCBufferPtr buffer) const
 {
     if (!buffer)
     {
         return VK_NULL_HANDLE;
     }
     
-    // 尝试转换为VKVertexBuffer
-    VKVertexBufferPtr vkVertexBuffer = std::dynamic_pointer_cast<VKVertexBuffer>(buffer);
-    if (vkVertexBuffer)
-    {
-        return vkVertexBuffer->GetGpuBuffer();
-    }
-    
-    return VK_NULL_HANDLE;
-}
-
-VkBuffer VKBlitEncoder::GetVkBufferFromRC(RCBufferPtr buffer) const
-{
-    if (!buffer)
-    {
-        return VK_NULL_HANDLE;
-    }
-    
-    // 尝试转换为VKRCBuffer
     VKRCBufferPtr vkRCBuffer = std::dynamic_pointer_cast<VKRCBuffer>(buffer);
     if (vkRCBuffer)
     {
@@ -91,11 +72,11 @@ VkImageSubresourceLayers VKBlitEncoder::GetImageSubresourceLayers(RCTexturePtr t
 
 // ==================== Buffer操作 ====================
 
-void VKBlitEncoder::CopyBufferToBuffer(VertexBufferPtr source,
-                                       uint64_t sourceOffset,
-                                       VertexBufferPtr destination,
-                                       uint64_t destinationOffset,
-                                       uint64_t size)
+void VKBlitEncoder::CopyBuffer(RCBufferPtr source,
+                               uint64_t sourceOffset,
+                               RCBufferPtr destination,
+                               uint64_t destinationOffset,
+                               uint64_t size)
 {
     if (!mContext || !mCommandBuffer)
     {
@@ -118,54 +99,27 @@ void VKBlitEncoder::CopyBufferToBuffer(VertexBufferPtr source,
     vkCmdCopyBuffer(mCommandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 }
 
-void VKBlitEncoder::FillBuffer(VertexBufferPtr destination,
-                              uint64_t destinationOffset,
-                              const void* data,
-                              uint64_t dataSize)
-{
-    // Vulkan不支持直接fillBuffer
-    // 需要通过临时buffer拷贝或使用compute shader实现
-    // 这里使用CopyBufferToBuffer作为简化实现
-    
-    // 注意：这不是真正的fill操作，实际项目中应该使用compute shader或临时buffer
-    if (!data || dataSize == 0)
-    {
-        return;
-    }
-    
-    // TODO: 实现真正的fill操作
-    // 可以创建一个临时的buffer填充pattern，然后拷贝
-    
-    //vkCmdFillBuffer()
-}
-
-// ==================== RCBuffer操作（新接口） ====================
-
-void VKBlitEncoder::CopyBuffer(RCBufferPtr source,
-                               uint64_t sourceOffset,
-                               RCBufferPtr destination,
+void VKBlitEncoder::FillBuffer(RCBufferPtr destination,
                                uint64_t destinationOffset,
-                               uint64_t size)
+                               const void* data,
+                               uint64_t dataSize)
 {
-    if (!mContext || !mCommandBuffer)
+    auto dst = std::dynamic_pointer_cast<VKRCBuffer>(destination);
+    if (!dst || !dst->IsValid() || !data || dataSize == 0 ||
+        destinationOffset > dst->GetSize() || dataSize > (uint64_t)dst->GetSize() - destinationOffset)
     {
         return;
     }
-    
-    VkBuffer srcBuffer = GetVkBufferFromRC(source);
-    VkBuffer dstBuffer = GetVkBufferFromRC(destination);
-    
-    if (srcBuffer == VK_NULL_HANDLE || dstBuffer == VK_NULL_HANDLE)
+
+    RCBufferDesc stagingDesc((uint32_t)dataSize, RCBufferUsage::TransferSrc, StorageModeShared);
+    auto staging = std::make_shared<VKRCBuffer>(mContext, stagingDesc, data);
+    if (!staging->IsValid())
     {
         return;
     }
-    
-    VkBufferCopy copyRegion = {};
-    copyRegion.srcOffset = sourceOffset;
-    copyRegion.dstOffset = destinationOffset;
-    copyRegion.size = size;
-    
-    vkCmdCopyBuffer(mCommandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+    CopyBuffer(staging, 0, destination, destinationOffset, dataSize);
+    // VKRCBuffer 析构通过 VulkanGarbageCollector 延迟销毁，覆盖本次提交的 GPU 生命周期。
 }
 
 void VKBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
@@ -184,7 +138,7 @@ void VKBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
     }
     
     VkImage srcImage = GetVkImage(source);
-    VkBuffer dstBuffer = GetVkBufferFromRC(destination);
+    VkBuffer dstBuffer = GetVkBuffer(destination);
     
     if (srcImage == VK_NULL_HANDLE || dstBuffer == VK_NULL_HANDLE)
     {
@@ -240,7 +194,7 @@ void VKBlitEncoder::CopyBufferToTexture(RCBufferPtr source,
         return;
     }
     
-    VkBuffer srcBuffer = GetVkBufferFromRC(source);
+    VkBuffer srcBuffer = GetVkBuffer(source);
     VkImage dstImage = GetVkImage(destination);
     
     if (srcBuffer == VK_NULL_HANDLE || dstImage == VK_NULL_HANDLE)
@@ -260,97 +214,6 @@ void VKBlitEncoder::CopyBufferToTexture(RCBufferPtr source,
     copyRegion.bufferOffset = sourceOffset;
     copyRegion.bufferRowLength = 0;
     copyRegion.bufferImageHeight = 0;
-    copyRegion.imageSubresource = subresource;
-    copyRegion.imageOffset = dstOffset;
-    copyRegion.imageExtent = extent;
-    
-    vkCmdCopyBufferToImage(mCommandBuffer, srcBuffer, dstImage,
-                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
-}
-
-// ==================== Texture到Buffer操作 ====================
-
-void VKBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
-                                       uint32_t sourceSlice,
-                                       uint32_t sourceMipLevel,
-                                       const mathutil::Vector2i& sourceOffset,
-                                       const mathutil::Vector2i& sourceSize,
-                                       VertexBufferPtr destination,
-                                       uint64_t destinationOffset,
-                                       uint64_t destinationBytesPerRow,
-                                       uint64_t destinationBytesPerImage)
-{
-    if (!mContext || !mCommandBuffer)
-    {
-        return;
-    }
-    
-    VkImage srcImage = GetVkImage(source);
-    VkBuffer dstBuffer = GetVkBuffer(destination);
-    
-    if (srcImage == VK_NULL_HANDLE || dstBuffer == VK_NULL_HANDLE)
-    {
-        return;
-    }
-    
-    VkImageSubresourceLayers subresource = GetImageSubresourceLayers(source, sourceSlice, sourceMipLevel);
-    
-    VkOffset3D srcOffset = {sourceOffset.x, sourceOffset.y, 0};
-    VkExtent3D extent = {static_cast<uint32_t>(sourceSize.x), 
-                         static_cast<uint32_t>(sourceSize.y), 1};
-    
-    VkImageCopy copyRegion = {};
-    copyRegion.srcSubresource = subresource;
-    copyRegion.srcOffset = srcOffset;
-    copyRegion.dstSubresource = subresource;
-    copyRegion.dstOffset = {0, 0, 0};
-    copyRegion.extent = extent;
-    
-    // 注意：Vulkan的CopyImageToBuffer需要dstOffset
-    // 但这里我们使用destinationOffset参数
-    // 实际使用时需要调整buffer offset
-    
-//    vkCmdCopyImageToBuffer(mCommandBuffer, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-//                          dstBuffer, 1, &copyRegion);
-}
-
-// ==================== Buffer到Texture操作 ====================
-
-void VKBlitEncoder::CopyBufferToTexture(VertexBufferPtr source,
-                                       uint64_t sourceOffset,
-                                       uint64_t sourceBytesPerRow,
-                                       uint64_t sourceBytesPerImage,
-                                       RCTexturePtr destination,
-                                       uint32_t destinationSlice,
-                                       uint32_t destinationMipLevel,
-                                       const mathutil::Vector2i& destinationOffset,
-                                       const mathutil::Vector2i& destinationSize)
-{
-    if (!mContext || !mCommandBuffer)
-    {
-        return;
-    }
-    
-    VkBuffer srcBuffer = GetVkBuffer(source);
-    VkImage dstImage = GetVkImage(destination);
-    
-    if (srcBuffer == VK_NULL_HANDLE || dstImage == VK_NULL_HANDLE)
-    {
-        return;
-    }
-    
-    VkImageSubresourceLayers subresource = GetImageSubresourceLayers(destination, 
-                                                                    destinationSlice, 
-                                                                    destinationMipLevel);
-    
-    VkOffset3D dstOffset = {destinationOffset.x, destinationOffset.y, 0};
-    VkExtent3D extent = {static_cast<uint32_t>(destinationSize.x), 
-                         static_cast<uint32_t>(destinationSize.y), 1};
-    
-    VkBufferImageCopy copyRegion = {};
-    copyRegion.bufferOffset = sourceOffset;
-    copyRegion.bufferRowLength = 0;  // 表示紧密打包
-    copyRegion.bufferImageHeight = 0; // 表示紧密打包
     copyRegion.imageSubresource = subresource;
     copyRegion.imageOffset = dstOffset;
     copyRegion.imageExtent = extent;

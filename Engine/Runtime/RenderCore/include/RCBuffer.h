@@ -98,14 +98,23 @@ struct RCBufferDesc
 /**
  * @brief Unified buffer interface for modern graphics APIs
  * 
- * RCBuffer replaces the separate VertexBuffer, ComputeBuffer classes.
+ * RCBuffer replaces the separate VertexBuffer, IndexBuffer classes.
  * This unified approach matches modern graphics APIs like Vulkan and Metal,
  * where the same buffer can serve multiple purposes.
+ * 
+ * 注意：资源的「用途」由 RCBufferUsage 描述；而索引宽度（IndexType）不属于资源属性，
+ * 它与 Vulkan 的 vkCmdBindIndexBuffer / Metal 的 drawIndexedPrimitives(indexType:)
+ * 一样，是绑定期由绘制调用给出的参数。
  * 
  * Usage example:
  * @code
  * // Create a buffer for vertex data
  * auto vertexBuffer = device->CreateBuffer(RCBufferDesc(1024, RCBufferUsage::VertexBuffer));
+ * 
+ * // Create an index buffer（索引宽度在绘制时传入）
+ * auto indexBuffer = device->CreateBuffer(RCBufferDesc(
+ *     2048, RCBufferUsage::IndexBuffer, StorageModePrivate), indices);
+ * encoder->DrawIndexedPrimitives(PrimitiveMode_TRIANGLES, count, indexBuffer, 0, 0, IndexType_UInt);
  * 
  * // Create a buffer used both as SSBO and vertex buffer (common in GPU-driven rendering)
  * auto combinedBuffer = device->CreateBuffer(RCBufferDesc(

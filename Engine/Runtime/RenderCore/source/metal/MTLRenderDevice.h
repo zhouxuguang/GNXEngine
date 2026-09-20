@@ -32,34 +32,6 @@ public:
         return mFeatures;
     }
     
-    /**
-     以指定长度创建buffer
-     
-     @param size 申请buffer长度，单位（byte）
-     @return 成功申请buffer句柄，失败返回0；
-     */
-    VertexBufferPtr CreateVertexBufferWithLength(uint32_t size) const override;
-    
-    /**
-     以指定buffer和长度以内存拷贝方式创建顶点buffer
-     
-     @param buffer 指定buffer内容
-     @param size buffer长度
-     @param mode 申请Buffer类型
-     @return 成功申请buffer句柄，失败返回0；
-     */
-    VertexBufferPtr CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const override;
-    
-    /**
-     以指定buffer和长度以内存拷贝方式创建索引buffer
-     
-     @param buffer 指定buffer内容
-     @param size buffer长度
-     @param indexType 索引类型
-     @return 成功申请buffer句柄，失败返回0；
-     */
-    IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const override;
-    
     // 统一Buffer接口
     virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc) const override;
     virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc, const void* data) const override;

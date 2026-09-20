@@ -875,24 +875,6 @@ void DX12RenderEncoder::SetTaskTextureAndSampler(const std::string& resourceName
 // 顶点/索引缓冲
 // ============================================================================
 
-void DX12RenderEncoder::SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index)
-{
-    auto dx12Buffer = std::dynamic_pointer_cast<DX12VertexBuffer>(buffer);
-    if (!dx12Buffer || !mCommandList)
-    {
-        return;
-    }
-
-    D3D12_VERTEX_BUFFER_VIEW view = {};
-    view.BufferLocation = dx12Buffer->GetGPUAddress() + offset;
-    view.SizeInBytes    = dx12Buffer->GetBufferLength() - offset;
-    // stride 必须显式给出：D3D12 不会从 PSO 的输入布局推导（那是 Vulkan 的语义）。
-    // 之前写死 0 会让 IA 反复读取同一个顶点，几何体退化成一条线，
-    // 结果就是"带顶点缓冲的绘制全部不可见"，且不产生任何校验错误。
-    view.StrideInBytes  = (mGraphicsPipeline != nullptr) ? mGraphicsPipeline->GetVertexStride((uint32_t)index) : 0;
-    mCommandList->IASetVertexBuffers((UINT)index, 1, &view);
-}
-
 void DX12RenderEncoder::SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index)
 {
     auto dx12Buffer = std::dynamic_pointer_cast<DX12RCBuffer>(buffer);
@@ -904,20 +886,22 @@ void DX12RenderEncoder::SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int
     D3D12_VERTEX_BUFFER_VIEW view = {};
     view.BufferLocation = dx12Buffer->GetGPUAddress() + offset;
     view.SizeInBytes    = dx12Buffer->GetSizeInBytes() - offset;
-    // 同上方重载：stride 必须显式给出，不能依赖 PSO 推导。
+    // stride 必须显式给出：D3D12 不会从 PSO 的输入布局推导（那是 Vulkan 的语义）。
+    // 之前写死 0 会让 IA 反复读取同一个顶点，几何体退化成一条线，
+    // 结果就是"带顶点缓冲的绘制全部不可见"，且不产生任何校验错误。
     view.StrideInBytes  = (mGraphicsPipeline != nullptr) ? mGraphicsPipeline->GetVertexStride((uint32_t)index) : 0;
     mCommandList->IASetVertexBuffers((UINT)index, 1, &view);
 }
 
-void DX12RenderEncoder::BindIndexBuffer(IndexBufferPtr buffer, int indexOffset)
+void DX12RenderEncoder::BindIndexBuffer(RCBufferPtr buffer, int indexOffset, IndexType indexType)
 {
-    auto dx12Buffer = std::dynamic_pointer_cast<DX12IndexBuffer>(buffer);
+    auto dx12Buffer = std::dynamic_pointer_cast<DX12RCBuffer>(buffer);
     if (!dx12Buffer || !mCommandList)
     {
         return;
     }
 
-    const DXGI_FORMAT format = dx12Buffer->GetDXGIIndexFormat();
+    const DXGI_FORMAT format = DX12RCBuffer::ToDXGIIndexFormat(indexType);
     const uint32_t indexSize = (format == DXGI_FORMAT_R32_UINT) ? 4u : 2u;
 
     D3D12_INDEX_BUFFER_VIEW view = {};
@@ -965,14 +949,14 @@ void DX12RenderEncoder::DrawInstancePrimitives(PrimitiveMode mode, int offset, i
     mCommandBuffer->MarkBlockUsedByDraw();
 }
 
-void DX12RenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer,
-                                              int offset, int baseVertex)
+void DX12RenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, RCBufferPtr buffer,
+                                              int offset, int baseVertex, IndexType indexType)
 {
     if (!mCommandList || !mGraphicsPipeline)
     {
         return;
     }
-    BindIndexBuffer(buffer, 0);
+    BindIndexBuffer(buffer, 0, indexType);
     ApplyTopology(mode);
     FlushDescriptorTables();
     mCommandList->DrawIndexedInstanced((UINT)size, 1, (UINT)offset, baseVertex, 0);
@@ -980,14 +964,15 @@ void DX12RenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, Inde
 }
 
 void DX12RenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size,
-                                                      IndexBufferPtr buffer, int offset,
-                                                      uint32_t firstInstance, uint32_t instanceCount)
+                                                      RCBufferPtr buffer, int offset,
+                                                      uint32_t firstInstance, uint32_t instanceCount,
+                                                      IndexType indexType)
 {
     if (!mCommandList || !mGraphicsPipeline)
     {
         return;
     }
-    BindIndexBuffer(buffer, 0);
+    BindIndexBuffer(buffer, 0, indexType);
     ApplyTopology(mode);
     FlushDescriptorTables();
     mCommandList->DrawIndexedInstanced((UINT)size, instanceCount, (UINT)offset, 0, firstInstance);
@@ -1088,10 +1073,11 @@ void DX12RenderEncoder::DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr b
     mCommandBuffer->MarkBlockUsedByDraw();
 }
 
-void DX12RenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+void DX12RenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr indexBuffer,
                                                       int indexBufferOffset, RCBufferPtr indirectBuffer,
                                                       uint32_t indirectBufferOffset,
-                                                      uint32_t drawCount, uint32_t stride)
+                                                      uint32_t drawCount, uint32_t stride,
+                                                      IndexType indexType)
 {
     auto args = std::dynamic_pointer_cast<DX12RCBuffer>(indirectBuffer);
     if (!mCommandList || !mGraphicsPipeline ||
@@ -1108,7 +1094,7 @@ void DX12RenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexB
         return;
     }
     mCommandBuffer->ResourceBarrier(indirectBuffer, ResourceAccessType::IndirectCommandRead);
-    BindIndexBuffer(indexBuffer, indexBufferOffset);
+    BindIndexBuffer(indexBuffer, indexBufferOffset, indexType);
     ApplyTopology(mode);
     FlushDescriptorTables();
     mCommandList->ExecuteIndirect(signature, drawCount, args->GetResource(),
@@ -1116,12 +1102,13 @@ void DX12RenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexB
     mCommandBuffer->MarkBlockUsedByDraw();
 }
 
-void DX12RenderEncoder::DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+void DX12RenderEncoder::DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, RCBufferPtr indexBuffer,
                                                            int indexBufferOffset, RCBufferPtr indirectBuffer,
                                                            uint32_t indirectBufferOffset,
                                                            RCBufferPtr countBuffer,
                                                            uint32_t countBufferOffset,
-                                                           uint32_t maxDrawCount, uint32_t stride)
+                                                           uint32_t maxDrawCount, uint32_t stride,
+                                                           IndexType indexType)
 {
     auto args = std::dynamic_pointer_cast<DX12RCBuffer>(indirectBuffer);
     auto count = std::dynamic_pointer_cast<DX12RCBuffer>(countBuffer);
@@ -1141,7 +1128,7 @@ void DX12RenderEncoder::DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, I
     }
     mCommandBuffer->ResourceBarrier(indirectBuffer, ResourceAccessType::IndirectCommandRead);
     mCommandBuffer->ResourceBarrier(countBuffer, ResourceAccessType::IndirectCommandRead);
-    BindIndexBuffer(indexBuffer, indexBufferOffset);
+    BindIndexBuffer(indexBuffer, indexBufferOffset, indexType);
     ApplyTopology(mode);
     FlushDescriptorTables();
     mCommandList->ExecuteIndirect(signature, maxDrawCount, args->GetResource(),

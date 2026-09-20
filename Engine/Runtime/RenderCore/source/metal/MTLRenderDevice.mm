@@ -6,8 +6,6 @@
 //
 
 #include "MTLRenderDevice.h"
-#include "MTLVertexBuffer.h"
-#include "MTLIndexBuffer.h"
 #include "MTLTextureSampler.h"
 #include "MTLUniformBuffer.h"
 #include "MTLGraphicsPipeline.h"
@@ -87,46 +85,6 @@ void MTLRenderDevice::Resize(uint32_t width, uint32_t height)
 RenderDeviceType MTLRenderDevice::GetRenderDeviceType() const
 {
     return RenderDeviceType::METAL;
-}
-
-/**
- 以指定长度创建buffer
- 
- @param size 申请buffer长度，单位（byte）
- @return 成功申请buffer句柄，失败返回0；
- */
-VertexBufferPtr MTLRenderDevice::CreateVertexBufferWithLength(uint32_t size) const
-{
-    auto vertexBuffer = std::make_shared<MTLVertexBuffer>(mMetalLayer.device, size, StorageModeShared);
-    return vertexBuffer;
-}
-
-/**
- 以指定buffer和长度以内存拷贝方式创建顶点buffer
- 
- @param buffer 指定buffer内容
- @param size buffer长度
- @param mode 申请Buffer类型
- @return 成功申请buffer句柄，失败返回0；
- */
-VertexBufferPtr MTLRenderDevice::CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const
-{
-    auto vertexBuffer = std::make_shared<MTLVertexBuffer>(mMetalLayer.device, mMetalCommandQueue, buffer, size, mode);
-    return vertexBuffer;
-}
-
-/**
- 以指定buffer和长度以内存拷贝方式创建索引buffer
- 
- @param buffer 指定buffer内容
- @param size buffer长度
- @param indexType 索引类型
- @return 成功申请buffer句柄，失败返回0；
- */
-IndexBufferPtr MTLRenderDevice::CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const
-{
-    auto indexBuffer = std::make_shared<MTLIndexBuffer>(mMetalLayer.device, mMetalCommandQueue, indexType, buffer, size);
-    return indexBuffer;
 }
 
 RCBufferPtr MTLRenderDevice::CreateBuffer(const RCBufferDesc& desc) const

@@ -9,7 +9,6 @@
 #define GNX_ENGINE_POST_PROCEESING_INCLUDE_H
 
 #include "../RSDefine.h"
-#include "Runtime/RenderCore/include/VertexBuffer.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 
 NS_RENDERSYSTEM_BEGIN
@@ -26,8 +25,8 @@ public:
     void Process(const RenderEncoderPtr &renderEncoder);
     
 private:
-    VertexBufferPtr mPositionCoord = nullptr;   //顶点buffer
-    VertexBufferPtr mTextureCoord = nullptr;  //纹理坐标buffer
+    RCBufferPtr mPositionCoord = nullptr;   //顶点buffer
+    RCBufferPtr mTextureCoord = nullptr;  //纹理坐标buffer
     RenderDevicePtr mRenderDevice = nullptr;  //渲染设备
     TextureSamplerPtr mTextureSampler = nullptr; //纹理采样器
     GraphicsPipelinePtr mPipeline = nullptr;   //渲染管线

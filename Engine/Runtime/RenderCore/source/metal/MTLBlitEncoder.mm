@@ -6,8 +6,6 @@
 //
 
 #include "MTLBlitEncoder.h"
-#include "MTLVertexBuffer.h"
-#include "MTLIndexBuffer.h"
 #include "MTLRCBuffer.h"
 #include "MTLTextureBase.h"
 
@@ -35,38 +33,13 @@ MTLBlitEncoder::~MTLBlitEncoder()
     }
 }
 
-id<MTLBuffer> MTLBlitEncoder::GetMTLBuffer(VertexBufferPtr buffer) const
+id<MTLBuffer> MTLBlitEncoder::GetMTLBuffer(RCBufferPtr buffer) const
 {
     if (!buffer)
     {
         return nil;
     }
     
-    // 尝试转换为MTLVertexBuffer
-    MTLVertexBufferPtr mtlVertexBuffer = std::dynamic_pointer_cast<MTLVertexBuffer>(buffer);
-    if (mtlVertexBuffer)
-    {
-        return mtlVertexBuffer->getMTLBuffer();
-    }
-    
-    // 尝试转换为MTLIndexBuffer（也是Buffer）
-    MTLIndexBufferPtr mtlIndexBuffer = std::dynamic_pointer_cast<MTLIndexBuffer>(buffer);
-    if (mtlIndexBuffer)
-    {
-        return mtlIndexBuffer->getMTLBuffer();
-    }
-    
-    return nil;
-}
-
-id<MTLBuffer> MTLBlitEncoder::GetMTLBufferFromRC(RCBufferPtr buffer) const
-{
-    if (!buffer)
-    {
-        return nil;
-    }
-    
-    // 尝试转换为MTLRCBuffer
     MTLRCBufferPtr mtlRCBuffer = std::dynamic_pointer_cast<MTLRCBuffer>(buffer);
     if (mtlRCBuffer)
     {
@@ -95,11 +68,11 @@ id<MTLTexture> MTLBlitEncoder::GetMTLTexture(RCTexturePtr texture) const
 
 // ==================== Buffer操作 ====================
 
-void MTLBlitEncoder::CopyBufferToBuffer(VertexBufferPtr source,
-                                         uint64_t sourceOffset,
-                                         VertexBufferPtr destination,
-                                         uint64_t destinationOffset,
-                                         uint64_t size)
+void MTLBlitEncoder::CopyBuffer(RCBufferPtr source,
+                                uint64_t sourceOffset,
+                                RCBufferPtr destination,
+                                uint64_t destinationOffset,
+                                uint64_t size)
 {
     if (!mBlitEncoder)
     {
@@ -119,48 +92,31 @@ void MTLBlitEncoder::CopyBufferToBuffer(VertexBufferPtr source,
     }
 }
 
-void MTLBlitEncoder::FillBuffer(VertexBufferPtr destination,
-                               uint64_t destinationOffset,
-                               const void* data,
-                               uint64_t dataSize)
-{
-    if (!mBlitEncoder || !data || dataSize == 0)
-    {
-        return;
-    }
-    
-    id<MTLBuffer> destBuffer = GetMTLBuffer(destination);
-    if (destBuffer)
-    {
-        [mBlitEncoder fillBuffer:destBuffer
-                         range:NSMakeRange(destinationOffset, dataSize)
-                          value:*(const uint8_t*)data];
-    }
-}
-
-// ==================== RCBuffer操作（新接口） ====================
-
-void MTLBlitEncoder::CopyBuffer(RCBufferPtr source,
-                                uint64_t sourceOffset,
-                                RCBufferPtr destination,
+void MTLBlitEncoder::FillBuffer(RCBufferPtr destination,
                                 uint64_t destinationOffset,
-                                uint64_t size)
+                                const void* data,
+                                uint64_t dataSize)
 {
-    if (!mBlitEncoder)
+    id<MTLBuffer> destBuffer = GetMTLBuffer(destination);
+    if (!mBlitEncoder || !destBuffer || !data || dataSize == 0 ||
+        destinationOffset > destBuffer.length || dataSize > destBuffer.length - destinationOffset)
     {
         return;
     }
-    
-    id<MTLBuffer> sourceBuffer = GetMTLBufferFromRC(source);
-    id<MTLBuffer> destBuffer = GetMTLBufferFromRC(destination);
-    
-    if (sourceBuffer && destBuffer)
+
+    @autoreleasepool
     {
-        [mBlitEncoder copyFromBuffer:sourceBuffer
-                        sourceOffset:sourceOffset
-                            toBuffer:destBuffer
-                   destinationOffset:destinationOffset
-                                size:size];
+        id<MTLBuffer> staging = [destBuffer.device newBufferWithBytes:data
+                                                               length:dataSize
+                                                              options:MTLResourceStorageModeShared];
+        if (staging)
+        {
+            [mBlitEncoder copyFromBuffer:staging
+                            sourceOffset:0
+                                toBuffer:destBuffer
+                       destinationOffset:destinationOffset
+                                    size:dataSize];
+        }
     }
 }
 
@@ -180,78 +136,6 @@ void MTLBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
     }
     
     id<MTLTexture> sourceTexture = GetMTLTexture(source);
-    id<MTLBuffer> destBuffer = GetMTLBufferFromRC(destination);
-    
-    if (sourceTexture && destBuffer)
-    {
-        MTLOrigin origin = MTLOriginMake(sourceOffset.x, sourceOffset.y, 0);
-        MTLSize size = MTLSizeMake(sourceSize.x, sourceSize.y, 1);
-        
-        [mBlitEncoder copyFromTexture:sourceTexture
-                          sourceSlice:sourceSlice
-                          sourceLevel:sourceMipLevel
-                         sourceOrigin:origin
-                           sourceSize:size
-                             toBuffer:destBuffer
-                    destinationOffset:destinationOffset
-               destinationBytesPerRow:destinationBytesPerRow
-             destinationBytesPerImage:destinationBytesPerImage];
-    }
-}
-
-void MTLBlitEncoder::CopyBufferToTexture(RCBufferPtr source,
-                                         uint64_t sourceOffset,
-                                         uint64_t sourceBytesPerRow,
-                                         uint64_t sourceBytesPerImage,
-                                         RCTexturePtr destination,
-                                         uint32_t destinationSlice,
-                                         uint32_t destinationMipLevel,
-                                         const mathutil::Vector2i& destinationOffset,
-                                         const mathutil::Vector2i& destinationSize)
-{
-    if (!mBlitEncoder)
-    {
-        return;
-    }
-    
-    id<MTLBuffer> sourceBuffer = GetMTLBufferFromRC(source);
-    id<MTLTexture> destTexture = GetMTLTexture(destination);
-    
-    if (sourceBuffer && destTexture)
-    {
-        MTLOrigin origin = MTLOriginMake(destinationOffset.x, destinationOffset.y, 0);
-        MTLSize size = MTLSizeMake(destinationSize.x, destinationSize.y, 1);
-        
-        [mBlitEncoder copyFromBuffer:sourceBuffer
-                        sourceOffset:sourceOffset
-                   sourceBytesPerRow:sourceBytesPerRow
-                 sourceBytesPerImage:sourceBytesPerImage
-                         sourceSize:size
-                          toTexture:destTexture
-                   destinationSlice:destinationSlice
-                   destinationLevel:destinationMipLevel
-                  destinationOrigin:origin];
-    }
-}
-
-// ==================== Texture到Buffer操作 ====================
-
-void MTLBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
-                                          uint32_t sourceSlice,
-                                          uint32_t sourceMipLevel,
-                                          const mathutil::Vector2i& sourceOffset,
-                                          const mathutil::Vector2i& sourceSize,
-                                          VertexBufferPtr destination,
-                                          uint64_t destinationOffset,
-                                          uint64_t destinationBytesPerRow,
-                                          uint64_t destinationBytesPerImage)
-{
-    if (!mBlitEncoder)
-    {
-        return;
-    }
-    
-    id<MTLTexture> sourceTexture = GetMTLTexture(source);
     id<MTLBuffer> destBuffer = GetMTLBuffer(destination);
     
     if (sourceTexture && destBuffer)
@@ -271,9 +155,7 @@ void MTLBlitEncoder::CopyTextureToBuffer(RCTexturePtr source,
     }
 }
 
-// ==================== Buffer到Texture操作 ====================
-
-void MTLBlitEncoder::CopyBufferToTexture(VertexBufferPtr source,
+void MTLBlitEncoder::CopyBufferToTexture(RCBufferPtr source,
                                          uint64_t sourceOffset,
                                          uint64_t sourceBytesPerRow,
                                          uint64_t sourceBytesPerImage,

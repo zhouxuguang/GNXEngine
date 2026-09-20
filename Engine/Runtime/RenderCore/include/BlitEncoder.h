@@ -9,7 +9,6 @@
 #define GNX_ENGINE_BLIT_ENCODER_INCLUDE_H
 
 #include "RenderDefine.h"
-#include "VertexBuffer.h"
 #include "RCBuffer.h"
 #include "RCTexture.h"
 #include "Runtime/MathUtil/include/Vector2.h"
@@ -47,39 +46,17 @@ public:
      * @param destinationOffset 目标偏移量（字节）
      * @param size 拷贝大小（字节）
      */
-    virtual void CopyBufferToBuffer(VertexBufferPtr source,
-                                   uint64_t sourceOffset,
-                                   VertexBufferPtr destination,
-                                   uint64_t destinationOffset,
-                                   uint64_t size) = 0;
-    
-    /**
-     * @brief 填充Buffer数据
-     * @param destination 目标Buffer
-     * @param destinationOffset 目标偏移量（字节）
-     * @param data 填充数据
-     * @param dataSize 数据大小（字节）
-     */
-    virtual void FillBuffer(VertexBufferPtr destination,
-                          uint64_t destinationOffset,
-                          const void* data,
-                          uint64_t dataSize) = 0;
-    
-    // ==================== RCBuffer操作（新接口） ====================
-    
-    /**
-     * @brief 拷贝RCBuffer数据
-     * @param source 源Buffer
-     * @param sourceOffset 源偏移量（字节）
-     * @param destination 目标Buffer
-     * @param destinationOffset 目标偏移量（字节）
-     * @param size 拷贝大小（字节）
-     */
     virtual void CopyBuffer(RCBufferPtr source,
                            uint64_t sourceOffset,
                            RCBufferPtr destination,
                            uint64_t destinationOffset,
                            uint64_t size) = 0;
+
+    /** 将指定字节数据写入 Buffer。 */
+    virtual void FillBuffer(RCBufferPtr destination,
+                            uint64_t destinationOffset,
+                            const void* data,
+                            uint64_t dataSize) = 0;
     
     /**
      * @brief 从Texture拷贝数据到RCBuffer
@@ -98,54 +75,6 @@ public:
      * @brief 从RCBuffer拷贝数据到Texture
      */
     virtual void CopyBufferToTexture(RCBufferPtr source,
-                                    uint64_t sourceOffset,
-                                    uint64_t sourceBytesPerRow,
-                                    uint64_t sourceBytesPerImage,
-                                    RCTexturePtr destination,
-                                    uint32_t destinationSlice,
-                                    uint32_t destinationMipLevel,
-                                    const mathutil::Vector2i& destinationOffset,
-                                    const mathutil::Vector2i& destinationSize) = 0;
-    
-    // ==================== Texture到Buffer操作 ====================
-    
-    /**
-     * @brief 从Texture拷贝数据到Buffer
-     * @param source 源纹理
-     * @param sourceSlice 源纹理数组切片索引
-     * @param sourceMipLevel 源纹理Mipmap级别
-     * @param sourceOffset 源纹理内偏移
-     * @param sourceSize 源纹理拷贝区域大小
-     * @param destination 目标Buffer
-     * @param destinationOffset 目标Buffer偏移量
-     * @param destinationBytesPerRow 目标Buffer每行字节数
-     * @param destinationBytesPerImage 目标Buffer每图像字节数（3D纹理使用）
-     */
-    virtual void CopyTextureToBuffer(RCTexturePtr source,
-                                    uint32_t sourceSlice,
-                                    uint32_t sourceMipLevel,
-                                    const mathutil::Vector2i& sourceOffset,
-                                    const mathutil::Vector2i& sourceSize,
-                                    VertexBufferPtr destination,
-                                    uint64_t destinationOffset,
-                                    uint64_t destinationBytesPerRow,
-                                    uint64_t destinationBytesPerImage = 0) = 0;
-    
-    // ==================== Buffer到Texture操作 ====================
-    
-    /**
-     * @brief 从Buffer拷贝数据到Texture
-     * @param source 源Buffer
-     * @param sourceOffset 源Buffer偏移量
-     * @param sourceBytesPerRow 源Buffer每行字节数
-     * @param sourceBytesPerImage 源Buffer每图像字节数（3D纹理使用）
-     * @param destination 目标纹理
-     * @param destinationSlice 目标纹理数组切片索引
-     * @param destinationMipLevel 目标纹理Mipmap级别
-     * @param destinationOffset 目标纹理内偏移
-     * @param destinationSize 目标纹理拷贝区域大小
-     */
-    virtual void CopyBufferToTexture(VertexBufferPtr source,
                                     uint64_t sourceOffset,
                                     uint64_t sourceBytesPerRow,
                                     uint64_t sourceBytesPerImage,

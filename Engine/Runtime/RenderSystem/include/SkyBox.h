@@ -52,7 +52,7 @@ private:
     
     RCTextureCubePtr mTextureCube = nullptr;
     TextureSamplerPtr mTextureSampler = nullptr;
-    VertexBufferPtr mVertexBuffer = nullptr;
+    RCBufferPtr mVertexBuffer = nullptr;
     
     GraphicsPipelinePtr mPipeline = nullptr;
     RenderDevicePtr mRenderDevice = nullptr;

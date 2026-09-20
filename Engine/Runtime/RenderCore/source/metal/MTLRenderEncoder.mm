@@ -6,8 +6,6 @@
 //
 
 #include "MTLRenderEncoder.h"
-#include "MTLVertexBuffer.h"
-#include "MTLIndexBuffer.h"
 #include "MTLUniformBuffer.h"
 #include "MTLTextureSampler.h"
 #include "MTLGraphicsPipeline.h"
@@ -106,20 +104,12 @@ void MTLRenderEncoder::SetFillMode(FillMode fillMode)
 }
 
 /**
- 
+ 设置顶点缓冲区
+
  @param buffer buffer对象
+ @param offset 偏移量
  @param index 绑定的索引
  */
-void MTLRenderEncoder::SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index)
-{
-    if (buffer == nullptr)
-    {
-        return;
-    }
-    id<MTLBuffer> mtlBuffer = std::dynamic_pointer_cast<MTLVertexBuffer>(buffer)->getMTLBuffer();
-    [mRenderEncoder setVertexBuffer:mtlBuffer offset:offset atIndex:index];
-}
-
 void MTLRenderEncoder::SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index)
 {
     if (buffer == nullptr)
@@ -499,26 +489,30 @@ void MTLRenderEncoder::DrawInstancePrimitives(PrimitiveMode mode, int offset, in
  @param buffer buffer description
  @param offset offset description
  */
-void MTLRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, int baseVertex)
+void MTLRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, RCBufferPtr buffer, int offset,
+                                             int baseVertex, IndexType indexType)
 {
     if (!buffer)
     {
         return;
     }
     
-    MTLIndexBufferPtr mtlBufferPtr = std::dynamic_pointer_cast<MTLIndexBuffer>(buffer);
+    MTLRCBufferPtr mtlBufferPtr = std::dynamic_pointer_cast<MTLRCBuffer>(buffer);
+    if (!mtlBufferPtr)
+    {
+        return;
+    }
     
-    id<MTLBuffer> mtlBuffer = mtlBufferPtr->getMTLBuffer();
+    id<MTLBuffer> mtlBuffer = mtlBufferPtr->GetMTLBuffer();
     if (!mtlBuffer)
     {
         return;
     }
     
-    IndexType type = mtlBufferPtr->getIndexType();
-    MTLIndexType mtlIndexType = (MTLIndexType)type;
+    MTLIndexType mtlIndexType = (MTLIndexType)indexType;
     
     int byteOffset = offset * sizeof(uint16_t);
-    if (type == IndexType_UInt)
+    if (indexType == IndexType_UInt)
     {
         byteOffset = offset * sizeof(uint32_t);
     }
@@ -529,27 +523,31 @@ void MTLRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, Index
                                                       instanceCount : 1 baseVertex : baseVertex baseInstance : 0];
 }
 
-void MTLRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
-                                           uint32_t firstInstance, uint32_t instanceCount)
+void MTLRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, RCBufferPtr buffer, int offset,
+                                           uint32_t firstInstance, uint32_t instanceCount,
+                                           IndexType indexType)
 {
     if (!buffer)
     {
         return;
     }
     
-    MTLIndexBufferPtr mtlBufferPtr = std::dynamic_pointer_cast<MTLIndexBuffer>(buffer);
+    MTLRCBufferPtr mtlBufferPtr = std::dynamic_pointer_cast<MTLRCBuffer>(buffer);
+    if (!mtlBufferPtr)
+    {
+        return;
+    }
     
-    id<MTLBuffer> mtlBuffer = mtlBufferPtr->getMTLBuffer();
+    id<MTLBuffer> mtlBuffer = mtlBufferPtr->GetMTLBuffer();
     if (!mtlBuffer)
     {
         return;
     }
     
-    IndexType type = mtlBufferPtr->getIndexType();
-    MTLIndexType mtlIndexType = (MTLIndexType)type;
+    MTLIndexType mtlIndexType = (MTLIndexType)indexType;
     
     int byteOffset = offset * sizeof(uint16_t);
-    if (type == IndexType_UInt)
+    if (indexType == IndexType_UInt)
     {
         byteOffset = offset * sizeof(uint32_t);
     }
@@ -589,22 +587,22 @@ void MTLRenderEncoder::DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr bu
     }
 }
 
-void MTLRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+void MTLRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr indexBuffer,
     int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
-    uint32_t drawCount, uint32_t stride)
+    uint32_t drawCount, uint32_t stride, IndexType indexType)
 {
     if (!indexBuffer || !indirectBuffer)
     {
         return;
     }
 
-    MTLIndexBufferPtr mtlIndexBufferPtr = std::dynamic_pointer_cast<MTLIndexBuffer>(indexBuffer);
+    MTLRCBufferPtr mtlIndexBufferPtr = std::dynamic_pointer_cast<MTLRCBuffer>(indexBuffer);
     if (!mtlIndexBufferPtr)
     {
         return;
     }
 
-    id<MTLBuffer> mtlIdxBuffer = mtlIndexBufferPtr->getMTLBuffer();
+    id<MTLBuffer> mtlIdxBuffer = mtlIndexBufferPtr->GetMTLBuffer();
     if (!mtlIdxBuffer)
     {
         return;
@@ -622,11 +620,10 @@ void MTLRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBu
         return;
     }
 
-    IndexType type = mtlIndexBufferPtr->getIndexType();
-    MTLIndexType mtlIndexType = (MTLIndexType)type;
+    MTLIndexType mtlIndexType = (MTLIndexType)indexType;
 
     int byteOffset = indexBufferOffset * sizeof(uint16_t);
-    if (type == IndexType_UInt)
+    if (indexType == IndexType_UInt)
     {
         byteOffset = indexBufferOffset * sizeof(uint32_t);
     }
@@ -644,23 +641,23 @@ void MTLRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBu
     }
 }
 
-void MTLRenderEncoder::DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+void MTLRenderEncoder::DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, RCBufferPtr indexBuffer,
     int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
     RCBufferPtr countBuffer, uint32_t countBufferOffset,
-    uint32_t maxDrawCount, uint32_t stride)
+    uint32_t maxDrawCount, uint32_t stride, IndexType indexType)
 {
     if (!indexBuffer || !indirectBuffer || !countBuffer)
     {
         return;
     }
 
-    MTLIndexBufferPtr mtlIndexBufferPtr = std::dynamic_pointer_cast<MTLIndexBuffer>(indexBuffer);
+    MTLRCBufferPtr mtlIndexBufferPtr = std::dynamic_pointer_cast<MTLRCBuffer>(indexBuffer);
     if (!mtlIndexBufferPtr)
     {
         return;
     }
 
-    id<MTLBuffer> mtlIdxBuffer = mtlIndexBufferPtr->getMTLBuffer();
+    id<MTLBuffer> mtlIdxBuffer = mtlIndexBufferPtr->GetMTLBuffer();
     if (!mtlIdxBuffer)
     {
         return;
@@ -690,11 +687,10 @@ void MTLRenderEncoder::DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, In
         return;
     }
 
-    IndexType type = mtlIndexBufferPtr->getIndexType();
-    MTLIndexType mtlIndexType = (MTLIndexType)type;
+    MTLIndexType mtlIndexType = (MTLIndexType)indexType;
 
     int byteOffset = indexBufferOffset * sizeof(uint16_t);
-    if (type == IndexType_UInt)
+    if (indexType == IndexType_UInt)
     {
         byteOffset = indexBufferOffset * sizeof(uint32_t);
     }

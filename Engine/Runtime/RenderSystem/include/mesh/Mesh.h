@@ -136,12 +136,12 @@ public:
     // Also updates the first SubMeshInfo's indexCount.
     void UpdateIndices(const uint32_t* data, size_t count);
 
-    VertexBufferPtr GetVertexBuffer() const
+    RCBufferPtr GetVertexBuffer() const
     {
         return mVertexBuffer;
     }
     
-    IndexBufferPtr GetIndexBuffer() const
+    RCBufferPtr GetIndexBuffer() const
     {
         return mIndexBuffer;
     }
@@ -157,8 +157,8 @@ private:
     
     std::vector<SubMeshInfo> mSubMeshInfos; 
     
-    VertexBufferPtr mVertexBuffer = nullptr;
-    IndexBufferPtr mIndexBuffer = nullptr;
+    RCBufferPtr mVertexBuffer = nullptr;
+    RCBufferPtr mIndexBuffer = nullptr;
     TextureSamplerPtr mTextureSampler = nullptr;
 };
 

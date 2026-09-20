@@ -395,40 +395,9 @@ void DX12RCBuffer::Unmap() const
     }
 }
 
-// ============================================================================
-// VertexBuffer
-// ============================================================================
-
-DX12VertexBuffer::DX12VertexBuffer(const DX12ContextPtr& context, uint32_t size, StorageMode mode)
+DXGI_FORMAT DX12RCBuffer::ToDXGIIndexFormat(IndexType indexType)
 {
-    RCBufferDesc desc(size, RCBufferUsage::VertexBuffer, mode);
-    CreateBufferInternal(context, desc, nullptr);
-}
-
-DX12VertexBuffer::DX12VertexBuffer(const DX12ContextPtr& context, const void* buffer, uint32_t size,
-                                   StorageMode mode)
-{
-    RCBufferDesc desc(size, RCBufferUsage::VertexBuffer, mode);
-    CreateBufferInternal(context, desc, buffer);
-}
-
-// ============================================================================
-// IndexBuffer
-// ============================================================================
-
-DX12IndexBuffer::DX12IndexBuffer(const DX12ContextPtr& context, IndexType indexType,
-                                 const void* data, uint32_t dataLen)
-    : IndexBuffer(indexType, data, dataLen)
-    , mIndexType(indexType)
-{
-    // 注意：IndexBuffer 的 dataLen 语义与 Vulkan 后端保持一致（字节数）
-    RCBufferDesc desc(dataLen, RCBufferUsage::IndexBuffer, StorageModePrivate);
-    CreateBufferInternal(context, desc, data);
-}
-
-DXGI_FORMAT DX12IndexBuffer::GetDXGIIndexFormat() const
-{
-    return (mIndexType == IndexType_UInt) ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT;
+    return (indexType == IndexType_UInt) ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT;
 }
 
 // ============================================================================

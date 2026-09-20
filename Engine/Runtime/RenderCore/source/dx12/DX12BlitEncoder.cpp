@@ -75,31 +75,6 @@ void DX12BlitEncoder::EndEncode()
 // Buffer 到 Buffer
 // ============================================================================
 
-void DX12BlitEncoder::CopyBufferToBuffer(VertexBufferPtr source, uint64_t sourceOffset,
-                                         VertexBufferPtr destination, uint64_t destinationOffset,
-                                         uint64_t size)
-{
-    auto src = std::dynamic_pointer_cast<DX12VertexBuffer>(source);
-    auto dst = std::dynamic_pointer_cast<DX12VertexBuffer>(destination);
-    if (!src || !dst || !mCommandList)
-    {
-        return;
-    }
-    mCommandList->CopyBufferRegion(dst->GetResource(), destinationOffset,
-                                   src->GetResource(), sourceOffset, size);
-}
-
-void DX12BlitEncoder::FillBuffer(VertexBufferPtr destination, uint64_t destinationOffset,
-                                 const void* data, uint64_t dataSize)
-{
-    auto dst = std::dynamic_pointer_cast<DX12VertexBuffer>(destination);
-    if (!dst)
-    {
-        return;
-    }
-    DoStagingFill(dst->GetResource(), destinationOffset, data, dataSize);
-}
-
 void DX12BlitEncoder::CopyBuffer(RCBufferPtr source, uint64_t sourceOffset,
                                  RCBufferPtr destination, uint64_t destinationOffset,
                                  uint64_t size)
@@ -137,6 +112,31 @@ void DX12BlitEncoder::CopyBuffer(RCBufferPtr source, uint64_t sourceOffset,
 
     mCommandList->CopyBufferRegion(dst->GetResource(), destinationOffset,
                                    src->GetResource(), sourceOffset, size);
+}
+
+void DX12BlitEncoder::FillBuffer(RCBufferPtr destination, uint64_t destinationOffset,
+                                 const void* data, uint64_t dataSize)
+{
+    auto dst = std::dynamic_pointer_cast<DX12RCBuffer>(destination);
+    if (!dst || !dst->IsValid() || !data || dataSize == 0 ||
+        destinationOffset > dst->GetSizeInBytes() ||
+        dataSize > (uint64_t)dst->GetSizeInBytes() - destinationOffset)
+    {
+        LOG_ERROR("[DX12] FillBuffer: invalid destination range or data");
+        return;
+    }
+
+    RCBufferDesc stagingDesc((uint32_t)dataSize, RCBufferUsage::TransferSrc, StorageModeShared);
+    auto staging = std::make_shared<DX12RCBuffer>(mCommandBuffer->GetContext(), stagingDesc, data);
+    if (!staging->IsValid())
+    {
+        LOG_ERROR("[DX12] FillBuffer: failed to create upload buffer");
+        return;
+    }
+
+    // CopyBufferRegion 只记录资源引用，不持有资源；由命令缓冲保活到帧槽位安全复用。
+    mCommandBuffer->RetainTransientBuffer(staging);
+    CopyBuffer(staging, 0, destination, destinationOffset, dataSize);
 }
 
 // ============================================================================
@@ -225,24 +225,6 @@ void DX12BlitEncoder::CopyBufferToTexture(RCBufferPtr source, uint64_t sourceOff
                       destinationSlice, destinationMipLevel, destinationOffset, destinationSize);
 }
 
-void DX12BlitEncoder::CopyBufferToTexture(VertexBufferPtr source, uint64_t sourceOffset,
-                                          uint64_t sourceBytesPerRow, uint64_t sourceBytesPerImage,
-                                          RCTexturePtr destination, uint32_t destinationSlice,
-                                          uint32_t destinationMipLevel,
-                                          const mathutil::Vector2i& destinationOffset,
-                                          const mathutil::Vector2i& destinationSize)
-{
-    (void)sourceBytesPerImage;
-    auto src = std::dynamic_pointer_cast<DX12VertexBuffer>(source);
-    auto dst = std::dynamic_pointer_cast<DX12TextureBase>(destination);
-    if (!src || !dst)
-    {
-        return;
-    }
-    DoBufferToTexture(src->GetResource(), sourceOffset, sourceBytesPerRow, dst.get(),
-                      destinationSlice, destinationMipLevel, destinationOffset, destinationSize);
-}
-
 void DX12BlitEncoder::DoTextureToBuffer(DX12TextureBase* source, uint32_t slice, uint32_t mip,
                                         const mathutil::Vector2i& offset,
                                         const mathutil::Vector2i& size,
@@ -317,25 +299,6 @@ void DX12BlitEncoder::CopyTextureToBuffer(RCTexturePtr source, uint32_t sourceSl
     (void)destinationBytesPerImage;
     auto src = std::dynamic_pointer_cast<DX12TextureBase>(source);
     auto dst = std::dynamic_pointer_cast<DX12RCBuffer>(destination);
-    if (!src || !dst)
-    {
-        return;
-    }
-    DoTextureToBuffer(src.get(), sourceSlice, sourceMipLevel, sourceOffset, sourceSize,
-                      dst->GetResource(), destinationOffset, destinationBytesPerRow);
-}
-
-void DX12BlitEncoder::CopyTextureToBuffer(RCTexturePtr source, uint32_t sourceSlice,
-                                          uint32_t sourceMipLevel,
-                                          const mathutil::Vector2i& sourceOffset,
-                                          const mathutil::Vector2i& sourceSize,
-                                          VertexBufferPtr destination, uint64_t destinationOffset,
-                                          uint64_t destinationBytesPerRow,
-                                          uint64_t destinationBytesPerImage)
-{
-    (void)destinationBytesPerImage;
-    auto src = std::dynamic_pointer_cast<DX12TextureBase>(source);
-    auto dst = std::dynamic_pointer_cast<DX12VertexBuffer>(destination);
     if (!src || !dst)
     {
         return;
@@ -443,53 +406,6 @@ void DX12BlitEncoder::GenerateMipmapsForRange(RCTexturePtr texture, uint32_t sli
     (void)baseMipLevel;
     (void)levelCount;
     GenerateMipmaps(texture, slice);
-}
-
-void DX12BlitEncoder::DoStagingFill(ID3D12Resource* destination, uint64_t offset,
-                                    const void* data, uint64_t size)
-{
-    if (destination == nullptr || data == nullptr || size == 0 || mContext == nullptr)
-    {
-        return;
-    }
-
-    // 通过一次性命令列表 + UPLOAD 暂存完成（这些调用都在资产加载/初始化阶段）
-    D3D12MA::Allocation* stagingAllocation = nullptr;
-    ComPtr<ID3D12Resource> staging;
-    const D3D12_RESOURCE_DESC stagingDesc = DX12BufferResourceDesc(size, D3D12_RESOURCE_FLAG_NONE);
-
-    const HRESULT hr = mContext->CreateResource(stagingDesc, D3D12_HEAP_TYPE_UPLOAD,
-                                               D3D12_RESOURCE_STATE_GENERIC_READ,
-                                               &stagingAllocation, IID_PPV_ARGS(&staging),
-                                               nullptr, nullptr);
-    if (FAILED(hr) || !staging)
-    {
-        LOG_ERROR("[DX12] FillBuffer: 创建暂存缓冲失败: %s", DX12HResultToString(hr));
-        return;
-    }
-
-    void* mapped = nullptr;
-    const D3D12_RANGE readRange = DX12ReadRange(0, 0);
-    if (SUCCEEDED(staging->Map(0, &readRange, &mapped)) && mapped != nullptr)
-    {
-        memcpy(mapped, data, size);
-        const D3D12_RANGE writtenRange = DX12ReadRange(0, size);
-        staging->Unmap(0, &writtenRange);
-    }
-
-    // 用当前命令列表立即拷贝（在记录期完成，无需单独提交）
-    if (mCommandList != nullptr)
-    {
-        const D3D12_RESOURCE_BARRIER toDest =
-            DX12TransitionBarrier(destination, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
-        mCommandList->ResourceBarrier(1, &toDest);
-        mCommandList->CopyBufferRegion(destination, offset, staging.Get(), 0, size);
-        const D3D12_RESOURCE_BARRIER fromDest =
-            DX12TransitionBarrier(destination, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_COMMON);
-        mCommandList->ResourceBarrier(1, &fromDest);
-    }
-
-    mContext->ReleaseAllocation(stagingAllocation);
 }
 
 NAMESPACE_RENDERCORE_END

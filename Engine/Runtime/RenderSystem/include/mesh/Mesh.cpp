@@ -93,13 +93,13 @@ void Mesh::SetUpBuffer()
     {
         return;
     }
-    mVertexBuffer = GetRenderDevice()->CreateVertexBufferWithBytes(mVertexData.GetDataPtr(),
+    mVertexBuffer = GetRenderDevice()->CreateVertexBuffer(mVertexData.GetDataPtr(),
             (uint32_t)mVertexData.GetDataSize(), StorageModePrivate);
 
     if (!mIndices.empty())
     {
-        mIndexBuffer = GetRenderDevice()->CreateIndexBufferWithBytes(mIndices.data(),
-                (uint32_t)mIndices.size() * sizeof(uint32_t), IndexType_UInt);
+        mIndexBuffer = GetRenderDevice()->CreateIndexBuffer(mIndices.data(),
+                (uint32_t)mIndices.size() * sizeof(uint32_t));
     }
     //mIndiceCount = (uint32_t)mIndices.size();
 
@@ -120,10 +120,9 @@ void Mesh::UpdateIndices(const uint32_t* data, size_t count)
 
     // Recreate GPU index buffer (old buffer is released via shared_ptr,
     // VulkanGarbageCollector handles deferred destruction)
-    mIndexBuffer = GetRenderDevice()->CreateIndexBufferWithBytes(
+    mIndexBuffer = GetRenderDevice()->CreateIndexBuffer(
         mIndices.data(),
-        (uint32_t)mIndices.size() * sizeof(uint32_t),
-        IndexType_UInt);
+        (uint32_t)mIndices.size() * sizeof(uint32_t));
 }
 
 NS_RENDERSYSTEM_END

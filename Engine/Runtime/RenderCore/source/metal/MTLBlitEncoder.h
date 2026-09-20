@@ -10,7 +10,6 @@
 
 #include "MTLRenderDefine.h"
 #include "BlitEncoder.h"
-#include "MTLVertexBuffer.h"
 #include "MTLRCBuffer.h"
 #include "MTLTextureBase.h"
 #include "Runtime/MathUtil/include/Vector2.h"
@@ -38,68 +37,36 @@ public:
     
     // ==================== Buffer操作 ====================
     
-    virtual void CopyBufferToBuffer(VertexBufferPtr source,
-                                   uint64_t sourceOffset,
-                                   VertexBufferPtr destination,
-                                   uint64_t destinationOffset,
-                                   uint64_t size) override;
-    
-    virtual void FillBuffer(VertexBufferPtr destination,
-                          uint64_t destinationOffset,
-                          const void* data,
-                          uint64_t dataSize) override;
-    
-    // ==================== RCBuffer操作（新接口） ====================
-    
     virtual void CopyBuffer(RCBufferPtr source,
                            uint64_t sourceOffset,
                            RCBufferPtr destination,
                            uint64_t destinationOffset,
                            uint64_t size) override;
+
+    virtual void FillBuffer(RCBufferPtr destination,
+                            uint64_t destinationOffset,
+                            const void* data,
+                            uint64_t dataSize) override;
     
     virtual void CopyTextureToBuffer(RCTexturePtr source,
-                                    uint32_t sourceSlice,
-                                    uint32_t sourceMipLevel,
-                                    const mathutil::Vector2i& sourceOffset,
-                                    const mathutil::Vector2i& sourceSize,
-                                    RCBufferPtr destination,
-                                    uint64_t destinationOffset,
-                                    uint64_t destinationBytesPerRow,
-                                    uint64_t destinationBytesPerImage = 0) override;
+                                   uint32_t sourceSlice,
+                                   uint32_t sourceMipLevel,
+                                   const mathutil::Vector2i& sourceOffset,
+                                   const mathutil::Vector2i& sourceSize,
+                                   RCBufferPtr destination,
+                                   uint64_t destinationOffset,
+                                   uint64_t destinationBytesPerRow,
+                                   uint64_t destinationBytesPerImage = 0) override;
     
     virtual void CopyBufferToTexture(RCBufferPtr source,
-                                    uint64_t sourceOffset,
-                                    uint64_t sourceBytesPerRow,
-                                    uint64_t sourceBytesPerImage,
-                                    RCTexturePtr destination,
-                                    uint32_t destinationSlice,
-                                    uint32_t destinationMipLevel,
-                                    const mathutil::Vector2i& destinationOffset,
-                                    const mathutil::Vector2i& destinationSize) override;
-    
-    // ==================== Texture到Buffer操作 ====================
-    
-    virtual void CopyTextureToBuffer(RCTexturePtr source,
-                                    uint32_t sourceSlice,
-                                    uint32_t sourceMipLevel,
-                                    const mathutil::Vector2i& sourceOffset,
-                                    const mathutil::Vector2i& sourceSize,
-                                    VertexBufferPtr destination,
-                                    uint64_t destinationOffset,
-                                    uint64_t destinationBytesPerRow,
-                                    uint64_t destinationBytesPerImage = 0) override;
-    
-    // ==================== Buffer到Texture操作 ====================
-    
-    virtual void CopyBufferToTexture(VertexBufferPtr source,
-                                    uint64_t sourceOffset,
-                                    uint64_t sourceBytesPerRow,
-                                    uint64_t sourceBytesPerImage,
-                                    RCTexturePtr destination,
-                                    uint32_t destinationSlice,
-                                    uint32_t destinationMipLevel,
-                                    const mathutil::Vector2i& destinationOffset,
-                                    const mathutil::Vector2i& destinationSize) override;
+                                   uint64_t sourceOffset,
+                                   uint64_t sourceBytesPerRow,
+                                   uint64_t sourceBytesPerImage,
+                                   RCTexturePtr destination,
+                                   uint32_t destinationSlice,
+                                   uint32_t destinationMipLevel,
+                                   const mathutil::Vector2i& destinationOffset,
+                                   const mathutil::Vector2i& destinationSize) override;
     
     // ==================== Texture到Texture操作 ====================
     
@@ -133,14 +100,9 @@ private:
     id<MTLCommandBuffer> mCommandBuffer = nil;
     
     /**
-     * @brief 辅助函数：获取MTLBuffer (from VertexBuffer)
+     * @brief 辅助函数：获取MTLBuffer
      */
-    id<MTLBuffer> GetMTLBuffer(VertexBufferPtr buffer) const;
-    
-    /**
-     * @brief 辅助函数：获取MTLBuffer (from RCBuffer)
-     */
-    id<MTLBuffer> GetMTLBufferFromRC(RCBufferPtr buffer) const;
+    id<MTLBuffer> GetMTLBuffer(RCBufferPtr buffer) const;
     
     /**
      * @brief 辅助函数：获取MTLTexture

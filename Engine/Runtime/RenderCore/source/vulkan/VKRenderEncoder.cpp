@@ -6,8 +6,6 @@
 //
 
 #include "VKRenderEncoder.h"
-#include "VKVertexBuffer.h"
-#include "VKIndexBuffer.h"
 #include "VKUniformBuffer.h"
 #include "VKTextureSampler.h"
 #include "VKGraphicsPipeline.h"
@@ -20,6 +18,31 @@
 #include "VKTextureBase.h"
 
 NAMESPACE_RENDERCORE_BEGIN
+
+/**
+ * @brief 绑定 RCBuffer 形式的索引缓冲区
+ *
+ * offsetInIndices 以“索引个数”为单位；vkCmdBindIndexBuffer 的 offset 必须是字节偏移。
+ * 首索引（firstIndex）仍由 vkCmdDrawIndexed 提供，这里只负责绑定基址。
+ * indexType 由绘制调用给出（与 Vulkan 原生 API 一致，索引宽度不是资源属性）。
+ */
+static void BindIndexBufferFromRC(VkCommandBuffer commandBuffer, const RCBufferPtr& buffer,
+                                  int offsetInIndices, IndexType indexType)
+{
+    VKRCBufferPtr vkIndexBuffer = std::dynamic_pointer_cast<VKRCBuffer>(buffer);
+    if (!vkIndexBuffer || !vkIndexBuffer->IsValid())
+    {
+        return;
+    }
+
+    const uint32_t indexSize = (indexType == IndexType_UInt) ? (uint32_t)sizeof(uint32_t)
+                                                             : (uint32_t)sizeof(uint16_t);
+    const VkIndexType vkIndexType = (indexType == IndexType_UInt) ? VK_INDEX_TYPE_UINT32
+                                                                  : VK_INDEX_TYPE_UINT16;
+
+    vkCmdBindIndexBuffer(commandBuffer, vkIndexBuffer->GetVkBuffer(),
+                         (VkDeviceSize)offsetInIndices * indexSize, vkIndexType);
+}
 
 static VkImageLayout ResolvePostRenderLayout(const VKTextureBasePtr& texture, bool isPresentStage)
 {
@@ -830,20 +853,6 @@ void VKRenderEncoder::SetFillMode(FillMode fillMode)
     }
 }
 
-void VKRenderEncoder::SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index)
-{
-    if (!buffer)
-    {
-        return;
-    }
-    
-    VKVertexBuffer* vkBuffer = (VKVertexBuffer*)buffer.get();
-    VkBuffer innerBuffer = vkBuffer->GetGpuBuffer();
-    VkDeviceSize deviceOffset = offset;
-    
-    BindDynamicVertexBuffer(static_cast<uint32_t>(index), innerBuffer, deviceOffset);
-}
-
 void VKRenderEncoder::SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index)
 {
     if (!buffer)
@@ -1202,27 +1211,17 @@ void VKRenderEncoder::DrawInstancePrimitives(PrimitiveMode mode, int offset, int
 	vkCmdDraw(mCommandBuffer, size, instanceCount, offset, firstInstance);
 }
 
-void VKRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, int baseVertex)
+void VKRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, RCBufferPtr buffer, int offset,
+                                           int baseVertex, IndexType indexType)
 {
-    VKIndexBuffer *indexBuffer = (VKIndexBuffer*)buffer.get();
-    if (!indexBuffer)
+    if (!buffer)
     {
         return;
     }
-    
-    // vkCmdBindIndexBuffer 的 offset is the starting offset in bytes within buffer used in index buffer address calculations.
-    
-    IndexType type = indexBuffer->getIndexType();
-    
-    int byteOffset = offset * sizeof(uint16_t);
-    VkIndexType indexType = VK_INDEX_TYPE_UINT16;
-    if (type == IndexType_UInt)
-    {
-        byteOffset = offset * sizeof(uint32_t);
-        indexType = VK_INDEX_TYPE_UINT32;
-    }
-    
-    vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer->GetBuffer(), 0, indexType);
+
+    // 首索引由 draw 调用给出，这里只绑定索引缓冲区基址
+    BindIndexBufferFromRC(mCommandBuffer, buffer, 0, indexType);
+
     if (mContext->vulkanExtension.enableExtendedDynamicState)
     {
         SetDynamicPrimitiveTopology(ConvertToVulkanPrimitiveTopology(mode));
@@ -1232,41 +1231,31 @@ void VKRenderEncoder::DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexB
         //mGraphicsPipieline->SetPrimitiveType(ConvertToVulkanPrimitiveTopology(mode));
     }
     //BindPipeline();
-    
+
     vkCmdDrawIndexed(mCommandBuffer, size, 1, offset, baseVertex, 0);
 }
 
-void VKRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, uint32_t firstInstance, uint32_t instanceCount)
+void VKRenderEncoder::DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, RCBufferPtr buffer, int offset,
+                                                   uint32_t firstInstance, uint32_t instanceCount,
+                                                   IndexType indexType)
 {
-	VKIndexBuffer* indexBuffer = (VKIndexBuffer*)buffer.get();
-	if (!indexBuffer)
-	{
-		return;
-	}
+    if (!buffer)
+    {
+        return;
+    }
 
-	// vkCmdBindIndexBuffer 的 offset is the starting offset in bytes within buffer used in index buffer address calculations.
+    BindIndexBufferFromRC(mCommandBuffer, buffer, 0, indexType);
 
-	IndexType type = indexBuffer->getIndexType();
+    if (mContext->vulkanExtension.enableExtendedDynamicState)
+    {
+        SetDynamicPrimitiveTopology(ConvertToVulkanPrimitiveTopology(mode));
+    }
+    else
+    {
+        //mGraphicsPipieline->SetPrimitiveType(ConvertToVulkanPrimitiveTopology(mode));
+    }
 
-	int byteOffset = offset * sizeof(uint16_t);
-	VkIndexType indexType = VK_INDEX_TYPE_UINT16;
-	if (type == IndexType_UInt)
-	{
-		byteOffset = offset * sizeof(uint32_t);
-		indexType = VK_INDEX_TYPE_UINT32;
-	}
-
-	vkCmdBindIndexBuffer(mCommandBuffer, indexBuffer->GetBuffer(), 0, indexType);
-	if (mContext->vulkanExtension.enableExtendedDynamicState)
-	{
-		SetDynamicPrimitiveTopology(ConvertToVulkanPrimitiveTopology(mode));
-	}
-	else
-	{
-		//mGraphicsPipieline->SetPrimitiveType(ConvertToVulkanPrimitiveTopology(mode));
-	}
-
-	vkCmdDrawIndexed(mCommandBuffer, size, instanceCount, offset, 0, firstInstance);
+    vkCmdDrawIndexed(mCommandBuffer, size, instanceCount, offset, 0, firstInstance);
 }
 
 // RCBuffer版本的间接绘制
@@ -1286,22 +1275,12 @@ void VKRenderEncoder::DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buf
     vkCmdDrawIndirect(mCommandBuffer, vkBuffer->GetVkBuffer(), offset, drawCount, stride);
 }
 
-void VKRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+void VKRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr indexBuffer,
     int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
-    uint32_t drawCount, uint32_t stride)
+    uint32_t drawCount, uint32_t stride, IndexType indexType)
 {
     // Vulkan: index buffer 通过 vkCmdBindIndexBuffer 绑定
-    if (indexBuffer)
-    {
-        VKIndexBufferPtr vkIndexBuffer = std::dynamic_pointer_cast<VKIndexBuffer>(indexBuffer);
-        if (vkIndexBuffer && vkIndexBuffer->GetBuffer())
-        {
-            IndexType type = vkIndexBuffer->getIndexType();
-            VkIndexType vkIndexType = (type == IndexType_UInt) ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
-            int byteOffset = indexBufferOffset * ((type == IndexType_UInt) ? sizeof(uint32_t) : sizeof(uint16_t));
-            vkCmdBindIndexBuffer(mCommandBuffer, vkIndexBuffer->GetBuffer(), byteOffset, vkIndexType);
-        }
-    }
+    BindIndexBufferFromRC(mCommandBuffer, indexBuffer, indexBufferOffset, indexType);
 
     VKRCBufferPtr vkBuffer = std::dynamic_pointer_cast<VKRCBuffer>(indirectBuffer);
     if (!vkBuffer || !vkBuffer->GetVkBuffer())
@@ -1330,27 +1309,17 @@ void VKRenderEncoder::DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBuf
     }
 }
 
-void VKRenderEncoder::DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+void VKRenderEncoder::DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, RCBufferPtr indexBuffer,
     int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
     RCBufferPtr countBuffer, uint32_t countBufferOffset,
-    uint32_t maxDrawCount, uint32_t stride)
+    uint32_t maxDrawCount, uint32_t stride, IndexType indexType)
 {
 #ifdef ENABLE_NSIGHT_AFTERMATH
     Aftermath_SetCheckpoint(mCommandBuffer, "DrawIndexedPrimitivesIndirectCount");
 #endif
 
     // 绑定 index buffer
-    if (indexBuffer)
-    {
-        VKIndexBufferPtr vkIndexBuffer = std::dynamic_pointer_cast<VKIndexBuffer>(indexBuffer);
-        if (vkIndexBuffer && vkIndexBuffer->GetBuffer())
-        {
-            IndexType type = vkIndexBuffer->getIndexType();
-            VkIndexType vkIndexType = (type == IndexType_UInt) ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
-            int byteOffset = indexBufferOffset * ((type == IndexType_UInt) ? sizeof(uint32_t) : sizeof(uint16_t));
-            vkCmdBindIndexBuffer(mCommandBuffer, vkIndexBuffer->GetBuffer(), byteOffset, vkIndexType);
-        }
-    }
+    BindIndexBufferFromRC(mCommandBuffer, indexBuffer, indexBufferOffset, indexType);
 
     VKRCBufferPtr vkIndirectBuf = std::dynamic_pointer_cast<VKRCBuffer>(indirectBuffer);
     VKRCBufferPtr vkCountBuf = std::dynamic_pointer_cast<VKRCBuffer>(countBuffer);

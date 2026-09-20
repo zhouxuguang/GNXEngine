@@ -613,18 +613,8 @@ void GeoMipTerrain::GenerateLODIndexTemplates()
 
     // Create the static GPU index buffer (never changes after this)
     mMesh->SetIndices(masterIndices.data(), (uint32_t)masterIndices.size());
-    auto indexBuffer = GetRenderDevice()->CreateIndexBufferWithBytes(
-        masterIndices.data(),
-        (uint32_t)masterIndices.size() * sizeof(uint32_t),
-        IndexType_UInt);
 
-    // Replace the index buffer created by SetUpBuffer with our master buffer
-    // We access the mesh's private member through the setter pattern
-    // Since Mesh doesn't have SetIndexBuffer, we use the fact that
-    // UpdateIndices creates a new index buffer from mIndices.
-    // But we already called SetIndices + SetUpBuffer, so we need to
-    // recreate the index buffer with the master data.
-    // The simplest approach: use UpdateIndices to create the GPU buffer.
+    // UpdateIndices 会从 mIndices 重建 GPU 索引缓冲区（索引数据之后不再变化）
     mMesh->UpdateIndices(masterIndices.data(), masterIndices.size());
 
     LOG_INFO("GeoMipTerrain: Master index buffer created, %u total indices", (uint32_t)masterIndices.size());

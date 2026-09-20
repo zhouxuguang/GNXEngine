@@ -29,16 +29,11 @@ public:
     ~DX12BlitEncoder() override;
 
     // ---- Buffer 操作 ----
-    void CopyBufferToBuffer(VertexBufferPtr source, uint64_t sourceOffset,
-                            VertexBufferPtr destination, uint64_t destinationOffset,
-                            uint64_t size) override;
-    void FillBuffer(VertexBufferPtr destination, uint64_t destinationOffset,
-                    const void* data, uint64_t dataSize) override;
-
-    // ---- RCBuffer 操作 ----
     void CopyBuffer(RCBufferPtr source, uint64_t sourceOffset,
                     RCBufferPtr destination, uint64_t destinationOffset,
                     uint64_t size) override;
+    void FillBuffer(RCBufferPtr destination, uint64_t destinationOffset,
+                    const void* data, uint64_t dataSize) override;
     void CopyTextureToBuffer(RCTexturePtr source, uint32_t sourceSlice, uint32_t sourceMipLevel,
                              const mathutil::Vector2i& sourceOffset,
                              const mathutil::Vector2i& sourceSize,
@@ -46,20 +41,6 @@ public:
                              uint64_t destinationBytesPerRow,
                              uint64_t destinationBytesPerImage) override;
     void CopyBufferToTexture(RCBufferPtr source, uint64_t sourceOffset,
-                             uint64_t sourceBytesPerRow, uint64_t sourceBytesPerImage,
-                             RCTexturePtr destination, uint32_t destinationSlice,
-                             uint32_t destinationMipLevel,
-                             const mathutil::Vector2i& destinationOffset,
-                             const mathutil::Vector2i& destinationSize) override;
-
-    // ---- VertexBuffer 版本 ----
-    void CopyTextureToBuffer(RCTexturePtr source, uint32_t sourceSlice, uint32_t sourceMipLevel,
-                             const mathutil::Vector2i& sourceOffset,
-                             const mathutil::Vector2i& sourceSize,
-                             VertexBufferPtr destination, uint64_t destinationOffset,
-                             uint64_t destinationBytesPerRow,
-                             uint64_t destinationBytesPerImage) override;
-    void CopyBufferToTexture(VertexBufferPtr source, uint64_t sourceOffset,
                              uint64_t sourceBytesPerRow, uint64_t sourceBytesPerImage,
                              RCTexturePtr destination, uint32_t destinationSlice,
                              uint32_t destinationMipLevel,
@@ -94,9 +75,6 @@ private:
                            const mathutil::Vector2i& offset, const mathutil::Vector2i& size,
                            ID3D12Resource* destination, uint64_t destinationOffset,
                            uint64_t destinationBytesPerRow);
-
-    /// 通过外部上传缓冲做 buffer→buffer / 清零（一次性命令列表）
-    void DoStagingFill(ID3D12Resource* destination, uint64_t offset, const void* data, uint64_t size);
 
     DX12CommandBufferPtr mCommandBuffer;
     ComPtr<ID3D12GraphicsCommandList> mCommandList;

@@ -478,23 +478,6 @@ CommandBufferPtr DX12RenderDevice::CreateCommandBuffer()
 // 资源创建
 // ============================================================================
 
-VertexBufferPtr DX12RenderDevice::CreateVertexBufferWithLength(uint32_t size) const
-{
-    return std::make_shared<DX12VertexBuffer>(mContext, size, StorageModePrivate);
-}
-
-VertexBufferPtr DX12RenderDevice::CreateVertexBufferWithBytes(const void* buffer, uint32_t size,
-                                                             StorageMode mode) const
-{
-    return std::make_shared<DX12VertexBuffer>(mContext, buffer, size, mode);
-}
-
-IndexBufferPtr DX12RenderDevice::CreateIndexBufferWithBytes(const void* buffer, uint32_t size,
-                                                           IndexType indexType) const
-{
-    return std::make_shared<DX12IndexBuffer>(mContext, indexType, buffer, size);
-}
-
 RCBufferPtr DX12RenderDevice::CreateBuffer(const RCBufferDesc& desc) const
 {
     return std::make_shared<DX12RCBuffer>(mContext, desc);

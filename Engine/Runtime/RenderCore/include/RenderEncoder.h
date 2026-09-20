@@ -10,9 +10,7 @@
 
 #include "RenderDefine.h"
 #include "GraphicsPipeline.h"
-#include "VertexBuffer.h"
 #include "UniformBuffer.h"
-#include "IndexBuffer.h"
 #include "TextureSampler.h"
 #include "RCTexture.h"
 #include "RCBuffer.h"
@@ -40,18 +38,8 @@ public:
     virtual void SetFillMode(FillMode fillMode) = 0;
     
     /**
-     Description
-     
-     @param buffer buffer对象
-     @param index 绑定的索引
-     */
-    virtual void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index) = 0;
-    
-    // ==================== RCBuffer接口 ====================
-    
-    /**
-     * @brief 设置RCBuffer作为顶点缓冲区
-     * @param buffer RCBuffer指针（需要包含VertexBuffer用途）
+     * @brief 设置顶点缓冲区
+     * @param buffer RCBuffer指针（需要包含 VertexBuffer 用途）
      * @param offset 偏移量
      * @param index 绑定索引
      */
@@ -85,10 +73,12 @@ public:
      * @param indirectBufferOffset indirectBuffer偏移
      * @param drawCount 绘制次数
      * @param stride 步长
+     * @param indexType 索引类型（16/32 位）
      */
-    virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+    virtual void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr indexBuffer,
             int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
-		    uint32_t drawCount, uint32_t stride) = 0;
+		    uint32_t drawCount, uint32_t stride,
+            IndexType indexType) = 0;
 
     /**
      * @brief 索引间接绘制（drawCount 由 GPU buffer 提供）
@@ -108,11 +98,13 @@ public:
      * @param countBufferOffset countBuffer 偏移（字节）
      * @param maxDrawCount      drawCount 上限（indirectBuffer 中的最大条目数）
      * @param stride            每个间接绘制命令的步长（字节）
+     * @param indexType         索引类型（16/32 位）
      */
-    virtual void DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+    virtual void DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, RCBufferPtr indexBuffer,
             int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
             RCBufferPtr countBuffer, uint32_t countBufferOffset,
-            uint32_t maxDrawCount, uint32_t stride) = 0;
+            uint32_t maxDrawCount, uint32_t stride,
+            IndexType indexType) = 0;
 
     // ==================== UniformBuffer接口 ====================
     
@@ -216,10 +208,12 @@ public:
      @param mode mode description
      @param size size description
      @param buffer buffer description
-     @param offset offset description
+     @param offset 索引的偏移（索引个数，非字节数）
      @param baseVertex 顶点偏移量，默认为0
+     @param indexType 索引类型（16/32 位）
      */
-    virtual void DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, int baseVertex = 0) = 0;
+    virtual void DrawIndexedPrimitives(PrimitiveMode mode, int size, RCBufferPtr buffer, int offset,
+        int baseVertex, IndexType indexType) = 0;
 
     /**
      draw function with index instance
@@ -230,9 +224,11 @@ public:
      @param offset 索引的偏移
      @param firstInstance 第一个实例的索引
      @param instanceCount 实例的个数
+     @param indexType 索引类型（16/32 位）
      */
-    virtual void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, 
-        uint32_t firstInstance, uint32_t instanceCount) = 0;
+    virtual void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, RCBufferPtr buffer, int offset, 
+        uint32_t firstInstance, uint32_t instanceCount,
+        IndexType indexType) = 0;
 
     /**
      * @brief 设置片源的纹理和采样器

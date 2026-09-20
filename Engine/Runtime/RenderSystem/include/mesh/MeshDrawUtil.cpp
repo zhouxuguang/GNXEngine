@@ -52,8 +52,8 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
     assert(renderEncoder);
     
     const ChannelInfo* channels = mesh.GetVertexData().GetChannels();
-    VertexBufferPtr vertexBuffer = mesh.GetVertexBuffer();
-    IndexBufferPtr indexBuffer = mesh.GetIndexBuffer();
+    RCBufferPtr vertexBuffer = mesh.GetVertexBuffer();
+    RCBufferPtr indexBuffer = mesh.GetIndexBuffer();
     
     for (int n = 0; n < mesh.GetSubMeshCount(); n ++)
     {
@@ -91,7 +91,7 @@ void MeshDrawUtil::DrawMesh(const Mesh& mesh, const RenderInfo& renderInfo)
         
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
         
-        renderEncoder->DrawIndexedPrimitives(PrimitiveMode_TRIANGLES, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
+        renderEncoder->DrawIndexedPrimitives(PrimitiveMode_TRIANGLES, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex, IndexType_UInt);
         
     }
 }
@@ -110,8 +110,8 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
     assert(renderEncoder);
     
     const ChannelInfo* channels = mesh.GetVertexData().GetChannels();
-    VertexBufferPtr vertexBuffer = mesh.GetVertexBuffer();
-    IndexBufferPtr indexBuffer = mesh.GetIndexBuffer();
+    RCBufferPtr vertexBuffer = mesh.GetVertexBuffer();
+    RCBufferPtr indexBuffer = mesh.GetIndexBuffer();
     
     for (int n = 0; n < mesh.GetSubMeshCount(); n ++)
     {
@@ -164,7 +164,7 @@ void MeshDrawUtil::DrawSkinnedMesh(const SkinnedMesh& mesh, const RenderInfo& re
         
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
         
-        renderEncoder->DrawIndexedPrimitives(PrimitiveMode_TRIANGLES, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
+        renderEncoder->DrawIndexedPrimitives(PrimitiveMode_TRIANGLES, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex, IndexType_UInt);
         
     }
 }
@@ -180,8 +180,8 @@ void MeshDrawUtil::DrawMeshDepthOnly(const Mesh& mesh, const RenderInfo& renderI
     assert(depthPSO);
     
     const ChannelInfo* channels = mesh.GetVertexData().GetChannels();
-    VertexBufferPtr vertexBuffer = mesh.GetVertexBuffer();
-    IndexBufferPtr indexBuffer = mesh.GetIndexBuffer();
+    RCBufferPtr vertexBuffer = mesh.GetVertexBuffer();
+    RCBufferPtr indexBuffer = mesh.GetIndexBuffer();
     
     // 检查是否有位置数据
     if (!mesh.HasChannel(kShaderChannelPosition))
@@ -207,7 +207,7 @@ void MeshDrawUtil::DrawMeshDepthOnly(const Mesh& mesh, const RenderInfo& renderI
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
         
         // 绘制
-        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
+        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex, IndexType_UInt);
     }
 }
 
@@ -218,8 +218,8 @@ void MeshDrawUtil::DrawSkinnedMeshDepthOnly(const SkinnedMesh& mesh, const Rende
     assert(depthPSO);
     
     const ChannelInfo* channels = mesh.GetVertexData().GetChannels();
-    VertexBufferPtr vertexBuffer = mesh.GetVertexBuffer();
-    IndexBufferPtr indexBuffer = mesh.GetIndexBuffer();
+    RCBufferPtr vertexBuffer = mesh.GetVertexBuffer();
+    RCBufferPtr indexBuffer = mesh.GetIndexBuffer();
     
     // 检查是否有必要的数据
     if (!mesh.HasChannel(kShaderChannelPosition))
@@ -261,7 +261,7 @@ void MeshDrawUtil::DrawSkinnedMeshDepthOnly(const SkinnedMesh& mesh, const Rende
         
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
         
-        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
+        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex, IndexType_UInt);
     }
 }
 
@@ -272,8 +272,8 @@ void MeshDrawUtil::DrawMeshFeedback(const Mesh& mesh, const RenderInfo& renderIn
     assert(feedbackPSO);
 
     const ChannelInfo* channels = mesh.GetVertexData().GetChannels();
-    VertexBufferPtr vertexBuffer = mesh.GetVertexBuffer();
-    IndexBufferPtr indexBuffer = mesh.GetIndexBuffer();
+    RCBufferPtr vertexBuffer = mesh.GetVertexBuffer();
+    RCBufferPtr indexBuffer = mesh.GetIndexBuffer();
 
     if (!mesh.HasChannel(kShaderChannelPosition) || !mesh.HasChannel(kShaderChannelTexCoord0))
     {
@@ -300,7 +300,7 @@ void MeshDrawUtil::DrawMeshFeedback(const Mesh& mesh, const RenderInfo& renderIn
         renderEncoder->SetVertexBuffer(vertexBuffer, channels[kShaderChannelTexCoord0].offset, 1);
 
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
-        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
+        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex, IndexType_UInt);
     }
 }
 
@@ -311,8 +311,8 @@ void MeshDrawUtil::DrawSkinnedMeshFeedback(const SkinnedMesh& mesh, const Render
     assert(feedbackPSO);
 
     const ChannelInfo* channels = mesh.GetVertexData().GetChannels();
-    VertexBufferPtr vertexBuffer = mesh.GetVertexBuffer();
-    IndexBufferPtr indexBuffer = mesh.GetIndexBuffer();
+    RCBufferPtr vertexBuffer = mesh.GetVertexBuffer();
+    RCBufferPtr indexBuffer = mesh.GetIndexBuffer();
 
     if (!mesh.HasChannel(kShaderChannelPosition) || !mesh.HasChannel(kShaderChannelTexCoord0))
     {
@@ -353,7 +353,7 @@ void MeshDrawUtil::DrawSkinnedMeshFeedback(const SkinnedMesh& mesh, const Render
         }
 
         const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
-        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
+        renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex, IndexType_UInt);
     }
 }
 
@@ -364,8 +364,8 @@ void MeshDrawUtil::DrawMeshBasePass(const Mesh& mesh, const RenderInfo& renderIn
 	assert(basePassPSO);
 
 	const ChannelInfo* channels = mesh.GetVertexData().GetChannels();
-	VertexBufferPtr vertexBuffer = mesh.GetVertexBuffer();
-	IndexBufferPtr indexBuffer = mesh.GetIndexBuffer();
+	RCBufferPtr vertexBuffer = mesh.GetVertexBuffer();
+	RCBufferPtr indexBuffer = mesh.GetIndexBuffer();
 
 	// 检查是否有位置数据
 	if (!mesh.HasChannel(kShaderChannelPosition))
@@ -444,7 +444,7 @@ void MeshDrawUtil::DrawMeshBasePass(const Mesh& mesh, const RenderInfo& renderIn
 		const SubMeshInfo& subInfo = mesh.GetSubMeshInfo(n);
 
 		// 绘制
-		renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex);
+		renderEncoder->DrawIndexedPrimitives(subInfo.topology, (int)subInfo.indexCount, indexBuffer, subInfo.firstIndex, subInfo.baseVertex, IndexType_UInt);
 	}
 }
 

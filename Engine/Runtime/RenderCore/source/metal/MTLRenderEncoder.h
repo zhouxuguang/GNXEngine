@@ -35,14 +35,12 @@ public:
     void SetFillMode(FillMode fillMode) override;
     
     /**
-     Description
+     设置顶点缓冲区
      
      @param buffer buffer对象
+     @param offset 偏移量
      @param index 绑定的索引
      */
-    void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index) override;
-    
-    // RCBuffer接口
     void SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index) override;
     
     void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer, ShaderStage stage) override;
@@ -50,14 +48,14 @@ public:
     void DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
         uint32_t drawCount, uint32_t stride) override;
 
-    void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+    void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr indexBuffer,
         int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
-        uint32_t drawCount, uint32_t stride) override;
+        uint32_t drawCount, uint32_t stride, IndexType indexType) override;
 
-    void DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+    void DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, RCBufferPtr indexBuffer,
         int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
         RCBufferPtr countBuffer, uint32_t countBufferOffset,
-        uint32_t maxDrawCount, uint32_t stride) override;
+        uint32_t maxDrawCount, uint32_t stride, IndexType indexType) override;
     
     /**
      设置uniformbuffer的索引
@@ -144,7 +142,8 @@ public:
      @param buffer buffer description
      @param offset offset description
      */
-    void DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, int baseVertex = 0) override;
+    void DrawIndexedPrimitives(PrimitiveMode mode, int size, RCBufferPtr buffer, int offset,
+                               int baseVertex, IndexType indexType) override;
     
     /**
      draw function with index instance
@@ -156,8 +155,9 @@ public:
      @param offset firstInstance 第一个实例的索引
      @param offset instanceCount 实例的个数
      */
-    void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
-                                               uint32_t firstInstance, uint32_t instanceCount) override;
+    void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, RCBufferPtr buffer, int offset,
+                                              uint32_t firstInstance, uint32_t instanceCount,
+                                              IndexType indexType) override;
     
     void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler) override;
     void SetVertexTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler) override;

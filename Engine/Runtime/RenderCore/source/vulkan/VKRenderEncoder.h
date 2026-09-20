@@ -37,9 +37,6 @@ public:
     
     void SetFillMode(FillMode fillMode) override;
     
-    void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index) override;
-    
-    // RCBuffer接口
     void SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index) override;
     
     void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer, ShaderStage stage) override;
@@ -47,14 +44,14 @@ public:
     void DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
         uint32_t drawCount, uint32_t stride) override;
 
-    void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+    void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr indexBuffer,
         int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
-        uint32_t drawCount, uint32_t stride) override;
+        uint32_t drawCount, uint32_t stride, IndexType indexType) override;
 
-    void DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+    void DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, RCBufferPtr indexBuffer,
         int indexBufferOffset, RCBufferPtr indirectBuffer, uint32_t indirectBufferOffset,
         RCBufferPtr countBuffer, uint32_t countBufferOffset,
-        uint32_t maxDrawCount, uint32_t stride) override;
+        uint32_t maxDrawCount, uint32_t stride, IndexType indexType) override;
     
     void SetVertexUniformBuffer(UniformBufferPtr buffer, int index) override;
     
@@ -78,10 +75,12 @@ public:
 
     void DrawInstancePrimitives(PrimitiveMode mode, int offset, int size, uint32_t firstInstance, uint32_t instanceCount) override;
     
-    void DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset, int baseVertex = 0) override;
+    void DrawIndexedPrimitives(PrimitiveMode mode, int size, RCBufferPtr buffer, int offset,
+        int baseVertex, IndexType indexType) override;
 
-    void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer, int offset,
-        uint32_t firstInstance, uint32_t instanceCount) override;
+    void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, RCBufferPtr buffer, int offset,
+        uint32_t firstInstance, uint32_t instanceCount,
+        IndexType indexType) override;
     
     void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler) override;
     void SetVertexTextureAndSampler(const std::string& resourceName, RCTexturePtr texture, TextureSamplerPtr sampler) override;

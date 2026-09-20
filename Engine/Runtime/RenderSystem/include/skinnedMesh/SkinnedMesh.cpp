@@ -182,10 +182,13 @@ void SkinnedMesh::CPUSkin(Skeleton& skeleton, AnimationPose& pose)
         skinnedNormal[i] = Vector3f(transformedNormal.x, transformedNormal.y, transformedNormal.z);
     }
     
-    // 更新gpu buffer
-    void *data = mVertexBuffer->MapBufferData();
-    memcpy(data, mSkinnedVertexData.GetDataPtr(), mSkinnedVertexData.GetDataSize());
-    mVertexBuffer->UnmapBufferData(data);
+    // 更新gpu buffer（顶点缓冲以 StorageModeShared 创建，Map() 才有效）
+    void* data = mVertexBuffer ? mVertexBuffer->Map() : nullptr;
+    if (data)
+    {
+        memcpy(data, mSkinnedVertexData.GetDataPtr(), mSkinnedVertexData.GetDataSize());
+        mVertexBuffer->Unmap();
+    }
 }
 
 struct SkinnedMatrix
@@ -218,11 +221,11 @@ void SkinnedMesh::AddSubMeshInfo(const SubMeshInfo& subMeshInfo)
 
 void SkinnedMesh::SetUpBuffer()
 {
-    mVertexBuffer = GetRenderDevice()->CreateVertexBufferWithBytes(mVertexData.GetDataPtr(),
+    mVertexBuffer = GetRenderDevice()->CreateVertexBuffer(mVertexData.GetDataPtr(),
             (uint32_t)mVertexData.GetDataSize(), StorageModeShared);
     
-    mIndexBuffer = GetRenderDevice()->CreateIndexBufferWithBytes(mIndices.data(),
-            (uint32_t)mIndices.size() * sizeof(uint32_t), IndexType_UInt);
+    mIndexBuffer = GetRenderDevice()->CreateIndexBuffer(mIndices.data(),
+            (uint32_t)mIndices.size() * sizeof(uint32_t));
     
     SamplerDesc samplerDescriptor;
     samplerDescriptor.filterMip = MIN_LINEAR_MIPMAP_LINEAR;

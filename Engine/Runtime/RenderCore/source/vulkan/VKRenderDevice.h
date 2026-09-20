@@ -42,12 +42,6 @@ public:
         return RenderDeviceType::VULKAN;
     }
     
-    VertexBufferPtr CreateVertexBufferWithLength(uint32_t size) const override;
-    
-    VertexBufferPtr CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const override;
-    
-    IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const override;
-    
     // 统一Buffer接口
     virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc) const override;
     virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc, const void* data) const override;

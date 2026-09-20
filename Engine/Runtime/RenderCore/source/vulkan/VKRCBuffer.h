@@ -19,6 +19,12 @@ NAMESPACE_RENDERCORE_BEGIN
  * 
  * Maps RCBufferUsage to appropriate VkBufferUsageFlags.
  * Uses VMA for memory management.
+ *
+ * 内存策略（与旧的 VertexBuffer / IndexBuffer 实现保持一致，便于承载大网格数据）：
+ *   - StorageModePrivate：优先 DEVICE_LOCAL；分配失败时回退到 host-visible，
+ *     保证大索引/顶点缓冲区不会因为显存不足而创建失败。
+ *   - 初始数据上传：host-visible 路径直接 memcpy；DEVICE_LOCAL 路径经 staging buffer，
+ *     若 staging 也分配失败则按 64MB 分块上传。
  */
 class VKRCBuffer : public RCBuffer
 {
@@ -48,6 +54,9 @@ public:
     
 private:
     void CreateBuffer(const RCBufferDesc& desc, const void* data);
+    
+    /// DEVICE_LOCAL 路径下的初始数据上传（staging / 分块 fallback）
+    bool UploadToDeviceLocal(const void* data);
     
     VkBufferUsageFlags ConvertToVkBufferUsage(RCBufferUsage usage) const;
     

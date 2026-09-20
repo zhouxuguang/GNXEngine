@@ -9,8 +9,6 @@
 #define GNX_ENGINE_RENDER_DEVICE_INCLUSDGG
 
 #include "RenderDefine.h"
-#include "IndexBuffer.h"
-#include "VertexBuffer.h"
 #include "UniformBuffer.h"
 #include "GraphicsPipeline.h"
 #include "RenderDeviceFeatures.h"
@@ -62,35 +60,7 @@ public:
     
     virtual RenderDeviceType GetRenderDeviceType() const = 0;
     
-    /**
-     以指定长度创建buffer
-     
-     @param size 申请buffer长度，单位（byte）
-     @return 成功申请buffer句柄，失败返回0；
-     */
-    virtual VertexBufferPtr CreateVertexBufferWithLength(uint32_t size) const = 0;
-    
-    /**
-     以指定buffer和长度以内存拷贝方式创建顶点buffer
-     
-     @param buffer 指定buffer内容
-     @param size buffer长度
-     @param mode 申请Buffer类型
-     @return 成功申请buffer句柄，失败返回0；
-     */
-    virtual VertexBufferPtr CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const = 0;
-    
-    /**
-     以指定buffer和长度以内存拷贝方式创建索引buffer
-     
-     @param buffer 指定buffer内容
-     @param size buffer长度
-     @param indexType 索引类型
-     @return 成功申请buffer句柄，失败返回0；
-     */
-    virtual IndexBufferPtr CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const = 0;
-    
-    // ==================== 新的统一Buffer接口 ====================
+    // ==================== 统一Buffer接口 ====================
     
     /**
      * @brief 创建统一Buffer
@@ -108,6 +78,40 @@ public:
      * @return RCBufferPtr Buffer指针
      */
     virtual RCBufferPtr CreateBuffer(const RCBufferDesc& desc, const void* data) const = 0;
+    
+    /**
+     以内存拷贝方式创建顶点buffer（内部即 RCBuffer，用途为 VertexBuffer）
+     
+     @param buffer 指定buffer内容
+     @param size buffer长度（byte）
+     @param mode 申请Buffer类型
+     @return 成功返回buffer句柄，失败返回nullptr
+     */
+    RCBufferPtr CreateVertexBuffer(const void* buffer, uint32_t size,
+                                   StorageMode mode = StorageModePrivate) const;
+    
+    /**
+     创建未初始化的顶点buffer（内部即 RCBuffer，用途为 VertexBuffer）
+     
+     @param size 申请buffer长度（byte）
+     @param mode 申请Buffer类型
+     @return 成功返回buffer句柄，失败返回nullptr
+     */
+    RCBufferPtr CreateVertexBuffer(uint32_t size,
+                                   StorageMode mode = StorageModePrivate) const;
+    
+    /**
+     以内存拷贝方式创建索引buffer（内部即 RCBuffer，用途为 IndexBuffer）
+     
+     索引宽度（IndexType）不属于资源属性，由 DrawIndexed* 在绑定时给出。
+     
+     @param buffer 指定buffer内容
+     @param size buffer长度（byte）
+     @param mode 申请Buffer类型
+     @return 成功返回buffer句柄，失败返回nullptr
+     */
+    RCBufferPtr CreateIndexBuffer(const void* buffer, uint32_t size,
+                                  StorageMode mode = StorageModePrivate) const;
     
     /**
      根据采样描述创建纹理采样器

@@ -34,9 +34,24 @@ RenderDevice::RenderDevice() {}
 
 RenderDevice::~RenderDevice() {}
 
-VertexBuffer::VertexBuffer(){}
+RCBufferPtr RenderDevice::CreateVertexBuffer(const void* buffer, uint32_t size, StorageMode mode) const
+{
+    RCBufferDesc desc(size, RCBufferUsage::VertexBuffer, mode);
+    return CreateBuffer(desc, buffer);
+}
 
-VertexBuffer::~VertexBuffer(){}
+RCBufferPtr RenderDevice::CreateVertexBuffer(uint32_t size, StorageMode mode) const
+{
+    RCBufferDesc desc(size, RCBufferUsage::VertexBuffer, mode);
+    return CreateBuffer(desc);
+}
+
+RCBufferPtr RenderDevice::CreateIndexBuffer(const void* buffer, uint32_t size,
+                                            StorageMode mode) const
+{
+    RCBufferDesc desc(size, RCBufferUsage::IndexBuffer, mode);
+    return CreateBuffer(desc, buffer);
+}
 
 ShaderFunction::ShaderFunction(){}
 
@@ -45,10 +60,6 @@ ShaderFunction::~ShaderFunction(){}
 TextureSampler::TextureSampler(const SamplerDesc& des){}
 
 TextureSampler::~TextureSampler(){}
-
-IndexBuffer::IndexBuffer(IndexType indexType, const void* pData, uint32_t dataLen){}
-
-IndexBuffer::~IndexBuffer(){}
 
 GraphicsPipeline::GraphicsPipeline(const GraphicsPipelineDesc& des) : mDesc(des) {}
 

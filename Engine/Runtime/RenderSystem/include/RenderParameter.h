@@ -2,7 +2,6 @@
 #define GNXENGINE_RENDER_PARAMETER_H
 
 #include "RSDefine.h"
-#include "Runtime/RenderCore/include/VertexBuffer.h"
 #include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/MathUtil/include/SimdMath.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"

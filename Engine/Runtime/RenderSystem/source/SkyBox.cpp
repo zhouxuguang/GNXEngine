@@ -281,7 +281,7 @@ void SkyBox::initBuffers(RenderDevicePtr renderDevice)
         -1.0f, -1.0f,  1.0f,
          1.0f, -1.0f,  1.0f
     };
-    mVertexBuffer = renderDevice->CreateVertexBufferWithBytes(skyboxVertices, sizeof(skyboxVertices), StorageModePrivate);
+    mVertexBuffer = renderDevice->CreateVertexBuffer(skyboxVertices, sizeof(skyboxVertices), StorageModePrivate);
 }
 
 NS_RENDERSYSTEM_END

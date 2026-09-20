@@ -108,7 +108,7 @@ public:
 
     // GPU 驱动渲染的模板网格
     RenderCore::RCBufferPtr GetTemplateVB() const { return mTemplateVB; }
-    RenderCore::IndexBufferPtr GetTemplateIB() const { return mTemplateIB; }
+    RenderCore::RCBufferPtr GetTemplateIB() const { return mTemplateIB; }
     uint32_t GetTemplatePositionSize() const { return mTemplatePositionSize; }
 
 private:
@@ -243,7 +243,7 @@ private:
 
     // GPU 驱动渲染的模板网格（17x17 = 289 顶点, 1536 索引）
     RenderCore::RCBufferPtr  mTemplateVB;            // 顶点缓冲区（SoA: 位置 + 纹理坐标）
-    RenderCore::IndexBufferPtr mTemplateIB;          // 索引缓冲区
+    RenderCore::RCBufferPtr mTemplateIB;          // 索引缓冲区
     uint32_t mTemplatePositionSize = 0;              // 模板 VB 中纹理坐标数据的字节偏移
 
     // 间接绘制命令（每帧由 BuildIndirectCommands 构建）

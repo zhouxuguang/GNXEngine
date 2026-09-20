@@ -13,8 +13,6 @@
 #include "AftermathCrashTracker.h"
 #endif
 #include "VKTextureSampler.h"
-#include "VKVertexBuffer.h"
-#include "VKIndexBuffer.h"
 #include "VulkanCommandBuffer.h"
 #include "VKComputePipeline.h"
 #include "VKUniformBuffer.h"
@@ -433,21 +431,6 @@ void VKRenderDevice::OnWindowMinimized()
     {
         vkDeviceWaitIdle(mVulkanContext->device);
     }
-}
-
-VertexBufferPtr VKRenderDevice::CreateVertexBufferWithLength(uint32_t size) const
-{
-    return std::make_shared<VKVertexBuffer>(mVulkanContext, size, StorageModePrivate);
-}
-
-VertexBufferPtr VKRenderDevice::CreateVertexBufferWithBytes(const void* buffer, uint32_t size, StorageMode mode) const
-{
-    return std::make_shared<VKVertexBuffer>(mVulkanContext, buffer, size, mode);
-}
-
-IndexBufferPtr VKRenderDevice::CreateIndexBufferWithBytes(const void* buffer, uint32_t size, IndexType indexType) const
-{
-    return std::make_shared<VKIndexBuffer>(mVulkanContext, indexType, buffer, size);
 }
 
 RCBufferPtr VKRenderDevice::CreateBuffer(const RCBufferDesc& desc) const

@@ -2,7 +2,7 @@
 //  DX12Buffer.h
 //  rendercore
 //
-//  D3D12 缓冲区实现（RCBuffer / VertexBuffer / IndexBuffer / UniformBuffer）。
+//  D3D12 缓冲区实现（RCBuffer / UniformBuffer）。
 //
 //  ── StorageModeShared 的语义映射（D3D12 与 Vulkan/Metal 差异最大的地方）──
 //  引擎用 StorageModeShared 同时表达两类需求：
@@ -22,8 +22,6 @@
 #include "DX12RenderDefine.h"
 #include "DX12Context.h"
 #include "RCBuffer.h"
-#include "VertexBuffer.h"
-#include "IndexBuffer.h"
 #include "UniformBuffer.h"
 
 NAMESPACE_RENDERCORE_BEGIN
@@ -127,45 +125,12 @@ public:
 
     /// 该缓冲区是否需要以 UAV 形式绑定
     bool SupportsUAV() const;
+
+    /// 索引宽度 → DXGI 索引格式（索引宽度由绘制调用给出，不是资源属性）
+    static DXGI_FORMAT ToDXGIIndexFormat(IndexType indexType);
 };
 
 using DX12RCBufferPtr = std::shared_ptr<DX12RCBuffer>;
-
-// ============================================================================
-// VertexBuffer（旧接口，内部持有 RCBuffer）
-// ============================================================================
-class DX12VertexBuffer : public VertexBuffer, public DX12BufferBase
-{
-public:
-    explicit DX12VertexBuffer(const DX12ContextPtr& context, uint32_t size, StorageMode mode);
-    DX12VertexBuffer(const DX12ContextPtr& context, const void* buffer, uint32_t size, StorageMode mode);
-    ~DX12VertexBuffer() override = default;
-
-    uint32_t GetBufferLength() const override { return mSize; }
-    void* MapBufferData() const override { return GetCpuPointer(); }
-    void UnmapBufferData(void* bufferData) const override { (void)bufferData; }
-    bool IsValid() const override { return IsResourceValid(); }
-    void SetName(const char* name) override { SetDebugName(name); }
-};
-
-// ============================================================================
-// IndexBuffer
-// ============================================================================
-class DX12IndexBuffer : public IndexBuffer, public DX12BufferBase
-{
-public:
-    DX12IndexBuffer(const DX12ContextPtr& context, IndexType indexType,
-                    const void* data, uint32_t dataLen);
-    ~DX12IndexBuffer() override = default;
-
-    IndexType GetIndexType() const { return mIndexType; }
-    DXGI_FORMAT GetDXGIIndexFormat() const;
-
-private:
-    IndexType mIndexType = IndexType_UShort;
-};
-
-using DX12IndexBufferPtr = std::shared_ptr<DX12IndexBuffer>;
 
 // ============================================================================
 // UniformBuffer

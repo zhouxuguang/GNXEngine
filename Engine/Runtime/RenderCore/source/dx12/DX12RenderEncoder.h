@@ -64,22 +64,23 @@ public:
     void SetGraphicsPipeline(GraphicsPipelinePtr graphicsPipeline) override;
     void SetFillMode(FillMode fillMode) override;
 
-    void SetVertexBuffer(VertexBufferPtr buffer, uint32_t offset, int index) override;
     void SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int index) override;
 
     void SetStorageBuffer(const std::string& resourceName, RCBufferPtr buffer, ShaderStage stage) override;
 
     void DrawPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr buffer, uint32_t offset,
                                 uint32_t drawCount, uint32_t stride) override;
-    void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+    void DrawIndexedPrimitivesIndirect(PrimitiveMode mode, RCBufferPtr indexBuffer,
                                        int indexBufferOffset, RCBufferPtr indirectBuffer,
                                        uint32_t indirectBufferOffset,
-                                       uint32_t drawCount, uint32_t stride) override;
-    void DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, IndexBufferPtr indexBuffer,
+                                       uint32_t drawCount, uint32_t stride,
+                                       IndexType indexType) override;
+    void DrawIndexedPrimitivesIndirectCount(PrimitiveMode mode, RCBufferPtr indexBuffer,
                                             int indexBufferOffset, RCBufferPtr indirectBuffer,
                                             uint32_t indirectBufferOffset,
                                             RCBufferPtr countBuffer, uint32_t countBufferOffset,
-                                            uint32_t maxDrawCount, uint32_t stride) override;
+                                            uint32_t maxDrawCount, uint32_t stride,
+                                            IndexType indexType) override;
 
     void SetVertexUniformBuffer(UniformBufferPtr buffer, int index) override;
     void SetFragmentUniformBuffer(UniformBufferPtr buffer, int index) override;
@@ -94,11 +95,13 @@ public:
     void DrawPrimitives(PrimitiveMode mode, int offset, int size) override;
     void DrawInstancePrimitives(PrimitiveMode mode, int offset, int size,
                                 uint32_t firstInstance, uint32_t instanceCount) override;
-    void DrawIndexedPrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer,
-                               int offset, int baseVertex) override;
-    void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, IndexBufferPtr buffer,
+    void DrawIndexedPrimitives(PrimitiveMode mode, int size, RCBufferPtr buffer,
+                               int offset, int baseVertex,
+                               IndexType indexType) override;
+    void DrawIndexedInstancePrimitives(PrimitiveMode mode, int size, RCBufferPtr buffer,
                                        int offset, uint32_t firstInstance,
-                                       uint32_t instanceCount) override;
+                                       uint32_t instanceCount,
+                                       IndexType indexType) override;
 
     void SetFragmentTextureAndSampler(const std::string& resourceName, RCTexturePtr texture,
                                       TextureSamplerPtr sampler) override;
@@ -201,7 +204,7 @@ private:
                         bool isRawBuffer, uint32_t structuredStride, uint32_t stageGroup = 0);
     void WriteSampler(uint32_t registerIndex, TextureSamplerPtr sampler, uint32_t stageGroup = 0);
 
-    void BindIndexBuffer(IndexBufferPtr buffer, int indexOffset);
+    void BindIndexBuffer(RCBufferPtr buffer, int indexOffset, IndexType indexType);
     void ApplyTopology(PrimitiveMode mode);
 
     /// Draw / Dispatch 前统一提交描述符表绑定
