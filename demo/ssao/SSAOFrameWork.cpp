@@ -11,9 +11,61 @@
 #include "Runtime/RenderSystem/include/ImageTextureUtil.h"
 #include "Runtime/RenderSystem/include/Transform.h"
 #include "Runtime/RenderSystem/include/TextureSlot.h"
+#include "Runtime/RenderSystem/include/Material.h"
 #include "Runtime/MathUtil/include/MathUtil.h"
 #include "Runtime/ImageCodec/include/VImage.h"
 #include "Runtime/ImageCodec/include/ImageDecoder.h"
+#include "Runtime/AssetManager/include/AssetFileHeader.h"
+#include "Runtime/AssetManager/include/MeshMessageUtil.h"
+#include "Runtime/BaseLib/include/FileUtil.h"
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace
+{
+// 加载引擎自有网格资产（.meshasset：AssetFileHeader + MeshMessage pb），与 pbr / vt demo 一致。
+RenderSystem::MeshPtr LoadMeshAsset(const std::string& filePath)
+{
+    std::vector<uint8_t> fileData;
+#if GNX_OS_IOS || GNX_OS_ANDROID
+    if (!AssetManager::AssetManager::LoadResource(filePath, fileData))
+    {
+        LOG_ERROR("LoadMeshAsset: cannot load %s", filePath.c_str());
+        return nullptr;
+    }
+#else
+    fileData = baselib::FileUtil::ReadBinaryFile(filePath);
+    if (fileData.empty())
+    {
+        LOG_ERROR("LoadMeshAsset: cannot read %s", filePath.c_str());
+        return nullptr;
+    }
+#endif
+
+    const size_t kHeaderSize = sizeof(AssetManager::AssetFileHeader);
+    if (fileData.size() <= kHeaderSize)
+    {
+        LOG_ERROR("LoadMeshAsset: file too small: %s", filePath.c_str());
+        return nullptr;
+    }
+
+    RenderSystem::MeshPtr mesh = std::make_shared<RenderSystem::Mesh>();
+    if (!AssetManager::MeshMessageUtil::DecodeMeshMessage(fileData.data() + kHeaderSize,
+                                                          (uint32_t)(fileData.size() - kHeaderSize),
+                                                          mesh.get()))
+    {
+        LOG_ERROR("LoadMeshAsset: pb decode failed: %s", filePath.c_str());
+        return nullptr;
+    }
+
+    // 创建 GPU 顶点/索引缓冲（渲染所需）
+    mesh->SetUpBuffer();
+    LOG_INFO("Loaded mesh asset: %s (%u verts, %zu indices, %u submesh)",
+             filePath.c_str(), mesh->GetVertexCount(), mesh->GetIndices().size(), mesh->GetSubMeshCount());
+    return mesh;
+}
+} // namespace
 
 RenderSystem::MeshPtr CreatePlaneMesh(float xsize, float zsize, int xdivs, int zdivs, float smax, float tmax)
 {
@@ -169,8 +221,8 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
     pointLight->setFalloffStart(100.0);
     pointLight->setFalloffEnd(300.0);
     
-    // dragon
-    std::string strDragonFile = GetProjectAssetDir() + "ssao/dragon.obj";
+    // dragon（.meshasset，重新生成：pbr_asset_baker mesh data_asset/ssao/dragon.obj <out>）
+    std::string strDragonFile = GetProjectAssetDir() + "ssao/dragon.meshasset";
 
 	Matrix4x4f translateMatrix = Matrix4x4f::CreateTranslate(0, 0.282958, 0);
 	Matrix4x4f scaleMatrix = Matrix4x4f::CreateScale(2.0f, 2.0f, 2.0f);
@@ -180,12 +232,34 @@ void SSAOFrameWork::Resize(uint32_t width, uint32_t height)
 	RenderSystem::Transform transform;
 	transform.TransformFromMat4(modelMatrix);
 
-    RenderSystem::SceneNode* dragonNode = sceneManager->GetRootNode()->CreateRendererNode("marry", strDragonFile, 
-        transform.position, transform.rotation, transform.scale);
-    RenderSystem::MeshRenderer * meshRender = dragonNode->QueryComponentT<RenderSystem::MeshRenderer>();
-    const std::vector<RenderSystem::MaterialPtr> materials = meshRender->GetMaterials();
-    RenderCore::RCTexturePtr dragonBaseColor = RenderSystem::ImageTextureUtil::CreateDiffuseTexture(0.9f, 0.5f, 0.2f);
-    materials[0]->SetTexture("diffuseTexture", dragonBaseColor);
+    RenderSystem::MeshPtr dragonMesh = LoadMeshAsset(strDragonFile);
+    if (!dragonMesh)
+    {
+        LOG_ERROR("Failed to load dragon mesh asset: %s", strDragonFile.c_str());
+    }
+    else
+    {
+        RenderSystem::SceneNode* dragonNode = sceneManager->GetRootNode()->CreateChildSceneNode("marry",
+            transform.position, transform.rotation, transform.scale);
+
+        RenderSystem::MeshRenderer* meshRender = dragonNode->AddComponent<RenderSystem::MeshRenderer>();
+        meshRender->SetSharedMesh(dragonMesh);
+
+        // 材质：dragon.obj 无 mtl，按原先 MeshAssimpImpoter 生成的默认 "PBR" 材质数值重建。
+        RenderSystem::MaterialPtr dragonMaterial = RenderSystem::Material::CreateMaterial("PBR");
+        if (dragonMaterial)
+        {
+            RenderCore::RCTexturePtr dragonBaseColor = RenderSystem::ImageTextureUtil::CreateDiffuseTexture(0.9f, 0.5f, 0.2f);
+            dragonMaterial->SetTexture("diffuseTexture", dragonBaseColor);
+            dragonMaterial->SetTexture("normalTexture", RenderSystem::ImageTextureUtil::CreateNormalTexture());
+            // 不能用 CreateMetalRoughTexture()（G=128 → roughness=0.5，龙会变光泽金属）；
+            // (0,255,255,255) 才是导入器默认值（roughness=1，哑光）。
+            dragonMaterial->SetTexture("roughnessTexture", RenderSystem::ImageTextureUtil::CreateDiffuseTexture(0.0f, 1.0f, 1.0f));
+            dragonMaterial->SetTexture("ambientTexture", RenderSystem::ImageTextureUtil::CreateAOTexture());
+            dragonMaterial->SetTexture("emissiveTexture", RenderSystem::ImageTextureUtil::CreateEmmisveTexture());
+            meshRender->AddMaterial(dragonMaterial);
+        }
+    }
 
     RenderCore::SamplerDesc sampDesc = RenderCore::SamplerDesc(
 		RenderCore::MAG_LINEAR,

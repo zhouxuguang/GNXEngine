@@ -228,6 +228,12 @@ void AssimpMeshImporter::processMeshVertex(const aiScene* scene)
 
 				mTangent.push_back(vector);
 			}
+			else
+			{
+				// 与运行时导入器一致：无切线（无 UV 的 obj）时补默认切线 (1,0,0,1)，
+				// 否则 .meshasset 缺 tangent 通道，切线属性会绑到顶点缓冲起始处，光照不一致。
+				mTangent.push_back(Vector4f(1.0f, 0.0f, 0.0f, 1.0f));
+			}
 
 			if (mesh->HasVertexColors(0))
 			{
