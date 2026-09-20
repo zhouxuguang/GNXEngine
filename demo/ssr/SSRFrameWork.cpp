@@ -123,7 +123,7 @@ void SSRFrameWork::Resize(uint32_t width, uint32_t height)
         Vector3f(-0.149f, 0.8314f, 0.07325f), 0.129908f,
         Vector3f(0.0f, 5.0f, -20.0f), Vector3f(3.0f, 3.0f, 3.0f), false,
         objectMetalRoughness);
-    CreateReferenceModel(root, "round_table", assetRoot + "round_table.obj",
+    CreateReferenceModel(root, "round_table", assetRoot + "SIMPLE ROUND TABLE.obj",
         Vector3f(0.0f, -0.149149f, 0.0f), 0.0670522f,
         Vector3f(-17.0f, -9.0f, 0.0f), Vector3f(1.0f, 1.0f, 1.0f), false,
         objectMetalRoughness);
