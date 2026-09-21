@@ -14,15 +14,19 @@ Reference::~Reference()
 
 uint32_t Reference::ReleaseReference()
 {
-	// 给指针记录独占地自减
-	if (static_cast<long>(m_nRef) == 0)
-		return 0;
-	if (!CBLAtomicDecrement((volatile int*)(&m_nRef)))
+	volatile int* reference = reinterpret_cast<volatile int*>(&m_nRef);
+	int current = *reference;
+	while (current > 0)
 	{
-		return 0;
+		const int desired = current - 1;
+		const int previous = CBLAtomicCompareSwap(reference, desired, current);
+		if (previous == current)
+			return static_cast<uint32_t>(desired);
+		current = previous;
 	}
 
-	return m_nRef;
+	// 已经为 0 时保持饱和，避免并发 Release 下溢成 UINT_MAX。
+	return 0;
 }
 
 uint32_t Reference::AddReference()

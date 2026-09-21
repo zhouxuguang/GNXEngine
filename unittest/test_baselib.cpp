@@ -883,6 +883,24 @@ TEST_CASE("ThreadOnceCall shares state across concurrent callers", "[baselib][th
     REQUIRE_FALSE(ThreadUtil::ThreadOnceCall(onceState, nullptr));
 }
 
+TEST_CASE("Reference concurrent release cannot underflow", "[baselib][atomic]")
+{
+    Reference reference;
+    constexpr int kReleaseCount = 32;
+    for (int i = 1; i < kReleaseCount; ++i)
+        reference.AddReference();
+
+    std::vector<std::thread> releasers;
+    for (int i = 0; i < kReleaseCount; ++i)
+        releasers.emplace_back([&reference]() { reference.ReleaseReference(); });
+    for (std::thread& releaser : releasers)
+        releaser.join();
+
+    REQUIRE(reference.GetReferenceCount() == 0);
+    REQUIRE(reference.ReleaseReference() == 0);
+    REQUIRE(reference.GetReferenceCount() == 0);
+}
+
 TEST_CASE("AlignedMalloc multiple allocations", "[baselib][alignedmalloc]")
 {
     void* ptrs[10];
