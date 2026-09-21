@@ -545,6 +545,22 @@ TEST_CASE("StrideIterator reports signed distances", "[baselib][iterator]")
     REQUIRE(first - last == -4);
 }
 
+TEST_CASE("LruCache duplicate insert at capacity does not evict another entry", "[baselib][lrucache]")
+{
+    LruCache<int, int> cache(2);
+    REQUIRE(cache.Put(1, 100));
+    REQUIRE(cache.Put(2, 200));
+
+    REQUIRE_FALSE(cache.Put(2, 999));
+    REQUIRE(cache.GetSize() == 2);
+    REQUIRE(cache.Contains(1));
+    REQUIRE(cache.Contains(2));
+    REQUIRE(cache.Get(2) == 200);
+
+    cache.SetMaxCapacity(1);
+    REQUIRE(cache.GetSize() == 1);
+}
+
 TEST_CASE("LruCache capacity 1", "[baselib][lrucache]")
 {
     LruCache<int, int> cache(1);

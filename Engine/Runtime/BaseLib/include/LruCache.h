@@ -208,6 +208,11 @@ NS_BASELIB_BEGIN
     void LruCache<TKey,TValue, THashFunc>::SetMaxCapacity(unsigned int maxCapacity)
     {
         this->mMaxCapacity = maxCapacity;
+        while (mMaxCapacity != kUnlimitedCapacity && GetSize() > mMaxCapacity)
+        {
+            if (!RemoveOldest())
+                break;
+        }
     }
     
     template <typename TKey, typename TValue, typename THashFunc>
@@ -238,18 +243,28 @@ NS_BASELIB_BEGIN
     template <typename TKey, typename TValue, typename THashFunc>
     bool LruCache<TKey, TValue, THashFunc>::Put(const TKey& key, const TValue& value)
 	{
-        if (mMaxCapacity != kUnlimitedCapacity && GetSize() >= mMaxCapacity) 
-		{
-            RemoveOldest();
-        }
-        
-        if (findByKey(key) != mSet->end()) 
+        // 先查重：满容量时重复 Put 不应先误删 LRU 项。
+        if (findByKey(key) != mSet->end())
 		{
             return false;
-        }
+		}
+
+        if (mMaxCapacity != kUnlimitedCapacity && GetSize() >= mMaxCapacity) 
+		{
+            if (!RemoveOldest())
+                return false;
+		}
         
         Entry* newEntry = new(std::nothrow) Entry(key, value);
-        mSet->insert(newEntry);
+        if (newEntry == NULL)
+            return false;
+
+        const auto result = mSet->insert(newEntry);
+        if (!result.second)
+        {
+            delete newEntry;
+            return false;
+        }
         attachToCache(*newEntry);
         return true;
     }
