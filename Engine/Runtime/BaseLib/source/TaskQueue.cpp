@@ -1,10 +1,12 @@
 #include "TaskQueue.h"
 #include "AtomicOps.h"
 
+#include <algorithm>
+
 NS_BASELIB_BEGIN
 
 TaskQueue::TaskQueue(int nMaxTaskCount) : mFullCondition(&mLock), mEmptyCondition(&mLock),
-            mMaxTaskCount(nMaxTaskCount), m_bFullQueue(false), m_bEmptyQueue(true)
+            mMaxTaskCount(std::max(1, nMaxTaskCount)), m_bFullQueue(false), m_bEmptyQueue(true)
 {
     Clear();
 }
@@ -16,6 +18,11 @@ TaskQueue::~TaskQueue(void)
 
 bool TaskQueue::AddTask(const TaskRunnerPtr &task, ThreadPool::TaskStrategy strategy)
 {
+    if (!task)
+    {
+        return false;
+    }
+
     AutoLock lock_guard(mLock);
 
     //如果超过最大任务数量，根据不同策略做不同的操作
@@ -71,6 +78,9 @@ bool TaskQueue::RemoveTask(const TaskRunnerPtr &task)
         if (task == *iter)
         {
             iter = mTaskList.erase(iter);
+            m_bEmptyQueue = mTaskList.empty();
+            m_bFullQueue = false;
+            mFullCondition.NotifyAll();
             return true;
         }
         else
@@ -92,6 +102,7 @@ TaskRunnerPtr TaskQueue::GetHeadTask()
     TaskRunnerPtr task = mTaskList.front();
     mTaskList.pop_front();
     m_bFullQueue = false;
+    m_bEmptyQueue = mTaskList.empty();
     mFullCondition.NotifyAll();
 
     return task;
@@ -107,13 +118,17 @@ void TaskQueue::Clear()
 {
     AutoLock lock_guard(mLock);
     mTaskList.clear();
+    m_bFullQueue = false;
+    m_bEmptyQueue = true;
     mFullCondition.NotifyAll();
     mEmptyCondition.NotifyAll();
 }
 
 void TaskQueue::SetMaxTaskCount(int nMaxTaskCount)
 {
-    mMaxTaskCount = nMaxTaskCount;
+    AutoLock lock_guard(mLock);
+    mMaxTaskCount = std::max(1, nMaxTaskCount);
+    mFullCondition.NotifyAll();
 }
 
 int TaskQueue::GetTaskCount() const
