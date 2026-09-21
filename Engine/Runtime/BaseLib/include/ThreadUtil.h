@@ -54,7 +54,7 @@ public:
      *  任意线程调用，只调用pInitFunc一次，保证资源只初始化一次
      *  @return
      */
-	static bool ThreadOnceCall(thread_once_t nInitValue, OnceInitProc pInitFunc);
+	static bool ThreadOnceCall(thread_once_t& nInitValue, OnceInitProc pInitFunc);
     
     /**
      * @brief 设置线程名字

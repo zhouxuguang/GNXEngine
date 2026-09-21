@@ -175,8 +175,12 @@ bool ThreadUtil::IsMainThread()
     
 }
 
-bool ThreadUtil::ThreadOnceCall(thread_once_t nInitValue, OnceInitProc pInitFunc)
+bool ThreadUtil::ThreadOnceCall(thread_once_t& nInitValue, OnceInitProc pInitFunc)
 {
+    if (pInitFunc == nullptr)
+    {
+        return false;
+    }
 #ifdef WIN32
     using namespace windows_pthread;
 #endif

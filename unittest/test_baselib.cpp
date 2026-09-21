@@ -839,6 +839,13 @@ void* IncrementThreadValue(void* argument)
     ++*static_cast<int*>(argument);
     return nullptr;
 }
+
+std::atomic<int> gOnceCallCount{0};
+
+void CountOnceCall()
+{
+    ++gOnceCallCount;
+}
 }
 
 TEST_CASE("Thread can be stopped and restarted", "[baselib][thread]")
@@ -852,6 +859,28 @@ TEST_CASE("Thread can be stopped and restarted", "[baselib][thread]")
     thread.Stop();
     REQUIRE(value == 2);
     REQUIRE_FALSE(thread.Start(nullptr, nullptr));
+}
+
+TEST_CASE("ThreadOnceCall shares state across concurrent callers", "[baselib][thread]")
+{
+    thread_once_t onceState = THREAD_INIT_VAL;
+    gOnceCallCount.store(0);
+    std::atomic<bool> allCallsSucceeded{true};
+
+    std::vector<std::thread> callers;
+    for (int i = 0; i < 16; ++i)
+    {
+        callers.emplace_back([&onceState, &allCallsSucceeded]() {
+            if (!ThreadUtil::ThreadOnceCall(onceState, CountOnceCall))
+                allCallsSucceeded.store(false);
+        });
+    }
+    for (std::thread& caller : callers)
+        caller.join();
+
+    REQUIRE(allCallsSucceeded.load());
+    REQUIRE(gOnceCallCount.load() == 1);
+    REQUIRE_FALSE(ThreadUtil::ThreadOnceCall(onceState, nullptr));
 }
 
 TEST_CASE("AlignedMalloc multiple allocations", "[baselib][alignedmalloc]")
