@@ -1008,3 +1008,21 @@ TEST_CASE("DataCompress LZ4 binary data roundtrip", "[baselib][compress]")
     REQUIRE(decompLen == data.size());
     REQUIRE(memcmp(decompressed.data(), data.data(), data.size()) == 0);
 }
+
+TEST_CASE("DataCompress rejects lengths that cannot be represented by codecs", "[baselib][compress]")
+{
+    uint8_t source = 0;
+    uint8_t destination = 0;
+    constexpr size_t kLz4MaxInputSize = 0x7E000000u;
+    const size_t tooLargeForLz4 = kLz4MaxInputSize + 1;
+
+    REQUIRE(CompressBound(&source, tooLargeForLz4, COMPRESS_LZ4) == 0);
+
+    size_t outputSize = 1;
+    REQUIRE_FALSE(DataCompress(&source, tooLargeForLz4, &destination, &outputSize, COMPRESS_LZ4));
+    REQUIRE(outputSize == 0);
+
+    outputSize = static_cast<size_t>(std::numeric_limits<int>::max()) + 1;
+    REQUIRE_FALSE(DataUnCompress(&source, 1, &destination, &outputSize, COMPRESS_LZ4));
+    REQUIRE(outputSize == 0);
+}

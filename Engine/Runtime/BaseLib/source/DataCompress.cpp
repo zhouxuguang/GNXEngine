@@ -7,6 +7,7 @@
 #endif
 //#include "lzma/LzmaLib.h"
 #include "lz4/lz4.h"
+#include <limits>
 
 extern "C"
 {
@@ -21,9 +22,13 @@ BASELIB_API size_t CompressBound(const void* pSrcData, size_t nLen, COMPRESS_TYP
 	switch (eType)
 	{
 	case COMPRESS_LZ4:
+		if (nLen > static_cast<size_t>(LZ4_MAX_INPUT_SIZE))
+			return 0;
 		return (size_t)LZ4_compressBound((int)nLen);
 
 	case COMPRESS_GZIP:
+		if (nLen > static_cast<size_t>(std::numeric_limits<uLong>::max()))
+			return 0;
 		return compressBound((uLong)nLen);
 
 	case COMPRESS_LZMA:
@@ -67,6 +72,12 @@ BASELIB_API bool DataCompress(const void* pSrcData, size_t nLen, void* pDstData,
 	{
 	case COMPRESS_GZIP:
 		{
+			if (nLen > static_cast<size_t>(std::numeric_limits<uLong>::max()) ||
+				*pOutLen > static_cast<size_t>(std::numeric_limits<uLongf>::max()))
+			{
+				*pOutLen = 0;
+				return false;
+			}
 			uLongf nDestSize = (uLongf)(*pOutLen);
 			int nErr = compress((Bytef *)pDstData, &nDestSize, (const Bytef*)pSrcData, nLen);
 			if (nErr != Z_OK)
@@ -88,6 +99,12 @@ BASELIB_API bool DataCompress(const void* pSrcData, size_t nLen, void* pDstData,
 
 	case COMPRESS_LZ4:
 		{
+			if (nLen > static_cast<size_t>(LZ4_MAX_INPUT_SIZE) ||
+				*pOutLen > static_cast<size_t>(std::numeric_limits<int>::max()))
+			{
+				*pOutLen = 0;
+				return false;
+			}
 			int nMaxSize = (int)(*pOutLen);
 			int nCompressed = LZ4_compress_fast((const char*)pSrcData, (char*)pDstData, (int)nLen, nMaxSize, 1);
 			if (nCompressed <= 0)
@@ -117,6 +134,12 @@ bool DataUnCompress(const void* pSrcData, size_t nLen, void* pDstData, size_t* p
 	{
 	case COMPRESS_GZIP:
 	{
+		if (nLen > static_cast<size_t>(std::numeric_limits<uInt>::max()) ||
+			*pOutLen > static_cast<size_t>(std::numeric_limits<uInt>::max()))
+		{
+			*pOutLen = 0;
+			return false;
+		}
 		// 使用 zlib 的 inflateInit2(16+MAX_WBITS) 解压 gzip 流
 		z_stream strm = {};
 		if (inflateInit2(&strm, 16 + MAX_WBITS) != Z_OK)
@@ -152,6 +175,12 @@ bool DataUnCompress(const void* pSrcData, size_t nLen, void* pDstData, size_t* p
 
 	case COMPRESS_LZ4:
 		{
+			if (nLen > static_cast<size_t>(std::numeric_limits<int>::max()) ||
+				*pOutLen > static_cast<size_t>(std::numeric_limits<int>::max()))
+			{
+				*pOutLen = 0;
+				return false;
+			}
 			int nDecompressed = LZ4_decompress_safe((const char*)pSrcData, (char*)pDstData, (int)nLen, (int)(*pOutLen));
 			if (nDecompressed < 0)
 			{
