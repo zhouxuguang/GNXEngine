@@ -27,14 +27,13 @@ bool RegexExpression::RegexParser(const std::string& srcStr, const std::string& 
 	regex_t reg;
 	if (regcomp(&reg,pattern.c_str(),REG_EXTENDED|REG_NEWLINE) != 0)		//����ʧ��
 	{
-		regfree(&reg);
 		return false;
 	}
     
     regmatch_t matchs[256];
     
     int nRet = regexec(&reg,srcStr.c_str(),256,matchs,REG_NOTBOL);
-    if (nRet == REG_NOMATCH)
+    if (nRet != 0)
     {
         regfree(&reg);
         return false;
@@ -42,7 +41,7 @@ bool RegexExpression::RegexParser(const std::string& srcStr, const std::string& 
     
     for (int i = 0; i < 256 && matchs[i].rm_so != -1; i ++)
     {
-        std::string strMatch = srcStr.substr(matchs[i].rm_so, matchs[i].rm_eo - matchs[i].rm_so + 1);
+        std::string strMatch = srcStr.substr(matchs[i].rm_so, matchs[i].rm_eo - matchs[i].rm_so);
         vecMatchPos.push_back(strMatch);
     }
     regfree(&reg);
@@ -50,10 +49,11 @@ bool RegexExpression::RegexParser(const std::string& srcStr, const std::string& 
     return true;
     
 #else
+	try
+	{
 	std::regex re(pattern);
 	std::smatch sm;   // ���string���������
-	std::regex_match(srcStr, sm, re);
-	if (sm.empty())
+	if (!std::regex_match(srcStr, sm, re))
 	{
 		return false;
 	}
@@ -63,6 +63,11 @@ bool RegexExpression::RegexParser(const std::string& srcStr, const std::string& 
 		vecMatchPos.push_back(sm[i]);
 	}
 	return true;
+	}
+	catch (const std::regex_error&)
+	{
+		return false;
+	}
 
 	// regex���
 	/*str = "!!!123!!!12333!!!890!!!";

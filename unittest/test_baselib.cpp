@@ -10,12 +10,23 @@
 #include "Runtime/BaseLib/include/LruCache.h"
 #include "Runtime/BaseLib/include/HashFunction.h"
 #include "Runtime/BaseLib/include/Random.h"
+#include "Runtime/BaseLib/include/RegexExpression.h"
+#include "Runtime/BaseLib/include/Reference.h"
 #include "Runtime/BaseLib/include/AlignedMalloc.h"
 #include "Runtime/BaseLib/include/CryptoHash.h"
 #include "Runtime/BaseLib/include/DataCompress.h"
 #include "Runtime/BaseLib/include/FileUtil.h"
+#include "Runtime/BaseLib/include/FileName.h"
 #include "Runtime/BaseLib/include/GuidGenerator.h"
 #include "Runtime/BaseLib/include/Thread.h"
+#include "Runtime/BaseLib/include/ThreadPool.h"
+#include "Runtime/BaseLib/include/ThreadUtil.h"
+#include "Runtime/BaseLib/include/StrideIterator.h"
+
+#include <atomic>
+#include <chrono>
+#include <limits>
+#include <thread>
 
 using namespace baselib;
 using Catch::Matchers::WithinAbs;
@@ -509,6 +520,20 @@ TEST_CASE("LruCache overwrite existing key", "[baselib][lrucache]")
     // LruCache may or may not overwrite; verify Get returns a value
     REQUIRE(cache.Contains(1));
     REQUIRE(cache.GetSize() == 1);
+}
+
+TEST_CASE("RegexExpression rejects invalid patterns without throwing", "[baselib][regex]")
+{
+    RegexExpression expression;
+    std::vector<std::string> matches;
+    REQUIRE_FALSE(expression.RegexParser("abc", "[", matches));
+    REQUIRE(matches.empty());
+
+    REQUIRE(expression.RegexParser("abc123", "([a-z]+)([0-9]+)", matches));
+    REQUIRE(matches.size() == 3);
+    REQUIRE(matches[0] == "abc123");
+    REQUIRE(matches[1] == "abc");
+    REQUIRE(matches[2] == "123");
 }
 
 TEST_CASE("LruCache capacity 1", "[baselib][lrucache]")
