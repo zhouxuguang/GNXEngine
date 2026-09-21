@@ -536,6 +536,15 @@ TEST_CASE("RegexExpression rejects invalid patterns without throwing", "[baselib
     REQUIRE(matches[2] == "123");
 }
 
+TEST_CASE("StrideIterator reports signed distances", "[baselib][iterator]")
+{
+    int values[4] = {1, 2, 3, 4};
+    StrideIterator<int> first(values, sizeof(int));
+    StrideIterator<int> last(values + 4, sizeof(int));
+    REQUIRE(last - first == 4);
+    REQUIRE(first - last == -4);
+}
+
 TEST_CASE("LruCache capacity 1", "[baselib][lrucache]")
 {
     LruCache<int, int> cache(1);

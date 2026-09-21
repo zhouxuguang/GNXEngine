@@ -53,7 +53,7 @@ public:
     {
         assert (m_Stride == it.m_Stride && "Iterators stride must be equal");
         assert (m_Stride != 0 && "Stide must not be zero");
-        return ((uintptr_t)m_Pointer - (uintptr_t)it.m_Pointer) / m_Stride;
+        return (m_Pointer - it.m_Pointer) / m_Stride;
     }
     
     T& operator[](size_t index)             { return *(T*)(m_Pointer + m_Stride * index); }
