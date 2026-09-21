@@ -4,7 +4,7 @@
 
 ## 特性
 
-- **跨平台 RHI**：图形 API 兼容 Metal 和 Vulkan，预留其它图形 API 接入能力
+- **跨平台 RHI**：图形 API 兼容 Metal、Vulkan和DX12
 - **自主基础设施**：多线程、线程池、时间、日期、日志、字符串等基础功能
 - **自主数学库**：向量、矩阵、四元数等 3D 数学运算
 - **资源导入**：使用 Assimp 导入静态网格、蒙皮网格及动画资源；支持 PNG/JPEG/TGA/KTX1 纹理格式
@@ -22,7 +22,7 @@
 |------|---------|---------|------|
 | **macOS** | Metal | GLFW | 原生 Metal 渲染 |
 | **iOS** | Metal | SDL2 | 原生 Metal 渲染（真机可运行） |
-| **Windows** | Vulkan | GLFW | — |
+| **Windows** | Vulkan DX12 | GLFW | — |
 | **Linux** | Vulkan | GLFW | — |
 | **Android** | Vulkan | SDL2 | 原生 Vulkan 渲染（真机可运行） |
 
