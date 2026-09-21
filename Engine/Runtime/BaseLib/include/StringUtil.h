@@ -14,7 +14,7 @@ public:
      *  @param strDemlit 分隔符
      *  @param vecTokens 分割后的字符串数组
      */
-	static void Split(const std::string& strSrc,const std::string& strDemlit,std::vector<std::string>& vecTokens);
+	static void Split(const std::string& strSrc, const std::string& strDemlit, std::vector<std::string>& vecTokens);
 
     /**
      *  字符串去除空白

@@ -2,17 +2,36 @@
 
 NS_BASELIB_BEGIN
 
-void StringUtil::Split(const std::string& strSrc,const std::string& strDemlit,std::vector<std::string>& vecTokens)
+void StringUtil::Split(const std::string& strSrc, const std::string& strDemlit,std::vector<std::string>& vecTokens)
 {
 	vecTokens.clear();
-	char* pszResult = NULL;
-	const char* pszDelim  = strDemlit.c_str();
-	char* pszSrc = (char*)strSrc.c_str();
-	pszResult = strtok(pszSrc,pszDelim);
-	while (pszResult != NULL)
+
+	if (strDemlit.empty())
 	{
-		vecTokens.push_back(pszResult);
-		pszResult = strtok(NULL,pszDelim);
+		return;
+	}
+
+	const size_t length = strSrc.size();
+	size_t begin = 0;
+	while (begin < length)
+	{
+		while (begin < length && std::string::npos != strDemlit.find(strSrc[begin]))
+		{
+			++begin;
+		}
+		if (begin >= length)
+		{
+			break;
+		}
+
+		size_t end = begin;
+		while (end < length && std::string::npos == strDemlit.find(strSrc[end]))
+		{
+			++end;
+		}
+
+		vecTokens.emplace_back(strSrc, begin, end - begin);
+		begin = end;
 	}
 }
 
@@ -21,22 +40,22 @@ void StringUtil::Trim(std::string& strSrc)
 	int size = (int)strSrc.size();
 	int start = 0;
 	int end  = size - 1;
-	for( ; start < size ; ++start)
+	for (; start < size; ++start)
 	{
-		if(strSrc[start] > ' ')
+		if (strSrc[start] > ' ')
 		{
 			break;
 		}
 	}
-	for( ; end >= 0 ; --end)
+	for ( ; end >= 0; --end)
 	{
-		if(strSrc[end] > ' ')
+		if (strSrc[end] > ' ')
 		{
 			break;
 		}
 	}
-	strSrc.erase(end+1,size-end);
-	strSrc.erase(0,start);
+	strSrc.erase(end + 1,size - end);
+	strSrc.erase(0, start);
 }
 
 /*
