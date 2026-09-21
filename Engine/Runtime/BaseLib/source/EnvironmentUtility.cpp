@@ -50,33 +50,15 @@ std::string EnvironmentUtility::GetUserName() const
 
 std::string EnvironmentUtility::GetCurrentWorkingDir() const
 {
-	std::string result;
-
-#if ENVIRONMENT_UTILITY_UNIX
-	//result = GetEnvironmentVariable("PWD");
-	const int BL_PATH_MAX = 1024;
-    char buffer[BL_PATH_MAX] = {0};
-    if (getcwd(buffer, sizeof(buffer)))
-    {
-        result = std::string(buffer);
-    }
-    else
-    {
-        // 错误处理
-        //perror("getcwd() error");
-        return "";
-    }
-#else
-	char buf[512];
-	_getcwd(buf, 512);
-	result = buf;
-#endif
-
-	return result;
+	std::error_code ec;
+	const fs::path current = fs::current_path(ec);
+	return ec ? std::string() : current.string();
 }
 
 bool EnvironmentUtility::SetCurrentDir(const char* path)
 {
+	if (path == nullptr || path[0] == '\0')
+		return false;
 #ifdef _WIN32
 	return SetCurrentDirectoryA(path);
 #else
