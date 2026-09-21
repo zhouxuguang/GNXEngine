@@ -27,76 +27,6 @@ using namespace std;
 
 NS_BASELIB_BEGIN
 
-//路径字符串分割
-#ifndef WIN32
-
-static void _split_whole_name(const char *whole_name, char *fname, char *ext);
-
-static void _splitpath(const char *path, char *drive, char *dir, char *fname, char *ext)
-{
-	if (drive)
-	{
-		drive[0] = '\0';
-	}
-
-	// 先判空，避免在 NULL 上调用 strcmp/strlen
-	if (NULL == path || path[0] == '\0')
-	{
-		if (dir)  dir[0]  = '\0';
-		if (fname) fname[0] = '\0';
-		if (ext)  ext[0]  = '\0';
-		return;
-	}
-
-	// 以 '/' 结尾：整个路径都是目录部分
-	if ('/' == path[strlen(path) - 1])
-	{
-		if (dir) strcpy(dir, path);
-		if (fname) fname[0] = '\0';
-		if (ext)  ext[0]  = '\0';
-		return;
-	}
-
-	const char *p_whole_name = strrchr(path, '/');
-	if (NULL != p_whole_name)
-	{
-		p_whole_name++;
-		_split_whole_name(p_whole_name, fname, ext);
-
-		if (dir)
-		{
-			// 目录部分：从 path 到最后一个 '/'（含），需为 NUL 结尾留一个字节
-			size_t dir_len = (size_t)(p_whole_name - path);
-			memcpy(dir, path, dir_len);
-			dir[dir_len] = '\0';
-		}
-	}
-	else
-	{
-		_split_whole_name(path, fname, ext);
-		if (dir) dir[0] = '\0';
-	}
-}
-
-static void _split_whole_name(const char *whole_name, char *fname, char *ext)
-{
-	char *p_ext;
-
-	p_ext = strrchr((char*)whole_name, '.');
-	if (NULL != p_ext)
-	{
-		strcpy(ext, p_ext);
-		snprintf(fname, p_ext - whole_name + 1, "%s", whole_name);
-	}
-	else
-	{
-		ext[0] = '\0';
-		strcpy(fname, whole_name);
-	}
-}
-
-#endif
-
 FileName::FileName(void)
 {
 	m_strFileName.clear();
@@ -114,7 +44,7 @@ FileName::FileName(const std::string& src)
 
 FileName::FileName(const char* src)
 {
-	m_strFileName = src;
+	m_strFileName = src != nullptr ? src : "";
 }
 
 FileName::~FileName(void)
@@ -140,11 +70,12 @@ bool FileName::IsFile() const
 	struct _stat sbuf;
 	if ( _stat(m_strFileName.c_str(), &sbuf ) == -1)
 		return false;
-	return (_S_IFMT & sbuf.st_mode ? true : false);
+	return (sbuf.st_mode & _S_IFMT) == _S_IFREG;
 #else
 	struct stat sbuf;
 
-	stat(m_strFileName.c_str(), &sbuf);
+	if (stat(m_strFileName.c_str(), &sbuf) != 0)
+		return false;
 	return ((sbuf.st_mode & S_IFMT) == S_IFREG);
 #endif
 }
@@ -537,30 +468,49 @@ bool FileName::Rename(const std::string& strDestFile, bool overwriteDestinationF
 			return false;
 		}
 	}
-	else if(sFile.Exists())
-	{
-		sFile.Remove();
-	}
-	::rename(m_strFileName.c_str(), strDestFile.c_str());
 
-	return true;
+#if defined(_WIN32)
+	const DWORD flags = overwriteDestinationFlag ? MOVEFILE_REPLACE_EXISTING : 0;
+	return MoveFileExA(m_strFileName.c_str(), strDestFile.c_str(), flags) != 0;
+#else
+	return ::rename(m_strFileName.c_str(), strDestFile.c_str()) == 0;
+#endif
 }
 
 void FileName::Split(std::string& drivePart, std::string& pathPart, std::string& filePart, std::string& extPart) const
 {
-	char szDriver[512] ;
-	memset(szDriver,0,512);
-	char szPath[512];
-	memset(szPath,0,512);
-	char szFile[512];
-	memset(szFile,0,512);
-	char szExt[512];
-	memset(szExt,0,512);
-	_splitpath(m_strFileName.c_str(),szDriver,szPath,szFile,szExt);
-	drivePart = szDriver;
-	pathPart = szPath;
-	filePart = szFile;
-	extPart = szExt;
+	drivePart.clear();
+	pathPart.clear();
+	filePart.clear();
+	extPart.clear();
+
+	size_t pathBegin = 0;
+#if defined(_WIN32)
+	if (m_strFileName.size() >= 2 && m_strFileName[1] == ':')
+	{
+		drivePart = m_strFileName.substr(0, 2);
+		pathBegin = 2;
+	}
+#endif
+
+	const size_t separator = m_strFileName.find_last_of("/\\");
+	if (separator != std::string::npos && separator >= pathBegin)
+	{
+		pathPart = m_strFileName.substr(pathBegin, separator - pathBegin + 1);
+	}
+
+	const size_t fileBegin = separator == std::string::npos ? pathBegin : separator + 1;
+	const std::string wholeName = m_strFileName.substr(fileBegin);
+	const size_t dot = wholeName.find_last_of('.');
+	if (dot == std::string::npos)
+	{
+		filePart = wholeName;
+	}
+	else
+	{
+		filePart = wholeName.substr(0, dot);
+		extPart = wholeName.substr(dot);
+	}
 }
 
 std::string FileName::GetFileName() const
@@ -575,138 +525,39 @@ void FileName::SetFileName(const std::string& strFileName)
 
 FileName FileName::Expand() const
 {
-	FileName result("");
-	if ( !m_strFileName.empty() )
+	if (m_strFileName.empty())
+		return FileName();
+
+	std::string expanded = m_strFileName;
+	if (expanded.size() >= 2 && expanded[0] == '~' &&
+		(expanded[1] == '/' || expanded[1] == '\\'))
 	{
-		result = *this;
+		const std::string home = EnvironmentUtility::GetInstance().GetUserDir();
+		if (!home.empty())
+			expanded = (fs::path(home) / expanded.substr(2)).string();
+	}
 
-		if ( IsNeedExpansion() )	//如果需要扩展
-		{
+	// 支持原接口文档中的 $(NAME) 环境变量形式。
+	size_t begin = 0;
+	while ((begin = expanded.find("$(", begin)) != std::string::npos)
+	{
+		const size_t end = expanded.find(')', begin + 2);
+		if (end == std::string::npos)
+			break;
+		const std::string name = expanded.substr(begin + 2, end - begin - 2);
+		const std::string value = EnvironmentUtility::GetInstance().GetEnvironmentVariable(name);
+		expanded.replace(begin, end - begin + 1, value);
+		begin += value.size();
+	}
 
-			bool addCwd = false;
+	std::error_code ec;
+	fs::path path(expanded);
+	if (path.is_relative())
+		path = fs::absolute(path, ec);
+	if (ec)
+		return *this;
 
-			if ( (m_strFileName.size() > 1) && (*(m_strFileName.begin()) == '~') && (*(m_strFileName.begin()+1) == PATHSPLIT) )
-			{
-				std::string homeDir = EnvironmentUtility::GetInstance().GetUserDir();
-
-				//FileName s( (result.m_strFileName.begin()+2) , result.m_strFileName.end());
-				//result = homeDir.dirCat(s);
-			}
-			else if( (m_strFileName.size() > 1) &&
-				(*(m_strFileName.begin()) == '.') && (*(m_strFileName.begin()+1) == PATHSPLIT) )
-			{
-				// dot slash i.e. ./foo
-				addCwd = true;
-			}
-			else if ( (m_strFileName.size() > 2)  && (*(m_strFileName.begin()) == '.')
-				&& (*(m_strFileName.begin()+1) == '.') && (*(m_strFileName.begin()+2) == PATHSPLIT) )
-			{
-				// ../foo
-				addCwd = true;
-			}
-
-
-			//else if (result == ".")
-			{
-				result = EnvironmentUtility::GetInstance().GetCurrentWorkingDir();
-			}
-
-			if (addCwd)
-			{
-				/*ossimFilename cwd = ossimEnvironmentUtility::instance()->
-					getCurrentWorkingDir();
-				result = cwd.dirCat(result);*/
-			}
-			else if ( result.IsRelative() )
-			{
-				if ( result.m_strFileName.size() && ((*(result.m_strFileName.begin())) != '$') )
-				{
-					FileName cwd = EnvironmentUtility::GetInstance().GetCurrentWorkingDir();
-					//result = cwd.dirCat(result);
-				}
-			}
-
-			// Check result to see if we're finished.
-			if ( result.IsNeedExpansion() )
-			{
-				// now expand any environment variable substitutions
-
-//				ossimFilename finalResult;
-//				const char* tempPtr = result.c_str();
-//				ossim_int32 startIdx = -1;
-//				ossim_int32 resultSize = (ossim_uint32)result.size();
-//				ossim_int32 scanIdx = 0;
-//				while(scanIdx < resultSize)
-//				{
-//					// look for start of substitution pattern
-//					if(tempPtr[scanIdx] == '$')
-//					{
-//						if(tempPtr[scanIdx+1] == '(')
-//						{
-//							scanIdx +=2;
-//							startIdx = scanIdx;
-//						}
-//					}
-//					// look for an end pattern and apply if we found a start pattern
-//					else if(tempPtr[scanIdx] == ')')
-//					{
-//						if(startIdx != -1)
-//						{
-//							ossimFilename value(
-//								ossimEnvironmentUtility::instance()->
-//								getEnvironmentVariable(ossimString(tempPtr+startIdx,
-//								tempPtr+scanIdx)));
-//#if defined(_WIN32) // do windows style replacment
-//							//                    value.convertBackToForwardSlashes();
-//#endif
-//							finalResult += value;
-//							// reset start idx indicator to not set so we are ready for next pattern
-//							//
-//							startIdx = -1;
-//						}
-//						else // if no start then tack on the )
-//						{
-//							finalResult += tempPtr[scanIdx];
-//						}
-//						++scanIdx;
-//					}
-//					else if(startIdx == -1)
-//					{
-//						finalResult += tempPtr[scanIdx];
-//						++scanIdx;
-//					}
-//					else
-//					{
-//						++scanIdx;
-//					}
-//				}
-#if defined(_WIN32)
-
-#else        
-				//finalResult.gsub("//", "/", true);
-#endif       
-				//result = finalResult;
-
-			} // matches:  if ( result.needsExpansion() )
-
-#if defined(_WIN32)
-			//        result.convertForwardToBackSlashes();
-#endif        
-
-		} // matches: if ( needsExpansion() )
-
-		//---
-		// If we had a size before "expand()" and now we don't something went
-		// wrong...
-		//---
-		if (!result.m_strFileName.size())
-		{
-			result = *this;
-		}
-
-	} // matches: if ( size() )
-
-	return result;
+	return FileName(path.lexically_normal().string());
 }
 
 bool FileName::IsNeedExpansion() const

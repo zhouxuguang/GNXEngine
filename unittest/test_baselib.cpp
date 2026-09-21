@@ -776,6 +776,49 @@ TEST_CASE("FileUtil distinguishes files, directories and missing paths", "[basel
     std::filesystem::remove_all(root, ec);
 }
 
+TEST_CASE("FileName reports file types and preserves destination on failed rename", "[baselib][filename]")
+{
+    const auto root = std::filesystem::temp_directory_path() / "gnx_baselib_filename_test";
+    const auto destination = root / "destination.bin";
+    const auto missingSource = root / "missing.bin";
+    std::error_code ec;
+    std::filesystem::remove_all(root, ec);
+
+    REQUIRE(FileUtil::MakeDirectory(root.string()));
+    const std::vector<uint8_t> payload = {9, 8, 7};
+    REQUIRE(FileUtil::WriteBinaryFile(destination.string(), payload));
+
+    REQUIRE(FileName(destination.string()).IsFile());
+    REQUIRE_FALSE(FileName(root.string()).IsFile());
+    REQUIRE_FALSE(FileName(missingSource.string()).IsFile());
+    REQUIRE_FALSE(FileName(missingSource.string()).Rename(destination.string(), true));
+    REQUIRE(FileUtil::ReadBinaryFile(destination.string()) == payload);
+
+    std::filesystem::remove_all(root, ec);
+}
+
+TEST_CASE("FileName Split handles paths larger than legacy fixed buffers", "[baselib][filename]")
+{
+    const std::string directory(2048, 'a');
+    FileName name(directory + "/asset.texture.bin");
+    std::string drive;
+    std::string path;
+    std::string file;
+    std::string extension;
+    name.Split(drive, path, file, extension);
+
+    REQUIRE(path == directory + "/");
+    REQUIRE(file == "asset.texture");
+    REQUIRE(extension == ".bin");
+}
+
+TEST_CASE("FileName Expand keeps a relative filename and makes it absolute", "[baselib][filename]")
+{
+    const FileName expanded = FileName("assets/test.bin").Expand();
+    REQUIRE_FALSE(expanded.IsRelative());
+    REQUIRE(expanded.GetFile() == "test.bin");
+}
+
 TEST_CASE("CreateGUIDFromBytes handles null and preserves bytes", "[baselib][guid]")
 {
     const NXGUID empty = CreateGUIDFromBytes(nullptr);
