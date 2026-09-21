@@ -1026,3 +1026,92 @@ TEST_CASE("DataCompress rejects lengths that cannot be represented by codecs", "
     REQUIRE_FALSE(DataUnCompress(&source, 1, &destination, &outputSize, COMPRESS_LZ4));
     REQUIRE(outputSize == 0);
 }
+
+namespace
+{
+class CountingTask final : public TaskRunner
+{
+public:
+    explicit CountingTask(std::atomic<int>& count) : mCount(count) {}
+    void Run() override { ++mCount; }
+
+private:
+    std::atomic<int>& mCount;
+};
+
+class BlockingTask final : public TaskRunner
+{
+public:
+    BlockingTask(std::atomic<bool>& started, std::atomic<bool>& release)
+        : mStarted(started), mRelease(release) {}
+
+    void Run() override
+    {
+        mStarted.store(true);
+        while (!mRelease.load())
+            std::this_thread::yield();
+    }
+
+private:
+    std::atomic<bool>& mStarted;
+    std::atomic<bool>& mRelease;
+};
+}
+
+TEST_CASE("ThreadPool clamps zero workers and rejects tasks after shutdown", "[baselib][threadpool]")
+{
+    std::atomic<int> count{0};
+    ThreadPool pool(0, 1);
+    pool.Start();
+    REQUIRE(pool.GetThreadCount() == 1);
+
+    pool.Execute(std::make_shared<CountingTask>(count));
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (count.load() == 0 && std::chrono::steady_clock::now() < deadline)
+        std::this_thread::yield();
+    REQUIRE(count.load() == 1);
+
+    pool.ShutDown();
+    pool.Execute(std::make_shared<CountingTask>(count));
+    REQUIRE(pool.GetTaskCount() == 0);
+    REQUIRE(count.load() == 1);
+}
+
+TEST_CASE("ThreadPool CancelAllTasks wakes a producer blocked by a full queue", "[baselib][threadpool]")
+{
+    std::atomic<bool> blockerStarted{false};
+    std::atomic<bool> releaseBlocker{false};
+    std::atomic<int> count{0};
+    ThreadPool pool(1, 1);
+    pool.Start();
+    pool.Execute(std::make_shared<BlockingTask>(blockerStarted, releaseBlocker));
+
+    const auto startDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (!blockerStarted.load() && std::chrono::steady_clock::now() < startDeadline)
+        std::this_thread::yield();
+    REQUIRE(blockerStarted.load());
+
+    pool.Execute(std::make_shared<CountingTask>(count));
+    std::atomic<bool> producerEntered{false};
+    std::atomic<bool> producerReturned{false};
+    std::thread producer([&]() {
+        producerEntered.store(true);
+        pool.Execute(std::make_shared<CountingTask>(count), ThreadPool::NO_REMOVE);
+        producerReturned.store(true);
+    });
+
+    while (!producerEntered.load())
+        std::this_thread::yield();
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    REQUIRE_FALSE(producerReturned.load());
+
+    pool.CancelAllTasks();
+    const auto producerDeadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+    while (!producerReturned.load() && std::chrono::steady_clock::now() < producerDeadline)
+        std::this_thread::yield();
+    REQUIRE(producerReturned.load());
+
+    producer.join();
+    releaseBlocker.store(true);
+    pool.ShutDown();
+}

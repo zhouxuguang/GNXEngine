@@ -9,6 +9,7 @@
 #define BASELIB_THREADPOOL_IMPL_INCLUDE_H_FFGD3FGGHR
 
 #include <thread>
+#include <mutex>
 #include <deque>
 #include <vector>
 #include "TaskRunner.h"
@@ -77,6 +78,8 @@ private:
     uint32_t  mMaxTasks;        //最大任务个数
     
     std::atomic_bool mShutDown;             //是否关闭线程池
+    std::atomic_bool mAcceptTasks{true};     //允许首次 Start 前排队，但 ShutDown 后拒绝新任务
+    std::mutex mLifecycleLock;              //串行化 Start/ShutDown 对工作线程容器的修改
     
     MutexLock mLock;
     

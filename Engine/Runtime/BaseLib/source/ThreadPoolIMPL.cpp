@@ -7,11 +7,13 @@
 
 #include "ThreadPoolIMPL.h"
 
+#include <algorithm>
+
 NS_BASELIB_BEGIN
 
 ThreadPoolIMPL::ThreadPoolIMPL():mShutDown(true),mFullCondition(&mLock),mEmptyCondition(&mLock)
 {
-    mThreadCount = std::thread::hardware_concurrency();
+    mThreadCount = static_cast<int>(std::max(1u, std::thread::hardware_concurrency()));
     mMaxTasks = 65536;
     m_bEmptyQueue = true;
     m_bFullQueue = false;
@@ -19,8 +21,8 @@ ThreadPoolIMPL::ThreadPoolIMPL():mShutDown(true),mFullCondition(&mLock),mEmptyCo
 
 ThreadPoolIMPL::ThreadPoolIMPL(uint32_t nThreadCount, uint32_t nMaxTaskCount):mShutDown(true),mFullCondition(&mLock),mEmptyCondition(&mLock)
 {
-    mThreadCount = nThreadCount;
-    mMaxTasks = nMaxTaskCount;
+    mThreadCount = static_cast<int>(std::max(1u, nThreadCount));
+    mMaxTasks = std::max(1u, nMaxTaskCount);
     m_bEmptyQueue = true;
     m_bFullQueue = false;
 }
@@ -32,20 +34,32 @@ ThreadPoolIMPL::~ThreadPoolIMPL()
 
 void ThreadPoolIMPL::ShutDown()
 {
-    mShutDown = true;
+    std::lock_guard<std::mutex> lifecycleGuard(mLifecycleLock);
 
-    //唤醒所有等待在空队列条件变量上的工作线程，使其退出循环
     {
         AutoLock lockGuard(mLock);
+        mAcceptTasks.store(false);
+        mShutDown.store(true);
         m_bEmptyQueue = false;
         mEmptyCondition.NotifyAll();
+        // Execute(NO_REMOVE) 也可能在满队列条件上等待。
+        mFullCondition.NotifyAll();
     }
 
-    for (size_t i = 0; i < mThreads.size(); i++)
+    const auto currentThread = std::this_thread::get_id();
+    for (std::thread& thread : mThreads)
     {
-        if (mThreads[i].joinable())
+        if (!thread.joinable())
+            continue;
+
+        // 任务内部可能触发 ThreadPool 析构，不能 join 当前线程。
+        if (thread.get_id() == currentThread)
         {
-            mThreads[i].join();
+            thread.detach();
+        }
+        else
+        {
+            thread.join();
         }
     }
     mThreads.clear();
@@ -53,7 +67,7 @@ void ThreadPoolIMPL::ShutDown()
 
 bool ThreadPoolIMPL::IsRunning() const
 {
-    return !mShutDown;
+    return !mShutDown.load();
 }
 
 int ThreadPoolIMPL::GetThreadCount()
@@ -72,11 +86,23 @@ void ThreadPoolIMPL::CancelAllTasks()
 {
     AutoLock lock_guard(mLock);
     mTaskList.clear();
+    m_bEmptyQueue = true;
+    mFullCondition.NotifyAll();
 }
 
 void ThreadPoolIMPL::Execute(const TaskRunnerPtr &task, ThreadPool::TaskStrategy strategy)
 {
+    if (!task)
+    {
+        return;
+    }
+
     AutoLock lockGuard(mLock);
+
+    if (!mAcceptTasks.load())
+    {
+        return;
+    }
 
     //如果超过最大任务数量，根据不同策略做不同的操作
     if (mTaskList.size() >= mMaxTasks)
@@ -106,8 +132,11 @@ void ThreadPoolIMPL::Execute(const TaskRunnerPtr &task, ThreadPool::TaskStrategy
             }
         }
 
-        m_bEmptyQueue = false;
-        mEmptyCondition.NotifyAll();
+        if (!mShutDown.load())
+        {
+            m_bEmptyQueue = false;
+            mEmptyCondition.NotifyAll();
+        }
     }
 
     //正常插入
@@ -172,14 +201,16 @@ void* ThreadPoolIMPL::WorkFunc(std::weak_ptr<ThreadPoolIMPL> weakThreadPool)
 
 void ThreadPoolIMPL::Start()
 {
-    if (!mShutDown)
+    std::lock_guard<std::mutex> lifecycleGuard(mLifecycleLock);
+    if (!mShutDown.load())
     {
         return;
     }
 
-    mShutDown = false;
+    mShutDown.store(false);
+    mAcceptTasks.store(true);
 
-    size_t nThreads = mThreadCount;
+    const int nThreads = mThreadCount;
     for (int i = 0; i < nThreads; i++)
     {
         mThreads.emplace_back(std::thread(std::bind(ThreadPoolIMPL::WorkFunc, std::weak_ptr(shared_from_this()))));
