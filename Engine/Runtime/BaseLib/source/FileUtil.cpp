@@ -23,6 +23,7 @@
 #  include <string.h>
 #endif
 #include <fstream>
+#include <limits>
 
 #ifndef WIN32
 
@@ -300,7 +301,11 @@ std::vector<uint8_t> FileUtil::ReadBinaryFile(const std::string& path)
 	// 获取文件大小
 	const std::streampos endPosition = file.tellg();
 	if (endPosition <= 0) return {};
-	size_t size = static_cast<size_t>(endPosition);
+	const std::streamoff fileSize = static_cast<std::streamoff>(endPosition);
+	if (static_cast<uintmax_t>(fileSize) > static_cast<uintmax_t>(std::numeric_limits<size_t>::max()) ||
+		static_cast<uintmax_t>(fileSize) > static_cast<uintmax_t>(std::numeric_limits<std::streamsize>::max()))
+		return {};
+	size_t size = static_cast<size_t>(fileSize);
 	if (size == 0) return {};
 
 	// 创建足够容纳文件的向量
@@ -308,7 +313,7 @@ std::vector<uint8_t> FileUtil::ReadBinaryFile(const std::string& path)
 
 	// 回到文件开头并读取内容
 	file.seekg(0);
-	if (!file.read(reinterpret_cast<char*>(buffer.data()), size))
+	if (!file.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(size)))
 	{
 		return {}; // 读取失败
 	}
