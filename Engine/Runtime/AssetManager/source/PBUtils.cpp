@@ -7,12 +7,7 @@ bool nanopb_decode_gnx_bytes(pb_istream_t* stream, const pb_field_t* field, void
 {
 	if (*arg != NULL)
 	{
-		pb_bytes_array_t* pByteArray = (pb_bytes_array_t*)*arg;
-		if (pByteArray)
-		{
-			free(pByteArray);
-		}
-		pByteArray->size = 0;
+		free(*arg);
 		*arg = NULL;
 	}
 
