@@ -498,13 +498,6 @@ UniformBufferPtr DX12RenderDevice::CreateUniformBufferWithSize(uint32_t bufSize)
     return std::make_shared<DX12UniformBuffer>(mContext, bufSize);
 }
 
-ShaderFunctionPtr DX12RenderDevice::CreateShaderFunction(const ShaderCode& shaderSource,
-                                                          ShaderStage shaderStage) const
-{
-    auto shader = std::make_shared<DX12ShaderFunction>(mContext);
-    return shader->InitInner(shaderSource, shaderStage);
-}
-
 GraphicsShaderPtr DX12RenderDevice::CreateGraphicsShader(const ShaderCode& vertexShader,
                                                          const ShaderCode& fragmentShader) const
 {

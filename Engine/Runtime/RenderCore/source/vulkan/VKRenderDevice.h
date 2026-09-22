@@ -50,8 +50,6 @@ public:
     
     UniformBufferPtr CreateUniformBufferWithSize(uint32_t bufSize) const override;
     
-    ShaderFunctionPtr CreateShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const override;
-
     GraphicsShaderPtr CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const override;
     
     GraphicsShaderPtr CreateMeshGraphicsShader(const ShaderCode& taskShader, const ShaderCode& meshShader, const ShaderCode& fragmentShader) const override;

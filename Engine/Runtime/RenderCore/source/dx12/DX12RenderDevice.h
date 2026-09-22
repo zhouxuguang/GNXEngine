@@ -39,7 +39,6 @@ public:
     TextureSamplerPtr CreateSamplerWithDescriptor(const SamplerDesc& des) const override;
     UniformBufferPtr CreateUniformBufferWithSize(uint32_t bufSize) const override;
 
-    ShaderFunctionPtr CreateShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const override;
     GraphicsShaderPtr CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const override;
     GraphicsShaderPtr CreateGraphicsShader(const ShaderStageData& vertexShader,
                                            const ShaderStageData& fragmentShader) const override;

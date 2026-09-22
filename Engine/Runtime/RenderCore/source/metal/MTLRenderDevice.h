@@ -50,11 +50,6 @@ public:
     UniformBufferPtr CreateUniformBufferWithSize(uint32_t bufSize) const override;
     
     /**
-     创建ShaderFunctionPtr
-     */
-    ShaderFunctionPtr CreateShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const override;
-    
-    /**
     创建图形shader
      */
     GraphicsShaderPtr CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const override;

@@ -462,14 +462,6 @@ UniformBufferPtr VKRenderDevice::CreateUniformBufferWithSize(uint32_t bufSize) c
     return std::make_shared<VKUniformBuffer>(mVulkanContext, bufSize, slotCount);
 }
 
-ShaderFunctionPtr VKRenderDevice::CreateShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const
-{
-    VKShaderFunctionPtr shaderPtr = std::make_shared<VKShaderFunction>(mVulkanContext);
-    shaderPtr = shaderPtr->initWithShaderSourceInner(shaderSource, shaderStage);
-    
-    return shaderPtr;
-}
-
 GraphicsShaderPtr VKRenderDevice::CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const
 {
     VKGraphicsShaderPtr shader = std::make_shared<VKGraphicsShader>(mVulkanContext, vertexShader, fragmentShader);

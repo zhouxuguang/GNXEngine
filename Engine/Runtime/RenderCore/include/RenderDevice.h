@@ -127,11 +127,6 @@ public:
     virtual UniformBufferPtr CreateUniformBufferWithSize(uint32_t bufSize) const = 0;
     
     /**
-     创建ShaderFunctionPtr
-     */
-    virtual ShaderFunctionPtr CreateShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const = 0;
-
-    /**
      创建GraphicsShader
      */
     virtual GraphicsShaderPtr CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const = 0;

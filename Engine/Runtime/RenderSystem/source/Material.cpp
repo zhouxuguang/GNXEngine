@@ -63,9 +63,6 @@ MaterialPtr Material::CreateMaterial(const char *shaderStrPath)
     fwrite(fragmentShader->data(), 1, fragmentShader->size(), fp2);
     fclose(fp2);*/
     
-    /*ShaderFunctionPtr vertShader = getRenderDevice()->createShaderFunction(*vertexShader, ShaderStage_Vertex);
-    ShaderFunctionPtr fragShader = getRenderDevice()->createShaderFunction(*fragmentShader, ShaderStage_Fragment);*/
-
     GraphicsShaderPtr shader = GetRenderDevice()->CreateGraphicsShader(
         *shaderAssetString.vertexShader, *shaderAssetString.fragmentShader);
     

@@ -118,15 +118,6 @@ UniformBufferPtr MTLRenderDevice::CreateUniformBufferWithSize(uint32_t bufSize) 
     return uniformBuffer;
 }
 
-/**
- 创建ShaderFunctionPtr
- */
-ShaderFunctionPtr MTLRenderDevice::CreateShaderFunction(const ShaderCode& shaderSource, ShaderStage shaderStage) const
-{
-    MTLShaderFunctionPtr shaderFunction = std::make_shared<MTLShaderFunction>(mMetalLayer.device);
-    return shaderFunction->InitWithShaderSource(shaderSource, shaderStage);
-}
-
 GraphicsShaderPtr MTLRenderDevice::CreateGraphicsShader(const ShaderCode& vertexShader, const ShaderCode& fragmentShader) const
 {
     MTLGraphicsShaderPtr shaderPtr = std::make_shared<MTLGraphicsShader>(mMetalLayer.device, vertexShader, fragmentShader);
@@ -149,8 +140,9 @@ GraphicsPipelinePtr MTLRenderDevice::CreateGraphicsPipeline(const GraphicsPipeli
 
 ComputePipelinePtr MTLRenderDevice::CreateComputePipeline(const ShaderCode& shaderSource) const
 {
-    ShaderFunctionPtr shaderFunction = CreateShaderFunction(shaderSource, ShaderStage_Compute);
-    return std::make_shared<MTLComputePipeline>(mMetalLayer.device, shaderFunction, mPipelineCache);
+    MTLShaderFunctionPtr shaderFunction = std::make_shared<MTLShaderFunction>(mMetalLayer.device);
+    ShaderFunctionPtr kernelFunction = shaderFunction->InitWithShaderSource(shaderSource, ShaderStage_Compute);
+    return std::make_shared<MTLComputePipeline>(mMetalLayer.device, kernelFunction, mPipelineCache);
 }
 
 CommandBufferPtr MTLRenderDevice::CreateCommandBuffer()
