@@ -57,6 +57,7 @@ flowchart TB
         direction LR
         Metal["Metal 后端<br/>macOS · iOS"]
         Vulkan["Vulkan 后端<br/>Windows · Linux · Android"]
+        DX12["DX12 后端<br/>Windows"]
     end
 
     subgraph Base["基础库"]
@@ -90,7 +91,7 @@ flowchart TB
     class Editor,Demo app
     class Engine core
     class RenderSystem,AssetProcess,ShaderCompiler,AssetManager,ImageCodec feature
-    class Metal,Vulkan rhi
+    class Metal,Vulkan,DX12 rhi
     class MathUtil,Allocator,BaseLib base
 
     style App fill:#FFFFFF,stroke:#B9B7E8
@@ -111,8 +112,8 @@ flowchart TB
 | **RenderSystem** | 渲染系统上层，场景、相机、光照、帧图、后处理 | RenderCore, ShaderCompiler |
 | **AssetProcess** | 资源处理，模型导入(Assimp)、IBL、纹理压缩转换 | RenderSystem, AssetManager, ImageCodec |
 | **AssetManager** | 资源管理器，资源加载、缓存、生命周期 | ImageCodec |
-| **RenderCore** | RHI 抽象层，GPU 资源与操作接口，Metal/Vulkan 双后端 | BaseLib |
-| **ShaderCompiler** | Shader 编译管线，HLSL → SPIR-V → MSL/SPIR-V | RenderCore |
+| **RenderCore** | RHI 抽象层，GPU 资源与操作接口，Metal/Vulkan/DX12 三后端 | BaseLib |
+| **ShaderCompiler** | Shader 编译管线，HLSL → SPIR-V → MSL/SPIR-V/DXIL | RenderCore |
 | **ImageCodec** | 图像编解码，PNG/JPEG/TGA/KTX | MathUtil |
 | **MathUtil** | 3D 数学库，向量、矩阵、四元数 | BaseLib |
 | **Allocator** | 内存分配器 | BaseLib |
