@@ -825,6 +825,9 @@ CompiledShaderInfoPtr compileToMSL(ShaderCodePtr spirvCode, ShaderStage shaderSt
     // 关键：使用 MSLResourceBinding 代替 decoration binding
     options.enable_decoration_binding = false;
     options.msl_version = spirv_cross::CompilerMSL::Options::make_msl_version(3, 0);
+    // iOS 上 Task/Mesh Shader 会用到 WaveActiveSum/WavePrefixSum 等 subgroup 运算。
+    // 默认走 quadgroup 路径会因不支持而抛异常，MSL 3.0 已保证 SIMD-group 可用，故显式启用。
+    options.ios_use_simdgroup_functions = true;
     msl.set_msl_options(options);
 
     // Compile to msl, ready to give to metal driver.
