@@ -140,10 +140,25 @@ public:
     void OnEvent(GNXEngine::Event& e);
 
     /**
+     * 启用 / 关闭 ImGui UI 层（默认关闭）。
+     * 关闭时 GetImGuiRenderer() 不会创建 ImGui 上下文与相关 GPU 资源，
+     * 渲染管线也不会绘制 UI；只有显式启用后才按需创建。
+     */
+    void SetImGuiEnabled(bool enabled) { mImGuiEnabled = enabled; }
+    bool IsImGuiEnabled() const { return mImGuiEnabled; }
+
+    /**
      * 获取 ImGui UI 层（首次调用时按需创建并初始化）。
+     * 仅在 SetImGuiEnabled(true) 后有效；未启用时返回 nullptr 且不创建任何资源。
      * 返回的指针由 SceneManager 持有，调用方直接使用即可。
      */
     ImGuiRendererPtr GetImGuiRenderer();
+
+    /**
+     * 查询已创建的 ImGui UI 层，不会触发创建。
+     * 供渲染管线（Present Pass）使用：UI 未启用或尚未创建时不绘制。
+     */
+    const ImGuiRendererPtr& PeekImGuiRenderer() const { return mImGuiRenderer; }
 
     // 清空场景（删除所有节点和灯光）
     void ClearScene();
@@ -208,7 +223,8 @@ private:
     SkyBoxNode* mSkyBoxNode = nullptr;   //天空盒的特殊节点
     PostProcessing *mPostProcessing = nullptr;
 
-    // ImGui UI 层（按需创建）
+    // ImGui UI 层（按需创建，仅在启用后创建）
+    bool mImGuiEnabled = false;
     ImGuiRendererPtr mImGuiRenderer = nullptr;
     
     CameraController* mActiveController = nullptr;  // active camera controller (polymorphic)

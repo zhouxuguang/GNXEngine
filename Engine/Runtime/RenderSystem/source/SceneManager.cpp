@@ -579,6 +579,13 @@ void SceneManager::OnEvent(GNXEngine::Event& e)
 
 ImGuiRendererPtr SceneManager::GetImGuiRenderer()
 {
+    // 未启用时不创建：避免 demo 从未使用 UI 也被迫初始化 ImGui 上下文、
+    // 探测/加载系统 CJK 字体、编译 ImGui 管线并分配顶点缓冲。
+    if (!mImGuiEnabled)
+    {
+        return nullptr;
+    }
+
     if (!mImGuiRenderer)
     {
         RenderDevicePtr device = GetRenderDevice();

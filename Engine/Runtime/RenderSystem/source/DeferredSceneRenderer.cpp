@@ -577,8 +577,10 @@ void DeferredSceneRenderer::RenderPresentPass(FrameGraph& frameGraph, CommandBuf
             mPostProcessing->SetRenderTexture(colorTexture.texture);
             mPostProcessing->Process(renderEncoder);
 
-            // ImGui UI：绘制在最终画面之上（后处理之后），复用同一个 encoder，只切换管线
-            if (ImGuiRendererPtr imGuiRenderer = SceneManager::GetInstance()->GetImGuiRenderer())
+            // ImGui UI：绘制在最终画面之上（后处理之后），复用同一个 encoder，只切换管线。
+            // 这里只查询已创建的 UI 层，不触发创建——UI 的创建由 AppFrameWork::SetImGuiEnabled(true)
+            // 显式开启后、经 GetImGui() 按需完成，未启用的 demo 不会被拉起 ImGui。
+            if (const ImGuiRendererPtr& imGuiRenderer = SceneManager::GetInstance()->PeekImGuiRenderer())
             {
                 imGuiRenderer->Render(renderEncoder);
             }

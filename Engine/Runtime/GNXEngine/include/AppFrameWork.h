@@ -31,8 +31,9 @@ public:
     // ==================== ImGui UI 层 ====================
     // 启用后：每帧由框架驱动 ImGui::NewFrame()，且事件分发时优先让 UI 消费输入
     // （UI 命中时不再传递给 3D 场景）。在 Initlize() 中调用即可。
-    void SetImGuiEnabled(bool enabled) { mImGuiEnabled = enabled; }
-    bool IsImGuiEnabled() const { return mImGuiEnabled; }
+    // 状态由 SceneManager 持有（唯一来源）：未启用时不会创建 ImGui 上下文与相关 GPU 资源。
+    void SetImGuiEnabled(bool enabled);
+    bool IsImGuiEnabled() const;
 
     // 获取 ImGui 层（未启用时返回 nullptr）
     RenderSystem::ImGuiRendererPtr GetImGui();
@@ -51,7 +52,6 @@ private:
 
     bool mMinimized = false;
 
-    bool     mImGuiEnabled = false;
     uint64_t mLastFrameTick = 0;
     float    mDeltaTime = 1.0f / 60.0f;
 };

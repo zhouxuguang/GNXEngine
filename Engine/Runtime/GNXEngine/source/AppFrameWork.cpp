@@ -93,9 +93,19 @@ void AppFrameWork::RenderFrame()
     commandBuffer->PresentFrameBuffer();
 }
 
+void AppFrameWork::SetImGuiEnabled(bool enabled)
+{
+    RenderSystem::SceneManager::GetInstance()->SetImGuiEnabled(enabled);
+}
+
+bool AppFrameWork::IsImGuiEnabled() const
+{
+    return RenderSystem::SceneManager::GetInstance()->IsImGuiEnabled();
+}
+
 RenderSystem::ImGuiRendererPtr AppFrameWork::GetImGui()
 {
-    if (!mImGuiEnabled)
+    if (!IsImGuiEnabled())
     {
         return nullptr;
     }
@@ -104,7 +114,7 @@ RenderSystem::ImGuiRendererPtr AppFrameWork::GetImGui()
 
 void AppFrameWork::UpdateImGuiFrame()
 {
-    if (!mImGuiEnabled || !mRenderWindow)
+    if (!IsImGuiEnabled() || !mRenderWindow)
     {
         return;
     }
@@ -136,7 +146,7 @@ void AppFrameWork::OnEvent(Event& e)
 
     // ImGui 优先消费输入事件：当 UI 捕获鼠标/键盘时，事件不再传递给 3D 场景，
     // 避免「点击 UI 面板的同时也在操作相机」这类问题。
-    if (mImGuiEnabled)
+    if (IsImGuiEnabled())
     {
         if (RenderSystem::ImGuiRendererPtr imgui = GetImGui())
         {

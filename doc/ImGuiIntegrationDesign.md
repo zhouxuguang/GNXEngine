@@ -345,7 +345,7 @@ ImGui::Render();
 | `ThirdParty/imgui/CMakeLists.txt` | **统一 STATIC**（`libimgui.a`），另提供 `imgui_headers` 接口目标，详见 8.2 |
 | `Engine/Shader/built-in/ImGui.shader` | 顶点属性 3 个独立 buffer（POSITION/TEXCOORD0/COLOR0），输出线性色的 `col * tex` |
 | `Engine/Runtime/RenderSystem/include/UI/ImGuiRenderer.{h,cpp}` | RHI 渲染后端 + 输入桥接（约 500 行） |
-| `Engine/Runtime/RenderSystem/include/SceneManager.h` + `.cpp` | 持有 ImGui 层，`GetImGuiRenderer()` 按需创建 |
+| `Engine/Runtime/RenderSystem/include/SceneManager.h` + `.cpp` | 持有 ImGui 层，`GetImGuiRenderer()` 在 `SetImGuiEnabled(true)` 后按需创建（Present Pass 用不触发创建的 `PeekImGuiRenderer()`） |
 | `Engine/Runtime/RenderSystem/source/DeferredSceneRenderer.cpp` | `RenderPresentPass` 中后处理之后绘制 UI |
 | `Engine/Runtime/GNXEngine/include/AppFrameWork.h` + `.cpp` | `SetImGuiEnabled()` / `GetImGui()` / `UpdateImGuiFrame()` / 事件优先拦截 |
 | `Engine/Runtime/GNXEngine/include/RenderWindow.h` | 新增 `GetDPIScale()`（GLFW/SDL 各自实现） |
