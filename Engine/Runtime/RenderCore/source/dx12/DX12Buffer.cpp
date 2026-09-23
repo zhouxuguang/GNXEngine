@@ -106,7 +106,19 @@ bool DX12BufferBase::CreateBufferInternal(const DX12ContextPtr& context, const R
 
     // ---- 创建主资源（16 字节对齐，满足 constant buffer / CBV 要求）----
     mSize = desc.size;
-    const uint64_t allocSize = (DX12Util::AlignUp(desc.size, 16));
+    uint64_t allocSize = (DX12Util::AlignUp(desc.size, 16));
+    if (allocSize == 0)
+    {
+        // 大小为 0 的缓冲区（例如"空"的顶点/结构缓冲）在 D3D12 里仍然要
+        // 占一个资源：GetResourceAllocationInfo 会返回 SizeInBytes == 0，
+        // D3D12MA 直接断言失败并终止进程（D3D12MemAlloc.cpp:6698）。
+        // 这里统一按最小对齐单位分配，保证资源合法；内容不会被实际使用。
+        LOG_WARN("[DX12] CreateBufferInternal: requested size is 0 (usage=0x%X, heap=%d, name=%s); "
+                 "allocating the minimum %u bytes instead",
+                 (unsigned)desc.usage, (int)heapType,
+                 mDebugName.empty() ? "<unnamed>" : mDebugName.c_str(), 16u);
+        allocSize = 16;
+    }
 
     const D3D12_RESOURCE_DESC resourceDesc = DX12BufferResourceDesc(allocSize, flags);
     HRESULT hr = mContext->CreateResource(resourceDesc, heapType, initialState, &mAllocation,
