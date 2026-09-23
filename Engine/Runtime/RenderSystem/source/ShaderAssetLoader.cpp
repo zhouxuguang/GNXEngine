@@ -15,6 +15,8 @@
 #include "Runtime/BaseLib/include/PreCompile.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include <fstream>
+#include <regex>
+#include <sstream>
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -218,13 +220,59 @@ ShaderAssetString LoadShaderAsset(const std::string &shaderName)
     return shaderAssetString;
 }
 
+// 入口点探测：一个 .shader 通常只定义少数入口（TerrainCull 只有 CS、普通模型
+// shader 只有 VS/PS、MeshShader 只有 MS/PS ...）。若对不存在的阶段也提交编译，
+// DXC 每个阶段都会报一次 "error: missing entry point definition"，
+// 既拖慢首次加载，又用无害但刺眼的 ERROR 刷屏。
+//
+// 探测规则与 tools/compile_shaders.* / tool/shader_compile 保持一致：
+// 匹配行首或空白之后的 VS(/PS(/CS(/TS(/MS(。
+// 文件读不到时返回全 1，保持"全部都试"的旧行为（宁可多编译也不要漏阶段）。
+static uint32_t DetectEntryPointMask(const std::string& shaderFilePath)
+{
+    constexpr uint32_t kAllStages = (1u << RenderCore::ShaderStage_Max) - 1u;
+
+    std::ifstream file(shaderFilePath, std::ios::binary);
+    if (!file.is_open())
+    {
+        return kAllStages;
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    const std::string content = buffer.str();
+
+    static const std::regex entryPointRegex(R"((?:^|\s)(VS|PS|CS|TS|MS)\s*\()");
+
+    uint32_t mask = 0;
+    for (auto it = std::sregex_iterator(content.begin(), content.end(), entryPointRegex);
+         it != std::sregex_iterator(); ++it)
+    {
+        const std::string token = (*it)[1].str();
+        if (token == "VS")      mask |= (1u << RenderCore::ShaderStage_Vertex);
+        else if (token == "PS") mask |= (1u << RenderCore::ShaderStage_Fragment);
+        else if (token == "CS") mask |= (1u << RenderCore::ShaderStage_Compute);
+        else if (token == "TS") mask |= (1u << RenderCore::ShaderStage_Task);
+        else if (token == "MS") mask |= (1u << RenderCore::ShaderStage_Mesh);
+    }
+
+    return (mask != 0) ? mask : kAllStages;
+}
+
 ShaderAssetString LoadCustomShaderAsset(const std::string &shaderName)
 {
     ShaderAssetString result;
     if (!GetRenderDevice()) return result;
 
     const RenderCore::ShaderFormat format = GetShaderFormat(GetRenderDevice()->GetRenderDeviceType());
+
+    const uint32_t stageMask = DetectEntryPointMask(shaderName);
+    const auto hasStage = [stageMask](ShaderStage stage) {
+        return (stageMask & (1u << (uint32_t)stage)) != 0;
+    };
+
     const auto compileStage = [&](ShaderStage stage) {
+        if (!hasStage(stage)) return std::shared_ptr<RenderCore::ShaderStageData>();
         CompiledShaderInfoPtr compiled = CompileShader(shaderName, stage, format);
         if (!compiled) return std::shared_ptr<RenderCore::ShaderStageData>();
         return std::make_shared<RenderCore::ShaderStageData>(compiled->ToStageData(stage));
