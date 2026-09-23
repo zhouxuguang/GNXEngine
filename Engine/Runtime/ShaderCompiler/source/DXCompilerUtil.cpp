@@ -276,24 +276,36 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
     result = m_pCompiler->Compile(&sourceBuffer, arguments.data(), (UINT32)arguments.size(), pIncludeHandler, IID_PPV_ARGS(&pResults));
     
     //
-    // 如果有错误，就打印出来看看
+    // 打印诊断信息。DXC 始终返回一个诊断缓冲：里面可能只有 warning（编译成功），
+    // 也可能是真正的编译错误。因此必须先用 GetStatus 区分成败，
+    // 否则"只有 warning"的正常编译也会以 ERROR 级别刷屏。
     //
     CComPtr<IDxcBlobUtf8> pErrors = nullptr;
     result = pResults->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&pErrors), nullptr);
     // Note that d3dcompiler would return null if no errors or warnings are present.
     // IDxcCompiler3::Compile will always return an error buffer, but its length will be zero if there are no warnings or errors.
+
+    HRESULT hrStatus;
+    result = pResults->GetStatus(&hrStatus);
+    const bool compileOk = SUCCEEDED(hrStatus);
+
     if (pErrors != nullptr && pErrors->GetStringLength() != 0)
     {
         const char* buffer = pErrors->GetStringPointer();
-        LOG_ERROR("Warnings and Errors: %s\n", buffer);
+        if (compileOk)
+        {
+            LOG_WARN("Shader compiled with warnings: %s\n", buffer);
+        }
+        else
+        {
+            LOG_ERROR("Warnings and Errors: %s\n", buffer);
+        }
     }
 
     //
     // Quit if the compilation failed.
     //
-    HRESULT hrStatus;
-    result = pResults->GetStatus(&hrStatus);
-    if (FAILED(hrStatus))
+    if (!compileOk)
     {
 		const char* buffer = pErrors->GetStringPointer();
         LOG_ERROR("Compilation Failed: %s\n", buffer);
@@ -325,9 +337,12 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
 namespace
 {
 // Runs DXC and returns DXIL; callers may retry with a compatibility language version.
+// logAsError == false 表示调用方后面还会用兼容模式重试，本次失败属于预期内，
+// 不要以 ERROR 级别报出来（否则一次成功编译也会在控制台留下错误）。
 CComPtr<IDxcBlob> RunDXCCompile(IDxcCompiler3* compiler, IDxcUtils* utils,
                                 const DxcBuffer& source, std::vector<LPCWSTR>& arguments,
-                                ShaderStage shaderStage, const char* tag)
+                                ShaderStage shaderStage, const char* tag,
+                                bool logAsError = true)
 {
     CComPtr<IDxcIncludeHandler> includeHandler = nullptr;
     utils->CreateDefaultIncludeHandler(&includeHandler);
@@ -344,15 +359,32 @@ CComPtr<IDxcBlob> RunDXCCompile(IDxcCompiler3* compiler, IDxcUtils* utils,
 
     CComPtr<IDxcBlobUtf8> errors = nullptr;
     results->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(&errors), nullptr);
-    if (errors != nullptr && errors->GetStringLength() != 0)
-    {
-        LOG_ERROR("[%s] DXC diagnostics (stage=%d): %s", tag, (int)shaderStage,
-                  errors->GetStringPointer());
-    }
 
     HRESULT status = E_FAIL;
     results->GetStatus(&status);
-    if (FAILED(status))
+    const bool compileOk = SUCCEEDED(status);
+
+    if (errors != nullptr && errors->GetStringLength() != 0)
+    {
+        // 只有 warning 时不要以 ERROR 级别报出来（见 compileHLSLToSPIRV 的同类处理）
+        if (compileOk)
+        {
+            LOG_WARN("[%s] DXC warnings (stage=%d): %s", tag, (int)shaderStage,
+                     errors->GetStringPointer());
+        }
+        else if (logAsError)
+        {
+            LOG_ERROR("[%s] DXC diagnostics (stage=%d): %s", tag, (int)shaderStage,
+                      errors->GetStringPointer());
+        }
+        else
+        {
+            LOG_WARN("[%s] DXC diagnostics (stage=%d, will retry with -HV 2016): %s", tag,
+                     (int)shaderStage, errors->GetStringPointer());
+        }
+    }
+
+    if (!compileOk)
     {
         return nullptr;
     }
@@ -364,6 +396,9 @@ CComPtr<IDxcBlob> RunDXCCompile(IDxcCompiler3* compiler, IDxcUtils* utils,
         LOG_ERROR("[%s] DXC produced no object (stage=%d)", tag, (int)shaderStage);
         return nullptr;
     }
+
+    LOG_INFO("[%s] DXIL compiled (stage=%d, %llu bytes)", tag, (int)shaderStage,
+             (unsigned long long)shader->GetBufferSize());
 
     return shader;
 }
@@ -432,9 +467,11 @@ ShaderCodePtr DXCompilerUtil::compileHLSLTextToDXIL(const std::string& hlslSourc
         arguments.push_back(L"USE_REVERSE_Z");
     }
 
-    // 首次尝试；失败后用 -HV 2016 重试（见 RunDXCCompile 的说明）
+    // 首次尝试；失败后用 -HV 2016 重试（见 RunDXCCompile 的说明）。
+    // 首次失败不算错误：部分 shader（如 SSRTrace 的 PS 里带 [unroll] 的循环）
+    // 只有在兼容模式下才会被 DXC 接受，因此这里必须以 logAsError=false 记录。
     CComPtr<IDxcBlob> pShader = RunDXCCompile(m_pCompiler, m_pUtils, sourceBuffer, arguments,
-                                              shaderStage, "DXIL");
+                                              shaderStage, "DXIL", false);
     if (!pShader)
     {
         arguments.push_back(L"-HV");
