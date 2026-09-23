@@ -75,7 +75,7 @@ public:
     static Quaternion Inverse(const Quaternion& rotation);
     
     //四元数混合
-    static Quaternion Mix(const Quaternion& from, const Quaternion& to, float t);
+    static Quaternion Mix(const Quaternion& from, const Quaternion& to, T t);
 
 	//球面线性插值
 	static Quaternion Slerp(const Quaternion &p, const Quaternion &q, T t);

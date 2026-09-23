@@ -58,20 +58,25 @@ bool IntersectRayTriangle(const Rayf& ray, const Vector3f& v0, const Vector3f& v
 template<typename T>
 bool IntersectRaySphere(const Ray<T>& ray, const Sphere<T>& inSphere)
 {
-    Vector3<T> dif = inSphere.GetCenter() - ray.GetOrigin();
-    T d = dif.DotProduct(ray.GetDirection());
-    T lSqr = dif.DotProduct(dif);
-    T rSqr = inSphere.GetRadius() * inSphere.GetRadius();
+    const Vector3<T> offset = ray.GetOrigin() - inSphere.GetCenter();
+    const Vector3<T> direction = ray.GetDirection();
+    const T radiusSquared = inSphere.GetRadius() * inSphere.GetRadius();
+    const T c = offset.DotProduct(offset) - radiusSquared;
 
-    if (d < 0.0f && lSqr > rSqr)
-        return false;
-
-    T mSqr = lSqr - d * d;
-
-    if (mSqr > rSqr)
-        return false;
-    else
+    // A ray starting inside or on the sphere intersects at t = 0.
+    if (c <= T(0))
         return true;
+
+    const T a = direction.DotProduct(direction);
+    if (a <= std::numeric_limits<T>::epsilon())
+        return false;
+
+    const T b = offset.DotProduct(direction);
+    if (b >= T(0))
+        return false;
+
+    const T discriminant = b * b - a * c;
+    return discriminant >= T(0);
 }
 
 template<typename T>
@@ -136,7 +141,7 @@ bool IntersectSphereSphere(const Sphere<T>& s1, const Sphere<T>& s2)
 {
 	T radiiSum = s1.GetRadius() + s2.GetRadius();
 	T sqDistance = (s1.GetCenter() - s2.GetCenter()).LengthSq();
-	return sqDistance < radiiSum * radiiSum;
+	return sqDistance <= radiiSum * radiiSum;
 }
 
 template<typename T>
@@ -145,7 +150,7 @@ bool IntersectSphereAABB(const Sphere<T>& sphere, const AxisAlignedBox<T>& aabb)
 	Vector3<T> closestPoint = PointTest::ClosestPoint(aabb, sphere.mCenter);
     T distSq = (sphere.mCenter - closestPoint).LengthSq();
     T radiusSq = sphere.mRadius * sphere.mRadius;
-	return distSq < radiusSq;
+	return distSq <= radiusSq;
 }
 
 template<typename T>
@@ -154,7 +159,7 @@ bool IntersectSphereOBB(const Sphere<T>& sphere, const OrientedBoundingBox<T>& o
     Vector3<T> closestPoint = PointTest::ClosestPoint(obb, sphere.mCenter);
     T distSq = (sphere.mCenter - closestPoint).LengthSq();
     T radiusSq = sphere.mRadius * sphere.mRadius;
-	return distSq < radiusSq;
+	return distSq <= radiusSq;
 }
 
 template<typename T>

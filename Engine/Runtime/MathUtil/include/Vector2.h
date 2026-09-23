@@ -58,7 +58,7 @@ public:
         return *this;
     }
 
-	inline Vector2& operator = ( const Real fScalar)
+	inline Vector2& operator = ( const T fScalar)
 	{
 		x = fScalar;
 		y = fScalar;
@@ -90,7 +90,7 @@ public:
             y - rkVector.y);
     }
 
-    inline Vector2 operator * ( const Real fScalar ) const
+    inline Vector2 operator * ( const T fScalar ) const
     {
         return Vector2(
             x * fScalar,
@@ -104,15 +104,13 @@ public:
             y * rhs.y);
     }
 
-    inline Vector2 operator / ( const Real fScalar ) const
+    inline Vector2 operator / ( const T fScalar ) const
     {
-        assert( !ApproxEqual(fScalar, Real(0)) );
-
-        Real fInv = 1.0f / fScalar;
+        assert( fScalar != T(0) );
 
         return Vector2(
-            x * fInv,
-            y * fInv);
+            x / fScalar,
+            y / fScalar);
     }
 
     inline Vector2 operator / ( const Vector2& rhs) const
@@ -132,42 +130,42 @@ public:
         return Vector2(-x, -y);
     }
 
-    inline friend Vector2 operator * ( const Real fScalar, const Vector2& rkVector )
+    inline friend Vector2 operator * ( const T fScalar, const Vector2& rkVector )
     {
         return Vector2(
             fScalar * rkVector.x,
             fScalar * rkVector.y);
     }
 
-    inline friend Vector2 operator / ( const Real fScalar, const Vector2& rkVector )
+    inline friend Vector2 operator / ( const T fScalar, const Vector2& rkVector )
     {
         return Vector2(
             fScalar / rkVector.x,
             fScalar / rkVector.y);
     }
 
-    inline friend Vector2 operator + (const Vector2& lhs, const Real rhs)
+    inline friend Vector2 operator + (const Vector2& lhs, const T rhs)
     {
         return Vector2(
             lhs.x + rhs,
             lhs.y + rhs);
     }
 
-    inline friend Vector2 operator + (const Real lhs, const Vector2& rhs)
+    inline friend Vector2 operator + (const T lhs, const Vector2& rhs)
     {
         return Vector2(
             lhs + rhs.x,
             lhs + rhs.y);
     }
 
-    inline friend Vector2 operator - (const Vector2& lhs, const Real rhs)
+    inline friend Vector2 operator - (const Vector2& lhs, const T rhs)
     {
         return Vector2(
             lhs.x - rhs,
             lhs.y - rhs);
     }
 
-    inline friend Vector2 operator - (const Real lhs, const Vector2& rhs)
+    inline friend Vector2 operator - (const T lhs, const Vector2& rhs)
     {
         return Vector2(
             lhs - rhs.x,
@@ -183,7 +181,7 @@ public:
         return *this;
     }
 
-    inline Vector2& operator += ( const Real fScaler )
+    inline Vector2& operator += ( const T fScaler )
     {
         x += fScaler;
         y += fScaler;
@@ -199,7 +197,7 @@ public:
         return *this;
     }
 
-    inline Vector2& operator -= ( const Real fScaler )
+    inline Vector2& operator -= ( const T fScaler )
     {
         x -= fScaler;
         y -= fScaler;
@@ -207,7 +205,7 @@ public:
         return *this;
     }
 
-    inline Vector2& operator *= ( const Real fScalar )
+    inline Vector2& operator *= ( const T fScalar )
     {
         x *= fScalar;
         y *= fScalar;
@@ -223,14 +221,12 @@ public:
         return *this;
     }
 
-    inline Vector2& operator /= ( const Real fScalar )
+    inline Vector2& operator /= ( const T fScalar )
     {
-        assert( !ApproxEqual(fScalar, Real(0)) );
+        assert( fScalar != T(0) );
 
-        Real fInv = 1.0f / fScalar;
-
-        x *= fInv;
-        y *= fInv;
+        x /= fScalar;
+        y /= fScalar;
 
         return *this;
     }

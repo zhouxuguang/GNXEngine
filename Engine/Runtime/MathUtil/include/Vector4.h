@@ -74,7 +74,7 @@ public:
 			w - rkVector.w);
 	}
 
-	inline Vector4 operator * ( const Real fScalar ) const
+	inline Vector4 operator * ( const T fScalar ) const
 	{
 		return Vector4(
 			x * fScalar,

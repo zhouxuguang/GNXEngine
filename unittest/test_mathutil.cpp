@@ -85,6 +85,16 @@ TEST_CASE("Vector2 scalar division", "[mathutil][vector2]")
     REQUIRE(r.y == 4.0f);
 }
 
+TEST_CASE("Vector2 double scalar operations preserve precision", "[mathutil][vector2]")
+{
+    const double scalar = 1.0 + 1.0e-10;
+    Vector2d value(2.0, 4.0);
+    const Vector2d result = value * scalar;
+
+    REQUIRE_THAT(result.x, WithinAbs(2.0 * scalar, 1.0e-14));
+    REQUIRE_THAT(result.y, WithinAbs(4.0 * scalar, 1.0e-14));
+}
+
 TEST_CASE("Vector2 component-wise multiply", "[mathutil][vector2]")
 {
     Vector2f a(2.0f, 3.0f);
@@ -461,6 +471,18 @@ TEST_CASE("Vector3 Lerp", "[mathutil][vector3]")
     REQUIRE_THAT(atEnd.x, WithinAbs(10.0f, 1e-5f));
     REQUIRE_THAT(atEnd.y, WithinAbs(10.0f, 1e-5f));
     REQUIRE_THAT(atEnd.z, WithinAbs(10.0f, 1e-5f));
+}
+
+TEST_CASE("Vector3 double Lerp preserves interpolation precision", "[mathutil][vector3]")
+{
+    const Vector3d start(0.0, 0.0, 0.0);
+    const Vector3d end(1.0, 2.0, 3.0);
+    const double t = 1.0e-10;
+    const Vector3d result = Vector3d::Lerp(start, end, t);
+
+    REQUIRE_THAT(result.x, WithinAbs(t, 1.0e-20));
+    REQUIRE_THAT(result.y, WithinAbs(2.0 * t, 1.0e-20));
+    REQUIRE_THAT(result.z, WithinAbs(3.0 * t, 1.0e-20));
 }
 
 // ==================== Vector4 测试 ====================
@@ -1388,6 +1410,23 @@ TEST_CASE("MathUtil constants", "[mathutil][mathutil]")
     REQUIRE_THAT(kPi, WithinAbs(3.14159265f, 1e-5f));
     REQUIRE_THAT(k2Pi, WithinAbs(2.0f * 3.14159265f, 1e-4f));
     REQUIRE_THAT(kPiOver2, WithinAbs(1.57079632f, 1e-5f));
+}
+
+TEST_CASE("Ray sphere intersection accepts non-unit directions", "[mathutil][intersection]")
+{
+    const Spheref sphere(Vector3f(5.0f, 0.0f, 0.0f), 1.0f);
+    const Rayf hit(Vector3f(0.0f, 0.0f, 0.0f), Vector3f(10.0f, 0.0f, 0.0f));
+    const Rayf miss(Vector3f(0.0f, 3.0f, 0.0f), Vector3f(10.0f, 0.0f, 0.0f));
+
+    REQUIRE(IntersectRaySphere(hit, sphere));
+    REQUIRE_FALSE(IntersectRaySphere(miss, sphere));
+}
+
+TEST_CASE("Sphere tangency counts as intersection", "[mathutil][intersection]")
+{
+    const Spheref first(Vector3f(0.0f, 0.0f, 0.0f), 1.0f);
+    const Spheref second(Vector3f(2.0f, 0.0f, 0.0f), 1.0f);
+    REQUIRE(IntersectSphereSphere(first, second));
 }
 
 // ==================== Sphere 测试 ====================

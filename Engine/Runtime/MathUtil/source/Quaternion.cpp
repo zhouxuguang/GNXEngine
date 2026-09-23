@@ -384,9 +384,9 @@ Quaternion<T> Quaternion<T>::Inverse(const Quaternion<T>& rotation)
 }
 
 template <typename T>
-Quaternion<T> Quaternion<T>::Mix(const Quaternion<T>& from, const Quaternion<T>& to, float t)
+Quaternion<T> Quaternion<T>::Mix(const Quaternion<T>& from, const Quaternion<T>& to, T t)
 {
-    return from * (1.0 - t) + to * t;
+    return from * (T(1) - t) + to * t;
 }
 
 template <typename T>

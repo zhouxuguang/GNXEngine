@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <mutex>
+#include <cstring>
 
 #include "MathUtil.h"
 #include "Vector3.h"
@@ -57,6 +58,9 @@ void Rand_Seed(const unsigned int seed)
 	srand(seed);
 }
 
+namespace
+{
+
 double SinTable[361] = {0};
 double CosTable[361] = {0};
 std::once_flag g_tableInitFlag;
@@ -74,36 +78,21 @@ void TableInit()
 	CosTable[360] = CosTable[0];
 }
 
+} // namespace
 
 
 Real MathUtil::ACos(Real fValue)
 {
-	if ( -(Real)1.0 < fValue )
-	{
-		if ( fValue < (Real)1.0 )
-			return (Real)acos((double)fValue);
-		else
-			return (Real)0.0;
-	}
-	else
-	{
-		return M_PI;
-	}
+	const Real clamped = Clamp(fValue, Real(-1), Real(1));
+	return static_cast<Real>(acos(static_cast<double>(clamped)));
 }
 
 Real MathUtil::ASin(Real fValue)
 {
-	if ( -(Real)1.0 < fValue )
-	{
-		if ( fValue < (Real)1.0 )
-			return (Real)asin((double)fValue);
-		else
-			return (Real)(M_PI / 2.0);  // fValue >= 1 时返回 π/2
-	}
-	else
-	{
-		return (Real)(-M_PI / 2.0);  // fValue <= -1 时返回 -π/2
-	}
+	// Keep the same saturating boundary semantics as ACos, without a second
+	// hand-written range-check implementation.
+	const Real clamped = Clamp(fValue, Real(-1), Real(1));
+	return static_cast<Real>(asin(static_cast<double>(clamped)));
 }
 
 bool MathUtil::IsNaN(Real f)
@@ -117,9 +106,12 @@ bool MathUtil::IsNaN(Real f)
 double MathUtil::FastInvSqrt(double dValue)
 {
 	double dHalf = 0.5*dValue;
-	long long i = *(long long*)&dValue;
+	// Copy the representation instead of type-punning through a pointer.
+	// The latter violates strict-aliasing and can miscompile under /O2/LTO.
+	long long i = 0;
+	std::memcpy(&i, &dValue, sizeof(i));
 	i = 0x5fe6ec85e7de30da - (i >> 1);
-	dValue = *(double*)&i;
+	std::memcpy(&dValue, &i, sizeof(dValue));
 	dValue = dValue*(1.5 - dHalf*dValue*dValue);
 	return dValue;
 }
@@ -127,17 +119,12 @@ double MathUtil::FastInvSqrt(double dValue)
 float MathUtil::FastInvSqrt(float fValue)
 {
 	float fHalf = 0.5f*fValue;
-	int i = *(int*)&fValue;
+	int i = 0;
+	std::memcpy(&i, &fValue, sizeof(i));
 	i = 0x5f3759df - (i >> 1);
-	fValue = *(float*)&i;
+	std::memcpy(&fValue, &i, sizeof(fValue));
 	fValue = fValue*(1.5f - fHalf*fValue*fValue);
 	return fValue;
-}
-
-inline bool b2IsValid(float x)
-{
-    int ix = *reinterpret_cast<int*>(&x);
-    return (ix & 0x7f800000) != 0x7f800000;
 }
 
 Real MathUtil::ATan(Real fValue)
@@ -197,29 +184,11 @@ Real MathUtil::FastCos(Real fValue)
 
 float GetClamp(float x,float fMin,float fMax)
 {
-	if (x < fMin)
-	{
-		x = fMin;
-	}
-
-	else if (x > fMax)
-	{
-		x = fMax;
-	}
-
-	return x;
+	return Clamp(x, fMin, fMax);
 }
 
 namespace
 {
-
-struct RGB9E5Data
-{
-	unsigned int R : 9;
-	unsigned int G : 9;
-	unsigned int B : 9;
-	unsigned int E : 5;
-};
 
 // B is the exponent bias (15)
 constexpr int g_sharedexp_bias = 15;
@@ -238,15 +207,6 @@ constexpr float g_sharedexp_max =
 	static_cast<float>(1 << g_sharedexp_mantissabits)) *
 	static_cast<float>(1 << (g_sharedexp_maxexponent - g_sharedexp_bias));
 
-template <typename destType, typename sourceType>
-destType bitCast(const sourceType& source)
-{
-	size_t copySize = std::min(sizeof(destType), sizeof(sourceType));
-	destType output;
-	memcpy(&output, &source, copySize);
-	return output;
-}
-
 }  // anonymous namespace
 
 uint32_t convertRGBFloatToRGB9E5(float red, float green, float blue)
@@ -257,16 +217,10 @@ uint32_t convertRGBFloatToRGB9E5(float red, float green, float blue)
 
 	const float max_c = std::max<float>({ red_c, green_c, blue_c });
 
-	RGB9E5Data output;
-
 	// 全零（或极小）输入编码为 0
 	if (max_c < 1e-32f)
 	{
-		output.R = 0;
-		output.G = 0;
-		output.B = 0;
-		output.E = 0;
-		return bitCast<unsigned int>(output);
+		return 0;
 	}
 
 	// 共享指数必须使用以 2 为底的对数（log2）。
@@ -291,24 +245,25 @@ uint32_t convertRGBFloatToRGB9E5(float red, float green, float blue)
 		unsigned int v = static_cast<unsigned int>(floor((c / pow2_exp) + 0.5f));
 		return v < 511u ? v : 511u;
 	};
-	output.R = quantize(red_c);
-	output.G = quantize(green_c);
-	output.B = quantize(blue_c);
-	output.E = exp_s;
-
-	return bitCast<unsigned int>(output);
+	const uint32_t r = quantize(red_c);
+	const uint32_t g = quantize(green_c);
+	const uint32_t b = quantize(blue_c);
+	const uint32_t e = static_cast<uint32_t>(exp_s) & 0x1fu;
+	return r | (g << 9) | (b << 18) | (e << 27);
 }
 
 void convertRGB9E5toRGBFloat(uint32_t input, float* red, float* green, float* blue)
 {
-	const RGB9E5Data* inputData = reinterpret_cast<const RGB9E5Data*>(&input);
-
+	const uint32_t r = input & 0x1ffu;
+	const uint32_t g = (input >> 9) & 0x1ffu;
+	const uint32_t b = (input >> 18) & 0x1ffu;
+	const uint32_t e = (input >> 27) & 0x1fu;
 	const float pow2_exp =
-		pow(2.0f, static_cast<float>(inputData->E) - g_sharedexp_biased_mantissabits);
+		pow(2.0f, static_cast<float>(e) - g_sharedexp_biased_mantissabits);
 
-	*red = inputData->R * pow2_exp;
-	*green = inputData->G * pow2_exp;
-	*blue = inputData->B * pow2_exp;
+	*red = r * pow2_exp;
+	*green = g * pow2_exp;
+	*blue = b * pow2_exp;
 }
 
 NS_MATHUTIL_END

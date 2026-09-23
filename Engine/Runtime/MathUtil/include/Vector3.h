@@ -168,7 +168,7 @@ public:
     static Vector3 Refraction(const Vector3& incident, const Vector3& normal, T eta);
     
     // 插值函数
-    static Vector3 Lerp(const Vector3& s, const Vector3& e, float t);
+    static Vector3 Lerp(const Vector3& s, const Vector3& e, T t);
 
     //常量向量定义
     /*static inline constexpr Vector3 ZERO = Vector3(0, 0, 0);

@@ -6,6 +6,7 @@
 //
 
 #include "HalfFloat.h"
+#include <cstring>
 
 //https://stackoverflow.com/questions/1659440/32-bit-to-16-bit-floating-point-conversion/60047308#60047308
 
@@ -15,12 +16,16 @@ NS_MATHUTIL_BEGIN
 
 static uint32_t as_uint(const float x)
 {
-    return *(uint32_t*)&x;
+    uint32_t result = 0;
+    std::memcpy(&result, &x, sizeof(result));
+    return result;
 }
 
 static float as_float(const uint32_t x)
 {
-    return *(float*)&x;
+    float result = 0.0f;
+    std::memcpy(&result, &x, sizeof(result));
+    return result;
 }
 
 float half_to_float(const uint16_t x)

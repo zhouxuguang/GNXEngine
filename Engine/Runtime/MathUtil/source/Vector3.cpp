@@ -88,7 +88,7 @@ Vector3<T> Vector3<T>::Refraction(const Vector3& incident, const Vector3& normal
 }
 
 template <typename T>
-Vector3<T> Vector3<T>::Lerp(const Vector3& s, const Vector3& e, float t)
+Vector3<T> Vector3<T>::Lerp(const Vector3& s, const Vector3& e, T t)
 {
     return Vector3(
         s.x + (e.x - s.x) * t,
