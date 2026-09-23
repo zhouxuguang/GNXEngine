@@ -244,6 +244,24 @@ ShaderCodePtr DXCompilerUtil::compileHLSLToSPIRV(const std::string& shaderFile, 
     //arguments.push_back(DXC_ARG_PACK_MATRIX_ROW_MAJOR); //-Zp
     //arguments.push_back(L"-enable-16bit-types");
     arguments.push_back(L"-fspv-target-env=vulkan1.2");
+    // 保留入口点的全部 interface 变量（含未被静态使用的输入）。
+    //
+    // 为什么必须做：像素着色器里未被使用的 varying（如 ModelShader 的 PS 只用到
+    // texcoord，normal/lightDir/viewDir 都被优化掉）会被 DXC 的 SPIR-V 后端 DCE。
+    // 于是 SPIRV-Cross 生成的 HLSL 中，VS 输出声明 4 个 varying，而 PS 只声明 1 个。
+    // D3D 的签名寄存器按"声明顺序"分配（不是按语义下标），
+    // 导致同一语义 TEXCOORD1 在 VS 是 register1、在 PS 是 register0，
+    // CreateGraphicsPipelineState 直接报
+    //   "Vertex Shader - Pixel Shader linkage error: ... mismatched hardware registers"。
+    // 保留 interface 后 PS 会声明完整 varying 列表，与 VS 输出的顺序/寄存器一致。
+    //
+    // 只对 PS 开启：VS 的顶点输入保留与否会改变顶点布局（VertexDesc），
+    // 而 mesh 的顶点缓冲槽位（如地球的 0/1/3）依赖 VS 输入被 DCE 后的结果，
+    // 因此 VS 维持原行为，避免破坏既有顶点布局约定。
+    if (shaderStage == ShaderStage_Fragment)
+    {
+        arguments.push_back(L"-fspv-preserve-interface");
+    }
     
     arguments.push_back(L"-D");
     arguments.push_back(L"TEXCOORD_FLIP");
