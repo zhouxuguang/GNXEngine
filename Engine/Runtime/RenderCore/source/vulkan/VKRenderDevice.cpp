@@ -1,4 +1,4 @@
-//
+﻿//
 //  VKRenderDevice.cpp
 //  rendercore
 //
@@ -232,7 +232,10 @@ VKRenderDevice::~VKRenderDevice()
     }
     
     // Wait for device idle
-    vkDeviceWaitIdle(mVulkanContext->device);
+    {
+        VulkanQueueAccess queueAccess(*mVulkanContext);
+        vkDeviceWaitIdle(mVulkanContext->device);
+    }
 
     // Save pipeline cache to disk before destroying the device
     SaveAndDestroyPipelineCache(*mVulkanContext);
@@ -291,6 +294,10 @@ VKRenderDevice::~VKRenderDevice()
 
 void VKRenderDevice::Resize(uint32_t width, uint32_t height)
 {
+    // 整段重建过程都持有队列锁：期间不能有上传线程向队列提交，
+    // 否则会把命令提交到正在被释放/重建的同步对象上。
+    VulkanQueueAccess queueAccess(*mVulkanContext);
+
     // 设备级空闲：下面会重建 fence/semaphore 与命令缓冲区，
     // 只等图形队列覆盖不到提交到计算/传输队列的工作
     vkDeviceWaitIdle(mVulkanContext->device);
@@ -346,6 +353,8 @@ void VKRenderDevice::OnWindowRestored(const NativeWindow& nativeWindow)
     {
         return;
     }
+
+    VulkanQueueAccess queueAccess(*mVulkanContext);
 
     // 等待所有 GPU 工作完成，避免销毁正在使用的资源
     if (mVulkanContext->graphicsQueue != VK_NULL_HANDLE)
@@ -429,6 +438,7 @@ void VKRenderDevice::OnWindowMinimized()
 
     if (mVulkanContext && mVulkanContext->device != VK_NULL_HANDLE)
     {
+        VulkanQueueAccess queueAccess(*mVulkanContext);
         vkDeviceWaitIdle(mVulkanContext->device);
     }
 }
@@ -511,6 +521,17 @@ RCTexture2DPtr VKRenderDevice::CreateTexture2D(TextureFormat format,
     imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageCreateInfo.usage = VulkanBufferUtil::ConvertTextureUsage(usage, vkformat);
     imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    // Streamed images are filled on the transfer family and sampled on the
+    // graphics family. Concurrent sharing avoids an ownership transfer.
+    const uint32_t uploadFamilies[] = {mVulkanContext->graphicsQueueFamilyIndex,
+                                       mVulkanContext->transferQueueFamilyIndex};
+    if ((usage & TextureUsage::TextureUsageShaderRead) != TextureUsage{} &&
+        uploadFamilies[0] != uploadFamilies[1])
+    {
+        imageCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+        imageCreateInfo.queueFamilyIndexCount = 2;
+        imageCreateInfo.pQueueFamilyIndices = uploadFamilies;
+    }
     imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageCreateInfo.flags = 0;
     
@@ -1030,7 +1051,10 @@ void VKRenderDevice::FlushPipelineCache()
     if (!mVulkanContext || mVulkanContext->pipelineCache == VK_NULL_HANDLE)
         return;
 
-    vkDeviceWaitIdle(mVulkanContext->device);
+    {
+        VulkanQueueAccess queueAccess(*mVulkanContext);
+        vkDeviceWaitIdle(mVulkanContext->device);
+    }
     SavePipelineCache(*mVulkanContext);
 }
 
@@ -1043,6 +1067,8 @@ void VKRenderDevice::SetVSync(bool enable)
     uint32_t width = mSwapChain->GetWidth();
     uint32_t height = mSwapChain->GetHeight();
 
+    // 重建交换链期间禁止其他线程向队列提交（否则会用到失效的 swapchain image）
+    VulkanQueueAccess queueAccess(*mVulkanContext);
     vkQueueWaitIdle(mVulkanContext->graphicsQueue);
 
     mSwapChain->Release();

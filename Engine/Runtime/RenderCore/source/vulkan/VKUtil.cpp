@@ -1,4 +1,4 @@
-#include "VKUtil.h"
+﻿#include "VKUtil.h"
 #include "VulkanContext.h"
 #include "VulkanBufferUtil.h"
 #include "Runtime/BaseLib/include/LogService.h"
@@ -92,7 +92,12 @@ void UpLoadTask::Run()
 	fence = mContext->fencePool.createFence(mContext->device);
 
 	baselib::AutoLock lockGuard(mContext->transferQueuesLock);
-	vkQueueSubmit(mContext->availableTransferQueues[0], 1, &submitInfo, fence->getHandle());
+	{
+		// 传输队列族与图形队列族相同时 availableTransferQueues[0] 就是图形队列，
+		// 渲染线程可能正在提交/呈现，必须与渲染线程串行化
+		VulkanQueueAccess queueAccess(*mContext);
+		vkQueueSubmit(mContext->availableTransferQueues[0], 1, &submitInfo, fence->getHandle());
+	}
 }
 
 // UpLoadThreadPool实现

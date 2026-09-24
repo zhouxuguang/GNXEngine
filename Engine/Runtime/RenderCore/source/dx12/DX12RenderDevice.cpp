@@ -555,9 +555,14 @@ RCTexture2DPtr DX12RenderDevice::CreateTexture2D(TextureFormat format, TextureUs
         return nullptr;
     }
 
-    const D3D12_RESOURCE_DESC desc = DX12TextureResourceDesc(
+    D3D12_RESOURCE_DESC desc = DX12TextureResourceDesc(
         D3D12_RESOURCE_DIMENSION_TEXTURE2D, width, height, 1, levels, dxgiFormat,
         DX12Util::ConvertTextureUsage(mContext->device.Get(), usage, dxgiFormat));
+    // A sampled-only texture must start in COMMON for a COPY command queue.
+    // The format capability probe above also enables RT/UAV flags, which
+    // otherwise makes the texture start in RENDER_TARGET state unnecessarily.
+    if (usage == TextureUsage::TextureUsageShaderRead)
+        desc.Flags = D3D12_RESOURCE_FLAG_NONE;
 
     auto texture = std::make_shared<DX12RCTexture2D>(mContext, desc, format);
     if (!texture->IsValid())

@@ -1,4 +1,4 @@
-//
+﻿//
 //  VKTextureBase.h
 //  rendercore
 //
@@ -10,6 +10,8 @@
 
 #include "VulkanContext.h"
 #include "RCTexture.h"
+
+#include <string.h>
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -37,6 +39,17 @@ public:
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow,
                         uint32_t bytesPerImage);
+
+    /**
+       同步上传（阻塞）：提交到图形队列并等待拷贝完成。
+       函数返回时数据已写入图像且布局为 SHADER_READ_ONLY_OPTIMAL，
+       同线程随后录制的绘制可以安全采样该纹理。
+     */
+    void ReplaceRegionSynchronous(const Rect2D& rect,
+                        uint32_t level,
+                        uint32_t slice,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow);
     
     bool IsValid() const override;
     
@@ -155,7 +168,8 @@ using VKTextureBasePtr = std::shared_ptr<VKTextureBase>;
 
 #pragma mark VKRCTexture2D
 
-class VKRCTexture2D : public VKTextureBase, public RCTexture2D
+class VKRCTexture2D : public VKTextureBase, public RCTexture2D,
+                      public std::enable_shared_from_this<VKRCTexture2D>
 {
 public:
     VKRCTexture2D(const VulkanContextPtr& context, const VkImageCreateInfo& imageCreateInfo);
@@ -174,6 +188,23 @@ public:
                         uint32_t level,
                         const uint8_t* pixelBytes,
                         uint32_t bytesPerRow) override;
+
+    /**
+       同步上传（阻塞）：返回时纹理已经可以安全采样。
+       需要「上传后立即绘制」的场景必须使用本接口。
+     */
+    virtual void ReplaceRegionSync(const Rect2D& rect,
+                        uint32_t level,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow) override;
+
+    TextureUploadPtr ReplaceRegionAsync(const Rect2D& rect,
+                        uint32_t level,
+                        const uint8_t* pixelBytes,
+                        uint32_t bytesPerRow) override;
+
+private:
+    VulkanContextPtr mUploadContext;
 };
 
 using VKRCTexture2DPtr = std::shared_ptr<VKRCTexture2D>;

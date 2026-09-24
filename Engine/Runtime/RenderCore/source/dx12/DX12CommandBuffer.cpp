@@ -300,6 +300,8 @@ bool DX12CommandBuffer::BeginRecording()
     mCurrentComputePipeline = nullptr;
     mCurrentIsMeshPipeline = false;
     mTransientBuffers.clear();
+    mTransientTextures.clear();
+    mTransientUniformBuffers.clear();
     mDebugGroupDepth = 0;
 
     // 绑定本命令缓冲区专属的描述符堆（整个录制期间不变）

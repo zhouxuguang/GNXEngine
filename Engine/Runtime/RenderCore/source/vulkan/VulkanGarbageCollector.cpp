@@ -40,8 +40,10 @@ void VulkanGarbageCollector::Cleanup()
     baselib::AutoLock lock(mMutex);
 
     CleanupBuffers();
-    CleanupImages();
+    // Views must be destroyed before their backing images when both become
+    // eligible on the same timeline value (VUID-vkDestroyImage-image-01000).
     CleanupImageViews();
+    CleanupImages();
     CleanupSamplers();
     CleanupFramebuffers();
     CleanupPipelines();
@@ -65,16 +67,6 @@ void VulkanGarbageCollector::ForceCleanupAll()
     }
     mPendingBuffers.clear();
 
-    // 清理所有 Images
-    for (const auto& pending : mPendingImages)
-    {
-        if (pending.image != VK_NULL_HANDLE)
-        {
-            vmaDestroyImage(allocator, pending.image, pending.allocation);
-        }
-    }
-    mPendingImages.clear();
-
     // 清理所有 ImageViews
     for (const auto& pending : mPendingImageViews)
     {
@@ -84,6 +76,16 @@ void VulkanGarbageCollector::ForceCleanupAll()
         }
     }
     mPendingImageViews.clear();
+
+    // Image views have been released, so their backing images can now go.
+    for (const auto& pending : mPendingImages)
+    {
+        if (pending.image != VK_NULL_HANDLE)
+        {
+            vmaDestroyImage(allocator, pending.image, pending.allocation);
+        }
+    }
+    mPendingImages.clear();
 
     // 清理所有 Samplers
     for (const auto& pending : mPendingSamplers)

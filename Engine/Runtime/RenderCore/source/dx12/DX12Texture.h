@@ -69,6 +69,7 @@ public:
 
     // ---- D3D12 访问 ----
     ID3D12Resource* GetResource() const { return mResource.Get(); }
+    DX12ContextPtr GetDX12Context() const { return mContext; }
     DXGI_FORMAT GetDXGIFormat() const { return mFormat; }
     DXGI_FORMAT GetTypelessFormat() const { return mTypelessFormat; }
 
@@ -167,7 +168,8 @@ using DX12TextureBasePtr = std::shared_ptr<DX12TextureBase>;
 // 同时 RCTexture2D 的 ReplaceRegion 是 4 参数版本，需要单独实现并转发。
 // ---------------------------------------------------------------------------
 
-class DX12RCTexture2D : public DX12TextureBase, public RCTexture2D
+class DX12RCTexture2D : public DX12TextureBase, public RCTexture2D,
+                        public std::enable_shared_from_this<DX12RCTexture2D>
 {
 public:
     DX12RCTexture2D(const DX12ContextPtr& context, const D3D12_RESOURCE_DESC& desc,
@@ -193,6 +195,9 @@ public:
     {
         DX12TextureBase::ReplaceRegion(rect, level, 0, pixelBytes, bytesPerRow, 0);
     }
+
+    TextureUploadPtr ReplaceRegionAsync(const Rect2D& rect, uint32_t level,
+                       const uint8_t* pixelBytes, uint32_t bytesPerRow) override;
 };
 
 using DX12RCTexture2DPtr = std::shared_ptr<DX12RCTexture2D>;

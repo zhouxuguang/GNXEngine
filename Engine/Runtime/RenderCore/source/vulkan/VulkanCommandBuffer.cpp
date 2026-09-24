@@ -1,4 +1,4 @@
-//
+﻿//
 //  VulkanCommandBuffer.cpp
 //  rendercore
 //
@@ -368,7 +368,11 @@ void VulkanCommandBuffer::PresentFrameBuffer()
     submitInfo.signalSemaphoreCount = (timelineSem != VK_NULL_HANDLE) ? (uint32_t)allSignalSemaphores.size() : 1;
     submitInfo.pSignalSemaphores = (timelineSem != VK_NULL_HANDLE) ? allSignalSemaphores.data() : signalSemaphores;
 
-    res = vkQueueSubmit(mCommandInfo->vulkanContext->graphicsQueue, 1, &submitInfo, mCommandInfo->flightFence);
+    {
+        // 队列宿主访问必须外部同步：上传线程可能同时在向同一队列提交
+        VulkanQueueAccess queueAccess(*mCommandInfo->vulkanContext);
+        res = vkQueueSubmit(mCommandInfo->vulkanContext->graphicsQueue, 1, &submitInfo, mCommandInfo->flightFence);
+    }
     
     if (res != VK_SUCCESS)
     {
@@ -410,7 +414,11 @@ void VulkanCommandBuffer::PresentFrameBuffer()
     presentInfo.pWaitSemaphores = signalSemaphores;
     presentInfo.pResults = nullptr;
 
-    res = vkQueuePresentKHR(mCommandInfo->vulkanContext->graphicsQueue, &presentInfo);
+    {
+        // 队列宿主访问必须外部同步：上传线程可能同时在向同一队列提交
+        VulkanQueueAccess queueAccess(*mCommandInfo->vulkanContext);
+        res = vkQueuePresentKHR(mCommandInfo->vulkanContext->graphicsQueue, &presentInfo);
+    }
     if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR)
     {
         char szBuf[32] = {0};
@@ -486,6 +494,7 @@ void VulkanCommandBuffer::WaitUntilCompleted()
             const VkQueue submittedQueue = mCommandInfo->isComputeCommandBuffer
                 ? mCommandInfo->vulkanContext->availableComputeQueues[0]
                 : mCommandInfo->vulkanContext->graphicsQueue;
+            VulkanQueueAccess queueAccess(*mCommandInfo->vulkanContext);
             vkQueueWaitIdle(submittedQueue);
         }
         return;
@@ -501,7 +510,11 @@ void VulkanCommandBuffer::WaitUntilCompleted()
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &mCommandBuffer;
 
-    vkQueueSubmit(mCommandInfo->vulkanContext->graphicsQueue, 1, &submitInfo, fence->getHandle());
+    // 队列宿主访问必须外部同步：上传线程可能同时在向同一队列提交
+    {
+        VulkanQueueAccess queueAccess(*mCommandInfo->vulkanContext);
+        vkQueueSubmit(mCommandInfo->vulkanContext->graphicsQueue, 1, &submitInfo, fence->getHandle());
+    }
 
     // 等待 Fence 信号
     fence->wait(mCommandInfo->vulkanContext->device, UINT64_MAX);
@@ -568,7 +581,12 @@ void VulkanCommandBuffer::Submit()
     
 	// 提交到队列
 	VkFence submitFence = mCommandInfo->isComputeCommandBuffer ? VK_NULL_HANDLE : mCommandInfo->flightFence;
-	VkResult res = vkQueueSubmit(submitQueue, 1, &submitInfo, submitFence);
+	VkResult res = VK_SUCCESS;
+	{
+		// 队列宿主访问必须外部同步：上传线程可能同时在向同一队列提交
+		VulkanQueueAccess queueAccess(*mCommandInfo->vulkanContext);
+		res = vkQueueSubmit(submitQueue, 1, &submitInfo, submitFence);
+	}
 	if (res != VK_SUCCESS)
 	{
 		LOG_INFO("VulkanCommandBuffer::Submit vkQueueSubmit failed with error: %d", res);

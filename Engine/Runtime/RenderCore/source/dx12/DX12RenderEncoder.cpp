@@ -662,6 +662,7 @@ void DX12RenderEncoder::WriteCBV(uint32_t registerIndex, UniformBufferPtr buffer
     const D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc =
         DX12CBVDesc(uniformBuffer->GetGPUAddress(), uniformBuffer->GetAlignedSize());
     mContext->device->CreateConstantBufferView(&cbvDesc, handle);
+    mCommandBuffer->RetainUniformBuffer(buffer);
 }
 
 void DX12RenderEncoder::WriteSRVTexture(uint32_t registerIndex, RCTexturePtr texture,
@@ -675,6 +676,7 @@ void DX12RenderEncoder::WriteSRVTexture(uint32_t registerIndex, RCTexturePtr tex
     dx12Texture->WriteSRV(mContext->device.Get(),
                           mCommandBuffer->GetCpuHandle(DX12DescriptorClass::SRV, registerIndex,
                                                        stageGroup));
+    mCommandBuffer->RetainTexture(texture);
 }
 
 void DX12RenderEncoder::WriteUAVTexture(uint32_t registerIndex, RCTexturePtr texture,
@@ -688,6 +690,7 @@ void DX12RenderEncoder::WriteUAVTexture(uint32_t registerIndex, RCTexturePtr tex
     dx12Texture->WriteUAV(mContext->device.Get(),
                           mCommandBuffer->GetCpuHandle(DX12DescriptorClass::UAV, registerIndex,
                                                        stageGroup));
+    mCommandBuffer->RetainTexture(texture);
 }
 
 void DX12RenderEncoder::WriteSRVBuffer(uint32_t registerIndex, RCBufferPtr buffer, bool asUAV,
@@ -705,6 +708,7 @@ void DX12RenderEncoder::WriteSRVBuffer(uint32_t registerIndex, RCBufferPtr buffe
                          mCommandBuffer->GetCpuHandle(
                              asUAV ? DX12DescriptorClass::UAV : DX12DescriptorClass::SRV,
                              registerIndex, stageGroup));
+    mCommandBuffer->RetainTransientBuffer(buffer);
 }
 
 void DX12RenderEncoder::WriteSampler(uint32_t registerIndex, TextureSamplerPtr sampler,
@@ -891,6 +895,7 @@ void DX12RenderEncoder::SetVertexBuffer(RCBufferPtr buffer, uint32_t offset, int
     // 结果就是"带顶点缓冲的绘制全部不可见"，且不产生任何校验错误。
     view.StrideInBytes  = (mGraphicsPipeline != nullptr) ? mGraphicsPipeline->GetVertexStride((uint32_t)index) : 0;
     mCommandList->IASetVertexBuffers((UINT)index, 1, &view);
+    mCommandBuffer->RetainTransientBuffer(buffer);
 }
 
 void DX12RenderEncoder::BindIndexBuffer(RCBufferPtr buffer, int indexOffset, IndexType indexType)
@@ -909,6 +914,7 @@ void DX12RenderEncoder::BindIndexBuffer(RCBufferPtr buffer, int indexOffset, Ind
     view.SizeInBytes    = dx12Buffer->GetSizeInBytes() - (uint64_t)indexOffset * indexSize;
     view.Format         = format;
     mCommandList->IASetIndexBuffer(&view);
+    mCommandBuffer->RetainTransientBuffer(buffer);
 }
 
 void DX12RenderEncoder::ApplyTopology(PrimitiveMode mode)

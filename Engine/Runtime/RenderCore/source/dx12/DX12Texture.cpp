@@ -7,6 +7,8 @@
 #include "DX12Util.h"
 #include "DX12Helpers.h"
 
+#include <mutex>
+
 NAMESPACE_RENDERCORE_BEGIN
 
 namespace
@@ -27,6 +29,104 @@ D3D12_RESOURCE_STATES GetNaturalInitialState(D3D12_RESOURCE_FLAGS flags)
 
 /// 全局递增的临时缓冲调试名序号
 std::atomic<uint32_t> g_textureUploadCounter{0};
+
+void WaitForCopyFence(ID3D12Fence* fence)
+{
+    if (!fence || fence->GetCompletedValue() >= 1)
+        return;
+
+    HANDLE event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    bool waited = false;
+    if (event)
+    {
+        if (SUCCEEDED(fence->SetEventOnCompletion(1, event)))
+            waited = WaitForSingleObject(event, INFINITE) == WAIT_OBJECT_0;
+        CloseHandle(event);
+    }
+    if (!waited)
+    {
+        // Event creation/registration can fail under resource pressure.
+        // Never release an in-flight upload heap in that case.
+        UINT64 value;
+        do {
+            Sleep(1);
+            value = fence->GetCompletedValue();
+        } while (value < 1 && value != UINT64_MAX);
+    }
+}
+
+class DX12TextureUpload final : public TextureUpload
+{
+public:
+    DX12TextureUpload(DX12ContextPtr context, DX12RCTexture2DPtr texture,
+                      D3D12MA::Allocation* stagingAllocation,
+                      ComPtr<ID3D12Resource> staging,
+                      ComPtr<ID3D12CommandAllocator> commandAllocator,
+                      ComPtr<ID3D12GraphicsCommandList> commandList,
+                      ComPtr<ID3D12Fence> fence)
+        : mContext(std::move(context)), mTexture(std::move(texture)),
+          mStagingAllocation(stagingAllocation), mStaging(std::move(staging)),
+          mCommandAllocator(std::move(commandAllocator)),
+          mCommandList(std::move(commandList)), mFence(std::move(fence)) {}
+
+    ~DX12TextureUpload() override
+    {
+        std::lock_guard<std::mutex> lock(mMutex);
+        // Keep the upload heap and destination texture alive until the copy
+        // queue has completed, including when a tile is evicted early.
+        WaitForCopyFence(mFence.Get());
+        ReleaseResources();
+    }
+
+    TextureUploadStatus GetStatus() const override
+    {
+        std::lock_guard<std::mutex> lock(mMutex);
+        if (mStatus != TextureUploadStatus::Pending)
+            return mStatus;
+        const UINT64 value = mFence->GetCompletedValue();
+        if (value == UINT64_MAX)
+            mStatus = TextureUploadStatus::Failed;
+        else if (value >= 1)
+            mStatus = TextureUploadStatus::Complete;
+        if (mStatus != TextureUploadStatus::Pending)
+        {
+            ReleaseResources();
+            if (mStatus == TextureUploadStatus::Complete)
+            {
+                static std::atomic<bool> loggedRelease{false};
+                if (!loggedRelease.exchange(true))
+                    LOG_INFO("[DX12] Completed texture upload staging and fence released");
+            }
+        }
+        return mStatus;
+    }
+
+private:
+    void ReleaseResources() const
+    {
+        mCommandList.Reset();
+        mCommandAllocator.Reset();
+        mStaging.Reset();
+        if (mStagingAllocation)
+        {
+            mContext->ReleaseAllocation(mStagingAllocation);
+            mStagingAllocation = nullptr;
+        }
+        mFence.Reset();
+        mTexture.reset();
+        mContext.reset();
+    }
+
+    mutable std::mutex mMutex;
+    mutable TextureUploadStatus mStatus = TextureUploadStatus::Pending;
+    mutable DX12ContextPtr mContext;
+    mutable DX12RCTexture2DPtr mTexture;
+    mutable D3D12MA::Allocation* mStagingAllocation;
+    mutable ComPtr<ID3D12Resource> mStaging;
+    mutable ComPtr<ID3D12CommandAllocator> mCommandAllocator;
+    mutable ComPtr<ID3D12GraphicsCommandList> mCommandList;
+    mutable ComPtr<ID3D12Fence> mFence;
+};
 } // namespace
 
 // ============================================================================
@@ -628,6 +728,136 @@ void DX12TextureBase::ReplaceRegion(const Rect2D& rect, uint32_t level, uint32_t
     mCurrentState = previousState;
 
     mContext->ReleaseAllocation(stagingAllocation);
+}
+
+TextureUploadPtr DX12RCTexture2D::ReplaceRegionAsync(const Rect2D& rect, uint32_t level,
+                                                      const uint8_t* pixels, uint32_t bytesPerRow)
+{
+    auto failed = [] { return std::make_shared<FailedTextureUpload>(); };
+    const auto context = GetDX12Context();
+    ID3D12Resource* texture = GetResource();
+    if (!context || !texture || !pixels || rect.width <= 0 || rect.height <= 0 ||
+        level >= GetMipLevels())
+    {
+        LOG_ERROR("[DX12] Async upload precondition: context=%d copyQueue=%d texture=%d pixels=%d size=%dx%d level=%u/%u state=%u",
+                  context != nullptr, context && context->copyQueue != nullptr,
+                  texture != nullptr, pixels != nullptr, rect.width, rect.height,
+                  level, GetMipLevels(), static_cast<unsigned>(GetCurrentState()));
+        return failed();
+    }
+    if (!context->copyQueue || GetCurrentState() != D3D12_RESOURCE_STATE_COMMON)
+    {
+        ReplaceRegion(rect, level, pixels, bytesPerRow);
+        return std::make_shared<CompletedTextureUpload>();
+    }
+
+    const uint32_t width = static_cast<uint32_t>(rect.width);
+    const uint32_t height = static_cast<uint32_t>(rect.height);
+    if (rect.offsetX < 0 || rect.offsetY < 0 ||
+        static_cast<uint32_t>(rect.offsetX) + width > std::max(1u, GetWidth() >> level) ||
+        static_cast<uint32_t>(rect.offsetY) + height > std::max(1u, GetHeight() >> level))
+        return failed();
+
+    D3D12_PLACED_SUBRESOURCE_FOOTPRINT footprint{};
+    UINT numRows = 0;
+    UINT64 rowSize = 0, totalBytes = 0;
+    const D3D12_RESOURCE_DESC desc = texture->GetDesc();
+    context->device->GetCopyableFootprints(&desc, level, 1, 0,
+                                           &footprint, &numRows, &rowSize, &totalBytes);
+    if (!totalBytes) { LOG_ERROR("[DX12] Async upload: no footprint"); return failed(); }
+    D3D12MA::Allocation* stagingAllocation = nullptr;
+    ComPtr<ID3D12Resource> staging;
+    const HRESULT createResult = context->CreateResource(
+        DX12BufferResourceDesc(totalBytes, D3D12_RESOURCE_FLAG_NONE),
+        D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ,
+        &stagingAllocation, IID_PPV_ARGS(&staging), nullptr, nullptr);
+    if (FAILED(createResult) || !staging)
+    {
+        LOG_ERROR("[DX12] Async upload: staging creation failed %s", DX12HResultToString(createResult));
+        return failed();
+    }
+    auto releaseStaging = [&] { context->ReleaseAllocation(stagingAllocation); };
+
+    const TextureBlockInfo block = GetCompressedTextureBlockInfo(GetTextureFormat());
+    const uint32_t blockWidth = block.bytesPerBlock ? block.blockWidth : 1;
+    const uint32_t blockHeight = block.bytesPerBlock ? block.blockHeight : 1;
+    const uint32_t bytesPerPixel = (DX12Util::GetFormatBitsPerPixel(GetTextureFormat()) + 7u) / 8u;
+    const uint32_t copyRowBytes = ((width + blockWidth - 1) / blockWidth) *
+                                  (block.bytesPerBlock ? block.bytesPerBlock : bytesPerPixel);
+    const uint32_t rows = (height + blockHeight - 1) / blockHeight;
+    if (!copyRowBytes || bytesPerRow < copyRowBytes || rows > numRows)
+        { LOG_ERROR("[DX12] Async upload: row layout invalid source=%u copy=%u rows=%u/%u", bytesPerRow, copyRowBytes, rows, numRows); releaseStaging(); return failed(); }
+    void* mapped = nullptr;
+    const D3D12_RANGE readRange = DX12ReadRange(0, 0);
+    if (FAILED(staging->Map(0, &readRange, &mapped)) || !mapped)
+        { LOG_ERROR("[DX12] Async upload: staging map failed"); releaseStaging(); return failed(); }
+    for (uint32_t row = 0; row < rows; ++row)
+        memcpy(static_cast<uint8_t*>(mapped) + footprint.Offset +
+                   static_cast<size_t>(row) * footprint.Footprint.RowPitch,
+               pixels + static_cast<size_t>(row) * bytesPerRow, copyRowBytes);
+    const D3D12_RANGE writtenRange = DX12ReadRange(0, totalBytes);
+    staging->Unmap(0, &writtenRange);
+
+    ComPtr<ID3D12CommandAllocator> allocator;
+    ComPtr<ID3D12GraphicsCommandList> list;
+    ComPtr<ID3D12Fence> fence;
+    if (FAILED(context->device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_COPY,
+                                                       IID_PPV_ARGS(&allocator))) ||
+        FAILED(context->device->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_COPY,
+                                                   allocator.Get(), nullptr,
+                                                   IID_PPV_ARGS(&list))) ||
+        FAILED(context->device->CreateFence(0, D3D12_FENCE_FLAG_NONE,
+                                            IID_PPV_ARGS(&fence))))
+        { LOG_ERROR("[DX12] Async upload: copy commands or fence creation failed"); releaseStaging(); return failed(); }
+
+    // COPY queues use implicit COMMON -> COPY_DEST promotion. A legacy
+    // ResourceBarrier here is invalid on a COPY command list (debug id 1334).
+    D3D12_TEXTURE_COPY_LOCATION destination{};
+    destination.pResource = texture;
+    destination.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+    destination.SubresourceIndex = level;
+    D3D12_TEXTURE_COPY_LOCATION source{};
+    source.pResource = staging.Get();
+    source.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+    source.PlacedFootprint = footprint;
+    D3D12_BOX box{};
+    box.right = width;
+    box.bottom = height;
+    box.back = 1;
+    if (block.bytesPerBlock)
+    {
+        box.right = ((width + blockWidth - 1) / blockWidth) * blockWidth;
+        box.bottom = ((height + blockHeight - 1) / blockHeight) * blockHeight;
+    }
+    list->CopyTextureRegion(&destination, rect.offsetX, rect.offsetY, 0,
+                            &source, &box);
+    // The promoted state decays back to COMMON when the copy completes.
+    if (FAILED(list->Close())) { LOG_ERROR("[DX12] Async upload: command list close failed"); releaseStaging(); return failed(); }
+    ID3D12CommandList* lists[] = {list.Get()};
+    context->copyQueue->ExecuteCommandLists(1, lists);
+    if (FAILED(context->copyQueue->Signal(fence.Get(), 1)))
+    {
+        context->copyFence.FlushAndWait(context->copyQueue.Get(), 10000);
+        releaseStaging();
+        return failed();
+    }
+    // A GPU queue wait establishes ordering and visibility before any later
+    // graphics submission that samples this texture.
+    if (FAILED(context->graphicsQueue->Wait(fence.Get(), 1)))
+    {
+        WaitForCopyFence(fence.Get());
+        releaseStaging();
+        return failed();
+    }
+    static bool loggedCopyQueue = false;
+    if (!loggedCopyQueue)
+    {
+        LOG_INFO("[DX12] Asynchronous texture upload submitted on Copy Queue");
+        loggedCopyQueue = true;
+    }
+    return std::make_shared<DX12TextureUpload>(context, shared_from_this(),
+        stagingAllocation, std::move(staging), std::move(allocator),
+        std::move(list), std::move(fence));
 }
 
 // ============================================================================

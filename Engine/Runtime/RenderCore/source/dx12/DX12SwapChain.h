@@ -105,6 +105,7 @@ private:
     uint32_t mCurrentBackBufferIndex = 0;
     bool mVSync = true;
     bool mWasResized = false;
+    bool mDeviceRemovalLogged = false;
 };
 
 using DX12SwapChainPtr = std::shared_ptr<DX12SwapChain>;

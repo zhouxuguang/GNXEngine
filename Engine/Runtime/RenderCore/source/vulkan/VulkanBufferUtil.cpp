@@ -1,4 +1,4 @@
-//
+﻿//
 //  VulkanBufferUtil.cpp
 //  rendercore
 //
@@ -43,7 +43,11 @@ void VulkanBufferUtil::EndSingleTimeCommand(VulkanContext& context, VkQueue queu
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    vkQueueSubmit(queue, 1, &submitInfo, fence->getHandle());
+    // 队列宿主访问必须外部同步（可能与渲染线程并发提交同一队列）
+    {
+        VulkanQueueAccess queueAccess(context);
+        vkQueueSubmit(queue, 1, &submitInfo, fence->getHandle());
+    }
 
     // 等待 Fence 信号
     fence->wait(context.device, UINT64_MAX);

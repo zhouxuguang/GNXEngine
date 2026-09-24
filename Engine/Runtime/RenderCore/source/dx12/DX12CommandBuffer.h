@@ -152,6 +152,18 @@ public:
         }
     }
 
+    void RetainTexture(const RCTexturePtr& texture)
+    {
+        if (texture)
+            mTransientTextures.push_back(texture);
+    }
+
+    void RetainUniformBuffer(const UniformBufferPtr& buffer)
+    {
+        if (buffer)
+            mTransientUniformBuffers.push_back(buffer);
+    }
+
     /// 提交并在上屏前插入 Present 前的资源状态转换
     bool PresentToSwapChain();
 
@@ -244,6 +256,8 @@ private:
     DX12ComputePipeline*  mCurrentComputePipeline = nullptr;
 
     std::vector<RCBufferPtr> mTransientBuffers;
+    std::vector<RCTexturePtr> mTransientTextures;
+    std::vector<UniformBufferPtr> mTransientUniformBuffers;
 
     uint32_t mDebugGroupDepth = 0;
 };

@@ -1,4 +1,4 @@
-//
+﻿//
 //  VulkanContext.h
 //  rendercore
 //
@@ -14,10 +14,13 @@
 #include "Runtime/BaseLib/include/ThreadLocal.h"
 #include "VKUtil.h"
 
+#include <mutex>
+
 NAMESPACE_RENDERCORE_BEGIN
 
 // 前向声明
 class VulkanGarbageCollector;
+struct VulkanContext;
 
 struct VulkanContext
 {
@@ -46,6 +49,10 @@ struct VulkanContext
     uint32_t transferQueueFamilyIndex = 0;
     baselib::MutexLock transferQueuesLock;
     std::vector<VkQueue> availableTransferQueues;    // 所有可用的传输队列 
+
+    // 串行化所有 VkQueue 的宿主访问，见 VulkanQueueAccess 的说明。
+    // 必须可重入：Resize/OnWindowRestored 等路径内部会再次进入队列调用。
+    std::recursive_mutex queueAccessLock;
 
 	uint32_t computeQueueFamilyIndex;
 	std::vector<VkQueue> availableComputeQueues;    // 所有可用的计算队列 
@@ -89,6 +96,37 @@ struct VulkanContext
 };
 
 using VulkanContextPtr = std::shared_ptr<VulkanContext>;
+
+/**
+ * VkQueue 宿主访问串行化锁（RAII）。
+
+ * Vulkan 规定对同一个 VkQueue 的宿主访问（vkQueueSubmit / vkQueueWaitIdle /
+ * vkQueuePresentKHR）必须外部同步。引擎中渲染线程（提交帧、present、swapchain 重建）
+ * 与资源上传线程（UpLoadThreadPool 提交 staging→image 拷贝、同步上传路径）会并发访问
+ * 同一队列；当传输队列族与图形队列族相同时它们就是同一个 VkQueue。
+ * 未加锁的并发提交属于未定义行为，驱动侧最常见的表现就是 VK_ERROR_DEVICE_LOST。
+
+ * 所有涉及 VkQueue 的调用点都必须用本类串行化。
+ */
+class VulkanQueueAccess
+{
+public:
+    explicit VulkanQueueAccess(VulkanContext& context) : mContext(context)
+    {
+        mContext.queueAccessLock.lock();
+    }
+
+    ~VulkanQueueAccess()
+    {
+        mContext.queueAccessLock.unlock();
+    }
+
+    VulkanQueueAccess(const VulkanQueueAccess&) = delete;
+    VulkanQueueAccess& operator=(const VulkanQueueAccess&) = delete;
+
+private:
+    VulkanContext& mContext;
+};
 
 // 根据API版本创建实例
 bool CreateInstance(VulkanContext& context, uint32_t apiVersion);
@@ -156,10 +194,9 @@ void ChoosePhysicalDevice(
 struct VulkanImageView
 {
 public:
-    VulkanImageView(VkDevice device, VkImageView imageView)
+    VulkanImageView(const VulkanContextPtr& context, VkImageView imageView)
+        : context(context), imageView(imageView)
     {
-        this->device = device;
-        this->imageView = imageView;
     }
     
     ~VulkanImageView()
@@ -174,15 +211,19 @@ public:
     
     void Release()
     {
-        if (device != VK_NULL_HANDLE && imageView != VK_NULL_HANDLE)
+        if (context && context->device != VK_NULL_HANDLE && imageView != VK_NULL_HANDLE)
         {
-            vkDestroyImageView(device, imageView, nullptr);
-            device = VK_NULL_HANDLE;
+            // Image views referenced by a descriptor remain in use until the
+            // submitted frame has completed.  Destroying the view immediately
+            // while its image is deferred leaves an invalid descriptor in an
+            // in-flight command buffer (tile eviction during zoom hits this
+            // path frequently), which can result in VK_ERROR_DEVICE_LOST.
+            SafeDestroyImageView(*context, imageView);
             imageView = VK_NULL_HANDLE;
         }
     }
 private:
-    VkDevice device = VK_NULL_HANDLE;
+    VulkanContextPtr context;
     VkImageView imageView = VK_NULL_HANDLE;
 };
 

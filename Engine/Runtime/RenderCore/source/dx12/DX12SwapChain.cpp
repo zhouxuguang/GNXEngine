@@ -255,8 +255,38 @@ bool DX12SwapChain::BeginFrame()
     const HRESULT reason = mContext->device->GetDeviceRemovedReason();
     if (FAILED(reason))
     {
-        LOG_ERROR("[DX12] Device removed (reason=0x%08X): %s",
-                  (unsigned)reason, DX12HResultToString(reason));
+        if (!mDeviceRemovalLogged)
+        {
+            mDeviceRemovalLogged = true;
+            LOG_ERROR("[DX12] Device removed (reason=0x%08X): %s",
+                      (unsigned)reason, DX12HResultToString(reason));
+            ComPtr<ID3D12DeviceRemovedExtendedData1> dred;
+            if (SUCCEEDED(mContext->device.As(&dred)))
+            {
+                D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 breadcrumbs{};
+                if (SUCCEEDED(dred->GetAutoBreadcrumbsOutput1(&breadcrumbs)))
+                {
+                    unsigned count = 0;
+                    for (auto node = breadcrumbs.pHeadAutoBreadcrumbNode;
+                         node && count < 16; node = node->pNext, ++count)
+                    {
+                        const UINT last = node->pLastBreadcrumbValue ? *node->pLastBreadcrumbValue : 0;
+                        const char* queueType = node->pCommandQueue == mContext->graphicsQueue.Get()
+                            ? "graphics" : node->pCommandQueue == mContext->copyQueue.Get()
+                            ? "copy" : "other";
+                        LOG_ERROR("[DX12][DRED] queue=%s list=%s breadcrumb=%u/%u lastOp=%d",
+                                  queueType,
+                                  node->pCommandListDebugNameA ? node->pCommandListDebugNameA : "?",
+                                  last, node->BreadcrumbCount,
+                                  last && node->pCommandHistory ? (int)node->pCommandHistory[last - 1] : -1);
+                    }
+                }
+                D3D12_DRED_PAGE_FAULT_OUTPUT1 pageFault{};
+                if (SUCCEEDED(dred->GetPageFaultAllocationOutput1(&pageFault)))
+                    LOG_ERROR("[DX12][DRED] page fault VA=0x%llX",
+                              (unsigned long long)pageFault.PageFaultVA);
+            }
+        }
         return false;
     }
 
