@@ -61,6 +61,8 @@ public:
     // 应用是否处于前台（后台时主循环应暂停渲染，移动端生命周期）
     virtual bool IsAppActive() const { return true; }
 
+    virtual void RequestClose() {}
+
     // 手动触发事件回调（用于外部事件系统如 Qt 的事件转发）
     virtual void TriggerEventCallback(Event& event) = 0;
 

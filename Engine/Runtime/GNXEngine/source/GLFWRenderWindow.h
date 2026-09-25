@@ -55,6 +55,8 @@ public:
 
     bool ShouldClose() const override;
 
+    void RequestClose() override;
+
     uint32_t GetWidth() const override
     {
         return mData.width;

@@ -172,6 +172,14 @@ bool GLFWRenderWindow::ShouldClose() const
     return glfwWindowShouldClose(mWindow);
 }
 
+void GLFWRenderWindow::RequestClose()
+{
+    if (mWindow)
+    {
+        glfwSetWindowShouldClose(mWindow, GLFW_TRUE);
+    }
+}
+
 void GLFWRenderWindow::Init()
 {
     // 只在使用 GLFW 窗口时才设置回调
