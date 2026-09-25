@@ -76,10 +76,20 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
 		memcpy(normalData.data() + i, attrDataFlt.data() + 4 + (i * 8), 12);
 	}
 
-	channels[RenderSystem::kShaderChannelTangent].offset = position.size() * sizeof(Vector3f);
+	// 顶点属性按「结构数组（SoA）」排布：位置块 → 切线块 → 法线块。
+	//
+	// 关键约束：tangentData 的元素类型是 simd_float4（Apple 的 ext_vector_type，
+	// 要求 16 字节对齐），而顶点缓冲由 malloc 分配（16 字节对齐）。因此切线块的
+	// 偏移必须是 16 的倍数 —— 原来直接用 position.size()*sizeof(Vector3f) = 12*N，
+	// 在 N 为奇数时只有 8 字节对齐，Mesh::SetTangents<simd_float4> 里的
+	// strided_copy 会对未对齐地址生成 movaps，触发 EXC_I386_GPFLT 崩溃。
+	const uint32_t positionBytes = static_cast<uint32_t>(position.size() * sizeof(Vector3f));
+	const uint32_t tangentOffset = (positionBytes + 15u) & ~15u;
+
+	channels[RenderSystem::kShaderChannelTangent].offset = tangentOffset;
 	channels[RenderSystem::kShaderChannelTangent].format = VertexFormatFloat4;
 	channels[RenderSystem::kShaderChannelTangent].stride = 16;
-	channels[RenderSystem::kShaderChannelNormal].offset = position.size() * sizeof(Vector3f) + tangentData.size() * sizeof(Vector4f);
+	channels[RenderSystem::kShaderChannelNormal].offset = tangentOffset + static_cast<uint32_t>(tangentData.size() * sizeof(Vector4f));
 	channels[RenderSystem::kShaderChannelNormal].format = VertexFormatFloat3;
 	channels[RenderSystem::kShaderChannelNormal].stride = sizeof(Vector3f);
 
@@ -107,8 +117,8 @@ static void LoadGeometryData(RenderSystem::SceneManager* sceneManager)
 
     RenderSystem::MeshRenderer* meshRender = node1->AddComponent<RenderSystem::MeshRenderer>();
 	meshRender->SetSharedMesh(mesh);
-	
-    RenderSystem::MeshRenderer* meshRender2 = node1->AddComponent<RenderSystem::MeshRenderer>();
+
+    RenderSystem::MeshRenderer* meshRender2 = node2->AddComponent<RenderSystem::MeshRenderer>();
     meshRender2->SetSharedMesh(mesh);
 }
 
