@@ -144,9 +144,7 @@ void MeshletFrameWork::Initlize()
         mMeshletParamsUBO->SetData(&params, 0, sizeof(cbMeshletParams));
     }
 
-    // Create per-object UBO for cbPerObject (model matrix)
-    mPerObjectUBO = mRenderDevice->CreateUniformBufferWithSize(sizeof(mathutil::Matrix4x4f) * instances.size());
-    mPerObjectUBO->SetData(instances.data(), 0, sizeof(mathutil::Matrix4x4f) * instances.size());
+    mPerObjectUBO = mRenderDevice->CreateUniformBufferWithSize(sizeof(RenderSystem::cbPerObject));
     
     RCBufferDesc desc((uint32_t)sizeof(mathutil::Matrix4x4f) * instances.size(), RCBufferUsage::StorageBuffer, StorageModePrivate);
     mInstanceSSBO = mRenderDevice->CreateBuffer(desc, instances.data());
