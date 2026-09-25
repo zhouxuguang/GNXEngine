@@ -90,7 +90,8 @@ void* AlignedMalloc(size_t size, size_t alignment)
 
 	if (!result)
 	{
-		assert(false);
+		LOG_ERROR("AlignedMalloc: allocation failed, size=%zu alignment=%zu", size, alignment);
+		return nullptr;
 	}
     assert((reinterpret_cast<uintptr_t>(result) & (alignment - 1)) == 0);
 

@@ -50,3 +50,9 @@ add_executable(HDRToCubemapTool HDRToCubemapTool.cpp)
 target_link_libraries(HDRToCubemapTool PRIVATE GNXEngine ktx)
 
 set_property(TARGET HDRToCubemapTool PROPERTY FOLDER "test")
+
+add_executable(AllocatorEngineStress AllocatorEngineStress.cpp)
+
+target_link_libraries(AllocatorEngineStress PRIVATE GNXEngine AssetManager)
+
+set_property(TARGET AllocatorEngineStress PROPERTY FOLDER "test")

@@ -39,6 +39,13 @@ source_group("Source Files" FILES test_mathutil.cpp)
 
 add_test(NAME test_mathutil COMMAND test_mathutil)
 
+add_executable(test_allocator test_allocator.cpp)
+target_link_libraries(test_allocator PRIVATE Catch2::Catch2WithMain Allocator BaseLib tbb tbbmalloc mimalloc)
+set_property(TARGET test_allocator PROPERTY FOLDER "unittest")
+source_group("Source Files" FILES test_allocator.cpp)
+
+add_test(NAME test_allocator COMMAND test_allocator)
+
 # 代码审计缺陷的复现 / 回归测试（见 doc/BugAuditReport.md）
 # 这些用例覆盖 ImageCodec / MathUtil / RenderSystem(Camera) 的已修复缺陷。
 # 只链接 GNXEngine 共享库：MathUtil / ImageCodec / RenderSystem 的符号均已由其导出，

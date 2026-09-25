@@ -13,4 +13,18 @@
 #define USING_NS_ALLOCATOR
 #endif
 
+#if defined(_WIN32) || defined(__CYGWIN__)
+	#if defined(ALLOCATOR_EXPORTS) || defined(GNXENGINE_EXPORTS)
+		#define ALLOCATOR_API __declspec(dllexport)
+	#else
+		#define ALLOCATOR_API __declspec(dllimport)
+	#endif
+#else
+	#if __GNUC__ >= 4
+		#define ALLOCATOR_API __attribute__((visibility("default")))
+	#else
+		#define ALLOCATOR_API
+	#endif
+#endif
+
 #endif

@@ -7,6 +7,8 @@
 
 #include "MallocAnsi.h"
 
+#include <algorithm>
+
 #if GNX_OS_WINDOWS
 #include <malloc.h>
 #endif
@@ -23,51 +25,61 @@ MallocAnsi::MallocAnsi()
 #endif
 }
 
-void* MallocAnsi::Alloc(size_t size)
+void* MallocAnsi::Alloc(size_t size, size_t* usableSizeOut)
 {
-    void* newPtr = nullptr;
-    size_t alignment = VOID_PTR_SIZE;
-#if GNX_OS_MACOS | GNX_OS_IOS
-    // macOS expects all allocations to be aligned to 16 bytes, but TBBs default alignment is 8,
-    // so on Mac we always have to use scalable_aligned_realloc
-    alignment = std::max((size_t)16, alignment);
-#else
-#endif
-    newPtr = baselib::AlignedMalloc(size, alignment);
-    return newPtr;
+    return AlignedAlloc(size, VOID_PTR_SIZE, usableSizeOut);
 }
 
-void* MallocAnsi::AlignedAlloc(size_t size, size_t alignment)
+void* MallocAnsi::AlignedAlloc(size_t size, size_t alignment, size_t* usableSizeOut)
 {
-	void* newPtr = nullptr;
 #if GNX_OS_MACOS | GNX_OS_IOS
 	// macOS expects all allocations to be aligned to 16 bytes, but TBBs default alignment is 8,
 	// so on Mac we always have to use scalable_aligned_realloc
 	alignment = std::max((size_t)16, alignment);
 #else
+	alignment = std::max((size_t)VOID_PTR_SIZE, alignment);
 #endif
-	newPtr = baselib::AlignedMalloc(size, alignment);
-	return newPtr;
+	void* ptr = baselib::AlignedMalloc(size, alignment);
+	if (ptr && usableSizeOut)
+	{
+		*usableSizeOut = baselib::GetAllocationSize(ptr);
+	}
+	return ptr;
 }
 
-void MallocAnsi::Free(void* ptr)
+bool MallocAnsi::FreeAndGetSize(void* ptr, size_t& usableSizeOut)
 {
+    usableSizeOut = 0;
     if (!ptr)
     {
-        return;
+        return false;
     }
 
+    usableSizeOut = baselib::GetAllocationSize(ptr);
     baselib::AlignedFree(ptr);
+    return true;
 }
 
 bool MallocAnsi::GetAllocationSize(void *ptr, size_t &sizeOut)
 {
+    sizeOut = 0;
+    if (!ptr)
+    {
+        return false;
+    }
+
     sizeOut = baselib::GetAllocationSize(ptr);
-    return true;
+    return sizeOut > 0;
+}
+
+bool MallocAnsi::OwnsPointer(const void* ptr) const
+{
+    return ptr != nullptr;
 }
 
 void MallocAnsi::Trim(bool bTrimThreadCaches)
 {
+    (void)bTrimThreadCaches;
 }
 
 bool MallocAnsi::IsThreadSafe() const

@@ -5,9 +5,13 @@ file(GLOB_RECURSE ALLOCATOR_PROCESS_SOURCES CONFIGURE_DEPENDS ${allocator_proces
     ${allocator_process_dir}/*.c ${allocator_process_dir}/*.h)
 file(GLOB_RECURSE ALLOCATOR_PROCESS_INCLUDES CONFIGURE_DEPENDS ${allocator_process_include_dir}/*.h)
 
+list(FILTER ALLOCATOR_PROCESS_SOURCES EXCLUDE REGEX "AllocatorNewDelete\\.cpp$")
+
 set(SOURCE_FILES ${ALLOCATOR_PROCESS_SOURCES} ${ALLOCATOR_PROCESS_INCLUDES})
 
 add_library(Allocator OBJECT ${SOURCE_FILES})
+
+target_compile_definitions(Allocator PRIVATE ALLOCATOR_EXPORTS)
 
 source_group(TREE ${allocator_process_dir} PREFIX source FILES ${ALLOCATOR_PROCESS_SOURCES})
 source_group(TREE ${allocator_process_include_dir} PREFIX include FILES ${ALLOCATOR_PROCESS_INCLUDES})

@@ -62,6 +62,11 @@ target_link_libraries(GNXEngine PRIVATE
     imgui
 )
 
+if(GNX_ALLOCATOR_OVERRIDE_NEW)
+    target_sources(GNXEngine PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/../Allocator/source/AllocatorNewDelete.cpp)
+endif()
+
 # ---------------------------------------------------------------------------
 # Dear ImGui：静态库并入本共享库，作为进程内的【唯一副本】
 #
