@@ -170,6 +170,18 @@ static void ParserImageFormat(CGImageRef imageRef, CGColorSpaceRef colorSpace, i
     }
 }
 
+struct CFGuard
+{
+    const void* ref = nullptr;
+    ~CFGuard() { if (ref) { CFRelease(ref); } }
+};
+
+struct CGImageGuard
+{
+    CGImageRef ref = nullptr;
+    ~CGImageGuard() { if (ref) { CGImageRelease(ref); } }
+};
+
 uint8_t* DecodeImageData_APPLE(const uint8_t* pImageData,
                              size_t dataLen,
                              uint32_t* uiWidth,
@@ -184,7 +196,16 @@ uint8_t* DecodeImageData_APPLE(const uint8_t* pImageData,
         
 #if TARGET_OS_OSX
         CGImageSourceRef imageSource = CGImageSourceCreateWithData((CFDataRef)data, NULL);
-        CGImageRef imageRef = CGImageSourceCreateImageAtIndex(imageSource, 0, NULL);
+        if (!imageSource)
+        {
+            return NULL;
+        }
+
+        const CFGuard      sourceGuard{ imageSource };
+        CGImageRef         originalImageRef = CGImageSourceCreateImageAtIndex(imageSource, 0, NULL);
+        const CGImageGuard originalImageGuard{ originalImageRef };
+
+        CGImageRef imageRef = originalImageRef;
 #elif TARGET_OS_IOS
         UIImage *image = [UIImage imageWithData: data];
         if (!image)
