@@ -44,6 +44,11 @@ static int pngHeaderCheck(const unsigned char* sig, size_t start, size_t num_to_
 
 bool ImageDecoderPNG::IsFormat(const void *buffer, size_t size)
 {
+    if (buffer == nullptr || size < 8)
+    {
+        return false;
+    }
+
     int is_png = pngHeaderCheck((const unsigned char*)buffer, 0, 8);
     return is_png == 0;
 }
