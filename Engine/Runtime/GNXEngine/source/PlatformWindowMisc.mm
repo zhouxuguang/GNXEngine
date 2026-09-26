@@ -1,3 +1,19 @@
+#include "Runtime/GNXEngine/include/PreDefine.h"
+#include <Foundation/Foundation.h>
+#include <functional>
+
+NAMESPACE_GNXENGINE_BEGIN
+
+void RunFrameWithPlatformPool(const std::function<void()>& callback)
+{
+    @autoreleasepool
+    {
+        callback();
+    }
+}
+
+NAMESPACE_GNXENGINE_END
+
 #if !GNX_WINDOW_SDL
 
 #include "GLFWRenderWindow.h"

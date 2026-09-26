@@ -5,8 +5,18 @@
 #include "Runtime/RenderSystem/include/RenderEngine.h"
 #include "Runtime/AssetManager/include/AssetManager.h"
 #include <tracy/Tracy.hpp>
+#include <functional>
 
 NAMESPACE_GNXENGINE_BEGIN
+
+void RunFrameWithPlatformPool(const std::function<void()>& callback);
+
+#if !defined(__APPLE__)
+void RunFrameWithPlatformPool(const std::function<void()>& callback)
+{
+    callback();
+}
+#endif
 
 RenderWindowPtr gRenderWindow = nullptr;
 
@@ -34,7 +44,7 @@ void AppFrameWork::RunLoop()
 {
     Initlize();
     Resize(mRenderWindow->GetWidth(), mRenderWindow->GetHeight());
-    while (mRenderWindow && !mRenderWindow->ShouldClose())
+    const std::function<void()> frame = [this]()
     {
         mRenderWindow->OnUpdate();
 
@@ -46,6 +56,10 @@ void AppFrameWork::RunLoop()
             RenderFrame();
         }
         FrameMark;
+    };
+    while (mRenderWindow && !mRenderWindow->ShouldClose())
+    {
+        RunFrameWithPlatformPool(frame);
     }
 
     // Flush pipeline cache to disk before RenderWindow is destroyed
