@@ -220,27 +220,20 @@ bool Frustum<T>::IsBoxInFrustum(const AxisAlignedBox<T>& aabb) const
 }
 
 template<typename T>
-bool Frustum<T>::IsOutOfFrustum(const OrientedBoundingBox<T>& obb) const
+bool Frustum<T>::IsOBBInFrustum(const OrientedBoundingBox<T>& obb) const
 {
-	/*if (mInitialized)
+	for (int i = 0; i < kPlaneFrustumNum; ++i)
 	{
-		Vector3<T> point;
-		Vector3<T> obbExtentX = obb.mHalfAxes.col(0) * 2.0;
-		Vector3<T> obbExtentY = obb.mHalfAxes.col(1) * 2.0;
-		Vector3<T> obbExtentZ = obb.mHalfAxes.col(2) * 2.0;
-
-		for (int i = 0; i < 6; i++)
-		{
-			const Vector3<T>& normal = mPlane[i].getNormal();
-			point = obb.mCenter;
-			point = normal.DotProduct(obbExtentX) > 0.0 ? point - obbExtentX : point + obbExtentX;
-			point = normal.DotProduct(obbExtentY) > 0.0 ? point - obbExtentY : point + obbExtentY;
-			point = normal.DotProduct(obbExtentZ) > 0.0 ? point - obbExtentZ : point + obbExtentZ;
-
-			if (mPlane[i].getSide(point) == PointSide::FRONT_PLANE)
-				return true;
-		}*/
-	return  false;
+		const Vector4<T>& plane = mPlanes[i];
+		const Vector3<T> normal(plane.x, plane.y, plane.z);
+		const T radius = std::abs(normal.DotProduct(obb.mHalfAxes.col(0))) +
+			std::abs(normal.DotProduct(obb.mHalfAxes.col(1))) +
+			std::abs(normal.DotProduct(obb.mHalfAxes.col(2)));
+		const T distance = normal.DotProduct(obb.mCenter) + plane.w;
+		if (distance + radius < T(0))
+			return false;
+	}
+	return true;
 }
 
 template <typename T>
@@ -261,7 +254,11 @@ bool Frustum<T>::IsSphereInFrustum(const Sphere<T> sphere) const
 template <typename T>
 static void NormalizePlane(Vector4<T> &plane)
 {
-    T invLen = 1.0 / sqrt(plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
+    const T length = sqrt(plane.x * plane.x + plane.y * plane.y + plane.z * plane.z);
+    // Infinite far projections can produce a constant, zero-normal clip plane.
+    if (!(length > T(0)))
+        return;
+    T invLen = T(1) / length;
     plane.x *= invLen;
     plane.y *= invLen;
     plane.z *= invLen;

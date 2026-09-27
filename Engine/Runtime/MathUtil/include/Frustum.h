@@ -55,7 +55,7 @@ public:
     /**
      * 判断OBB和视锥体的关系
      */
-    bool IsOutOfFrustum(const OrientedBoundingBox<T>& obb) const;
+    bool IsOBBInFrustum(const OrientedBoundingBox<T>& obb) const;
 
     /**
      * 判断球和视锥体的关系
