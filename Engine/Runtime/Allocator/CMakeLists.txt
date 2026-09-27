@@ -21,3 +21,11 @@ target_include_directories(Allocator PUBLIC ${allocator_process_include_dir})
 target_link_libraries(Allocator PRIVATE BaseLib tbb tbbmalloc mimalloc)
 
 set_property(TARGET Allocator PROPERTY FOLDER "Runtime")
+
+# 全局 operator new/delete 替换（静态库，由 GNXEngine 以 PUBLIC 传播给各可执行模块）
+if(GNX_ALLOCATOR_OVERRIDE_NEW)
+    add_library(AllocatorOverride STATIC ${allocator_process_dir}/AllocatorNewDelete.cpp)
+    target_include_directories(AllocatorOverride PRIVATE ${allocator_process_include_dir})
+    target_link_libraries(AllocatorOverride PRIVATE BaseLib)
+    set_property(TARGET AllocatorOverride PROPERTY FOLDER "Runtime")
+endif()

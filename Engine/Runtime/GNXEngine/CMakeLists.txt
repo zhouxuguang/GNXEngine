@@ -62,9 +62,10 @@ target_link_libraries(GNXEngine PRIVATE
     imgui
 )
 
+# 在windows上各个模块使用同一个分配器，所有模块都要链接GNXEngine
+# 所有模块都要链接GNXEngine，才能保证全局 operator new/delete 替换生效。
 if(GNX_ALLOCATOR_OVERRIDE_NEW)
-    target_sources(GNXEngine PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/../Allocator/source/AllocatorNewDelete.cpp)
+    target_link_libraries(GNXEngine PUBLIC AllocatorOverride)
 endif()
 
 # ---------------------------------------------------------------------------

@@ -33,112 +33,112 @@ inline void Delete(void* ptr) noexcept
 
 } // namespace
 
-ALLOCATOR_API void* operator new(size_t size)
+void* operator new(size_t size)
 {
     return NewOrThrow(size, kDefaultNewAlignment);
 }
 
-ALLOCATOR_API void* operator new[](size_t size)
+void* operator new[](size_t size)
 {
     return NewOrThrow(size, kDefaultNewAlignment);
 }
 
-ALLOCATOR_API void* operator new(size_t size, const std::nothrow_t&) noexcept
+void* operator new(size_t size, const std::nothrow_t&) noexcept
 {
     return NewNoThrow(size, kDefaultNewAlignment);
 }
 
-ALLOCATOR_API void* operator new[](size_t size, const std::nothrow_t&) noexcept
+void* operator new[](size_t size, const std::nothrow_t&) noexcept
 {
     return NewNoThrow(size, kDefaultNewAlignment);
 }
 
-ALLOCATOR_API void* operator new(size_t size, std::align_val_t alignment)
+void* operator new(size_t size, std::align_val_t alignment)
 {
     return NewOrThrow(size, static_cast<size_t>(alignment));
 }
 
-ALLOCATOR_API void* operator new[](size_t size, std::align_val_t alignment)
+void* operator new[](size_t size, std::align_val_t alignment)
 {
     return NewOrThrow(size, static_cast<size_t>(alignment));
 }
 
-ALLOCATOR_API void* operator new(size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept
+void* operator new(size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept
 {
     return NewNoThrow(size, static_cast<size_t>(alignment));
 }
 
-ALLOCATOR_API void* operator new[](size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept
+void* operator new[](size_t size, std::align_val_t alignment, const std::nothrow_t&) noexcept
 {
     return NewNoThrow(size, static_cast<size_t>(alignment));
 }
 
-ALLOCATOR_API void operator delete(void* ptr) noexcept
+void operator delete(void* ptr) noexcept
 {
     Delete(ptr);
 }
 
-ALLOCATOR_API void operator delete[](void* ptr) noexcept
+void operator delete[](void* ptr) noexcept
 {
     Delete(ptr);
 }
 
-ALLOCATOR_API void operator delete(void* ptr, const std::nothrow_t&) noexcept
+void operator delete(void* ptr, const std::nothrow_t&) noexcept
 {
     Delete(ptr);
 }
 
-ALLOCATOR_API void operator delete[](void* ptr, const std::nothrow_t&) noexcept
+void operator delete[](void* ptr, const std::nothrow_t&) noexcept
 {
     Delete(ptr);
 }
 
-ALLOCATOR_API void operator delete(void* ptr, size_t) noexcept
+void operator delete(void* ptr, size_t) noexcept
 {
     Delete(ptr);
 }
 
-ALLOCATOR_API void operator delete[](void* ptr, size_t) noexcept
+void operator delete[](void* ptr, size_t) noexcept
 {
     Delete(ptr);
 }
 
-ALLOCATOR_API void operator delete(void* ptr, std::align_val_t) noexcept
+void operator delete(void* ptr, std::align_val_t) noexcept
 {
     Delete(ptr);
 }
 
-ALLOCATOR_API void operator delete[](void* ptr, std::align_val_t) noexcept
+void operator delete[](void* ptr, std::align_val_t) noexcept
 {
     Delete(ptr);
 }
 
-ALLOCATOR_API void operator delete(void* ptr, size_t, std::align_val_t) noexcept
+void operator delete(void* ptr, size_t, std::align_val_t) noexcept
 {
     Delete(ptr);
 }
 
-ALLOCATOR_API void operator delete[](void* ptr, size_t, std::align_val_t) noexcept
+void operator delete[](void* ptr, size_t, std::align_val_t) noexcept
 {
     Delete(ptr);
 }
 
-ALLOCATOR_API void operator delete(void* ptr, std::align_val_t, const std::nothrow_t&) noexcept
+void operator delete(void* ptr, std::align_val_t, const std::nothrow_t&) noexcept
 {
     Delete(ptr);
 }
 
-ALLOCATOR_API void operator delete[](void* ptr, std::align_val_t, const std::nothrow_t&) noexcept
+void operator delete[](void* ptr, std::align_val_t, const std::nothrow_t&) noexcept
 {
     Delete(ptr);
 }
 
-ALLOCATOR_API void operator delete(void* ptr, size_t, std::align_val_t, const std::nothrow_t&) noexcept
+void operator delete(void* ptr, size_t, std::align_val_t, const std::nothrow_t&) noexcept
 {
     Delete(ptr);
 }
 
-ALLOCATOR_API void operator delete[](void* ptr, size_t, std::align_val_t, const std::nothrow_t&) noexcept
+void operator delete[](void* ptr, size_t, std::align_val_t, const std::nothrow_t&) noexcept
 {
     Delete(ptr);
 }
