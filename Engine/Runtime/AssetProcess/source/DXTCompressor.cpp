@@ -25,7 +25,8 @@ static void CompressDXT1_ISPC(uint8_t* result, const uint8_t* input, uint32_t wi
 
 void CompressDXT1(uint8_t* result, const uint8_t* input, uint32_t width, uint32_t height, uint32_t stride)
 {
-	if (width % 16 != 0 || height % 4 != 0)
+	if (width % 16 != 0 || height % 4 != 0 ||
+		reinterpret_cast<uintptr_t>(input) % 64 != 0 || stride % 64 != 0)
 	{
         return CompressDXT1_ISPC(result, input, width, height, stride);
 	}
