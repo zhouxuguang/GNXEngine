@@ -23,6 +23,7 @@
 #include "skinnedMesh/SkinnedMesh.h"
 #include "mesh/MeshDrawUtil.h"
 #include "terrain/TerrainComponent.h"
+#include "DeferredGeometry.h"
 #include <memory>
 #include <vector>
 #include <limits>
@@ -77,6 +78,7 @@ struct DepthMeshData
 
     /** 地形组件列表（专属渲染路径） */
     std::vector<TerrainComponent*> terrainItems;
+    std::vector<DeferredGeometryDraw> deferredGeometry;
     
     /** 获取总网格数量 */
     size_t GetTotalMeshCount() const
@@ -85,13 +87,14 @@ struct DepthMeshData
         count += staticMeshes.size();
         count += skinnedMeshes.size();
         count += terrainItems.size();
+        count += deferredGeometry.size();
         return count;
     }
     
     /** 是否有网格数据 */
     bool HasMeshes() const
     {
-        return (!staticMeshes.empty() || !skinnedMeshes.empty() || !terrainItems.empty());
+        return (!staticMeshes.empty() || !skinnedMeshes.empty() || !terrainItems.empty() || !deferredGeometry.empty());
     }
 };
 
@@ -277,6 +280,7 @@ private:
     GraphicsPipelinePtr mDepthOnlyPipeline = nullptr;
     GraphicsPipelinePtr mSkinnedDepthOnlyPipeline = nullptr;
     GraphicsPipelinePtr mTerrainDepthPipeline = nullptr;  // terrain-specific depth PSO
+    GraphicsPipelinePtr mDeferredGeometryDepthPipeline = nullptr;
     GraphicsPipelinePtr mTerrainDepthMSPipeline = nullptr; // terrain Mesh Shader depth PSO
     
     // FrameGraph 资源 ID

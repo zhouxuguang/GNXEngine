@@ -65,6 +65,7 @@ public:
 
     void SetSSREnabled(bool enabled);
     bool IsSSREnabled() const;
+    void SetOptionalPassesEnabled(bool enabled) { mEnableOptionalPasses = enabled; }
 
 private:
     FrameGraphResource RenderPreDepthPass(
@@ -73,6 +74,7 @@ private:
         const std::vector<DepthMeshItem>& meshItems,
         const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
         UniformBufferPtr cameraUBO,
+        const std::vector<DeferredGeometryDraw>& deferredGeometry,
         const std::vector<TerrainComponent*>& terrainItems = {},
         const mathutil::Frustumf& frustum = mathutil::Frustumf());
 
@@ -83,6 +85,7 @@ private:
         const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
         UniformBufferPtr cameraUBO,
         FrameGraphResource preDepthTexture = -1,
+        const std::vector<DeferredGeometryDraw>& deferredGeometry = {},
         const std::vector<TerrainComponent*>& terrainItems = {},
         const mathutil::Frustumf& frustum = mathutil::Frustumf());
 
@@ -166,7 +169,8 @@ private:
         SceneNode* node,
         std::vector<DepthMeshItem>& meshItems,
         std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
-        std::vector<TerrainComponent*>& terrainItems);
+        std::vector<TerrainComponent*>& terrainItems,
+        std::vector<DeferredGeometryDraw>& deferredGeometry);
 
     /**
      * 递归查找场景中的大气散射组件
@@ -207,6 +211,7 @@ private:
     AtmosphereComponent* mAtmosphere = nullptr;         // 大气散射组件（可空）
     bool mEnableMotionBlur = false;
     bool mEnableSSR = false;
+    bool mEnableOptionalPasses = true;
     
     uint32_t mWidth = 1;
     uint32_t mHeight = 1;

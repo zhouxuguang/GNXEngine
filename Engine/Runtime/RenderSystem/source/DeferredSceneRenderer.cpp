@@ -117,11 +117,12 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     std::vector<DepthMeshItem> meshItems;
     std::vector<DepthSkinnedMeshItem> skinnedMeshItems;
     std::vector<TerrainComponent*> terrainItems;
+    std::vector<DeferredGeometryDraw> deferredGeometry;
 
     SceneNode* rootNode = sceneManager->GetRootNode();
     if (rootNode)
     {
-        CollectMeshesRecursive(rootNode, meshItems, skinnedMeshItems, terrainItems);
+        CollectMeshesRecursive(rootNode, meshItems, skinnedMeshItems, terrainItems, deferredGeometry);
     }
 
     // 收集使用 VT 材质的物体（用于 feedback pass）
@@ -174,7 +175,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     // ========== 大气散射 ==========
     // 查找场景中的大气散射组件；首次使用时执行一次预计算，并在每帧更新视角参数
     mAtmosphere = FindAtmosphereRecursive(rootNode);
-    if (mAtmosphere && mAtmosphere->IsInitialized())
+    if (mEnableOptionalPasses && mAtmosphere && mAtmosphere->IsInitialized())
     {
         AtmosphereRenderer* atmoRenderer = mAtmosphere->GetRenderer();
         if (atmoRenderer)
@@ -233,12 +234,12 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // PreZPass
     FrameGraphResource depthResource = RenderPreDepthPass(
-        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, terrainItems, frustum);
+        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, deferredGeometry, terrainItems, frustum);
 
     // ShadowMap Pass（在 PreDepth 之后、BasePass 之前生成光源视角深度）
     // 所有投射阴影的几何体在光源相机参数下绘制
     ShadowMapModuleOutput shadowOutput;
-    if (mShadowMapModule)
+    if (mEnableOptionalPasses && mShadowMapModule)
     {
         shadowOutput = RenderShadowMapPass(
             frameGraph, commandBuffer, meshItems, skinnedMeshItems);
@@ -246,7 +247,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // Hi-Z Pass（在PreDepth之后、BasePass之前）
     HiZOutput hiZOutput;
-    if (depthResource != -1)
+    if (mEnableOptionalPasses && depthResource != -1)
     {
         hiZOutput = BuildHiZPass(frameGraph, commandBuffer, depthResource);
         mLastHiZOutput = hiZOutput;
@@ -254,12 +255,12 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // BasePass (G-Buffer)
     GBufferData gbufferData = RenderBasePass(
-        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, depthResource, terrainItems, frustum);
+        frameGraph, commandBuffer, meshItems, skinnedMeshItems, cameraUBO, depthResource, deferredGeometry, terrainItems, frustum);
 
     // SSAO Pass（在G-Buffer之后、DeferredLighting之前）
     SSAOOutput ssaoOutput;
     ssaoOutput.ssaoResult = -1;
-    if (mSSAOPass && depthResource != -1 && gbufferData.gBufferA != -1)
+    if (mEnableOptionalPasses && mSSAOPass && depthResource != -1 && gbufferData.gBufferA != -1)
     {
         if (!mSSAOPass->IsInitialized())
         {
@@ -305,7 +306,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // Atmosphere Pass（大气散射天空）：在天空盒之后，只填充远平面（天空）区域
     FrameGraphResource atmosphereResult = skyboxResult;
-    if (mAtmosphere && mAtmosphere->IsInitialized()
+    if (mEnableOptionalPasses && mAtmosphere && mAtmosphere->IsInitialized()
         && mAtmosphere->GetRenderer() && mAtmosphere->GetRenderer()->IsPrecomputed()
         && depthResource != -1)
     {
@@ -315,7 +316,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // SSR Pass（在光照和天空盒之后、后处理之前）
     FrameGraphResource reflectedResult = atmosphereResult;
-    if (mEnableSSR && mSSRPass && depthResource != -1 && gbufferData.gBufferA != -1)
+    if (mEnableOptionalPasses && mEnableSSR && mSSRPass && depthResource != -1 && gbufferData.gBufferA != -1)
     {
         if (!mSSRPass->IsInitialized())
         {
@@ -346,7 +347,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // Motion Blur Pass（在 SSR 之后、Present之前）
     FrameGraphResource finalResult = reflectedResult;
-    if (mEnableMotionBlur && mMotionBlurPass && depthResource != -1)
+    if (mEnableOptionalPasses && mEnableMotionBlur && mMotionBlurPass && depthResource != -1)
     {
         if (!mMotionBlurPass->IsInitialized())
         {
@@ -368,7 +369,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // VT Feedback Pass（在 MotionBlur/Skybox 之后、Present 之前）
     // 降分辨率重绘 VT 物体，PS 输出 encoded page 到 R32Uint target
-    if (mFeedbackRender && mFeedbackRender->IsInitialized() && !feedbackMeshItems.empty())
+    if (mEnableOptionalPasses && mFeedbackRender && mFeedbackRender->IsInitialized() && !feedbackMeshItems.empty())
     {
         auto vtManager = sceneManager->GetVTManager(0);
         if (vtManager)
@@ -448,6 +449,7 @@ FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(
     const std::vector<DepthMeshItem>& meshItems,
     const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
     UniformBufferPtr cameraUBO,
+    const std::vector<DeferredGeometryDraw>& deferredGeometry,
     const std::vector<TerrainComponent*>& terrainItems,
     const mathutil::Frustumf& frustum)
 {
@@ -467,6 +469,7 @@ FrameGraphResource DeferredSceneRenderer::RenderPreDepthPass(
     params.meshes.staticMeshes = meshItems;
     params.meshes.skinnedMeshes = skinnedMeshItems;
     params.meshes.terrainItems = terrainItems;
+    params.meshes.deferredGeometry = deferredGeometry;
     params.uniforms.cameraUBO = cameraUBO;
     params.uniforms.skinnedMatrixUBO = skinnedMatrixUBO;
     params.frustum = frustum;
@@ -484,6 +487,7 @@ GBufferData DeferredSceneRenderer::RenderBasePass(
     const std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
     UniformBufferPtr cameraUBO,
     FrameGraphResource preDepthTexture,
+    const std::vector<DeferredGeometryDraw>& deferredGeometry,
     const std::vector<TerrainComponent*>& terrainItems,
     const mathutil::Frustumf& frustum)
 {
@@ -499,6 +503,7 @@ GBufferData DeferredSceneRenderer::RenderBasePass(
     params.meshes.staticMeshes = meshItems;
     params.meshes.skinnedMeshes = skinnedMeshItems;
     params.meshes.terrainItems = terrainItems;
+    params.meshes.deferredGeometry = deferredGeometry;
     params.uniforms.cameraUBO = cameraUBO;
     params.uniforms.skinnedMatrixUBO = skinnedMatrixUBO;
     params.preDepthTexture = preDepthTexture;  // 传递 PreDepth 深度图
@@ -912,7 +917,8 @@ void DeferredSceneRenderer::CollectMeshesRecursive(
     SceneNode* node,
     std::vector<DepthMeshItem>& meshItems,
     std::vector<DepthSkinnedMeshItem>& skinnedMeshItems,
-    std::vector<TerrainComponent*>& terrainItems)
+    std::vector<TerrainComponent*>& terrainItems,
+    std::vector<DeferredGeometryDraw>& deferredGeometry)
 {
     if (!node || !node->IsVisible())
     {
@@ -925,6 +931,8 @@ void DeferredSceneRenderer::CollectMeshesRecursive(
     MeshRenderer* meshRenderer = node->QueryComponentT<MeshRenderer>();
     if (meshRenderer)
     {
+        if (auto* provider = dynamic_cast<DeferredGeometryProvider*>(meshRenderer))
+            provider->CollectDeferredGeometry(deferredGeometry);
         MeshPtr mesh = meshRenderer->GetSharedMesh();
         if (mesh)
         {
@@ -964,7 +972,7 @@ void DeferredSceneRenderer::CollectMeshesRecursive(
     const auto& children = node->GetAllNodes();
     for (SceneNode* child : children)
     {
-        CollectMeshesRecursive(child, meshItems, skinnedMeshItems, terrainItems);
+        CollectMeshesRecursive(child, meshItems, skinnedMeshItems, terrainItems, deferredGeometry);
     }
 }
 

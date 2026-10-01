@@ -70,6 +70,25 @@ GBufferData GBufferRenderer::AddToFrameGraph(
     CommandBufferPtr commandBuffer,
     const GBufferRenderParams& params)
 {
+    if (!params.meshes.deferredGeometry.empty() && !mDeferredGeometryPipeline)
+    {
+        GraphicsShaderInfo shader = CreateGraphicsShaderInfo("DeferredGeometryBase");
+        shader.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
+        shader.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionEqual;
+        shader.graphicsPipelineDesc.renderTargetCount = 5;
+        mDeferredGeometryPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shader.graphicsPipelineDesc);
+        mDeferredGeometryPipeline->AttachGraphicsShader(shader.graphicsShader);
+    }
+    if (!params.meshes.deferredGeometry.empty() && !mDeferredGeometryUnlitPipeline)
+    {
+        GraphicsShaderInfo shader = CreateGraphicsShaderInfo("DeferredGeometryUnlitBase");
+        shader.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
+        shader.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionEqual;
+        shader.graphicsPipelineDesc.renderTargetCount = 5;
+        mDeferredGeometryUnlitPipeline = RenderCore::GetRenderDevice()->CreateGraphicsPipeline(shader.graphicsPipelineDesc);
+        mDeferredGeometryUnlitPipeline->AttachGraphicsShader(shader.graphicsShader);
+    }
+
     // 定义 GBuffer Pass 数据结构
     struct GBufferPassData
     {
@@ -249,6 +268,25 @@ GBufferData GBufferRenderer::AddToFrameGraph(
                     renderInfo.pageTableSampler = data.pageTableSampler;
 
                     MeshDrawUtil::DrawMeshBasePass(*meshItem.mesh, renderInfo, pso);
+                }
+            }
+
+            if (mDeferredGeometryPipeline)
+            {
+                for (const auto& draw : data.meshes.deferredGeometry)
+                {
+                    if (!draw.vertexBuffer || !draw.indexBuffer || !draw.objectUBO ||
+                        !draw.baseColor || !draw.sampler || draw.indexCount == 0)
+                        continue;
+                    renderEncoder->SetGraphicsPipeline(draw.unlit ? mDeferredGeometryUnlitPipeline : mDeferredGeometryPipeline);
+                    renderEncoder->SetVertexUniformBuffer("cbPerCamera", data.uniforms.cameraUBO);
+                    renderEncoder->SetVertexUniformBuffer("cbPerObject", draw.objectUBO);
+                    renderEncoder->SetVertexBuffer(draw.vertexBuffer, 0, 0);
+                    renderEncoder->SetVertexBuffer(draw.vertexBuffer, draw.vertexCount * sizeof(mathutil::Vector3f), 1);
+                    renderEncoder->SetVertexBuffer(draw.vertexBuffer, draw.vertexCount * sizeof(mathutil::Vector3f) * 2, 2);
+                    renderEncoder->SetFragmentTextureAndSampler("gDiffuseMap", draw.baseColor, draw.sampler);
+                    renderEncoder->DrawIndexedPrimitives(PrimitiveMode_TRIANGLES, (int)draw.indexCount,
+                        draw.indexBuffer, 0, 0, IndexType_UShort);
                 }
             }
 

@@ -100,6 +100,7 @@ public:
      * @param path 渲染路径类型
      */
     void SetRenderPath(RenderPath path);
+    void SetDeferredOptionalPassesEnabled(bool enabled);
     
     /**
      * 获取当前渲染路径

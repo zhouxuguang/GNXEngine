@@ -322,6 +322,12 @@ void SceneManager::SetRenderPath(RenderPath path)
     mRenderPath = path;
 }
 
+void SceneManager::SetDeferredOptionalPassesEnabled(bool enabled)
+{
+    if (auto* deferred = dynamic_cast<DeferredSceneRenderer*>(mSceneRenderer.get()))
+        deferred->SetOptionalPassesEnabled(enabled);
+}
+
 void SceneManager::Render(RenderEncoderPtr renderEncoder)
 {
     // 如果是延迟渲染，获取最终纹理并呈现

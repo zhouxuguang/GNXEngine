@@ -349,6 +349,11 @@ float4 PS(VertexOut pin) : SV_Target0
     
     // 从RT0读取自发光颜色（BasePass写入）
     float3 emissive = gGBufferSceneColor.Sample(gGBufferSceneColorSam, pin.texCoord).rgb;
+
+    // The unlit geometry path stores linear image color in SceneColor and marks RT2.a.
+    // Alpha 0 carries the unlit presentation mode to the final post-process pass.
+    if (metallicSpecularRoughness.a > 0.99)
+        return float4(emissive, 0.0);
     
     // 从深度重建顶点世界坐标
     float depth = gDepth.Sample(gDepthSam, pin.texCoord).r;

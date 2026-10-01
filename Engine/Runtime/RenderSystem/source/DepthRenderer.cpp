@@ -24,7 +24,7 @@ DepthRenderer::DepthRenderer(RenderDevice* device) : mDevice(device)
     shaderInfoDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
     mDepthOnlyPipeline = mDevice->CreateGraphicsPipeline(shaderInfoDepth.graphicsPipelineDesc);
     mDepthOnlyPipeline->AttachGraphicsShader(shaderInfoDepth.graphicsShader);
-    
+
     GraphicsShaderInfo shaderInfoSkinnedDepth = CreateGraphicsShaderInfo("SkinnedDepthGenerate");
     shaderInfoSkinnedDepth.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
     mSkinnedDepthOnlyPipeline = mDevice->CreateGraphicsPipeline(shaderInfoSkinnedDepth.graphicsPipelineDesc);
@@ -67,6 +67,7 @@ bool DepthRenderer::Initialize(const DepthRenderConfig& config)
 void DepthRenderer::Shutdown()
 {
     mDepthOnlyPipeline = nullptr;
+    mDeferredGeometryDepthPipeline = nullptr;
     mSkinnedDepthOnlyPipeline = nullptr;
     mTerrainDepthPipeline = nullptr;
     mInitialized = false;
@@ -99,6 +100,14 @@ FrameGraphResource DepthRenderer::Render(
     const DepthRenderParams& params,
     const std::string& textureName)
 {
+    if (!params.meshes.deferredGeometry.empty() && !mDeferredGeometryDepthPipeline)
+    {
+        GraphicsShaderInfo shader = CreateGraphicsShaderInfo("DeferredGeometryDepth");
+        shader.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = DepthConfig::GetDefaultDepthCompareFunc();
+        mDeferredGeometryDepthPipeline = mDevice->CreateGraphicsPipeline(shader.graphicsPipelineDesc);
+        mDeferredGeometryDepthPipeline->AttachGraphicsShader(shader.graphicsShader);
+    }
+
     // 定义 Pass 数据结构
     struct DepthPassData
     {
@@ -161,6 +170,21 @@ FrameGraphResource DepthRenderer::Render(
                     renderInfo.objectUBO = meshItem.objectUBO;
 
                     MeshDrawUtil::DrawMeshDepthOnly(*meshItem.mesh, renderInfo, mDepthOnlyPipeline);
+                }
+            }
+
+            if (mDeferredGeometryDepthPipeline)
+            {
+                for (const auto& draw : data.meshes.deferredGeometry)
+                {
+                    if (!draw.vertexBuffer || !draw.indexBuffer || !draw.objectUBO || draw.indexCount == 0)
+                        continue;
+                    renderEncoder->SetGraphicsPipeline(mDeferredGeometryDepthPipeline);
+                    renderEncoder->SetVertexUniformBuffer("cbPerCamera", data.uniforms.cameraUBO);
+                    renderEncoder->SetVertexUniformBuffer("cbPerObject", draw.objectUBO);
+                    renderEncoder->SetVertexBuffer(draw.vertexBuffer, 0, 0);
+                    renderEncoder->DrawIndexedPrimitives(PrimitiveMode_TRIANGLES, (int)draw.indexCount,
+                        draw.indexBuffer, 0, 0, IndexType_UShort);
                 }
             }
 

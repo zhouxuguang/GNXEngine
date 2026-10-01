@@ -40,6 +40,7 @@ struct GBufferMeshData
     std::vector<DepthMeshItem> staticMeshes;
     std::vector<DepthSkinnedMeshItem> skinnedMeshes;
     std::vector<TerrainComponent*> terrainItems;
+    std::vector<DeferredGeometryDraw> deferredGeometry;
 };
 
 // G-Buffer 渲染的 UBO 数据
@@ -143,6 +144,8 @@ private:
     GraphicsPipelinePtr mGBufferPipeline = nullptr;
     GraphicsPipelinePtr mGBufferVTPipeline = nullptr;  // VirtualTexturePBR 专用
     GraphicsPipelinePtr mTerrainGBufferPipeline = nullptr;  // terrain-specific G-buffer PSO
+    GraphicsPipelinePtr mDeferredGeometryPipeline = nullptr;
+    GraphicsPipelinePtr mDeferredGeometryUnlitPipeline = nullptr;
     GraphicsPipelinePtr mTerrainMSPipeline = nullptr;       // terrain Mesh Shader G-buffer PSO
     bool mIsInitialized = false;
 };

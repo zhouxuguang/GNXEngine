@@ -101,6 +101,17 @@ half4 PS(v2f pin) : SV_Target
 {
     half4 texColor = texImage.Sample(texImageSam, pin.texcoord);
 
+    // Unlit imagery has already supplied its final SDR color in linear space.
+    // The forward path presented the source image directly; applying ACES here
+    // changes its contrast and saturation. Alpha 0 is set by DeferredLighting.
+    if (texColor.a < 0.5h)
+    {
+        float3 sRGB = float3(LinearToGammaSpaceExact(texColor.r),
+                             LinearToGammaSpaceExact(texColor.g),
+                             LinearToGammaSpaceExact(texColor.b));
+        return float4(sRGB, 1.0);
+    }
+
     // if (color.x > 1.0 || color.y > 1.0 || color.z > 1.0)
     // {
     //     return float4(1.0, 0.0, 0.0, 1.0);
