@@ -72,6 +72,9 @@ public:
     void SetSkyShaderAsset(const std::string& asset) { mSkyShaderAsset = asset; }
     void SetSkyExtraUniformBuffer(const std::string& name, UniformBufferPtr buffer)
     { mSkyExtraUniformName = name; mSkyExtraUniformBuffer = std::move(buffer); }
+    void SetPlanetEllipsoidRadii(const mathutil::Vector3d& radii) { mPlanetRadii = radii; }
+    bool HasPlanetEllipsoid() const { return mPlanetRadii.x > 0.0 && mPlanetRadii.y > 0.0 && mPlanetRadii.z > 0.0; }
+    void UpdatePlanetParams(const mathutil::Vector3d& up, double altitude);
 
     // 每帧更新行星相对视角参数，世界位置使用双精度米。
     void UpdateViewParams(const Camera* camera,
@@ -83,6 +86,8 @@ public:
 
     // 渲染天空。调用者需提供颜色附件为场景颜色、深度附件为场景深度的 RenderEncoder。
     void RenderSky(RenderEncoderPtr renderEncoder);
+    void RenderPlanetAtmosphere(RenderEncoderPtr renderEncoder, RCTexturePtr sceneColor,
+                                RCTexturePtr sceneDepth);
 
 private:
     void CreateResources();
@@ -132,6 +137,7 @@ private:
 
     UniformBufferPtr mAtmosphereUBO;          // AtmosphereParametersCB
     UniformBufferPtr mViewUBO;                // AtmosphereViewCB
+    UniformBufferPtr mPlanetUBO;              // AtmospherePlanetCB
 
     // 预计算 Pass 用到的 (layer, order) 参数 UBO。命令缓冲区随帧提交，
     // 这些 UBO 必须存活到 GPU 执行完，故由渲染器持有并按 key 复用。
@@ -149,6 +155,9 @@ private:
     GraphicsPipelinePtr mIndirectIrradiancePipeline;
     GraphicsPipelinePtr mMultipleScatteringPipeline;
     GraphicsPipelinePtr mSkyPipeline;
+    GraphicsPipelinePtr mPlanetPipeline;
+    mathutil::Vector3d mPlanetRadii{0.0, 0.0, 0.0};
+    float mAtmosphereHeight = 0.0f;
 
     std::string mSkyShaderAsset = "Atmosphere/AtmosphereShader";
     std::string mSkyExtraUniformName;

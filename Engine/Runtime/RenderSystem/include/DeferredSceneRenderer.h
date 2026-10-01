@@ -189,6 +189,13 @@ private:
         UniformBufferPtr cameraUBO,
         AtmosphereComponent* atmosphere);
 
+    FrameGraphResource RenderPlanetAtmospherePass(
+        FrameGraph& frameGraph,
+        CommandBufferPtr commandBuffer,
+        FrameGraphResource colorTexture,
+        FrameGraphResource depthTexture,
+        AtmosphereComponent* atmosphere);
+
     /**
      * 渲染场景（延迟渲染路径）
      * @param deltaTime 帧时间（秒）

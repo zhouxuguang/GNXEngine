@@ -27,8 +27,23 @@ public:
         return ComponentType::Atmosphere;
     }
 
-    // 构建默认大气模型并初始化 GPU 预计算资源
+    // 使用调用方的米制模型初始化 GPU 预计算资源。
     bool Initialize(const Atmosphere::AtmosphereParameters& params, unsigned int numScatteringOrders = 4);
+
+    void SetEnabled(bool enabled) { mEnabled = enabled; }
+    bool IsEnabled() const { return mEnabled; }
+
+    // 可选的实体椭球半轴（米）。未设置时保留原有的纯天空绘制路径。
+    void SetPlanetEllipsoidRadii(const Vector3d& radii) { mPlanetEllipsoidRadii = radii; }
+    const Vector3d& GetPlanetEllipsoidRadii() const { return mPlanetEllipsoidRadii; }
+    bool HasPlanetEllipsoid() const
+    { return mPlanetEllipsoidRadii.x > 0.0 && mPlanetEllipsoidRadii.y > 0.0 && mPlanetEllipsoidRadii.z > 0.0; }
+
+    // 调用方以双精度提供当前相机的大地法线与椭球高（米）。
+    void SetCameraSurfaceFrame(const Vector3d& up, double altitude)
+    { mCameraGeodeticUp = up; mCameraAltitude = altitude; }
+    const Vector3d& GetCameraGeodeticUp() const { return mCameraGeodeticUp; }
+    double GetCameraAltitude() const { return mCameraAltitude; }
 
     bool IsInitialized() const
     {
@@ -100,6 +115,10 @@ private:
     std::string mSkyShaderAsset = "Atmosphere/AtmosphereShader";
     std::string mSkyExtraUniformName;
     RenderCore::UniformBufferPtr mSkyExtraUniformBuffer;
+    Vector3d mPlanetEllipsoidRadii{0.0, 0.0, 0.0};
+    Vector3d mCameraGeodeticUp{0.0, 0.0, 1.0};
+    double mCameraAltitude = 0.0;
+    bool mEnabled = true;
 };
 
 template<> struct ComponentTypeOf<AtmosphereComponent>

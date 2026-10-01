@@ -73,6 +73,7 @@ bool AtmosphereRenderer::Initialize(const Atmosphere::AtmosphereParameters& para
 
     mNumScatteringOrders = numScatteringOrders < 1 ? 1 : numScatteringOrders;
     mSunAngularRadius = params.sun_angular_radius;
+    mAtmosphereHeight = params.top_radius - params.bottom_radius;
 
     CreateResources();
     CreatePipelines();
@@ -145,6 +146,8 @@ void AtmosphereRenderer::CreateResources()
     // UBO
     mAtmosphereUBO = device->CreateUniformBufferWithSize(sizeof(Atmosphere::AtmosphereParameters));
     mViewUBO = device->CreateUniformBufferWithSize(sizeof(Atmosphere::AtmosphereViewParams));
+    if (HasPlanetEllipsoid())
+        mPlanetUBO = device->CreateUniformBufferWithSize(sizeof(Atmosphere::AtmospherePlanetParams));
 
     // 采样器（线性、Clamp）
     SamplerDesc samplerDesc;
@@ -168,6 +171,7 @@ void AtmosphereRenderer::DestroyResources()
     mDeltaScatteringDensityTexture.reset();
     mAtmosphereUBO.reset();
     mViewUBO.reset();
+    mPlanetUBO.reset();
     mLinearSampler.reset();
     mPrecomputeUBOs.clear();
     mPrecomputeSteps.clear();
@@ -181,6 +185,7 @@ void AtmosphereRenderer::DestroyResources()
     mIndirectIrradiancePipeline.reset();
     mMultipleScatteringPipeline.reset();
     mSkyPipeline.reset();
+    mPlanetPipeline.reset();
 }
 
 void AtmosphereRenderer::CreatePipelines()
@@ -252,6 +257,16 @@ void AtmosphereRenderer::CreatePipelines()
             DepthConfig::GetSkyboxDepthCompareFunc();
         mSkyPipeline = device->CreateGraphicsPipeline(info.graphicsPipelineDesc);
         mSkyPipeline->AttachGraphicsShader(info.graphicsShader);
+    }
+
+    if (HasPlanetEllipsoid())
+    {
+        GraphicsShaderInfo info = CreateGraphicsShaderInfo("Atmosphere/AtmospherePlanetComposite");
+        info.graphicsPipelineDesc.renderTargetCount = 1;
+        info.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
+        info.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction = CompareFunctionAlways;
+        mPlanetPipeline = device->CreateGraphicsPipeline(info.graphicsPipelineDesc);
+        mPlanetPipeline->AttachGraphicsShader(info.graphicsShader);
     }
 }
 
@@ -541,6 +556,19 @@ void AtmosphereRenderer::UpdateViewParams(const Camera* camera,
     mViewUBO->SetData(&vp, 0, sizeof(vp));
 }
 
+void AtmosphereRenderer::UpdatePlanetParams(const Vector3d& up, double altitude)
+{
+    if (!mPlanetUBO) return;
+    Atmosphere::AtmospherePlanetParams params{};
+    params.ground_radii_top_height = make_simd_float4(
+        static_cast<float>(mPlanetRadii.x), static_cast<float>(mPlanetRadii.y),
+        static_cast<float>(mPlanetRadii.z), mAtmosphereHeight);
+    params.camera_up_altitude = make_simd_float4(
+        static_cast<float>(up.x), static_cast<float>(up.y),
+        static_cast<float>(up.z), static_cast<float>(altitude));
+    mPlanetUBO->SetData(&params, 0, sizeof(params));
+}
+
 // ---------------------------------------------------------------------------
 // 天空渲染
 // ---------------------------------------------------------------------------
@@ -556,6 +584,25 @@ void AtmosphereRenderer::RenderSky(RenderEncoderPtr renderEncoder)
     renderEncoder->SetFragmentUniformBuffer("AtmosphereViewCB", mViewUBO);
     if (mSkyExtraUniformBuffer && !mSkyExtraUniformName.empty())
         renderEncoder->SetFragmentUniformBuffer(mSkyExtraUniformName.c_str(), mSkyExtraUniformBuffer);
+    renderEncoder->SetFragmentTextureAndSampler("transmittance_texture", mTransmittanceTexture, mLinearSampler);
+    renderEncoder->SetFragmentTextureAndSampler("scattering_texture", mScatteringTexture, mLinearSampler);
+    renderEncoder->SetFragmentTextureAndSampler("single_mie_scattering_texture", mSingleMieTexture, mLinearSampler);
+    renderEncoder->SetFragmentTextureAndSampler("irradiance_texture", mIrradianceTexture, mLinearSampler);
+    renderEncoder->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
+}
+
+void AtmosphereRenderer::RenderPlanetAtmosphere(RenderEncoderPtr renderEncoder,
+                                                RCTexturePtr sceneColor,
+                                                RCTexturePtr sceneDepth)
+{
+    if (!mPrecomputed || !renderEncoder || !mPlanetPipeline || !sceneColor || !sceneDepth)
+        return;
+    renderEncoder->SetGraphicsPipeline(mPlanetPipeline);
+    renderEncoder->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
+    renderEncoder->SetFragmentUniformBuffer("AtmosphereViewCB", mViewUBO);
+    renderEncoder->SetFragmentUniformBuffer("AtmospherePlanetCB", mPlanetUBO);
+    renderEncoder->SetFragmentTextureAndSampler("scene_color_texture", sceneColor, mLinearSampler);
+    renderEncoder->SetFragmentTextureAndSampler("scene_depth_texture", sceneDepth, mLinearSampler);
     renderEncoder->SetFragmentTextureAndSampler("transmittance_texture", mTransmittanceTexture, mLinearSampler);
     renderEncoder->SetFragmentTextureAndSampler("scattering_texture", mScatteringTexture, mLinearSampler);
     renderEncoder->SetFragmentTextureAndSampler("single_mie_scattering_texture", mSingleMieTexture, mLinearSampler);

@@ -22,6 +22,7 @@ bool AtmosphereComponent::Initialize(const Atmosphere::AtmosphereParameters& par
     mRenderer = std::make_shared<AtmosphereRenderer>();
     mRenderer->SetSkyShaderAsset(mSkyShaderAsset);
     mRenderer->SetSkyExtraUniformBuffer(mSkyExtraUniformName, mSkyExtraUniformBuffer);
+    mRenderer->SetPlanetEllipsoidRadii(mPlanetEllipsoidRadii);
     return mRenderer->Initialize(params, numScatteringOrders);
 }
 

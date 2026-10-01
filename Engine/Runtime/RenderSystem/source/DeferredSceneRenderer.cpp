@@ -175,7 +175,7 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     // ========== 大气散射 ==========
     // 查找场景中的大气散射组件；首次使用时执行一次预计算，并在每帧更新视角参数
     mAtmosphere = FindAtmosphereRecursive(rootNode);
-    if (mEnableOptionalPasses && mAtmosphere && mAtmosphere->IsInitialized())
+    if (camera && mAtmosphere && mAtmosphere->IsEnabled() && mAtmosphere->IsInitialized())
     {
         AtmosphereRenderer* atmoRenderer = mAtmosphere->GetRenderer();
         if (atmoRenderer)
@@ -214,6 +214,9 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
             atmoRenderer->UpdateViewParams(camera.get(), cameraWorldPosition,
                                            mAtmosphere->GetPlanetCenter(), sunDir,
                                            mAtmosphere->GetExposure(), mAtmosphere->GetWhitePoint());
+            if (mAtmosphere->HasPlanetEllipsoid())
+                atmoRenderer->UpdatePlanetParams(mAtmosphere->GetCameraGeodeticUp(),
+                                                 mAtmosphere->GetCameraAltitude());
         }
     }
 
@@ -310,12 +313,13 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
 
     // Atmosphere Pass（大气散射天空）：在天空盒之后，只填充远平面（天空）区域
     FrameGraphResource atmosphereResult = skyboxResult;
-    if (mEnableOptionalPasses && mAtmosphere && mAtmosphere->IsInitialized()
+    if (mAtmosphere && mAtmosphere->IsEnabled() && mAtmosphere->IsInitialized()
         && mAtmosphere->GetRenderer() && mAtmosphere->GetRenderer()->IsPrecomputed()
         && depthResource != -1)
     {
-        atmosphereResult = RenderAtmospherePass(
-            frameGraph, commandBuffer, skyboxResult, depthResource, cameraUBO, mAtmosphere);
+        atmosphereResult = mAtmosphere->HasPlanetEllipsoid()
+            ? RenderPlanetAtmospherePass(frameGraph, commandBuffer, skyboxResult, depthResource, mAtmosphere)
+            : RenderAtmospherePass(frameGraph, commandBuffer, skyboxResult, depthResource, cameraUBO, mAtmosphere);
     }
 
     // SSR Pass（在光照和天空盒之后、后处理之前）
@@ -1066,6 +1070,53 @@ FrameGraphResource DeferredSceneRenderer::RenderAtmospherePass(
     );
 
     return passData.outputResult;
+}
+
+FrameGraphResource DeferredSceneRenderer::RenderPlanetAtmospherePass(
+    FrameGraph& frameGraph, CommandBufferPtr commandBuffer,
+    FrameGraphResource colorTexture, FrameGraphResource depthTexture,
+    AtmosphereComponent* atmosphere)
+{
+    struct PassData
+    {
+        FrameGraphResource inputColor;
+        FrameGraphResource inputDepth;
+        FrameGraphResource outputColor;
+    };
+
+    auto& passData = frameGraph.AddPass<PassData>(
+        "PlanetAtmosphere_Pass",
+        [=, this](FrameGraph::Builder& builder, PassData& data)
+        {
+            data.inputColor = builder.Read(colorTexture, (uint32_t)ResourceAccessType::ShaderRead);
+            data.inputDepth = builder.Read(depthTexture, (uint32_t)ResourceAccessType::ShaderRead);
+            FrameGraphTexture::Desc outputDesc;
+            outputDesc.SetName("PlanetAtmosphere_Output");
+            outputDesc.extent = Rect2D{0, 0, (int)mWidth, (int)mHeight};
+            outputDesc.depth = 1;
+            outputDesc.format = kTexFormatRGBA16Float;
+            data.outputColor = builder.Create<FrameGraphTexture>(outputDesc.name, outputDesc);
+            data.outputColor = builder.Write(data.outputColor, (uint32_t)ResourceAccessType::ColorAttachment);
+        },
+        [this, commandBuffer, atmosphere](const PassData& data,
+                                          FrameGraphPassResources& resources, void*)
+        {
+            FrameGraphTexture& input = resources.Get<FrameGraphTexture>(data.inputColor);
+            FrameGraphTexture& depth = resources.Get<FrameGraphTexture>(data.inputDepth);
+            FrameGraphTexture& output = resources.Get<FrameGraphTexture>(data.outputColor);
+            RenderPass renderPass;
+            renderPass.renderRegion = Rect2D(0, 0, (int)mWidth, (int)mHeight);
+            auto colorAttachment = std::make_shared<RenderPassColorAttachment>();
+            colorAttachment->texture = output.texture;
+            colorAttachment->loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+            colorAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            colorAttachment->clearColor = MakeClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            renderPass.colorAttachments.push_back(colorAttachment);
+            RenderEncoderPtr encoder = commandBuffer->CreateRenderEncoder(renderPass);
+            atmosphere->GetRenderer()->RenderPlanetAtmosphere(encoder, input.texture, depth.texture);
+            encoder->EndEncode();
+        });
+    return passData.outputColor;
 }
 
 NS_RENDERSYSTEM_END

@@ -126,6 +126,14 @@ struct DECLARE_ALIGNED(16) AtmosphereViewParams
     simd_float4 white_point_pad;
 };
 
+struct DECLARE_ALIGNED(16) AtmospherePlanetParams
+{
+    simd_float4 ground_radii_top_height; // xyz=椭球半轴(米), w=大气厚度(米)
+    simd_float4 camera_up_altitude;      // xyz=双精度计算的大地法线, w=相机大地高(米)
+};
+
+static_assert(sizeof(AtmospherePlanetParams) == 32);
+
 static void ValidateAtmosphereViewParamsOffsets()
 {
     static_assert(offsetof(AtmosphereViewParams, camera_pos_exposure) == 64);
