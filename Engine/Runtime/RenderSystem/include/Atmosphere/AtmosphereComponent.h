@@ -28,7 +28,7 @@ public:
     }
 
     // 构建默认大气模型并初始化 GPU 预计算资源
-    bool Initialize(unsigned int numScatteringOrders = 4);
+    bool Initialize(const Atmosphere::AtmosphereParameters& params, unsigned int numScatteringOrders = 4);
 
     bool IsInitialized() const
     {
@@ -73,29 +73,18 @@ public:
         return mSunDirection;
     }
 
-    // 地球中心（大气单位）
-    void SetEarthCenter(const Vector3f& center)
-    {
-        mEarthCenter = center;
-    }
+    // 世界坐标和相机覆盖位置均使用米。相机覆盖值可由双精度地球相机逐帧更新。
+    void SetPlanetCenter(const Vector3d& center) { mPlanetCenter = center; }
+    const Vector3d& GetPlanetCenter() const { return mPlanetCenter; }
+    void SetCameraWorldPosition(const Vector3d& position) { mCameraWorldPosition = position; mHasCameraWorldPosition = true; }
+    void ClearCameraWorldPosition() { mHasCameraWorldPosition = false; }
+    bool HasCameraWorldPosition() const { return mHasCameraWorldPosition; }
+    const Vector3d& GetCameraWorldPosition() const { return mCameraWorldPosition; }
 
-    const Vector3f& GetEarthCenter() const
-    {
-        return mEarthCenter;
-    }
-
-    // 场景“额外几何体”（球体 + 地面）：用于演示大气光柱与地面着色，由着色器外部传入。
-    // 单位说明：均为“大气单位”（1 大气单位 = Atmosphere::kLengthUnitInMeters 米）。
-    // 使用引擎 Y-up 世界坐标；默认球心位于地表上方 1000m。
-    void SetSceneGeometry(const Atmosphere::AtmosphereSceneGeometry& geometry)
-    {
-        mSceneGeometry = geometry;
-    }
-
-    const Atmosphere::AtmosphereSceneGeometry& GetSceneGeometry() const
-    {
-        return mSceneGeometry;
-    }
+    // 在初始化前配置天空资源和额外 UBO；重新预计算时配置保持有效。
+    void SetSkyShaderAsset(const std::string& asset) { mSkyShaderAsset = asset; }
+    void SetSkyExtraUniformBuffer(const std::string& name, RenderCore::UniformBufferPtr buffer)
+    { mSkyExtraUniformName = name; mSkyExtraUniformBuffer = std::move(buffer); }
 
 private:
     AtmosphereRendererPtr mRenderer;
@@ -105,9 +94,12 @@ private:
     float mExposure = 5.0f;
     Vector3f mWhitePoint{1.0f, 1.0f, 1.0f};
     Vector3f mSunDirection{0.0f, 1.0f, 0.0f};
-    // 引擎世界坐标为 Y-up，地表原点正下方是地球中心。
-    Vector3f mEarthCenter{0.0f, -6360.0f, 0.0f};
-    Atmosphere::AtmosphereSceneGeometry mSceneGeometry;
+    Vector3d mPlanetCenter{0.0, 0.0, 0.0};
+    Vector3d mCameraWorldPosition{0.0, 0.0, 0.0};
+    bool mHasCameraWorldPosition = false;
+    std::string mSkyShaderAsset = "Atmosphere/AtmosphereShader";
+    std::string mSkyExtraUniformName;
+    RenderCore::UniformBufferPtr mSkyExtraUniformBuffer;
 };
 
 template<> struct ComponentTypeOf<AtmosphereComponent>

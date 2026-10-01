@@ -45,7 +45,7 @@ public:
     double constant_term;
 };
 
-class AtmosphereModel
+class RENDERSYSTEM_API AtmosphereModel
 {
 public:
     AtmosphereModel(
@@ -78,13 +78,7 @@ public:
             // 地面的平均反照率
             const std::vector<double>& ground_albedo,
             // 太阳最大的天顶角,弧度制
-            double max_sun_zenith_angle,
-            // 长度单位
-            double length_unit_in_meters,
-            // 是否把单次mie散射和rayleigh散射以及多次散射合并到一个纹理
-            bool combine_scattering_textures,
-            // 采用半精度浮点数还是单精度浮点数
-            bool half_precision);
+            double max_sun_zenith_angle);
 
     ~AtmosphereModel();
     

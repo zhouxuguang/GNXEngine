@@ -2,6 +2,8 @@ add_executable(atmosphere
 main.cpp
 AtmosphereFrameWork.cpp
 AtmosphereFrameWork.h
+AtmospherePreset.cpp
+AtmospherePreset.h
 )
 
 # 注意：这里链接的是 imgui_headers（仅头文件），不是 imgui 静态库本身。
@@ -32,3 +34,24 @@ if(IOS)
 endif()
 
 set_property(TARGET atmosphere PROPERTY FOLDER "demo/atmosphere")
+
+# Demo-owned sky shader is compiled offline for every supported backend.
+# The iOS bundle copies these assets with the shared Shader directory above.
+if(NOT IOS)
+    get_filename_component(ATMOS_DEMO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+    set(ATMOS_DEMO_SHADER "${CMAKE_CURRENT_SOURCE_DIR}/Shader/AtmosphereDemoSky.shader")
+    set(ATMOS_DEMO_SHADER_OUTPUTS)
+    foreach(ATMOS_FORMAT IN ITEMS msl_macos msl_ios spirv)
+        set(ATMOS_OUTPUT "${ATMOS_DEMO_ROOT}/data_asset/Shader/AtmosphereDemo/Sky.${ATMOS_FORMAT}.gnxasset")
+        add_custom_command(OUTPUT "${ATMOS_OUTPUT}"
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${ATMOS_DEMO_ROOT}/data_asset/Shader/AtmosphereDemo"
+            COMMAND $<TARGET_FILE:shader_compile> "${ATMOS_DEMO_SHADER}" -a -f ${ATMOS_FORMAT} -o "${ATMOS_OUTPUT}"
+            DEPENDS shader_compile "${ATMOS_DEMO_SHADER}"
+                "${ATMOS_DEMO_ROOT}/Engine/Shader/built-in/Atmosphere/AtmosphereCommon.hlsl"
+                "${ATMOS_DEMO_ROOT}/Engine/Shader/built-in/VolumetricCommon.hlsl"
+            VERBATIM)
+        list(APPEND ATMOS_DEMO_SHADER_OUTPUTS "${ATMOS_OUTPUT}")
+    endforeach()
+    add_custom_target(atmosphere_demo_shaders DEPENDS ${ATMOS_DEMO_SHADER_OUTPUTS})
+    add_dependencies(atmosphere atmosphere_demo_shaders)
+endif()

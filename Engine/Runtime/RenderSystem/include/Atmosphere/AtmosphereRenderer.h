@@ -69,13 +69,17 @@ public:
      */
     void Precompute(CommandBufferPtr commandBuffer);
 
-    // 每帧更新视角参数（相机、地球中心、太阳方向、曝光、白点、场景几何体）
+    void SetSkyShaderAsset(const std::string& asset) { mSkyShaderAsset = asset; }
+    void SetSkyExtraUniformBuffer(const std::string& name, UniformBufferPtr buffer)
+    { mSkyExtraUniformName = name; mSkyExtraUniformBuffer = std::move(buffer); }
+
+    // 每帧更新行星相对视角参数，世界位置使用双精度米。
     void UpdateViewParams(const Camera* camera,
-                          const mathutil::Vector3f& earthCenter,
+                          const mathutil::Vector3d& cameraWorldPosition,
+                          const mathutil::Vector3d& planetCenter,
                           const mathutil::Vector3f& sunDirection,
                           float exposure,
-                          const mathutil::Vector3f& whitePoint,
-                          const Atmosphere::AtmosphereSceneGeometry& geometry);
+                          const mathutil::Vector3f& whitePoint);
 
     // 渲染天空。调用者需提供颜色附件为场景颜色、深度附件为场景深度的 RenderEncoder。
     void RenderSky(RenderEncoderPtr renderEncoder);
@@ -146,6 +150,10 @@ private:
     GraphicsPipelinePtr mMultipleScatteringPipeline;
     GraphicsPipelinePtr mSkyPipeline;
 
+    std::string mSkyShaderAsset = "Atmosphere/AtmosphereShader";
+    std::string mSkyExtraUniformName;
+    UniformBufferPtr mSkyExtraUniformBuffer;
+    float mSunAngularRadius = 0.0f;
     bool mInitialized = false;
     bool mPrecomputed = false;
     unsigned int mNumScatteringOrders = 4;
@@ -153,8 +161,6 @@ private:
 
 typedef std::shared_ptr<AtmosphereRenderer> AtmosphereRendererPtr;
 
-// 依据默认参数创建大气模型（保留旧接口，供外部快速构建）
-RENDERSYSTEM_API AtmosphereModel* CreateAtmoModel();
 
 NS_RENDERSYSTEM_END
 

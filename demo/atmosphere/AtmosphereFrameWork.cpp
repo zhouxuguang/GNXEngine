@@ -4,6 +4,8 @@
 //
 
 #include "AtmosphereFrameWork.h"
+#include "AtmospherePreset.h"
+#include "Runtime/RenderCore/include/RenderDevice.h"
 #include "Runtime/RenderSystem/include/EditorCameraController.h"
 #include "Runtime/RenderSystem/include/Light.h"
 #include "Runtime/RenderSystem/include/Atmosphere/AtmosphereRenderer.h"
@@ -55,7 +57,7 @@ void AtmosphereFrameWork::Resize(uint32_t width, uint32_t height)
         RenderSystem::CameraPtr camera = sceneManager->GetCamera("MainCamera");
         if (camera)
         {
-            camera->SetLens(50.0f, width, height, 0.5f, 1000.0f);
+            camera->SetLens(50.0f, width, height, 500.0f, 1000000.0f);
         }
     }
 }
@@ -74,10 +76,10 @@ void AtmosphereFrameWork::CreateScene(uint32_t width, uint32_t height)
     }
     // 参考视角旋转到引擎坐标后的位置。目标固定为地表原点，使控制器首次同步时
     // 获得正确的焦点和 9km 轨道距离，后续拖拽、平移和缩放都不会跳变。
-    camera->LookAt(Vector3f(8.910f, 0.905f, 0.893f),
+    camera->LookAt(Vector3f(8910.0f, 905.0f, 893.0f),
                    Vector3f(0.0f, 0.0f, 0.0f),
                    Vector3f(0.0f, 1.0f, 0.0f));
-    camera->SetLens(50.0f, width, height, 0.5f, 1000.0f);
+    camera->SetLens(50.0f, width, height, 500.0f, 1000000.0f);
 
     // 参考实现的相机天顶角被夹在 [0, π/2]，从而保证 |camera - earth_center| >= bottom_radius。
     // 这里给轨道相机加同样的约束：焦点在地表，若不限制，往上拖鼠标会让相机沉到地面以下，
@@ -86,6 +88,9 @@ void AtmosphereFrameWork::CreateScene(uint32_t width, uint32_t height)
             dynamic_cast<RenderSystem::EditorCameraController*>(sceneManager->GetCameraController()))
     {
         orbitController->SetMinCameraY(0.0f);
+        orbitController->SetMoveSpeed(10000.0f);
+        orbitController->SetMinDistance(100.0f);
+        orbitController->SetMaxDistance(100000000.0f);
     }
 
     // ---- 太阳（方向光）：方向从地表指向太阳 ----
@@ -103,20 +108,13 @@ void AtmosphereFrameWork::CreateScene(uint32_t width, uint32_t height)
     mAtmosphere->SetExposure(5.0f);
     mAtmosphere->SetWhitePoint(Vector3f(1.0f, 1.0f, 1.0f));
 
-    // 场景“额外几何体”（球体 + 地面）：来自参考 Demo 的演示物体。
-    // 这里以米为单位给出，再换算成大气单位（1 大气单位 = kLengthUnitInMeters 米），
-    // 通过参数传给着色器，避免把这些场景参数写死在 shader 里。
-    {
-        const float kLengthUnitInMeters = static_cast<float>(RenderSystem::Atmosphere::kLengthUnitInMeters);
-        RenderSystem::Atmosphere::AtmosphereSceneGeometry geometry;
-        geometry.sphereCenter = Vector3f(0.0f, 1000.0f / kLengthUnitInMeters, 0.0f); // Y-up：球心高 1000m
-        geometry.sphereRadius = 1000.0f / kLengthUnitInMeters;                       // 半径 1000m
-        geometry.sphereAlbedo = Vector3f(0.8f, 0.8f, 0.8f);                          // 球体反照率
-        geometry.groundAlbedo = Vector3f(0.0f, 0.0f, 0.04f);                         // 地面着色反照率
-        mAtmosphere->SetSceneGeometry(geometry);
-    }
-
-    mAtmosphere->Initialize(5);   // 散射重数 = 5
+    mAtmosphereParameters = CreateDemoAtmosphereParameters();
+    mAtmosphere->SetPlanetCenter(Vector3d(0.0, -mAtmosphereParameters.bottom_radius, 0.0));
+    mDemoGeometryUBO = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(48);
+    UpdateDemoGeometryUBO();
+    mAtmosphere->SetSkyShaderAsset("AtmosphereDemo/Sky");
+    mAtmosphere->SetSkyExtraUniformBuffer("AtmosphereDemoCB", mDemoGeometryUBO);
+    mAtmosphere->Initialize(mAtmosphereParameters, 5);
     mScatteringOrders = 5;
     mPendingScatteringOrders = 5;
 
@@ -233,7 +231,6 @@ void AtmosphereFrameWork::BuildImGuiPanel()
     }
 
     ImGuiIO& io = ImGui::GetIO();
-    const float unit = static_cast<float>(RenderSystem::Atmosphere::kLengthUnitInMeters);
 
     ImGui::SetNextWindowPos(ImVec2(12.0f, 12.0f), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(430.0f, 560.0f), ImGuiCond_FirstUseEver);
@@ -276,7 +273,7 @@ void AtmosphereFrameWork::BuildImGuiPanel()
             ImGui::TextWrapped("当前生效: %d 重", mScatteringOrders);
             if (ImGui::Button("重新预计算 LUT"))
             {
-                mAtmosphere->Initialize((unsigned int)mPendingScatteringOrders);
+                mAtmosphere->Initialize(mAtmosphereParameters, (unsigned int)mPendingScatteringOrders);
                 mScatteringOrders = mPendingScatteringOrders;
             }
             if (ImGui::IsItemHovered())
@@ -288,11 +285,11 @@ void AtmosphereFrameWork::BuildImGuiPanel()
         // ---- 场景几何体（参考 Demo 的球体与地面）----
         if (ImGui::CollapsingHeader("场景几何体"))
         {
-            RenderSystem::Atmosphere::AtmosphereSceneGeometry geometry = mAtmosphere->GetSceneGeometry();
+            DemoGeometry geometry = mGeometry;
 
-            float centerXZ[2] = { geometry.sphereCenter.x * unit, geometry.sphereCenter.z * unit };
-            float centerY = geometry.sphereCenter.y * unit;
-            float radiusMeters = geometry.sphereRadius * unit;
+            float centerXZ[2] = { geometry.sphereCenter.x, geometry.sphereCenter.z };
+            float centerY = geometry.sphereCenter.y;
+            float radiusMeters = geometry.sphereRadius;
             float sphereAlbedo[3] = { geometry.sphereAlbedo.x, geometry.sphereAlbedo.y, geometry.sphereAlbedo.z };
             float groundAlbedo[3] = { geometry.groundAlbedo.x, geometry.groundAlbedo.y, geometry.groundAlbedo.z };
 
@@ -305,11 +302,12 @@ void AtmosphereFrameWork::BuildImGuiPanel()
 
             if (changed)
             {
-                geometry.sphereCenter = Vector3f(centerXZ[0] / unit, centerY / unit, centerXZ[1] / unit);
-                geometry.sphereRadius = radiusMeters / unit;
+                geometry.sphereCenter = Vector3f(centerXZ[0], centerY, centerXZ[1]);
+                geometry.sphereRadius = radiusMeters;
                 geometry.sphereAlbedo = Vector3f(sphereAlbedo[0], sphereAlbedo[1], sphereAlbedo[2]);
                 geometry.groundAlbedo = Vector3f(groundAlbedo[0], groundAlbedo[1], groundAlbedo[2]);
-                mAtmosphere->SetSceneGeometry(geometry);
+                mGeometry = geometry;
+                UpdateDemoGeometryUBO();
             }
         }
 
@@ -320,4 +318,27 @@ void AtmosphereFrameWork::BuildImGuiPanel()
         ImGui::TextDisabled("点击面板时输入不会传给 3D 场景");
     }
     ImGui::End();
+}
+
+void AtmosphereFrameWork::UpdateDemoGeometryUBO()
+{
+    if (!mDemoGeometryUBO) return;
+    struct alignas(16) DemoCB
+    {
+        simd_float4 sphereCenterRadius;
+        simd_float4 sphereAlbedo;
+        simd_float4 groundAlbedo;
+    } data;
+    static_assert(sizeof(DemoCB) == 48);
+    const Vector3d center = mAtmosphere->GetPlanetCenter();
+    data.sphereCenterRadius = {
+        static_cast<float>(static_cast<double>(mGeometry.sphereCenter.x) - center.x),
+        static_cast<float>(static_cast<double>(mGeometry.sphereCenter.y) - center.y),
+        static_cast<float>(static_cast<double>(mGeometry.sphereCenter.z) - center.z),
+        mGeometry.sphereRadius};
+    data.sphereAlbedo = {mGeometry.sphereAlbedo.x, mGeometry.sphereAlbedo.y,
+                                        mGeometry.sphereAlbedo.z, 0.0f};
+    data.groundAlbedo = {mGeometry.groundAlbedo.x, mGeometry.groundAlbedo.y,
+                                        mGeometry.groundAlbedo.z, 0.0f};
+    mDemoGeometryUBO->SetData(&data, 0, sizeof(data));
 }

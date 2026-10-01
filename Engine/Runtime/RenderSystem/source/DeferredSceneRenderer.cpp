@@ -207,9 +207,13 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
             }
             mAtmosphere->SetSunDirection(sunDir);
 
-            atmoRenderer->UpdateViewParams(camera.get(), mAtmosphere->GetEarthCenter(),
-                                           sunDir, mAtmosphere->GetExposure(), mAtmosphere->GetWhitePoint(),
-                                           mAtmosphere->GetSceneGeometry());
+            const Vector3f cameraPosition = camera->GetPosition();
+            const Vector3d cameraWorldPosition = mAtmosphere->HasCameraWorldPosition()
+                ? mAtmosphere->GetCameraWorldPosition()
+                : Vector3d(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+            atmoRenderer->UpdateViewParams(camera.get(), cameraWorldPosition,
+                                           mAtmosphere->GetPlanetCenter(), sunDir,
+                                           mAtmosphere->GetExposure(), mAtmosphere->GetWhitePoint());
         }
     }
 

@@ -2,6 +2,7 @@
 #define GNX_ENGINE_ATMOSPHERE_COMMON_FUNCTION_HJFHJDSHJH_INCLUDE
 
 #include "AtmosphereDefine.hlsl"
+#include "../VolumetricCommon.hlsl"
 
 /**
  * 以下几个clamp函数用以限制数值在其对应的数值域内
@@ -25,19 +26,6 @@ float ClampRadius(AtmosphereParameters atmosphere, float r)
 float SafeSqrt(float a)
 {
 	return(sqrt(max( a, 0.0)));
-}
-
-/** Rayleigh phase function */
-float PhaseFunctionR(float Mu) 
-{
-    return (3.0 / (16.0 * PI)) * (1.0 + Mu * Mu);
-}
-
-/** Mie phase function */
-float PhaseFunctionM(float Mu, float MieG)
-{
-	return 1.5 * 1.0 / (4.0 * PI) * (1.0 - MieG * MieG) * pow(abs(1.0 + (MieG * MieG) - 2.0 * MieG * Mu), -3.0/2.0) * (1.0 + Mu * Mu) / 
-		(2.0 + MieG * MieG);
 }
 
 /**
@@ -150,7 +138,7 @@ float ComputeOpticalLengthToTopAtmosphereBoundary(
  **/
 float3 ComputeTransmittanceToTopAtmosphereBoundary(AtmosphereParameters atmosphere, float r, float mu)
 {
-	return(exp(-(
+	return BeerLambertTransmittance(
 			    atmosphere.rayleigh_scattering *
 			    ComputeOpticalLengthToTopAtmosphereBoundary(
 				    atmosphere, atmosphere.rayleigh_density, r, mu) +
@@ -159,7 +147,7 @@ float3 ComputeTransmittanceToTopAtmosphereBoundary(AtmosphereParameters atmosphe
 				    atmosphere, atmosphere.mie_density, r, mu) +
 			    atmosphere.absorption_extinction *
 			    ComputeOpticalLengthToTopAtmosphereBoundary(
-				    atmosphere, atmosphere.absorption_density, r, mu))));
+				    atmosphere, atmosphere.absorption_density, r, mu));
 }
 
 /**
@@ -421,31 +409,6 @@ void ComputeSingleScattering(
 	// 此时尚未乘上相位函数,为了减少计算量,因为是均匀采样,所以将dx放到外循环去
 	rayleigh = rayleigh_sum * dx * atmosphere.solar_irradiance * atmosphere.rayleigh_scattering;
 	mie 	  = mie_sum * dx * atmosphere.solar_irradiance * atmosphere.mie_scattering;
-}
-
-/**
- * 功能:
- *  计算rayleigh相位函数
- * 传入参数：
- *  nu是向量pq与太阳单位方向向量的夹角cos值
- **/
-float RayleighPhaseFunction(float nu)
-{
-	float k = 3.0 / (16.0 * PI); // sr为立体角单位
-	return(k * (1.0 + nu * nu) );
-}
-
-/**
- * 功能:
- *  计算mie相位函数
- * 传入参数：
- *  nu是向量pq与太阳单位方向向量的夹角cos值, g是散射的对称性因子
- *  g为正数表示光线大多数向后方散射,为负数说明更多的光线向前方散射
- **/
-float MiePhaseFunction(float g, float nu)
-{
-	float k = 3.0 / (8.0 * PI) * (1.0 - g * g) / (2.0 + g * g);
-	return(k * (1.0 + nu * nu) / pow(1.0 + g * g - 2.0 * g * nu, 1.5));
 }
 
 /**
@@ -1170,8 +1133,13 @@ float3 GetSkyRadiance(
 	float r = length(camera);           /* 视点所在的高度 */
 	float rmu = dot(camera, view_ray);  /* r*天顶角cos值 */
 	/* 视点沿视线到大气层顶层的距离 */
-	float distance_to_top_atmosphere_boundary = -rmu -
-					sqrt(rmu * rmu - r * r + atmosphere.top_radius * atmosphere.top_radius);
+	float top_discriminant = rmu * rmu - r * r + atmosphere.top_radius * atmosphere.top_radius;
+    if (r > atmosphere.top_radius && (top_discriminant < 0.0 || rmu >= 0.0))
+    {
+        transmittance = float3(1.0, 1.0, 1.0);
+        return float3(0.0, 0.0, 0.0);
+    }
+    float distance_to_top_atmosphere_boundary = -rmu - sqrt(max(top_discriminant, 0.0));
 	/* 如果观察者在太空且视线与大气层有交点,把观察者移到视线与大气层顶部交点的位置 */
 	if (distance_to_top_atmosphere_boundary > 0.0)
 	{
@@ -1251,8 +1219,13 @@ float3 GetSkyRadianceToPoint(
 	float		r			= length(camera);             /* 海拔高度 */
 	float		rmu			= dot(camera, view_ray);      /* r*天顶角cos值 */
 	/* 到达大气层顶部的距离 */
-	float distance_to_top_atmosphere_boundary = -rmu -
-				sqrt(rmu * rmu - r * r + atmosphere.top_radius * atmosphere.top_radius);
+	float top_discriminant = rmu * rmu - r * r + atmosphere.top_radius * atmosphere.top_radius;
+    if (r > atmosphere.top_radius && (top_discriminant < 0.0 || rmu >= 0.0))
+    {
+        transmittance = float3(1.0, 1.0, 1.0);
+        return float3(0.0, 0.0, 0.0);
+    }
+    float distance_to_top_atmosphere_boundary = -rmu - sqrt(max(top_discriminant, 0.0));
 	/* 如果视点在太空中, 且视线与大气层有交点,那么把view沿着视线移动到大气层顶部 */
 	if (distance_to_top_atmosphere_boundary > 0.0)
 	{

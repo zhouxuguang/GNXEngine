@@ -35,7 +35,7 @@ struct DensityProfile
 	DensityProfileLayer layers[2];
 };
 
-//大气层参数模型
+// 大气参数：半径和长度为米，散射和消光系数为每米。
 struct AtmosphereParameters
 {
 	// 太阳相关参数

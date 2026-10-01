@@ -72,6 +72,7 @@ bool AtmosphereRenderer::Initialize(const Atmosphere::AtmosphereParameters& para
     }
 
     mNumScatteringOrders = numScatteringOrders < 1 ? 1 : numScatteringOrders;
+    mSunAngularRadius = params.sun_angular_radius;
 
     CreateResources();
     CreatePipelines();
@@ -244,7 +245,7 @@ void AtmosphereRenderer::CreatePipelines()
 
     // ---------- 天空渲染 ----------
     {
-        GraphicsShaderInfo info = CreateGraphicsShaderInfo("Atmosphere/AtmosphereShader");
+        GraphicsShaderInfo info = CreateGraphicsShaderInfo(mSkyShaderAsset);
         info.graphicsPipelineDesc.renderTargetCount = 1;
         info.graphicsPipelineDesc.depthStencilDescriptor.depthWriteEnabled = false;
         info.graphicsPipelineDesc.depthStencilDescriptor.depthCompareFunction =
@@ -516,39 +517,27 @@ void AtmosphereRenderer::Precompute(CommandBufferPtr commandBuffer)
 // 每帧视角参数
 // ---------------------------------------------------------------------------
 void AtmosphereRenderer::UpdateViewParams(const Camera* camera,
-                                          const Vector3f& earthCenter,
+                                          const Vector3d& cameraWorldPosition,
+                                          const Vector3d& planetCenter,
                                           const Vector3f& sunDirection,
                                           float exposure,
-                                          const Vector3f& whitePoint,
-                                          const Atmosphere::AtmosphereSceneGeometry& geometry)
+                                          const Vector3f& whitePoint)
 {
-    if (!mViewUBO || !camera)
-    {
-        return;
-    }
+    if (!mViewUBO || !camera) return;
 
     Atmosphere::AtmosphereViewParams vp{};
-    Matrix4x4f vpMat = camera->GetProjectionMatrix() * camera->GetViewMatrix();
-    vp.inv_view_proj = vpMat.Inverse();
+    Matrix4x4f viewRotation = camera->GetViewMatrix();
+    viewRotation[0].w = 0.0f;
+    viewRotation[1].w = 0.0f;
+    viewRotation[2].w = 0.0f;
+    vp.inv_view_proj = (camera->GetProjectionMatrix() * viewRotation).Inverse();
 
-    const Vector3f& camPos = camera->GetPosition();
-    vp.camera_pos_exposure = make_simd_float4(camPos.x, camPos.y, camPos.z, exposure);
-    vp.earth_center_pad = make_simd_float4(earthCenter.x, earthCenter.y, earthCenter.z, 0.0f);
+    const Vector3d relative = cameraWorldPosition - planetCenter;
+    vp.camera_pos_exposure = make_simd_float4(static_cast<float>(relative.x),
+        static_cast<float>(relative.y), static_cast<float>(relative.z), exposure);
     vp.sun_direction_pad = make_simd_float4(sunDirection.x, sunDirection.y, sunDirection.z, 0.0f);
-
-    // sun_size = (tan(sunAngularRadius), cos(sunAngularRadius))
-    const float sunAngularRadius = Atmosphere::kSunAngularRadius;
-    vp.sun_size_pad = make_simd_float4(tanf(sunAngularRadius), cosf(sunAngularRadius), 0.0f, 0.0f);
+    vp.sun_size_pad = make_simd_float4(tanf(mSunAngularRadius), cosf(mSunAngularRadius), 0.0f, 0.0f);
     vp.white_point_pad = make_simd_float4(whitePoint.x, whitePoint.y, whitePoint.z, 0.0f);
-
-    // 场景“额外几何体”（球体 + 地面），全部由 C++ 侧传入，着色器内不再写死
-    vp.sphere_center_radius = make_simd_float4(geometry.sphereCenter.x, geometry.sphereCenter.y,
-                                               geometry.sphereCenter.z, geometry.sphereRadius);
-    vp.sphere_albedo_pad = make_simd_float4(geometry.sphereAlbedo.x, geometry.sphereAlbedo.y,
-                                            geometry.sphereAlbedo.z, 0.0f);
-    vp.ground_albedo_pad = make_simd_float4(geometry.groundAlbedo.x, geometry.groundAlbedo.y,
-                                            geometry.groundAlbedo.z, 0.0f);
-
     mViewUBO->SetData(&vp, 0, sizeof(vp));
 }
 
@@ -565,123 +554,13 @@ void AtmosphereRenderer::RenderSky(RenderEncoderPtr renderEncoder)
     renderEncoder->SetGraphicsPipeline(mSkyPipeline);
     renderEncoder->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
     renderEncoder->SetFragmentUniformBuffer("AtmosphereViewCB", mViewUBO);
+    if (mSkyExtraUniformBuffer && !mSkyExtraUniformName.empty())
+        renderEncoder->SetFragmentUniformBuffer(mSkyExtraUniformName.c_str(), mSkyExtraUniformBuffer);
     renderEncoder->SetFragmentTextureAndSampler("transmittance_texture", mTransmittanceTexture, mLinearSampler);
     renderEncoder->SetFragmentTextureAndSampler("scattering_texture", mScatteringTexture, mLinearSampler);
     renderEncoder->SetFragmentTextureAndSampler("single_mie_scattering_texture", mSingleMieTexture, mLinearSampler);
     renderEncoder->SetFragmentTextureAndSampler("irradiance_texture", mIrradianceTexture, mLinearSampler);
     renderEncoder->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
-}
-
-// ---------------------------------------------------------------------------
-// 默认大气模型构建（保留旧接口）
-// ---------------------------------------------------------------------------
-AtmosphereModel* CreateAtmoModel()
-{
-    // 太阳光谱
-    constexpr int kLambdaMin = 360;
-    constexpr int kLambdaMax = 830;
-    constexpr double kSolarIrradiance[48] = {
-        1.11776, 1.14259, 1.01249, 1.14716, 1.72765, 1.73054, 1.68870, 1.61253,
-        1.91198, 2.03474, 2.02042, 2.02212, 1.93377, 1.95809, 1.91686, 1.82980,
-        1.86850, 1.89310, 1.85149, 1.85040, 1.83410, 1.83450, 1.81470, 1.78158, 1.7533,
-        1.69650, 1.68194, 1.64654, 1.60480, 1.52143, 1.55622, 1.51130, 1.47400, 1.4482,
-        1.41018, 1.36775, 1.34188, 1.31429, 1.28303, 1.26758, 1.23670, 1.20820,
-        1.18737, 1.14683, 1.12362, 1.10580, 1.07124, 1.04992
-    };
-    // http://www.iup.uni-bremen.de/gruppen/molspec/databases
-    // /referencespectra/o3spectra2011/index.html
-    constexpr double kOzoneCrossSection[48] = {
-        1.18e-27, 2.182e-28, 2.818e-28, 6.636e-28, 1.527e-27, 2.763e-27, 5.52e-27,
-        8.451e-27, 1.582e-26, 2.316e-26, 3.669e-26, 4.924e-26, 7.752e-26, 9.016e-26,
-        1.48e-25, 1.602e-25, 2.139e-25, 2.755e-25, 3.091e-25, 3.5e-25, 4.266e-25,
-        4.672e-25, 4.398e-25, 4.701e-25, 5.019e-25, 4.305e-25, 3.74e-25, 3.215e-25,
-        2.662e-25, 2.238e-25, 1.852e-25, 1.473e-25, 1.209e-25, 9.423e-26, 7.455e-26,
-        6.566e-26, 5.105e-26, 4.15e-26, 4.228e-26, 3.237e-26, 2.451e-26, 2.801e-26,
-        2.534e-26, 1.624e-26, 1.465e-26, 2.078e-26, 1.383e-26, 7.105e-27
-    };
-    // https://en.wikipedia.org/wiki/Dobson_unit, in molecules.m^-2.
-    constexpr double kDobsonUnit = 2.687e20;
-    // 臭氧层最大密度
-    constexpr double kMaxOzoneNumberDensity = 300.0 * kDobsonUnit / 15000.0;
-    // 与波长无关的太阳辐照度光谱
-    constexpr double kConstantSolarIrradiance = 1.5;
-    constexpr double kBottomRadius = 6360000.0;
-    constexpr double kTopRadius = 6420000.0;
-    constexpr double kRayleigh = 1.24062e-6;
-    // rayleigh散射缩放高度
-    constexpr double kRayleighScaleHeight = 8000.0;
-    // mie散射缩放高度
-    constexpr double kMieScaleHeight = 1200.0;
-    constexpr double kMieAngstromAlpha = 0.0;
-    constexpr double kMieAngstromBeta = 5.328e-3;
-    constexpr double kMieSingleScatteringAlbedo = 0.9;
-
-    double kMiePhaseFunctionG = 0.8;
-    constexpr double kGroundAlbedo = 0.1;
-    const double max_sun_zenith_angle = (120.0) / 180.0 * Atmosphere::kPi;
-
-    // rayleigh层，即空气分子层     //width,exp_term,exp_scale,linear_term,constant_term
-    DensityProfileLayer rayleigh_layer(0.0, 1.0,
-                                       -1.0 / kRayleighScaleHeight,
-                                       0.0, 0.0);
-    // mie层，气溶胶层            //width,exp_term,exp_scale,linear_term,constant_term
-    DensityProfileLayer mie_layer(0.0, 1.0, -1.0 / kMieScaleHeight, 0.0, 0.0);
-    std::vector<DensityProfileLayer> ozone_density;
-    ozone_density.push_back(DensityProfileLayer(25000.0, 0.0, 0.0, 1.0 / 15000.0, -2.0 / 3.0));
-    ozone_density.push_back(DensityProfileLayer(0.0, 0.0, 0.0, -1.0 / 15000.0, 8.0 / 3.0));
-
-    std::vector<double> wavelengths;            // 波长
-    std::vector<double> solar_irradiance;       // 太阳辐照度
-    std::vector<double> rayleigh_scattering;    // rayleigh散射
-    std::vector<double> mie_scattering;         // mie散射
-    std::vector<double> mie_extinction;         // mie消光
-    std::vector<double> absorption_extinction;  // 吸收光线的空气分子消光
-    std::vector<double> ground_albedo;          // 地面反照率
-    for (int l = kLambdaMin; l <= kLambdaMax; l += 10)
-    {
-        double lambda = static_cast<double>(l) * 1e-3;
-        double mie = kMieAngstromBeta / kMieScaleHeight * pow(lambda, -kMieAngstromAlpha);
-        // 太阳光波波长
-        wavelengths.push_back(l);
-
-        // 太阳辐照度
-        if (0)  // use_constant_solar_spectrum_
-        {
-            solar_irradiance.push_back(kConstantSolarIrradiance);
-        }
-        else
-        {
-            solar_irradiance.push_back(kSolarIrradiance[(l - kLambdaMin) / 10]);
-        }
-        rayleigh_scattering.push_back(kRayleigh * pow(lambda, -4));
-        mie_scattering.push_back(mie * kMieSingleScatteringAlbedo);
-        mie_extinction.push_back(mie);
-        absorption_extinction.push_back(1 * kMaxOzoneNumberDensity * kOzoneCrossSection[(l - kLambdaMin) / 10]);
-        ground_albedo.push_back(kGroundAlbedo);
-    }
-
-    // 创建新模型
-    AtmosphereModel* model = new AtmosphereModel(
-                wavelengths,                            // 太阳波长，单位nm
-                solar_irradiance,                       // 太阳辐照度
-                Atmosphere::kSunAngularRadius,          // 太阳角半径
-                kBottomRadius,                          // 大气层底层到星球中心的距离(内半径)
-                kTopRadius,                             // 大气层外层到星球中心的距离(外半径)
-                {rayleigh_layer},                       // 大气空气分子密度分布
-                rayleigh_scattering,                    // rayleigh散射系数
-                {mie_layer},                            // 大气气溶胶密度分布
-                mie_scattering,                         // (气溶胶)mie散射系数
-                mie_extinction,                         // (气溶胶)mie消光系数
-                kMiePhaseFunctionG,                     // 气溶胶Cornette-Shanks的相位函数参数值g
-                ozone_density,                          // 大气中吸收光线的空气分子密度
-                absorption_extinction,                  // 吸收光线的空气分子消光
-                ground_albedo,                          // 地面的平均反照率
-                max_sun_zenith_angle,                   // 太阳最大的天顶角,弧度制
-                Atmosphere::kLengthUnitInMeters,        // 长度单位
-                false,                                  // 是否把单次散射合并到一个纹理
-                true);                                  // 半精度浮点数
-
-    return model;
 }
 
 NS_RENDERSYSTEM_END

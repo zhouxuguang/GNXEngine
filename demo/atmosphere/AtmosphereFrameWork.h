@@ -14,6 +14,7 @@
 #include "Runtime/RenderSystem/include/Atmosphere/AtmosphereComponent.h"
 #include "Runtime/GNXEngine/include/Events/KeyEvent.h"
 #include "Runtime/MathUtil/include/Vector3.h"
+#include "Runtime/RenderCore/include/UniformBuffer.h"
 
 class AtmosphereFrameWork : public GNXEngine::AppFrameWork
 {
@@ -45,6 +46,16 @@ private:
     int   mPendingScatteringOrders = 5;                // UI 上待应用的值
     float mGroundAlbedoBlue = 0.04f;                   // 地面着色反照率（蓝通道）
 
+    struct DemoGeometry
+    {
+        mathutil::Vector3f sphereCenter{0.0f, 1000.0f, 0.0f};
+        float sphereRadius = 1000.0f;
+        mathutil::Vector3f sphereAlbedo{0.8f, 0.8f, 0.8f};
+        mathutil::Vector3f groundAlbedo{0.0f, 0.0f, 0.04f};
+    } mGeometry;
+    RenderSystem::Atmosphere::AtmosphereParameters mAtmosphereParameters{};
+    RenderCore::UniformBufferPtr mDemoGeometryUBO;
+    void UpdateDemoGeometryUBO();
     RenderSystem::AtmosphereComponent* mAtmosphere = nullptr;
 };
 
