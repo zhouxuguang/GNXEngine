@@ -96,6 +96,19 @@ public:
         return (float)mData.width / (float)winW;
     }
 
+    float GetContentScale() const override
+    {
+#if GNX_OS_WINDOWS
+        if (mWindow && !mUseExternalWindow)
+        {
+            float xScale = 1.0f, yScale = 1.0f;
+            glfwGetWindowContentScale(mWindow, &xScale, &yScale);
+            return xScale > 0.0f ? xScale : 1.0f;
+        }
+#endif
+        return GetDPIScale();
+    }
+
     void Resize(uint32_t width, uint32_t height) override;
 
     virtual void Shutdown();

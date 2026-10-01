@@ -4,7 +4,6 @@
 //
 
 #include "AtmosphereFrameWork.h"
-#include "Runtime/GNXEngine/include/RenderWindow.h"
 #include "Runtime/RenderSystem/include/EditorCameraController.h"
 #include "Runtime/RenderSystem/include/Light.h"
 #include "Runtime/RenderSystem/include/Atmosphere/AtmosphereRenderer.h"
@@ -34,25 +33,10 @@ void AtmosphereFrameWork::Initlize()
     GNXEngine::AppFrameWork::Initlize();
 }
 
-// 启用 ImGui，并按窗口 DPI 设置渲染缩放
+// 启用 ImGui；窗口与显示器缩放由 AppFrameWork 每帧同步
 void AtmosphereFrameWork::SetupImGui()
 {
     SetImGuiEnabled(true);
-
-    RenderSystem::ImGuiRendererPtr imgui = GetImGui();
-    if (!imgui)
-    {
-        return;
-    }
-
-    // ImGui 1.92 采用动态字体：字形按需光栅化、图集随用字增长，
-    // 生僻字无需任何注册即可正常显示（原 AddGlyphText / InvalidateFontAtlas 已移除）。
-    float dpiScale = 1.0f;
-    if (GNXEngine::RenderWindowPtr window = GNXEngine::GetRenderWindow())
-    {
-        dpiScale = window->GetDPIScale();
-    }
-    imgui->SetDPIScale(dpiScale);
 }
 
 void AtmosphereFrameWork::Resize(uint32_t width, uint32_t height)

@@ -56,6 +56,10 @@ public:
     // 供 UI 层（ImGui）与需要逻辑坐标的输入处理使用。
     virtual float GetDPIScale() const { return 1.0f; }
 
+    // 显示器的 UI 内容缩放。Windows 上帧缓冲/窗口比例通常仍为 1，
+    // 但系统缩放可能是 125%/150%；两者必须分别传给 ImGui。
+    virtual float GetContentScale() const { return GetDPIScale(); }
+
     virtual void Resize(uint32_t width, uint32_t height) = 0;
 
     // 应用是否处于前台（后台时主循环应暂停渲染，移动端生命周期）

@@ -147,7 +147,9 @@ void AppFrameWork::UpdateImGuiFrame()
 
     if (RenderSystem::ImGuiRendererPtr imgui = GetImGui())
     {
-        // 窗口尺寸为帧缓冲像素尺寸；DPI 缩放由 demo/平台层设置
+        // 每帧读取当前窗口的比例，覆盖跨显示器移动造成的 DPI 变化。
+        imgui->SetDPIScale(mRenderWindow->GetDPIScale());
+        imgui->SetContentScale(mRenderWindow->GetContentScale());
         imgui->NewFrame(mDeltaTime, mRenderWindow->GetWidth(), mRenderWindow->GetHeight());
     }
 }

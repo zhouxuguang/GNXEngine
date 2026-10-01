@@ -69,6 +69,10 @@ public:
     void SetDPIScale(float scale) { mDPIScale = scale > 0.0f ? scale : 1.0f; }
     float GetDPIScale() const { return mDPIScale; }
 
+    // 显示器内容缩放，用于控件布局及字体大小；与帧缓冲像素密度分开。
+    void SetContentScale(float scale) { mContentScale = scale > 0.0f ? scale : 1.0f; }
+    float GetContentScale() const { return mContentScale; }
+
     // ---- 字体 ----
     // 设置 CJK 字体文件（.ttf/.ttc）。留空则自动探测系统中的中文字体。
     // 须在 Initialize 之前设置。
@@ -127,6 +131,8 @@ private:
     std::vector<DrawBatch> mBatches;
 
     float    mDPIScale = 1.0f;
+    float    mContentScale = 1.0f;
+    float    mAppliedUIScale = 1.0f;
     float    mFontSize = 15.0f;                 // 逻辑字号（未乘 DPI）
     uint32_t mWidth = 0;
     uint32_t mHeight = 0;

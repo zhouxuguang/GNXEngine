@@ -170,6 +170,7 @@ bool ImGuiRenderer::Initialize(RenderDevice* device, bool installIniFile)
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    mAppliedUIScale = 1.0f;
 
     ImGuiIO& io = ImGui::GetIO();
     io.BackendPlatformName = "GNXEngine_PlatformBridge";
@@ -381,8 +382,7 @@ bool ImGuiRenderer::LoadFonts()
     // 1.92 的后端会依据 io.DisplayFramebufferScale 自动设置字形光栅化密度
     // （g.FontRasterizerDensity = DisplayFramebufferScale），Retina 下自动清晰。
     style.FontSizeBase = mFontSize;
-    // 保持 1.0：本引擎用 DisplayFramebufferScale 表达 DPI，
-    // 若再设置 FontScaleDpi 会与自动密度叠加、导致字号被二次放大。
+    // 初值为 1；NewFrame 按显示器内容缩放与帧缓冲密度的比例更新。
     style.FontScaleMain = 1.0f;
     style.FontScaleDpi = 1.0f;
 
@@ -404,7 +404,8 @@ bool ImGuiRenderer::LoadFonts()
     }
 
     ImFontConfig config;
-    config.PixelSnapH = true;
+    // 系统 TTF 字体允许水平方向自动过采样，改善低 DPI 下的小字边缘。
+    config.PixelSnapH = false;
     // OversampleH/V 保持默认「自动(0)」：自 1.91.8 起官方建议不要手动指定
 
     // 中文字形：优先使用显式指定的字体，其次自动探测系统 CJK 字体。
@@ -502,7 +503,7 @@ void ImGuiRenderer::UpdateTexture(ImTextureData* tex)
 
         // 全量上传：行距使用 ImGui 给出的 pitch（= Width * BytesPerPixel）
         Rect2D rect(0, 0, tex->Width, tex->Height);
-        texture->ReplaceRegion(rect, 0, (const uint8_t*)tex->GetPixels(), (uint32_t)tex->GetPitch());
+        texture->ReplaceRegionSync(rect, 0, (const uint8_t*)tex->GetPixels(), (uint32_t)tex->GetPitch());
 
         // ImTextureID 约定存放引擎纹理基类指针（RCTexture*），绘制时在 ExpandDrawData 还原。
         // 注意：RCTexture2D 虚继承自 RCTexture，虚基类地址与派生类地址不同，
@@ -525,12 +526,20 @@ void ImGuiRenderer::UpdateTexture(ImTextureData* tex)
             return;
         }
 
-        // ImGui 保证只会写入「从未被使用过」的区域，因此无需读回原内容做混合
+        // ImGui 的更新矩形仍引用整张图集的行距。Vulkan 的同步上传按紧密排列
+        // 读取子区域，必须先逐行打包，否则展开面板时新字形会错行变成乱码。
         for (const ImTextureRect& r : tex->Updates)
         {
             Rect2D rect((int)r.x, (int)r.y, (int)r.w, (int)r.h);
-            it->second->ReplaceRegion(rect, 0, (const uint8_t*)tex->GetPixelsAt(r.x, r.y),
-                                      (uint32_t)tex->GetPitch());
+            const uint32_t rowBytes = (uint32_t)r.w * 4u; // RGBA32
+            const uint8_t* source = (const uint8_t*)tex->GetPixelsAt(r.x, r.y);
+            std::vector<uint8_t> packedPixels((size_t)rowBytes * (size_t)r.h);
+            for (int y = 0; y < r.h; ++y)
+            {
+                memcpy(packedPixels.data() + (size_t)y * rowBytes,
+                       source + (size_t)y * (size_t)tex->GetPitch(), rowBytes);
+            }
+            it->second->ReplaceRegionSync(rect, 0, packedPixels.data(), rowBytes);
         }
         tex->SetStatus(ImTextureStatus_OK);
     }
@@ -596,12 +605,20 @@ void ImGuiRenderer::NewFrame(float deltaTime, uint32_t width, uint32_t height)
 
     // 1.92 动态字体：框架会依据 DisplayFramebufferScale 自动设置当前字形的光栅化密度
     // （见 imgui.cpp 中 g.FontRasterizerDensity = DisplayFramebufferScale），Retina 自动清晰。
-    // 注意：不要再手工 FontGlobalScale 缩放、也不要设置 style.FontScaleDpi，
-    // 否则会与自动密度叠加导致字号二次放大。
+    // 字体的 UI 尺寸缩放在下方单独设置，避免把内容缩放误用作光栅密度。
     io.DisplayFramebufferScale = ImVec2(scale, scale);
 
-    // 基准字号（逻辑尺寸）：动态字体允许运行期修改，立即生效
+    // Windows 的 framebuffer/window 比例常为 1，但内容缩放可为 1.25/1.5。
+    // 用内容缩放与像素密度之比放大布局和字号；动态字体会按最终字号
+    // 光栅化，而不是把低分辨率图集做纹理放大。Retina 两者相同，不重复放大。
     ImGuiStyle& style = ImGui::GetStyle();
+    const float uiScale = std::max(mContentScale, 1.0f) / scale;
+    if (uiScale != mAppliedUIScale)
+    {
+        style.ScaleAllSizes(uiScale / mAppliedUIScale);
+        mAppliedUIScale = uiScale;
+    }
+    style.FontScaleDpi = uiScale;
     if (style.FontSizeBase != mFontSize)
     {
         style.FontSizeBase = mFontSize;

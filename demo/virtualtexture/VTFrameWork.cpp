@@ -85,19 +85,6 @@ VTFrameWork::VTFrameWork(const GNXEngine::WindowProps& props)
 void VTFrameWork::SetupImGui()
 {
     SetImGuiEnabled(true);
-
-    RenderSystem::ImGuiRendererPtr imgui = GetImGui();
-    if (!imgui)
-    {
-        return;
-    }
-
-    float dpiScale = 1.0f;
-    if (GNXEngine::RenderWindowPtr window = GNXEngine::GetRenderWindow())
-    {
-        dpiScale = window->GetDPIScale();
-    }
-    imgui->SetDPIScale(dpiScale);
 }
 
 void VTFrameWork::UpdateCameraLens(uint32_t width, uint32_t height)
