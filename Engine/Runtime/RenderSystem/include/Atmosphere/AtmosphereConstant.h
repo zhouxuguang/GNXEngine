@@ -33,6 +33,16 @@ constexpr uint32_t SCATTERING_TEXTURE_DEPTH      = SCATTERING_TEXTURE_R_SIZE;
 constexpr uint32_t IRRADIANCE_TEXTURE_WIDTH      = 64;
 constexpr uint32_t IRRADIANCE_TEXTURE_HEIGHT     = 16;
 
+// Sky Atmosphere LUT dimensions (UE 5.3 defaults).
+constexpr uint32_t SKY_MULTI_SCATTERING_WIDTH = 32;
+constexpr uint32_t SKY_MULTI_SCATTERING_HEIGHT = 32;
+constexpr uint32_t SKY_VIEW_WIDTH = 192;
+constexpr uint32_t SKY_VIEW_HEIGHT = 104;
+constexpr uint32_t SKY_AERIAL_WIDTH = 32;
+constexpr uint32_t SKY_AERIAL_HEIGHT = 32;
+constexpr uint32_t SKY_AERIAL_DEPTH = 16;
+constexpr float SKY_AERIAL_DISTANCE_METERS = 96000.0f;
+
 static constexpr double kLambdaR = 680.0;
 static constexpr double kLambdaG = 550.0;
 static constexpr double kLambdaB = 440.0;

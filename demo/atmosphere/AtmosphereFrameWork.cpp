@@ -113,6 +113,7 @@ void AtmosphereFrameWork::CreateScene(uint32_t width, uint32_t height)
     mDemoGeometryUBO = RenderCore::GetRenderDevice()->CreateUniformBufferWithSize(48);
     UpdateDemoGeometryUBO();
     mAtmosphere->SetSkyShaderAsset("AtmosphereDemo/Sky");
+    mAtmosphere->SetNewSkyShaderAsset("Atmosphere/NewSkyDemoComposite");
     mAtmosphere->SetSkyExtraUniformBuffer("AtmosphereDemoCB", mDemoGeometryUBO);
     mAtmosphere->Initialize(mAtmosphereParameters, 5);
     mScatteringOrders = 5;
@@ -242,6 +243,14 @@ void AtmosphereFrameWork::BuildImGuiPanel()
         ImGui::Text("输入捕获: 鼠标[%s] 键盘[%s]",
                     io.WantCaptureMouse ? "UI" : "场景",
                     io.WantCaptureKeyboard ? "UI" : "场景");
+        int atmosphereAlgorithm = mAtmosphere->GetAlgorithm() ==
+            RenderSystem::AtmosphereAlgorithm::SkyAtmosphere ? 1 : 0;
+        if (ImGui::Combo("大气算法", &atmosphereAlgorithm, "旧版预计算\0新版天空大气\0"))
+        {
+            mAtmosphere->SetAlgorithm(atmosphereAlgorithm == 1
+                ? RenderSystem::AtmosphereAlgorithm::SkyAtmosphere
+                : RenderSystem::AtmosphereAlgorithm::LegacyPrecomputed);
+        }
         ImGui::Separator();
 
         // ---- 曝光 ----
@@ -267,7 +276,8 @@ void AtmosphereFrameWork::BuildImGuiPanel()
         }
 
         // ---- 散射预计算 ----
-        if (ImGui::CollapsingHeader("散射 / LUT 预计算"))
+        if (mAtmosphere->GetAlgorithm() == RenderSystem::AtmosphereAlgorithm::LegacyPrecomputed &&
+            ImGui::CollapsingHeader("散射 / LUT 预计算"))
         {
             ImGui::SliderInt("scattering orders", &mPendingScatteringOrders, 1, 8);
             ImGui::TextWrapped("当前生效: %d 重", mScatteringOrders);

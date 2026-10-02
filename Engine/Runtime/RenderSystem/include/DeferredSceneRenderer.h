@@ -66,6 +66,8 @@ public:
     void SetSSREnabled(bool enabled);
     bool IsSSREnabled() const;
     void SetOptionalPassesEnabled(bool enabled) { mEnableOptionalPasses = enabled; }
+    // Optional SDR target for the next PresentPass (used by deterministic screenshots).
+    void SetCaptureTarget(RCTexturePtr target) { mCaptureTarget = std::move(target); }
 
 private:
     FrameGraphResource RenderPreDepthPass(
@@ -216,6 +218,7 @@ private:
     FeedbackRendererUniPtr mFeedbackRender = nullptr;
     ShadowMapModuleUniPtr mShadowMapModule = nullptr;   // 阴影模块（PCSS）
     AtmosphereComponent* mAtmosphere = nullptr;         // 大气散射组件（可空）
+    RCTexturePtr mCaptureTarget;
     bool mEnableMotionBlur = false;
     bool mEnableSSR = false;
     bool mEnableOptionalPasses = true;

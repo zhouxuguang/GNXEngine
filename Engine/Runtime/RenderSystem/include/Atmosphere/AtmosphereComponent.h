@@ -12,9 +12,16 @@
 #include "../Component.h"
 #include "AtmosphereConstant.h"
 #include "AtmosphereRenderer.h"
+#include "SkyAtmosphereRenderer.h"
 #include "Runtime/MathUtil/include/Vector3.h"
 
 NS_RENDERSYSTEM_BEGIN
+
+enum class AtmosphereAlgorithm
+{
+    LegacyPrecomputed,
+    SkyAtmosphere,
+};
 
 class RENDERSYSTEM_API AtmosphereComponent : public Component
 {
@@ -29,6 +36,23 @@ public:
 
     // 使用调用方的米制模型初始化 GPU 预计算资源。
     bool Initialize(const Atmosphere::AtmosphereParameters& params, unsigned int numScatteringOrders = 4);
+
+    void SetAlgorithm(AtmosphereAlgorithm algorithm);
+    AtmosphereAlgorithm GetAlgorithm() const { return mAlgorithm; }
+    bool IsPrecomputed() const;
+    bool IsReadyForRendering() const;
+    void Precompute(CommandBufferPtr commandBuffer);
+    void UpdateViewParams(const Camera* camera,
+                          const Vector3d& cameraWorldPosition,
+                          const Vector3d& planetCenter,
+                          const Vector3f& sunDirection,
+                          float exposure,
+                          const Vector3f& whitePoint);
+    void UpdatePlanetParams(const Vector3d& up, double altitude);
+    void UpdateDynamicLuts(CommandBufferPtr commandBuffer);
+    void RenderSky(RenderEncoderPtr encoder);
+    void RenderPlanetAtmosphere(RenderEncoderPtr encoder, RCTexturePtr sceneColor,
+                                RCTexturePtr sceneDepth);
 
     void SetEnabled(bool enabled) { mEnabled = enabled; }
     bool IsEnabled() const { return mEnabled; }
@@ -47,7 +71,9 @@ public:
 
     bool IsInitialized() const
     {
-        return mRenderer && mRenderer->IsInitialized();
+        return mAlgorithm == AtmosphereAlgorithm::SkyAtmosphere
+            ? (mSkyRenderer && mSkyRenderer->IsInitialized())
+            : (mRenderer && mRenderer->IsInitialized());
     }
 
     AtmosphereRenderer* GetRenderer() const
@@ -98,11 +124,17 @@ public:
 
     // 在初始化前配置天空资源和额外 UBO；重新预计算时配置保持有效。
     void SetSkyShaderAsset(const std::string& asset) { mSkyShaderAsset = asset; }
+    void SetNewSkyShaderAsset(const std::string& asset) { mNewSkyShaderAsset = asset; }
     void SetSkyExtraUniformBuffer(const std::string& name, RenderCore::UniformBufferPtr buffer)
     { mSkyExtraUniformName = name; mSkyExtraUniformBuffer = std::move(buffer); }
 
 private:
     AtmosphereRendererPtr mRenderer;
+    SkyAtmosphereRendererPtr mSkyRenderer;
+    AtmosphereAlgorithm mAlgorithm = AtmosphereAlgorithm::LegacyPrecomputed;
+    Atmosphere::AtmosphereParameters mParameters{};
+    unsigned int mNumScatteringOrders = 4;
+    bool mHasParameters = false;
 
     // 默认曝光：着色器输出线性 HDR，由管线末端 PostProcessing(ACES) 色调映射，
     // 取 5.0 时整体亮度与参考实现（exposure=10 配合自带指数曲线）一致。
@@ -113,6 +145,7 @@ private:
     Vector3d mCameraWorldPosition{0.0, 0.0, 0.0};
     bool mHasCameraWorldPosition = false;
     std::string mSkyShaderAsset = "Atmosphere/AtmosphereShader";
+    std::string mNewSkyShaderAsset = "Atmosphere/NewSkyComposite";
     std::string mSkyExtraUniformName;
     RenderCore::UniformBufferPtr mSkyExtraUniformBuffer;
     Vector3d mPlanetEllipsoidRadii{0.0, 0.0, 0.0};

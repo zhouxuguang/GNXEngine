@@ -101,6 +101,7 @@ public:
      */
     void SetRenderPath(RenderPath path);
     void SetDeferredOptionalPassesEnabled(bool enabled);
+    void SetFrameCaptureTarget(RCTexturePtr target);
     
     /**
      * 获取当前渲染路径

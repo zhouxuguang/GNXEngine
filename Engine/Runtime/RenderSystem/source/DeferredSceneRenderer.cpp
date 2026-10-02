@@ -177,15 +177,12 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     mAtmosphere = FindAtmosphereRecursive(rootNode);
     if (camera && mAtmosphere && mAtmosphere->IsEnabled() && mAtmosphere->IsInitialized())
     {
-        AtmosphereRenderer* atmoRenderer = mAtmosphere->GetRenderer();
-        if (atmoRenderer)
-        {
             // 首次使用：执行 GPU 预计算（一次性）。
             // 直接录制进当前帧的命令缓冲区：Vulkan / DX12 的 CreateCommandBuffer()
             // 与交换链帧同步绑定，为每个 Pass 单独新建会耗尽交换链图像导致死锁。
-            if (!atmoRenderer->IsPrecomputed())
+            if (!mAtmosphere->IsPrecomputed())
             {
-                atmoRenderer->Precompute(commandBuffer);
+                mAtmosphere->Precompute(commandBuffer);
             }
 
             // 从场景方向光推导太阳方向（地表指向太阳）
@@ -211,13 +208,15 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
             const Vector3d cameraWorldPosition = mAtmosphere->HasCameraWorldPosition()
                 ? mAtmosphere->GetCameraWorldPosition()
                 : Vector3d(cameraPosition.x, cameraPosition.y, cameraPosition.z);
-            atmoRenderer->UpdateViewParams(camera.get(), cameraWorldPosition,
-                                           mAtmosphere->GetPlanetCenter(), sunDir,
-                                           mAtmosphere->GetExposure(), mAtmosphere->GetWhitePoint());
+            mAtmosphere->UpdateViewParams(camera.get(), cameraWorldPosition,
+                                          mAtmosphere->GetPlanetCenter(), sunDir,
+                                          mAtmosphere->GetExposure(), mAtmosphere->GetWhitePoint());
             if (mAtmosphere->HasPlanetEllipsoid())
-                atmoRenderer->UpdatePlanetParams(mAtmosphere->GetCameraGeodeticUp(),
-                                                 mAtmosphere->GetCameraAltitude());
-        }
+                mAtmosphere->UpdatePlanetParams(mAtmosphere->GetCameraGeodeticUp(),
+                                                mAtmosphere->GetCameraAltitude());
+            // The new view and aerial LUTs depend on camera and sun, unlike the
+            // static transmittance and multi-scattering LUTs above.
+            mAtmosphere->UpdateDynamicLuts(commandBuffer);
     }
 
     // ========== 执行渲染 Pass ==========
@@ -314,10 +313,11 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
     // Atmosphere Pass（大气散射天空）：在天空盒之后，只填充远平面（天空）区域
     FrameGraphResource atmosphereResult = skyboxResult;
     if (mAtmosphere && mAtmosphere->IsEnabled() && mAtmosphere->IsInitialized()
-        && mAtmosphere->GetRenderer() && mAtmosphere->GetRenderer()->IsPrecomputed()
+        && mAtmosphere->IsReadyForRendering()
         && depthResource != -1)
     {
-        atmosphereResult = mAtmosphere->HasPlanetEllipsoid()
+        atmosphereResult = (mAtmosphere->HasPlanetEllipsoid() ||
+                            mAtmosphere->GetAlgorithm() == AtmosphereAlgorithm::SkyAtmosphere)
             ? RenderPlanetAtmospherePass(frameGraph, commandBuffer, skyboxResult, depthResource, mAtmosphere)
             : RenderAtmospherePass(frameGraph, commandBuffer, skyboxResult, depthResource, cameraUBO, mAtmosphere);
     }
@@ -599,6 +599,27 @@ void DeferredSceneRenderer::RenderPresentPass(FrameGraph& frameGraph, CommandBuf
             }
 
             renderEncoder->EndEncode();
+        }
+        if (mCaptureTarget)
+        {
+            // Render the same HDR source through the same tone mapper into a
+            // readback target. A deferred SceneManager::Render ignores an
+            // externally supplied encoder, so screenshots must branch here.
+            commandBuffer->ResourceBarrier(mCaptureTarget, ResourceAccessType::ColorAttachment);
+            RenderPass capturePass;
+            capturePass.renderRegion = Rect2D(0, 0, (int)mWidth, (int)mHeight);
+            auto captureAttachment = std::make_shared<RenderPassColorAttachment>();
+            captureAttachment->texture = mCaptureTarget;
+            captureAttachment->loadOp = ATTACHMENT_LOAD_OP_CLEAR;
+            captureAttachment->storeOp = ATTACHMENT_STORE_OP_STORE;
+            captureAttachment->clearColor = MakeClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            capturePass.colorAttachments.push_back(captureAttachment);
+            RenderEncoderPtr captureEncoder = commandBuffer->CreateRenderEncoder(capturePass);
+            mPostProcessing->Process(captureEncoder);
+            if (const ImGuiRendererPtr& imGuiRenderer = SceneManager::GetInstance()->PeekImGuiRenderer())
+                imGuiRenderer->Render(captureEncoder);
+            captureEncoder->EndEncode();
+            commandBuffer->ResourceBarrier(mCaptureTarget, ResourceAccessType::TransferSrc);
         }
         commandBuffer->PresentFrameBuffer();
     });
@@ -1064,7 +1085,7 @@ FrameGraphResource DeferredSceneRenderer::RenderAtmospherePass(
             renderPass.depthAttachment = depthAttachment;
 
             RenderEncoderPtr renderEncoder = commandBuffer->CreateRenderEncoder(renderPass);
-            atmosphere->GetRenderer()->RenderSky(renderEncoder);
+            atmosphere->RenderSky(renderEncoder);
             renderEncoder->EndEncode();
         }
     );
@@ -1113,7 +1134,7 @@ FrameGraphResource DeferredSceneRenderer::RenderPlanetAtmospherePass(
             colorAttachment->clearColor = MakeClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             renderPass.colorAttachments.push_back(colorAttachment);
             RenderEncoderPtr encoder = commandBuffer->CreateRenderEncoder(renderPass);
-            atmosphere->GetRenderer()->RenderPlanetAtmosphere(encoder, input.texture, depth.texture);
+            atmosphere->RenderPlanetAtmosphere(encoder, input.texture, depth.texture);
             encoder->EndEncode();
         });
     return passData.outputColor;

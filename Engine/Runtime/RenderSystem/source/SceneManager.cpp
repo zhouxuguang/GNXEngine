@@ -22,6 +22,7 @@
 #include "EditorCameraController.h"
 #include <algorithm>
 #include <mutex>
+#include <utility>
 
 NS_RENDERSYSTEM_BEGIN
 
@@ -326,6 +327,12 @@ void SceneManager::SetDeferredOptionalPassesEnabled(bool enabled)
 {
     if (auto* deferred = dynamic_cast<DeferredSceneRenderer*>(mSceneRenderer.get()))
         deferred->SetOptionalPassesEnabled(enabled);
+}
+
+void SceneManager::SetFrameCaptureTarget(RCTexturePtr target)
+{
+    if (auto* deferred = dynamic_cast<DeferredSceneRenderer*>(mSceneRenderer.get()))
+        deferred->SetCaptureTarget(std::move(target));
 }
 
 void SceneManager::Render(RenderEncoderPtr renderEncoder)
