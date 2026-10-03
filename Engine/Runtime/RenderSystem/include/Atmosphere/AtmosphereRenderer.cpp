@@ -102,6 +102,7 @@ void AtmosphereRenderer::CreateResources()
         kFormat, kUsage,
         Atmosphere::TRANSMITTANCE_TEXTURE_WIDTH,
         Atmosphere::TRANSMITTANCE_TEXTURE_HEIGHT, 1);
+    if (mTransmittanceTexture) mTransmittanceTexture->SetName("Atmosphere.Legacy.TransmittanceLUT");
 
     mScatteringTexture = device->CreateTexture3D(
         kFormat, kUsage,
@@ -119,6 +120,9 @@ void AtmosphereRenderer::CreateResources()
         kFormat, kUsage,
         Atmosphere::IRRADIANCE_TEXTURE_WIDTH,
         Atmosphere::IRRADIANCE_TEXTURE_HEIGHT, 1);
+    if (mScatteringTexture) mScatteringTexture->SetName("Atmosphere.Legacy.ScatteringLUT");
+    if (mSingleMieTexture) mSingleMieTexture->SetName("Atmosphere.Legacy.SingleMieLUT");
+    if (mIrradianceTexture) mIrradianceTexture->SetName("Atmosphere.Legacy.IrradianceLUT");
 
     // 中间纹理
     mDeltaIrradianceTexture = device->CreateTexture2D(
@@ -144,11 +148,19 @@ void AtmosphereRenderer::CreateResources()
         Atmosphere::SCATTERING_TEXTURE_HEIGHT,
         Atmosphere::SCATTERING_TEXTURE_DEPTH, 1);
 
+    if (mDeltaIrradianceTexture) mDeltaIrradianceTexture->SetName("Atmosphere.Legacy.DeltaIrradiance");
+    if (mDeltaRayleighTexture) mDeltaRayleighTexture->SetName("Atmosphere.Legacy.DeltaRayleigh");
+    if (mDeltaMieTexture) mDeltaMieTexture->SetName("Atmosphere.Legacy.DeltaMie");
+    if (mDeltaScatteringDensityTexture) mDeltaScatteringDensityTexture->SetName("Atmosphere.Legacy.DeltaScatteringDensity");
+
     // UBO
     mAtmosphereUBO = device->CreateUniformBufferWithSize(sizeof(Atmosphere::AtmosphereParameters));
     mViewUBO = device->CreateUniformBufferWithSize(sizeof(Atmosphere::AtmosphereViewParams));
     if (HasPlanetEllipsoid())
         mPlanetUBO = device->CreateUniformBufferWithSize(sizeof(Atmosphere::AtmospherePlanetParams));
+    if (mAtmosphereUBO) mAtmosphereUBO->SetName("Atmosphere.Legacy.ParametersCB");
+    if (mViewUBO) mViewUBO->SetName("Atmosphere.Legacy.ViewCB");
+    if (mPlanetUBO) mPlanetUBO->SetName("Atmosphere.Legacy.PlanetCB");
 
     // 采样器（线性、Clamp）
     SamplerDesc samplerDesc;
@@ -320,6 +332,9 @@ UniformBufferPtr AtmosphereRenderer::GetScatteringUBO(int layer, int order)
     p.pad0 = 0;
     p.pad1 = 0;
     ubo->SetData(&p, 0, sizeof(p));
+    char debugName[96];
+    std::snprintf(debugName, sizeof(debugName), "Atmosphere.Legacy.ScatteringCB[layer=%d,order=%d]", layer, order);
+    ubo->SetName(debugName);
     mPrecomputeUBOs[key] = ubo;
     return ubo;
 }

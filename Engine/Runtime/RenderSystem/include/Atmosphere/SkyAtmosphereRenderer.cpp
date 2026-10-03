@@ -67,6 +67,13 @@ bool SkyAtmosphereRenderer::Initialize(const Atmosphere::AtmosphereParameters& p
     if (!mTransmittanceTexture || !mMultiScatteringTexture || !mSkyViewTexture ||
         !mAerialTexture || !mAtmosphereUBO || !mViewUBO || !mPlanetUBO)
         return false;
+    mTransmittanceTexture->SetName("Atmosphere.Sky.TransmittanceLUT");
+    mMultiScatteringTexture->SetName("Atmosphere.Sky.MultiScatteringLUT");
+    mSkyViewTexture->SetName("Atmosphere.Sky.SkyViewLUT");
+    mAerialTexture->SetName("Atmosphere.Sky.AerialPerspectiveLUT");
+    mAtmosphereUBO->SetName("Atmosphere.Sky.ParametersCB");
+    mViewUBO->SetName("Atmosphere.Sky.ViewCB");
+    mPlanetUBO->SetName("Atmosphere.Sky.PlanetCB");
     mAtmosphereUBO->SetData(&params, 0, sizeof(params));
 
     mAerialSliceUBOs.reserve(Atmosphere::SKY_AERIAL_DEPTH);
@@ -77,6 +84,9 @@ bool SkyAtmosphereRenderer::Initialize(const Atmosphere::AtmosphereParameters& p
         const SkyLutParams lut{float(i), Atmosphere::SKY_AERIAL_DISTANCE_METERS / 1000.0f,
                                float(Atmosphere::SKY_AERIAL_DEPTH), 0.0f};
         buffer->SetData(&lut, 0, sizeof(lut));
+        char debugName[96];
+        std::snprintf(debugName, sizeof(debugName), "Atmosphere.Sky.AerialSliceCB[slice=%u]", i);
+        buffer->SetName(debugName);
         mAerialSliceUBOs.push_back(buffer);
     }
 
