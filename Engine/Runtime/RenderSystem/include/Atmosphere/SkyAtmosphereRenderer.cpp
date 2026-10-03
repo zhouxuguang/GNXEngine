@@ -6,6 +6,7 @@
 #include "Runtime/RenderCore/include/TextureFormat.h"
 #include "Runtime/BaseLib/include/LogService.h"
 #include <cmath>
+#include <cstdio>
 #include <tracy/Tracy.hpp>
 
 USING_NS_MATHUTIL
@@ -14,6 +15,8 @@ NS_RENDERSYSTEM_BEGIN
 
 namespace
 {
+constexpr float kSkyDebugColor[4] = {0.4f, 0.7f, 1.0f, 1.0f};
+
 struct alignas(16) SkyLutParams
 {
     float slice;
@@ -121,8 +124,10 @@ void SkyAtmosphereRenderer::Precompute(CommandBufferPtr commandBuffer)
 {
     ZoneScopedN("SkyAtmosphereRenderer::Precompute");
     if (!mInitialized || !commandBuffer || IsPrecomputed()) return;
+    ScopedDebugMarker precomputeGroup(commandBuffer, "SkyAtmosphere Precompute", kSkyDebugColor);
     if (mStaticStep == 0)
     {
+        ScopedDebugMarker passGroup(commandBuffer, "Transmittance LUT", kSkyDebugColor);
         commandBuffer->ResourceBarrier(mTransmittanceTexture, ResourceAccessType::ColorAttachment);
         auto enc = BeginPass(commandBuffer, mTransmittancePipeline, mTransmittanceTexture,
             Atmosphere::TRANSMITTANCE_TEXTURE_WIDTH, Atmosphere::TRANSMITTANCE_TEXTURE_HEIGHT);
@@ -134,6 +139,7 @@ void SkyAtmosphereRenderer::Precompute(CommandBufferPtr commandBuffer)
         ++mStaticStep;
         return;
     }
+    ScopedDebugMarker passGroup(commandBuffer, "MultiScattering LUT", kSkyDebugColor);
     commandBuffer->ResourceBarrier(mMultiScatteringTexture, ResourceAccessType::ColorAttachment);
     auto enc = BeginPass(commandBuffer, mMultiScatteringPipeline, mMultiScatteringTexture,
         Atmosphere::SKY_MULTI_SCATTERING_WIDTH, Atmosphere::SKY_MULTI_SCATTERING_HEIGHT);
@@ -193,24 +199,32 @@ void SkyAtmosphereRenderer::UpdateDynamicLuts(CommandBufferPtr commandBuffer)
 {
     ZoneScopedN("SkyAtmosphereRenderer::UpdateDynamicLuts");
     if (!IsPrecomputed() || !commandBuffer || !mViewUBO || !mPlanetUBO) return;
-    commandBuffer->ResourceBarrier(mSkyViewTexture, ResourceAccessType::ColorAttachment);
-    auto sky = BeginPass(commandBuffer, mSkyViewPipeline, mSkyViewTexture,
-        Atmosphere::SKY_VIEW_WIDTH, Atmosphere::SKY_VIEW_HEIGHT);
-    if (!sky) return;
-    sky->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
-    sky->SetFragmentUniformBuffer("AtmosphereViewCB", mViewUBO);
-    sky->SetFragmentUniformBuffer("AtmospherePlanetCB", mPlanetUBO);
-    sky->SetFragmentTextureAndSampler("new_sky_transmittance_texture",
-        mTransmittanceTexture, mLinearSampler);
-    sky->SetFragmentTextureAndSampler("new_sky_multiscattering_texture",
-        mMultiScatteringTexture, mLinearSampler);
-    sky->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
-    sky->EndEncode();
-    commandBuffer->ResourceBarrier(mSkyViewTexture, ResourceAccessType::ShaderRead);
+    ScopedDebugMarker dynamicGroup(commandBuffer, "SkyAtmosphere Dynamic LUTs", kSkyDebugColor);
+    {
+        ScopedDebugMarker passGroup(commandBuffer, "SkyView LUT", kSkyDebugColor);
+        commandBuffer->ResourceBarrier(mSkyViewTexture, ResourceAccessType::ColorAttachment);
+        auto sky = BeginPass(commandBuffer, mSkyViewPipeline, mSkyViewTexture,
+            Atmosphere::SKY_VIEW_WIDTH, Atmosphere::SKY_VIEW_HEIGHT);
+        if (!sky) return;
+        sky->SetFragmentUniformBuffer("AtmosphereParametersCB", mAtmosphereUBO);
+        sky->SetFragmentUniformBuffer("AtmosphereViewCB", mViewUBO);
+        sky->SetFragmentUniformBuffer("AtmospherePlanetCB", mPlanetUBO);
+        sky->SetFragmentTextureAndSampler("new_sky_transmittance_texture",
+            mTransmittanceTexture, mLinearSampler);
+        sky->SetFragmentTextureAndSampler("new_sky_multiscattering_texture",
+            mMultiScatteringTexture, mLinearSampler);
+        sky->DrawPrimitives(PrimitiveMode_TRIANGLES, 0, 3);
+        sky->EndEncode();
+        commandBuffer->ResourceBarrier(mSkyViewTexture, ResourceAccessType::ShaderRead);
+    }
 
+    ScopedDebugMarker aerialGroup(commandBuffer, "AerialPerspective LUT", kSkyDebugColor);
     commandBuffer->ResourceBarrier(mAerialTexture, ResourceAccessType::ColorAttachment);
     for (uint32_t slice = 0; slice < Atmosphere::SKY_AERIAL_DEPTH; ++slice)
     {
+        char debugName[64];
+        std::snprintf(debugName, sizeof(debugName), "AerialPerspective (slice=%u)", slice);
+        ScopedDebugMarker sliceGroup(commandBuffer, debugName, kSkyDebugColor);
         auto aerial = BeginPass(commandBuffer, mAerialPipeline, mAerialTexture,
             Atmosphere::SKY_AERIAL_WIDTH, Atmosphere::SKY_AERIAL_HEIGHT,
             slice, Atmosphere::SKY_AERIAL_DEPTH);

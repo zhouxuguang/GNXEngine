@@ -17,6 +17,7 @@
 #include "Runtime/BaseLib/include/LogService.h"
 #include "Runtime/MathUtil/include/Vector3.h"
 #include "Runtime/MathUtil/include/Matrix4x4.h"
+#include <cstdio>
 #include <tracy/Tracy.hpp>
 
 USING_NS_MATHUTIL
@@ -356,6 +357,16 @@ void AtmosphereRenderer::BuildPrecomputeSteps()
 
 void AtmosphereRenderer::RunPrecomputeStep(CommandBufferPtr commandBuffer, const PrecomputeStep& step)
 {
+    static constexpr const char* kStepNames[] = {
+        "Transmittance", "DirectIrradiance", "SingleScattering",
+        "ScatteringDensity", "IndirectIrradiance", "MultipleScattering"
+    };
+    char debugName[128];
+    std::snprintf(debugName, sizeof(debugName), "%s (layer=%d, order=%d)",
+                  kStepNames[static_cast<size_t>(step.type)], step.layer, step.order);
+    const float debugColor[4] = {0.4f, 0.7f, 1.0f, 1.0f};
+    ScopedDebugMarker debugGroup(commandBuffer, debugName, debugColor);
+
     const int kScatteringW = (int)Atmosphere::SCATTERING_TEXTURE_WIDTH;
     const int kScatteringH = (int)Atmosphere::SCATTERING_TEXTURE_HEIGHT;
     const uint32_t kScatteringD = Atmosphere::SCATTERING_TEXTURE_DEPTH;
@@ -487,6 +498,9 @@ void AtmosphereRenderer::Precompute(CommandBufferPtr commandBuffer)
     {
         return;
     }
+
+    const float debugColor[4] = {0.4f, 0.7f, 1.0f, 1.0f};
+    ScopedDebugMarker debugGroup(commandBuffer, "Atmosphere Precompute", debugColor);
 
     if (mPrecomputeSteps.empty())
     {

@@ -1122,6 +1122,9 @@ FrameGraphResource DeferredSceneRenderer::RenderPlanetAtmospherePass(
         [this, commandBuffer, atmosphere](const PassData& data,
                                           FrameGraphPassResources& resources, void*)
         {
+            float debugColor[4] = {0.4f, 0.7f, 1.0f, 1.0f};
+            SCOPED_DEBUGMARKER_EVENT(commandBuffer, resources.GetPassName().c_str(), debugColor);
+
             FrameGraphTexture& input = resources.Get<FrameGraphTexture>(data.inputColor);
             FrameGraphTexture& depth = resources.Get<FrameGraphTexture>(data.inputDepth);
             FrameGraphTexture& output = resources.Get<FrameGraphTexture>(data.outputColor);
