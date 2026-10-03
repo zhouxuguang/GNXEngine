@@ -10,6 +10,7 @@
 
 #include "MTLBufferBase.h"
 #include "UniformBuffer.h"
+#include <string>
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -21,6 +22,7 @@ public:
     ~MTLUniformBuffer();
     
     void SetData(const void* data, uint32_t offset, uint32_t dataSize) override;
+    void SetName(const char* name) override;
     
     id<MTLBuffer> getMTLBuffer()
     {
@@ -38,12 +40,15 @@ public:
     
     bool isBuffer() const
     {
-        return mIsBuufer;
+        return mIsBuufer || mBuffer != nullptr;
     }
     
 private:
-    MTLBufferBasePtr mBuffer = nullptr;     // 大于4096时使用
-    std::vector<uint8_t> mBufferData;      // 小于4096时使用
+    void UpdateNamedBuffer();
+    id<MTLDevice> mDevice;
+    std::string mDebugName;
+    MTLBufferBasePtr mBuffer = nullptr;    // Large UBOs or named small snapshots.
+    std::vector<uint8_t> mBufferData;      // CPU data for UBOs up to 4096 bytes.
     bool mIsBuufer = false;
 };
 

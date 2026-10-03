@@ -80,6 +80,15 @@ void VKUniformBuffer::CreateSlots(uint32_t slotCount)
     
     // StorageModeShared 的分配带 VMA_ALLOCATION_CREATE_MAPPED_BIT，直接拿常驻映射指针
     mMappedData = (uint8_t*)allocationInfo.pMappedData;
+    if (!mDebugName.empty())
+        SetName(mDebugName.c_str());
+}
+
+void VKUniformBuffer::SetName(const char* name)
+{
+    mDebugName = name ? name : "";
+    if (mContext && mContext->device && mBuffer != VK_NULL_HANDLE)
+        SetObjectName(mContext->device, VK_OBJECT_TYPE_BUFFER, (uint64_t)mBuffer, mDebugName.c_str());
 }
 
 void VKUniformBuffer::EnsureSlotCount(uint32_t slotCount)

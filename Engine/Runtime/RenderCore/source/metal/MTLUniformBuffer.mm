@@ -11,6 +11,7 @@
 NAMESPACE_RENDERCORE_BEGIN
 
 MTLUniformBuffer::MTLUniformBuffer(id<MTLDevice> device, uint32_t size)
+    : mDevice(device)
 {
     if (size > 4096)
     {
@@ -51,7 +52,32 @@ void MTLUniformBuffer::SetData(const void* data, uint32_t offset, uint32_t dataS
     else
     {
         memcpy(mBufferData.data() + offset, data, dataSize);
+        UpdateNamedBuffer();
     }
+}
+
+void MTLUniformBuffer::SetName(const char* name)
+{
+    mDebugName = name ? name : "";
+    if (mIsBuufer)
+        mBuffer->SetName(mDebugName.c_str());
+    else
+        UpdateNamedBuffer();
+}
+
+void MTLUniformBuffer::UpdateNamedBuffer()
+{
+    if (mDebugName.empty() || mBufferData.empty())
+    {
+        mBuffer.reset();
+        return;
+    }
+
+    // setBytes has no resource to label. Named small UBOs use an immutable
+    // snapshot instead; recorded encoders retain it across later SetData calls.
+    mBuffer = std::make_unique<MTLBufferBase>(mDevice, nullptr, mBufferData.data(),
+                                             mBufferData.size(), StorageModeShared);
+    mBuffer->SetName(mDebugName.c_str());
 }
 
 NAMESPACE_RENDERCORE_END

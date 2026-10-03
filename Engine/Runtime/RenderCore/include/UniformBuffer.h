@@ -20,6 +20,9 @@ public:
     virtual ~UniformBuffer();
     
     virtual void SetData(const void* data, uint32_t offset, uint32_t dataSize) = 0;
+
+    // Name the GPU resource for graphics debuggers.
+    virtual void SetName(const char* name) = 0;
 };
 
 typedef std::shared_ptr<UniformBuffer> UniformBufferPtr;

@@ -145,6 +145,7 @@ public:
     ~DX12UniformBuffer() override = default;
 
     void SetData(const void* data, uint32_t offset, uint32_t dataSize) override;
+    void SetName(const char* name) override { SetDebugName(name); }
 
     /// 保持与 Vulkan 后端一致的“影子数据”语义（部分路径会读取它）
     const void* GetShadowData() const { return mShadowData.data(); }

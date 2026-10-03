@@ -10,6 +10,7 @@
 
 #include "VulkanContext.h"
 #include "UniformBuffer.h"
+#include <string>
 
 NAMESPACE_RENDERCORE_BEGIN
 
@@ -29,6 +30,7 @@ public:
      * 表现为"移动相机时画面闪烁"。因此这里只写 CPU 影子副本。
      */
     void SetData(const void* data, uint32_t offset, uint32_t dataSize) override;
+    void SetName(const char* name) override;
     
     /**
      * @brief 绑定前调用：确保 frameIndex 对应的帧槽位持有最新数据，返回该槽位在 buffer 中的字节偏移。
@@ -61,6 +63,7 @@ private:
     void UploadSlot(uint32_t slot);
     
     VulkanContextPtr mContext;
+    std::string mDebugName;
     VkBuffer mBuffer = VK_NULL_HANDLE;
     StorageMode mStorageMode;
     uint32_t mBufferLength = 0;      // 逻辑大小（shader 看到的大小）
