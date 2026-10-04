@@ -1,0 +1,31 @@
+cmake_minimum_required(VERSION 3.17)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    project(RayAABBTests LANGUAGES CXX)
+    enable_testing()
+endif()
+
+# Build the real CPU geometry sources without downloading Catch2 or starting a GPU.
+set(math_dir ${CMAKE_CURRENT_SOURCE_DIR}/../../Engine/Runtime/MathUtil)
+set(math_sources)
+foreach(source AABB OBB Sphere Ray Intersection Vector3 Vector4 Matrix3x3 Matrix4x4)
+    list(APPEND math_sources ${math_dir}/source/${source}.cpp)
+endforeach()
+add_library(RayAABBMathUnderTest STATIC ${math_sources})
+target_include_directories(RayAABBMathUnderTest PUBLIC ${math_dir}/include)
+target_compile_definitions(RayAABBMathUnderTest PUBLIC MATH3D_EXPORTS)
+target_compile_features(RayAABBMathUnderTest PUBLIC cxx_std_20)
+add_executable(test_ray_aabb test_ray_aabb.cpp)
+target_link_libraries(test_ray_aabb PRIVATE RayAABBMathUnderTest)
+
+# Performance runs are explicit and are not added to CTest.
+add_executable(benchmark_ray_aabb EXCLUDE_FROM_ALL benchmark_ray_aabb.cpp legacy_ray_aabb.cpp)
+target_link_libraries(benchmark_ray_aabb PRIVATE RayAABBMathUnderTest)
+
+option(GNX_RAY_AABB_SANITIZERS "Enable address, undefined behavior and floating divide-by-zero checks" OFF)
+if(GNX_RAY_AABB_SANITIZERS AND CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    foreach(target RayAABBMathUnderTest test_ray_aabb benchmark_ray_aabb)
+        target_compile_options(${target} PRIVATE -fsanitize=address,undefined,float-divide-by-zero -fno-omit-frame-pointer)
+        target_link_options(${target} PRIVATE -fsanitize=address,undefined,float-divide-by-zero)
+    endforeach()
+endif()
+add_test(NAME MathUtil.IntersectRayAABB COMMAND test_ray_aabb)

@@ -129,11 +129,43 @@ bool IntersectRayAABBInner(const Ray<T>& ray, const AxisAlignedBox<T>& inAABB, T
 }
 
 template<typename T>
+bool RayBoxESlab(const Vector3<T>& boxMin, const Vector3<T>& boxMax, const Vector3<T>& pos, const Vector3<T>& rayDir)
+{
+    // Intersect the three closed slab intervals with the forward ray t >= 0.
+    // Use current bounds, since public center/length caches may be stale.
+    long double enter = 0;
+    long double leave = std::numeric_limits<long double>::infinity();
+    for (int axis = 0; axis < 3; ++axis)
+    {
+        const long double direction = rayDir[axis];
+        if (direction == 0)
+        {
+            // Includes negative zero. Avoid 0/0 for rays on a box face.
+            if (pos[axis] < boxMin[axis] || pos[axis] > boxMax[axis])
+                return false;
+            continue;
+        }
+
+        const long double first = (static_cast<long double>(boxMin[axis]) - pos[axis]) / direction;
+        const long double last = (static_cast<long double>(boxMax[axis]) - pos[axis]) / direction;
+        enter = std::max(enter, std::min(first, last));
+        leave = std::min(leave, std::max(first, last));
+        if (enter > leave)
+            return false;
+    }
+    return true;
+}
+
+template<typename T>
 bool IntersectRayAABB(const Ray<T>& ray, const AxisAlignedBox<T>& inAABB)
 {
+#if 0
     T t0 = 0;
     T t1 = 0;
     return IntersectRayAABBInner(ray, inAABB, &t0, &t1);
+#else
+    return RayBoxESlab(inAABB.minimum, inAABB.maximum, ray.GetOrigin(), ray.GetDirection());
+#endif
 }
 
 template<typename T>
