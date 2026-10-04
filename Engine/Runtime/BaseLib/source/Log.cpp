@@ -21,6 +21,24 @@ bool HasConsole()
 	return hasConsole.load();
 }
 
+namespace
+{
+	// 源文件按 /utf-8 编译，输出的是 UTF-8 字节；而 Windows 控制台默认按系统 ANSI
+	// 代码页（简体中文系统为 936/GBK）解码，导致中文乱码。这里在模块加载阶段
+	// （main 之前）把控制台代码页切换到 UTF-8，使进程内所有输出（含 printf）都能
+	// 正确显示中文，无需调用方做任何事。
+	struct ConsoleUtf8Initializer
+	{
+		ConsoleUtf8Initializer()
+		{
+			::SetConsoleOutputCP(CP_UTF8);
+			::SetConsoleCP(CP_UTF8);
+		}
+	};
+
+	const ConsoleUtf8Initializer g_consoleUtf8Initializer;
+}
+
 #endif
 #ifdef __ANDROID__
     #include <android/log.h>
