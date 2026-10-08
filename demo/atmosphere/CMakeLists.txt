@@ -49,6 +49,7 @@ if(NOT IOS)
             DEPENDS shader_compile "${ATMOS_DEMO_SHADER}"
                 "${ATMOS_DEMO_ROOT}/Engine/Shader/built-in/Atmosphere/AtmosphereCommon.hlsl"
                 "${ATMOS_DEMO_ROOT}/Engine/Shader/built-in/VolumetricCommon.hlsl"
+                "${ATMOS_DEMO_ROOT}/Engine/Shader/built-in/FullscreenTriangle.hlsl"
             VERBATIM)
         list(APPEND ATMOS_DEMO_SHADER_OUTPUTS "${ATMOS_OUTPUT}")
     endforeach()

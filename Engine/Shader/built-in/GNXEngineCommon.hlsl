@@ -10,6 +10,8 @@
 #ifndef GNX_ENGINE_COMMON_INCLUEDGDGDF_H
 #define GNX_ENGINE_COMMON_INCLUEDGDGDF_H
 
+#include "FullscreenTriangle.hlsl"
+
 #define UNITY_PI            3.14159265359f
 #define UNITY_TWO_PI        6.28318530718f
 #define UNITY_FOUR_PI       12.56637061436f
@@ -352,23 +354,6 @@ float3 ReconstructViewPosition(float2 uv, float depth)
     viewPos.xyz /= viewPos.w;
     
     return viewPos.xyz;
-}
-
-float4 fsTrianglePosition(int vtx) 
-{
-    float x = -1.0 + float((vtx & 1) << 2);
-    float y = -1.0 + float((vtx & 2) << 1);
-    return float4(x, y, 0.0, 1.0);
-}
-
-float2 fsTriangleUV(int vtx) 
-{
-    float u = (vtx == 1) ? 2.0 : 0.0;
-    float v = (vtx == 2) ? 2.0 : 0.0;
-#ifdef TEXCOORD_FLIP
-    v = 1.0 - v;
-#endif
-    return float2(u, v);
 }
 
 #endif

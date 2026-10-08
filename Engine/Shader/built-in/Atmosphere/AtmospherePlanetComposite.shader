@@ -35,15 +35,8 @@ struct VS_OUTPUT { float4 position : SV_POSITION; float2 uv : TEXCOORD0; };
 VS_OUTPUT VS(uint vertexID : SV_VertexID)
 {
     VS_OUTPUT output;
-    float x = -1.0 + float((vertexID & 1) << 2);
-    float y = -1.0 + float((vertexID & 2) << 1);
-    output.position = float4(x, y, 0.0, 1.0);
-    float u = vertexID == 1 ? 2.0 : 0.0;
-    float v = vertexID == 2 ? 2.0 : 0.0;
-#ifdef TEXCOORD_FLIP
-    v = 1.0 - v;
-#endif
-    output.uv = float2(u, v);
+    output.position = fsTrianglePosition(vertexID);
+    output.uv = fsTriangleUV(vertexID);
     return output;
 }
 

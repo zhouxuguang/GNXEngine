@@ -3,6 +3,7 @@
 
 #include "AtmosphereDefine.hlsl"
 #include "../VolumetricCommon.hlsl"
+#include "../FullscreenTriangle.hlsl"
 
 /**
  * 以下几个clamp函数用以限制数值在其对应的数值域内

@@ -33,24 +33,6 @@ struct VS_OUTPUT
     float2 uv       : TEXCOORD0;
 };
 
-float4 fsTrianglePosition(uint vtx)
-{
-    float x = -1.0 + float((vtx & 1) << 2);
-    float y = -1.0 + float((vtx & 2) << 1);
-    return float4(x, y, 0.0, 1.0);
-}
-
-// 与引擎 GNXEngineCommon.hlsl 中的 fsTriangleUV 保持一致（含 TEXCOORD_FLIP）
-float2 fsTriangleUV(uint vtx)
-{
-    float u = (vtx == 1) ? 2.0 : 0.0;
-    float v = (vtx == 2) ? 2.0 : 0.0;
-#ifdef TEXCOORD_FLIP
-    v = 1.0 - v;
-#endif
-    return float2(u, v);
-}
-
 [shader("vertex")]
 VS_OUTPUT VS(uint vertexID : SV_VertexID)
 {

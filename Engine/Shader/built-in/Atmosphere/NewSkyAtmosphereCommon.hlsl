@@ -4,6 +4,7 @@
 // Hillaire, EGSR 2020 / UE SkyAtmosphere. The public engine parameters remain
 // in metres; all ray intersections and optical integrals below use kilometres.
 #include "AtmosphereDefine.hlsl"
+#include "../FullscreenTriangle.hlsl"
 
 #define NEW_SKY_TRANSMITTANCE_WIDTH 256
 #define NEW_SKY_TRANSMITTANCE_HEIGHT 64
@@ -76,13 +77,8 @@ struct NewSkyVertexOutput
 NewSkyVertexOutput NewSkyFullscreenVertex(uint vertexID)
 {
     NewSkyVertexOutput o;
-    o.position = float4(-1.0 + float((vertexID & 1) << 2),
-                        -1.0 + float((vertexID & 2) << 1), 0.0, 1.0);
-    o.uv = float2(vertexID == 1 ? 2.0 : 0.0,
-                  vertexID == 2 ? 2.0 : 0.0);
-#ifdef TEXCOORD_FLIP
-    o.uv.y = 1.0 - o.uv.y;
-#endif
+    o.position = fsTrianglePosition(vertexID);
+    o.uv = fsTriangleUV(vertexID);
     return o;
 }
 
