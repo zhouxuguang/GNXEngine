@@ -36,10 +36,8 @@ float2 ProjectViewPosition(float3 viewPosition)
 {
     float4 clip = mul(float4(viewPosition, 1.0), MATRIX_P);
     float2 uv = clip.xy / clip.w * 0.5 + 0.5;
-#ifdef TEXCOORD_FLIP
-    uv.y = 1.0 - uv.y;
-#endif
-    return uv;
+    // 屏幕 UV 与 NDC 的 Y 方向约定相反，统一由全屏三角形模块处理
+    return fsScreenUVFlipY(uv);
 }
 
 bool IsOutside(float2 uv)

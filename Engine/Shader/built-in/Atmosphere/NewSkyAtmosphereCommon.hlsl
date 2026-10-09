@@ -362,9 +362,8 @@ NewSkyIntegration NewSkyIntegrate(float3 originKm, float3 ray,
 #ifdef NEW_SKY_USE_VIEW
 float3 NewSkyScreenRay(float2 uv)
 {
-#ifdef TEXCOORD_FLIP
-    uv.y = 1.0 - uv.y;
-#endif
+    // 屏幕 UV 与 NDC 的 Y 方向约定相反，统一由全屏三角形模块处理
+    uv = fsScreenUVFlipY(uv);
     float4 clip = float4(uv * 2.0 - 1.0, 0.5, 1.0);
     float4 rayPoint = mul(clip, inv_view_proj);
     return normalize(rayPoint.xyz / rayPoint.w);
@@ -372,9 +371,8 @@ float3 NewSkyScreenRay(float2 uv)
 
 float3 NewSkyScreenPoint(float2 uv, float depth)
 {
-#ifdef TEXCOORD_FLIP
-    uv.y = 1.0 - uv.y;
-#endif
+    // 屏幕 UV 与 NDC 的 Y 方向约定相反，统一由全屏三角形模块处理
+    uv = fsScreenUVFlipY(uv);
     float4 surfacePoint = mul(float4(uv * 2.0 - 1.0, depth, 1.0), inv_view_proj);
     return surfacePoint.xyz / surfacePoint.w;
 }

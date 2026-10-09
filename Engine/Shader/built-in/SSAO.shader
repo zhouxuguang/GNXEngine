@@ -130,10 +130,9 @@ float PS(VertexOut pin) : SV_Target0
         offset = mul(offset, MATRIX_P);
         offset.xyz /= offset.w;
         offset.xy = offset.xy * 0.5f + 0.5f;    // [-1,1] -> [0,1]
-#ifdef TEXCOORD_FLIP
-        offset.y = 1.0 - offset.y;
-#endif
-        
+        // 屏幕 UV 与 NDC 的 Y 方向约定相反，统一由全屏三角形模块处理
+        offset.xy = fsScreenUVFlipY(offset.xy);
+
         // 获取采样点的深度
         float depthZ = gDepth.Sample(gDepthSam, offset.xy).r;
         float surfaceZ = ReconstructViewPosition(offset.xy, depthZ).z;

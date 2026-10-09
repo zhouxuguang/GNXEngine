@@ -188,10 +188,8 @@ float4 PS(VS_OUTPUT input) : SV_Target0
     // 视线重建：取深度范围内一个有限值 (z=0.5) 反投影得到世界坐标点。
     // 注意：Reverse-Z 下远平面对应 NDC z=0，在无限远投影里等价于“无穷远”，
     // 反投影后齐次坐标 w=0，会得到 Inf/NaN（这正是之前天空全黑的根因）。
-    float2 uv = input.uv;
-#ifdef TEXCOORD_FLIP
-    uv.y = 1.0 - uv.y;
-#endif
+    // 屏幕 UV 与 NDC 的 Y 方向约定相反，统一由全屏三角形模块处理
+    float2 uv = fsScreenUVFlipY(input.uv);
     float4 clipPos = float4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, 0.5, 1.0);
     float4 worldFar = mul(clipPos, inv_view_proj);
     worldFar /= worldFar.w;

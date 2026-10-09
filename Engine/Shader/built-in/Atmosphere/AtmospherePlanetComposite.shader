@@ -143,10 +143,8 @@ float4 PS(VS_OUTPUT input) : SV_Target0
 #else
     bool hasSurface = depth < 1.0;
 #endif
-    float2 uv = input.uv;
-#ifdef TEXCOORD_FLIP
-    uv.y = 1.0 - uv.y;
-#endif
+    // 屏幕 UV 与 NDC 的 Y 方向约定相反，统一由全屏三角形模块处理
+    float2 uv = fsScreenUVFlipY(input.uv);
     float4 clip = float4(uv * 2.0 - 1.0, 0.5, 1.0);
     float4 rayPoint = mul(clip, inv_view_proj);
     float3 worldRay = normalize(rayPoint.xyz / rayPoint.w);

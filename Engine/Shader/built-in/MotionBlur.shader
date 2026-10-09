@@ -43,15 +43,13 @@ float4 PS(VertexOut pin) : SV_Target0
 {
     // 获取深度值
     float depth = gDepthTexture.Sample(gDepthTextureSam, pin.texCoord).r;
-    
+
     // 重建世界空间位置
-    // H是视口位置，范围[-1,1]
-    float4 H = float4(pin.texCoord.x * 2.0 - 1.0, (1.0 - pin.texCoord.y) * 2.0 - 1.0, depth, 1.0);
-    
-#ifdef TEXCOORD_FLIP
-    H.y = (pin.texCoord.y * 2.0 - 1.0);
-#endif
-    
+    // H 是当前帧的 NDC 位置，范围 [-1,1]。
+    // 屏幕 UV 与 NDC 的 Y 方向约定相反，统一由全屏三角形模块处理。
+    float2 ndc = fsScreenUVFlipY(pin.texCoord) * 2.0 - 1.0;
+    float4 H = float4(ndc, depth, 1.0);
+
     // 使用当前帧的逆VP矩阵变换到世界空间
     float4 D = mul(H, MATRIX_INV_VP);
     float4 worldPos = D / D.w;

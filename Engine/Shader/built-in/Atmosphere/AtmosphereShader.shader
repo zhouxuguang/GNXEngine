@@ -83,10 +83,8 @@ float3 GetSkyRadiance(float3 camera, float3 view_ray, float shadow_length,
 [shader("pixel")]
 float4 PS(VS_OUTPUT input) : SV_Target0
 {
-    float2 uv = input.uv;
-#ifdef TEXCOORD_FLIP
-    uv.y = 1.0 - uv.y;
-#endif
+    // 屏幕 UV 与 NDC 的 Y 方向约定相反，统一由全屏三角形模块处理
+    float2 uv = fsScreenUVFlipY(input.uv);
     float4 clipPos = float4(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0, 0.5, 1.0);
     float4 rayPoint = mul(clipPos, inv_view_proj);
     float3 viewDirection = normalize(rayPoint.xyz / rayPoint.w);
