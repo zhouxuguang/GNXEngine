@@ -180,6 +180,10 @@ public:
 
     void SetSSREnabled(bool enabled);
 
+    /// 设置 FXAA 抗锯齿开关（透传到延迟渲染器的 Present 后处理）
+    void SetFXAAEnabled(bool enabled);
+    bool IsFXAAEnabled() const;
+
     // ==================== 虚拟纹理系统 ====================
 
     /**

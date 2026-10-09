@@ -264,6 +264,31 @@ void SceneManager::SetSSREnabled(bool enabled)
     }
 }
 
+void SceneManager::SetFXAAEnabled(bool enabled)
+{
+    if (mSceneRenderer)
+    {
+        auto* deferredRenderer = dynamic_cast<DeferredSceneRenderer*>(mSceneRenderer.get());
+        if (deferredRenderer)
+        {
+            deferredRenderer->SetFXAAEnabled(enabled);
+        }
+    }
+}
+
+bool SceneManager::IsFXAAEnabled() const
+{
+    if (mSceneRenderer)
+    {
+        auto* deferredRenderer = dynamic_cast<DeferredSceneRenderer*>(mSceneRenderer.get());
+        if (deferredRenderer)
+        {
+            return deferredRenderer->IsFXAAEnabled();
+        }
+    }
+    return false;
+}
+
 void SceneManager::DestroyCameraController()
 {
     if (mActiveController)

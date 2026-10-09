@@ -18,6 +18,7 @@
 #include "SSRPass.h"
 #include "MotionBlurPass.h"
 #include "PostProcess/PostProcessing.h"
+#include "PostProcess/FXAAPass.h"
 #include "SkyBoxNode.h"
 #include "terrain/TerrainComponent.h"
 #include "VirtualTexture/FeedbackRenderer.h"
@@ -65,6 +66,11 @@ public:
 
     void SetSSREnabled(bool enabled);
     bool IsSSREnabled() const;
+
+    /// 设置 FXAA 抗锯齿开关（默认关闭）。开启后 Present 阶段用 FXAAPass 取代默认的色调映射后处理
+    void SetFXAAEnabled(bool enabled);
+    bool IsFXAAEnabled() const;
+
     void SetOptionalPassesEnabled(bool enabled) { mEnableOptionalPasses = enabled; }
     // Optional SDR target for the next PresentPass (used by deterministic screenshots).
     void SetCaptureTarget(RCTexturePtr target) { mCaptureTarget = std::move(target); }
@@ -148,6 +154,9 @@ private:
      */
     void RenderForwardPass();
 
+    // 最终后处理：按 FXAA 开关选择 FXAAPass 或默认色调映射，输出到 encoder 当前目标
+    void ApplyPostProcess(const RenderEncoderPtr& renderEncoder, RCTexturePtr sceneColor);
+
     /**
      * 执行天空盒Pass（在延迟光照之后、后处理之前）
      * 通过深度测试 LEQUAL 只填充远平面区域
@@ -214,6 +223,7 @@ private:
     SSAOPassPtr mSSAOPass = nullptr;
     SSRPassPtr mSSRPass = nullptr;
     MotionBlurPassPtr mMotionBlurPass = nullptr;
+    FXAAPassPtr mFXAAPass = nullptr;
     PostProcessing* mPostProcessing = nullptr;
     FeedbackRendererUniPtr mFeedbackRender = nullptr;
     ShadowMapModuleUniPtr mShadowMapModule = nullptr;   // 阴影模块（PCSS）
@@ -221,6 +231,7 @@ private:
     RCTexturePtr mCaptureTarget;
     bool mEnableMotionBlur = false;
     bool mEnableSSR = false;
+    bool mEnableFXAA = false;
     bool mEnableOptionalPasses = true;
     
     uint32_t mWidth = 1;

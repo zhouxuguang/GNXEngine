@@ -34,6 +34,7 @@ DeferredSceneRenderer::DeferredSceneRenderer()
     mSSAOPass = std::make_shared<SSAOPass>();
     mSSRPass = std::make_shared<SSRPass>();
     mMotionBlurPass = std::make_shared<MotionBlurPass>();
+    mFXAAPass = std::make_shared<FXAAPass>();
     mShadowMapModule = std::make_unique<ShadowMapModule>(GetRenderDevice().get());
     
     mPostProcessing = new PostProcessing(GetRenderDevice());
@@ -80,6 +81,16 @@ void DeferredSceneRenderer::SetSSREnabled(bool enabled)
 bool DeferredSceneRenderer::IsSSREnabled() const
 {
     return mEnableSSR;
+}
+
+void DeferredSceneRenderer::SetFXAAEnabled(bool enabled)
+{
+    mEnableFXAA = enabled;
+}
+
+bool DeferredSceneRenderer::IsFXAAEnabled() const
+{
+    return mEnableFXAA;
 }
 
 const GBufferRenderer::GBufferConfig& DeferredSceneRenderer::GetGBufferConfig() const
@@ -411,6 +422,11 @@ void DeferredSceneRenderer::Render(SceneManager *sceneManager, float deltaTime)
         }
     }
 
+    if (mEnableFXAA && mFXAAPass && !mFXAAPass->IsInitialized())
+    {
+        mFXAAPass->Initialize();
+    }
+
     RenderPresentPass(frameGraph, commandBuffer, finalResult);
 
     frameGraph.Compile();
@@ -563,6 +579,23 @@ HiZOutput DeferredSceneRenderer::BuildHiZPass(
     return mHiZPass->AddToFrameGraph("HiZPass", frameGraph, commandBuffer, params);
 }
 
+void DeferredSceneRenderer::ApplyPostProcess(const RenderEncoderPtr& renderEncoder, RCTexturePtr sceneColor)
+{
+    if (!renderEncoder || !sceneColor)
+    {
+        return;
+    }
+
+    if (mEnableFXAA && mFXAAPass && mFXAAPass->IsInitialized())
+    {
+        mFXAAPass->Process(renderEncoder, sceneColor);
+        return;
+    }
+
+    mPostProcessing->SetRenderTexture(sceneColor);
+    mPostProcessing->Process(renderEncoder);
+}
+
 void DeferredSceneRenderer::RenderPresentPass(FrameGraph& frameGraph, CommandBufferPtr commandBuffer, FrameGraphResource depthResource)
 {
     frameGraph.AddPass("PresentPass",
@@ -587,8 +620,7 @@ void DeferredSceneRenderer::RenderPresentPass(FrameGraph& frameGraph, CommandBuf
 
             renderEncoder = commandBuffer->CreateDefaultRenderEncoder();
 
-            mPostProcessing->SetRenderTexture(colorTexture.texture);
-            mPostProcessing->Process(renderEncoder);
+            ApplyPostProcess(renderEncoder, colorTexture.texture);
 
             // ImGui UI：绘制在最终画面之上（后处理之后），复用同一个 encoder，只切换管线。
             // 这里只查询已创建的 UI 层，不触发创建——UI 的创建由 AppFrameWork::SetImGuiEnabled(true)
@@ -615,7 +647,7 @@ void DeferredSceneRenderer::RenderPresentPass(FrameGraph& frameGraph, CommandBuf
             captureAttachment->clearColor = MakeClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             capturePass.colorAttachments.push_back(captureAttachment);
             RenderEncoderPtr captureEncoder = commandBuffer->CreateRenderEncoder(capturePass);
-            mPostProcessing->Process(captureEncoder);
+            ApplyPostProcess(captureEncoder, colorTexture.texture);
             if (const ImGuiRendererPtr& imGuiRenderer = SceneManager::GetInstance()->PeekImGuiRenderer())
                 imGuiRenderer->Render(captureEncoder);
             captureEncoder->EndEncode();
