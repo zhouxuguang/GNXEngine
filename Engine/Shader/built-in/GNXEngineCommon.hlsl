@@ -160,6 +160,12 @@ half LinearRgbToLuminance(half3 linearRgb)
     return dot(linearRgb, half3(0.2126729f,  0.7151522f, 0.0721750f));
 }
 
+// 感知亮度（Rec.601 系数），用于在伽马编码后的 SDR 颜色上做亮度比较
+inline float RgbToLuma(float3 rgb)
+{
+    return dot(rgb, float3(0.299f, 0.587f, 0.114f));
+}
+
 //根据法线和切线生成由切线空间转换到模型空间的转换矩阵
 float3x3 GetTangentRotation(float3 normal, float3 tangent)
 {
