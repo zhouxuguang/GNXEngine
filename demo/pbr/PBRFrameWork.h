@@ -35,6 +35,8 @@ public:
     
 private:
     bool OnKeyUp(GNXEngine::KeyReleasedEvent& e);
+    void SetupImGui();
+    void BuildImGuiPanel();
     void CreateScene(uint32_t width, uint32_t height);
     void CreateIBL();
     void CreateSkybox();
@@ -43,6 +45,10 @@ private:
 private:
     // 场景只创建一次（避免 Resize 事件重复创建）
     bool mSceneCreated = false;
+
+    // ImGui 调试面板（用于对比 FXAA 开关前后的抗锯齿效果）
+    bool mEnableFXAA = false;
+    bool mShowPanel = true;
 
     // IBL 资源（来自 .texture 资产）
     RenderCore::RCTextureCubePtr mIrradianceMap = nullptr;

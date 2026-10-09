@@ -29,6 +29,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include <imgui.h>
+
 using namespace mathutil;
 
 namespace
@@ -127,6 +129,46 @@ PBRFrameWork::PBRFrameWork(const GNXEngine::WindowProps& props)
 void PBRFrameWork::Initlize()
 {
     GNXEngine::AppFrameWork::Initlize();
+
+    SetupImGui();
+}
+
+void PBRFrameWork::SetupImGui()
+{
+    SetImGuiEnabled(true);
+
+    // 渲染器的 FXAA 状态与面板初值保持一致
+    RenderSystem::SceneManager::GetInstance()->SetFXAAEnabled(mEnableFXAA);
+}
+
+void PBRFrameWork::BuildImGuiPanel()
+{
+    if (!mShowPanel)
+    {
+        return;
+    }
+
+    ImGuiIO& io = ImGui::GetIO();
+
+    ImGui::SetNextWindowPos(ImVec2(12.0f, 12.0f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowSize(ImVec2(320.0f, 190.0f), ImGuiCond_FirstUseEver);
+
+    if (ImGui::Begin("PBR 后处理 (Post Processing)", &mShowPanel))
+    {
+        ImGui::Text("FPS %.1f (%.2f ms)", io.Framerate,
+                    io.Framerate > 0.0f ? 1000.0f / io.Framerate : 0.0f);
+        ImGui::Separator();
+
+        if (ImGui::Checkbox("FXAA 抗锯齿", &mEnableFXAA))
+        {
+            RenderSystem::SceneManager::GetInstance()->SetFXAAEnabled(mEnableFXAA);
+        }
+        ImGui::TextDisabled(mEnableFXAA ? "FXAA: 开启" : "FXAA: 关闭");
+
+        ImGui::Separator();
+        ImGui::TextWrapped("操作: 左键拖拽旋转 / 滚轮缩放，打开/关闭 FXAA 对比边缘锯齿。");
+    }
+    ImGui::End();
 }
 
 void PBRFrameWork::Resize(uint32_t width, uint32_t height)
@@ -318,6 +360,14 @@ void PBRFrameWork::RenderFrame()
     lastTime = thisTime;
     
     SceneManager* sceneManager = SceneManager::GetInstance();
+
+    // ImGui：构建 UI 并结束帧（NewFrame 由框架驱动，实际绘制在 Present Pass 里）
+    if (GetImGui())
+    {
+        BuildImGuiPanel();
+        ImGui::Render();
+    }
+
     sceneManager->Update(deltaTime);
     
     // Render via DeferredSceneRenderer (G-Buffer → Deferred Lighting pipeline)
