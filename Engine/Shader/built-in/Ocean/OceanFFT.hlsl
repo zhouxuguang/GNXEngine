@@ -26,6 +26,11 @@ float2 ComplexMul(float2 a, float2 b)
     return float2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
 }
 
+float2 ComplexExp(float2 a) 
+{
+    return float2(cos(a.y), sin(a.y) * exp(a.x));
+}
+
 //Gneral Fuctions
 float hash(uint n)
 {
@@ -130,6 +135,11 @@ float JONSWAP(float omega, float g, float depth, JONSWAP_parameters pars)
 		* oneOverOmega * oneOverOmega * oneOverOmega * oneOverOmega * oneOverOmega
 		* exp(-1.25 * peakOmegaOverOmega * peakOmegaOverOmega * peakOmegaOverOmega * peakOmegaOverOmega)
 		* pow(abs(pars.gamma), r);
+}
+
+float ShortWavesFade(float kLength, JONSWAP_parameters spectrum) 
+{
+	return exp(-spectrum.shortWavesFade * spectrum.shortWavesFade * kLength * kLength);
 }
 
 #endif // _OCEAN_FFT_H_
